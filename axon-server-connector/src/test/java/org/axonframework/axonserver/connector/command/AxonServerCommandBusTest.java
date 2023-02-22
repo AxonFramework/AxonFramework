@@ -67,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Unit test class to cover all the operations performed by the {@link AxonServerCommandBus}.
@@ -157,11 +158,13 @@ class AxonServerCommandBusTest {
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
         await().atMost(Duration.ofSeconds(3l))
-                .until(() ->
-                        spanFactory.spanCompleted("AxonServerCommandBus.dispatch"));
+                .untilAsserted(
+                        () -> spanFactory.verifySpanCompleted("AxonServerCommandBus.dispatch")
+                );
         await().atMost(Duration.ofSeconds(3l))
-                .untilAsserted(() ->
-                        spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage));
+                .untilAsserted(
+                        () -> spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage)
+                );
     }
 
     @Test

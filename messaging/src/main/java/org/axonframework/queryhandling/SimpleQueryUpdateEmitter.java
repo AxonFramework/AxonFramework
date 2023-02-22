@@ -152,7 +152,11 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                          @Nonnull SubscriptionQueryUpdateMessage<U> update) {
         SubscriptionQueryUpdateMessage<U> updateMessage = spanFactory.propagateContext(update);
         Span span = spanFactory.createInternalSpan(() -> "SimpleQueryUpdateEmitter.emit", updateMessage);
-        runOnAfterCommitOrNow(span.wrapRunnable(() -> doEmit(filter, intercept(updateMessage))));
+        span.run(() -> {
+            Span doEmitSpan = spanFactory.createDispatchSpan(() -> "SimpleQueryUpdateEmitter.doEmit", updateMessage);
+            runOnAfterCommitOrNow(doEmitSpan.wrapRunnable(
+                    () -> doEmit(filter, intercept(spanFactory.propagateContext(updateMessage)))));
+        });
     }
 
     private <U> SubscriptionQueryUpdateMessage<U> intercept(SubscriptionQueryUpdateMessage<U> message) {
@@ -188,47 +192,42 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                             SubscriptionQueryUpdateMessage<U> update) {
         updateHandlers.keySet()
                       .stream()
-      				  .filter(payloadMatchesQueryResponseType(update.getPayloadType()))
+                      .filter(payloadMatchesQueryResponseType(update.getPayloadType()))
                       .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
                       .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
                                                 .ifPresent(uh -> doEmit(query, uh, update)));
     }
 
-    private Predicate<SubscriptionQueryMessage<?,?,?>> payloadMatchesQueryResponseType(Class<?> payloadType) {
-		return sqm -> {
-			if(sqm.getUpdateResponseType() instanceof MultipleInstancesResponseType) {
-				return payloadType.isArray() ||	Iterable.class.isAssignableFrom(payloadType);
-			}
-			if(sqm.getUpdateResponseType() instanceof OptionalResponseType) {
-				return Optional.class.isAssignableFrom(payloadType);
-			}
-			if(sqm.getUpdateResponseType() instanceof PublisherResponseType) {
-				return Publisher.class.isAssignableFrom(payloadType);
-			}
-			return sqm.getUpdateResponseType().getExpectedResponseType().isAssignableFrom(payloadType);
-		};
-	}
+    private Predicate<SubscriptionQueryMessage<?, ?, ?>> payloadMatchesQueryResponseType(Class<?> payloadType) {
+        return sqm -> {
+            if (sqm.getUpdateResponseType() instanceof MultipleInstancesResponseType) {
+                return payloadType.isArray() || Iterable.class.isAssignableFrom(payloadType);
+            }
+            if (sqm.getUpdateResponseType() instanceof OptionalResponseType) {
+                return Optional.class.isAssignableFrom(payloadType);
+            }
+            if (sqm.getUpdateResponseType() instanceof PublisherResponseType) {
+                return Publisher.class.isAssignableFrom(payloadType);
+            }
+            return sqm.getUpdateResponseType().getExpectedResponseType().isAssignableFrom(payloadType);
+        };
+    }
 
     @SuppressWarnings("unchecked")
     private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
-        spanFactory
-                .createDispatchSpan(() -> "QueryUpdateEmitter.emit " + query.getQueryName(), update, query)
-                .run(() -> {
-                    SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
-                    MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(message);
-                    try {
-                        ((SinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(message);
-                        monitorCallback.reportSuccess();
-                    } catch (Exception e) {
-                        logger.info("An error occurred while trying to emit an update to a query '{}'. " +
-                                            "The subscription will be cancelled. Exception summary: {}",
-                                    query.getQueryName(), e.toString());
-                        monitorCallback.reportFailure(e);
-                        updateHandlers.remove(query);
-                        emitError(query, e, updateHandler);
-                    }
-                });
+        MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
+        try {
+            ((SinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
+            monitorCallback.reportSuccess();
+        } catch (Exception e) {
+            logger.info("An error occurred while trying to emit an update to a query '{}'. " +
+                                "The subscription will be cancelled. Exception summary: {}",
+                        query.getQueryName(), e.toString());
+            monitorCallback.reportFailure(e);
+            updateHandlers.remove(query);
+            emitError(query, e, updateHandler);
+        }
     }
 
     private void doComplete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
@@ -266,16 +265,16 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     /**
      * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
      * {@link UnitOfWork} if {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}. This is
-     * done to ensure any emitter calls made from a message handling function are executed in the {@link
-     * UnitOfWork.Phase#AFTER_COMMIT} phase.
+     * done to ensure any emitter calls made from a message handling function are executed in the
+     * {@link UnitOfWork.Phase#AFTER_COMMIT} phase.
      * <p>
      * The latter check requires the current UnitOfWork's phase to be {@link UnitOfWork.Phase#STARTED}. This is done to
      * allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can do this
      * by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a different
      * phase.
      *
-     * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if {@link
-     *                        SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}
+     * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if
+     *                        {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}
      */
     private void runOnAfterCommitOrNow(Runnable queryUpdateTask) {
         if (inStartedPhaseOfUnitOfWork()) {
@@ -325,8 +324,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
          * Sets the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s being processed.
          * Defaults to a {@link NoOpMessageMonitor}.
          *
-         * @param updateMessageMonitor the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s
-         *                             being processed
+         * @param updateMessageMonitor the {@link MessageMonitor} used to monitor
+         *                             {@link SubscriptionQueryUpdateMessage}s being processed
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder updateMessageMonitor(

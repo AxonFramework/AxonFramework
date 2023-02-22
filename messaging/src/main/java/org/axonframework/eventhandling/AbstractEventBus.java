@@ -27,6 +27,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,42 +155,48 @@ public abstract class AbstractEventBus implements EventBus {
 
     private List<EventMessage<?>> eventsQueue(UnitOfWork<?> unitOfWork) {
         return unitOfWork.getOrComputeResource(eventsKey, r -> {
-            Span span = spanFactory.createInternalSpan(() -> getClass().getSimpleName() + ".commit");
+            Span commitSpan = spanFactory.createInternalSpan(() -> getClass().getSimpleName() + ".commit");
             List<EventMessage<?>> eventQueue = new ArrayList<>();
 
             unitOfWork.onPrepareCommit(u -> {
-                span.start();
-                if (u.parent().isPresent() && !u.parent().get().phase().isAfter(PREPARE_COMMIT)) {
-                    eventsQueue(u.parent().get()).addAll(eventQueue);
-                } else {
-                    int processedItems = eventQueue.size();
-                    doWithEvents(this::prepareCommit, intercept(eventQueue));
-                    // Make sure events published during publication prepare commit phase are also published
-                    while (processedItems < eventQueue.size()) {
-                        List<? extends EventMessage<?>> newMessages =
-                                intercept(eventQueue.subList(processedItems, eventQueue.size()));
-                        processedItems = eventQueue.size();
-                        doWithEvents(this::prepareCommit, newMessages);
+                commitSpan.start();
+                try (SpanScope unused = commitSpan.makeCurrent()) {
+                    if (u.parent().isPresent() && !u.parent().get().phase().isAfter(PREPARE_COMMIT)) {
+                        eventsQueue(u.parent().get()).addAll(eventQueue);
+                    } else {
+                        int processedItems = eventQueue.size();
+                        doWithEvents(this::prepareCommit, intercept(eventQueue));
+                        // Make sure events published during publication prepare commit phase are also published
+                        while (processedItems < eventQueue.size()) {
+                            List<? extends EventMessage<?>> newMessages =
+                                    intercept(eventQueue.subList(processedItems, eventQueue.size()));
+                            processedItems = eventQueue.size();
+                            doWithEvents(this::prepareCommit, newMessages);
+                        }
                     }
                 }
             });
             unitOfWork.onCommit(u -> {
-                if (u.parent().isPresent() && !u.root().phase().isAfter(COMMIT)) {
-                    u.root().onCommit(w -> doWithEvents(this::commit, eventQueue));
-                } else {
-                    doWithEvents(this::commit, eventQueue);
+                try (SpanScope unused = commitSpan.makeCurrent()) {
+                    if (u.parent().isPresent() && !u.root().phase().isAfter(COMMIT)) {
+                        u.root().onCommit(w -> doWithEvents(this::commit, eventQueue));
+                    } else {
+                        doWithEvents(this::commit, eventQueue);
+                    }
                 }
             });
             unitOfWork.afterCommit(u -> {
-                if (u.parent().isPresent() && !u.root().phase().isAfter(AFTER_COMMIT)) {
-                    u.root().afterCommit(w -> doWithEvents(this::afterCommit, eventQueue));
-                } else {
-                    doWithEvents(this::afterCommit, eventQueue);
+                try (SpanScope unused = commitSpan.makeCurrent()) {
+                    if (u.parent().isPresent() && !u.root().phase().isAfter(AFTER_COMMIT)) {
+                        u.root().afterCommit(w -> doWithEvents(this::afterCommit, eventQueue));
+                    } else {
+                        doWithEvents(this::afterCommit, eventQueue);
+                    }
                 }
             });
             unitOfWork.onCleanup(u -> {
                 u.resources().remove(eventsKey);
-                span.end();
+                commitSpan.end();
             });
             return eventQueue;
         });

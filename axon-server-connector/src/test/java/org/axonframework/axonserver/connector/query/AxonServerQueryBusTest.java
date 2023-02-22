@@ -51,6 +51,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -67,6 +68,7 @@ import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalIn
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Unit test suite to verify the {@link AxonServerQueryBus}.
@@ -219,6 +221,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void queryReportsCorrectNonTransientException() throws ExecutionException, InterruptedException {
+        spanFactory.reset();
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(),
                                   "Faking non transient exception result")
@@ -239,8 +242,10 @@ class AxonServerQueryBusTest {
                      remoteQueryHandlingException.getErrorCode());
 
         verify(targetContextResolver).resolveContext(testQuery);
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
-        spanFactory.verifySpanHasException("AxonServerQueryBus.query", QueryExecutionException.class);
+        await().untilAsserted(() -> {
+            spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
+            spanFactory.verifySpanHasException("AxonServerQueryBus.query", QueryExecutionException.class);
+        });
     }
 
     @Test
@@ -342,11 +347,13 @@ class AxonServerQueryBusTest {
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
         await().atMost(Duration.ofSeconds(3l))
-                .until(() ->
-                        spanFactory.spanCompleted("AxonServerQueryBus.streamingQuery"));
+               .untilAsserted(
+                       () -> spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery")
+               );
         await().atMost(Duration.ofSeconds(3l))
-                .untilAsserted(() ->
-                        spanFactory.verifySpanHasException("AxonServerQueryBus.streamingQuery", RuntimeException.class));
+               .untilAsserted(() -> spanFactory.verifySpanHasException(
+                       "AxonServerQueryBus.streamingQuery", RuntimeException.class
+               ));
     }
 
     @Test

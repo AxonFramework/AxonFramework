@@ -74,6 +74,7 @@
         <slf4j.version>2.0.6</slf4j.version>
         <log4j.version>2.19.0</log4j.version>
         <spring.version>5.3.25</spring.version>
+        <awaitility.version>4.2.0</awaitility.version>
         <spring-security.version>5.7.3</spring-security.version>
         <spring.boot.version>2.7.8</spring.boot.version>
         <mockito.version>4.11.0</mockito.version>
@@ -277,6 +278,11 @@
                 <artifactId>reactor-test</artifactId>
                 <version>${projectreactor.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${awaitility.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>

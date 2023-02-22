@@ -157,7 +157,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
         spanFactory.verifySpanCompleted(managerName + ".schedule(deadlineName)");
         await().pollDelay(Duration.ofMillis(50)).atMost(Duration.ofMillis(100))
-               .until(() -> spanFactory.spanCompleted("DeadlineJob.execute"));
+               .untilAsserted(() -> spanFactory.verifySpanCompleted("DeadlineJob.execute"));
     }
 
 

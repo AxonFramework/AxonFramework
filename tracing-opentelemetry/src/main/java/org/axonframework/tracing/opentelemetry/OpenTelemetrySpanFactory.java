@@ -49,12 +49,17 @@ import static org.axonframework.tracing.SpanUtils.determineMessageName;
  * java agent to export data. Without this, it will have the same effect as the
  * {@link org.axonframework.tracing.NoOpSpanFactory} since the data is not sent anywhere.
  *
+ * <p>
+ * When creating a trace, the context of the current trace is used as a parent, instead of the one active at the time of
+ * starting the span (Default OpenTelemetry behavior). This is done using {@link SpanBuilder#setParent(Context)}.
+ *
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
 public class OpenTelemetrySpanFactory implements SpanFactory {
 
     private final Tracer tracer;
+    private final TextMapPropagator textMapPropagator;
     private final List<SpanAttributesProvider> spanAttributesProviders;
     private final TextMapGetter<Message<?>> textMapGetter;
     private final TextMapSetter<Map<String, String>> textMapSetter;
@@ -67,6 +72,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     public OpenTelemetrySpanFactory(Builder builder) {
         this.spanAttributesProviders = builder.spanAttributesProviders;
         this.tracer = builder.tracer;
+        this.textMapPropagator = builder.textMapPropagator;
         this.textMapGetter = builder.textMapGetter;
         this.textMapSetter = builder.textMapSetter;
     }
@@ -87,26 +93,27 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     @SuppressWarnings("unchecked")
     public <M extends Message<?>> M propagateContext(M message) {
         HashMap<String, String> additionalMetadataProperties = new HashMap<>();
-        propagator().inject(Context.current(), additionalMetadataProperties, textMapSetter);
+        textMapPropagator.inject(Context.current(), additionalMetadataProperties, textMapSetter);
         return (M) message.andMetaData(additionalMetadataProperties);
     }
 
     @Override
     public Span createRootTrace(Supplier<String> operationNameSupplier) {
-        SpanBuilder spanBuilder = tracer.spanBuilder(operationNameSupplier.get())
-                                        .setSpanKind(SpanKind.INTERNAL);
-        spanBuilder.addLink(io.opentelemetry.api.trace.Span.current().getSpanContext()).setNoParent();
+        SpanBuilder spanBuilder = createSpanBuilder(operationNameSupplier.get(), SpanKind.INTERNAL)
+                .addLink(io.opentelemetry.api.trace.Span.current().getSpanContext())
+                .setNoParent();
         return new OpenTelemetrySpan(spanBuilder);
     }
 
     @Override
-    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, boolean isChildTrace,
+    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
+                                  boolean isChildTrace,
                                   Message<?>... linkedParents) {
-        Context parentContext = propagator().extract(Context.current(),
-                                                     parentMessage,
-                                                     textMapGetter);
-        SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationNameSupplier.get(), parentMessage))
-                                        .setSpanKind(SpanKind.CONSUMER);
+        Context parentContext = textMapPropagator.extract(Context.current(),
+                                                          parentMessage,
+                                                          textMapGetter);
+        SpanBuilder spanBuilder = createSpanBuilder(formatName(operationNameSupplier.get(), parentMessage),
+                                                    SpanKind.CONSUMER);
         if (isChildTrace) {
             spanBuilder.setParent(parentContext);
         } else {
@@ -119,9 +126,11 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, Message<?>... linkedSiblings) {
-        SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationNameSupplier.get(), parentMessage))
-                                        .setSpanKind(SpanKind.PRODUCER);
+    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
+                                   Message<?>... linkedSiblings) {
+        SpanBuilder spanBuilder = createSpanBuilderWithCurrentContext(
+                formatName(operationNameSupplier.get(), parentMessage),
+                SpanKind.PRODUCER);
         addLinks(spanBuilder, linkedSiblings);
         addMessageAttributes(spanBuilder, parentMessage);
         return new OpenTelemetrySpan(spanBuilder);
@@ -129,24 +138,28 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
 
     private void addLinks(SpanBuilder spanBuilder, Message<?>[] linkedMessages) {
         for (Message<?> message : linkedMessages) {
-            Context linkedContext = propagator().extract(Context.current(),
-                                                         message,
-                                                         textMapGetter);
+            Context linkedContext = textMapPropagator.extract(Context.current(),
+                                                              message,
+                                                              textMapGetter);
             spanBuilder.addLink(io.opentelemetry.api.trace.Span.fromContext(linkedContext).getSpanContext());
         }
     }
 
     @Override
     public Span createInternalSpan(Supplier<String> operationNameSupplier) {
-        SpanBuilder spanBuilder = tracer.spanBuilder(operationNameSupplier.get())
-                                        .setSpanKind(SpanKind.INTERNAL);
+        SpanBuilder spanBuilder = createSpanBuilderWithCurrentContext(
+                operationNameSupplier.get(),
+                SpanKind.INTERNAL
+        );
         return new OpenTelemetrySpan(spanBuilder);
     }
 
     @Override
     public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
-        SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationNameSupplier.get(), message))
-                                        .setSpanKind(SpanKind.INTERNAL);
+        SpanBuilder spanBuilder = createSpanBuilderWithCurrentContext(
+                formatName(operationNameSupplier.get(), message),
+                SpanKind.INTERNAL
+        );
         addMessageAttributes(spanBuilder, message);
         return new OpenTelemetrySpan(spanBuilder);
     }
@@ -175,8 +188,16 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         });
     }
 
-    private TextMapPropagator propagator() {
-        return GlobalOpenTelemetry.getPropagators().getTextMapPropagator();
+    /**
+     * Use the context at moment of creation as parent, not at moment of start. Keep this call, it will break trace
+     * correlation otherwise.
+     */
+    private SpanBuilder createSpanBuilderWithCurrentContext(String name, SpanKind kind) {
+        return createSpanBuilder(name, kind).setParent(Context.current());
+    }
+
+    private SpanBuilder createSpanBuilder(String name, SpanKind kind) {
+        return tracer.spanBuilder(name).setSpanKind(kind);
     }
 
     /**
@@ -189,6 +210,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     public static class Builder {
 
         private Tracer tracer = null;
+        private TextMapPropagator textMapPropagator = null;
         private TextMapSetter<Map<String, String>> textMapSetter = MetadataContextSetter.INSTANCE;
         private TextMapGetter<Message<?>> textMapGetter = MetadataContextGetter.INSTANCE;
 
@@ -203,6 +225,18 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         public Builder addSpanAttributeProviders(@Nonnull List<SpanAttributesProvider> attributesProviders) {
             BuilderUtils.assertNonNull(attributesProviders, "The attributesProviders should not be null");
             spanAttributesProviders.addAll(attributesProviders);
+            return this;
+        }
+
+        /**
+         * Sets the propagator to be used. A propagator is used to propagate the current context into a message, so it
+         * can become the parent of another span despite being in another system.
+         *
+         * @param propagator The propagator to be used.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder contextPropagators(TextMapPropagator propagator) {
+            this.textMapPropagator = propagator;
             return this;
         }
 
@@ -252,6 +286,9 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         public OpenTelemetrySpanFactory build() {
             if (tracer == null) {
                 tracer = GlobalOpenTelemetry.getTracer("AxonFramework-OpenTelemetry");
+            }
+            if (textMapPropagator == null) {
+                textMapPropagator = GlobalOpenTelemetry.getPropagators().getTextMapPropagator();
             }
             return new OpenTelemetrySpanFactory(this);
         }
