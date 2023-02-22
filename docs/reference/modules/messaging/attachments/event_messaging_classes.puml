@@ -1,0 +1,16 @@
+' This is a fragment of a diagram
+' It is meant to be used together with generic_messaging_classes.puml
+
+package "event messages" <<Rectangle>> {
+
+  interface EventMessage<T> {
+    -timestamp: Instant
+  }
+
+  class GenericEventMessage<T> {}
+
+}
+
+EventMessage --|> Message
+GenericEventMessage ..|> EventMessage
+GenericEventMessage --|> MessageDecorator

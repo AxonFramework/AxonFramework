@@ -1,0 +1,35 @@
+= Message Correlation
+
+#TODO#
+
+== Requirements
+
+#TODO#
+
+== Implementation
+
+#TODO#
+
+=== Correlation Data Provider
+
+#TODO#
+
+=== Message Origin Provider
+
+#TODO#
+
+=== `SimpleCorrelationDataProvider`
+
+#TODO#
+
+=== `MultiCorrelationDataProvider`
+
+#TODO#
+
+== Usage
+
+#TODO#
+
+== Reference
+
+The xref:af_customization:ROOT:correlation_data_provider.adoc[] explains how to implement your own

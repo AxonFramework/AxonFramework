@@ -1,0 +1,3 @@
+= Modeling
+
+This module contains the necessary components to create domain models, like xref:aggregate.adoc[] and xref:saga.adoc[].

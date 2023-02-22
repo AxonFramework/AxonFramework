@@ -1,0 +1,46 @@
+= Event Messages
+
+This document provides information about the design, implementation and intended usage of event messages in Axon Framework.
+
+== Requirements
+
+Events are specific type of messages, used to notify something has happened. To distinguish them from other message types, the framework must provide a dedicates objects.
+
+In addition to the generic messages, event messages have the following characteristics:
+
+=== Timestamp
+
+#TODO: more info about timestamps#
+
+== Implementation
+
+In Axon Framework, an event message is an immutable, serializable Java object implementing the `EventMessage` interface.
+
+
+[plantuml, svg, title="Event messaging class diagram"]
+....
+include::attachment$generic_messaging_classes.puml[]
+include::attachment$event_messaging_classes.puml[]
+....
+
+Event do not expect responses so the communication is always unidirectional.
+
+
+== Usage
+
+#TODO#
+
+== Reference
+
+
+.Javadoc
+[%collapsible]
+====
+* #TODO#
+====
+
+.Source code
+[%collapsible]
+====
+* #TODO#
+====

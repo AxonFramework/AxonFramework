@@ -1,0 +1,53 @@
+= Command Messages
+
+This document provides information about the design, implementation and intended usage of command messages in Axon Framework.
+
+== Requirements
+
+Commands are specific type of messages, used to express and an intent. To distinguish them from other message types, the framework must provide a dedicates objects.
+
+In addition to the generic messages, command messages have the following characteristics:
+
+=== Name
+
+#TODO: more info about naming (requirements, auto name from FQCN, etc)#
+
+== Implementation
+
+In Axon Framework, a command message is an immutable, serializable Java object implementing the `CommandMessage` interface.
+
+
+[plantuml, svg, title="Command messaging class diagram"]
+....
+include::attachment$generic_messaging_classes.puml[]
+include::attachment$command_messaging_classes.puml[]
+....
+
+When the communication is bidirectional, the command response is an object that implements `CommandResultMessage`.
+
+
+== Usage
+
+#TODO#
+
+include::partial$command_message.adoc[tag=constructor]
+
+#TODO#
+
+include::partial$command_message.adoc[tag=static]
+
+
+== Reference
+
+
+.Javadoc
+[%collapsible]
+====
+* #TODO#
+====
+
+.Source code
+[%collapsible]
+====
+* #TODO#
+====

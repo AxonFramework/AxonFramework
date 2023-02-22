@@ -1,0 +1,17 @@
+* Configuration
+** Main Configuration
+** Module Configuration
+** Event Processing Configuration
+** Aggregate Configuration
+** Saga Configuration
+* SpringBoot auto configuration
+** ...
+** ...
+** ...
+** ...
+** ...
+* Testing
+** Aggregate Test Fixture
+** Saga Test Fixture
+** Matchers
+** Containers

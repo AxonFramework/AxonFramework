@@ -1,0 +1,19 @@
+= Aggregate
+
+#TODO#
+
+== Requirements
+
+#TODO#
+
+== Implementation
+
+#TODO#
+
+== Usage
+
+#TODO#
+
+== Reference
+
+#TODO#

@@ -1,0 +1,17 @@
+name: axon_framework_ref
+title: Axon Framework
+version: true
+prerelease: true
+
+asciidoc:
+  attributes:
+    component_description: The Axon Framework reference documentation
+    type: reference
+    group: product
+
+nav:
+  - modules/ROOT/nav.adoc
+  - modules/messaging/nav.adoc
+  - modules/modeling/nav.adoc
+  - modules/eventsourcing/nav.adoc
+  - modules/tmp/nav.adoc
