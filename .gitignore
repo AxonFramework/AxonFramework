@@ -20,3 +20,6 @@ events/
 
 # MacOS makes this one
 .DS_Store
+
+# documentation's local bulid
+docs/playbook/build
