@@ -50,6 +50,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collections;
@@ -81,10 +82,10 @@ import static org.junit.jupiter.api.Assertions.*;
         AxonServerAutoConfiguration.class,
         AxonServerActuatorAutoConfiguration.class
 })
+@TestPropertySource(properties = {"axon.axonserver.enabled=false", "spring.main.banner-mode=off"})
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class TrackingEventProcessorIntegrationTest {
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private EventBus eventBus;
     @Autowired

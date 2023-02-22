@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.spy;
 
 class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?>> {
+
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 64;
 
     private final TransactionManager transactionManager = spy(new NoOpTransactionManager());

@@ -74,7 +74,7 @@ class AutoWiredStateStoredAggregateTest {
             return new EventProcessingModule();
         }
 
-        @Entity
+        @Entity(name = "myAggregate")
         @Aggregate
         public static class MyAggregate {
 

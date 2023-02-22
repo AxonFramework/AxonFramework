@@ -25,6 +25,8 @@ import java.util.function.Consumer;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link SimpleEventBus}
+ *
  * @author Allard Buijze
  */
 class SimpleEventBusTest {
@@ -32,20 +34,25 @@ class SimpleEventBusTest {
     private Consumer<List<? extends EventMessage<?>>> listener1;
     private Consumer<List<? extends EventMessage<?>>> listener2;
     private Consumer<List<? extends EventMessage<?>>> listener3;
+
     private EventBus testSubject;
 
     @BeforeEach
-    @SuppressWarnings("unchecked")
     void setUp() {
+        //noinspection unchecked
         listener1 = mock(Consumer.class);
+        //noinspection unchecked
         listener2 = mock(Consumer.class);
+        //noinspection unchecked
         listener3 = mock(Consumer.class);
+
         testSubject = SimpleEventBus.builder().build();
     }
 
     @Test
-    void eventIsDispatchedToSubscribedListeners() throws Exception {
+    void eventIsDispatchedToSubscribedListeners() {
         testSubject.publish(newEvent());
+        //noinspection resource
         testSubject.subscribe(listener1);
         // subscribing twice should not make a difference
         Registration subscription1 = testSubject.subscribe(listener1);
@@ -66,7 +73,7 @@ class SimpleEventBusTest {
         verify(listener3, times(2)).accept(anyList());
     }
 
-    private EventMessage newEvent() {
+    private EventMessage<Object> newEvent() {
         return new GenericEventMessage<>(new Object());
     }
 }

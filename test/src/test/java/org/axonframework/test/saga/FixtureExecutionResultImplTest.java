@@ -91,10 +91,10 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void startRecording() throws Exception {
-        RecordingListenerInvocationErrorHandler errorHandler =
-                new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
+        RecordingListenerInvocationErrorHandler errorHandler = new RecordingListenerInvocationErrorHandler(
+                (exception, event, eventHandler) -> {/* No-op */}
+        );
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
-        doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
         testSubject = new FixtureExecutionResultImpl<>(
                 sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, StubSaga.class,
                 AllFieldsFilter.instance(), errorHandler);
@@ -129,9 +129,10 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void startRecording_ClearsEventsAndCommands() throws Exception {
-        RecordingListenerInvocationErrorHandler errorHandler = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
+        RecordingListenerInvocationErrorHandler errorHandler = new RecordingListenerInvocationErrorHandler(
+                (exception, event, eventHandler) -> {/* No-op */}
+        );
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
-        doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
         testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, deadlineManager, eventBus,
                                                        commandBus, StubSaga.class, AllFieldsFilter.instance(), errorHandler);
         testSubject.startRecording();

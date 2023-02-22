@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
@@ -25,13 +24,11 @@ import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jmx.support.RegistrationPolicy;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,26 +37,49 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Sara Pellegrini
  */
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration
-@EnableAutoConfiguration
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 class JpaAutoConfigurationTest {
 
-    @Autowired
-    private EntityManagerProvider entityManagerProvider;
-    @Autowired
-    private TokenStore tokenStore;
-    @Autowired
-    private SagaStore<?> sagaStore;
-    @Autowired
-    private PersistenceExceptionResolver persistenceExceptionResolver;
+    private ApplicationContextRunner testContext;
+
+    @BeforeEach
+    void setUp() {
+        testContext = new ApplicationContextRunner().withUserConfiguration(TestContext.class)
+                                                    .withPropertyValues("axon.axonserver.enabled=false");
+    }
 
     @Test
     void contextInitialization() {
-        assertTrue(entityManagerProvider instanceof ContainerManagedEntityManagerProvider);
-        assertTrue(tokenStore instanceof JpaTokenStore);
-        assertTrue(sagaStore instanceof JpaSagaStore);
-        assertTrue(persistenceExceptionResolver instanceof SQLErrorCodesResolver);
+        testContext.run(context -> {
+            Map<String, EntityManagerProvider> entityManagerProviders =
+                    context.getBeansOfType(EntityManagerProvider.class);
+            assertTrue(entityManagerProviders.containsKey("entityManagerProvider"));
+            assertEquals(ContainerManagedEntityManagerProvider.class,
+                         entityManagerProviders.get("entityManagerProvider").getClass());
+
+            Map<String, TokenStore> tokenStores =
+                    context.getBeansOfType(TokenStore.class);
+            assertTrue(tokenStores.containsKey("tokenStore"));
+            assertEquals(JpaTokenStore.class,
+                         tokenStores.get("tokenStore").getClass());
+
+            //noinspection rawtypes
+            Map<String, SagaStore> sagaStores =
+                    context.getBeansOfType(SagaStore.class);
+            assertTrue(sagaStores.containsKey("sagaStore"));
+            assertEquals(JpaSagaStore.class,
+                         sagaStores.get("sagaStore").getClass());
+
+            Map<String, SQLErrorCodesResolver> persistenceExceptionResolvers =
+                    context.getBeansOfType(SQLErrorCodesResolver.class);
+            assertTrue(persistenceExceptionResolvers.containsKey("persistenceExceptionResolver"));
+            assertEquals(SQLErrorCodesResolver.class,
+                         persistenceExceptionResolvers.get("persistenceExceptionResolver").getClass());
+        });
+    }
+
+    @ContextConfiguration
+    @EnableAutoConfiguration
+    private static class TestContext {
+
     }
 }

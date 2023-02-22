@@ -89,6 +89,7 @@ class CommandGatewayFactoryTest {
     void gatewayFireAndForget() {
         final Object metaTest = new Object();
 
+        //noinspection DataFlowIssue
         doAnswer(new Success(asCommandResultMessage(null)))
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         testSubject.registerCommandCallback(callback, ResponseTypes.instanceOf(Void.class));
@@ -123,17 +124,24 @@ class CommandGatewayFactoryTest {
     }
 
     @Test
-    @Timeout(value = 2)
+    @Timeout(value = 5)
     void gatewayTimeout() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(new CountDown(latch))
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
-        Thread t = new Thread(() -> gateway.fireAndWait("Command"));
+        Thread t = new Thread(() -> {
+            try {
+                gateway.fireAndWait("Command");
+                fail("Expected a TimeoutException to be thrown");
+            } catch (TimeoutException e) {
+                // expected!
+            }
+        });
         t.start();
         assertTrue(latch.await(1, TimeUnit.SECONDS), "Expected command bus to be invoked");
         assertTrue(t.isAlive());
-        t.interrupt();
+        t.join(500);
     }
 
     @Test
@@ -776,7 +784,7 @@ class CommandGatewayFactoryTest {
         void waitForException(Object command) throws InterruptedException;
 
         @Timeout(value = 1, unit = TimeUnit.SECONDS)
-        void fireAndWait(Object command);
+        void fireAndWait(Object command) throws TimeoutException;
 
         void fireAndWaitWithTimeoutParameter(Object command, long timeout, TimeUnit unit);
 
