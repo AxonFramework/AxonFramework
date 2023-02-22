@@ -34,6 +34,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -346,15 +347,14 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
                 logger.debug("Triggered deadline");
             }
 
-            try {
-                Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
+            Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
+            try(SpanScope unused = span.makeCurrent()) {
                 Instant triggerInstant = GenericEventMessage.clock.instant();
                 UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(new GenericDeadlineMessage<>(
                         deadlineId.getDeadlineName(),
                         deadlineMessage,
                         () -> triggerInstant));
                 unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
-                unitOfWork.onCleanup(uow -> span.end());
                 unitOfWork.attachTransaction(transactionManager);
                 InterceptorChain chain =
                         new DefaultInterceptorChain<>(unitOfWork,
@@ -371,9 +371,11 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
                                  deadlineId.getDeadlineName(), deadlineId.getDeadlineId(), e);
                 }
             } catch (Exception e) {
+                span.recordException(e);
                 logger.error("An error occurred while triggering the deadline [{}] with identifier [{}]",
                              deadlineId.getDeadlineName(), deadlineId.getDeadlineId(), e);
             } finally {
+                span.end();
                 scheduledTasks.remove(deadlineId);
             }
         }

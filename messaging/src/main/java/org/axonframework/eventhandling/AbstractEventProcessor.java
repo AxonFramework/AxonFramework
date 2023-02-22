@@ -26,7 +26,6 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -166,22 +165,21 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
             MessageMonitor.MonitorCallback monitorCallback =
                     messageMonitor.onMessageIngested(unitOfWork.getMessage());
-            return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
-                Span span = spanFactory.createInternalSpan(this::getSpanName, m).start();
-                try {
-                    for (Segment processingSegment : processingSegments) {
-                        eventHandlerInvoker.handle(m, processingSegment);
-                    }
-                    monitorCallback.reportSuccess();
-                    return null;
-                } catch (Exception exception) {
-                    monitorCallback.reportFailure(exception);
-                    span.recordException(exception);
-                    throw exception;
-                } finally {
-                    span.end();
-                }
-            }).proceed();
+            return new DefaultInterceptorChain<>(
+                    unitOfWork,
+                    interceptors,
+                    m -> spanFactory.createInternalSpan(this::getSpanName, m).runCallable(() -> {
+                        try {
+                            for (Segment processingSegment : processingSegments) {
+                                eventHandlerInvoker.handle(m, processingSegment);
+                            }
+                            monitorCallback.reportSuccess();
+                            return null;
+                        } catch (Exception exception) {
+                            monitorCallback.reportFailure(exception);
+                            throw exception;
+                        }
+                    })).proceed();
         }, rollbackConfiguration);
 
         if (resultMessage.isExceptional()) {

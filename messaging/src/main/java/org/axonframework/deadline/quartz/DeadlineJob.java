@@ -34,6 +34,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.SpanScope;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -53,8 +54,8 @@ import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinde
 import static org.axonframework.messaging.Headers.*;
 
 /**
- * Quartz job which depicts handling of a scheduled deadline message. The {@link DeadlineMessage} and {@link
- * ScopeDescriptor} are retrieved from the {@link JobExecutionContext}. The {@link TransactionManager} and
+ * Quartz job which depicts handling of a scheduled deadline message. The {@link DeadlineMessage} and
+ * {@link ScopeDescriptor} are retrieved from the {@link JobExecutionContext}. The {@link TransactionManager} and
  * {@link ScopeAware} components are fetched from {@link SchedulerContext}.
  *
  * @author Milan Savic
@@ -128,37 +129,47 @@ public class DeadlineJob implements Job {
         ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
 
         Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
-        DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
-        unitOfWork.attachTransaction(transactionManager);
-        unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
-        unitOfWork.onCleanup(uow -> span.end());
-        InterceptorChain chain =
-                new DefaultInterceptorChain<>(unitOfWork,
-                                              handlerInterceptors,
-                                              interceptedDeadlineMessage -> {
-                                                  executeScheduledDeadline(scopeAwareComponents,
-                                                                           interceptedDeadlineMessage,
-                                                                           deadlineScope);
-                                                  return null;
-                                              });
+        try (SpanScope unused = span.makeCurrent()) {
+            DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(
+                    deadlineMessage);
+            unitOfWork.attachTransaction(transactionManager);
+            unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult()
+                                                                 .getExceptionResult()));
+            InterceptorChain chain =
+                    new DefaultInterceptorChain<>(unitOfWork,
+                                                  handlerInterceptors,
+                                                  interceptedDeadlineMessage -> {
+                                                      executeScheduledDeadline(
+                                                              scopeAwareComponents,
+                                                              interceptedDeadlineMessage,
+                                                              deadlineScope);
+                                                      return null;
+                                                  });
 
-        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
-        if (resultMessage.isExceptional()) {
-            Throwable exceptionResult = resultMessage.exceptionResult();
+            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
+            if (resultMessage.isExceptional()) {
+                Throwable exceptionResult = resultMessage.exceptionResult();
+                span.recordException(exceptionResult);
 
-            @SuppressWarnings("unchecked")
-            Predicate<Throwable> refirePolicy = (Predicate<Throwable>) schedulerContext.get(REFIRE_IMMEDIATELY_POLICY);
-            if (refirePolicy.test(exceptionResult)) {
-                logger.error("Exception occurred during processing a deadline job which will be retried [{}]",
+                @SuppressWarnings("unchecked")
+                Predicate<Throwable> refirePolicy = (Predicate<Throwable>) schedulerContext.get(
+                        REFIRE_IMMEDIATELY_POLICY);
+                if (refirePolicy.test(exceptionResult)) {
+                    logger.error(
+                            "Exception occurred during processing a deadline job which will be retried [{}]",
+                            jobDetail.getDescription(),
+                            exceptionResult);
+                    throw new JobExecutionException(exceptionResult, REFIRE_IMMEDIATELY);
+                }
+                logger.error("Exception occurred during processing a deadline job [{}]",
                              jobDetail.getDescription(), exceptionResult);
-                throw new JobExecutionException(exceptionResult, REFIRE_IMMEDIATELY);
+                throw new JobExecutionException(exceptionResult);
+            } else if (logger.isInfoEnabled()) {
+                logger.info("Job successfully executed. Deadline message [{}] processed.",
+                            deadlineMessage.getPayloadType().getSimpleName());
             }
-            logger.error("Exception occurred during processing a deadline job [{}]",
-                         jobDetail.getDescription(), exceptionResult);
-            throw new JobExecutionException(exceptionResult);
-        } else if (logger.isInfoEnabled()) {
-            logger.info("Job successfully executed. Deadline message [{}] processed.",
-                        deadlineMessage.getPayloadType().getSimpleName());
+        } finally {
+            span.end();
         }
     }
 
@@ -209,11 +220,11 @@ public class DeadlineJob implements Job {
         public static final String SERIALIZED_DEADLINE_SCOPE_CLASS_NAME = "serializedDeadlineScopeClassName";
 
         /**
-         * Serializes the provided {@code deadlineMessage} and {@code deadlineScope} and puts them in a {@link
-         * JobDataMap}.
+         * Serializes the provided {@code deadlineMessage} and {@code deadlineScope} and puts them in a
+         * {@link JobDataMap}.
          *
-         * @param serializer      the {@link Serializer} used to serialize the given {@code deadlineMessage} and {@code
-         *                        deadlineScope}
+         * @param serializer      the {@link Serializer} used to serialize the given {@code deadlineMessage} and
+         *                        {@code deadlineScope}
          * @param deadlineMessage the {@link DeadlineMessage} to be handled
          * @param deadlineScope   the {@link ScopeDescriptor} of the {@link org.axonframework.messaging.Scope} the
          *                        {@code deadlineMessage} should go to.
