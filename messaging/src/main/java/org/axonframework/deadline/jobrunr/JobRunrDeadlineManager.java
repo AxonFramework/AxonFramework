@@ -38,6 +38,7 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.SpanScope;
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
 
@@ -172,24 +173,27 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
         DeadlineDetails deadlineDetails = serializer.deserialize(serializedDeadlineMetaData);
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
         Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
-        UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
-        unitOfWork.attachTransaction(transactionManager);
-        unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
-        unitOfWork.onCleanup(uow -> span.end());
-        InterceptorChain chain = new DefaultInterceptorChain<>(
-                unitOfWork,
-                handlerInterceptors(),
-                interceptedDeadlineMessage -> {
-                    executeScheduledDeadline(interceptedDeadlineMessage,
-                                             deadlineDetails.getDeserializedScopeDescriptor(serializer));
-                    return null;
-                });
-        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
-        if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.exceptionResult();
-            logger.warn("An error occurred while triggering deadline with name [{}].",
-                        deadlineDetails.getDeadlineName());
-            throw new DeadlineException("Failed to process", e);
+        try (SpanScope unused = span.makeCurrent()) {
+            UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
+            unitOfWork.attachTransaction(transactionManager);
+            unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
+            unitOfWork.onCleanup(uow -> span.end());
+            InterceptorChain chain = new DefaultInterceptorChain<>(
+                    unitOfWork,
+                    handlerInterceptors(),
+                    interceptedDeadlineMessage -> {
+                        executeScheduledDeadline(interceptedDeadlineMessage,
+                                                 deadlineDetails.getDeserializedScopeDescriptor(serializer));
+                        return null;
+                    });
+            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
+            if (resultMessage.isExceptional()) {
+                Throwable e = resultMessage.exceptionResult();
+                span.recordException(e);
+                logger.warn("An error occurred while triggering deadline with name [{}].",
+                            deadlineDetails.getDeadlineName());
+                throw new DeadlineException("Failed to process", e);
+            }
         }
     }
 
