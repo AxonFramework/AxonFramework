@@ -67,7 +67,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.*;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Unit test class to cover all the operations performed by the {@link AxonServerCommandBus}.
