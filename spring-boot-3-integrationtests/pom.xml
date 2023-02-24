@@ -37,6 +37,9 @@
     <properties>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
+        <jobrunr.version>6.0.0</jobrunr.version>
+        <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
+        <jacoco.version>0.8.8</jacoco.version>
     </properties>
 
     <dependencies>
@@ -146,6 +149,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql-connector-java.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -153,7 +157,7 @@
         <dependency>
             <groupId>org.jobrunr</groupId>
             <artifactId>jobrunr</artifactId>
-            <version>6.0.0</version>
+            <version>${jobrunr.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -230,7 +234,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.8</version>
+                <version>${jacoco.version}</version>
                 <executions>
                     <execution>
                         <id>prepare-agent-for-unit-tests</id>
