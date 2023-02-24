@@ -177,27 +177,27 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
         Span span = spanFactory.createDispatchSpan(() -> "AxonServerQueryBus.streamingQuery", query).start();
-        SpanScope scope = span.makeCurrent();
-        StreamingQueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(query);
-        int priority = priorityCalculator.determinePriority(queryWithContext);
-        AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(
-                queryExecutor,
-                priority,
-                TASK_SEQUENCE));
-        scope.close();
-        return Mono.fromSupplier(this::registerStreamingQueryActivity).flatMapMany(
-                activity -> Mono.just(dispatchInterceptors.intercept(queryWithContext))
-                                .flatMapMany(intercepted ->
-                                                     Mono.just(serializeStreaming(intercepted, priority))
-                                                         .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
-                                                                 () -> sendRequest(intercepted, queryRequest)))
-                                                         .concatMap(queryResponse -> deserialize(intercepted,
-                                                                                                 queryResponse))
-                                )
-                                .publishOn(scheduler.get())
-                                .doOnError(span::recordException)
-                                .doFinally(new ActivityFinisher(activity, span))
-                                .subscribeOn(scheduler.get()));
+        try(SpanScope unused = span.makeCurrent()) {
+            StreamingQueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(query);
+            int priority = priorityCalculator.determinePriority(queryWithContext);
+            AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(
+                    queryExecutor,
+                    priority,
+                    TASK_SEQUENCE));
+            return Mono.fromSupplier(this::registerStreamingQueryActivity).flatMapMany(
+                    activity -> Mono.just(dispatchInterceptors.intercept(queryWithContext))
+                                    .flatMapMany(intercepted ->
+                                                         Mono.just(serializeStreaming(intercepted, priority))
+                                                             .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
+                                                                     () -> sendRequest(intercepted, queryRequest)))
+                                                             .concatMap(queryResponse -> deserialize(intercepted,
+                                                                                                     queryResponse))
+                                    )
+                                    .publishOn(scheduler.get())
+                                    .doOnError(span::recordException)
+                                    .doFinally(new ActivityFinisher(activity, span))
+                                    .subscribeOn(scheduler.get()));
+        }
     }
 
 
@@ -249,52 +249,51 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> queryMessage) {
         Span span = spanFactory.createDispatchSpan(() -> "AxonServerQueryBus.query", queryMessage).start();
-        SpanScope scope = span.makeCurrent();
-        QueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(queryMessage);
-        Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
-                       () -> "The direct query does not support Flux as a return type.");
-        shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
+        try(SpanScope unused = span.makeCurrent()) {
+            QueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(queryMessage);
+            Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
+                           () -> "The direct query does not support Flux as a return type.");
+            shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
-        QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryWithContext);
-        //noinspection resource
-        ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
-        CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
-        try {
-            int priority = priorityCalculator.determinePriority(interceptedQuery);
-            QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
-            ResultStream<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
-            queryTransaction.whenComplete((r, e) -> result.close());
-            Span responseTaskSpan = spanFactory.createInternalSpan(() -> "AxonServerQueryBus.ResponseProcessingTask");
-            Runnable responseProcessingTask = new ResponseProcessingTask<>(result,
-                                                                           serializer,
-                                                                           queryTransaction,
-                                                                           queryMessage.getResponseType(),
-                                                                           responseTaskSpan);
+            QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryWithContext);
+            //noinspection resource
+            ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
+            CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
+            try {
+                int priority = priorityCalculator.determinePriority(interceptedQuery);
+                QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
+                ResultStream<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
+                queryTransaction.whenComplete((r, e) -> result.close());
+                Span responseTaskSpan = spanFactory.createInternalSpan(() -> "AxonServerQueryBus.ResponseProcessingTask");
+                Runnable responseProcessingTask = new ResponseProcessingTask<>(result,
+                                                                               serializer,
+                                                                               queryTransaction,
+                                                                               queryMessage.getResponseType(),
+                                                                               responseTaskSpan);
 
-            result.onAvailable(() -> {
-                queryExecutor.execute(new PriorityRunnable(responseTaskSpan.wrapRunnable(responseProcessingTask),
-                                                           priority,
-                                                           TASK_SEQUENCE.incrementAndGet()));
+                result.onAvailable(() -> queryExecutor.execute(new PriorityRunnable(
+                        responseProcessingTask,
+                        priority,
+                        TASK_SEQUENCE.incrementAndGet())));
+            } catch (Exception e) {
+                logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
+                AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
+                queryTransaction.completeExceptionally(exception);
+                span.recordException(e).end();
+            }
+
+           queryTransaction.whenComplete((r, e) -> {
+                queryInTransit.end();
+                if (e != null) {
+                    span.recordException(e);
+                }
+                if (r != null && r.isExceptional()) {
+                    span.recordException(r.exceptionResult());
+                }
+                span.end();
             });
-        } catch (Exception e) {
-            logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
-            AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
-            queryTransaction.completeExceptionally(exception);
-            span.recordException(e).end();
+            return queryTransaction;
         }
-
-        queryTransaction.whenComplete((r, e) -> {
-            queryInTransit.end();
-            if (e != null) {
-                span.recordException(e);
-            }
-            if (r != null && r.isExceptional()) {
-                span.recordException(r.exceptionResult());
-            }
-            span.end();
-        });
-        scope.close();
-        return queryTransaction;
     }
 
     private QueryRequest serializeStreaming(QueryMessage<?, ?> query, int priority) {
@@ -390,18 +389,17 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(@Nonnull QueryMessage<Q, R> queryMessage,
                                                                 long timeout,
                                                                 @Nonnull TimeUnit timeUnit) {
-        Span span = spanFactory.createDispatchSpan(() -> "AxonServerQueryBus.scatterGather", queryMessage).start();
-        SpanScope scope = span.makeCurrent();
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
                        () -> "The scatter-Gather query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
         ));
-
-        QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(queryMessage));
         ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
-        long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
-        try {
+
+        Span span = spanFactory.createDispatchSpan(() -> "AxonServerQueryBus.scatterGather", queryMessage).start();
+        try(SpanScope unused = span.makeCurrent()) {
+            QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(queryMessage));
+            long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
             String targetContext = targetContextResolver.resolveContext(interceptedQuery);
             QueryRequest queryRequest =
                     serializer.serializeRequest(interceptedQuery,
@@ -426,12 +424,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                     false
             ).onClose(closeHandler);
         } catch (Exception e) {
-            logger.debug("There was a problem issuing a scatter-gather query {}.", interceptedQuery, e);
+            logger.debug("There was a problem issuing a scatter-gather query {}.", queryMessage, e);
             queryInTransit.end();
             span.recordException(e).end();
             throw e;
-        } finally {
-            scope.close();
         }
     }
 
@@ -455,8 +451,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             @Nonnull SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
     ) {
-        Span span = spanFactory.createDispatchSpan(() -> "AxonServerQueryBus.subscriptionQuery", query).start();
-        SpanScope scope = span.makeCurrent();
         Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
                        () -> "The subscription Query query does not support Flux as a return type.");
         Assert.isFalse(Publisher.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
@@ -465,31 +459,32 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
         ));
 
-        SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(
-                spanFactory.propagateContext(query)
-        );
-        String subscriptionId = interceptedQuery.getIdentifier();
-        String targetContext = targetContextResolver.resolveContext(interceptedQuery);
+        Span span = spanFactory.createDispatchSpan(() -> "AxonServerQueryBus.subscriptionQuery", query).start();
+        try(SpanScope unused = span.makeCurrent()) {
+            SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(
+                    spanFactory.propagateContext(query)
+            );
+            String subscriptionId = interceptedQuery.getIdentifier();
+            String targetContext = targetContextResolver.resolveContext(interceptedQuery);
 
-        logger.debug("Subscription Query requested with subscription Id [{}]", subscriptionId);
+            logger.debug("Subscription Query requested with subscription Id [{}]", subscriptionId);
 
-        io.axoniq.axonserver.connector.query.SubscriptionQueryResult result =
-                axonServerConnectionManager.getConnection(targetContext)
-                                           .queryChannel()
-                                           .subscriptionQuery(
-                                                   subscriptionSerializer.serializeQuery(interceptedQuery),
-                                                   subscriptionSerializer.serializeUpdateType(interceptedQuery),
-                                                   configuration.getQueryFlowControl().getInitialNrOfPermits(),
-                                                   configuration.getQueryFlowControl().getNrOfNewPermits()
-                                           );
-        AxonServerSubscriptionQueryResult<I, U> axonServerResult = new AxonServerSubscriptionQueryResult<>(
-                interceptedQuery,
-                result,
-                subscriptionSerializer,
-                spanFactory,
-                span);
-        scope.close();
-        return axonServerResult;
+            io.axoniq.axonserver.connector.query.SubscriptionQueryResult result =
+                    axonServerConnectionManager.getConnection(targetContext)
+                                               .queryChannel()
+                                               .subscriptionQuery(
+                                                       subscriptionSerializer.serializeQuery(interceptedQuery),
+                                                       subscriptionSerializer.serializeUpdateType(interceptedQuery),
+                                                       configuration.getQueryFlowControl().getInitialNrOfPermits(),
+                                                       configuration.getQueryFlowControl().getNrOfNewPermits()
+                                               );
+            return new AxonServerSubscriptionQueryResult<>(
+                    interceptedQuery,
+                    result,
+                    subscriptionSerializer,
+                    spanFactory,
+                    span);
+        }
     }
 
     @Override
