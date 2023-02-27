@@ -24,9 +24,16 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The repository provides an abstraction of the storage of aggregates.
+ * The {@link Repository} provides an abstraction of the storage of aggregates.
+ * <p>
+ * When interacting with the {@code Repository} the framework expects an active
+ * {@link org.axonframework.messaging.unitofwork.UnitOfWork} containing a
+ * {@link org.axonframework.commandhandling.CommandMessage} implementation on the invoking thread to be present. If
+ * there is no active {@code UnitOfWork} an {@link IllegalStateException} is thrown.
  *
  * @param <T> The type of aggregate this repository stores.
+ * @author Allard Buijze
+ * @since 0.1
  */
 public interface Repository<T> extends ScopeAware {
 
