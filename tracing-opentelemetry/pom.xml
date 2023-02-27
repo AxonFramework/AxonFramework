@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>4.6.6</version>
+        <version>4.6.7-SNAPSHOT</version>
     </parent>
 
     <artifactId>axon-tracing-opentelemetry</artifactId>
