@@ -37,7 +37,7 @@
     <properties>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-        <jobrunr.version>6.0.0</jobrunr.version>
+        <jobrunr.version>6.1.0</jobrunr.version>
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
         <jacoco.version>0.8.8</jacoco.version>
     </properties>
