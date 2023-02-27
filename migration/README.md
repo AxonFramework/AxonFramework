@@ -21,7 +21,7 @@ Requires a custom [Gradle init script](https://docs.openrewrite.org/running-reci
 ### Maven
 ```bash
 mvn -U org.openrewrite.maven:rewrite-maven-plugin:run \
-  -Drewrite.recipeArtifactCoordinates=org.axonframework:axon-migration:4.7.2-SNAPSHOT \
+  -Drewrite.recipeArtifactCoordinates=org.axonframework:axon-migration:4.7.2 \
   -DactiveRecipes=org.axonframework.axon.UpgradeAxonFramework_4_7_Jakarta
 ```
 
