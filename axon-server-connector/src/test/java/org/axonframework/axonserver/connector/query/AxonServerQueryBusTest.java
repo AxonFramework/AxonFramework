@@ -318,8 +318,10 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && -1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.scatterGather", testQuery);
-        spanFactory.verifySpanPropagated("AxonServerQueryBus.scatterGather", testQuery);
+        await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> {
+            spanFactory.verifySpanCompleted("AxonServerQueryBus.scatterGather", testQuery);
+            spanFactory.verifySpanPropagated("AxonServerQueryBus.scatterGather", testQuery);
+        });
     }
 
     @Test
@@ -344,12 +346,11 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
-        await().atMost(Duration.ofSeconds(3l))
-                .untilAsserted(() ->
-                        spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery", testQuery));
-        await().atMost(Duration.ofSeconds(3l))
-                .untilAsserted(() ->
-                        spanFactory.verifySpanPropagated("AxonServerQueryBus.streamingQuery", testQuery));
+        await().atMost(Duration.ofSeconds(3))
+               .untilAsserted(() -> {
+                   spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery", testQuery);
+                   spanFactory.verifySpanPropagated("AxonServerQueryBus.streamingQuery", testQuery);
+               });
     }
 
     @Test
@@ -368,14 +369,11 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
-        await().atMost(Duration.ofSeconds(3l))
-               .untilAsserted(
-                       () -> spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery")
-               );
-        await().atMost(Duration.ofSeconds(3l))
-               .untilAsserted(() -> spanFactory.verifySpanHasException(
-                       "AxonServerQueryBus.streamingQuery", RuntimeException.class
-               ));
+        await().atMost(Duration.ofSeconds(3))
+               .untilAsserted(() -> {
+                   spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery");
+                   spanFactory.verifySpanHasException("AxonServerQueryBus.streamingQuery", RuntimeException.class);
+               });
     }
 
     @Test
