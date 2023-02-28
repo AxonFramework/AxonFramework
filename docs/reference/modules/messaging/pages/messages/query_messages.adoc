@@ -10,7 +10,7 @@ Queries are specific type of messages, used to request information. To distingui
 
 === Name
 
-#TODO: more info about naming (requirements, auto name from FQCN, etc)#
+#TODO: more info about naming (requirements, auto name, etc)#
 
 === Response type
 

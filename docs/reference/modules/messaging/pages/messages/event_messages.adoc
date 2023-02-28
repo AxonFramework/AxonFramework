@@ -23,7 +23,7 @@ include::attachment$generic_messaging_classes.puml[]
 include::attachment$event_messaging_classes.puml[]
 ....
 
-Event do not expect responses so the communication is always unidirectional.
+Event don't expect responses so the communication is always unidirectional.
 
 
 == Usage

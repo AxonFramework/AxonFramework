@@ -1,5 +1,6 @@
 = Command Messages
 
+
 This document provides information about the design, implementation, and intended usage of command messages in Axon Framework.
 
 == Requirements
@@ -10,7 +11,9 @@ In addition to the generic messages, command messages have the following charact
 
 === Name
 
-#TODO: more info about naming (requirements, auto name from FQCN, etc)#
+#TODO: more info about naming (requirements, auto name, etc)#
+
+
 
 == Implementation
 
