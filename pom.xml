@@ -37,6 +37,7 @@
         <module>integrationtests</module>
         <module>legacy</module>
         <module>reactorless-test</module>
+        <module>migration</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -73,6 +74,7 @@
         <slf4j.version>2.0.6</slf4j.version>
         <log4j.version>2.20.0</log4j.version>
         <spring.version>5.3.25</spring.version>
+        <awaitility.version>4.2.0</awaitility.version>
         <spring-security.version>5.7.3</spring-security.version>
         <spring.boot.version>2.7.9</spring.boot.version>
         <mockito.version>4.11.0</mockito.version>

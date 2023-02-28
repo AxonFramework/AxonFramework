@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.Message;
@@ -89,7 +90,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     @Override
     public A newInstance(@Nonnull Callable<T> factoryMethod,
                          @Nonnull Consumer<Aggregate<T>> initMethod) throws Exception {
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        UnitOfWork<?> uow = currentUnitOfWork();
         AtomicReference<A> aggregateReference = new AtomicReference<>();
         // a constructor may apply events, and the persistence of an aggregate must take precedence over publishing its events.
         uow.onPrepareCommit(x -> {
@@ -135,7 +136,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         return spanFactory
                 .createInternalSpan(() -> this.getClass().getSimpleName() + ".load " + aggregateIdentifier)
                 .runSupplier(() -> {
-                    UnitOfWork<?> uow = CurrentUnitOfWork.get();
+                    UnitOfWork<?> uow = currentUnitOfWork();
                     Map<String, A> aggregates = managedAggregates(uow);
                     A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
                                                              s -> doLoad(aggregateIdentifier,
@@ -151,7 +152,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     @Override
     public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod) {
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        UnitOfWork<?> uow = currentUnitOfWork();
         Map<String, A> aggregates = managedAggregates(uow);
         A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
                                                  s -> {
@@ -168,6 +169,16 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         prepareForCommit(aggregate);
 
         return aggregate;
+    }
+
+    private UnitOfWork<?> currentUnitOfWork() {
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        Class<?> messageType = uow.getMessage() != null ? uow.getMessage().getClass() : null;
+        if (messageType != null && !CommandMessage.class.isAssignableFrom(messageType)) {
+            logger.warn("The active Unit of Work is expected to contain a CommandMessage, but instead contains a [{}]",
+                        messageType);
+        }
+        return uow;
     }
 
     /**

@@ -157,11 +157,13 @@ class AxonServerCommandBusTest {
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
         await().atMost(Duration.ofSeconds(3l))
-                .until(() ->
-                        spanFactory.spanCompleted("AxonServerCommandBus.dispatch"));
+                .untilAsserted(
+                        () -> spanFactory.verifySpanCompleted("AxonServerCommandBus.dispatch")
+                );
         await().atMost(Duration.ofSeconds(3l))
-                .untilAsserted(() ->
-                        spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage));
+                .untilAsserted(
+                        () -> spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage)
+                );
     }
 
     @Test

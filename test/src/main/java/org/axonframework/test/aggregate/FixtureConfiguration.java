@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -308,67 +308,80 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerCommandTargetResolver(CommandTargetResolver commandTargetResolver);
 
     /**
-     * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event
-     * store when an aggregate is loaded.
+     * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event store
+     * when an aggregate is loaded.
      * <p/>
-     * If an item in the given {@code domainEvents} implements {@link Message}, the
-     * payload and meta data from that message are copied into a newly created Domain Event Message. Otherwise, a
-     * Domain Event Message with the item as payload and empty meta data is created.
+     * If an item in the given {@code domainEvents} implements {@link Message}, the payload and {@link MetaData} from
+     * that {@code Message} are copied into a newly created {@link org.axonframework.eventhandling.DomainEventMessage}.
+     * Otherwise, a {@code DomainEventMessage} with the item as payload and empty {@code MetaData} is created.
+     * <p>
+     * Note that transitioning to the returned {@link TestExecutor} will clear any previously defined "given" state to
+     * ensure the fixture can run a clean test environment.
      *
-     * @param domainEvents the domain events the event store should return
-     * @return a TestExecutor instance that can execute the test with this configuration
+     * @param domainEvents The domain events the event store should return.
+     * @return A {@link TestExecutor} instance that can execute the test with this configuration.
      */
     TestExecutor<T> given(Object... domainEvents);
 
     /**
      * Sets the aggregate instance as supplied by given {@code aggregateState} as the initial state for a test case.
      * <p>
-     * Note that usage of this method is highly discouraged for event sourced aggregates. In that case, use
+     * Usage of this method is highly discouraged for event sourced aggregates. In that case, use
      * {@link #given(Object...)} to specify historic events.
+     * <p>
+     * Note that transitioning to the returned {@link TestExecutor} will clear any previously defined "given" state to
+     * ensure the fixture can run a clean test environment.
      *
-     * @param aggregateState a supplier providing the state to use as starting point for this fixture.
-     * @return a TestExecutor instance that can execute the test with this configuration
+     * @param aggregateState A {@link Supplier} providing the state to use as starting point for this fixture.
+     * @return A {@link TestExecutor} instance that can execute the test with this configuration.
      */
     TestExecutor<T> givenState(Supplier<T> aggregateState);
 
     /**
-     * Indicates that no relevant activities like commands or events have occurred in the past.
-     * This also means that no previous state is present in the repository.
+     * Indicates that no relevant activities like commands or events have occurred in the past. This also means that no
+     * previous state is present in the repository.
      *
-     * @return a TestExecutor instance that can execute the test with this configuration
-     *
-     * @since 2.1.1
+     * @return A {@link TestExecutor} instance that can execute the test with this configuration.
      */
     TestExecutor<T> givenNoPriorActivity();
 
     /**
-     * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event
-     * store when an aggregate is loaded.
+     * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event store
+     * when an aggregate is loaded.
      * <p/>
-     * If an item in the list implements {@link Message}, the payload and meta data from that
-     * message are copied into a newly created Domain Event Message. Otherwise, a Domain Event Message with the item
-     * as payload and empty meta data is created.
+     * If an item in the list implements {@link Message}, the payload and {@link MetaData} from that {@code Message} are
+     * copied into a newly created {@link org.axonframework.eventhandling.DomainEventMessage}. Otherwise, a
+     * {@code DomainEventMessage} with the item as payload and empty {@code MetaData} is created.
+     * <p>
+     * Note that transitioning to the returned {@link TestExecutor} will clear any previously defined "given" state to
+     * ensure the fixture can run a clean test environment.
      *
-     * @param domainEvents the domain events the event store should return
-     * @return a TestExecutor instance that can execute the test with this configuration
+     * @param domainEvents The domain events the event store should return.
+     * @return A {@link TestExecutor} instance that can execute the test with this configuration.
      */
     TestExecutor<T> given(List<?> domainEvents);
 
     /**
-     * Configures the given {@code commands} as the command that will provide the "given" events. The commands are
-     * executed, and the resulting stored events are captured.
+     * Configures the given {@code commands} as to execute against the aggregate under test to initiate the given-phase.
+     * The commands are executed, and the resulting stored events are captured.
+     * <p>
+     * Note that transitioning to the returned {@link TestExecutor} will clear any previously defined "given" state to
+     * ensure the fixture can run a clean test environment.
      *
-     * @param commands the domain events the event store should return
-     * @return a TestExecutor instance that can execute the test with this configuration
+     * @param commands The commands to execute against the aggregate under test to initiate the given-phase.
+     * @return A {@link TestExecutor} instance that can execute the test with this configuration.
      */
     TestExecutor<T> givenCommands(Object... commands);
 
     /**
-     * Configures the given {@code commands} as the command that will provide the "given" events. The commands are
-     * executed, and the resulting stored events are captured.
+     * Configures the given {@code commands} as to execute against the aggregate under test to initiate the given-phase.
+     * The commands are executed, and the resulting stored events are captured.
+     * <p>
+     * Note that transitioning to the returned {@link TestExecutor} will clear any previously defined "given" state to
+     * ensure the fixture can run a clean test environment.
      *
-     * @param commands the domain events the event store should return
-     * @return a TestExecutor instance that can execute the test with this configuration
+     * @param commands The commands to execute against the aggregate under test to initiate the given-phase.
+     * @return A {@link TestExecutor} instance that can execute the test with this configuration.
      */
     TestExecutor<T> givenCommands(List<?> commands);
 
@@ -405,11 +418,14 @@ public interface FixtureConfiguration<T> {
     Repository<T> getRepository();
 
     /**
-     * Use this method to indicate a specific moment as the initial current time "known" by the fixture at the start
-     * of the given state.
+     * Use this method to indicate a specific moment as the initial current time "known" by the fixture at the start of
+     * the given state.
+     * <p>
+     * Note that transitioning to the returned {@link TestExecutor} will clear any previously defined "given" state to
+     * ensure the fixture can run a clean test environment.
      *
-     * @param time an {@link Instant} defining the simulated "current time" at which the given state is initialized
-     * @return a TestExecutor instance that can execute the test with this configuration
+     * @param time An {@link Instant} defining the simulated "current time" at which the given state is initialized.
+     * @return A {@link TestExecutor} instance that can execute the test with this configuration.
      */
     TestExecutor<T> givenCurrentTime(Instant time);
 

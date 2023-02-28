@@ -295,20 +295,23 @@ class SimpleQueryBusTest {
 
         //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
-            spanFactory.verifySpanActive("SimpleQueryBus.scatterGather(0)", testQueryMessage);
+            spanFactory.verifySpanActive("SimpleQueryBus.scatterGather", testQueryMessage);
+            spanFactory.verifySpanActive("SimpleQueryBus.scatterGatherHandler-0");
             return q.getPayload() + "1234";
         });
         //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
-            spanFactory.verifySpanActive("SimpleQueryBus.scatterGather(1)", testQueryMessage);
+            spanFactory.verifySpanActive("SimpleQueryBus.scatterGather", testQueryMessage);
+            spanFactory.verifySpanActive("SimpleQueryBus.scatterGatherHandler-1");
             return q.getPayload() + "12345678";
         });
 
         //noinspection ResultOfMethodCallIgnored
         testSubject.scatterGather(testQueryMessage, 500, TimeUnit.MILLISECONDS).collect(Collectors.toList());
 
-        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGather(0)", testQueryMessage);
-        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGather(1)", testQueryMessage);
+        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGather", testQueryMessage);
+        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGatherHandler-0");
+        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGatherHandler-1");
     }
 
 
@@ -823,19 +826,23 @@ class SimpleQueryBusTest {
                                     .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.getQueryName())))
                                     .subscribe();
 
-        //noinspection resource
-        SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result = testSubject
-                .subscriptionQuery(new GenericSubscriptionQueryMessage<>("test",
-                                                                         "queryName",
-                                                                         ResponseTypes.instanceOf(Long.class),
-                                                                         ResponseTypes.instanceOf(Long.class)));
-        Mono<QueryResponseMessage<Long>> initialResult = result.initialResult();
-        Objects.requireNonNull(initialResult.block()).getPayload();
-        spanFactory.verifySpanCompleted("SimpleQueryBus.query");
-        updatedLatch.await();
-        Objects.requireNonNull(result.updates().next().block()).getPayload();
-        spanFactory.verifySpanCompleted("QueryUpdateEmitter.emit queryName");
-        disposable.dispose();
+
+        try {
+            //noinspection resource
+            SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result = testSubject
+                    .subscriptionQuery(new GenericSubscriptionQueryMessage<>("test",
+                                                                             "queryName",
+                                                                             ResponseTypes.instanceOf(Long.class),
+                                                                             ResponseTypes.instanceOf(Long.class)));
+            Mono<QueryResponseMessage<Long>> initialResult = result.initialResult();
+            Objects.requireNonNull(initialResult.block()).getPayload();
+            spanFactory.verifySpanCompleted("SimpleQueryBus.query");
+            updatedLatch.await();
+            Objects.requireNonNull(result.updates().next().block()).getPayload();
+            spanFactory.verifySpanCompleted("SimpleQueryUpdateEmitter.emit");
+        } finally {
+            disposable.dispose();
+        }
     }
 
     @Test

@@ -17,9 +17,11 @@
 package org.axonframework.tracing.opentelemetry;
 
 import io.opentelemetry.api.trace.SpanBuilder;
+import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
 import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanScope;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -33,53 +35,65 @@ class OpenTelemetrySpanTest {
 
     private final SpanBuilder spanBuilder = Mockito.mock(SpanBuilder.class);
     private final io.opentelemetry.api.trace.Span span = Mockito.mock(io.opentelemetry.api.trace.Span.class);
+    private final List<Scope> openScopeList = new CopyOnWriteArrayList<>();
 
     private OpenTelemetrySpan openTelemetrySpan;
-    private List<Scope> createdScopesList = new CopyOnWriteArrayList<>();
 
     @BeforeEach
     void setUp() {
         when(spanBuilder.startSpan()).thenReturn(span);
         when(span.makeCurrent()).thenAnswer(invocation -> {
             Scope mock = mock(Scope.class);
-            createdScopesList.add(mock);
+            openScopeList.add(mock);
+            doAnswer((invocationOnMock) -> {
+                openScopeList.remove(mock);
+                return null;
+            }).when(mock).close();
             return mock;
         });
+        when(span.getSpanContext()).thenReturn(mock(SpanContext.class));
 
         openTelemetrySpan = new OpenTelemetrySpan(spanBuilder);
     }
 
     @Test
-    void startingTheSpanMakesItStartWithCurrentScope() {
+    void startingTheSpanStartsItButDoesNotMakeItCurrent() {
         openTelemetrySpan.start();
 
         verify(spanBuilder).startSpan();
-        verify(span).makeCurrent();
-        assertEquals(1, createdScopesList.size());
+        assertEquals(0, openScopeList.size());
     }
 
     @Test
-    void endingTheSpanClosesScopeAndEndsIt() {
+    void startingTheSpanAndMakingItActiveMakesItCurrent() {
+        openTelemetrySpan.start();
+        SpanScope scope = openTelemetrySpan.makeCurrent();
+
+        verify(spanBuilder).startSpan();
+        verify(span).makeCurrent();
+
+        assertEquals(1, openScopeList.size());
+        scope.close();
+        assertEquals(0, openScopeList.size());
+    }
+
+    @Test
+    void endingTheSpanDoesNotCloseOpenScopes() {
         Span start = openTelemetrySpan.start();
+        start.makeCurrent();
 
         start.end();
-        verify(createdScopesList.get(0)).close();
+        verify(openScopeList.get(0), never()).close();
         verify(span).end();
     }
 
     @Test
-    void onlyClosesWhenAllScopesAreClosed() {
+    void endsSpanEventWhenSpansAreStillCurrent() {
         Span axonSpan = openTelemetrySpan.start();
         axonSpan.start();
+        axonSpan.makeCurrent();
 
         axonSpan.end();
-        verify(createdScopesList.get(0), never()).close();
-        // The last created scope is closed first, it's a tree
-        verify(createdScopesList.get(1), times(1)).close();
-        verify(span, never()).end();
-
-        axonSpan.end();
-        verify(createdScopesList.get(1), times(1)).close();
         verify(span, times(1)).end();
     }
 

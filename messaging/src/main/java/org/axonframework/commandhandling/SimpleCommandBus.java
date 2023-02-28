@@ -44,6 +44,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
@@ -120,14 +121,15 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
                                 @Nonnull final CommandCallback<? super C, ? super R> callback) {
-        Span span = spanFactory.createInternalSpan(() -> getClass().getSimpleName() + ".dispatch", command).start();
-        CommandCallback<? super C, ? super R> spanAwareCallback = callback.wrap((commandMessage, commandResultMessage) -> {
-            if (commandResultMessage.isExceptional()) {
-                span.recordException(commandResultMessage.exceptionResult());
-            }
-            span.end();
+        Span span = spanFactory.createInternalSpan(() -> getClass().getSimpleName() + ".dispatch", command);
+        span.run(() -> {
+            CommandCallback<? super C, ? super R> spanAwareCallback = callback.wrap((commandMessage, commandResultMessage) -> {
+                if (commandResultMessage.isExceptional()) {
+                    span.recordException(commandResultMessage.exceptionResult());
+                }
+            });
+            doDispatch(intercept(command), spanAwareCallback);
         });
-        doDispatch(intercept(command), spanAwareCallback);
     }
 
     /**
@@ -186,7 +188,8 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> void handle(CommandMessage<C> command,
                                  MessageHandler<? super CommandMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
-        spanFactory.createInternalSpan(() -> getClass().getSimpleName() + ".handle", command).run(() -> {
+        Supplier<String> spanName = () -> getClass().getSimpleName() + ".handle";
+        CommandResultMessage<R> resultMessage = spanFactory.createInternalSpan(spanName, command).runSupplier(() -> {
             if (logger.isDebugEnabled()) {
                 logger.debug("Handling command [{}]", command.getCommandName());
             }
@@ -195,10 +198,10 @@ public class SimpleCommandBus implements CommandBus {
             unitOfWork.attachTransaction(transactionManager);
             InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
-            CommandResultMessage<R> resultMessage = asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed,
-                                                                                                        rollbackConfiguration));
-            callback.onResult(command, resultMessage);
+            return asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed,
+                                                                       rollbackConfiguration));
         });
+        callback.onResult(command, resultMessage);
     }
 
     /**
