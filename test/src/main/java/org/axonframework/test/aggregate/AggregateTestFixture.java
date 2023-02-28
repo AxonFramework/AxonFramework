@@ -457,12 +457,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> givenCurrentTime(Instant currentTime) {
+        clearGivenWhenState();
         return andGivenCurrentTime(currentTime);
     }
 
     @Override
     public TestExecutor<T> andGivenCurrentTime(Instant currentTime) {
-        clearGivenWhenState();
         deadlineManager.initializeAt(currentTime);
         return this;
     }

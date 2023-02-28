@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
+import static org.axonframework.test.matchers.Matchers.matches;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -269,6 +271,23 @@ class FixtureTest_Annotated {
                .when(new CreateAggregateCommand(AGGREGATE_ID, CreateAggregateCommand.SHOULD_NOT_PUBLISH))
                .expectNoEvents()
                .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void givenFollowedUpByAndGivenCurrentTimeWorksAsExcepted() {
+        String testAggregateId = "1337";
+
+        fixture.given(new MyEvent(testAggregateId, 1), new MyEvent(testAggregateId, 2))
+               .andGivenCurrentTime(Instant.EPOCH)
+               .when(new TestCommand(testAggregateId))
+               .expectEventsMatching(exactSequenceOf(matches(
+                       eventMessage -> eventMessage.getTimestamp() == Instant.EPOCH
+                               && MyEvent.class.equals(eventMessage.getPayloadType())
+               )));
+
+        assertEquals(3, fixture.getEventStore()
+                               .readEvents(testAggregateId)
+                               .asStream().count());
     }
 
     private static class StubDomainEvent {
