@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>4.7.2</version>
+    <version>4.7.3-SNAPSHOT</version>
     <modules>
         <module>messaging</module>
         <module>modelling</module>
@@ -878,7 +878,7 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>axon-4.7.2</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <developers>
