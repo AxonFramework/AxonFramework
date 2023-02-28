@@ -1,4 +1,4 @@
-= High-level overview
+= High-Level Overview
 
 The purpose of Axon Framework is to help software developers design and build solutions according to well-established principles and best practices. To understand the framework, one first needs to understand what solutions made with it look like.
 
@@ -41,7 +41,7 @@ Axon Framework removes that overhead by providing pre-ready components that take
 
 Axon Framework consists of several modules packaged and distributed as JAR files. This approach allows developers to pick and choose the functionality they need.
 
-=== Bootstrap Modules
+=== Bootstrap modules
 
 Those are the modules that allow bootstrapping and configuring an Axon-based application. The application should include the preferred option as a dependency.
 
@@ -52,7 +52,7 @@ xref:#[Spring Boot Starter]::
 This module provides Spring Boot auto-configuration for the application. It depends on Spring Framework to automatically configure all Axon Framework components.
 
 
-=== Core Modules
+=== Core modules
 
 The core modules provide the essential components and building blocks for any Axon-based application.
 
@@ -69,7 +69,7 @@ NOTE: A typical Axon-based application will almost always depend on all core mod
 
 
 
-=== Optional Modules
+=== Optional modules
 
 xref:#[Spring]::
 This module allows developers to configure Axon Framework components in a Spring Application context. It also provides several implementations specific to Spring Framework, such as an adapter for publishing and retrieving Axon Events on a Spring Messaging Channel.

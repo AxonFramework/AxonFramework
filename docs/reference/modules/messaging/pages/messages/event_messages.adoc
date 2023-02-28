@@ -1,6 +1,6 @@
 = Event Messages
 
-This document provides information about the design, implementation and intended usage of event messages in Axon Framework.
+This document provides information about the design, implementation, and intended usage of event messages in Axon Framework.
 
 == Requirements
 

@@ -10,11 +10,11 @@
 
 #TODO#
 
-=== Correlation Data Provider
+=== Correlation data provider
 
 #TODO#
 
-=== Message Origin Provider
+=== Message origin provider
 
 #TODO#
 

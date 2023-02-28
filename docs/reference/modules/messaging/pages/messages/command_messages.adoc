@@ -1,6 +1,6 @@
 = Command Messages
 
-This document provides information about the design, implementation and intended usage of command messages in Axon Framework.
+This document provides information about the design, implementation, and intended usage of command messages in Axon Framework.
 
 == Requirements
 
