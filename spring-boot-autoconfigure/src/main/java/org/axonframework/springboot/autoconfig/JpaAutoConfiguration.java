@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,19 @@ package org.axonframework.springboot.autoconfig;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.deadletter.jpa.JpaEventProcessingSdlqFactory;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
+import org.axonframework.messaging.deadletter.EventProcessingSdlqFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.TokenStoreProperties;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -92,5 +96,23 @@ public class JpaAutoConfiguration {
     public PersistenceExceptionResolver persistenceExceptionResolver(DataSource dataSource)
             throws SQLException {
         return new SQLErrorCodesResolver(dataSource);
+    }
+
+    @Lazy
+    @Bean
+    @ConditionalOnMissingBean(EventProcessingSdlqFactory.class)
+    public JpaEventProcessingSdlqFactory<?> eventProcessingSdlqFactory(
+            EntityManagerProvider entityManagerProvider,
+            @Qualifier("eventSerializer") Serializer eventSerializer,
+            Serializer genericSerializer,
+            TransactionManager transactionManager
+    ) {
+        return JpaEventProcessingSdlqFactory
+                .builder()
+                .entityManagerProvider(entityManagerProvider)
+                .eventSerializer(eventSerializer)
+                .genericSerializer(genericSerializer)
+                .transactionManager(transactionManager)
+                .build();
     }
 }

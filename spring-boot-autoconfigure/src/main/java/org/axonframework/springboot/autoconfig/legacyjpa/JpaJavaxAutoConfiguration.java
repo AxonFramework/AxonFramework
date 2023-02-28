@@ -18,9 +18,12 @@ package org.axonframework.springboot.autoconfig.legacyjpa;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.legacyjpa.EntityManagerProvider;
+import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.deadletter.jpa.JpaEventProcessingSdlqFactory;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.legacyjpa.SQLErrorCodesResolver;
+import org.axonframework.messaging.deadletter.EventProcessingSdlqFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.legacyjpa.JpaSagaStore;
 import org.axonframework.serialization.Serializer;
@@ -29,6 +32,7 @@ import org.axonframework.springboot.autoconfig.JdbcAutoConfiguration;
 import org.axonframework.springboot.autoconfig.JpaAutoConfiguration;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -101,5 +105,23 @@ public class JpaJavaxAutoConfiguration {
     public PersistenceExceptionResolver persistenceExceptionResolver(DataSource dataSource)
             throws SQLException {
         return new SQLErrorCodesResolver(dataSource);
+    }
+
+    @Lazy
+    @Bean
+    @ConditionalOnMissingBean(EventProcessingSdlqFactory.class)
+    public JpaEventProcessingSdlqFactory<?> eventProcessingSdlqFactory(
+            EntityManagerProvider entityManagerProvider,
+            @Qualifier("eventSerializer") Serializer eventSerializer,
+            Serializer genericSerializer,
+            TransactionManager transactionManager
+    ) {
+        return JpaEventProcessingSdlqFactory
+                .builder()
+                .entityManagerProvider(entityManagerProvider)
+                .eventSerializer(eventSerializer)
+                .genericSerializer(genericSerializer)
+                .transactionManager(transactionManager)
+                .build();
     }
 }

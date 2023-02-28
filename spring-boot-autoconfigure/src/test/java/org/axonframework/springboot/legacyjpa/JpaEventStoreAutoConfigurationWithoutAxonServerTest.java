@@ -18,10 +18,12 @@ package org.axonframework.springboot.legacyjpa;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.deadletter.jpa.JpaEventProcessingSdlqFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.legacyjpa.JpaEventStorageEngine;
+import org.axonframework.messaging.deadletter.EventProcessingSdlqFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -49,6 +51,8 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
                     assertThat(context).hasSingleBean(JpaEventStorageEngine.class);
                     assertThat(context).getBean(JpaEventStorageEngine.class).isInstanceOf(JpaEventStorageEngine.class);
                     assertThat(context).getBean(EventStore.class).isInstanceOf(EmbeddedEventStore.class);
+                    assertThat(context.getBean(EventProcessingSdlqFactory.class)).isInstanceOf(
+                            JpaEventProcessingSdlqFactory.class);
                 });
     }
 
