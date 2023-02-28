@@ -32,6 +32,12 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.correlation.MessageOriginProvider;
+import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
+import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.EntityId;
@@ -42,16 +48,19 @@ import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.tracing.TestSpanFactory;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -83,6 +92,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static final boolean CLOSED = true;
     // This ensures we do not wire Axon Server components
     private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
+    private static final String CUSTOM_CORRELATION_DATA_KEY = "custom-correlation-data";
 
     protected Configuration configuration;
     protected TestSpanFactory spanFactory;
@@ -97,11 +107,18 @@ public abstract class AbstractDeadlineManagerTestSuite {
                                                       .storageEngine(new InMemoryEventStorageEngine())
                                                       .spanFactory(spanFactory)
                                                       .build());
+        List<CorrelationDataProvider> correlationDataProviders = new ArrayList<>();
+        correlationDataProviders.add(new MessageOriginProvider());
+        correlationDataProviders.add(new SimpleCorrelationDataProvider(CUSTOM_CORRELATION_DATA_KEY));
+
         Configurer configurer = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
         configurer.eventProcessing()
                   .usingSubscribingEventProcessors()
                   .registerSaga(MySaga.class);
         configuration = configurer.configureEventStore(c -> eventStore)
+                                  .configureCorrelationDataProviders(config -> {
+                                      return correlationDataProviders;
+                                  })
                                   .configureAggregate(MyAggregate.class)
                                   .registerComponent(DeadlineManager.class, this::buildAndSpyDeadlineManager)
                                   .configureSpanFactory(c -> spanFactory)
@@ -114,6 +131,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     private DeadlineManager buildAndSpyDeadlineManager(Configuration configuration) {
         DeadlineManager builtManager = buildDeadlineManager(configuration);
+        //noinspection resource
+        builtManager.registerHandlerInterceptor(
+                new CorrelationDataInterceptor<>(configuration.correlationDataProviders())
+        );
         managerName = builtManager.getClass().getSimpleName();
         this.deadlineManager = spy(builtManager);
         return this.deadlineManager;
@@ -277,6 +298,28 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
+    void deadlineMessagesReceiveCorrelationDataThroughAggregate() {
+        String expectedCorrelationData = "customValue";
+        MessageDispatchInterceptor<Message<?>> correlationDataDispatchInterceptor =
+                new CustomCorrelationDataDispatchInterceptor(expectedCorrelationData);
+
+        //noinspection resource
+        configuration.commandGateway().registerDispatchInterceptor(correlationDataDispatchInterceptor);
+
+        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
+
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
+
+        Message<?> aggregateCreatedEvent = publishedMessages.get(0);
+        assertTrue(aggregateCreatedEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, aggregateCreatedEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        Message<?> deadLineEvent = publishedMessages.get(1);
+        assertTrue(deadLineEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, deadLineEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+    }
+
+    @Test
     void scheduleInPastTriggersDeadline() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, -10000));
 
@@ -431,6 +474,32 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
                               new DeadlineOccurredEvent(new DeadlinePayload("fakeId")));
         assertSagaIs(LIVE);
+    }
+
+    @Test
+    void deadlineMessagesReceiveCorrelationDataThroughSaga() {
+        String expectedCorrelationData = "customValue";
+        MessageDispatchInterceptor<Message<?>> correlationDataDispatchInterceptor =
+                new CustomCorrelationDataDispatchInterceptor(expectedCorrelationData);
+
+        //noinspection resource
+        configuration.eventStore().registerDispatchInterceptor(correlationDataDispatchInterceptor);
+
+        EventMessage<Object> testEventMessage =
+                asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
+        configuration.eventStore().publish(testEventMessage);
+
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
+                              new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
+
+        assertSagaIs(LIVE);
+
+        Message<?> sagaStartingEvent = publishedMessages.get(0);
+        assertTrue(sagaStartingEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, sagaStartingEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        Message<?> deadLineOccurredEvent = publishedMessages.get(1);
+        assertTrue(deadLineOccurredEvent.getMetaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, deadLineOccurredEvent.getMetaData().get(CUSTOM_CORRELATION_DATA_KEY));
     }
 
     private void assertPublishedEvents(Object... expectedEvents) {
@@ -973,6 +1042,21 @@ public abstract class AbstractDeadlineManagerTestSuite {
         public void on(EntityDeadlinePayload deadlineInfo, @Timestamp Instant timestamp) {
             assertNotNull(timestamp);
             apply(new DeadlineOccurredInChildEvent(deadlineInfo));
+        }
+    }
+
+    private static class CustomCorrelationDataDispatchInterceptor implements MessageDispatchInterceptor<Message<?>> {
+
+        private final String correlationData;
+
+        private CustomCorrelationDataDispatchInterceptor(String correlationData) {
+            this.correlationData = correlationData;
+        }
+
+        @NotNull
+        @Override
+        public BiFunction<Integer, Message<?>, Message<?>> handle(@NotNull List<? extends Message<?>> messages) {
+            return (i, m) -> m.andMetaData(MetaData.with(CUSTOM_CORRELATION_DATA_KEY, correlationData));
         }
     }
 }
