@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector;
+package org.axonframework.axonserver.connector.utils;
 
 import io.axoniq.axonserver.grpc.control.ClientIdentification;
 import io.axoniq.axonserver.grpc.control.Heartbeat;
@@ -26,7 +26,10 @@ import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +45,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase {
 
-    public static final Metadata.Key<String> AXON_IQ_CONTEXT = Metadata.Key.of("AxonIQ-Context", Metadata.ASCII_STRING_MARSHALLER);
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    public static final Metadata.Key<String> AXON_IQ_CONTEXT =
+            Metadata.Key.of("AxonIQ-Context", Metadata.ASCII_STRING_MARSHALLER);
     public static final io.grpc.Context.Key<String> CONTEXT_KEY = Context.key("AxonIQ-Context");
 
     private final int port;
@@ -96,7 +102,7 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
 
                 if (platformInboundInstruction.hasRegister()) {
                     ClientIdentification register = platformInboundInstruction.getRegister();
-                    System.out.println(register);
+                    logger.info("The following client is registering: [{}]", register);
                     clientIdentificationRequests.add(register);
                 } else if (platformInboundInstruction.hasHeartbeat()) {
                     heartbeatMessages.add(platformInboundInstruction.getHeartbeat());

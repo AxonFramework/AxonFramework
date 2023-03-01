@@ -71,13 +71,14 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
     /**
      * Tests that exceptions thrown by dispatch interceptors on another thread are handled properly.
      * <p/>
-     * Documentation states, <blockquote> Exceptions have the following effect:<br>
-     * Any declared checked exception will be thrown if the Command Handler (or an interceptor) threw an exceptions of
-     * that type. If a checked exception is thrown that has not been declared, it is wrapped in a
-     * CommandExecutionException, which is a RuntimeException.<br> &hellip; </blockquote>
+     * Documentation states, <blockquote> Exceptions have the following effect:<br> Any declared checked exception will
+     * be thrown if the Command Handler (or an interceptor) threw an exceptions of that type. If a checked exception is
+     * thrown that has not been declared, it is wrapped in a CommandExecutionException, which is a RuntimeException.<br>
+     * &hellip; </blockquote>
      */
     @Test
-    @Timeout(value = 10)// bug is that the caller waits forever for a CommandCallback.onFailure that never comes...
+    @Timeout(value = 10)
+    // bug is that the caller waits forever for a CommandCallback.onFailure that never comes...
     void commandDispatchInterceptorExceptionOnRetryThreadIsThrownToCaller() {
         commandGateway = DefaultCommandGateway.builder()
                                               .commandBus(commandBus)
@@ -85,6 +86,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
                                               .build();
 
         // Trigger retry
+        //noinspection resource
         commandBus.subscribe(String.class.getName(), commandMessage -> {
             throw new ConcurrencyException("some retryable exception");
         });
@@ -92,6 +94,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
         // say we have a dispatch interceptor that expects to get the user's session from a ThreadLocal...
         // yes, this should be configured on the gateway instead of the command bus, but still...
         final Thread testThread = Thread.currentThread();
+        //noinspection resource
         commandBus.registerDispatchInterceptor(new MessageDispatchInterceptor<CommandMessage<?>>() {
             @Nonnull
             @Override
@@ -102,7 +105,8 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
                         return message; // ok
                     } else {
                         // also, nothing is logged!
-                        LoggerFactory.getLogger(getClass()).info("throwing exception from dispatcher...");
+                        LoggerFactory.getLogger("CommandRetryAndDispatchInterceptorIntegrationTest")
+                                     .info("Logging is part of the validation of this test");
                         throw new SecurityException("test dispatch interceptor exception");
                     }
                 };
@@ -113,7 +117,6 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
         // per documentation, an unchecked exception (theoretically the only kind throwable by an interceptor)
         // is returned unwrapped
         assertThrows(SecurityException.class, () -> commandGateway.sendAndWait("command"));
-
     }
 
     /**
@@ -121,10 +124,9 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
      * preserved on retry.
      * <p/>
      * It'd be nice if metadata added by a
-     * {@linkplain SimpleCommandBus#registerDispatchInterceptor(MessageDispatchInterceptor)}  command bus's
-     * dispatch interceptors} could be preserved, too, but that doesn't seem to
-     * be possible given how {@link RetryingCallback} works, so verify that it
-     * is not preserved.
+     * {@linkplain SimpleCommandBus#registerDispatchInterceptor(MessageDispatchInterceptor)}  command bus's dispatch
+     * interceptors} could be preserved, too, but that doesn't seem to be possible given how {@link RetryingCallback}
+     * works, so verify that it is not preserved.
      */
     @SuppressWarnings("unchecked")
     @Test
@@ -135,7 +137,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
                 DefaultCommandGateway.builder()
                                      .commandBus(commandBus)
                                      .retryScheduler(retryScheduler)
-                                     .dispatchInterceptors((MessageDispatchInterceptor<CommandMessage<?>>) messages -> (index, message) -> {
+                                     .dispatchInterceptors(messages -> (index, message) -> {
                                          if (Thread.currentThread() == testThread) {
                                              return message.andMetaData(
                                                      Collections.singletonMap("gatewayMetaData", "myUserSession"));
@@ -146,6 +148,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
                                      }).build();
 
         // Trigger retry, then return metadata for verification
+        //noinspection resource
         commandBus.subscribe(String.class.getName(), commandMessage -> {
             if (Thread.currentThread() == testThread) {
                 throw new ConcurrencyException("some retryable exception");
@@ -160,10 +163,9 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
 
     /**
      * It'd be nice if metadata added by a
-     * {@linkplain SimpleCommandBus#registerDispatchInterceptor(MessageDispatchInterceptor)}  command bus's
-     * dispatch interceptors} could be preserved, too, but that doesn't seem to
-     * be possible given how {@link RetryingCallback} works, so verify that it
-     * behaves as designed (if not as "expected").
+     * {@linkplain SimpleCommandBus#registerDispatchInterceptor(MessageDispatchInterceptor)}  command bus's dispatch
+     * interceptors} could be preserved, too, but that doesn't seem to be possible given how {@link RetryingCallback}
+     * works, so verify that it behaves as designed (if not as "expected").
      */
     @Test
     @Timeout(value = 10)
@@ -175,6 +177,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
                                               .build();
 
         // Trigger retry, then return metadata for verification
+        //noinspection resource
         commandBus.subscribe(String.class.getName(), commandMessage -> {
             if (Thread.currentThread() == testThread) {
                 throw new ConcurrencyException("some retryable exception");
@@ -183,6 +186,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
             }
         });
 
+        //noinspection resource
         commandBus.registerDispatchInterceptor(messages -> (index, message) -> {
             if (Thread.currentThread() == testThread) {
                 return message.andMetaData(Collections.singletonMap("commandBusMetaData", "myUserSession"));

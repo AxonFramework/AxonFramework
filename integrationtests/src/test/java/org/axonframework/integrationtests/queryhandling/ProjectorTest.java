@@ -26,13 +26,16 @@ import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.junit.jupiter.api.*;
 
-class QueryEventHandlingTest {
+class ProjectorTest {
+
+    // This ensures we do not wire Axon Server components
+    private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
 
     @Test
     void queryHandlerAndEventHandlerCleanlyShutdown() {
         UserSummaryProjection userSummaryProjection = new UserSummaryProjection();
 
-        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
         configurer.configureCommandBus(c -> SimpleCommandBus.builder().build())
                   .configureQueryBus(c -> SimpleQueryBus.builder().build())
                   .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())

@@ -15,7 +15,7 @@
   -->
 
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
-    <persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="jpaSagaStorePersistenceUnit" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
@@ -28,7 +28,7 @@
             <property name="hibernate.connection.username" value="sa"/>
             <property name="hibernate.connection.password" value=""/>
             <property name="hibernate.connection.url"
-                      value="jdbc:hsqldb:mem:addressbook"/>
+                      value="jdbc:hsqldb:mem:axontest"/>
         </properties>
     </persistence-unit>
 </persistence>

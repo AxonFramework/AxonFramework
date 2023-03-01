@@ -64,7 +64,8 @@ class JpaEventStorageEngineTest
 
     private JpaEventStorageEngine testSubject;
 
-    private final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("eventStore");
+    private final EntityManagerFactory entityManagerFactory =
+            Persistence.createEntityManagerFactory("jpaEventStorageEngineTest");
     private final EntityManager entityManager = entityManagerFactory.createEntityManager();
     private final EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
     private final TransactionManager transactionManager = spy(new NoOpTransactionManager());

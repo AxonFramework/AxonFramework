@@ -18,33 +18,59 @@ package org.axonframework.springboot.legacyjpa;
 
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.axonframework.springboot.utils.GrpcServerStub;
+import org.axonframework.springboot.utils.TcpUtils;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jmx.support.RegistrationPolicy;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests JPA EventStore auto-configuration
  *
  * @author Sara Pellegrini
  */
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration
-@EnableAutoConfiguration
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 class JpaEventStoreAutoConfigurationWithAxonServerTest {
 
-    @Autowired
-    private EventStore eventStore;
+    private ApplicationContextRunner testContext;
+
+    @BeforeEach
+    void setUp() {
+        testContext = new ApplicationContextRunner().withUserConfiguration(TestContext.class);
+    }
+
+    @BeforeAll
+    static void beforeAll() {
+        System.setProperty("axon.axonserver.servers", GrpcServerStub.DEFAULT_HOST + ":" + TcpUtils.findFreePort());
+    }
+
+    @AfterAll
+    static void afterAll() {
+        System.clearProperty("axon.axonserver.servers");
+    }
 
     @Test
-    void eventStore() {
-        assertTrue(eventStore instanceof AxonServerEventStore);
+    void eventStoreIsOfTypeAxonServerEventStore() {
+        testContext.run(context -> {
+            Map<String, EventStore> eventStores = context.getBeansOfType(EventStore.class);
+            assertTrue(eventStores.containsKey("eventStore"));
+            assertEquals(AxonServerEventStore.class, eventStores.get("eventStore").getClass());
+        });
+    }
+
+    @ContextConfiguration
+    @EnableAutoConfiguration
+    private static class TestContext {
+
+        @Bean(initMethod = "start", destroyMethod = "shutdown")
+        public GrpcServerStub grpcServerStub(@Value("${axon.axonserver.servers}") String servers) {
+            return new GrpcServerStub(Integer.parseInt(servers.split(":")[1]));
+        }
     }
 }

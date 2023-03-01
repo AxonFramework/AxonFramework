@@ -149,7 +149,6 @@ class SagaManagerTest {
         });
         if (resultMessage.isExceptional()) {
             Throwable e = resultMessage.exceptionResult();
-            e.printStackTrace();
             assertEquals("Mock", e.getMessage());
         } else {
             fail("Expected exception to be propagated");

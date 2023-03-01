@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,24 @@
 
 package org.axonframework.integrationtests.deadline.jobrunr;
 
-import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.jobrunr.server.JobActivator;
 
 /**
  * When using Spring it will use the context to get the bean, this is a simple activator, just to return the manager
  * instance. This keeps the tests light.
  */
-public class SimpleActivator implements JobActivator {
+public class SimpleActivator<T> implements JobActivator {
 
-    private JobRunrDeadlineManager manager;
+    private final T instance;
 
-    SimpleActivator(JobRunrDeadlineManager manager) {
-        this.manager = manager;
+    public SimpleActivator(T instance) {
+        this.instance = instance;
     }
 
     @Override
     public <T> T activateJob(Class<T> type) {
-        if (type.isAssignableFrom(JobRunrDeadlineManager.class)) {
-            return (T) manager;
+        if (type.isAssignableFrom(instance.getClass())) {
+            return (T) instance;
         }
         return null;
     }

@@ -18,7 +18,6 @@ package org.axonframework.spring.eventsourcing.benchmark;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.axonframework.common.legacyjpa.SimpleEntityManagerProvider;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
@@ -31,8 +30,6 @@ import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
@@ -69,8 +66,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = JpaStorageEngineInsertionReadOrderTest.TestContext.class)
 class JpaStorageEngineInsertionReadOrderTest {
-
-    private static final Logger logger = LoggerFactory.getLogger(JpaStorageEngineInsertionReadOrderTest.class);
 
     private final Serializer serializer = TestSerializer.XSTREAM.getSerializer();
 
@@ -131,6 +126,7 @@ class JpaStorageEngineInsertionReadOrderTest {
 
         EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
+        //noinspection resource
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
 
         int counter = 0;
@@ -169,7 +165,6 @@ class JpaStorageEngineInsertionReadOrderTest {
         while (counter < expectedEventCount) {
             readEvents.nextAvailable();
             counter++;
-            logger.info("SLOW_CONSUMER Handling event #[{}]", counter);
             if (counter % 50 == 0) {
                 Thread.sleep(200);
             }
@@ -221,10 +216,6 @@ class JpaStorageEngineInsertionReadOrderTest {
                     testSubject.readEvents(lastToken, false).collect(Collectors.toList());
             for (TrackedEventMessage<?> message : batch) {
                 result.add(message);
-                if (logger.isDebugEnabled()) {
-                    logger.debug(message.getPayload() + " / " + ((DomainEventMessage<?>) message).getSequenceNumber() +
-                                         " => " + message.trackingToken().toString());
-                }
                 lastToken = message.trackingToken();
             }
         }
@@ -238,7 +229,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         public ComboPooledDataSource dataSource() throws PropertyVetoException {
             ComboPooledDataSource dataSource = new ComboPooledDataSource();
             dataSource.setDriverClass("org.hsqldb.jdbcDriver");
-            dataSource.setJdbcUrl("jdbc:hsqldb:mem:address-book");
+            dataSource.setJdbcUrl("jdbc:hsqldb:mem:axontest");
             dataSource.setUser("sa");
             dataSource.setMaxPoolSize(50);
             dataSource.setMinPoolSize(1);
@@ -251,7 +242,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         @Bean
         public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactory = new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactory.setPersistenceUnitName("eventStore");
+            entityManagerFactory.setPersistenceUnitName("AxonSpringTest");
 
             HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
             vendorAdapter.setDatabasePlatform("org.hibernate.dialect.HSQLDialect");

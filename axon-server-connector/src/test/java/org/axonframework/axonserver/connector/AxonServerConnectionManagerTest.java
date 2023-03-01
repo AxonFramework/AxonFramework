@@ -27,6 +27,7 @@ import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
+import org.axonframework.axonserver.connector.utils.PlatformService;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.TagsConfiguration;
 import org.junit.jupiter.api.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 import static org.axonframework.commandhandling.DuplicateCommandHandlerResolution.rejectDuplicates;
+import static org.axonframework.commandhandling.DuplicateCommandHandlerResolution.silentOverride;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -85,7 +86,9 @@ class AggregateAnnotationCommandHandlerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        commandBus = SimpleCommandBus.builder().build();
+        commandBus = SimpleCommandBus.builder()
+                                     .duplicateCommandHandlerResolver(silentOverride())
+                                     .build();
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
         newInstanceCallableFactoryCaptor = ArgumentCaptor.forClass(Callable.class);

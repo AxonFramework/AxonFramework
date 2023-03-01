@@ -22,6 +22,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 /**
@@ -114,11 +116,13 @@ public class LoggingSpanFactory implements SpanFactory {
         protected final String identifier;
         protected final String name;
         protected final Supplier<String> startLog;
+        protected final List<Slf4jSpanScope> scopesList;
 
         private Slf4jSpan(Supplier<String> nameSupplier, Supplier<String> startLog) {
             this.startLog = startLog;
             this.identifier = IdentifierFactory.getInstance().generateIdentifier();
             this.name = nameSupplier.get();
+            this.scopesList = new CopyOnWriteArrayList<>();
         }
 
         @Override
@@ -128,7 +132,18 @@ public class LoggingSpanFactory implements SpanFactory {
         }
 
         @Override
+        public SpanScope makeCurrent() {
+            logger.debug("[{}][{}] Made current for thread [{}]", identifier, name, Thread.currentThread().getName());
+            Slf4jSpanScope scope = new Slf4jSpanScope();
+            scopesList.add(scope);
+            return scope;
+        }
+
+        @Override
         public void end() {
+            if(!scopesList.isEmpty()) {
+                logger.error("[{}][{}] Span ended without closing {} scopes!", identifier, name, scopesList.size());
+            }
             logger.info("[{}][{}] Span ended", identifier, name);
         }
 
@@ -137,5 +152,13 @@ public class LoggingSpanFactory implements SpanFactory {
             logger.info("[{}][{}] Span recorded exception", identifier, name, t);
             return this;
         }
+        private class Slf4jSpanScope implements SpanScope {
+            @Override
+            public void close() {
+                logger.debug("[{}][{}] Closed for thread [{}]", identifier, name, Thread.currentThread().getName());
+                scopesList.remove(this);
+            }
+        }
     }
+
 }

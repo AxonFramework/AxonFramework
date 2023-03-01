@@ -37,6 +37,7 @@ import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolve
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.SpanScope;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -168,13 +169,12 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> query) {
-        Span span = spanFactory.createInternalSpan(() -> "SimpleQueryBus.query", query).start();
-        return doQuery(query).whenComplete((r, t) -> {
+        Span span = spanFactory.createInternalSpan(() -> "SimpleQueryBus.query", query);
+        return span.runSupplier(() -> doQuery(query).whenComplete((r, t) -> {
             if (t != null) {
                 span.recordException(t);
             }
-            span.end();
-        });
+        }));
     }
 
     @Nonnull
@@ -229,20 +229,22 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
-        return Mono.just(intercept(query))
-                   .flatMapMany(
-                           interceptedQuery -> Mono.just(interceptedQuery)
-                                                   .flatMapMany(this::getStreamingHandlersForMessage)
-                                                   .switchIfEmpty(Flux.error(noHandlerException(interceptedQuery)))
-                                                   .map(handler -> interceptAndInvokeStreaming(
-                                                           interceptedQuery, handler
-                                                   ))
-                                                   .skipWhile(ResultMessage::isExceptional)
-                                                   .switchIfEmpty(Flux.error(noSuitableHandlerException(interceptedQuery)))
-                                                   .next()
-                                                   .doOnEach(new SuccessReporter())
-                                                   .flatMapMany(Message::getPayload)
-                   ).contextWrite(new MonitorCallbackContextWriter(messageMonitor, query));
+        Span span = spanFactory.createChildHandlerSpan(() -> "SimpleQueryBus.streamingQuery", query).start();
+        try (SpanScope unused = span.makeCurrent()) {
+            return Mono.just(intercept(query))
+                       .flatMapMany(interceptedQuery -> Mono
+                               .just(interceptedQuery)
+                               .flatMapMany(this::getStreamingHandlersForMessage)
+                               .switchIfEmpty(Flux.error(noHandlerException(interceptedQuery)))
+                               .map(handler -> interceptAndInvokeStreaming(interceptedQuery, handler, span))
+                               .skipWhile(ResultMessage::isExceptional)
+                               .switchIfEmpty(Flux.error(noSuitableHandlerException(interceptedQuery)))
+                               .next()
+                               .doOnEach(new SuccessReporter())
+                               .flatMapMany(Message::getPayload)
+                       ).contextWrite(new MonitorCallbackContextWriter(messageMonitor, query))
+                       .doOnTerminate(span::end);
+        }
     }
 
     /**
@@ -335,33 +337,52 @@ public class SimpleQueryBus implements QueryBus {
             return Stream.empty();
         }
 
-        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-        return handlers.stream()
-                       .map(handler -> {
-                           Span handlerSpan = spanFactory.createInternalSpan(() -> "SimpleQueryBus.scatterGather(" + handlers.indexOf(handler) + ")", query)
-                                                         .start();
-                           long leftTimeout = getRemainingOfDeadline(deadline);
-                           ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =
-                                   interceptAndInvoke(DefaultUnitOfWork.startAndGet(interceptedQuery),
-                                                      handler);
-                           QueryResponseMessage<R> response = null;
-                           if (resultMessage.isExceptional()) {
-                               monitorCallback.reportFailure(resultMessage.exceptionResult());
-                               handlerSpan.recordException(resultMessage.exceptionResult());
-                               errorHandler.onError(resultMessage.exceptionResult(), interceptedQuery, handler);
-                           } else {
-                               try {
-                                   response = resultMessage.getPayload().get(leftTimeout, TimeUnit.MILLISECONDS);
-                                   monitorCallback.reportSuccess();
-                               } catch (Exception e) {
-                                   handlerSpan.recordException(e);
-                                   monitorCallback.reportFailure(e);
-                                   errorHandler.onError(e, interceptedQuery, handler);
-                               }
-                           }
-                           handlerSpan.end();
-                           return response;
-                       }).filter(Objects::nonNull);
+        return spanFactory.createInternalSpan(() -> "SimpleQueryBus.scatterGather", query).runSupplier(() -> {
+            long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
+            List<Span> spans = handlers.stream().map(handler -> spanFactory
+                    .createInternalSpan(() -> {
+                        int handlerIndex = handlers.indexOf(handler);
+                        return "SimpleQueryBus.scatterGatherHandler-" + handlerIndex;
+                    })).collect(Collectors.toList());
+            return handlers
+                    .stream()
+                    .map(handler -> {
+                        Span span = spans.get(handlers.indexOf(handler));
+                        return span.runSupplier(
+                                () -> scatterGatherHandler(span, monitorCallback, interceptedQuery, deadline, handler));
+                    })
+                    .filter(Objects::nonNull);
+        });
+    }
+
+    private <Q, R> QueryResponseMessage<R> scatterGatherHandler(
+            Span span,
+            MessageMonitor.MonitorCallback monitorCallback,
+            QueryMessage<Q, R> interceptedQuery,
+            long deadline,
+            MessageHandler<? super QueryMessage<?, ?>> handler
+    ) {
+        long leftTimeout = getRemainingOfDeadline(deadline);
+        ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =
+                interceptAndInvoke(DefaultUnitOfWork.startAndGet(interceptedQuery),
+                                   handler);
+        QueryResponseMessage<R> response = null;
+        if (resultMessage.isExceptional()) {
+            monitorCallback.reportFailure(resultMessage.exceptionResult());
+            span.recordException(resultMessage.exceptionResult());
+            errorHandler.onError(resultMessage.exceptionResult(), interceptedQuery, handler);
+        } else {
+            try {
+                response = resultMessage.getPayload().get(leftTimeout,
+                                                          TimeUnit.MILLISECONDS);
+                monitorCallback.reportSuccess();
+            } catch (Exception e) {
+                span.recordException(e);
+                monitorCallback.reportFailure(e);
+                errorHandler.onError(e, interceptedQuery, handler);
+            }
+        }
+        return response;
     }
 
     /**
@@ -463,14 +484,16 @@ public class SimpleQueryBus implements QueryBus {
 
     private <Q, R> ResultMessage<Publisher<QueryResponseMessage<R>>> interceptAndInvokeStreaming(
             StreamingQueryMessage<Q, R> query,
-            MessageHandler<? super StreamingQueryMessage<?, R>> handler) {
-        DefaultUnitOfWork<StreamingQueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(query);
-        return uow.executeWithResult(() -> {
-            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
-            return Flux.from(query.getResponseType()
-                                  .convert(queryResponse))
-                       .map(GenericQueryResponseMessage::asResponseMessage);
-        });
+            MessageHandler<? super StreamingQueryMessage<?, R>> handler, Span span) {
+        try (SpanScope unused = span.makeCurrent()) {
+            DefaultUnitOfWork<StreamingQueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(query);
+            return uow.executeWithResult(() -> {
+                Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
+                return Flux.from(query.getResponseType()
+                                      .convert(queryResponse))
+                           .map(GenericQueryResponseMessage::asResponseMessage);
+            });
+        }
     }
 
     private <R> CompletableFuture<QueryResponseMessage<R>> buildCompletableFuture(ResponseType<R> responseType,

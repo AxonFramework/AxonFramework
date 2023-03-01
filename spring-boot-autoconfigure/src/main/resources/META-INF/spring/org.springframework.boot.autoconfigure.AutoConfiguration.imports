@@ -1,4 +1,5 @@
 org.axonframework.springboot.autoconfig.AxonAutoConfiguration
+org.axonframework.springboot.autoconfig.AxonJobRunrAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration

@@ -203,6 +203,11 @@ class SpanTest {
         }
 
         @Override
+        public SpanScope makeCurrent() {
+            return () -> {};
+        }
+
+        @Override
         public void end() {
             this.ended = true;
         }

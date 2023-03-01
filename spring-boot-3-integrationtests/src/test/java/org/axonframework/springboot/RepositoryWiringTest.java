@@ -65,7 +65,6 @@ class RepositoryWiringTest {
         });
     }
 
-    @Disabled
     @Test
     void aggregateRepositoriesAreWiredToExternalCommandHandlerBasedOnGenerics() {
         testApplicationContext.withUserConfiguration(SeveralAggregatesContext.class).run(context -> {
@@ -99,7 +98,6 @@ class RepositoryWiringTest {
         });
     }
 
-    @Disabled
     @Test
     void aggregateRepositoriesAreWiredToExternalCommandHandlerBasedOnBeanName() {
         testApplicationContext.withUserConfiguration(SeveralAggregatesContext.class).run(context -> {

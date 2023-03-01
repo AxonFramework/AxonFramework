@@ -28,7 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.context.annotation.ImportResource;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.support.JdbcTransactionManager;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -60,7 +61,7 @@ class SpringDataSourceConnectionProviderTest {
 
     @BeforeEach
     void setUp() {
-        springTransactionManager  = new SpringTransactionManager(transactionManager);
+        springTransactionManager = new SpringTransactionManager(transactionManager);
     }
 
     @DirtiesContext
@@ -86,7 +87,7 @@ class SpringDataSourceConnectionProviderTest {
             final Object spy = spy(invocation.callRealMethod());
             mockConnection = (Connection) spy;
             return spy;
-        }).when(dataSource).getConnection("sa", "");
+        }).when(dataSource).getConnection();
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         Transaction transaction = springTransactionManager.startTransaction();
@@ -103,9 +104,23 @@ class SpringDataSourceConnectionProviderTest {
         verify(mockConnection).commit();
     }
 
-    @ImportResource("classpath:/META-INF/spring/db-context.xml")
     @Configuration
-    public static class Context {
+    static class Context {
+
+        @Bean
+        public DataSource dataSource() {
+            DriverManagerDataSource dataSource = new DriverManagerDataSource();
+            dataSource.setUrl("jdbc:hsqldb:mem:axontest");
+            dataSource.setUsername("sa");
+            dataSource.setPassword("");
+            dataSource.setDriverClassName("org.hsqldb.jdbcDriver");
+            return spy(dataSource);
+        }
+
+        @Bean
+        public PlatformTransactionManager platformTransactionManager(DataSource dataSource) {
+            return new JdbcTransactionManager(dataSource);
+        }
 
         @Bean
         public ConnectionProvider connectionProvider(DataSource dataSource) {

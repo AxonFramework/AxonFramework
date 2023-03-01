@@ -62,6 +62,11 @@ class JobRunrEventSchedulerBuilderTest {
     }
 
     @Test
+    void whenSettingNameWithNullThrowError() {
+        assertThrows(AxonConfigurationException.class, () -> builder.jobName(null));
+    }
+
+    @Test
     void whenSettingTransactionManagerWithNullThrowError() {
         assertThrows(AxonConfigurationException.class, () -> builder.transactionManager(null));
     }

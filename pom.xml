@@ -37,6 +37,7 @@
         <module>integrationtests</module>
         <module>legacy</module>
         <module>reactorless-test</module>
+        <module>migration</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -71,10 +72,11 @@
         <!-- dependency versions -->
 
         <slf4j.version>2.0.6</slf4j.version>
-        <log4j.version>2.19.0</log4j.version>
+        <log4j.version>2.20.0</log4j.version>
         <spring.version>5.3.25</spring.version>
+        <awaitility.version>4.2.0</awaitility.version>
         <spring-security.version>5.7.3</spring-security.version>
-        <spring.boot.version>2.7.8</spring.boot.version>
+        <spring.boot.version>2.7.9</spring.boot.version>
         <mockito.version>4.11.0</mockito.version>
         <projectreactor.version>3.5.3</projectreactor.version>
         <micrometer.version>1.10.4</micrometer.version>
@@ -86,12 +88,12 @@
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
-        <jobrunr.version>6.0.0</jobrunr.version>
+        <jobrunr.version>6.1.0</jobrunr.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.2</hsqldb.version>
         <hibernate-core.version>5.6.14.Final</hibernate-core.version>
         <hibernate-core.6.version>6.1.6.Final</hibernate-core.6.version>
-        <byte-buddy.version>1.13.0</byte-buddy.version>
+        <byte-buddy.version>1.14.0</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.11.0</commons-io.version>
         <javassist.version>3.29.2-GA</javassist.version>
@@ -110,9 +112,9 @@
         <!-- plugin versions -->
         <felix.maven-bundle-plugin.version>5.1.8</felix.maven-bundle-plugin.version>
         <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
-        <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
+        <maven-assembly-plugin.version>3.5.0</maven-assembly-plugin.version>
         <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
-        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
 
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
 
@@ -803,7 +805,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.4.1</version>
+                        <version>3.5.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadoc</id>

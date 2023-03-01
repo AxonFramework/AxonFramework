@@ -30,6 +30,7 @@ import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -177,7 +178,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     private boolean doInvokeSaga(EventMessage<?> event, Saga<T> saga) throws Exception {
         if (saga.canHandle(event)) {
             Span span = spanFactory.createInternalSpan(() -> createInvokeSpanName(saga)).start();
-            try {
+            try(SpanScope unused = span.makeCurrent()) {
                 saga.handle(event);
             } catch (Exception e) {
                 span.recordException(e);

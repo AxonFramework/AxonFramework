@@ -73,8 +73,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ContextConfiguration(classes = JpaStorageEngineInsertionReadOrderTest.TestContext.class)
 class JpaStorageEngineInsertionReadOrderTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(JpaStorageEngineInsertionReadOrderTest.class);
-
     private final Serializer serializer = TestSerializer.XSTREAM.getSerializer();
 
     @PersistenceContext
@@ -172,7 +170,6 @@ class JpaStorageEngineInsertionReadOrderTest {
         while (counter < expectedEventCount) {
             readEvents.nextAvailable();
             counter++;
-            logger.info("SLOW_CONSUMER Handling event #[{}]", counter);
             if (counter % 50 == 0) {
                 Thread.sleep(200);
             }
@@ -224,10 +221,6 @@ class JpaStorageEngineInsertionReadOrderTest {
                     testSubject.readEvents(lastToken, false).collect(Collectors.toList());
             for (TrackedEventMessage<?> message : batch) {
                 result.add(message);
-                if (logger.isDebugEnabled()) {
-                    logger.debug(message.getPayload() + " / " + ((DomainEventMessage<?>) message).getSequenceNumber() +
-                            " => " + message.trackingToken().toString());
-                }
                 lastToken = message.trackingToken();
             }
         }
@@ -241,7 +234,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         public ComboPooledDataSource dataSource() throws PropertyVetoException {
             ComboPooledDataSource dataSource = new ComboPooledDataSource();
             dataSource.setDriverClass("org.hsqldb.jdbcDriver");
-            dataSource.setJdbcUrl("jdbc:hsqldb:mem:address-book");
+            dataSource.setJdbcUrl("jdbc:hsqldb:mem:axontest");
             dataSource.setUser("sa");
             dataSource.setMaxPoolSize(50);
             dataSource.setMinPoolSize(1);
