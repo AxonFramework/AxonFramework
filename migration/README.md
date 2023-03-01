@@ -9,7 +9,7 @@ Module containing [OpenRewrite](https://docs.openrewrite.org/) recipes for migra
 ```bash
 mvn -U org.openrewrite.maven:rewrite-maven-plugin:run \
   -Drewrite.recipeArtifactCoordinates=org.axonframework:axon-migration:LATEST \
-  -DactiveRecipes=org.axonframework.axon.UpgradeAxonFramework_4_7_Javax
+  -DactiveRecipes=org.axonframework.migration.UpgradeAxonFramework_4_7_Javax
 ```
 
 #### Gradle
@@ -22,7 +22,7 @@ Requires a custom [Gradle init script](https://docs.openrewrite.org/running-reci
 ```bash
 mvn -U org.openrewrite.maven:rewrite-maven-plugin:run \
   -Drewrite.recipeArtifactCoordinates=org.axonframework:axon-migration:LATEST \
-  -DactiveRecipes=org.axonframework.axon.UpgradeAxonFramework_4_7_Jakarta
+  -DactiveRecipes=org.axonframework.migration.UpgradeAxonFramework_4_7_Jakarta
 ```
 
 #### Gradle
