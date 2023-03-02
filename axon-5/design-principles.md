@@ -5,6 +5,10 @@
 - Project Reactor throughout APIs.
 - Decide upon project modularity. 
 - E.g. should we split axon-messaging into events/commands/queries? Of move core components to axon-core?.
+* Extract Spring from main project into extension?
+* Extract JPA/JDBC from main project into extension?
+* Selectively open up APIs to end users, to allow us to change things even after a release.
+  Thus, giving us more flexibility in designing (todo - discuss idea with Allard due to his API design experience).
 
 ## UnitOfWork
 - UnitOfWork should not be accessible to end users. 
@@ -38,10 +42,12 @@
    and wrap the behavior of the infrastructure components.
   Simply put, use the Decorator Pattern.
 - Favor direct component configuration i.o. Service Loader usage.
+* Dynamic configuration changes?
 
 ## Annotations
 - Define annotation-based Message Handling Component setup, using the MHC-configuration
 - HandlerEnhancers and ParameterResolvers are purely intended for annotation based MHCs.
+* Ahead of time?
 
 ## Serialization
 - Messages should not be serialization native. 
@@ -63,6 +69,25 @@
 - Have Aggregate Test Fixtures ingest the Aggregate Configuration, to base the test suite on.
 - Aggregate Test Fixtures should, if configured, validate the given scenario's state with the snapshot state.
   Doing so, we guard users against incorrectly defining the snapshot state of their aggregates.
+
+## Commands
+* 
+
+## Queries
+* 
+
+## Sagas / ProcessManager
+* 
+
+## Deadlines
+* 
+
+## Monitoring / Tracing
+* 
+
+## Deprecation
+* Should we pre-deprecate stuff that we'll remove in AF5?
+* If we will remove stuff that's not already deprecated, of course. (Disruptor, ConflictResolution, Sagas)
 
 ## Rules
 - No ThreadLocals!
