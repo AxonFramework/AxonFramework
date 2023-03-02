@@ -4,7 +4,9 @@
 - Use JDK17.
 - Project Reactor throughout APIs.
 - Decide upon project modularity. 
-- E.g. should we split axon-messaging into events/commands/queries? Of move core components to axon-core?.
+* Decide upon project modularity.
+  E.g. should we split axon-messaging into events/commands/queries?
+  Or move core components to axon-core?.
 * Extract Spring from main project into extension?
 * Extract JPA/JDBC from main project into extension?
 * Selectively open up APIs to end users, to allow us to change things even after a release.
@@ -17,24 +19,24 @@
 
 ## Messaging
 - Dispatch Interceptors should allow reaction to the responses of handling the message(s).
-- Disconnect message name from payload type. 
+* Disconnect message name from payload type. 
   This means during handler subscription, that you need to provide a name. 
   Annotation based may default to the FQCN, still.
-- Make the notion of 'namespaces' to all messages explicit. 
+* Make the notion of 'namespaces' to all messages explicit. 
   This is already present at the moment, but it's part of the payloadType. 
   Exposes this directly allows a (cleaner) mapping from messages-to-namespace, and namespaces-to-context.
-- Usage of the namespaces may also allow an easier integration of multi tenancy within the core of the Framework.
-- A Message Handler should be capable of defining the business name of the message it handles,
+* Usage of the namespaces may also allow an easier integration of multi tenancy within the core of the Framework.
+* A Message Handler should be capable of defining the business name of the message it handles,
    and the type it wants to receive it in.
 
 ## Event Processing
-- 
+* 
 
 ## Configuration
 - Break up Configuration module, to not have one module that depends on all other modules.
 - Define Message Handling Component configuration (MHC-configuration), without Annotations.
-- Drop default Serializer, to enforce users to think about the Serializer to use.
-- Revamp the configuration to allow a 'higher-level' configuration component,
+* Drop default Serializer, to enforce users to think about the Serializer to use.
+* Revamp the configuration to allow a 'higher-level' configuration component,
    like a "Command Handling Component Configuration" or "Command Center Configuration".
   Through this, we can have a user define a message handler, appending any type of additional behavior required.
   Furthermore, this allows us to eliminate unclear config options (e.g., why have a Parameter Resolver for the Repository?).
@@ -55,7 +57,7 @@
   They should, as these know the message handlers, and what the expected type to handle is. 
   Thus, handlers need to register themselves with the desired message name.
 - Attach upcasting to the serialization-process / Serializer.
-- Enforce serialized format of internal objects, e.g. tokens.
+* Enforce serialized format of internal objects, e.g. tokens.
   This eliminates issues with de-/serialization with different Serializer choices.
 - Serializers are configured on the buses.
 
