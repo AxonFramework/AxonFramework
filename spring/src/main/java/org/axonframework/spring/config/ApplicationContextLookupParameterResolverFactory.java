@@ -24,6 +24,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
+
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nonnull;
@@ -76,7 +78,7 @@ public class ApplicationContextLookupParameterResolverFactory implements Factory
 
     @Override
     public void afterPropertiesSet() {
-        factories.addAll(applicationContext.getBeansOfType(ParameterResolverFactory.class).values());
+        factories.addAll(beansOfTypeIncludingAncestors(applicationContext, ParameterResolverFactory.class).values());
         parameterResolverFactory = MultiParameterResolverFactory.ordered(factories);
     }
 }
