@@ -2,7 +2,11 @@
 
 ## Base
 - Use JDK17.
-- Project Reactor throughout APIs.
+- [Async-native / Project Reactor] throughout APIs intended for end-user actions.
+  There's a concern on debugging Project Reactor, though, as usual stack trace is lost.
+  Hence, when following this route, we should be certain to use 'check points' throughout VERY thoroughly.
+  Otherwise, issues, locally or at end users, will be a lot harder to figure out.
+  Whether we take a Java-async-native or Project Reactor approach, requires experimentation.
 - Decide upon project modularity. 
 * Decide upon project modularity.
   E.g. should we split axon-messaging into events/commands/queries?
