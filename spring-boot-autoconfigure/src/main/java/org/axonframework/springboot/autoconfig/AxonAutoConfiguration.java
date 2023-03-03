@@ -85,6 +85,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
+
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -181,7 +183,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                        SerializerProperties.SerializerType serializerType) {
         switch (serializerType) {
             case JACKSON:
-                Map<String, ObjectMapper> objectMapperBeans = applicationContext.getBeansOfType(ObjectMapper.class);
+                Map<String, ObjectMapper> objectMapperBeans = beansOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
                 ObjectMapper objectMapper = objectMapperBeans.containsKey("defaultAxonObjectMapper")
                                             ? objectMapperBeans.get("defaultAxonObjectMapper")
                                             : objectMapperBeans.values().stream().findFirst()
@@ -197,7 +199,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             case XSTREAM:
             case DEFAULT:
             default:
-                Map<String, XStream> xStreamBeans = applicationContext.getBeansOfType(XStream.class);
+                Map<String, XStream> xStreamBeans = beansOfTypeIncludingAncestors(applicationContext, XStream.class);
                 XStream xStream = xStreamBeans.containsKey("defaultAxonXStream")
                         ? xStreamBeans.get("defaultAxonXStream")
                         : xStreamBeans.values().stream().findFirst()

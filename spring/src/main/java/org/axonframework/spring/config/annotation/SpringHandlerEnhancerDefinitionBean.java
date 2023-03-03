@@ -26,6 +26,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -110,8 +112,7 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
 
     private void initialize() {
         enhancers.addAll(ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader).getDelegates());
-        Map<String, HandlerEnhancerDefinition> enhancersFound = applicationContext.getBeansOfType(
-                HandlerEnhancerDefinition.class);
+        Map<String, HandlerEnhancerDefinition> enhancersFound = beansOfTypeIncludingAncestors(applicationContext, HandlerEnhancerDefinition.class);
         enhancers.addAll(enhancersFound.values());
     }
 }

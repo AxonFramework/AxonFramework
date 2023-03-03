@@ -29,6 +29,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
+
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nonnull;
@@ -127,8 +129,8 @@ public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinitio
 
     private void initialize() {
         definitions.addAll(ClasspathHandlerDefinition.forClassLoader(classLoader).getDelegates());
-        definitions.addAll(applicationContext.getBeansOfType(HandlerDefinition.class).values());
+        definitions.addAll(beansOfTypeIncludingAncestors(applicationContext, HandlerDefinition.class).values());
         enhancers.addAll(ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader).getDelegates());
-        enhancers.addAll(applicationContext.getBeansOfType(HandlerEnhancerDefinition.class).values());
+        enhancers.addAll(beansOfTypeIncludingAncestors(applicationContext, HandlerEnhancerDefinition.class).values());
     }
 }

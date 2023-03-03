@@ -30,6 +30,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
+
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
@@ -93,11 +95,11 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
         AggregateFactory<?> aggregateFactory = super.getAggregateFactory(aggregateType);
         if (aggregateFactory == null) {
             Optional<AggregateFactory> factory =
-                    applicationContext.getBeansOfType(AggregateFactory.class).values().stream()
+                    beansOfTypeIncludingAncestors(applicationContext, AggregateFactory.class).values().stream()
                                       .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
                                       .findFirst();
             if (!factory.isPresent()) {
-                factory = applicationContext.getBeansOfType(EventSourcingRepository.class).values().stream()
+                factory = beansOfTypeIncludingAncestors(applicationContext, EventSourcingRepository.class).values().stream()
                                             .map((Function<EventSourcingRepository, AggregateFactory>) EventSourcingRepository::getAggregateFactory)
                                             .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
                                             .findFirst();
