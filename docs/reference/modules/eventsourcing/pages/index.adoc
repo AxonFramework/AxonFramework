@@ -1,3 +1,2 @@
-= Event Sourcing
-
-#TODO#
+= Event Sourcing Module
+:navtitle: Event Sourcing

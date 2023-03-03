@@ -1,4 +1,5 @@
-= Messaging
+= Messaging Module
+:navtitle: Messaging
 
 This module contains all necessary components and building blocks to provide scalable, robust, and hassle-free messaging between components.
 

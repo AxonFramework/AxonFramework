@@ -10,8 +10,4 @@ asciidoc:
     group: product
 
 nav:
-  - modules/ROOT/nav.adoc
-  - modules/messaging/nav.adoc
-  - modules/modeling/nav.adoc
-  - modules/eventsourcing/nav.adoc
-  - modules/tmp/nav.adoc
+  - modules/nav.adoc

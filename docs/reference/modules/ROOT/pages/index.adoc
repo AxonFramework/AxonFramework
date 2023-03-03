@@ -1,4 +1,5 @@
 = Axon Framework Reference Documentation
+:navtitle: Axon Framework Reference Documentation
 
 Welcome to the Axon Framework's reference documentation. It provides information about the modules and components of the framework, their purpose, and their intended use.
 

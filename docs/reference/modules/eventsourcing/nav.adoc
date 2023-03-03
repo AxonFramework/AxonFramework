@@ -1,3 +1,0 @@
-* xref:index.adoc[Event Sourcing]
-** Event Store
-** Snapshots
