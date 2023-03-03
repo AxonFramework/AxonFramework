@@ -34,7 +34,8 @@
    and the type it wants to receive it in.
 
 ## Event Processing
-* 
+* Experiment whether we can remove the Event Processor to Processing Group layering.
+  Thus, can we do without Processing Groups to simplify configuration?
 
 ## Configuration
 - Break up Configuration module, to not have one module that depends on all other modules.
@@ -80,7 +81,14 @@
 * 
 
 ## Queries
-* 
+* Merge Direct and Scatter-Gather into the Streaming Query API.
+  We can achieve this by adjusting the (handler) cardinality of the Streaming Query operation.
+  E.g. cardinality of one would mean a direct query format, and N is scatter gather.
+  Intent for this approach is to simplify the Query API for users.
+- Simplify / rethink the subscription query API.
+  Explaining the AF4 format raises eyebrows for users at the moment.
+  So, seeing how we can either wrap the support in the Streaming Query API, is beneficial.
+  Note that it does serve a different purpose at the base: an initial response and updates (from N locations).
 
 ## Sagas / ProcessManager
 * 
@@ -103,5 +111,3 @@
 - No Thread#sleep!
 - No Exception throwing in the functional-coding style!
 - No Schema maintenance!
-
-## Guidelines
