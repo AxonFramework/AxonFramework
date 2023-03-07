@@ -19,7 +19,7 @@ package org.axonframework.springboot.autoconfig.legacyjpa;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.legacyjpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.deadletter.jpa.JpaEventProcessingSdlqFactory;
+import org.axonframework.eventhandling.deadletter.legacyjpa.JpaEventProcessingSdlqFactory;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.legacyjpa.SQLErrorCodesResolver;
