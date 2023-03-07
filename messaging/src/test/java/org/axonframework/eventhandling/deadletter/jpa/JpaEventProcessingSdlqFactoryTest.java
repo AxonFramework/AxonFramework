@@ -29,7 +29,7 @@ import java.time.temporal.ChronoUnit;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class JpaEventProcessingSdlqFactoryTest {
+class JpaEventProcessingSdlqFactoryTest {
 
     private final TransactionManager transactionManager = mock(TransactionManager.class);
     private final EntityManagerProvider entityManagerProvider = mock(EntityManagerProvider.class);
