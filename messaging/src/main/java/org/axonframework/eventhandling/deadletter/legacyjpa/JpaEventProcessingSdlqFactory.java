@@ -133,7 +133,8 @@ public class JpaEventProcessingSdlqFactory<M extends EventMessage<?>> implements
         }
 
         /**
-         * Sets the maximum number of unique sequences this {@link SequencedDeadLetterQueue} may contain.
+         * Sets the maximum number of unique sequences the queues created from this
+         * {@link JpaEventProcessingSdlqFactory factory} may contain.
          * <p>
          * The given {@code maxSequences} is required to be a positive number, higher or equal to {@code 128}. It
          * defaults to {@code 1024}.
@@ -149,8 +150,8 @@ public class JpaEventProcessingSdlqFactory<M extends EventMessage<?>> implements
         }
 
         /**
-         * Sets the maximum amount of {@link DeadLetter letters} per unique sequences this
-         * {@link SequencedDeadLetterQueue} can store.
+         * Sets the maximum amount of {@link DeadLetter letters} per unique sequences the queues created from this
+         * {@link JpaEventProcessingSdlqFactory factory} can store.
          * <p>
          * The given {@code maxSequenceSize} is required to be a positive number, higher or equal to {@code 128}. It
          * defaults to {@code 1024}.
@@ -167,8 +168,7 @@ public class JpaEventProcessingSdlqFactory<M extends EventMessage<?>> implements
 
         /**
          * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the underlying
-         * database for this {@link org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue}
-         * implementation.
+         * database for the queues created from this {@link JpaEventProcessingSdlqFactory factory}.
          *
          * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
          *                              access the underlying database
