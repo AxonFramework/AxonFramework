@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,8 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
+import org.axonframework.messaging.deadletter.EventProcessingSdlqFactory;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -320,6 +322,9 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                     );
                 }
             }
+            if (settings.getDlq().isEnabled()) {
+                eventProcessingConfigurer.registerDeadLetterQueue(name, resolveSdlq(applicationContext, name));
+            }
         });
     }
 
@@ -353,6 +358,13 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             sequencingPolicy = c -> SequentialPerAggregatePolicy.instance();
         }
         return sequencingPolicy;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> resolveSdlq(
+            ApplicationContext applicationContext, String name
+    ) {
+        return c -> applicationContext.getBean(EventProcessingSdlqFactory.class).getSdlq(name);
     }
 
     @Bean
