@@ -65,7 +65,7 @@ public class OpenTelemetrySpan implements Span {
         if (span == null) {
             span = spanBuilder.startSpan();
         } else {
-            logger.error("An attempt was made to start span with id [{}] of trace [{}] a second time",
+            logger.warn("An attempt was made to start span with id [{}] of trace [{}] a second time",
                          span.getSpanContext().getSpanId(),
                          span.getSpanContext().getTraceId());
         }
@@ -75,7 +75,7 @@ public class OpenTelemetrySpan implements Span {
     @Override
     public SpanScope makeCurrent() {
         if (span == null) {
-            logger.error(
+            logger.warn(
                     "Span was attempted to be made current while not started yet! Please report this to the Axon Framework team.",
                     new IllegalStateException("Span attempted to be made current while not started"));
             // Return empty scope as to not influence user's code
@@ -94,19 +94,19 @@ public class OpenTelemetrySpan implements Span {
     @Override
     public void end() {
         if (span == null) {
-            logger.error(
+            logger.warn(
                     "Span was attempted to be ended while not started yet! Please report this to the Axon Framework team.",
                     new IllegalStateException("Span attempted to be ended while not started"));
             return;
         }
         if (ended) {
-            logger.error(
+            logger.warn(
                     "Span ended a second time! Will ignore this ended invocation. Please report this to the Axon Framework team.",
                     new IllegalStateException("Span ended a second time"));
             return;
         }
         if (!scopes.isEmpty()) {
-            logger.error(
+            logger.warn(
                     "Span ended without all scopes! Please report this to the Axon Framework team. This might influence reliability of your OpenTelemetry traces.",
                     new IllegalStateException("Span ended with still " + scopes.size() + " open!"));
         }
