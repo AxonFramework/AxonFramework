@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>4.6.7-SNAPSHOT</version>
+    <version>4.6.7</version>
     <modules>
         <module>messaging</module>
         <module>messaging-jakarta</module>
@@ -864,7 +864,7 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>HEAD</tag>
+        <tag>axon-4.6.7</tag>
     </scm>
 
     <developers>
