@@ -36,10 +36,10 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.core.ResolvableType;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
@@ -220,13 +220,12 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
         if (!registry.containsBeanDefinition(aggregateFactory)) {
             ((BeanDefinitionRegistry) registry).registerBeanDefinition(
                     aggregateFactory,
-                    BeanDefinitionBuilder.rootBeanDefinition(
-                            SpringPrototypeAggregateFactory.class,
-                            // using static method to avoid ambiguous constructor resolution in Spring AOT
-                            () -> SpringPrototypeAggregateFactory.withSubtypeSupport(
-                                    aggregateBeanName, subTypes
-                            )
-                    ).getBeanDefinition()
+                    BeanDefinitionBuilder.genericBeanDefinition(SpringPrototypeAggregateFactory.class)
+                                         // using static method to avoid ambiguous constructor resolution in Spring AOT
+                                         .setFactoryMethod("withSubtypeSupport")
+                                         .addConstructorArgValue(aggregateBeanName)
+                                         .addConstructorArgValue(subTypes)
+                                         .getBeanDefinition()
             );
         }
         beanDefinitionBuilder.addPropertyValue("aggregateFactory", aggregateFactory);
