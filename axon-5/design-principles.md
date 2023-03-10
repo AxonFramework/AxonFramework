@@ -33,9 +33,20 @@
 * A Message Handler should be capable of defining the business name of the message it handles,
    and the type it wants to receive it in.
 
+## Message Handling
+- A generic form of "stateful message handler" is a beneficial for any message handler in the system.
+  For example, stateful command handlers would be a way to deal differently with your Command Model than the current aggregate approach.
+  Similarly, a stateful event handler can mitigate the situation where a users needs to wire the Repository manually.
+  And, (e.g.) we can ditch the Saga!!! Because that becomes a stateful event handler too.
+
 ## Event Processing
 * Experiment whether we can remove the Event Processor to Processing Group layering.
   Thus, can we do without Processing Groups to simplify configuration?
+
+## Event Scheduling
+- Event scheduling should schedule the event inside the Event Store.
+  The fact they're currently separated over different storage solution may incur problematic scenarios.
+  Hence, assuring they're in the same store will mitigate this.
 
 ## Configuration
 - Break up Configuration module, to not have one module that depends on all other modules.
@@ -77,8 +88,9 @@
 - Aggregate Test Fixtures should, if configured, validate the given scenario's state with the snapshot state.
   Doing so, we guard users against incorrectly defining the snapshot state of their aggregates.
 
-## Commands
-* 
+## Commands / Command Modelling
+- (Annotated) aggregates as they currently exist inside Axon Framework should stick.
+  The underlying implementation will very likely differ, taking the "Kill the Aggregate!" presentation in mind.
 
 ## Queries
 * Merge Direct and Scatter-Gather into the Streaming Query API.
