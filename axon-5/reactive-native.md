@@ -63,3 +63,19 @@ The ease our development, we could still have both use the same underlying concr
 - Spring's adapter object to switch between reactive formats - https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/ReactiveAdapter.html
 - Reactive Manifesto - https://www.reactivemanifesto.org/
 - Reactive Programming by Baeldung - https://www.baeldung.com/cs/reactive-programming
+
+# Useful (perhaps) pointers from above links
+
+From https://spring.io/blog/2016/06/13/notes-on-reactive-programming-part-ii-writing-some-code):
+
+Tip 1
+> A library that will process sequences for you, like Spring Reactive Web, can handle the subscriptions.
+> It’s good to be able to push these concerns down the stack because it saves you from cluttering your code with non-business logic, making it more readable and easier to test and maintain.
+> So as a rule, it is a good thing if you can avoid subscribing to a sequence, or at least push that code into a processing layer, and out of the business logic.
+
+Tip 2
+> Warning
+> 
+>  A good rule of thumb is "never call an extractor". 
+>  There are some exceptions (otherwise the methods would not exist). 
+>  One notable exception is in tests because it’s useful to be able to block to allow results to accumulate.
