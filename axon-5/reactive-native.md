@@ -13,6 +13,14 @@
 The only common denominator is:
 - Asynchronous stream of data going through, open which you can attach operators
 
+## Personas playing with our API
+
+1. Procedural-minded people (Procedural Peter) -> don't like Publishers!
+2. Whatever-minded people -> sure, make it async, I don't care.
+3. Full-reactive-minded people (Async Angela) -> Publishers all the way!
+
+The API we define should follow the implementation guidelines, helping all three.
+
 # Concrete(ish) idea to provide both
 
 ## One-interface-approach
