@@ -127,9 +127,13 @@ class AxonServerEventStoreTest {
         Arrays.stream(eventMessages).forEach(e -> {
             testSpanFactory.verifySpanCompleted("AxonServerEventStore.publish", e);
         });
+        testSpanFactory.verifyNotStarted("AxonServerEventStore.prepareCommit");
         testSpanFactory.verifyNotStarted("AxonServerEventStore.commit");
+        testSpanFactory.verifyNotStarted("AxonServerEventStore.afterCommit");
         uow.commit();
+        testSpanFactory.verifySpanCompleted("AxonServerEventStore.prepareCommit");
         testSpanFactory.verifySpanCompleted("AxonServerEventStore.commit");
+        testSpanFactory.verifySpanCompleted("AxonServerEventStore.afterCommit");
 
         TrackingEventStream stream = testSubject.openStream(null);
 
