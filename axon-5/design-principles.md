@@ -106,7 +106,13 @@
 * 
 
 ## Deadlines
-* 
+- We agree that the current API, which assumes a DeadlineMessage to be an EventMessage, to be incorrect.
+  A DeadlineMessage should be its own Message entirely,
+  follow command routing rules when targeted towards an Aggregate and Event routing rules when targeted towards a Saga.
+- Taking note of the state message handler idea under "Message Handling"
+  should proof as a guideline to design the deadline support within Axon Framework 5. 
+- We need to take into consideration that Deadlines are a technical solution to real world problem
+  and *are not* a concept that resides in Domain-Driven Design. 
 
 ## Monitoring / Tracing
 * 
