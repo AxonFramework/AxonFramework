@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,10 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -40,10 +43,23 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class InMemoryTokenStore implements TokenStore {
 
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static final GlobalSequenceTrackingToken NULL_TOKEN = new GlobalSequenceTrackingToken(-1);
 
     private final Map<ProcessAndSegment, TrackingToken> tokens = new ConcurrentHashMap<>();
     private final String identifier = UUID.randomUUID().toString();
+
+    /**
+     * No-arg constructor for the {@link InMemoryTokenStore} which will log a warning on initialization.
+     */
+    public InMemoryTokenStore() {
+        logger.warn(
+                "An in memory token store is being created.\n" +
+                        "This means the event processor using this token store might process the " +
+                        "same events again when the application is restarted.\n" +
+                        "If the use of an in memory token store is intentional, this warning can be ignored.\n" +
+                        "If the tokens should be persisted, use the JPA, JDBC or MongoDB token store instead.");
+    }
 
     @Override
     public void initializeTokenSegments(@Nonnull String processorName, int segmentCount)
