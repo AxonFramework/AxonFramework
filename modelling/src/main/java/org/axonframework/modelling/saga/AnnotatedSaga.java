@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     private Object handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
         try {
-            return executeWithResult(() -> handler.handle(event, sagaInstance));
+            return executeWithResult(() -> metaModel.chainedInterceptor().handle(event, sagaInstance, handler));
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {
