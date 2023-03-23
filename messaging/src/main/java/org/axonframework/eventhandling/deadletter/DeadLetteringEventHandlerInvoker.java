@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
@@ -26,6 +27,8 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
@@ -39,6 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 
@@ -63,7 +68,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class DeadLetteringEventHandlerInvoker
         extends SimpleEventHandlerInvoker
-        implements SequencedDeadLetterProcessor<EventMessage<?>> {
+        implements SequencedDeadLetterProcessor<EventMessage<?>>, MessageHandlerInterceptorSupport<EventMessage<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -71,6 +76,7 @@ public class DeadLetteringEventHandlerInvoker
     private final EnqueuePolicy<EventMessage<?>> enqueuePolicy;
     private final TransactionManager transactionManager;
     private final boolean allowReset;
+    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
 
     /**
      * Instantiate a dead-lettering {@link EventHandlerInvoker} based on the given {@link Builder builder}. Uses a
@@ -153,11 +159,20 @@ public class DeadLetteringEventHandlerInvoker
     @Override
     public boolean process(Predicate<DeadLetter<? extends EventMessage<?>>> sequenceFilter) {
         DeadLetteredEventProcessingTask processingTask =
-                new DeadLetteredEventProcessingTask(super.eventHandlers(), enqueuePolicy, transactionManager);
-
+                new DeadLetteredEventProcessingTask(super.eventHandlers(),
+                                                    interceptors,
+                                                    enqueuePolicy,
+                                                    transactionManager);
         UnitOfWork<?> uow = new DefaultUnitOfWork<>(null);
         uow.attachTransaction(transactionManager);
         return uow.executeWithResult(() -> queue.process(sequenceFilter, processingTask::process)).getPayload();
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
+        interceptors.add(interceptor);
+        return () -> interceptors.remove(interceptor);
     }
 
     /**

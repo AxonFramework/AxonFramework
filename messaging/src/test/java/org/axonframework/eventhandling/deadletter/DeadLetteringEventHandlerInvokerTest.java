@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.utils.EventTestUtils;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -82,6 +84,14 @@ class DeadLetteringEventHandlerInvokerTest {
         transactionManager = spy(new StubTransactionManager());
 
         setTestSubject(createTestSubject());
+        DefaultUnitOfWork.startAndGet(null);
+    }
+
+    @AfterEach
+    void tearDown() {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.clear(CurrentUnitOfWork.get());
+        }
     }
 
     private void setTestSubject(DeadLetteringEventHandlerInvoker testSubject) {
@@ -191,7 +201,6 @@ class DeadLetteringEventHandlerInvokerTest {
 
         doThrow(testCause).when(handler).handle(TEST_EVENT);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
-
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);

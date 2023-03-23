@@ -20,6 +20,8 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
@@ -49,13 +51,16 @@ class DeadLetteredEventProcessingTask
     private final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final List<EventMessageHandler> eventHandlingComponents;
+    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors;
     private final EnqueuePolicy<EventMessage<?>> enqueuePolicy;
     private final TransactionManager transactionManager;
 
     DeadLetteredEventProcessingTask(List<EventMessageHandler> eventHandlingComponents,
+                                    List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors,
                                     EnqueuePolicy<EventMessage<?>> enqueuePolicy,
                                     TransactionManager transactionManager) {
         this.eventHandlingComponents = eventHandlingComponents;
+        this.interceptors = interceptors;
         this.enqueuePolicy = enqueuePolicy;
         this.transactionManager = transactionManager;
     }
@@ -89,15 +94,30 @@ class DeadLetteredEventProcessingTask
                   .put(DeadLetter.class.getName(), letter);
         unitOfWork.onPrepareCommit(uow -> decision.set(onCommit(letter)));
         unitOfWork.onRollback(uow -> decision.set(onRollback(letter, uow.getExecutionResult().getExceptionResult())));
-        unitOfWork.executeWithResult(() -> handle(letter));
+        unitOfWork.executeWithResult(() -> handleWithInterceptors(letter, unitOfWork));
 
         return ObjectUtils.getOrDefault(decision.get(), Decisions::ignore);
     }
 
-    private Object handle(DeadLetter<? extends EventMessage<?>> letter) throws Exception {
+    private void handle(EventMessage<?> eventMessage) throws Exception {
         for (EventMessageHandler handler : eventHandlingComponents) {
-            handler.handle(letter.message());
+            handler.handle(eventMessage);
         }
+    }
+
+    private Object handleWithInterceptors(
+            DeadLetter<? extends EventMessage<?>> letter,
+            UnitOfWork<? extends EventMessage<?>> unitOfWork
+    ) throws Exception {
+        unitOfWork.transformMessage(m -> letter.message());
+        new DefaultInterceptorChain<EventMessage<?>>(
+                unitOfWork,
+                interceptors,
+                m -> {
+                    handle(m);
+                    return null;
+                }
+        ).proceed();
         // There's no result of event handling to return here.
         // We use this methods format to be able to define the Error Handler may throw Exceptions.
         return null;

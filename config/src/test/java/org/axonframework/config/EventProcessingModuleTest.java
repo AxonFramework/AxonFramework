@@ -1357,6 +1357,34 @@ class EventProcessingModuleTest {
         assertFalse(eventProcessingConfig.sequencedDeadLetterProcessor("non-existing-group").isPresent());
     }
 
+    @Test
+    void interceptorsOnDeadLetterProcessorShouldBePresent(
+            @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String processingGroup = "pooled-streaming";
+        StubInterceptor interceptor1 = new StubInterceptor();
+        StubInterceptor interceptor2 = new StubInterceptor();
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(processingGroup)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
+                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE)
+                  .registerHandlerInterceptor(processingGroup, c -> interceptor1)
+                  .registerDefaultHandlerInterceptor((c, n) -> interceptor2);
+        ;
+
+        Configuration config = configurer.start();
+        EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
+
+        Optional<SequencedDeadLetterProcessor<EventMessage<?>>> optionalDeadLetterProcessor =
+                eventProcessingConfig.sequencedDeadLetterProcessor(processingGroup);
+        assertTrue(optionalDeadLetterProcessor.isPresent());
+        List<MessageHandlerInterceptor<?>> interceptors = getField("interceptors", optionalDeadLetterProcessor.get());
+        assertEquals(3, interceptors.size());
+    }
+
     private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {
         return getField(object.getClass(), fieldName, object);
     }
@@ -1476,6 +1504,7 @@ class EventProcessingModuleTest {
     }
 
     private static class StubInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
+
         @Override
         public Object handle(@Nonnull UnitOfWork<? extends EventMessage<?>> unitOfWork,
                              @Nonnull InterceptorChain interceptorChain)
