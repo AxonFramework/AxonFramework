@@ -76,7 +76,7 @@
         <spring.version>5.3.26</spring.version>
         <awaitility.version>4.2.0</awaitility.version>
         <spring-security.version>5.7.3</spring-security.version>
-        <spring.boot.version>2.7.9</spring.boot.version>
+        <spring.boot.version>2.7.10</spring.boot.version>
         <mockito.version>4.11.0</mockito.version>
         <projectreactor.version>3.5.4</projectreactor.version>
         <micrometer.version>1.10.5</micrometer.version>
