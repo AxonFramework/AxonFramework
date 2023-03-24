@@ -6,10 +6,10 @@ Axon Framework consists of several modules packaged and distributed as JAR files
 
 Those are the modules that allow bootstrapping and configuring an Axon-based application. The application should include the preferred option as a dependency.
 
-xref:#[Configuration]::
+xref:configuration:index.adoc[]::
 This module contains all the necessary components to configure an Axon-based application manually. It doesn't depend on any third party frameworks.
 
-xref:#[Spring Boot Starter]::
+xref:springboot-starter:index.adoc[]::
 This module provides Spring Boot auto-configuration for the application. It depends on Spring Framework to automatically configure all Axon Framework components.
 
 
@@ -32,26 +32,26 @@ NOTE: A typical Axon-based application almost always depends on all core modules
 
 == Optional modules
 
-xref:#[Spring]::
+xref:spring:index.adoc[]::
 This module allows developers to configure Axon Framework components in a Spring Application context. It also provides several implementations specific to Spring Framework, such as an adapter for publishing and retrieving Axon Events on a Spring Messaging Channel.
 
-xref:#[Axon Server Connector]::
+xref:axon-server-connector:index.adoc[]::
 This module provides infrastructure components that connect to Axon Server.
 
-xref:#[Test]::
+xref:test:index.adoc[]::
 This module contains test fixtures that developers can use to test Axon-based components, such as Command Handlers, Aggregates, and Sagas. Typically one doesn't need this module at runtime and only adds it to the classpath for running tests.
 
-xref:#[Disruptor]::
+xref:disruptor:index.adoc[]::
 This module contains a specific CommandBus and Command Handling solution based on the Disruptor paradigm.
 
-xref:#[Metrics]::
+xref:metrics:index.adoc[]::
 This module provides basic implementations based on Coda Hale to collect the monitoring information.
 
-xref:#[Micrometer]::
+xref:micrometer:index.adoc[]::
 This module provides basic implementations based on Micrometer to collect the monitoring information. It's a dimensional-first metrics collection facade aiming to allow developers to time, count, and gauge their code with a vendor-neutral API.
 
-xref:#[Legacy]::
+xref:legacy:index.adoc[]::
 This module contains components that enable the migration of older Axon projects to use the latest Axon version.
 
-xref:#[Tracing OpenTelemetry]::
+xref:tracing-open-telemetry:index.adoc[]::
 This module contains the components needed to enable tracing with OpenTelemetry.
