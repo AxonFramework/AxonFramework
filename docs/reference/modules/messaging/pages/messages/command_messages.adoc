@@ -1,17 +1,20 @@
 = Command Messages
+:page-needs-improvement: considerations, usage, ref
+:page-needs-considerations: Design considerations needs details about command messages characteristics
+:page-needs-usage: Usage section need detailed examples
+:page-needs-ref: Reference section need more links to samples, source code, etc.
+
 
 
 This document provides information about the design, implementation, and intended usage of command messages in Axon Framework.
 
-== Requirements
+== Design considerations
 
 Commands are specific type of messages, used to express and an intent. To distinguish them from other message types, the framework must provide a dedicates objects.
 
 In addition to the generic messages, command messages have the following characteristics:
 
 === Name
-
-#TODO: more info about naming (requirements, auto name, etc)#
 
 
 
@@ -31,11 +34,9 @@ When the communication is bidirectional, the command response is an object that 
 
 == Usage
 
-#TODO#
 
 include::partial$command_message.adoc[tag=constructor]
 
-#TODO#
 
 include::partial$command_message.adoc[tag=static]
 
@@ -46,11 +47,11 @@ include::partial$command_message.adoc[tag=static]
 .Javadoc
 [%collapsible]
 ====
-* #TODO#
+* &nbsp;
 ====
 
 .Source code
 [%collapsible]
 ====
-* #TODO#
+* &nbsp;
 ====

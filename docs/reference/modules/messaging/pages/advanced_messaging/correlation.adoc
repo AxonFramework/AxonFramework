@@ -1,34 +1,22 @@
 = Message Correlation
+:page-needs-improvement: content
+:page-needs-content: This page is a placeholder. Add meaningful content.
 
-#TODO#
 
-== Requirements
+== Design considerations
 
-#TODO#
 
 == Implementation
 
-#TODO#
-
 === Correlation data provider
-
-#TODO#
 
 === Message origin provider
 
-#TODO#
-
 === `SimpleCorrelationDataProvider`
-
-#TODO#
 
 === `MultiCorrelationDataProvider`
 
-#TODO#
-
 == Usage
-
-#TODO#
 
 == Reference
 

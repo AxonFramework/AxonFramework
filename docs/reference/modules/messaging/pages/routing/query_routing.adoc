@@ -1,19 +1,11 @@
 = Query Routing
+:page-needs-improvement: content
+:page-needs-content: This page is a placeholder. Add meaningful content.
 
-#TODO#
-
-== Requirements
-
-#TODO#
+== Design considerations
 
 == Implementation
 
-#TODO#
-
 == Usage
 
-#TODO#
-
 == Reference
-
-#TODO#

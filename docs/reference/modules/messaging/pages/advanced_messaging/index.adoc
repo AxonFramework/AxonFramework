@@ -1,3 +1,11 @@
 = Advanced Messaging
+:page-needs-improvement: content
+:page-needs-content: This page is a placeholder. Add meaningful content.
 
-#TODO#
+== Design considerations
+
+== Implementation
+
+== Usage
+
+== Reference

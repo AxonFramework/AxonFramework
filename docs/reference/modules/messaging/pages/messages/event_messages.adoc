@@ -1,8 +1,13 @@
 = Event Messages
+:page-needs-improvement: considerations, usage, ref
+:page-needs-considerations: Design considerations needs details about event messages characteristics
+:page-needs-usage: Usage section needs detailed examples
+:page-needs-ref: Reference section need more links to samples, source code, etc.
+
 
 This document provides information about the design, implementation, and intended usage of event messages in Axon Framework.
 
-== Requirements
+== Design considerations
 
 Events are specific type of messages, used to notify something has happened. To distinguish them from other message types, the framework must provide a dedicates objects.
 
@@ -10,7 +15,6 @@ In addition to the generic messages, event messages have the following character
 
 === Timestamp
 
-#TODO: more info about timestamps#
 
 == Implementation
 
@@ -28,19 +32,17 @@ Event don't expect responses so the communication is always unidirectional.
 
 == Usage
 
-#TODO#
 
 == Reference
-
 
 .Javadoc
 [%collapsible]
 ====
-* #TODO#
+* &nbsp;
 ====
 
 .Source code
 [%collapsible]
 ====
-* #TODO#
+* &nbsp;
 ====

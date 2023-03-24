@@ -1,18 +1,21 @@
 = Messages
+:page-needs-improvement: considerations, usage, ref
+:page-needs-considerations: Design considerations needs details about messages characteristics
+:page-needs-usage: Usage section needs detailed examples
+:page-needs-ref: Reference section need more links to samples, source code, etc.
 
 This document provides information about the design, implementation, and intended usage of generic messaging in Axon Framework.
 
-== Requirements
+== Design considerations
 
 To allow components to communicate via messages, developers must represent those as Java objects. Axon Framework should provide means to construct such objects so it can use them to carry data from one component to another consistently across modules and deployment units. Below are the characteristics that every message has.
 
 === Uniquely identifiable
 
-All messages are uniquely identifiable. #TODO: more info about identity#
+All messages are uniquely identifiable.
 
 === Serializable
 
-#TODO: more info about serialization#
 
 === Immutable
 

@@ -1,20 +1,19 @@
 = Query Messages
+:page-needs-improvement: considerations, usage, ref
+:page-needs-considerations: Design considerations needs more details
+:page-needs-usage: Usage section need detailed examples
+:page-needs-ref: Reference section need more links to samples, source code, etc.
+
 
 This document provides information about the design, implementation, and intended usage of query messages in Axon Framework.
 
-== Requirements
+== Design considerations
 
 Queries are specific type of messages, used to request information. To distinguish them from other message types, the framework must provide a dedicates objects.
 
-#TODO#
-
 === Name
 
-#TODO: more info about naming (requirements, auto name, etc)#
-
 === Response type
-
-#TODO: more info response type#
 
 == Implementation
 
@@ -31,7 +30,6 @@ With queries the communication is always bidirectional, and the response is an o
 
 == Usage
 
-#TODO#
 
 == Reference
 
@@ -39,11 +37,11 @@ With queries the communication is always bidirectional, and the response is an o
 .Javadoc
 [%collapsible]
 ====
-* #TODO#
+* &nbsp;
 ====
 
 .Source code
 [%collapsible]
 ====
-* #TODO#
+* &nbsp;
 ====
