@@ -671,7 +671,6 @@ public class SpringAxonAutoConfigurerTest {
             private final EventBus eventBus;
             private final QueryUpdateEmitter queryUpdateEmitter;
 
-            @Autowired
             public MyEventHandler(EventBus eventBus, QueryUpdateEmitter queryUpdateEmitter) {
                 this.eventBus = eventBus;
                 this.queryUpdateEmitter = queryUpdateEmitter;
