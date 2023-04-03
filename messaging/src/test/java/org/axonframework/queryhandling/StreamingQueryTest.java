@@ -63,6 +63,11 @@ class StreamingQueryTest {
         annotationQueryHandlerAdapter.subscribe(queryBus);
     }
 
+    @AfterEach
+    void reset() {
+        myQueryHandler.errorThrown.set(false);
+    }
+
     private <Q, R> Flux<R> streamingQueryPayloads(StreamingQueryMessage<Q, R> queryMessage) {
         return streamingQuery(queryMessage).map(Message::getPayload);
     }
@@ -277,6 +282,23 @@ class StreamingQueryTest {
                     .verifyErrorMatches(t -> t instanceof NoHandlerForQueryException);
     }
 
+    @Test
+    void resubscribeWorksEvenWhenAnErrorHasBeenCashed() {
+        StreamingQueryMessage<String, String> queryMessage =
+                new GenericStreamingQueryMessage<>("criteria", "exceptionQueryOnce", String.class);
+
+        Flux<String> flux = streamingQueryPayloads(queryMessage);
+
+        StepVerifier.create(flux)
+                    .expectErrorMatches(t -> t instanceof QueryExecutionException
+                            && t.getMessage().startsWith("Error starting stream"))
+                    .verify();
+
+        StepVerifier.create(flux)
+                    .expectNext("correctNow")
+                    .verifyComplete();
+    }
+
     private static class ErrorQueryHandler {
 
         @QueryHandler(queryName = "listQuery")
@@ -287,6 +309,8 @@ class StreamingQueryTest {
     }
 
     private static class MyQueryHandler {
+
+        AtomicBoolean errorThrown = new AtomicBoolean(false);
 
         @QueryHandler(queryName = "fluxQuery")
         public Flux<String> fluxQuery(String criteria) {
@@ -363,6 +387,14 @@ class StreamingQueryTest {
         @QueryHandler(queryName = "errorStream")
         public Flux<String> errorStream(String criteria) {
             return Flux.error(new RuntimeException("oops"));
+        }
+
+        @QueryHandler(queryName = "exceptionQueryOnce")
+        public Flux<String> exceptionQueryOnce(String criteria) {
+            if (errorThrown.compareAndSet(false, true)) {
+                throw new RuntimeException("oops");
+            }
+            return Flux.just("correctNow");
         }
     }
 }
