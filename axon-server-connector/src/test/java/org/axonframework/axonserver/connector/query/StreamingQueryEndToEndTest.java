@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,12 +33,9 @@ import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -55,7 +52,7 @@ import java.util.concurrent.ExecutionException;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * End-to-end tests for Streaming Query functionality. They include backwards compatibility end-to-end tests as well.
@@ -174,7 +171,9 @@ class StreamingQueryEndToEndTest {
         int count = 100;
 
         StepVerifier.create(Flux.range(0, count)
-                                .flatMap(i -> streamingQueryPayloads(new GenericStreamingQueryMessage<>(new FluxQuery(), String.class), supportsStreaming)))
+                                .flatMap(i -> streamingQueryPayloads(new GenericStreamingQueryMessage<>(new FluxQuery(),
+                                                                                                        String.class),
+                                                                     supportsStreaming)))
                     .expectNextCount(count * 1000)
                     .verifyComplete();
     }
@@ -198,7 +197,7 @@ class StreamingQueryEndToEndTest {
 
         StepVerifier.create(streamingQueryPayloads(query, true))
                     .expectErrorMatches(t -> t instanceof QueryExecutionException
-                            && t.getMessage().startsWith("No suitable handler"))
+                            && t.getMessage().startsWith("Error starting stream"))
                     .verify();
     }
 

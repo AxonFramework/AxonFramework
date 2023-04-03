@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -68,6 +69,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -231,14 +233,15 @@ public class SimpleQueryBus implements QueryBus {
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
         Span span = spanFactory.createChildHandlerSpan(() -> "SimpleQueryBus.streamingQuery", query).start();
         try (SpanScope unused = span.makeCurrent()) {
+            AtomicReference<Throwable> lastError = new AtomicReference<>();
             return Mono.just(intercept(query))
                        .flatMapMany(interceptedQuery -> Mono
                                .just(interceptedQuery)
                                .flatMapMany(this::getStreamingHandlersForMessage)
                                .switchIfEmpty(Flux.error(noHandlerException(interceptedQuery)))
                                .map(handler -> interceptAndInvokeStreaming(interceptedQuery, handler, span))
-                               .skipWhile(ResultMessage::isExceptional)
-                               .switchIfEmpty(Flux.error(noSuitableHandlerException(interceptedQuery)))
+                               .flatMap(new CatchLastError<>(lastError))
+                               .doOnEach(new ErrorIfComplete(lastError, interceptedQuery))
                                .next()
                                .doOnEach(new SuccessReporter())
                                .flatMapMany(Message::getPayload)
@@ -246,6 +249,72 @@ public class SimpleQueryBus implements QueryBus {
                        .doOnTerminate(span::end);
         }
     }
+
+    /**
+     * <p>
+     * The reason for this static class to exist at all is the ability of instantiating {@link SimpleQueryBus} even
+     * without Project Reactor on the classpath.
+     * </p>
+     * <p>
+     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
+     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
+     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
+     * instantiation would fail.
+     * </p>
+     */
+    private static class CatchLastError<R> implements Function<ResultMessage<R>, Mono<ResultMessage<R>>> {
+
+        private final AtomicReference<Throwable> lastError;
+
+        private CatchLastError(AtomicReference<Throwable> lastError) {
+            this.lastError = lastError;
+        }
+
+        @Override
+        public Mono<ResultMessage<R>> apply(ResultMessage<R> resultMessage) {
+            if (resultMessage.isExceptional()) {
+                lastError.set(resultMessage.exceptionResult());
+                return Mono.empty();
+            }
+            return Mono.just(resultMessage);
+        }
+    }
+
+    /**
+     * <p>
+     * The reason for this static class to exist at all is the ability of instantiating {@link SimpleQueryBus} even
+     * without Project Reactor on the classpath.
+     * </p>
+     * <p>
+     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
+     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
+     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
+     * instantiation would fail.
+     * </p>
+     */
+    private static class ErrorIfComplete implements Consumer<Signal<?>> {
+
+        private final AtomicReference<Throwable> lastError;
+        private final StreamingQueryMessage<?, ?> interceptedQuery;
+
+        private ErrorIfComplete(AtomicReference<Throwable> lastError, StreamingQueryMessage<?, ?> interceptedQuery) {
+            this.lastError = lastError;
+            this.interceptedQuery = interceptedQuery;
+        }
+
+        @Override
+        public void accept(Signal signal) {
+            if (signal.isOnComplete()) {
+                Throwable throwable = lastError.get();
+                if (isNull(throwable)) {
+                    throw noSuitableHandlerException(interceptedQuery);
+                } else {
+                    throw new QueryExecutionException("Error starting stream", throwable);
+                }
+            }
+        }
+    }
+
 
     /**
      * Reports result of streaming query execution to the
@@ -318,7 +387,7 @@ public class SimpleQueryBus implements QueryBus {
                                                      intercepted.getResponseType()));
     }
 
-    private NoHandlerForQueryException noSuitableHandlerException(QueryMessage<?, ?> intercepted) {
+    private static NoHandlerForQueryException noSuitableHandlerException(QueryMessage<?, ?> intercepted) {
         return new NoHandlerForQueryException(format("No suitable handler was found for [%s] with response type [%s]",
                                                      intercepted.getQueryName(),
                                                      intercepted.getResponseType()));
