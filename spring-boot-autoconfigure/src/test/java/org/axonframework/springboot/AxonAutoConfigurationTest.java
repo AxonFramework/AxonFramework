@@ -284,7 +284,6 @@ class AxonAutoConfigurationTest {
 
             private final EventBus eventBus;
 
-            @Autowired
             public CustomParameterResolverFactory(EventBus eventBus) {
                 this.eventBus = eventBus;
             }
