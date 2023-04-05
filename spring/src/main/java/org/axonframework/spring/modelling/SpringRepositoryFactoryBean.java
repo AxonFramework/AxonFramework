@@ -18,6 +18,7 @@ package org.axonframework.spring.modelling;
 
 import org.axonframework.config.Configuration;
 import org.axonframework.modelling.command.Repository;
+import org.axonframework.spring.config.BeanHelper;
 import org.axonframework.spring.config.SpringAggregateConfigurer;
 import org.springframework.beans.factory.FactoryBean;
 
@@ -25,10 +26,14 @@ import org.springframework.beans.factory.FactoryBean;
  * Supplies the {@link Repository} created by the {@link SpringAggregateConfigurer} to the Spring Application Context.
  * This will allow it to be injected as a bean.
  *
+ * @param <T> The aggregate type
+ *
  * @author Mitchell Herrijgers
  * @since 4.6.1
- * @param <T> The aggregate type
+ * @deprecated Instead of using a factory bean, consider retrieving the Repository directly from the Axon Configuration.
+ * Alternatively, when building a BeanDefinition, use the {@link BeanHelper} factory methods to retrieve it.
  */
+@Deprecated
 public class SpringRepositoryFactoryBean<T> implements FactoryBean<Repository<T>> {
 
     private final Class<T> aggregateClass;
