@@ -104,7 +104,7 @@
         <junit.jupiter.version>5.9.1</junit.jupiter.version>
         <axonserver-connector-java.version>4.6.3</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <testcontainers.version>1.17.6</testcontainers.version>
+        <testcontainers.version>1.18.0</testcontainers.version>
         <awaitility.version>4.2.0</awaitility.version>
         <xstream.version>1.4.20</xstream.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
