@@ -25,8 +25,11 @@ import org.axonframework.modelling.utils.StubDomainEvent;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
+@AggregateRoot(type = JpaAggregate.JPA_AGGREGATE_CUSTOM_TYPE_NAME)
 @Entity
 public class JpaAggregate {
+
+    public static final String JPA_AGGREGATE_CUSTOM_TYPE_NAME = "MyJpaAggregate";
 
     @AggregateIdentifier
     @Id

@@ -150,6 +150,14 @@ class AbstractRepositoryTest {
     }
 
     @Test
+    void canResolveReturnsTrueForExplicitAggregateType() {
+        assertTrue(testSubject.canResolve(new AggregateScopeDescriptor(
+                JpaAggregate.JPA_AGGREGATE_CUSTOM_TYPE_NAME, AGGREGATE_ID)
+        ));
+    }
+
+
+    @Test
     void canResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
         assertFalse(testSubject.canResolve(new SagaScopeDescriptor("some-saga-type", AGGREGATE_ID)));
     }
