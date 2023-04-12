@@ -8,7 +8,6 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-    - "Status: In Progress"
   milestone: 82
   reviewers:
     - "gklijs"
@@ -22,7 +21,6 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-    - "Status: In Progress"
   milestone: 82
   reviewers:
     - "gklijs"
