@@ -22,4 +22,4 @@ events/
 .DS_Store
 
 # documentation's local bulid
-docs/playbook/build
+docs/_playbook/build
