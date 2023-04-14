@@ -73,7 +73,7 @@
 
         <slf4j.version>2.0.7</slf4j.version>
         <log4j.version>2.20.0</log4j.version>
-        <spring.version>5.3.26</spring.version>
+        <spring.version>5.3.27</spring.version>
         <awaitility.version>4.2.0</awaitility.version>
         <spring-security.version>5.7.3</spring-security.version>
         <spring.boot.version>2.7.10</spring.boot.version>
