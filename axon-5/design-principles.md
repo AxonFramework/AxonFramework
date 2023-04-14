@@ -38,8 +38,10 @@
   For example, stateful command handlers would be a way to deal differently with your Command Model than the current aggregate approach.
   Similarly, a stateful event handler can mitigate the situation where a users needs to wire the Repository manually.
   And, (e.g.) we can ditch the Saga!!! Because that becomes a stateful event handler too.
+- The described breakdown allows us to derive new combinations of message handlers.
+  This should support any style/archetype of Message Handling Component.
 
-## Event Processing
+## Event Processing / Token Maintenance 
 * Experiment whether we can remove the Event Processor to Processing Group layering.
   Thus, can we do without Processing Groups to simplify configuration?
 
@@ -67,21 +69,30 @@
 - HandlerEnhancers and ParameterResolvers are purely intended for annotation based MHCs.
 * Ahead of time?
 
-## Serialization
+## Serialization / Upcasting
 - Messages should not be serialization native. 
   The message buses need to be serialization aware, though. 
   They should, as these know the message handlers, and what the expected type to handle is. 
   Thus, handlers need to register themselves with the desired message name.
 - Attach upcasting to the serialization-process / Serializer.
-* Enforce serialized format of internal objects, e.g. tokens.
+- Enforce serialized format of internal objects, e.g. tokens.
   This eliminates issues with de-/serialization with different Serializer choices.
+  Taking the token example further, looking at the `GlobalIndexTrackingToken`, all we require is the `globalIndex`.
+  Pushing that object through in customizable serializer does not provide benefit over simply storing the index.
+  So, in short, we drop the `generic` serializer option.
+  This does require us to find a solution for snapshot serialization, which uses the `generic` serializer.
 - Serializers are configured on the buses.
+- Consider renaming `Serializer` to `Converter`, as all the current serializer does is convert from one format to another.
+  Or in other terms, it maps.
+  This name switch allows the `Converter` to (1) provide the roll of the (AF4) Serializer and (2) support Upcasting.
+- The `axon-legacy` (or `axon-vintage`?!) module should allow a transition from the (AF4) `Upcaster` solution to the new `Converter` approach.
 
 ## Snapshotting
 - Snapshot triggering, creation, and usage should be more easily definable by the end user
   This point stems from the assumed lack of XStream serialization simplicity, that "simply works."
   Using another format, like Jackson, currently requires introduction of getter/setter logic; code that doesn't belong in an Aggregate.
 - Employee snapshotting in test fixtures.
+- [START HERE]
 
 ## Testing
 - Have Aggregate Test Fixtures ingest the Aggregate Configuration, to base the test suite on.
@@ -102,8 +113,12 @@
   So, seeing how we can either wrap the support in the Streaming Query API, is beneficial.
   Note that it does serve a different purpose at the base: an initial response and updates (from N locations).
 
-## Sagas / ProcessManager
-* 
+## Stateful-EventHandler (Sagas / ProcessManager)
+- We drop the notion of Sagas in the framework, in favor for Stateful-EventHandlers.
+  The Stateful-EventHandlers follows the ["stateful message handler"](#message-handling) approach.
+  A component describing the "process" (in AF4 resolved by a Saga/ProcessManager) should be composable from these stateful-event-handlers.
+- We should no longer store sagas/processes ourselves. 
+  Thus, whenever the process-archetype is used, the user should define how the state is stored and retrieved.
 
 ## Deadlines
 - We agree that the current API, which assumes a DeadlineMessage to be an EventMessage, to be incorrect.
