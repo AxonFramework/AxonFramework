@@ -385,10 +385,13 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     @Override
     public boolean canResolve(@Nonnull ScopeDescriptor scopeDescription) {
-        return scopeDescription instanceof AggregateScopeDescriptor && (
-                Objects.equals(aggregateModel.type(), ((AggregateScopeDescriptor) scopeDescription).getType())
-                        || (aggregateModel.types().anyMatch(t -> t.getSimpleName().contentEquals(((AggregateScopeDescriptor) scopeDescription).getType())))
-        );
+        return scopeDescription instanceof AggregateScopeDescriptor
+                && aggregateModel.types()
+                                 .map(aggregateModel::declaredType)
+                                 .filter(Optional::isPresent)
+                                 .map(Optional::get)
+                                 .anyMatch(declaredType -> ((AggregateScopeDescriptor) scopeDescription).getType()
+                                                                                                        .equals(declaredType));
     }
 
     /**
