@@ -63,6 +63,7 @@ The ease our development, we could still have both use the same underlying concr
 - Spring's adapter object to switch between reactive formats - https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/ReactiveAdapter.html
 - Reactive Manifesto - https://www.reactivemanifesto.org/
 - Reactive Programming by Baeldung - https://www.baeldung.com/cs/reactive-programming
+- RxJava JDBC implementation - https://github.com/davidmoten/rxjava-jdbc
 
 # Useful (perhaps) pointers from above links
 
