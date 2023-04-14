@@ -4,6 +4,9 @@ When constructing Axon Framework 5, and you are in doubt, take the following gui
 
 1. Discover the essence of your API!
 2. Ease of use when using the Framework.
+  a. Bare-bones for maximum freedom.
+  b. Declarative configuration style. 
+  c. Annotation-based.
 3. Don't make any assumptions on the threading model.
 4. Support both reactive and non-reactive application design.
 5. Support both annotation-less and annotation based application design.
