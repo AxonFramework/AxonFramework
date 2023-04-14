@@ -6,6 +6,9 @@ on:
       - main
       - master
       - axon-*.*.x
+    paths-ignore:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
 
 jobs:
   build:

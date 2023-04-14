@@ -1,0 +1,37 @@
+site:
+  title: Axon Framework docs PREVIEW
+  start_page: axon_framework_ref::index.adoc
+
+content:
+  sources:
+  - url: ../..
+    start_paths: ['docs/*', '!docs/playbook']
+
+asciidoc:
+  attributes:
+    experimental: true
+    page-pagination: true
+    kroki-fetch-diagram: true
+  extensions:
+  - asciidoctor-kroki
+
+antora:
+  extensions:
+  # - id: prose-linting
+  #   require: ./extensions/vale.js
+  #   enabled: true
+  #   vale_config: .vale.ini
+  - id: lunr
+    require: '@antora/lunr-extension'
+    enabled: true
+    index_latest_only: true
+
+runtime:
+  fetch: false
+  log:
+    level: info
+    failure_level: error
+
+ui:
+  bundle:
+    url: https://github.com/AxonIQ/docs-ui/releases/download/v0.0.3/ui-bundle.zip

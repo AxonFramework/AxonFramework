@@ -1,0 +1,63 @@
+digraph foo {
+    layout="dot"
+    rankdir="LR"
+
+    node [style=rounded, colorscheme=oranges9]
+
+    subgraph cluster_command_side {
+        label="Command side";
+        graph[style=dotted];
+
+        "Command Handling Component" [shape=box, style="filled", fillcolor=5]
+        "Command model repository" [shape=cylinder, style="filled", fillcolor=2]
+        "Command Handling Component" -> "Command model repository" [name="persistCommandModel", dir=both]
+
+        // hack to align the UI
+        c1 -> "Command Handling Component" [style="invis"]
+    }
+
+    subgraph cluster_query_side {
+        label="Query side";
+        graph[style=dotted];
+
+        "Event Handling Component" [shape=box, style="filled", fillcolor=5]
+        "Query Handling Component" [shape=box, style="filled", fillcolor=5]
+        "Query model repository" [shape=cylinder, style="filled", fillcolor=2]
+
+        "Event Handling Component" -> "Query model repository" [name="persistQueryModel"]
+        "Query Handling Component" -> "Query model repository" [name="read", dir=both]
+
+        // hack to align the UI
+        "Event Handling Component" -> c2 [style="invis"]
+    }
+
+    subgraph cluster_messaging {
+
+        label="Messaging";
+        graph[style=dotted];
+
+        CommandBus [shape=assembly, label=""]
+        EventBus [shape=assembly, label=""]
+        QueryBus [shape=assembly, label=""]
+
+
+    }
+
+    Client [shape=component, color=9, weight=1, height=2]
+
+    "Command Handling Component" -> EventBus [name="event", label="event"]
+    EventBus -> "Event Handling Component" [name="event", label="event"]
+
+
+    Client -> CommandBus -> "Command Handling Component" [name="command", label="command", dir=both]
+    Client -> QueryBus -> "Query Handling Component" [name="query", xlabel="query", dir=both]
+    Client -> EventBus [name="event", label="event"]
+
+    // hack to align the UI
+    {
+        rank=same
+        c1 [style="invis"]
+        c2 [style="invis"]
+    }
+
+}
