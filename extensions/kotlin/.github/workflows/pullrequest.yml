@@ -8,6 +8,7 @@ jobs:
     name: Test and Build on JDK ${{ matrix.java-version }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - java-version: 8
@@ -16,7 +17,6 @@ jobs:
             sonar-enabled: false
           - java-version: 17
             sonar-enabled: true
-      fail-fast: false
 
     steps:
       - name: Checkout code
