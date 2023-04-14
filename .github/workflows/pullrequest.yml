@@ -2,6 +2,9 @@ name: Axon Framework
 
 on:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
 
 jobs:
   build:
