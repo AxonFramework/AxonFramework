@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
@@ -367,19 +367,30 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
                 load(aggregateIdentifier).handle(message);
             } catch (AggregateNotFoundException e) {
                 logger.debug("Aggregate (with id: [{}]) cannot be loaded. Hence, message '[{}]' cannot be handled.",
-                             aggregateIdentifier, message);
+                        aggregateIdentifier, message);
             }
         }
     }
+
     @Override
     public boolean canResolve(@Nonnull ScopeDescriptor scopeDescription) {
-        return scopeDescription instanceof AggregateScopeDescriptor
-                && aggregateModel.types()
-                                 .map(aggregateModel::declaredType)
-                                 .filter(Optional::isPresent)
-                                 .map(Optional::get)
-                                 .anyMatch(declaredType -> ((AggregateScopeDescriptor) scopeDescription).getType()
-                                                                                                        .equals(declaredType));
+        return (scopeDescription instanceof AggregateScopeDescriptor) &&
+                (matchesSimpleType((AggregateScopeDescriptor) scopeDescription)
+                        || matchesDeclaredType((AggregateScopeDescriptor) scopeDescription));
+    }
+
+    private boolean matchesSimpleType(AggregateScopeDescriptor scopeDescription) {
+        return aggregateModel.types().anyMatch(t ->
+                t.getSimpleName().contentEquals(scopeDescription.getType()));
+    }
+
+    private boolean matchesDeclaredType(AggregateScopeDescriptor scopeDescription) {
+        return aggregateModel.types()
+                .map(aggregateModel::declaredType)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .anyMatch(declaredType -> scopeDescription.getType()
+                        .equals(declaredType));
     }
 
     /**
