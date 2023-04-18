@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,8 @@ public class DeadLetteringEventHandlerInvoker
                 DeadLetter<EventMessage<?>> letter = new GenericDeadLetter<>(sequenceIdentifier, message, e);
                 EnqueueDecision<EventMessage<?>> decision = enqueuePolicy.decide(letter, e);
                 if (decision.shouldEnqueue()) {
-                    queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter));
+                    Throwable cause = decision.enqueueCause().orElse(null);
+                    queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause)));
                 } else if (logger.isInfoEnabled()) {
                     logger.info("The enqueue policy decided not to dead letter event [{}].", message.getIdentifier());
                 }
