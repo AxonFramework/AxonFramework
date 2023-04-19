@@ -29,8 +29,7 @@ import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.stereotype.Aggregate;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -64,6 +63,29 @@ class AggregatePolymorphismAutoConfigurationTest {
     void polymorphicAggregateWiringHandlesCommandsAndIsEventSourcedAsExpected() {
         String catId = UUID.randomUUID().toString();
         String dogId = UUID.randomUUID().toString();
+
+        testApplicationContext.withUserConfiguration(PolymorphicAggregateContext.class)
+                              .run(context -> {
+                                  CommandGateway commandGateway =
+                                          context.getBean("commandGateway", CommandGateway.class);
+
+                                  commandGateway.sendAndWait(
+                                          new PolymorphicAggregateContext.CreateCatCommand(catId, "Felix")
+                                  );
+                                  commandGateway.sendAndWait(
+                                          new PolymorphicAggregateContext.RenameAnimalCommand(catId, "Wokkel")
+                                  );
+                                  commandGateway.sendAndWait(
+                                          new PolymorphicAggregateContext.CreateDogCommand(dogId, "Milou")
+                                  );
+                                  commandGateway.sendAndWait(
+                                          new PolymorphicAggregateContext.RenameAnimalCommand(dogId, "Medor")
+                                  );
+                              });
+    }
+
+    @Test
+    void polymorphicAggregateWiringConstructsSingleAggregateFactory() {
         String catFactoryBeanName = aggregateFactoryBeanNameFor(PolymorphicAggregateContext.Cat.class);
         String dogFactoryBeanName = aggregateFactoryBeanNameFor(PolymorphicAggregateContext.Dog.class);
         String animalFactoryBeanName = aggregateFactoryBeanNameFor(PolymorphicAggregateContext.Animal.class);
@@ -82,21 +104,11 @@ class AggregatePolymorphismAutoConfigurationTest {
                                           .getBean(animalFactoryBeanName, SpringPrototypeAggregateFactory.class)
                                           .isNotNull();
 
-                                  CommandGateway commandGateway =
-                                          context.getBean("commandGateway", CommandGateway.class);
-
-                                  commandGateway.sendAndWait(
-                                          new PolymorphicAggregateContext.CreateCatCommand(catId, "Felix")
-                                  );
-                                  commandGateway.sendAndWait(
-                                          new PolymorphicAggregateContext.RenameAnimalCommand(catId, "Wokkel")
-                                  );
-                                  commandGateway.sendAndWait(
-                                          new PolymorphicAggregateContext.CreateDogCommand(dogId, "Milou")
-                                  );
-                                  commandGateway.sendAndWait(
-                                          new PolymorphicAggregateContext.RenameAnimalCommand(dogId, "Medor")
-                                  );
+                                  //noinspection rawtypes
+                                  SpringPrototypeAggregateFactory animalAggregateFactory =
+                                          context.getBean(animalFactoryBeanName, SpringPrototypeAggregateFactory.class);
+                                  assertThat(animalAggregateFactory.getAggregateType())
+                                          .isEqualTo(PolymorphicAggregateContext.Animal.class);
                               });
     }
 
