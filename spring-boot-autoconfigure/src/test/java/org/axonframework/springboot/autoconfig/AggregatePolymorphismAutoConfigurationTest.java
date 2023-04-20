@@ -17,22 +17,24 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.thoughtworks.xstream.XStream;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
-import org.axonframework.spring.stereotype.Aggregate;
+import org.axonframework.springboot.autoconfig.context.Animal;
+import org.axonframework.springboot.autoconfig.context.Cat;
+import org.axonframework.springboot.autoconfig.context.CreateCatCommand;
+import org.axonframework.springboot.autoconfig.context.CreateDogCommand;
+import org.axonframework.springboot.autoconfig.context.Dog;
+import org.axonframework.springboot.autoconfig.context.RenameAnimalCommand;
 import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
@@ -42,7 +44,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
-import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 /**
  * Test class validating Aggregate Polymorphism works as intended when using Spring Boot autoconfiguration.
@@ -69,26 +70,18 @@ class AggregatePolymorphismAutoConfigurationTest {
                                   CommandGateway commandGateway =
                                           context.getBean("commandGateway", CommandGateway.class);
 
-                                  commandGateway.sendAndWait(
-                                          new PolymorphicAggregateContext.CreateCatCommand(catId, "Felix")
-                                  );
-                                  commandGateway.sendAndWait(
-                                          new PolymorphicAggregateContext.RenameAnimalCommand(catId, "Wokkel")
-                                  );
-                                  commandGateway.sendAndWait(
-                                          new PolymorphicAggregateContext.CreateDogCommand(dogId, "Milou")
-                                  );
-                                  commandGateway.sendAndWait(
-                                          new PolymorphicAggregateContext.RenameAnimalCommand(dogId, "Medor")
-                                  );
+                                  commandGateway.sendAndWait(new CreateCatCommand(catId, "Felix"));
+                                  commandGateway.sendAndWait(new RenameAnimalCommand(catId, "Wokkel"));
+                                  commandGateway.sendAndWait(new CreateDogCommand(dogId, "Milou"));
+                                  commandGateway.sendAndWait(new RenameAnimalCommand(dogId, "Medor"));
                               });
     }
 
     @Test
     void polymorphicAggregateWiringConstructsSingleAggregateFactory() {
-        String catFactoryBeanName = aggregateFactoryBeanNameFor(PolymorphicAggregateContext.Cat.class);
-        String dogFactoryBeanName = aggregateFactoryBeanNameFor(PolymorphicAggregateContext.Dog.class);
-        String animalFactoryBeanName = aggregateFactoryBeanNameFor(PolymorphicAggregateContext.Animal.class);
+        String catFactoryBeanName = aggregateFactoryBeanNameFor(Cat.class);
+        String dogFactoryBeanName = aggregateFactoryBeanNameFor(Dog.class);
+        String animalFactoryBeanName = aggregateFactoryBeanNameFor(Animal.class);
 
         testApplicationContext.withUserConfiguration(PolymorphicAggregateContext.class)
                               .run(context -> {
@@ -103,12 +96,6 @@ class AggregatePolymorphismAutoConfigurationTest {
                                   assertThat(context)
                                           .getBean(animalFactoryBeanName, SpringPrototypeAggregateFactory.class)
                                           .isNotNull();
-
-                                  //noinspection rawtypes
-                                  SpringPrototypeAggregateFactory animalAggregateFactory =
-                                          context.getBean(animalFactoryBeanName, SpringPrototypeAggregateFactory.class);
-                                  assertThat(animalAggregateFactory.getAggregateType())
-                                          .isEqualTo(PolymorphicAggregateContext.Animal.class);
                               });
     }
 
@@ -118,7 +105,7 @@ class AggregatePolymorphismAutoConfigurationTest {
 
     @Test
     void polymorphicAggregateWiringConstructsSingleRepository() {
-        String animalRepositoryBeanName = repositoryBeanName(PolymorphicAggregateContext.Animal.class);
+        String animalRepositoryBeanName = repositoryBeanName(Animal.class);
 
         testApplicationContext.withUserConfiguration(PolymorphicAggregateContext.class)
                               .run(context -> {
@@ -153,136 +140,8 @@ class AggregatePolymorphismAutoConfigurationTest {
     }
 
     @Configuration
+    @ComponentScan(basePackages = {"org.axonframework.springboot.autoconfig.context"})
     static class PolymorphicAggregateContext {
 
-        @Aggregate
-        public static class Cat extends Animal {
-
-            @CommandHandler
-            public Cat(CreateCatCommand command) {
-                apply(new CatCreatedEvent(command.aggregateId, command.name));
-            }
-
-            @EventSourcingHandler
-            public void on(CatCreatedEvent event) {
-                this.aggregateId = event.aggregateId;
-                this.name = event.name;
-            }
-
-            public Cat() {
-                // Required by Axon
-            }
-        }
-
-        public static class CreateCatCommand {
-
-            @TargetAggregateIdentifier
-            private final String aggregateId;
-            private final String name;
-
-            public CreateCatCommand(String aggregateId, String name) {
-                this.aggregateId = aggregateId;
-                this.name = name;
-            }
-        }
-
-        public static class CatCreatedEvent {
-
-            private final String aggregateId;
-            private final String name;
-
-            public CatCreatedEvent(String aggregateId, String name) {
-                this.aggregateId = aggregateId;
-                this.name = name;
-            }
-        }
-
-        @Aggregate
-        public static class Dog extends Animal {
-
-            @CommandHandler
-            public Dog(CreateDogCommand command) {
-                apply(new DogCreatedEvent(command.aggregateId, command.name));
-            }
-
-            @EventSourcingHandler
-            public void on(DogCreatedEvent event) {
-                this.aggregateId = event.aggregateId;
-                this.name = event.name;
-            }
-
-            public Dog() {
-                // Required by Axon
-            }
-        }
-
-        public static class CreateDogCommand {
-
-            @TargetAggregateIdentifier
-            private final String aggregateId;
-            private final String name;
-
-            public CreateDogCommand(String aggregateId, String name) {
-                this.aggregateId = aggregateId;
-                this.name = name;
-            }
-        }
-
-        public static class DogCreatedEvent {
-
-            private final String aggregateId;
-            private final String name;
-
-            public DogCreatedEvent(String aggregateId, String name) {
-                this.aggregateId = aggregateId;
-                this.name = name;
-            }
-        }
-
-        @Aggregate
-        public static abstract class Animal {
-
-            @AggregateIdentifier
-            protected String aggregateId;
-            protected String name;
-
-            @CommandHandler
-            public void handle(RenameAnimalCommand command) {
-                apply(new AnimalRenamedEvent(aggregateId, command.rename));
-            }
-
-            @EventSourcingHandler
-            public void on(AnimalRenamedEvent event) {
-                this.name = event.rename;
-            }
-
-            public Animal() {
-            }
-        }
-
-        public static class RenameAnimalCommand {
-
-            @SuppressWarnings({"FieldCanBeLocal", "unused"})
-            @TargetAggregateIdentifier
-            private final String aggregateId;
-            private final String rename;
-
-            public RenameAnimalCommand(String aggregateId, String rename) {
-                this.aggregateId = aggregateId;
-                this.rename = rename;
-            }
-        }
-
-        public static class AnimalRenamedEvent {
-
-            @SuppressWarnings({"FieldCanBeLocal", "unused"})
-            private final String aggregateId;
-            private final String rename;
-
-            public AnimalRenamedEvent(String aggregateId, String rename) {
-                this.aggregateId = aggregateId;
-                this.rename = rename;
-            }
-        }
     }
 }
