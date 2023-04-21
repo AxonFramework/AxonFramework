@@ -20,9 +20,12 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ResetNotSupportedException;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
+import org.axonframework.modelling.saga.metamodel.SagaMetaModelFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -51,7 +54,8 @@ class AnnotatedSagaTest {
         testSaga = new StubAnnotatedSaga();
         testSubject = new AnnotatedSaga<>(
                 "id", Collections.emptySet(), testSaga,
-                new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class)
+                new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class),
+                NoMoreInterceptors.instance()
         );
     }
 
@@ -115,7 +119,8 @@ class AnnotatedSagaTest {
         StubAnnotatedSaga testSaga = new StubAnnotatedSagaWithExplicitAssociationRemoval();
         AnnotatedSaga<StubAnnotatedSaga> testSubject = new AnnotatedSaga<>(
                 "id", Collections.emptySet(), testSaga,
-                new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class)
+                new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class),
+                NoMoreInterceptors.instance()
         );
 
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
@@ -290,6 +295,19 @@ class AnnotatedSagaTest {
         public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
                                   @Nonnull MessageHandlingMember<T> handler) {
             return null;
+        }
+    }
+
+    private static class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberChain<T> {
+
+        private static <T> MessageHandlerInterceptorMemberChain<T> instance() {
+            return new SagaMetaModelFactory.NoMoreInterceptors<>();
+        }
+
+        @Override
+        public Object handle(@Nonnull Message<?> message, @Nonnull T target,
+                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
+            return handler.handle(message, target);
         }
     }
 }

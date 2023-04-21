@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,11 @@
 package org.axonframework.modelling.saga.metamodel;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.saga.AssociationValue;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.Nonnull;
 
 /**
  * Interface of a model that describes a Saga of type {@code T}. Use the SagaModel to obtain associations and
@@ -59,29 +56,6 @@ public interface SagaModel<T> {
      */
     default boolean hasHandlerMethod(EventMessage<?> eventMessage) {
         return !findHandlerMethods(eventMessage).isEmpty();
-    }
-
-    /**
-     * Returns an Interceptor Chain of annotated interceptor methods. The given chain will invoke all relevant
-     * interceptors in an order defined by the handler definition.
-     *
-     * @return an interceptor chain that invokes the interceptor handlers
-     */
-    default MessageHandlerInterceptorMemberChain<T> chainedInterceptor() {
-        return NoMoreInterceptors.instance();
-    }
-
-    class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberChain<T> {
-
-        static <T> MessageHandlerInterceptorMemberChain<T> instance() {
-            return new NoMoreInterceptors<>();
-        }
-
-        @Override
-        public Object handle(@Nonnull Message<?> message, @Nonnull T target,
-                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
-            return handler.handle(message, target);
-        }
     }
 
     /**

@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -43,13 +44,11 @@ import java.util.stream.Collectors;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * {@link SagaRepository} implementation extending from the
- * {@link LockingSagaRepository} dealing with annotated Sagas. Will take care of the uniqueness of {@link Saga}
- * instances in the JVM. That means it will prevent multiple instances of the same conceptual Saga (i.e. with same
- * identifier) to exist within the JVM.
+ * {@link SagaRepository} implementation extending from the {@link LockingSagaRepository} dealing with annotated Sagas.
+ * Will take care of the uniqueness of {@link Saga} instances in the JVM. That means it will prevent multiple instances
+ * of the same conceptual Saga (i.e. with same identifier) to exist within the JVM.
  *
- * @param <T> generic type specifying the Saga type stored by this
- *            {@link SagaRepository}
+ * @param <T> generic type specifying the Saga type stored by this {@link SagaRepository}
  * @author Allard Buijze
  * @since 0.7
  */
@@ -58,6 +57,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     private final Class<T> sagaType;
     private final SagaStore<? super T> sagaStore;
     private final SagaModel<T> sagaModel;
+    private final MessageHandlerInterceptorMemberChain<T> chainedInterceptor;
     private final ResourceInjector resourceInjector;
 
     private final Map<String, AnnotatedSaga<T>> managedSagas;
@@ -67,10 +67,10 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * Instantiate a {@link AnnotatedSagaRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@code sagaType}, {@link SagaStore} and {@link ResourceInjector} are not {@code null}, and
-     * will throw an {@link AxonConfigurationException} if any of them is {@code null}.
-     * Additionally, the provided  Builder's goal is to either build a {@link SagaModel} specifying generic {@code T} as
-     * the Saga type to be stored or derive it based on the given {@code sagaType}.
-     * All Sagas in this repository must be {@code instanceOf} this saga type.
+     * will throw an {@link AxonConfigurationException} if any of them is {@code null}. Additionally, the provided
+     * builder's goal is to either build a {@link SagaModel} specifying generic {@code T} as the Saga type to be stored
+     * or derive it based on the given {@code sagaType}. Same for the {@link MessageHandlerInterceptorMemberChain}. All
+     * Sagas in this repository must be {@code instanceOf} this saga type.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AnnotatedSagaRepository} instance
      */
@@ -78,6 +78,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         super(builder);
         this.sagaType = builder.sagaType;
         this.sagaModel = builder.buildSagaModel();
+        this.chainedInterceptor = builder.buildChainedInterceptor();
         this.sagaStore = builder.sagaStore;
         this.resourceInjector = builder.resourceInjector;
         this.managedSagas = new ConcurrentHashMap<>();
@@ -87,15 +88,14 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     /**
      * Instantiate a Builder to be able to create an {@link AnnotatedSagaRepository}.
      * <p>
-     * The {@link ResourceInjector} is defaulted to a {@link NoResourceInjector}.
-     * This Builder either allows directly setting a {@link SagaModel} of generic type {@code T}, or it will generate it
-     * based of the required {@code sagaType} field of type {@link Class} Thus, either the SagaModel <b>or</b> the
-     * {@code sagaType} should be provided. All Saga in this repository must be {@code instanceOf} this saga type.
-     * Additionally, the {@code sagaType} and {@link SagaStore} are <b>hard requirements</b> and as such should be
-     * provided.
+     * The {@link ResourceInjector} is defaulted to a {@link NoResourceInjector}. This Builder either allows directly
+     * setting a {@link SagaModel} of generic type {@code T}, or it will generate it based of the required
+     * {@code sagaType} field of type {@link Class}. Same for the {@link MessageHandlerInterceptorMemberChain} Thus,
+     * either the SagaModel <b>or</b> the {@code sagaType} should be provided. All Saga in this repository must be
+     * {@code instanceOf} this saga type. Additionally, the {@code sagaType} and {@link SagaStore} are <b>hard
+     * requirements</b> and as such should be provided.
      *
-     * @param <T> a generic specifying the Saga type contained in this
-     *            {@link SagaRepository} implementation
+     * @param <T> a generic specifying the Saga type contained in this {@link SagaRepository} implementation
      * @return a Builder to be able to create a {@link AnnotatedSagaRepository}
      */
     public static <T> Builder<T> builder() {
@@ -131,7 +131,11 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
             T sagaRoot = sagaFactory.get();
             resourceInjector.injectResources(sagaRoot);
             AnnotatedSaga<T> saga =
-                    new AnnotatedSaga<>(sagaIdentifier, Collections.emptySet(), sagaRoot, sagaModel);
+                    new AnnotatedSaga<>(sagaIdentifier,
+                                        Collections.emptySet(),
+                                        sagaRoot,
+                                        sagaModel,
+                                        chainedInterceptor);
 
             unsavedSagaResource(processRoot).add(sagaIdentifier);
             unitOfWork.onPrepareCommit(u -> {
@@ -220,9 +224,9 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     }
 
     /**
-     * Loads the saga with given {@code sagaIdentifier} from the underlying saga store and returns it as a {@link
-     * AnnotatedSaga}. Resources of the saga will be injected using the {@link ResourceInjector} configured with the
-     * repository.
+     * Loads the saga with given {@code sagaIdentifier} from the underlying saga store and returns it as a
+     * {@link AnnotatedSaga}. Resources of the saga will be injected using the {@link ResourceInjector} configured with
+     * the repository.
      *
      * @param sagaIdentifier the identifier of the saga to load
      * @return AnnotatedSaga instance with the loaded saga
@@ -232,7 +236,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         if (entry != null) {
             T saga = entry.saga();
             resourceInjector.injectResources(saga);
-            return new AnnotatedSaga<>(sagaIdentifier, entry.associationValues(), saga, sagaModel);
+            return new AnnotatedSaga<>(sagaIdentifier, entry.associationValues(), saga, sagaModel, chainedInterceptor);
         }
         return null;
     }
@@ -240,15 +244,13 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     /**
      * Builder class to instantiate a {@link AnnotatedSagaRepository}.
      * <p>
-     * The {@link ResourceInjector} is defaulted to a {@link NoResourceInjector}.
-     * This Builder either allows directly setting a {@link SagaModel} of generic type {@code T}, or it will generate
-     * one based of the required {@code sagaType} field of type {@link Class}. Thus, either the SagaModel <b>or</b> the
-     * {@code sagaType} should be provided. All Sagas in this repository must be {@code instanceOf} this saga type.
-     * Additionally, the {@code sagaType} and {@link SagaStore} are <b>hard requirements</b> and as such should be
-     * provided.
+     * The {@link ResourceInjector} is defaulted to a {@link NoResourceInjector}. This Builder either allows directly
+     * setting a {@link SagaModel} of generic type {@code T}, or it will generate one based of the required
+     * {@code sagaType} field of type {@link Class}. Thus, either the SagaModel <b>or</b> the {@code sagaType} should be
+     * provided. All Sagas in this repository must be {@code instanceOf} this saga type. Additionally, the
+     * {@code sagaType} and {@link SagaStore} are <b>hard requirements</b> and as such should be provided.
      *
-     * @param <T> a generic specifying the Saga type contained in this
-     *            {@link SagaRepository} implementation
+     * @param <T> a generic specifying the Saga type contained in this {@link SagaRepository} implementation
      */
     public static class Builder<T> extends LockingSagaRepository.Builder<T> {
 
@@ -256,6 +258,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private SagaModel<T> sagaModel;
+        private MessageHandlerInterceptorMemberChain<T> interceptorMemberChain;
         private SagaStore<? super T> sagaStore;
         private ResourceInjector resourceInjector = NoResourceInjector.INSTANCE;
 
@@ -266,12 +269,10 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         }
 
         /**
-         * Sets the {@code sagaType} as a {@link Class}, specifying the type of Saga this
-         * {@link SagaRepository} will store. If no {@link SagaModel} is specified
-         * directly, a model will be derived from this type.
+         * Sets the {@code sagaType} as a {@link Class}, specifying the type of Saga this {@link SagaRepository} will
+         * store. If no {@link SagaModel} is specified directly, a model will be derived from this type.
          *
-         * @param sagaType the {@link Class} specifying the type of Saga this
-         *                 {@link SagaRepository} will store
+         * @param sagaType the {@link Class} specifying the type of Saga this {@link SagaRepository} will store
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> sagaType(Class<T> sagaType) {
@@ -295,8 +296,8 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         }
 
         /**
-         * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code sagaType}.
-         * Only used to instantiate a {@link SagaModel} if no SagaModel has been provided directly.
+         * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code sagaType}. Only used
+         * to instantiate a {@link SagaModel} if no SagaModel has been provided directly.
          *
          * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given
          *                          {@code sagaType}.
@@ -310,11 +311,11 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
 
         /**
          * Sets the {@link SagaModel} of generic type {@code T}, describing the structure of the Saga this
-         * {@link SagaRepository} implementation will store. If this is not
-         * provided directly, the {@code sagaType} will be used to instantiate a SagaModel.
+         * {@link SagaRepository} implementation will store. If this is not provided directly, the {@code sagaType} will
+         * be used to instantiate a SagaModel.
          *
-         * @param sagaModel the {@link SagaModel} of generic type {@code T} of the Saga this
-         *                  {@link SagaRepository} implementation will store
+         * @param sagaModel the {@link SagaModel} of generic type {@code T} of the Saga this {@link SagaRepository}
+         *                  implementation will store
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> sagaModel(SagaModel<T> sagaModel) {
@@ -359,11 +360,11 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         }
 
         /**
-         * Instantiate the {@link SagaModel} of generic type {@code T} describing the structure of the Saga
-         * this {@link SagaRepository} will store.
+         * Instantiate the {@link SagaModel} of generic type {@code T} describing the structure of the Saga this
+         * {@link SagaRepository} will store.
          *
-         * @return a {@link SagaModel} of generic type {@code T} describing the Saga this
-         * {@link SagaRepository} implementation will store
+         * @return a {@link SagaModel} of generic type {@code T} describing the Saga this {@link SagaRepository}
+         * implementation will store
          */
         protected SagaModel<T> buildSagaModel() {
             if (sagaModel == null) {
@@ -383,6 +384,33 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
                 return new AnnotationSagaMetaModelFactory(
                         parameterResolverFactory, handlerDefinition
                 ).modelOf(sagaType);
+            }
+        }
+
+        /**
+         * Instantiate the {@link MessageHandlerInterceptorMemberChain} of generic type {@code T}. To be used in
+         * handling the event messages.
+         *
+         * @return a {@link MessageHandlerInterceptorMemberChain} of generic type {@code T}. To be used in handling the
+         * event messages.
+         */
+        protected MessageHandlerInterceptorMemberChain<T> buildChainedInterceptor() {
+            if (interceptorMemberChain == null) {
+                return inspectChainedInterceptor();
+            } else {
+                return interceptorMemberChain;
+            }
+        }
+
+        private MessageHandlerInterceptorMemberChain<T> inspectChainedInterceptor() {
+            if (parameterResolverFactory == null && handlerDefinition == null) {
+                return new AnnotationSagaMetaModelFactory().chainedInterceptor(sagaType);
+            } else if (parameterResolverFactory != null && handlerDefinition == null) {
+                return new AnnotationSagaMetaModelFactory(parameterResolverFactory).chainedInterceptor(sagaType);
+            } else {
+                return new AnnotationSagaMetaModelFactory(
+                        parameterResolverFactory, handlerDefinition
+                ).chainedInterceptor(sagaType);
             }
         }
 

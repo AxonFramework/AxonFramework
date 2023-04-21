@@ -18,6 +18,7 @@ package org.axonframework.modelling.saga;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
 
@@ -36,6 +37,7 @@ import java.util.function.Function;
 public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     private final SagaModel<T> metaModel;
+    private final MessageHandlerInterceptorMemberChain<T> chainedInterceptor;
 
     private final AssociationValues associationValues;
     private final String sagaId;
@@ -55,12 +57,14 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     public AnnotatedSaga(String sagaId,
                          Set<AssociationValue> associationValues,
                          T annotatedSaga,
-                         SagaModel<T> metaModel) {
+                         SagaModel<T> metaModel,
+                         MessageHandlerInterceptorMemberChain<T> chainedInterceptor) {
         Assert.notNull(annotatedSaga, () -> "SagaInstance may not be null");
         this.sagaId = sagaId;
         this.associationValues = new AssociationValuesImpl(associationValues);
         this.sagaInstance = annotatedSaga;
         this.metaModel = metaModel;
+        this.chainedInterceptor = chainedInterceptor;
     }
 
     @Override
@@ -118,7 +122,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     private Object handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
         try {
-            return executeWithResult(() -> metaModel.chainedInterceptor().handle(event, sagaInstance, handler));
+            return executeWithResult(() -> chainedInterceptor.handle(event, sagaInstance, handler));
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {

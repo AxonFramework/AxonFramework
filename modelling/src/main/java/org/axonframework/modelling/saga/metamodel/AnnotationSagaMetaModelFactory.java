@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
 
     private final Map<Class<?>, SagaModel<?>> registry = new ConcurrentHashMap<>();
+    private final Map<Class<?>, MessageHandlerInterceptorMemberChain<?>> interceptorRegistry = new ConcurrentHashMap<>();
 
     private final ParameterResolverFactory parameterResolverFactory;
     private final HandlerDefinition handlerDefinition;
@@ -81,29 +82,40 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
         return (SagaModel<T>) registry.computeIfAbsent(sagaType, this::doCreateModel);
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> MessageHandlerInterceptorMemberChain<T> chainedInterceptor(Class<T> sagaType) {
+        return (MessageHandlerInterceptorMemberChain<T>) interceptorRegistry.computeIfAbsent(sagaType,
+                                                                                             this::doCreateChain);
+    }
+
     private <T> SagaModel<T> doCreateModel(Class<T> sagaType) {
         AnnotatedHandlerInspector<T> handlerInspector =
                 AnnotatedHandlerInspector.inspectType(sagaType,
                                                       parameterResolverFactory,
                                                       handlerDefinition);
 
-        return new InspectedSagaModel<>(
-                handlerInspector.getHandlers(sagaType).collect(Collectors.toList()),
-                handlerInspector.chainedInterceptor(sagaType)
+        return new InspectedSagaModel<T>(
+                handlerInspector.getHandlers(sagaType).collect(Collectors.toList())
         );
+    }
+
+    private <T> MessageHandlerInterceptorMemberChain<T> doCreateChain(Class<T> sagaType) {
+        AnnotatedHandlerInspector<T> handlerInspector =
+                AnnotatedHandlerInspector.inspectType(sagaType,
+                                                      parameterResolverFactory,
+                                                      handlerDefinition);
+        return handlerInspector.chainedInterceptor(sagaType);
     }
 
     private class InspectedSagaModel<T> implements SagaModel<T> {
 
         private final List<MessageHandlingMember<? super T>> handlers;
-        private final MessageHandlerInterceptorMemberChain<T> interceptorMemberChain;
 
         public InspectedSagaModel(
-                List<MessageHandlingMember<? super T>> handlers,
-                MessageHandlerInterceptorMemberChain<T> interceptorMemberChain
+                List<MessageHandlingMember<? super T>> handlers
         ) {
             this.handlers = handlers;
-            this.interceptorMemberChain = interceptorMemberChain;
         }
 
         @Override
@@ -132,11 +144,6 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
                 }
             }
             return false;
-        }
-
-        @Override
-        public MessageHandlerInterceptorMemberChain<T> chainedInterceptor() {
-            return interceptorMemberChain;
         }
 
         @Override

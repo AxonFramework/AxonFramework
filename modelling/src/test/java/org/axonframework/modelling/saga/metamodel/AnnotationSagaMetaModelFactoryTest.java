@@ -18,6 +18,7 @@ package org.axonframework.modelling.saga.metamodel;
 
 import org.axonframework.common.AxonException;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.modelling.saga.AssociationValue;
@@ -62,7 +63,8 @@ class AnnotationSagaMetaModelFactoryTest {
         Optional<MessageHandlingMember<? super MySaga>> handler = sagaModel
                 .findHandlerMethods(event).stream().findFirst();
         assertTrue(handler.isPresent());
-        assertThrows(FooException.class, () -> sagaModel.chainedInterceptor().handle(event, saga, handler.get()));
+        MessageHandlerInterceptorMemberChain<MySaga> interceptorChain = testSubject.chainedInterceptor(MySaga.class);
+        assertThrows(FooException.class, () -> interceptorChain.handle(event, saga, handler.get()));
     }
 
     @Test
@@ -74,8 +76,16 @@ class AnnotationSagaMetaModelFactoryTest {
         Optional<MessageHandlingMember<? super MySagaWithErrorHandler>> handler = sagaModel
                 .findHandlerMethods(event).stream().findFirst();
         assertTrue(handler.isPresent());
-        Object result = sagaModel.chainedInterceptor().handle(event, saga, handler.get());
+        MessageHandlerInterceptorMemberChain<MySagaWithErrorHandler> interceptorChain = testSubject.chainedInterceptor(
+                MySagaWithErrorHandler.class);
+        Object result = interceptorChain.handle(event, saga, handler.get());
         assertNull(result);
+    }
+
+    @Test
+    void testAnnotatedHandlerInspectorMessageHandlerInterceptorMemberChain() {
+        assertEquals("org.axonframework.messaging.annotation.AnnotatedHandlerInspector$NoMoreInterceptors",
+                     testSubject.chainedInterceptor(MySaga.class).getClass().getName());
     }
 
     public static class MySaga {
