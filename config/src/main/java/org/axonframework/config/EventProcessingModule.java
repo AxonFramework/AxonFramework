@@ -75,6 +75,7 @@ import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.config.EventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp;
@@ -130,7 +131,9 @@ public class EventProcessingModule
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
 
-    protected Configuration configuration;
+    protected final List<BiFunction<Configuration, String, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterProviders = new ArrayList<>();
+
+    private Configuration configuration;
 
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
@@ -870,6 +873,26 @@ public class EventProcessingModule
     ) {
         this.defaultPooledStreamingProcessorConfiguration = pooledStreamingProcessorConfiguration;
         return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerDeadLetterProvider(
+            BiFunction<Configuration, String, SequencedDeadLetterQueue<EventMessage<?>>> deadLetterProvider) {
+        this.deadLetterProviders.add(deadLetterProvider);
+        return this;
+    }
+
+    @Override
+    public Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> provideDlq(String processingGroup){
+        return conf -> {
+            for(BiFunction<Configuration, String, SequencedDeadLetterQueue<EventMessage<?>>> provider : deadLetterProviders){
+                SequencedDeadLetterQueue<EventMessage<?>> dlq = provider.apply(conf, processingGroup);
+                if (! isNull(processingGroup)){
+                    return dlq;
+                }
+            }
+            return null;
+        };
     }
 
     private EventProcessor defaultEventProcessor(String name,

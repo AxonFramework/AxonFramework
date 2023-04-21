@@ -823,4 +823,30 @@ public interface EventProcessingConfigurer {
             return (config, builder) -> builder;
         }
     }
+
+    /**
+     * Register the given {@code deadLetterProvider} as a default to build a {@link SequencedDeadLetterQueue} for
+     * {@link EventProcessor}s created in this configuration.
+     * <p>
+     * The {@code deadLetterProvider} is invoked only if a processing group is configured to have a dlq.
+     *
+     * @param deadLetterProvider a builder {@link Function} that provides a {@link SequencedDeadLetterQueue} for a
+     *                           processing group. It's possible to return null depending on the processing group, if so
+     *                           the next ones will be tried.
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    default EventProcessingConfigurer registerDeadLetterProvider(
+            BiFunction<Configuration, String, SequencedDeadLetterQueue<EventMessage<?>>> deadLetterProvider) {
+        return this;
+    }
+
+    /**
+     * Provides a function to get a {@link SequencedDeadLetterQueue} based on the set {@code deadLetterProviders}.
+     *
+     * @param processingGroup the processingGroup to provide a sequnced dead letter queue for
+     * @return a function to provide a {@link SequencedDeadLetterQueue}
+     */
+    default Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> provideDlq(String processingGroup) {
+        return c -> null;
+    }
 }

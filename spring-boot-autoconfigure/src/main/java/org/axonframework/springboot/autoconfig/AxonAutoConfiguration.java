@@ -49,8 +49,6 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
-import org.axonframework.messaging.deadletter.EventProcessingSdlqFactory;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -323,7 +321,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 }
             }
             if (settings.getDlq().isEnabled()) {
-                eventProcessingConfigurer.registerDeadLetterQueue(name, resolveSdlq(applicationContext, name));
+                eventProcessingConfigurer.registerDeadLetterQueue(name, eventProcessingConfigurer.provideDlq(name));
             }
         });
     }
@@ -358,13 +356,6 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             sequencingPolicy = c -> SequentialPerAggregatePolicy.instance();
         }
         return sequencingPolicy;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> resolveSdlq(
-            ApplicationContext applicationContext, String name
-    ) {
-        return c -> applicationContext.getBean(EventProcessingSdlqFactory.class).getSdlq(name);
     }
 
     @Bean

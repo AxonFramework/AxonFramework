@@ -18,11 +18,9 @@ package org.axonframework.springboot.legacyjpa;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.legacyjpa.EntityManagerProvider;
-import org.axonframework.eventhandling.deadletter.legacyjpa.JpaEventProcessingSdlqFactory;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.legacyjpa.SQLErrorCodesResolver;
-import org.axonframework.messaging.deadletter.EventProcessingSdlqFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.legacyjpa.JpaSagaStore;
 import org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider;
@@ -74,13 +72,6 @@ class JpaJavaxAutoConfigurationTest {
             assertTrue(sagaStores.containsKey("sagaStore"));
             assertEquals(JpaSagaStore.class,
                          sagaStores.get("sagaStore").getClass());
-
-            //noinspection rawtypes
-            Map<String, EventProcessingSdlqFactory> dlqFactories =
-                    context.getBeansOfType(EventProcessingSdlqFactory.class);
-            assertTrue(dlqFactories.containsKey("eventProcessingSdlqFactory"));
-            assertEquals(JpaEventProcessingSdlqFactory.class,
-                         dlqFactories.get("eventProcessingSdlqFactory").getClass());
 
             Map<String, SQLErrorCodesResolver> persistenceExceptionResolvers =
                     context.getBeansOfType(SQLErrorCodesResolver.class);
