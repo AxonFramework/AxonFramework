@@ -94,7 +94,7 @@ class DeadLetteredEventProcessingTask
                   .put(DeadLetter.class.getName(), letter);
         unitOfWork.onPrepareCommit(uow -> decision.set(onCommit(letter)));
         unitOfWork.onRollback(uow -> decision.set(onRollback(letter, uow.getExecutionResult().getExceptionResult())));
-        unitOfWork.executeWithResult(() -> handleWithInterceptors(letter, unitOfWork));
+        unitOfWork.executeWithResult(() -> handleWithInterceptors(unitOfWork));
 
         return ObjectUtils.getOrDefault(decision.get(), Decisions::ignore);
     }
@@ -106,10 +106,8 @@ class DeadLetteredEventProcessingTask
     }
 
     private Object handleWithInterceptors(
-            DeadLetter<? extends EventMessage<?>> letter,
             UnitOfWork<? extends EventMessage<?>> unitOfWork
     ) throws Exception {
-        unitOfWork.transformMessage(m -> letter.message());
         new DefaultInterceptorChain<EventMessage<?>>(
                 unitOfWork,
                 interceptors,
