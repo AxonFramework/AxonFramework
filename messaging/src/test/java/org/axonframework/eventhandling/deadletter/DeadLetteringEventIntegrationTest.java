@@ -576,7 +576,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                .atMost(Duration.ofSeconds(10))
                .until(() -> deadLetterQueue.size() == 1);
 
-        //component needs to be reset, so precess will cause an exception again
+        // component needs to be reset, so process will cause an exception again
         eventHandlingComponent.handledEvent.clear();
         eventHandlingComponent.firstTryFailures.clear();
         deadLetteringInvoker.process(deadLetter -> true);
