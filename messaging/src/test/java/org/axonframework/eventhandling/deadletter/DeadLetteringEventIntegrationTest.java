@@ -52,6 +52,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
@@ -567,7 +568,8 @@ public abstract class DeadLetteringEventIntegrationTest {
     void deadLetterEventProcessingTaskIsUsingInterceptor() {
         //needed to increase otherwise it would be evicted anyway
         maxRetries.set(3);
-        deadLetteringInvoker.registerHandlerInterceptor(errorCatchingInterceptor());
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        deadLetteringInvoker.registerHandlerInterceptor(errorCatchingInterceptor(invoked));
 
         String aggregateId = UUID.randomUUID().toString();
         eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL)));
@@ -580,6 +582,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         eventHandlingComponent.handledEvent.clear();
         eventHandlingComponent.firstTryFailures.clear();
         deadLetteringInvoker.process(deadLetter -> true);
+        assertTrue(invoked.get());
         assertEquals(0, deadLetterQueue.size());
     }
 
@@ -759,14 +762,15 @@ public abstract class DeadLetteringEventIntegrationTest {
         }
     }
 
-    private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor() {
-        return (event, chain) -> {
+    private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
+        return (unitOfWork, chain) -> {
+            invoked.set(true);
             try {
                 chain.proceed();
             } catch (RuntimeException e) {
-                return event;
+                return unitOfWork;
             }
-            return event;
+            return unitOfWork;
         };
     }
 }

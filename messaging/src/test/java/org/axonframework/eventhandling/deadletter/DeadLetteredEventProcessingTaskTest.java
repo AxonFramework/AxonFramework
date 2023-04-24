@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -114,8 +115,9 @@ class DeadLetteredEventProcessingTaskTest {
 
     @Test
     void useInterceptorToHandleError() throws Exception {
+        AtomicBoolean invoked = new AtomicBoolean(false);
         testSubject = new DeadLetteredEventProcessingTask(eventHandlingComponents,
-                                                          Collections.singletonList(errorCatchingInterceptor()),
+                                                          Collections.singletonList(errorCatchingInterceptor(invoked)),
                                                           enqueuePolicy,
                                                           transactionManager);
         //noinspection unchecked
@@ -129,6 +131,7 @@ class DeadLetteredEventProcessingTaskTest {
         EnqueueDecision<EventMessage<?>> result = testSubject.process(testLetter);
 
         assertFalse(result.shouldEnqueue());
+        assertTrue(invoked.get());
         verify(transactionManager).startTransaction();
         verify(eventHandlerOne).handle(TEST_EVENT);
         verify(eventHandlerTwo).handle(TEST_EVENT);
@@ -144,14 +147,15 @@ class DeadLetteredEventProcessingTaskTest {
         }
     }
 
-    private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor() {
-        return (event, chain) -> {
+    private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
+        return (unitOfWork, chain) -> {
+            invoked.set(true);
             try {
                 chain.proceed();
             } catch (RuntimeException e) {
-                return event;
+                return unitOfWork;
             }
-            return event;
+            return unitOfWork;
         };
     }
 }
