@@ -21,7 +21,6 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.config.Configuration;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
-import org.axonframework.spring.modelling.SpringRepositoryFactoryBean;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +70,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
      * @param beanFactory         The beanFactory containing the definitions of the Aggregates.
      * @param aggregatePrototypes The prototype beans found for each individual type of Aggregate.
      * @param <A>                 The type of Aggregate.
+     *
      * @return A hierarchy model with subtypes for each declared main Aggregate.
      */
     @SuppressWarnings("unchecked")
@@ -202,11 +202,10 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             } else {
                 ((BeanDefinitionRegistry) registry).registerBeanDefinition(
                         repositoryName,
-                        BeanDefinitionBuilder.rootBeanDefinition(SpringRepositoryFactoryBean.class)
+                        BeanDefinitionBuilder.rootBeanDefinition(BeanHelper.class)
                                              .addConstructorArgValue(aggregateType)
-                                             .addPropertyValue(
-                                                     "configuration", new RuntimeBeanReference(Configuration.class)
-                                             )
+                                             .addConstructorArgValue(new RuntimeBeanReference(Configuration.class))
+                                             .setFactoryMethod("repository")
                                              .applyCustomizers(bd -> {
                                                  ResolvableType resolvableRepositoryType =
                                                          forClassWithGenerics(Repository.class, aggregateType);

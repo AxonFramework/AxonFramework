@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.deadletter;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.axonframework.common.AxonException;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandler;
@@ -96,6 +97,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     private DeadLetteringEventHandlerInvoker deadLetteringInvoker;
     private InMemoryStreamableEventSource eventSource;
     private StreamingEventProcessor streamingProcessor;
+    private AtomicBoolean returnReferenceErrorFromPolicy = new AtomicBoolean(false);
     protected TransactionManager transactionManager;
     private final AtomicInteger maxRetries = new AtomicInteger(DEFAULT_RETRIES);
 
@@ -122,8 +124,13 @@ public abstract class DeadLetteringEventIntegrationTest {
         EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> {
             int retries = (int) letter.diagnostics().getOrDefault("retries", 0);
             if (retries < maxRetries.get()) {
+                Throwable decisionThrowable = cause;
+                if (returnReferenceErrorFromPolicy.get()) {
+                    decisionThrowable = new ReferenceException(UUID.randomUUID());
+                }
                 return Decisions.enqueue(
-                        cause, l -> MetaData.with("retries", (int) l.diagnostics().getOrDefault("retries", 0) + 1)
+                        decisionThrowable,
+                        l -> MetaData.with("retries", (int) l.diagnostics().getOrDefault("retries", 0) + 1)
                 );
             } else {
                 return Decisions.evict();
@@ -172,6 +179,7 @@ public abstract class DeadLetteringEventIntegrationTest {
             executor.shutdownNow();
         }
         maxRetries.set(DEFAULT_RETRIES);
+        returnReferenceErrorFromPolicy.set(false);
     }
 
     /**
@@ -586,6 +594,21 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertEquals(0, deadLetterQueue.size());
     }
 
+    @Test
+    void causeFromDecisionShouldBeStored() {
+        returnReferenceErrorFromPolicy.set(true);
+        String aggregateId = UUID.randomUUID().toString();
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL)));
+        startProcessingEvent();
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> deadLetterQueue.amountOfSequences() == 1);
+        DeadLetter<?> deadLetter = deadLetterQueue.deadLetters().iterator().next().iterator().next();
+        assertTrue(deadLetter.cause().isPresent());
+        String causeType = deadLetter.cause().get().type();
+        assertEquals(ReferenceException.class.getName(), causeType);
+    }
+
     private void publishEventsFor(String aggregateId,
                                   int immediateSuccessesPerAggregate,
                                   int failFirstAndThenSucceedPerAggregate,
@@ -772,5 +795,14 @@ public abstract class DeadLetteringEventIntegrationTest {
             }
             return unitOfWork;
         };
+    }
+
+    private static class ReferenceException extends AxonException {
+
+        private static final long serialVersionUID = 1380362964599517107L;
+
+        ReferenceException(UUID reference) {
+            super(reference.toString());
+        }
     }
 }
