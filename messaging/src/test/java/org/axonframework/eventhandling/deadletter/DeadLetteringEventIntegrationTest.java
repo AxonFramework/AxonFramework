@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageIdentifier;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -51,6 +52,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import static org.awaitility.Awaitility.await;
@@ -86,6 +89,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     private static final boolean SUCCEED_RETRY = true;
     private static final boolean FAIL = false;
     private static final boolean FAIL_RETRY = false;
+    private static final int DEFAULT_RETRIES = 1;
 
     private ProblematicEventHandlingComponent eventHandlingComponent;
     private SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue;
@@ -93,6 +97,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     private InMemoryStreamableEventSource eventSource;
     private StreamingEventProcessor streamingProcessor;
     protected TransactionManager transactionManager;
+    private final AtomicInteger maxRetries = new AtomicInteger(DEFAULT_RETRIES);
 
     private ScheduledExecutorService executor;
 
@@ -116,7 +121,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         // A policy that ensure a letter is only retried once by adding diagnostics.
         EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> {
             int retries = (int) letter.diagnostics().getOrDefault("retries", 0);
-            if (retries < 1) {
+            if (retries < maxRetries.get()) {
                 return Decisions.enqueue(
                         cause, l -> MetaData.with("retries", (int) l.diagnostics().getOrDefault("retries", 0) + 1)
                 );
@@ -166,6 +171,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         if (!executorTerminated) {
             executor.shutdownNow();
         }
+        maxRetries.set(DEFAULT_RETRIES);
     }
 
     /**
@@ -558,6 +564,28 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertEquals(3, eventHandlingComponent.resolvedDeadLetterParameterCount(aggregateId));
     }
 
+    @Test
+    void deadLetterEventProcessingTaskIsUsingInterceptor() {
+        //needed to increase otherwise it would be evicted anyway
+        maxRetries.set(3);
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        deadLetteringInvoker.registerHandlerInterceptor(errorCatchingInterceptor(invoked));
+
+        String aggregateId = UUID.randomUUID().toString();
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL)));
+        startProcessingEvent();
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(10))
+               .until(() -> deadLetterQueue.size() == 1);
+
+        // component needs to be reset, so process will cause an exception again
+        eventHandlingComponent.handledEvent.clear();
+        eventHandlingComponent.firstTryFailures.clear();
+        deadLetteringInvoker.process(deadLetter -> true);
+        assertTrue(invoked.get());
+        assertEquals(0, deadLetterQueue.size());
+    }
+
     private void publishEventsFor(String aggregateId,
                                   int immediateSuccessesPerAggregate,
                                   int failFirstAndThenSucceedPerAggregate,
@@ -732,5 +760,17 @@ public abstract class DeadLetteringEventIntegrationTest {
                     ", shouldSucceedOnEvaluation=" + shouldSucceedOnEvaluation +
                     '}';
         }
+    }
+
+    private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
+        return (unitOfWork, chain) -> {
+            invoked.set(true);
+            try {
+                chain.proceed();
+            } catch (RuntimeException e) {
+                return unitOfWork;
+            }
+            return unitOfWork;
+        };
     }
 }

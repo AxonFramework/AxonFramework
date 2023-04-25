@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -313,6 +314,7 @@ public class EventProcessingModule
                 deadLetteringInvokerConfigs.getOrDefault(processingGroup, DeadLetteringInvokerConfiguration.noOp())
                                            .apply(configuration, builder)
                                            .build();
+        addInterceptors(processorName, deadLetteringInvoker);
         deadLetteringEventHandlerInvokers.put(processingGroup, deadLetteringInvoker);
         return deadLetteringInvoker;
     }
@@ -362,21 +364,25 @@ public class EventProcessingModule
                 .getOrDefault(processorName, defaultEventProcessorBuilder)
                 .build(processorName, configuration, multiEventHandlerInvoker);
 
+        addInterceptors(processorName, eventProcessor);
+
+        return eventProcessor;
+    }
+
+    private void addInterceptors(String processorName, MessageHandlerInterceptorSupport<EventMessage<?>> processor){
         handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
                                    .stream()
                                    .map(hi -> hi.apply(configuration))
-                                   .forEach(eventProcessor::registerHandlerInterceptor);
+                                   .forEach(processor::registerHandlerInterceptor);
 
         defaultHandlerInterceptors.stream()
                                   .map(f -> f.apply(configuration, processorName))
                                   .filter(Objects::nonNull)
-                                  .forEach(eventProcessor::registerHandlerInterceptor);
+                                  .forEach(processor::registerHandlerInterceptor);
 
-        eventProcessor.registerHandlerInterceptor(
+        processor.registerHandlerInterceptor(
                 new CorrelationDataInterceptor<>(configuration.correlationDataProviders())
         );
-
-        return eventProcessor;
     }
 
     //<editor-fold desc="configuration methods">
