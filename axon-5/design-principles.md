@@ -99,9 +99,15 @@
 - Aggregate Test Fixtures should, if configured, validate the given scenario's state with the snapshot state.
   Doing so, we guard users against incorrectly defining the snapshot state of their aggregates.
 
-## Commands / Command Modelling
+## Commands / Command Modelling / Aggregates
 - (Annotated) aggregates as they currently exist inside Axon Framework should stick.
   The underlying implementation will very likely differ, taking the "Kill the Aggregate!" presentation in mind.
+- Users should be able to configure an Aggregate through (1) Annotations, and (2) declarative configuration.
+  This declarative configuration allows users to be "more pure" on a DDD-level, as they do not have to use framework logic inside the model.
+  Furthermore, the declarative configuration allows definitions like "this event('s state) is handled by these methods," or "this command is handled by this function, resulting in these events."
+- The current AggregateLifecycle#apply method obstructs the fact it will *first* handle the event inside the aggregate and then move back to the command handler.
+  This obscures the fact subsequent tasks inside the command handler invoking *apply* can rely on that state change.
+  Although clarified in the JavaDoc, finding an explicit means to dictate "apply this event to the current state and then proceed."
 
 ## Queries
 * Merge Direct and Scatter-Gather into the Streaming Query API.
