@@ -717,8 +717,10 @@ class Coordinator {
                     // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
                     scheduleImmediateCoordinationTask();
                 } else if (isSpaceAvailable()) {
-                    // There is space, but no events to process. We caught up.
-                    workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
+                    // There is space, but no events to process. We seem to have caught up, some might be processed still.
+                    if (isDone()){
+                        workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
+                    }
 
                     if (!availabilityCallbackSupported) {
                         scheduleCoordinationTask(500);
@@ -818,6 +820,11 @@ class Coordinator {
         private boolean isSpaceAvailable() {
             return workPackages.values().stream()
                                .allMatch(WorkPackage::hasRemainingCapacity);
+        }
+
+        private boolean isDone() {
+            return workPackages.values().stream()
+                               .allMatch(WorkPackage::isDone);
         }
 
         /**
