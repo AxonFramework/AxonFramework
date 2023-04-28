@@ -26,3 +26,34 @@ Release a milestone of Axon Framework 5 at or before the AxonIQ Conference of 20
 9. Once some approaches become common practice within Axon Framework 5, solo programming should become an option.
    Done to ensure speed is maintained to reach the goal.
    You can think of boilerplate code, POJO construction, JavaDoc, or providing a second/third/... implementation of a discussed interface.
+
+## Roadmaps
+
+This section contains roadmaps to proceed towards a milestone release of Axon Framework 5.
+
+### Roadmap for 01-05-2023 to 05-05-2023
+
+1. Mob-styled PoC for the reactive UnitOfWork as the core of the framework.
+   Points to take into account:
+   1. [Single-interface approach](reactive-native.md#one-interface-approach)
+   2. [Multi-interface approach](reactive-native.md#two-interfaces-approach) 
+   3. Reactive Transaction Manager
+2. Define developer Personas for Axon Framework as a means to debate the module/component break down.
+3. Mob-styled PoC for [`Configuration` API](design-principles.md#configuration).
+4. Mob-styled PoC for [`Message`](design-principles.md#messaging) interfaces.
+   Point to take into account:
+   1. Allow definition of namespaces.
+   2. Separate message name from payload type.
+5. Mob-styled PoC for stateful message handlers.
+6. Mob-styled PoC for message bus design.
+7. Mob-styled PoC for the Event Store.
+   Point to take into account:
+   1. Aggregate events can be published with a set of identifiers the event belongs to. 
+      This supports aggregate break down / "kill the aggregate"-like solutions.
+8. Pass through of Axon Framework 4 marking components as deprecated or moved to extension/AxonServer.
+   Point to take into account:
+   1. Move JDBC or JPA outside of the Framework.
+   2. Move Spring outside of the Framework.
+   3. Drop components that aren't used a lot, like `ConflictResolution` or the `DisruptorCommandBus`.
+9. Mob-styled PoC for converter design (`Serializer` replacement).
+10. Mob-styled PoC for [declarative aggregate configuration](design-principles.md#commands--command-modelling--aggregates). 
