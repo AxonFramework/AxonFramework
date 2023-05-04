@@ -38,6 +38,8 @@ import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,6 +54,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -1137,5 +1140,42 @@ class PooledStreamingEventProcessorTest {
                     assertFalse(testSubject.isReplaying());
                 }
         );
+    }
+
+    @Test
+    void isCaughtUpWhenDoneProcessing() throws Exception {
+        mockSlowEventHandler();
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
+        List<EventMessage<Integer>> events = IntStream.range(0, 3)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+
+        testSubject.start();
+
+        AtomicReference<Instant> startedProcessing = new AtomicReference<>(null);
+        assertWithin(
+                5, TimeUnit.SECONDS,
+                () -> {
+                    assertEquals(1, testSubject.processingStatus().size());
+                    startedProcessing.compareAndSet(null, Instant.now());
+                }
+        );
+        assertWithin(
+                5, TimeUnit.SECONDS,
+                () -> {
+                    assertTrue(testSubject.processingStatus().get(0).isCaughtUp());
+                }
+        );
+        Instant now = Instant.now();
+        //It should have taken 2 seconds (rounded down) or more this will fail, want changed to normal mock, then it goes faster
+        assertTrue(Duration.between(startedProcessing.get(), now).getSeconds() >= 2);
+    }
+
+    private void mockSlowEventHandler() throws Exception {
+        doAnswer(invocation -> {
+            Thread.sleep(1000);
+            return null;
+        }).when(stubEventHandler).handle(any(), any());
     }
 }

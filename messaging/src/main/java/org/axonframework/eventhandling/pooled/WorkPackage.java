@@ -340,6 +340,16 @@ class WorkPackage {
     }
 
     /**
+     * Indicates whether this {@link WorkPackage} has any work in the queue or scheduled.
+     *
+     * @return {@code true} if the {@code processingQueue} is empty and there is nothing scheduled, or {@code false}
+     * otherwise.
+     */
+    public boolean isDone() {
+        return this.processingQueue.isEmpty() && !this.scheduled.get();
+    }
+
+    /**
      * Returns the {@link Segment} that this {@link WorkPackage} is processing events for.
      *
      * @return the {@link Segment} that this {@link WorkPackage} is processing events for
