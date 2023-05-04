@@ -99,15 +99,14 @@ public class AxonServerBusAutoConfiguration {
                                        Serializer genericSerializer,
                                        QueryPriorityCalculator priorityCalculator,
                                        QueryInvocationErrorHandler queryInvocationErrorHandler,
-                                       TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver,
-                                       SpanFactory spanFactory) {
+                                       TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver) {
         SimpleQueryBus simpleQueryBus =
                 SimpleQueryBus.builder()
                               .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
                               .transactionManager(txManager)
                               .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                               .errorHandler(queryInvocationErrorHandler)
-                              .spanFactory(spanFactory)
+                              .spanFactory(axonConfiguration.spanFactory())
                               .build();
         simpleQueryBus.registerHandlerInterceptor(
                 new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
@@ -122,7 +121,7 @@ public class AxonServerBusAutoConfiguration {
                                  .genericSerializer(genericSerializer)
                                  .priorityCalculator(priorityCalculator)
                                  .targetContextResolver(targetContextResolver)
-                                 .spanFactory(spanFactory)
+                                 .spanFactory(axonConfiguration.spanFactory())
                                  .build();
     }
 
