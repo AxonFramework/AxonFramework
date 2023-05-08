@@ -49,6 +49,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -92,6 +93,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
+
+import static java.util.Objects.isNull;
 
 /**
  * @author Allard Buijze
@@ -319,9 +322,6 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                             c -> applicationContext.getBean(settings.getSource(), SubscribableMessageSource.class)
                     );
                 }
-            }
-            if (settings.getDlq().isEnabled()) {
-                eventProcessingConfigurer.registerDeadLetterQueue(name, eventProcessingConfigurer.provideDlq(name));
             }
         });
     }

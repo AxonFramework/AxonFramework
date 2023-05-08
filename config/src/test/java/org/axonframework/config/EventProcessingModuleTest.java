@@ -1385,6 +1385,51 @@ class EventProcessingModuleTest {
         assertEquals(3, interceptors.size());
     }
 
+    @Test
+    void registerDeadLetterQueueProviderConstructsDeadLetteringEventHandlerInvoker(
+            @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String processingGroup = "pooled-streaming";
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(processingGroup)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDeadLetterQueueProvider(p -> c -> deadLetterQueue)
+                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+        Configuration config = configurer.start();
+
+        Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
+                                                                        .deadLetterPolicy(processingGroup);
+        assertTrue(optionalPolicy.isPresent());
+        EnqueuePolicy<EventMessage<?>> expectedPolicy = optionalPolicy.get();
+
+        Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
+                config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
+        assertTrue(configuredDlq.isPresent());
+        assertEquals(deadLetterQueue, configuredDlq.get());
+
+        Optional<PooledStreamingEventProcessor> optionalProcessor =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(processingGroup, PooledStreamingEventProcessor.class);
+        assertTrue(optionalProcessor.isPresent());
+        PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
+
+        EventHandlerInvoker resultInvoker =
+                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
+
+        MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
+        List<EventHandlerInvoker> delegates = getField("delegates", resultMultiInvoker);
+        assertFalse(delegates.isEmpty());
+        DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
+                ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+
+        assertEquals(deadLetterQueue, getField("queue", resultDeadLetteringInvoker));
+        assertEquals(expectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
+        assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", resultDeadLetteringInvoker));
+    }
+
     private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {
         return getField(object.getClass(), fieldName, object);
     }

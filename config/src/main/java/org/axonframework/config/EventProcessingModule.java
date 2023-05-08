@@ -75,7 +75,6 @@ import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
-import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.config.EventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp;
@@ -131,7 +130,7 @@ public class EventProcessingModule
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
 
-    protected final List<BiFunction<Configuration, String, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterProviders = new ArrayList<>();
+    protected Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
 
     private Configuration configuration;
 
@@ -275,6 +274,11 @@ public class EventProcessingModule
                             });
         assignments.forEach((processingGroup, handlers) -> {
             String processorName = processorNameForProcessingGroup(processingGroup);
+            if (!deadLetterQueues.containsKey(processingGroup)) {
+                Optional.ofNullable(deadLetterQueueProvider.apply(processingGroup))
+                        .ifPresent(deadLetterQueueFunction ->
+                                           registerDeadLetterQueue(processingGroup, deadLetterQueueFunction));
+            }
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>()).add(
                     c -> !deadLetterQueues.containsKey(processingGroup)
                             ? simpleInvoker(processingGroup, handlers)
@@ -500,6 +504,11 @@ public class EventProcessingModule
     @Override
     public Optional<SequencedDeadLetterQueue<EventMessage<?>>> deadLetterQueue(@Nonnull String processingGroup) {
         validateConfigInitialization();
+        if (!deadLetterQueues.containsKey(processingGroup)) {
+            Optional.ofNullable(deadLetterQueueProvider.apply(processingGroup))
+                    .ifPresent(deadLetterQueueFunction ->
+                                       registerDeadLetterQueue(processingGroup, deadLetterQueueFunction));
+        }
         return deadLetterQueues.containsKey(processingGroup)
                 ? Optional.ofNullable(deadLetterQueues.get(processingGroup).get()) : Optional.empty();
     }
@@ -876,23 +885,10 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerDeadLetterProvider(
-            BiFunction<Configuration, String, SequencedDeadLetterQueue<EventMessage<?>>> deadLetterProvider) {
-        this.deadLetterProviders.add(deadLetterProvider);
+    public EventProcessingConfigurer registerDeadLetterQueueProvider(
+            Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider) {
+        this.deadLetterQueueProvider = deadLetterQueueProvider;
         return this;
-    }
-
-    @Override
-    public Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> provideDlq(String processingGroup){
-        return conf -> {
-            for(BiFunction<Configuration, String, SequencedDeadLetterQueue<EventMessage<?>>> provider : deadLetterProviders){
-                SequencedDeadLetterQueue<EventMessage<?>> dlq = provider.apply(conf, processingGroup);
-                if (! isNull(processingGroup)){
-                    return dlq;
-                }
-            }
-            return null;
-        };
     }
 
     private EventProcessor defaultEventProcessor(String name,

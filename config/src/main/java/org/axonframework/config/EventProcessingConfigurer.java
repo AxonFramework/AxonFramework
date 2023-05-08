@@ -828,25 +828,17 @@ public interface EventProcessingConfigurer {
      * Register the given {@code deadLetterProvider} as a default to build a {@link SequencedDeadLetterQueue} for
      * {@link EventProcessor}s created in this configuration.
      * <p>
-     * The {@code deadLetterProvider} is invoked only if a processing group is configured to have a dead-letter queue.
+     * The {@code deadLetterProvider} might return null if the given processing group name should not have a sequenced
+     * dead letter queue. An explicit set sequenced dead letter queue set using
+     * {@link #registerDeadLetterQueue(String, Function)} will always have precedence over the one provided by this
+     * provider.
      *
-     * @param deadLetterProvider a builder {@link Function} that provides a {@link SequencedDeadLetterQueue} for a
-     *                           processing group. It's possible to return null depending on the processing group, if so
-     *                           the next ones will be tried.
+     * @param deadLetterQueueProvider a builder {@link Function} that provides a {@link SequencedDeadLetterQueue} for a
+     *                                processing group. It's possible to return null depending on the processing group.
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer registerDeadLetterProvider(
-            BiFunction<Configuration, String, SequencedDeadLetterQueue<EventMessage<?>>> deadLetterProvider) {
+    default EventProcessingConfigurer registerDeadLetterQueueProvider(
+            Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider) {
         return this;
-    }
-
-    /**
-     * Provides a function to get a {@link SequencedDeadLetterQueue} based on the set {@code deadLetterProviders}.
-     *
-     * @param processingGroup the processingGroup to provide a sequnced dead letter queue for
-     * @return a function to provide a {@link SequencedDeadLetterQueue}
-     */
-    default Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> provideDlq(String processingGroup) {
-        return c -> null;
     }
 }

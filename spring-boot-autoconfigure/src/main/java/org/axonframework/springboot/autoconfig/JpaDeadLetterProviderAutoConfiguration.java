@@ -22,11 +22,15 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.springboot.EventProcessorProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+
+import java.util.Optional;
 
 /**
  * Auto configuration class for Axon's JPA specific sequenced dead letter queue.
@@ -38,9 +42,16 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
  * @since 4.8.0
  */
 @AutoConfiguration
-@AutoConfigureAfter({JpaAutoConfiguration.class, EventProcessingAutoConfiguration.class})
 @ConditionalOnBean(EntityManagerFactory.class)
+@AutoConfigureAfter({JpaAutoConfiguration.class, EventProcessingAutoConfiguration.class})
+@EnableConfigurationProperties(value = EventProcessorProperties.class)
 public class JpaDeadLetterProviderAutoConfiguration {
+
+    private final EventProcessorProperties eventProcessorProperties;
+
+    public JpaDeadLetterProviderAutoConfiguration(EventProcessorProperties eventProcessorProperties) {
+        this.eventProcessorProperties = eventProcessorProperties;
+    }
 
     @Autowired
     void registerDeadLetterProvider(
@@ -50,16 +61,26 @@ public class JpaDeadLetterProviderAutoConfiguration {
             Serializer genericSerializer,
             TransactionManager transactionManager
     ) {
-        processingModule.registerDeadLetterProvider(
-                ((configuration, processingGroup) ->
-                        JpaSequencedDeadLetterQueue
+        processingModule.registerDeadLetterQueueProvider(
+                processingGroup -> {
+                    if (dlqEnabled(processingGroup)) {
+                        return configuration -> JpaSequencedDeadLetterQueue
                                 .builder()
                                 .processingGroup(processingGroup)
                                 .entityManagerProvider(entityManagerProvider)
                                 .transactionManager(transactionManager)
                                 .eventSerializer(eventSerializer)
                                 .genericSerializer(genericSerializer)
-                                .build()
-                ));
+                                .build();
+                    } else {
+                        return null;
+                    }
+                });
+    }
+
+    private boolean dlqEnabled(String processingGroup) {
+        return Optional.ofNullable(eventProcessorProperties.getProcessors().get(processingGroup))
+                       .map(processorSettings -> processorSettings.getDlq().isEnabled())
+                       .orElse(false);
     }
 }
