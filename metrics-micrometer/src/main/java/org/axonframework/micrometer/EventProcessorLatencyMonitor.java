@@ -22,6 +22,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitorCallback;
@@ -36,7 +37,15 @@ import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Measures the difference in message timestamps between the last ingested and the last processed message.
+ * A {@link MessageMonitor} implementation dedicated to {@link EventMessage EventMessages}.
+ * <p>
+ * This monitor defines the latency between the {@link EventMessage#getTimestamp()} and the {@link Clock#wallTime()}.
+ * Doing so, it depicts the latency from when an event was published compared to when an
+ * {@link org.axonframework.eventhandling.EventProcessor} processes the event to clarify how far behind an
+ * {@code EventProcessor} is.
+ * <p>
+ * Do note that a replay (as triggered through {@link StreamingEventProcessor#resetTokens()}, for example) will cause
+ * this metric to bump up due to the processor handling old events.
  *
  * @author Marijn van Zelst
  * @author Ivan Dugalic
@@ -147,8 +156,8 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
         private Clock clock = Clock.SYSTEM;
 
         /**
-         * Sets the name used to prefix the names of the {@link Gauge} instances created by this {@link
-         * MessageMonitor}.
+         * Sets the name used to prefix the names of the {@link Gauge} instances created by this
+         * {@link MessageMonitor}.
          *
          * @param meterNamePrefix a {@link String} used to prefix the names of the {@link Gauge} instances created by
          *                        this {@link MessageMonitor}

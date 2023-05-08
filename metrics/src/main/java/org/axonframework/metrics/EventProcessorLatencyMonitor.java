@@ -20,6 +20,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitorCallback;
 
@@ -31,7 +32,15 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nonnull;
 
 /**
- * Measures the difference in message timestamps between the last ingested and the last processed message.
+ * A {@link MessageMonitor} implementation dedicated to {@link EventMessage EventMessages}.
+ * <p>
+ * This monitor defines the latency between the {@link EventMessage#getTimestamp()} and the {@link Clock#instant()}.
+ * Doing so, it depicts the latency from when an event was published compared to when an
+ * {@link org.axonframework.eventhandling.EventProcessor} processes the event to clarify how far behind an
+ * {@code EventProcessor} is.
+ * <p>
+ * Do note that a replay (as triggered through {@link StreamingEventProcessor#resetTokens()}, for example) will cause
+ * this metric to bump up due to the processor handling old events.
  *
  * @author Marijn van Zelst
  * @author Allard Buijze
