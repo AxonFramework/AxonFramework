@@ -123,7 +123,7 @@ public class EventProcessorProperties {
         private String sequencingPolicy;
 
         /**
-         * The sequenced dead letter queue settings to be used for this processing group.
+         * The {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} settings that will be used for this processing group.
          */
         private Dlq dlq = new Dlq();
 
