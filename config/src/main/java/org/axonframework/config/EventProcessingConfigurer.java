@@ -828,7 +828,7 @@ public interface EventProcessingConfigurer {
      * Register the given {@code deadLetterProvider} as a default to build a {@link SequencedDeadLetterQueue} for
      * {@link EventProcessor}s created in this configuration.
      * <p>
-     * The {@code deadLetterProvider} is invoked only if a processing group is configured to have a dlq.
+     * The {@code deadLetterProvider} is invoked only if a processing group is configured to have a dead-letter queue.
      *
      * @param deadLetterProvider a builder {@link Function} that provides a {@link SequencedDeadLetterQueue} for a
      *                           processing group. It's possible to return null depending on the processing group, if so
