@@ -20,19 +20,17 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ResetNotSupportedException;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.NoMoreInterceptors;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
-import org.axonframework.modelling.saga.metamodel.SagaMetaModelFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Nonnull;
 import java.util.Set;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWith;
 import static org.junit.jupiter.api.Assertions.*;
@@ -295,19 +293,6 @@ class AnnotatedSagaTest {
         public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
                                   @Nonnull MessageHandlingMember<T> handler) {
             return null;
-        }
-    }
-
-    private static class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberChain<T> {
-
-        private static <T> MessageHandlerInterceptorMemberChain<T> instance() {
-            return new SagaMetaModelFactory.NoMoreInterceptors<>();
-        }
-
-        @Override
-        public Object handle(@Nonnull Message<?> message, @Nonnull T target,
-                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
-            return handler.handle(message, target);
         }
     }
 }

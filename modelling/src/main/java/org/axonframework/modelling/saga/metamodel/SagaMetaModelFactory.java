@@ -16,11 +16,8 @@
 
 package org.axonframework.modelling.saga.metamodel;
 
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-
-import javax.annotation.Nonnull;
+import org.axonframework.messaging.annotation.NoMoreInterceptors;
 
 /**
  * Interface of a factory for a {@link SagaModel} for any given saga type.
@@ -47,18 +44,5 @@ public interface SagaMetaModelFactory {
      */
     default <T> MessageHandlerInterceptorMemberChain<T> chainedInterceptor(Class<T> sagaType) {
         return NoMoreInterceptors.instance();
-    }
-
-    class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberChain<T> {
-
-        private static <T> MessageHandlerInterceptorMemberChain<T> instance() {
-            return new NoMoreInterceptors<>();
-        }
-
-        @Override
-        public Object handle(@Nonnull Message<?> message, @Nonnull T target,
-                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
-            return handler.handle(message, target);
-        }
     }
 }

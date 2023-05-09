@@ -17,6 +17,11 @@
 package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -28,6 +33,9 @@ import org.mockito.*;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.messaging.unitofwork.DefaultUnitOfWork.startAndGet;
@@ -54,6 +62,7 @@ class AnnotatedSagaRepositoryTest {
         if (currentUnitOfWork.isActive()) {
             currentUnitOfWork.commit();
         }
+        CountingInterceptors.counter.set(0);
     }
 
     @Test
@@ -78,7 +87,7 @@ class AnnotatedSagaRepositoryTest {
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
         Saga<Object> saga2 =
                 startAndGet(null).executeWithResult(() -> testSubject.load(saga.getSagaIdentifier()))
-                .getPayload();
+                                 .getPayload();
 
         assertSame(saga, saga2);
         currentUnitOfWork.commit();
@@ -144,5 +153,44 @@ class AnnotatedSagaRepositoryTest {
         otherProcess.join();
 
         assertEquals(singleton(sagaId), testSubject.find(associationValue));
+    }
+
+    @Test
+    void ifInterceptorSetThatOneShouldBeUsed() throws Exception {
+        AnnotatedSagaRepository<TestSaga> sagaRepository = AnnotatedSagaRepository.<TestSaga>builder()
+                                                                                  .sagaType(TestSaga.class)
+                                                                                  .sagaStore(store)
+                                                                                  .interceptorMemberChain(
+                                                                                          CountingInterceptors.instance())
+                                                                                  .build();
+        Saga<TestSaga> saga =
+                sagaRepository.createInstance(IdentifierFactory.getInstance().generateIdentifier(), TestSaga::new);
+        saga.handle(GenericEventMessage.asEventMessage(new Object()));
+
+        assertEquals(1, CountingInterceptors.counter.get());
+    }
+
+    private static class CountingInterceptors implements MessageHandlerInterceptorMemberChain<TestSaga> {
+
+        static AtomicInteger counter = new AtomicInteger(0);
+
+        private static MessageHandlerInterceptorMemberChain<TestSaga> instance() {
+            return new CountingInterceptors();
+        }
+
+        @Override
+        public Object handle(@Nonnull Message<?> message, @Nonnull TestSaga target,
+                             @Nonnull MessageHandlingMember<? super TestSaga> handler) throws Exception {
+            counter.incrementAndGet();
+            return handler.handle(message, target);
+        }
+    }
+
+    private static class TestSaga {
+
+        @EventHandler
+        public void on(Object o) {
+
+        }
     }
 }

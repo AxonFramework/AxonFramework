@@ -20,6 +20,7 @@ import org.axonframework.common.AxonException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.NoMoreInterceptors;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.SagaEventHandler;
@@ -83,9 +84,8 @@ class AnnotationSagaMetaModelFactoryTest {
     }
 
     @Test
-    void testAnnotatedHandlerInspectorMessageHandlerInterceptorMemberChain() {
-        assertEquals("org.axonframework.messaging.annotation.AnnotatedHandlerInspector$NoMoreInterceptors",
-                     testSubject.chainedInterceptor(MySaga.class).getClass().getName());
+    void messageHandlerInterceptorShouldDefaultToNoMoreInterceptors() {
+        assertEquals(NoMoreInterceptors.class, testSubject.chainedInterceptor(MySaga.class).getClass());
     }
 
     public static class MySaga {

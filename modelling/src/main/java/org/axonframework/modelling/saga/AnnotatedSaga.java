@@ -45,14 +45,15 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private volatile boolean isActive = true;
 
     /**
-     * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given {@code
-     * sagaId} and associated with the given {@code associationValues}. The {@code metaModel} provides the description
-     * of the structure of the Saga.
+     * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given
+     * {@code sagaId} and associated with the given {@code associationValues}. The {@code metaModel} provides the
+     * description of the structure of the Saga.
      *
-     * @param sagaId            The identifier of this Saga instance
-     * @param associationValues The current associations of this Saga
-     * @param annotatedSaga     The object instance representing the Saga
-     * @param metaModel         The model describing Saga structure
+     * @param sagaId             The identifier of this Saga instance
+     * @param associationValues  The current associations of this Saga
+     * @param annotatedSaga      The object instance representing the Saga
+     * @param metaModel          The model describing Saga structure
+     * @param chainedInterceptor The interceptor to be used for this Saga
      */
     public AnnotatedSaga(String sagaId,
                          Set<AssociationValue> associationValues,

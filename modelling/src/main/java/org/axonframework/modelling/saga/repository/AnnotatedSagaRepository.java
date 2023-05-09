@@ -69,7 +69,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * Will assert that the {@code sagaType}, {@link SagaStore} and {@link ResourceInjector} are not {@code null}, and
      * will throw an {@link AxonConfigurationException} if any of them is {@code null}. Additionally, the provided
      * builder's goal is to either build a {@link SagaModel} specifying generic {@code T} as the Saga type to be stored
-     * or derive it based on the given {@code sagaType}. Same for the {@link MessageHandlerInterceptorMemberChain}. All
+     * or derive it based on the given {@code sagaType}. The same argument applies to the {@link MessageHandlerInterceptorMemberChain}. All
      * Sagas in this repository must be {@code instanceOf} this saga type.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AnnotatedSagaRepository} instance
@@ -351,6 +351,20 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         }
 
         /**
+         * Sets the {@link MessageHandlerInterceptorMemberChain} of generic type {@code T}, describing the structure of the Saga this
+         * {@link SagaRepository} implementation will store. To be used in handling the event messages.
+         *
+         * @param interceptorMemberChain the {@link MessageHandlerInterceptorMemberChain} of generic type {@code T} of the Saga this {@link SagaRepository}
+         *                  implementation will store
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> interceptorMemberChain(MessageHandlerInterceptorMemberChain<T> interceptorMemberChain) {
+            assertNonNull(interceptorMemberChain, "InterceptorMemberChain may not be null");
+            this.interceptorMemberChain = interceptorMemberChain;
+            return this;
+        }
+
+        /**
          * Initializes a {@link AnnotatedSagaRepository} as specified through this Builder.
          *
          * @return a {@link AnnotatedSagaRepository} as specified through this Builder
@@ -388,18 +402,17 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         }
 
         /**
-         * Instantiate the {@link MessageHandlerInterceptorMemberChain} of generic type {@code T}. To be used in
-         * handling the event messages.
+         * Instantiate the {@link MessageHandlerInterceptorMemberChain} of generic type {@code T} as the Saga type to
+         * be stored. To be used in handling the event messages.
          *
          * @return a {@link MessageHandlerInterceptorMemberChain} of generic type {@code T}. To be used in handling the
          * event messages.
          */
         protected MessageHandlerInterceptorMemberChain<T> buildChainedInterceptor() {
             if (interceptorMemberChain == null) {
-                return inspectChainedInterceptor();
-            } else {
-                return interceptorMemberChain;
+                interceptorMemberChain = inspectChainedInterceptor();
             }
+            return interceptorMemberChain;
         }
 
         private MessageHandlerInterceptorMemberChain<T> inspectChainedInterceptor() {
