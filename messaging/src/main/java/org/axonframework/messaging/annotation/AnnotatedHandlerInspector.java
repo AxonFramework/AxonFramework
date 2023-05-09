@@ -373,17 +373,4 @@ public class AnnotatedHandlerInspector<T> {
             return next.handle(message, target, handler);
         }
     }
-
-    private static class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberChain<T> {
-
-        static <T> MessageHandlerInterceptorMemberChain<T> instance() {
-            return new NoMoreInterceptors<>();
-        }
-
-        @Override
-        public Object handle(@Nonnull Message<?> message, @Nonnull T target,
-                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
-            return handler.handle(message, target);
-        }
-    }
 }

@@ -16,6 +16,9 @@
 
 package org.axonframework.modelling.saga.metamodel;
 
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.annotation.NoMoreInterceptors;
+
 /**
  * Interface of a factory for a {@link SagaModel} for any given saga type.
  */
@@ -26,8 +29,20 @@ public interface SagaMetaModelFactory {
      * characteristics of the given type.
      *
      * @param sagaType The saga class to be inspected
-     * @param <T> The saga type
+     * @param <T>      The saga type
      * @return Model describing the capabilities and characteristics of the inspected saga class
      */
     <T> SagaModel<T> modelOf(Class<T> sagaType);
+
+    /**
+     * Returns an Interceptor Chain of annotated interceptor methods for the given {@code sagaType}. The given chain
+     * will invoke all relevant interceptors in an order defined by the handler definition.
+     *
+     * @param sagaType The saga class to be inspected
+     * @param <T>      The saga type
+     * @return an interceptor chain that invokes the interceptor handlers
+     */
+    default <T> MessageHandlerInterceptorMemberChain<T> chainedInterceptor(Class<T> sagaType) {
+        return NoMoreInterceptors.instance();
+    }
 }
