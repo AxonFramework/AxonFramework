@@ -56,9 +56,10 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.causeTypeColumn() + " VARCHAR(255),\n" +
                 schema.causeMessageColumn() + " VARCHAR(255),\n" + // TODO large size for the message?
                 schema.diagnosticsColumn() + " " + serializedDataType() + " ,\n" +
-                "PRIMARY KEY (" + schema.processingGroupColumn() + "),\n" +
-                "PRIMARY KEY (" + schema.processingGroupColumn() + "," + schema.sequenceIdentifierColumn() + "),\n" +
-                "PRIMARY KEY (" +
+                "PRIMARY KEY (" + schema.deadLetterIdColumn() + "),\n" +
+                "UNIQUE (" + schema.processingGroupColumn() + "),\n" +
+                "UNIQUE (" + schema.processingGroupColumn() + "," + schema.sequenceIdentifierColumn() + "),\n" +
+                "UNIQUE (" +
                 schema.processingGroupColumn() + "," + schema.sequenceIdentifierColumn() + "," +
                 schema.sequenceIndexColumn() +
                 ")\n" +
