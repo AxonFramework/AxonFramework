@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,29 +32,21 @@ import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.spring.saga.SpringResourceInjector;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.axonframework.springboot.utils.GrpcServerStub;
+import org.axonframework.springboot.utils.TcpUtils;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration
-@EnableAutoConfiguration
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 class AxonServerAutoConfigurationTest {
 
     private static final TargetContextResolver<Message<?>> CUSTOM_TARGET_CONTEXT_RESOLVER =
@@ -62,180 +54,184 @@ class AxonServerAutoConfigurationTest {
     private static final ManagedChannelCustomizer CUSTOM_MANAGED_CHANNEL_CUSTOMIZER =
             ManagedChannelBuilder::directExecutor;
 
-    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(
-                    AxonTracingAutoConfiguration.class,
-                    AxonAutoConfiguration.class,
-                    EventProcessingAutoConfiguration.class,
-                    InfraConfiguration.class,
-                    JdbcAutoConfiguration.class,
-                    JpaAutoConfiguration.class,
-                    JpaEventStoreAutoConfiguration.class,
-                    MetricsAutoConfiguration.class,
-                    NoOpTransactionAutoConfiguration.class,
-                    ObjectMapperAutoConfiguration.class,
-                    TransactionAutoConfiguration.class,
-                    XStreamAutoConfiguration.class
-            ));
+    private ApplicationContextRunner testContext;
 
-    @Autowired
-    private CommandBus commandBus;
-    @Autowired
-    @Qualifier("localSegment")
-    private CommandBus localSegment;
+    @BeforeEach
+    void setUp() {
+        testContext = new ApplicationContextRunner().withUserConfiguration(TestContext.class);
+    }
 
-    @Autowired
-    private QueryBus queryBus;
-    @Autowired
-    private QueryUpdateEmitter updateEmitter;
+    @BeforeAll
+    static void beforeAll() {
+        System.setProperty("axon.axonserver.servers", GrpcServerStub.DEFAULT_HOST + ":" + TcpUtils.findFreePort());
+    }
 
-    @Autowired
-    private ApplicationContext applicationContext;
+    @AfterAll
+    static void afterAll() {
+        System.clearProperty("axon.axonserver.servers");
+    }
 
     @Test
     void axonServerQueryBusConfiguration() {
-        assertTrue(queryBus instanceof AxonServerQueryBus);
-        assertSame(updateEmitter, queryBus.queryUpdateEmitter());
-    }
+        testContext.run(context -> {
+            QueryBus queryBus = context.getBean(QueryBus.class);
+            assertThat(queryBus).isNotNull();
+            assertThat(queryBus).isInstanceOf(AxonServerQueryBus.class);
 
-    @Test
-    void axonServerCommandBusBeanTypesConfiguration() {
-        assertTrue(commandBus instanceof AxonServerCommandBus);
-        assertTrue(localSegment instanceof SimpleCommandBus);
-    }
-
-    @Test
-    void springResourceInjectorConfigured() {
-        assertFalse(applicationContext.getBeansOfType(ResourceInjector.class).isEmpty(), "Expected an autoconfigured ResourceInjector");
-        assertTrue(applicationContext.getBean(ResourceInjector.class) instanceof SpringResourceInjector);
-    }
-
-    @Test
-    void axonServerDefaultCommandBusConfiguration() {
-        this.contextRunner
-                .withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
-                .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                .run(context -> {
-                    assertThat(context).getBeanNames(CommandBus.class)
-                                       .hasSize(2);
-                    assertThat(context).getBean("axonServerCommandBus")
-                                       .isExactlyInstanceOf(AxonServerCommandBus.class);
-                    assertThat(context).getBean("commandBus")
-                                       .isExactlyInstanceOf(SimpleCommandBus.class);
-                });
-    }
-
-    @Test
-    void axonServerDefaultConfiguration_AxonServerDisabled() {
-        this.contextRunner.withPropertyValues("axon.axonserver.enabled=false")
-                          .withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
-                          .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                          .run(context -> {
-                              assertThat(context).getBeanNames(CommandBus.class)
-                                                 .hasSize(1);
-                              assertThat(context).doesNotHaveBean("axonServerCommandBus");
-                              assertThat(context).getBean("commandBus")
-                                                 .isExactlyInstanceOf(SimpleCommandBus.class);
-                              assertThat(context).hasSingleBean(EventBus.class);
-                          });
-    }
-
-    @Test
-    void axonServerUserDefinedCommandBusConfiguration() {
-        this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                          .withUserConfiguration(ExplicitUserCommandBusConfiguration.class)
-                          .run(context -> {
-                              assertThat(context).getBeanNames(CommandBus.class)
-                                                 .hasSize(1);
-                              assertThat(context).getBean(CommandBus.class)
-                                                 .isExactlyInstanceOf(DisruptorCommandBus.class);
-                          });
-    }
-
-    @Test
-    void axonServerUserDefinedLocalSegmentConfiguration() {
-        this.contextRunner
-                .withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
-                .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                .withUserConfiguration(ExplicitUserLocalSegmentConfiguration.class)
-                .run(context -> {
-                    assertThat(context).getBeanNames(CommandBus.class)
-                                       .hasSize(2);
-                    assertThat(context).getBean("axonServerCommandBus")
-                                       .isExactlyInstanceOf(AxonServerCommandBus.class);
-                    assertThat(context).getBean("commandBus")
-                                       .isExactlyInstanceOf(DisruptorCommandBus.class);
-                });
-    }
-
-    @Test
-    void axonServerWrongUserDefinedLocalSegmentConfiguration() {
-        this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                          .withUserConfiguration(ExplicitWrongUserLocalSegmentConfiguration.class)
-                          .run(context -> {
-                              assertThat(context).getBeanNames(CommandBus.class)
-                                                 .hasSize(1);
-                              assertThat(context).getBean(CommandBus.class)
-                                                 .isExactlyInstanceOf(DisruptorCommandBus.class);
-                          });
-    }
-
-    @Test
-    void nonAxonServerCommandBusConfiguration() {
-        this.contextRunner.run(context -> {
-            assertThat(context).getBeanNames(CommandBus.class)
-                               .hasSize(1);
-            assertThat(context).getBean(CommandBus.class)
-                               .isExactlyInstanceOf(SimpleCommandBus.class);
+            QueryUpdateEmitter queryUpdateEmitter = context.getBean(QueryUpdateEmitter.class);
+            assertThat(queryUpdateEmitter).isNotNull();
+            assertThat(queryUpdateEmitter).isEqualTo(queryBus.queryUpdateEmitter());
         });
     }
 
     @Test
+    void axonServerCommandBusBeanTypesConfiguration() {
+        testContext.run(context -> {
+            Map<String, CommandBus> commandBusses = context.getBeansOfType(CommandBus.class);
+
+            assertThat(commandBusses).containsKey("axonServerCommandBus");
+            assertThat(commandBusses.get("axonServerCommandBus")).isInstanceOf(AxonServerCommandBus.class);
+
+            assertThat(commandBusses).containsKey("commandBus");
+            assertThat(commandBusses.get("commandBus")).isInstanceOf(SimpleCommandBus.class);
+        });
+    }
+
+    @Test
+    void springResourceInjectorConfigured() {
+        testContext.run(context -> {
+            ResourceInjector resourceInjector = context.getBean(ResourceInjector.class);
+            assertThat(resourceInjector).isNotNull();
+            assertThat(resourceInjector).isInstanceOf(SpringResourceInjector.class);
+        });
+    }
+
+    @Test
+    void axonServerDefaultCommandBusConfiguration() {
+        testContext.withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
+                   .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
+                   .run(context -> {
+                       assertThat(context).getBeanNames(CommandBus.class)
+                                          .hasSize(2);
+                       assertThat(context).getBean("axonServerCommandBus")
+                                          .isExactlyInstanceOf(AxonServerCommandBus.class);
+                       assertThat(context).getBean("commandBus")
+                                          .isExactlyInstanceOf(SimpleCommandBus.class);
+                   });
+    }
+
+    @Test
+    void axonServerDefaultConfiguration_AxonServerDisabled() {
+        testContext.withPropertyValues("axon.axonserver.enabled=false")
+                   .run(context -> {
+                       assertThat(context).getBeanNames(CommandBus.class)
+                                          .hasSize(1);
+                       assertThat(context).doesNotHaveBean("axonServerCommandBus");
+                       assertThat(context).getBean("commandBus")
+                                          .isExactlyInstanceOf(SimpleCommandBus.class);
+                       assertThat(context).hasSingleBean(EventBus.class);
+                   });
+    }
+
+    @Test
+    void axonServerUserDefinedCommandBusConfiguration() {
+        testContext.withUserConfiguration(ExplicitUserCommandBusConfiguration.class)
+                   .run(context -> {
+                       assertThat(context).getBeanNames(CommandBus.class)
+                                          .hasSize(1);
+                       assertThat(context).getBean(CommandBus.class)
+                                          .isExactlyInstanceOf(DisruptorCommandBus.class);
+                   });
+    }
+
+    @Test
+    void axonServerUserDefinedLocalSegmentConfiguration() {
+        testContext.withUserConfiguration(ExplicitUserLocalSegmentConfiguration.class)
+                   .run(context -> {
+                       assertThat(context).getBeanNames(CommandBus.class)
+                                          .hasSize(2);
+                       assertThat(context).getBean("axonServerCommandBus")
+                                          .isExactlyInstanceOf(AxonServerCommandBus.class);
+                       assertThat(context).getBean("commandBus")
+                                          .isExactlyInstanceOf(DisruptorCommandBus.class);
+                   });
+    }
+
+    @Test
+    void axonServerWrongUserDefinedLocalSegmentConfiguration() {
+        testContext.withUserConfiguration(
+                           ExplicitWrongUserLocalSegmentConfiguration.class
+                   )
+                   .run(context -> {
+                       assertThat(context).getBeanNames(CommandBus.class)
+                                          .hasSize(1);
+                       assertThat(context).getBean(CommandBus.class)
+                                          .isExactlyInstanceOf(DisruptorCommandBus.class);
+                   });
+    }
+
+    @Test
+    void nonAxonServerCommandBusConfiguration() {
+        testContext.withPropertyValues("axon.axonserver.enabled=false")
+                   .run(context -> {
+                       assertThat(context).getBeanNames(CommandBus.class)
+                                          .hasSize(1);
+                       assertThat(context).getBean(CommandBus.class)
+                                          .isExactlyInstanceOf(SimpleCommandBus.class);
+                   });
+    }
+
+    @Test
     void defaultTargetContextResolverIsNoOp() {
-        this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                          .run(context -> {
-                              assertThat(context).getBeanNames(TargetContextResolver.class)
-                                                 .hasSize(1);
-                              assertThat(context).getBean(TargetContextResolver.class)
-                                                 .isEqualTo(TargetContextResolver.noOp());
-                          });
+        testContext.run(context -> {
+            assertThat(context).getBeanNames(TargetContextResolver.class)
+                               .hasSize(1);
+            assertThat(context).getBean(TargetContextResolver.class)
+                               .isEqualTo(TargetContextResolver.noOp());
+        });
     }
 
     @Test
     void customTargetContextResolverIsConfigured() {
-        this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                          .withUserConfiguration(TargetContextResolverConfiguration.class)
-                          .run(context -> {
-                              assertThat(context).getBeanNames(TargetContextResolver.class)
-                                                 .hasSize(1);
-                              assertThat(context).getBean(TargetContextResolver.class)
-                                                 .isEqualTo(CUSTOM_TARGET_CONTEXT_RESOLVER);
-                          });
+        testContext.withUserConfiguration(TargetContextResolverConfiguration.class)
+                   .run(context -> {
+                       assertThat(context).getBeanNames(TargetContextResolver.class)
+                                          .hasSize(1);
+                       assertThat(context).getBean(TargetContextResolver.class)
+                                          .isEqualTo(CUSTOM_TARGET_CONTEXT_RESOLVER);
+                   });
     }
 
     @Test
     void axonServerEventSchedulerIsConfigured() {
-        this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                          .run(context -> {
-                              assertThat(context).getBeanNames(EventScheduler.class)
-                                                 .hasSize(1);
-                              assertThat(context).getBean(EventScheduler.class)
-                                                 .isExactlyInstanceOf(AxonServerEventScheduler.class);
-                          });
+        testContext.run(context -> {
+            assertThat(context).getBeanNames(EventScheduler.class)
+                               .hasSize(1);
+            assertThat(context).getBean(EventScheduler.class)
+                               .isExactlyInstanceOf(AxonServerEventScheduler.class);
+        });
     }
 
     @Test
     void customManagedChannelCustomizerIsConfigured() {
-        this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                          .withUserConfiguration(ManagedChannelCustomizerConfiguration.class)
-                          .run(context -> {
-                              assertThat(context).getBeanNames(ManagedChannelCustomizer.class)
-                                                 .hasSize(1);
-                              assertThat(context).getBean(ManagedChannelCustomizer.class)
-                                                 .isEqualTo(CUSTOM_MANAGED_CHANNEL_CUSTOMIZER);
-                          });
+        testContext.withUserConfiguration(ManagedChannelCustomizerConfiguration.class)
+                   .run(context -> {
+                       assertThat(context).getBeanNames(ManagedChannelCustomizer.class)
+                                          .hasSize(1);
+                       assertThat(context).getBean(ManagedChannelCustomizer.class)
+                                          .isEqualTo(CUSTOM_MANAGED_CHANNEL_CUSTOMIZER);
+                   });
     }
 
+    @ContextConfiguration
+    @EnableAutoConfiguration
+    private static class TestContext {
+
+        @Bean(initMethod = "start", destroyMethod = "shutdown")
+        public GrpcServerStub grpcServerStub(@Value("${axon.axonserver.servers}") String servers) {
+            return new GrpcServerStub(Integer.parseInt(servers.split(":")[1]));
+        }
+    }
 
     private static class ExplicitUserCommandBusConfiguration {
 

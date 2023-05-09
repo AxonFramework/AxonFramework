@@ -40,6 +40,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
+
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -69,7 +71,7 @@ public class SpringAggregateSnapshotterFactoryBean
     public SpringAggregateSnapshotter getObject() {
         if (transactionManager == null) {
             Map<String, PlatformTransactionManager> candidates =
-                    applicationContext.getBeansOfType(PlatformTransactionManager.class);
+                    beansOfTypeIncludingAncestors(applicationContext, PlatformTransactionManager.class);
             if (candidates.size() == 1) {
                 this.transactionManager = candidates.values().iterator().next();
             }
@@ -91,8 +93,8 @@ public class SpringAggregateSnapshotterFactoryBean
         }
 
         if (handlerDefinition == null) {
-            handlerDefinition = new HandlerDefinitionFactoryBean(new ArrayList<>(applicationContext.getBeansOfType(HandlerDefinition.class).values()),
-                                                                 new ArrayList<>(applicationContext.getBeansOfType(HandlerEnhancerDefinition.class).values()))
+            handlerDefinition = new HandlerDefinitionFactoryBean(new ArrayList<>(beansOfTypeIncludingAncestors(applicationContext, HandlerDefinition.class).values()),
+                                                                 new ArrayList<>(beansOfTypeIncludingAncestors(applicationContext, HandlerEnhancerDefinition.class).values()))
                     .getObject();
         }
 

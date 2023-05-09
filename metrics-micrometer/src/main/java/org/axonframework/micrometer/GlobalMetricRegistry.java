@@ -230,6 +230,9 @@ public class GlobalMetricRegistry {
                     message -> Tags.of(
                             PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
                             PROCESSOR_NAME_TAG, componentName
+                    ),
+                    message -> Tags.of(
+                            PROCESSOR_NAME_TAG, componentName
                     )
             );
         }
@@ -258,15 +261,39 @@ public class GlobalMetricRegistry {
      * @param eventProcessorName the name under which the {@link EventProcessor} should be registered to the registry
      * @param tagsBuilder        the function used to construct the list of {@link Tag}, based on the ingested message
      * @return a {@link MessageMonitor} to monitor the behavior of an {@link EventProcessor}
+     * @deprecated Please use the {@link #registerEventProcessor(String, Function, Function)} instead, which has
+     * separate tags for the latency metric.
      */
+    @Deprecated
     public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String eventProcessorName,
                                                                           Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+        return registerEventProcessor(eventProcessorName, tagsBuilder, tagsBuilder);
+    }
+
+    /**
+     * Registers new metrics to the registry to monitor an {@link EventProcessor} using {@link Tag}s through the given
+     * {@code tagsBuilder}. The monitor will be registered with the registry under the given {@code eventProcessorName}.
+     * The returned {@link MessageMonitor} can be installed on the {@code EventProcessor} to initiate the monitoring.
+     * <p>
+     * The second tags builder parameter is specifically for the latency metric. These tags might be wanted to be less
+     * specific than the others. For example, the {@link MessageTimerMonitor} makes sense per payload type, but the
+     * latency makes sense only for the event processor as a whole.
+     *
+     * @param eventProcessorName the name under which the {@link EventProcessor} should be registered to the registry
+     * @param tagsBuilder        the function used to construct the list of {@link Tag}, based on the ingested message
+     * @return a {@link MessageMonitor} to monitor the behavior of an {@link EventProcessor}
+     */
+
+    public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String eventProcessorName,
+                                                                          Function<Message<?>, Iterable<Tag>> tagsBuilder,
+                                                                          Function<Message<?>, Iterable<Tag>> latencyTagsBuilder
+                                                                          ) {
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
         monitors.add(MessageTimerMonitor.buildMonitor(eventProcessorName, registry, tagsBuilder));
         monitors.add(EventProcessorLatencyMonitor.builder()
                                                  .meterNamePrefix(eventProcessorName)
                                                  .meterRegistry(registry)
-                                                 .tagsBuilder(tagsBuilder)
+                                                 .tagsBuilder(latencyTagsBuilder)
                                                  .build());
         monitors.add(CapacityMonitor.buildMonitor(eventProcessorName, registry, tagsBuilder));
         monitors.add(MessageCountingMonitor.buildMonitor(eventProcessorName, registry, tagsBuilder));

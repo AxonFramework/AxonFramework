@@ -1,0 +1,15 @@
+* xref:messaging:index.adoc[]
+** xref:messaging:messages/messages.adoc[]
+*** xref:messaging:messages/command_messages.adoc[]
+*** xref:messaging:messages/query_messages.adoc[]
+*** xref:messaging:messages/event_messages.adoc[]
+** xref:messaging:routing/routing.adoc[]
+*** xref:messaging:routing/command_routing.adoc[]
+*** xref:messaging:routing/query_routing.adoc[]
+*** xref:messaging:routing/event_routing.adoc[]
+** xref:messaging:advanced_messaging/index.adoc[]
+*** xref:messaging:advanced_messaging/correlation.adoc[]
+// *** Serialization
+// *** Interception
+// *** Deadlines
+// *** Scheduling

@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -35,11 +36,11 @@ import org.axonframework.modelling.saga.repository.jdbc.SagaSqlSchema;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
 
@@ -49,10 +50,16 @@ import javax.sql.DataSource;
  * @author Allard Buijze
  * @since 3.1
  */
-@Configuration
+@AutoConfiguration
 @ConditionalOnBean(DataSource.class)
 @AutoConfigureAfter(value = {JpaAutoConfiguration.class, JpaEventStoreAutoConfiguration.class})
 public class JdbcAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean({EventStorageEngine.class, EventSchema.class})
+    public EventSchema eventSchema() {
+        return new EventSchema();
+    }
 
     @Bean
     @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
@@ -61,7 +68,8 @@ public class JdbcAutoConfiguration {
                                                  @Qualifier("eventSerializer") Serializer eventSerializer,
                                                  org.axonframework.config.Configuration configuration,
                                                  ConnectionProvider connectionProvider,
-                                                 TransactionManager transactionManager) {
+                                                 TransactionManager transactionManager,
+                                                 EventSchema eventSchema) {
         return JdbcEventStorageEngine.builder()
                                      .snapshotSerializer(defaultSerializer)
                                      .upcasterChain(configuration.upcasterChain())
@@ -70,6 +78,7 @@ public class JdbcAutoConfiguration {
                                      .snapshotFilter(configuration.snapshotFilter())
                                      .connectionProvider(connectionProvider)
                                      .transactionManager(transactionManager)
+                                     .schema(eventSchema)
                                      .build();
     }
 
@@ -85,10 +94,15 @@ public class JdbcAutoConfiguration {
         return new UnitOfWorkAwareConnectionProviderWrapper(new SpringDataSourceConnectionProvider(dataSource));
     }
 
-    @Bean("tokenStore")
+    @Bean
+    @ConditionalOnMissingBean({TokenStore.class, TokenSchema.class})
+    public TokenSchema tokenSchema() {
+        return new TokenSchema();
+    }
+
+    @Bean
     @ConditionalOnMissingBean(TokenStore.class)
-    @ConditionalOnBean(TokenSchema.class)
-    public TokenStore tokenStoreWithCustomSchema(ConnectionProvider connectionProvider, Serializer serializer, TokenSchema tokenSchema) {
+    public TokenStore tokenStore(ConnectionProvider connectionProvider, Serializer serializer, TokenSchema tokenSchema) {
         return JdbcTokenStore.builder()
                              .connectionProvider(connectionProvider)
                              .schema(tokenSchema)
@@ -96,19 +110,9 @@ public class JdbcAutoConfiguration {
                              .build();
     }
 
-    @Bean("tokenStore")
-    @ConditionalOnMissingBean({TokenStore.class, TokenSchema.class})
-    public TokenStore tokenStoreWithDefaultSchema(ConnectionProvider connectionProvider, Serializer serializer) {
-        return JdbcTokenStore.builder()
-                             .connectionProvider(connectionProvider)
-                             .schema(new TokenSchema())
-                             .serializer(serializer)
-                             .build();
-    }
-
     @Bean
     @ConditionalOnMissingBean({SagaStore.class, SagaSqlSchema.class})
-    public JdbcSagaStore sagaStore(ConnectionProvider connectionProvider, Serializer serializer) {
+    public JdbcSagaStore sagaStoreNoSchema(ConnectionProvider connectionProvider, Serializer serializer) {
         return JdbcSagaStore.builder()
                             .connectionProvider(connectionProvider)
                             .sqlSchema(new GenericSagaSqlSchema())
@@ -119,7 +123,8 @@ public class JdbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(SagaStore.class)
     @ConditionalOnBean(SagaSqlSchema.class)
-    public JdbcSagaStore sagaStore(ConnectionProvider connectionProvider, Serializer serializer, SagaSqlSchema schema) {
+    public JdbcSagaStore sagaStoreWithSchema(ConnectionProvider connectionProvider, Serializer serializer,
+                                             SagaSqlSchema schema) {
         return JdbcSagaStore.builder()
                             .connectionProvider(connectionProvider)
                             .sqlSchema(schema)

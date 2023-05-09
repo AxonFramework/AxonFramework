@@ -1,0 +1,30 @@
+* Overview
+include::ROOT:partial$nav.adoc[]
+
+* Bootstrap modules
++
+--
+include::configuration:partial$nav.adoc[]
+include::springboot-starter:partial$nav.adoc[]
+--
+
+* Core modules
++
+--
+include::messaging:partial$nav.adoc[]
+include::modeling:partial$nav.adoc[]
+include::eventsourcing:partial$nav.adoc[]
+--
+
+* Optional modules
++
+--
+include::test:partial$nav.adoc[]
+include::axon-server-connector:partial$nav.adoc[]
+include::spring:partial$nav.adoc[]
+include::disruptor:partial$nav.adoc[]
+include::metrics:partial$nav.adoc[]
+include::micrometer:partial$nav.adoc[]
+include::tracing-open-telemetry:partial$nav.adoc[]
+include::legacy:partial$nav.adoc[]
+--

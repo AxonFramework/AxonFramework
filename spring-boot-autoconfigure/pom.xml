@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2022. Axon Framework
+  ~ Copyright (c) 2010-2023. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -19,15 +19,15 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>4.7.0-SNAPSHOT</version>
+        <version>4.8.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>axon-spring-boot-autoconfigure</artifactId>
 
-    <name>Axon Framework Spring Boot Support</name>
+    <name>Axon Framework - Spring Boot Support</name>
     <description>
-        Module providing support for auto configuration of the framework through Spring Boot.
+        Module providing support for auto-configuration of Axon Framework through Spring Boot.
     </description>
 
     <dependencies>
@@ -56,6 +56,12 @@
             <groupId>org.axonframework</groupId>
             <artifactId>axon-micrometer</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jobrunr</groupId>
+            <artifactId>jobrunr</artifactId>
             <optional>true</optional>
         </dependency>
 
@@ -128,6 +134,26 @@
             <version>${xstream.version}</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <optional>true</optional>
+        </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -161,23 +187,11 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Enforce older version of jakarta.persistence (one with `javax` namespace)
-        to be compatible with Spring -->
         <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-            <version>${jakarta.persistence.legacy.version}</version>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
         </dependency>
-
-        <!-- Enforce older version of jakarta.validation (one with `javax` namespace)
-        to be compatible with Hibernate -->
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-            <version>${jakarta.validation.legacy.version}</version>
-        </dependency>
-
-
     </dependencies>
 
     <build>

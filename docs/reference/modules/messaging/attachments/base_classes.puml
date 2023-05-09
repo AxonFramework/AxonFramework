@@ -1,0 +1,86 @@
+' scale max 1024 width
+
+
+package "generic messages" <<Rectangle>> {
+
+  interface Message{
+    -identifier: String
+    -payloadType: Class
+    -payload: Object
+    -metdata:  MetaData
+  }
+
+  interface ResultMessage<R> {
+    -exceptional: boolean
+    -exceptionDetails: Throwable
+  }
+
+  abstract AbstractMessage<T> {}
+  class GenericMessage<T> {}
+  class GenericResultMessage<T>
+
+  abstract MessageDecorator {
+    -delegate: Message
+  }
+}
+
+package "command messages" <<Rectangle>> {
+  interface CommandMessage<T> {
+    -commandName: String
+  }
+
+  class GenericCommandMessage<T> {}
+
+  class GenericCommandResultMessage{}
+
+  interface CommandResultMessage<T> {}
+
+}
+
+package "query messages" <<Rectangle>> {
+
+  interface QueryMessage<T,R> {
+   	-queryName: String
+   	-responseType: ResponseType
+  }
+
+  interface QueryResponseMessage<T> {}
+
+  class GenericQueryMessage<T,R> {}
+
+  class GenericQueryResponseMessage{}
+
+}
+
+package "event messages" <<Rectangle>> {
+
+  interface EventMessage<T> {
+    -timestamp: Instant
+  }
+
+  class GenericEventMessage<T> {}
+
+}
+
+
+AbstractMessage ..|> Message
+MessageDecorator ..|> Message
+CommandMessage --|> Message
+QueryMessage --|> Message
+EventMessage --|> Message
+ResultMessage --|> Message
+
+GenericMessage --|> AbstractMessage
+GenericCommandMessage ..|> CommandMessage
+GenericQueryMessage ..|> QueryMessage
+GenericEventMessage ..|> EventMessage
+
+GenericResultMessage --|> ResultMessage
+CommandResultMessage --|> ResultMessage
+QueryResponseMessage --|> ResultMessage
+
+GenericCommandResultMessage ..|> CommandResultMessage
+GenericCommandResultMessage --|> GenericResultMessage
+GenericQueryResponseMessage ..|> QueryResponseMessage
+GenericQueryResponseMessage --|> GenericResultMessage
+

@@ -29,12 +29,12 @@ import org.axonframework.tracing.attributes.MessageNameSpanAttributesProvider;
 import org.axonframework.tracing.attributes.MessageTypeSpanAttributesProvider;
 import org.axonframework.tracing.attributes.MetadataSpanAttributesProvider;
 import org.axonframework.tracing.attributes.PayloadTypeSpanAttributesProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
@@ -49,7 +49,7 @@ import java.util.List;
  * @see OpenTelemetryAutoConfiguration
  * @since 4.6.0
  */
-@Configuration
+@AutoConfiguration
 @AutoConfigureBefore({AxonServerAutoConfiguration.class, AxonAutoConfiguration.class})
 @EnableConfigurationProperties(TracingProperties.class)
 public class AxonTracingAutoConfiguration {

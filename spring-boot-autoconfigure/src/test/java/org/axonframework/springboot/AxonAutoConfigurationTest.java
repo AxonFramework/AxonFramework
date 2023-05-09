@@ -53,7 +53,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.axonframework.tracing.SpanFactory;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -69,14 +69,12 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class AxonAutoConfigurationTest {
 
@@ -156,11 +154,32 @@ class AxonAutoConfigurationTest {
     }
 
     @Test
+    void shutDownCalledOnEmbeddedEventStoreEngine() {
+        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withPropertyValues("axon.axonserver.enabled=false");
+
+        AtomicReference<EmbeddedEventStore> eventStore = new AtomicReference<>();
+
+        applicationContextRunner.run(context -> {
+            eventStore.set(context.getBean(EmbeddedEventStore.class));
+            assertNotNull(eventStore.get());
+        });
+        verify(eventStore.get(), atLeastOnce()).shutDown();
+    }
+
+    @Test
     void ambiguousPrimaryComponentsThrowExceptionWhenRequestedFromConfiguration() {
         ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
-                .withBean("gatewayOne", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build(), beanDefinition -> beanDefinition.setPrimary(true))
-                .withBean("gatewayTwo", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build(), beanDefinition -> beanDefinition.setPrimary(true))
+                .withBean("gatewayOne",
+                          CommandGateway.class,
+                          () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build(),
+                          beanDefinition -> beanDefinition.setPrimary(true))
+                .withBean("gatewayTwo",
+                          CommandGateway.class,
+                          () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build(),
+                          beanDefinition -> beanDefinition.setPrimary(true))
                 .withPropertyValues("axon.axonserver.enabled=false");
 
         AxonConfigurationException actual = assertThrows(AxonConfigurationException.class, () -> {
@@ -210,7 +229,7 @@ class AxonAutoConfigurationTest {
 
         @Bean
         public EventStore eventStore() {
-            return EmbeddedEventStore.builder().storageEngine(storageEngine()).build();
+            return spy(EmbeddedEventStore.builder().storageEngine(storageEngine()).build());
         }
 
         @Bean
@@ -265,7 +284,6 @@ class AxonAutoConfigurationTest {
 
             private final EventBus eventBus;
 
-            @Autowired
             public CustomParameterResolverFactory(EventBus eventBus) {
                 this.eventBus = eventBus;
             }

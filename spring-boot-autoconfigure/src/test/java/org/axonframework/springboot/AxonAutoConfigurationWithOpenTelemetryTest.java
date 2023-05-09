@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.tracing.NestingSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory;
 import org.junit.jupiter.api.*;
@@ -29,6 +30,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 
+import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AxonAutoConfigurationWithOpenTelemetryTest {
@@ -37,12 +39,31 @@ class AxonAutoConfigurationWithOpenTelemetryTest {
     void spanFactoryIsOpenTelemetrySpanFactory() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
+                .withPropertyValues("axon.axonserver.enabled=false")
                 .run(context -> {
                     assertNotNull(context);
 
                     assertTrue(context.containsBean("spanFactory"));
-                    assertNotNull(context.getBean(OpenTelemetrySpanFactory.class));
+                    assertNotNull(context.getBean(SpanFactory.class));
                     assertEquals(OpenTelemetrySpanFactory.class, context.getBean(SpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void spanFactoryIsNestingSpanFactoryWhenPropertyIsSet() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withPropertyValues("axon.tracing.nested-handlers=true", "axon.axonserver.enabled=false")
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("spanFactory"));
+                    assertNotNull(context.getBean(SpanFactory.class));
+                    SpanFactory bean = context.getBean(SpanFactory.class);
+                    assertEquals(NestingSpanFactory.class, bean.getClass());
+                    Object delegateSpanFactory =
+                            getFieldValue(NestingSpanFactory.class.getDeclaredField("delegateSpanFactory"), bean);
+                    assertEquals(OpenTelemetrySpanFactory.class, delegateSpanFactory.getClass());
                 });
     }
 

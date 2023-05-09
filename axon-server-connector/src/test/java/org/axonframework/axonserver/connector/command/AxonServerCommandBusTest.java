@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
-import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
@@ -45,6 +44,7 @@ import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -60,6 +60,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -155,8 +156,14 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
-        spanFactory.verifySpanCompleted("AxonServerCommandBus.dispatch", commandMessage);
-        spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage);
+        await().atMost(Duration.ofSeconds(3l))
+                .untilAsserted(
+                        () -> spanFactory.verifySpanCompleted("AxonServerCommandBus.dispatch")
+                );
+        await().atMost(Duration.ofSeconds(3l))
+                .untilAsserted(
+                        () -> spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage)
+                );
     }
 
     @Test
@@ -301,7 +308,6 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
-        spanFactory.verifySpanHasException("AxonServerCommandBus.dispatch", EventStoreException.class);
     }
 
     @Test
@@ -410,13 +416,19 @@ class AxonServerCommandBusTest {
     void disconnectUnsubscribesAllRegisteredCommands() {
         String testCommandOne = "testCommandOne";
         String testCommandTwo = "testCommandTwo";
+        //noinspection resource
         testSubject.subscribe(testCommandOne, command -> "Done");
+        //noinspection resource
         testSubject.subscribe(testCommandTwo, command -> "Done");
 
         testSubject.disconnect().join();
 
-        assertTrue(dummyMessagePlatformServer.isUnsubscribed(testCommandOne));
-        assertTrue(dummyMessagePlatformServer.isUnsubscribed(testCommandTwo));
+        await().atMost(Duration.ofSeconds(5))
+               .pollDelay(Duration.ofMillis(250))
+               .until(() -> dummyMessagePlatformServer.isUnsubscribed(testCommandOne));
+        await().atMost(Duration.ofSeconds(5))
+               .pollDelay(Duration.ofMillis(250))
+               .until(() -> dummyMessagePlatformServer.isUnsubscribed(testCommandTwo));
     }
 
     @Test

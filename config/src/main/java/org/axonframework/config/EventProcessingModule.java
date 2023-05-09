@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -88,9 +89,11 @@ import static org.axonframework.config.EventProcessingConfigurer.PooledStreaming
 public class EventProcessingModule
         implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {
 
+    private static final String CONFIGURED_DEFAULT_TEP_CONFIG = "___DEFAULT_TEP_CONFIG";
+    private static final TrackingEventProcessorConfiguration DEFAULT_TEP_CONFIG =
+            TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
     private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
-            TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
-                                               .andInitialTrackingToken(StreamableMessageSource::createHeadToken);
+            DEFAULT_TEP_CONFIG.andInitialTrackingToken(StreamableMessageSource::createHeadToken);
     private static final Function<Class<?>, String> DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION =
             c -> c.getSimpleName() + "Processor";
 
@@ -127,7 +130,7 @@ public class EventProcessingModule
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
 
-    private Configuration configuration;
+    protected Configuration configuration;
 
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
@@ -182,7 +185,7 @@ public class EventProcessingModule
                     "defaultSubscribableMessageSource",
                     Configuration::eventBus
             );
-    private final Component<TrackingEventProcessorConfiguration> defaultTrackingEventProcessorConfiguration =
+    private final Component<TrackingEventProcessorConfiguration> defaultTepConfig =
             new Component<>(
                     () -> configuration,
                     "trackingEventProcessorConfiguration",
@@ -311,6 +314,7 @@ public class EventProcessingModule
                 deadLetteringInvokerConfigs.getOrDefault(processingGroup, DeadLetteringInvokerConfiguration.noOp())
                                            .apply(configuration, builder)
                                            .build();
+        addInterceptors(processorName, deadLetteringInvoker);
         deadLetteringEventHandlerInvokers.put(processingGroup, deadLetteringInvoker);
         return deadLetteringInvoker;
     }
@@ -344,7 +348,8 @@ public class EventProcessingModule
         return DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION.apply(type).equals(processingGroup)
                 && processingGroup.equals(processorName)
                 && !eventProcessorBuilders.containsKey(processorName)
-                && !tepConfigs.containsKey(processorName);
+                && !tepConfigs.containsKey(processorName)
+                && !tepConfigs.containsKey(CONFIGURED_DEFAULT_TEP_CONFIG);
     }
 
     private EventProcessor buildEventProcessor(List<Function<Configuration, EventHandlerInvoker>> builderFunctions,
@@ -359,21 +364,25 @@ public class EventProcessingModule
                 .getOrDefault(processorName, defaultEventProcessorBuilder)
                 .build(processorName, configuration, multiEventHandlerInvoker);
 
+        addInterceptors(processorName, eventProcessor);
+
+        return eventProcessor;
+    }
+
+    private void addInterceptors(String processorName, MessageHandlerInterceptorSupport<EventMessage<?>> processor){
         handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
                                    .stream()
                                    .map(hi -> hi.apply(configuration))
-                                   .forEach(eventProcessor::registerHandlerInterceptor);
+                                   .forEach(processor::registerHandlerInterceptor);
 
         defaultHandlerInterceptors.stream()
                                   .map(f -> f.apply(configuration, processorName))
                                   .filter(Objects::nonNull)
-                                  .forEach(eventProcessor::registerHandlerInterceptor);
+                                  .forEach(processor::registerHandlerInterceptor);
 
-        eventProcessor.registerHandlerInterceptor(
+        processor.registerHandlerInterceptor(
                 new CorrelationDataInterceptor<>(configuration.correlationDataProviders())
         );
-
-        return eventProcessor;
     }
 
     //<editor-fold desc="configuration methods">
@@ -791,7 +800,10 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
             Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
     ) {
-        this.defaultTrackingEventProcessorConfiguration.update(trackingEventProcessorConfigurationBuilder);
+        this.tepConfigs.put(CONFIGURED_DEFAULT_TEP_CONFIG,
+                            new Component<>(() -> configuration,
+                                            "trackingEventProcessorConfiguration",
+                                            trackingEventProcessorConfigurationBuilder));
         return this;
     }
 
@@ -879,7 +891,10 @@ public class EventProcessingModule
     }
 
     private TrackingEventProcessorConfiguration trackingEventProcessorConfig(String name) {
-        return tepConfigs.getOrDefault(name, defaultTrackingEventProcessorConfiguration).get();
+        if (tepConfigs.containsKey(name)) {
+            return tepConfigs.get(name).get();
+        }
+        return tepConfigs.getOrDefault(CONFIGURED_DEFAULT_TEP_CONFIG, defaultTepConfig).get();
     }
 
     /**

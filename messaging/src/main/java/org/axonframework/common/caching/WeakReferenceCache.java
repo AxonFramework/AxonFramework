@@ -17,6 +17,7 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
 
 import java.lang.ref.Reference;
@@ -27,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -107,6 +109,26 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
+    public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
+        purgeItems();
+        Entry currentEntry = cache.get(key);
+        Object existingValue = ObjectUtils.getOrDefault(currentEntry, Entry::get, null);
+        if (existingValue != null) {
+            //noinspection unchecked
+            return (T) existingValue;
+        }
+        T newValue = valueSupplier.get();
+        if (newValue == null) {
+            throw new IllegalStateException("Value Supplier of Cache produced a null value for key [" + key + "]!");
+        }
+        cache.put(key, new Entry(key, newValue));
+        for (EntryListener adapter : adapters) {
+            adapter.onEntryCreated(key, newValue);
+        }
+        return newValue;
+    }
+
+    @Override
     public boolean remove(Object key) {
         if (cache.remove(key) != null) {
             for (EntryListener adapter : adapters) {
@@ -150,8 +172,26 @@ public class WeakReferenceCache implements Cache {
 
     @Override
     public <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
-        //noinspection unchecked
-        cache.computeIfPresent(key, (k, v) -> new Entry(k, update.apply((V) v.get())));
+        purgeItems();
+        cache.computeIfPresent(key, (k, v) -> {
+            Object currentValue = v.get();
+            if (currentValue == null) {
+                return null;
+            }
+            //noinspection unchecked
+            V value = update.apply((V) currentValue);
+            if (value != null) {
+                for (EntryListener adapter : adapters) {
+                    adapter.onEntryUpdated(key, value);
+                }
+                return new Entry(k, value);
+            } else {
+                for (EntryListener adapter : adapters) {
+                    adapter.onEntryRemoved(key);
+                }
+                return null;
+            }
+        });
     }
 
     private class Entry extends WeakReference<Object> {

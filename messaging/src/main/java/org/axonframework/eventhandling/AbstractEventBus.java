@@ -154,11 +154,13 @@ public abstract class AbstractEventBus implements EventBus {
 
     private List<EventMessage<?>> eventsQueue(UnitOfWork<?> unitOfWork) {
         return unitOfWork.getOrComputeResource(eventsKey, r -> {
-            Span span = spanFactory.createInternalSpan(() -> getClass().getSimpleName() + ".commit");
+            String simpleName = getClass().getSimpleName();
+            Span prepareCommitSpan = spanFactory.createInternalSpan(() -> simpleName + ".prepareCommit");
+            Span commitSpan = spanFactory.createInternalSpan(() -> simpleName + ".commit");
+            Span afterCommitSpan = spanFactory.createInternalSpan(() -> simpleName + ".afterCommit");
             List<EventMessage<?>> eventQueue = new ArrayList<>();
 
-            unitOfWork.onPrepareCommit(u -> {
-                span.start();
+            unitOfWork.onPrepareCommit(prepareCommitSpan.wrapConsumer(u -> {
                 if (u.parent().isPresent() && !u.parent().get().phase().isAfter(PREPARE_COMMIT)) {
                     eventsQueue(u.parent().get()).addAll(eventQueue);
                 } else {
@@ -172,25 +174,22 @@ public abstract class AbstractEventBus implements EventBus {
                         doWithEvents(this::prepareCommit, newMessages);
                     }
                 }
-            });
-            unitOfWork.onCommit(u -> {
+            }));
+            unitOfWork.onCommit(commitSpan.wrapConsumer(u -> {
                 if (u.parent().isPresent() && !u.root().phase().isAfter(COMMIT)) {
                     u.root().onCommit(w -> doWithEvents(this::commit, eventQueue));
                 } else {
                     doWithEvents(this::commit, eventQueue);
                 }
-            });
-            unitOfWork.afterCommit(u -> {
+            }));
+            unitOfWork.afterCommit(afterCommitSpan.wrapConsumer(u -> {
                 if (u.parent().isPresent() && !u.root().phase().isAfter(AFTER_COMMIT)) {
                     u.root().afterCommit(w -> doWithEvents(this::afterCommit, eventQueue));
                 } else {
                     doWithEvents(this::afterCommit, eventQueue);
                 }
-            });
-            unitOfWork.onCleanup(u -> {
-                u.resources().remove(eventsKey);
-                span.end();
-            });
+            }));
+            unitOfWork.onCleanup(u -> u.resources().remove(eventsKey));
             return eventQueue;
         });
     }

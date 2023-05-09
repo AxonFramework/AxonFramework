@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -78,6 +79,18 @@ public class JdbcAutoConfigurationTest {
     }
 
     @Test
+    void defaultTokenSchemaDefinedWhenNoneAvailable() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(TokenSchema.class);
+                    TokenSchema tokenSchema = context.getBean(TokenSchema.class);
+                    assertThat(context).hasSingleBean(TokenStore.class);
+                    assertThat(context).getBean(TokenStore.class).extracting("schema").isSameAs(tokenSchema);
+                });
+    }
+
+    @Test
     void customTokenSchema() {
         TokenSchema tokenSchema = TokenSchema.builder().setTokenTable("TEST123").build();
         new ApplicationContextRunner()
@@ -86,6 +99,30 @@ public class JdbcAutoConfigurationTest {
                 .run(context -> {
                     assertThat(context).hasSingleBean(TokenStore.class);
                     assertThat(context).getBean(TokenStore.class).extracting("schema").isSameAs(tokenSchema);
+                });
+    }
+
+    @Test
+    void defaultEventSchemaDefinedWhenNoneAvailable() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(EventSchema.class);
+                    EventSchema eventSchema = context.getBean(EventSchema.class);
+                    assertThat(context).hasSingleBean(EventStorageEngine.class);
+                    assertThat(context).getBean(EventStorageEngine.class).extracting("schema").isSameAs(eventSchema);
+                });
+    }
+
+    @Test
+    void customEventSchema() {
+        EventSchema eventSchema = EventSchema.builder().eventTable("TEST123").build();
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(EventSchema.class, () -> eventSchema)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(EventStorageEngine.class);
+                    assertThat(context).getBean(EventStorageEngine.class).extracting("schema").isSameAs(eventSchema);
                 });
     }
 

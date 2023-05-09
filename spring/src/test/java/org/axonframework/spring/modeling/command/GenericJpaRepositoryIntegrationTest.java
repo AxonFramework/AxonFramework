@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,21 @@
 
 package org.axonframework.spring.modeling.command;
 
-import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.common.legacyjpa.EntityManagerProvider;
+import org.axonframework.common.legacyjpa.SimpleEntityManagerProvider;
+import org.axonframework.eventhandling.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
+import org.axonframework.modelling.command.legacyjpa.GenericJpaRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,12 +49,12 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -202,7 +200,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
                 DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
+            entityManagerFactoryBean.setPersistenceUnitName("AxonSpringTest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
             jpaVendorAdapter.setDatabasePlatform(dialect);

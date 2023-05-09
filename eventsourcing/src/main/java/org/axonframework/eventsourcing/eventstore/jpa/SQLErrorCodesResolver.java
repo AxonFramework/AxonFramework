@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
+import jakarta.persistence.EntityExistsException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityExistsException;
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -32,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import javax.sql.DataSource;
 
 import static org.axonframework.common.ExceptionUtils.findException;
 
@@ -193,7 +193,7 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
     }
 
     private List<Integer> loadKeyViolationCodes(String databaseProductName, Properties properties) {
-        String key = databaseProductName.replaceAll(" ", "_") + KEY_CODE_SUFFIX;
+        String key = databaseProductName.replace(" ", "_") + KEY_CODE_SUFFIX;
         String property = properties.getProperty(key);
 
         List<Integer> keyCodes = new ArrayList<>();

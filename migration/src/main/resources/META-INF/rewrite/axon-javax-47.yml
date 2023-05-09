@@ -1,0 +1,56 @@
+type: specs.openrewrite.org/v1beta/recipe
+name: org.axonframework.migration.UpgradeAxonFramework_4_7_Javax
+displayName: Upgrade to Axonframework 4.7 Javax
+description: Migration file to upgrade an Axon Framework Javax-specific project and remain on Javax.
+recipeList:
+  - org.openrewrite.maven.UpgradeDependencyVersion:
+      groupId: org.axonframework
+      artifactId: "*"
+      newVersion: 4.x
+  # Move all classes from org.axonframework.common.jpa to org.axonframework.common.legacyjpa
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.axonframework.common.jpa
+      newPackageName: org.axonframework.common.legacyjpa
+  # Move selected classes
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter
+      newFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterJpaConverter
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter
+      newFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.legacyjpa.EventMessageDeadLetterJpaConverter
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.jpa.JpaDeadLetter
+      newFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.legacyjpa.JpaDeadLetter
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue
+      newFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.legacyjpa.JpaSequencedDeadLetterQueue
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore
+      newFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine
+      newFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.legacyjpa.JpaEventStorageEngine
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver
+      newFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.legacyjpa.SQLErrorCodesResolver
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.messaging.interceptors.BeanValidationInterceptor
+      newFullyQualifiedTypeName: org.axonframework.messaging.interceptors.legacyvalidation.BeanValidationInterceptor
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.messaging.interceptors.JSR303ViolationException
+      newFullyQualifiedTypeName: org.axonframework.messaging.interceptors.legacyvalidation.JSR303ViolationException
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.modelling.command.GenericJpaRepository
+      newFullyQualifiedTypeName: org.axonframework.modelling.command.legacyjpa.GenericJpaRepository
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.modelling.saga.repository.jpa.JpaSagaStore
+      newFullyQualifiedTypeName: org.axonframework.modelling.saga.repository.legacyjpa.JpaSagaStore
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.springboot.autoconfig.JpaAutoConfiguration
+      newFullyQualifiedTypeName: org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration
+      newFullyQualifiedTypeName: org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxEventStoreAutoConfiguration
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider
+      newFullyQualifiedTypeName: org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider

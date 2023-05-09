@@ -37,6 +37,7 @@ import org.junit.jupiter.api.*;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Hooks;
 import reactor.test.StepVerifier;
 import reactor.test.StepVerifierOptions;
 import reactor.util.concurrent.Queues;
@@ -83,6 +84,13 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         AnnotationQueryHandlerAdapter<ChatQueryHandler> annotationQueryHandlerAdapter =
                 new AnnotationQueryHandlerAdapter<>(chatQueryHandler);
         annotationQueryHandlerAdapter.subscribe(queryBus);
+
+        Hooks.onErrorDropped(error -> {/*Ignore these exceptions for these test cases*/});
+    }
+
+    @AfterEach
+    void tearDown() {
+        Hooks.resetOnErrorDropped();
     }
 
     /**

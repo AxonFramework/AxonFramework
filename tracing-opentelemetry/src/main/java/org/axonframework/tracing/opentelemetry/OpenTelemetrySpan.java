@@ -20,10 +20,13 @@ import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
 import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanScope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * {@link Span} implementation that uses OpenTelemetry's {@link io.opentelemetry.api.trace.Span} to provide tracing
@@ -32,19 +35,19 @@ import java.util.Objects;
  * These traces should always be created using the {@link OpenTelemetrySpanFactory} since this will make sure the proper
  * parent context is extracted before creating the {@link Span}.
  * <p>
- * Each {@link #start()} should result in an {@link #end()} being called. Only when the last {@code end()} is called
- * will the OpenTelemetry span actually be ended. This is because {@link Scope}s that are kept active should be closed
- * before ending the span, or memory leaks can occur. This is also the reason the {@code scopes} are kept in a
- * {@link Deque}.
+ * {@inheritDoc}
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
 public class OpenTelemetrySpan implements Span {
 
+    private static final Logger logger = LoggerFactory.getLogger(OpenTelemetrySpan.class);
+
     private final SpanBuilder spanBuilder;
-    private final Deque<Scope> scopeQueue = new ArrayDeque<>();
+    private final List<Scope> scopes = new CopyOnWriteArrayList<>();
     private io.opentelemetry.api.trace.Span span = null;
+    private boolean ended = false;
 
     /**
      * Creates the span, based on the {@link SpanBuilder} provided. This {@link SpanBuilder} will supply the
@@ -61,19 +64,54 @@ public class OpenTelemetrySpan implements Span {
     public Span start() {
         if (span == null) {
             span = spanBuilder.startSpan();
+        } else {
+            logger.warn("An attempt was made to start span with id [{}] of trace [{}] a second time",
+                         span.getSpanContext().getSpanId(),
+                         span.getSpanContext().getTraceId());
         }
-        scopeQueue.addFirst(span.makeCurrent());
         return this;
     }
 
     @Override
+    public SpanScope makeCurrent() {
+        if (span == null) {
+            logger.warn(
+                    "Span was attempted to be made current while not started yet! Please report this to the Axon Framework team.",
+                    new IllegalStateException("Span attempted to be made current while not started"));
+            // Return empty scope as to not influence user's code
+            return () -> {
+            };
+        }
+        Scope scope = span.makeCurrent();
+        scopes.add(scope);
+        return () -> {
+            scopes.remove(scope);
+            scope.close();
+        };
+    }
+
+
+    @Override
     public void end() {
-        if (!scopeQueue.isEmpty()) {
-            scopeQueue.remove().close();
+        if (span == null) {
+            logger.warn(
+                    "Span was attempted to be ended while not started yet! Please report this to the Axon Framework team.",
+                    new IllegalStateException("Span attempted to be ended while not started"));
+            return;
         }
-        if (scopeQueue.isEmpty()) {
-            span.end();
+        if (ended) {
+            logger.warn(
+                    "Span ended a second time! Will ignore this ended invocation. Please report this to the Axon Framework team.",
+                    new IllegalStateException("Span ended a second time"));
+            return;
         }
+        if (!scopes.isEmpty()) {
+            logger.warn(
+                    "Span ended without all scopes! Please report this to the Axon Framework team. This might influence reliability of your OpenTelemetry traces.",
+                    new IllegalStateException("Span ended with still " + scopes.size() + " open!"));
+        }
+        span.end();
+        ended = true;
     }
 
     @Override

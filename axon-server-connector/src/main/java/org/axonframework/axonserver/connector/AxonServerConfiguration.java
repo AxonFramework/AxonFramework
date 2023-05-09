@@ -622,9 +622,9 @@ public class AxonServerConfiguration {
 
         /**
          * Enables heartbeat messages between a client and Axon Server. When enabled, the connection will be abandoned
-         * if a heartbeat message response <b>is not</b> returned in a timely manor. Defaults to {@code false}.
+         * if a heartbeat message response <b>is not</b> returned in a timely manner. Defaults to {@code true}.
          */
-        private boolean enabled = false;
+        private boolean enabled = true;
 
         /**
          * Interval between consecutive heartbeat message sent in milliseconds. Defaults to {@code 10_000}

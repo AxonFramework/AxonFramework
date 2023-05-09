@@ -16,6 +16,7 @@
 
 package org.axonframework.common.jpa;
 
+import jakarta.persistence.TypedQuery;
 import org.axonframework.common.transaction.TransactionManager;
 
 import java.util.ArrayDeque;
@@ -24,7 +25,6 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.persistence.TypedQuery;
 
 /**
  * Enables iterating through a JPA query using paging while lazily mapping the results when necessary. Paging is taken

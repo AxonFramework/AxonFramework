@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,9 +84,9 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
         this.enhancers = delegates.toArray(new HandlerEnhancerDefinition[delegates.size()]);
     }
 
-    private static HandlerEnhancerDefinition[] flatten(Collection<HandlerEnhancerDefinition> factories) {
-        List<HandlerEnhancerDefinition> flattened = new ArrayList<>(factories.size());
-        for (HandlerEnhancerDefinition handlerEnhancer : factories) {
+    private static HandlerEnhancerDefinition[] flatten(Collection<HandlerEnhancerDefinition> enhancers) {
+        List<HandlerEnhancerDefinition> flattened = new ArrayList<>(enhancers.size());
+        for (HandlerEnhancerDefinition handlerEnhancer : enhancers) {
             if (handlerEnhancer instanceof MultiHandlerEnhancerDefinition) {
                 flattened.addAll(((MultiHandlerEnhancerDefinition) handlerEnhancer).getDelegates());
             } else {

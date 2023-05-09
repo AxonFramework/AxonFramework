@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,17 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * SQL schema supporting postgres databases.
+ * SQL schema supporting PostgreSQL databases.
  * <p/>
- * This implementation uses the appropriate postgres data types (serial, bytea).
+ * This implementation uses the appropriate PostgreSQL data types (serial, bytea).
  *
  * @author Jochen Munz
  * @since 2.4
  */
+@SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
+
+    private boolean exclusiveLoad = false;
 
     /**
      * Initialize a PostgresSagaSqlSchema using the default schema configuration.
@@ -46,27 +49,58 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
 
     @Override
     public PreparedStatement sql_createTableAssocValueEntry(Connection conn) throws SQLException {
-        final String sql = "create table if not exists " + sagaSchema().associationValueEntryTable() + " (\n" +
-                "        id bigserial not null,\n" +
-                "        associationKey varchar(255),\n" +
-                "        associationValue varchar(255),\n" +
-                "        sagaId varchar(255),\n" +
-                "        sagaType varchar(255),\n" +
-                "        primary key (id)\n" +
+        final String sql = "CREATE TABLE IF NOT EXISTS " + sagaSchema().associationValueEntryTable() + " (\n" +
+                "        id bigserial NOT NULL,\n" +
+                "        " + sagaSchema.associationKeyColumn() + " VARCHAR(255),\n" +
+                "        " + sagaSchema.associationValueColumn() + " VARCHAR(255),\n" +
+                "        " + sagaSchema.sagaIdColumn() + " VARCHAR(255),\n" +
+                "        " + sagaSchema.sagaTypeColumn() + " VARCHAR(255),\n" +
+                "        PRIMARY KEY (id)\n" +
                 "    );\n";
         return conn.prepareStatement(sql);
     }
 
     @Override
     public PreparedStatement sql_createTableSagaEntry(Connection conn) throws SQLException {
-        return conn.prepareStatement("create table if not exists " + sagaSchema().sagaEntryTable() + " (\n" +
-                "        sagaId varchar(255) not null,\n" +
-                "        revision varchar(255),\n" +
-                "        sagaType varchar(255),\n" +
-                "        serializedSaga bytea,\n" +
-                "        primary key (sagaId)\n" +
-                "    );");
+        return conn.prepareStatement("CREATE TABLE IF NOT EXISTS " + sagaSchema().sagaEntryTable() + " (\n" +
+                                             "        " + sagaSchema.sagaIdColumn() + " VARCHAR(255) NOT NULL,\n" +
+                                             "        " + sagaSchema.revisionColumn() + " VARCHAR(255),\n" +
+                                             "        " + sagaSchema.sagaTypeColumn() + " VARCHAR(255),\n" +
+                                             "        " + sagaSchema.serializedSagaColumn() + " bytea,\n" +
+                                             "        PRIMARY KEY (" + sagaSchema.sagaIdColumn() + ")\n" +
+                                             "    );");
     }
 
+    @Override
+    public PreparedStatement sql_loadSaga(Connection connection, String sagaId) throws SQLException {
+        if (!exclusiveLoad) {
+            return super.sql_loadSaga(connection, sagaId);
+        }
+        final String sql = "SELECT " + sagaSchema.serializedSagaColumn() + ", " + sagaSchema.sagaTypeColumn() + ", " +
+                sagaSchema.revisionColumn() +
+                " FROM " + sagaSchema().sagaEntryTable() +
+                " WHERE " + sagaSchema.sagaIdColumn() + " = ?" +
+                " FOR UPDATE";
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        preparedStatement.setString(1, sagaId);
+        return preparedStatement;
+    }
 
+    /**
+     * Sets whether loading of Sagas should occur exclusively by a single node, by requiring a row lock from the
+     * database.
+     * <p>
+     * If {@code true}, only one instance of the application may load a saga at a time. This may be used to serialize
+     * event handling in sagas in multi-node configurations where <b>no</b>
+     * {@link org.axonframework.eventhandling.StreamingEventProcessor} is used. The given processor type caveat is
+     * explained through the fact that a {@code StreamingEventProcessor} requires claimed segments to be able to perform
+     * any event handling work. Furthermore, this segments originate from a shared resources in a distributed
+     * environment.
+     * <p>
+     * As such, a Saga cannot be accessed concurrently through the {@code StreamingEventProcessor}. And hence, setting
+     * {@code exclusiveLoad} to {@code true} would not change the underlying behavior at all.
+     */
+    public void setExclusiveLoad(boolean exclusiveLoad) {
+        this.exclusiveLoad = exclusiveLoad;
+    }
 }

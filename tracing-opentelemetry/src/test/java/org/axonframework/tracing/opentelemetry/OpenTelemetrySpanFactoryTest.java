@@ -101,7 +101,7 @@ class OpenTelemetrySpanFactoryTest {
     @Test
     void createRootTracesCreatesSpanWithNoParentLinkedToCurrent() {
         SpanContext spanContext = Span.current().getSpanContext();
-        org.axonframework.tracing.Span span = factory.createRootTrace(() ->"MyRootTrace");
+        org.axonframework.tracing.Span span = factory.createRootTrace(() -> "MyRootTrace");
 
         verify(spanBuilder).setNoParent();
         verify(spanBuilder).addLink(spanContext);
@@ -122,7 +122,10 @@ class OpenTelemetrySpanFactoryTest {
     @Test
     void createHandlerSpanAddsLinks() {
         Message<?> message = generateMessageWithTraceId("1");
-        factory.createChildHandlerSpan(() -> "MyRootTrace", message, generateMessageWithTraceId("2"), generateMessageWithTraceId("3"));
+        factory.createChildHandlerSpan(() -> "MyRootTrace",
+                                       message,
+                                       generateMessageWithTraceId("2"),
+                                       generateMessageWithTraceId("3"));
 
         verify(spanBuilder).setParent(any());
         verify(spanBuilder).setSpanKind(SpanKind.CONSUMER);
@@ -130,7 +133,7 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void createHandlerSpanExtractsLinkedContext() {
+    void createLinkedHandlerSpanExtractsLinkedContext() {
         Message<?> message = generateMessageWithTraceId("1");
         factory.createLinkedHandlerSpan(() -> "MyRootTrace", message);
 
@@ -151,10 +154,24 @@ class OpenTelemetrySpanFactoryTest {
     @Test
     void createDispatchSpanAddsLinks() {
         Message<?> message = generateMessageWithTraceId("1");
-        factory.createDispatchSpan(() -> "MyRootTrace", message, generateMessageWithTraceId("2"), generateMessageWithTraceId("3"));
+        factory.createDispatchSpan(() -> "MyRootTrace",
+                                   message,
+                                   generateMessageWithTraceId("2"),
+                                   generateMessageWithTraceId("3"));
 
         verify(spanBuilder).setSpanKind(SpanKind.PRODUCER);
         verify(spanBuilder, times(2)).addLink(any());
+    }
+
+    @Test
+    void createDispatchSpanSetsCurrentContextAsParent() {
+        Message<?> message = generateMessageWithTraceId("1");
+        factory.createDispatchSpan(() -> "MyRootTrace",
+                                   message,
+                                   generateMessageWithTraceId("2"),
+                                   generateMessageWithTraceId("3"));
+
+        verify(spanBuilder).setParent(Context.current());
     }
 
     @Test
@@ -171,6 +188,13 @@ class OpenTelemetrySpanFactoryTest {
         factory.createInternalSpan(() -> "MyRootTrace");
 
         verify(spanBuilder).setSpanKind(SpanKind.INTERNAL);
+    }
+
+    @Test
+    void createInternalSpanSetsCurrentContextAsParent() {
+        factory.createInternalSpan(() -> "MyRootTrace");
+
+        verify(spanBuilder).setParent(Context.current());
     }
 
     @Test

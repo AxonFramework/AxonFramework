@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.DoNotEnqueue;
@@ -30,8 +31,10 @@ import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -53,13 +56,15 @@ class DeadLetteredEventProcessingTaskTest {
     private EnqueuePolicy<EventMessage<?>> enqueuePolicy;
     private TransactionManager transactionManager;
 
+    private List<EventMessageHandler> eventHandlingComponents;
+
     private DeadLetteredEventProcessingTask testSubject;
 
     @BeforeEach
     void setUp() {
         eventHandlerOne = mock(EventMessageHandler.class);
         eventHandlerTwo = mock(EventMessageHandler.class);
-        List<EventMessageHandler> eventHandlingComponents = new ArrayList<>();
+        eventHandlingComponents = new ArrayList<>();
         eventHandlingComponents.add(eventHandlerOne);
         eventHandlingComponents.add(eventHandlerTwo);
         //noinspection unchecked
@@ -67,7 +72,10 @@ class DeadLetteredEventProcessingTaskTest {
         when(enqueuePolicy.decide(any(), any())).thenReturn(TEST_DECISION);
         transactionManager = spy(new StubTransactionManager());
 
-        testSubject = new DeadLetteredEventProcessingTask(eventHandlingComponents, enqueuePolicy, transactionManager);
+        testSubject = new DeadLetteredEventProcessingTask(eventHandlingComponents,
+                                                          Collections.emptyList(),
+                                                          enqueuePolicy,
+                                                          transactionManager);
     }
 
     @Test
@@ -105,6 +113,31 @@ class DeadLetteredEventProcessingTaskTest {
         verify(enqueuePolicy).decide(testLetter, testException);
     }
 
+    @Test
+    void useInterceptorToHandleError() throws Exception {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        testSubject = new DeadLetteredEventProcessingTask(eventHandlingComponents,
+                                                          Collections.singletonList(errorCatchingInterceptor(invoked)),
+                                                          enqueuePolicy,
+                                                          transactionManager);
+        //noinspection unchecked
+        DeadLetter<EventMessage<?>> testLetter = mock(DeadLetter.class);
+        //noinspection unchecked
+        when(testLetter.message()).thenReturn(TEST_EVENT);
+        Exception testException = new RuntimeException();
+
+        when(eventHandlerTwo.handle(TEST_EVENT)).thenThrow(testException);
+
+        EnqueueDecision<EventMessage<?>> result = testSubject.process(testLetter);
+
+        assertFalse(result.shouldEnqueue());
+        assertTrue(invoked.get());
+        verify(transactionManager).startTransaction();
+        verify(eventHandlerOne).handle(TEST_EVENT);
+        verify(eventHandlerTwo).handle(TEST_EVENT);
+        verify(enqueuePolicy, never()).decide(testLetter, testException);
+    }
+
     // This stub TransactionManager is used for spying.
     private static class StubTransactionManager implements TransactionManager {
 
@@ -112,5 +145,17 @@ class DeadLetteredEventProcessingTaskTest {
         public Transaction startTransaction() {
             return NoTransactionManager.INSTANCE.startTransaction();
         }
+    }
+
+    private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
+        return (unitOfWork, chain) -> {
+            invoked.set(true);
+            try {
+                chain.proceed();
+            } catch (RuntimeException e) {
+                return unitOfWork;
+            }
+            return unitOfWork;
+        };
     }
 }

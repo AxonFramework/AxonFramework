@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -32,9 +34,11 @@ import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
@@ -89,7 +93,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     @Override
     public A newInstance(@Nonnull Callable<T> factoryMethod,
                          @Nonnull Consumer<Aggregate<T>> initMethod) throws Exception {
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        UnitOfWork<?> uow = currentUnitOfWork();
         AtomicReference<A> aggregateReference = new AtomicReference<>();
         // a constructor may apply events, and the persistence of an aggregate must take precedence over publishing its events.
         uow.onPrepareCommit(x -> {
@@ -121,7 +125,6 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      *
      * @param factoryMethod The method to create the aggregate's root instance
      * @return an Aggregate instance describing the aggregate's state
-     *
      * @throws Exception when the factoryMethod throws an exception
      */
     protected abstract A doCreateNew(Callable<T> factoryMethod) throws Exception;
@@ -135,7 +138,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         return spanFactory
                 .createInternalSpan(() -> this.getClass().getSimpleName() + ".load " + aggregateIdentifier)
                 .runSupplier(() -> {
-                    UnitOfWork<?> uow = CurrentUnitOfWork.get();
+                    UnitOfWork<?> uow = currentUnitOfWork();
                     Map<String, A> aggregates = managedAggregates(uow);
                     A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
                                                              s -> doLoad(aggregateIdentifier,
@@ -151,7 +154,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     @Override
     public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod) {
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        UnitOfWork<?> uow = currentUnitOfWork();
         Map<String, A> aggregates = managedAggregates(uow);
         A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
                                                  s -> {
@@ -168,6 +171,26 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         prepareForCommit(aggregate);
 
         return aggregate;
+    }
+
+    private UnitOfWork<?> currentUnitOfWork() {
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        Class<?> messageType = uow.getMessage() != null ? uow.getMessage().getClass() : null;
+        if (invalidMessageType(messageType)) {
+            logger.warn("The active Unit of Work is expected to contain a CommandMessage or a DeadlineMessage, but instead contains a [{}]",
+                        messageType);
+        }
+        return uow;
+    }
+
+    private boolean invalidMessageType(Class<?> messageType) {
+        if (messageType == null) {
+            return false;
+        }
+        if (CommandMessage.class.isAssignableFrom(messageType)) {
+            return false;
+        }
+        return !DeadlineMessage.class.isAssignableFrom(messageType);
     }
 
     /**
@@ -355,15 +378,30 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
                 load(aggregateIdentifier).handle(message);
             } catch (AggregateNotFoundException e) {
                 logger.debug("Aggregate (with id: [{}]) cannot be loaded. Hence, message '[{}]' cannot be handled.",
-                             aggregateIdentifier, message);
+                        aggregateIdentifier, message);
             }
         }
     }
+
     @Override
     public boolean canResolve(@Nonnull ScopeDescriptor scopeDescription) {
-        return scopeDescription instanceof AggregateScopeDescriptor && aggregateModel.types().anyMatch(
-                t -> t.getSimpleName().contentEquals(((AggregateScopeDescriptor) scopeDescription).getType())
-        );
+        return (scopeDescription instanceof AggregateScopeDescriptor) &&
+                (matchesSimpleType((AggregateScopeDescriptor) scopeDescription)
+                        || matchesDeclaredType((AggregateScopeDescriptor) scopeDescription));
+    }
+
+    private boolean matchesSimpleType(AggregateScopeDescriptor scopeDescription) {
+        return aggregateModel.types().anyMatch(t ->
+                t.getSimpleName().contentEquals(scopeDescription.getType()));
+    }
+
+    private boolean matchesDeclaredType(AggregateScopeDescriptor scopeDescription) {
+        return aggregateModel.types()
+                .map(aggregateModel::declaredType)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .anyMatch(declaredType -> scopeDescription.getType()
+                        .equals(declaredType));
     }
 
     /**

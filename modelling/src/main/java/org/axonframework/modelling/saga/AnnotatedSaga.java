@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.modelling.saga;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
 
@@ -36,6 +37,7 @@ import java.util.function.Function;
 public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     private final SagaModel<T> metaModel;
+    private final MessageHandlerInterceptorMemberChain<T> chainedInterceptor;
 
     private final AssociationValues associationValues;
     private final String sagaId;
@@ -43,24 +45,27 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private volatile boolean isActive = true;
 
     /**
-     * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given {@code
-     * sagaId} and associated with the given {@code associationValues}. The {@code metaModel} provides the description
-     * of the structure of the Saga.
+     * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given
+     * {@code sagaId} and associated with the given {@code associationValues}. The {@code metaModel} provides the
+     * description of the structure of the Saga.
      *
-     * @param sagaId            The identifier of this Saga instance
-     * @param associationValues The current associations of this Saga
-     * @param annotatedSaga     The object instance representing the Saga
-     * @param metaModel         The model describing Saga structure
+     * @param sagaId             The identifier of this Saga instance
+     * @param associationValues  The current associations of this Saga
+     * @param annotatedSaga      The object instance representing the Saga
+     * @param metaModel          The model describing Saga structure
+     * @param chainedInterceptor The interceptor to be used for this Saga
      */
     public AnnotatedSaga(String sagaId,
                          Set<AssociationValue> associationValues,
                          T annotatedSaga,
-                         SagaModel<T> metaModel) {
+                         SagaModel<T> metaModel,
+                         MessageHandlerInterceptorMemberChain<T> chainedInterceptor) {
         Assert.notNull(annotatedSaga, () -> "SagaInstance may not be null");
         this.sagaId = sagaId;
         this.associationValues = new AssociationValuesImpl(associationValues);
         this.sagaInstance = annotatedSaga;
         this.metaModel = metaModel;
+        this.chainedInterceptor = chainedInterceptor;
     }
 
     @Override
@@ -118,7 +123,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     private Object handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
         try {
-            return executeWithResult(() -> handler.handle(event, sagaInstance));
+            return executeWithResult(() -> chainedInterceptor.handle(event, sagaInstance, handler));
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {

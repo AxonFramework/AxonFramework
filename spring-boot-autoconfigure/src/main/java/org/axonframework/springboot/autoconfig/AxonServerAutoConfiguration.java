@@ -37,6 +37,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -46,10 +47,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.Nullable;
 
 import javax.annotation.Nonnull;
-import org.springframework.lang.Nullable;
 
 /**
  * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.
@@ -57,7 +57,7 @@ import org.springframework.lang.Nullable;
  * @author Marc Gathier
  * @since 4.0
  */
-@Configuration
+@AutoConfiguration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(AxonServerConfiguration.class)
 @EnableConfigurationProperties(TagsConfigurationProperties.class)

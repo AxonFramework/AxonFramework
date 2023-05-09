@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests Streaming Query functionality using a {@link SimpleQueryBus}. Query Handlers are subscribed using {@link
- * AnnotationQueryHandlerAdapter}.
+ * Tests Streaming Query functionality using a {@link SimpleQueryBus}. Query Handlers are subscribed using
+ * {@link AnnotationQueryHandlerAdapter}.
  *
  * @author Milan Savic
  * @author Stefan Dragisic
@@ -61,6 +61,11 @@ class StreamingQueryTest {
     @BeforeEach
     void setUp() {
         annotationQueryHandlerAdapter.subscribe(queryBus);
+    }
+
+    @AfterEach
+    void reset() {
+        myQueryHandler.errorThrown.set(false);
     }
 
     private <Q, R> Flux<R> streamingQueryPayloads(StreamingQueryMessage<Q, R> queryMessage) {
@@ -195,8 +200,8 @@ class StreamingQueryTest {
                 new GenericStreamingQueryMessage<>("criteria", "exceptionQuery", String.class);
 
         StepVerifier.create(streamingQueryPayloads(queryMessage))
-                    .expectErrorMatches(t -> t instanceof NoHandlerForQueryException
-                            && t.getMessage().startsWith("No suitable handler"))
+                    .expectErrorMatches(t -> t instanceof QueryExecutionException
+                            && t.getMessage().startsWith("Error starting stream"))
                     .verify();
     }
 
@@ -268,6 +273,32 @@ class StreamingQueryTest {
                     .verifyErrorMatches(t -> t instanceof RuntimeException && t.getMessage().equals("oops"));
     }
 
+    @Test
+    void queryNotExists() {
+        StreamingQueryMessage<String, String> queryMessage =
+                new GenericStreamingQueryMessage<>("criteria", "queryNotExists", String.class);
+
+        StepVerifier.create(streamingQueryPayloads(queryMessage))
+                    .verifyErrorMatches(t -> t instanceof NoHandlerForQueryException);
+    }
+
+    @Test
+    void resubscribeWorksEvenWhenAnErrorHasBeenCashed() {
+        StreamingQueryMessage<String, String> queryMessage =
+                new GenericStreamingQueryMessage<>("criteria", "exceptionQueryOnce", String.class);
+
+        Flux<String> flux = streamingQueryPayloads(queryMessage);
+
+        StepVerifier.create(flux)
+                    .expectErrorMatches(t -> t instanceof QueryExecutionException
+                            && t.getMessage().startsWith("Error starting stream"))
+                    .verify();
+
+        StepVerifier.create(flux)
+                    .expectNext("correctNow")
+                    .verifyComplete();
+    }
+
     private static class ErrorQueryHandler {
 
         @QueryHandler(queryName = "listQuery")
@@ -278,6 +309,8 @@ class StreamingQueryTest {
     }
 
     private static class MyQueryHandler {
+
+        AtomicBoolean errorThrown = new AtomicBoolean(false);
 
         @QueryHandler(queryName = "fluxQuery")
         public Flux<String> fluxQuery(String criteria) {
@@ -354,6 +387,14 @@ class StreamingQueryTest {
         @QueryHandler(queryName = "errorStream")
         public Flux<String> errorStream(String criteria) {
             return Flux.error(new RuntimeException("oops"));
+        }
+
+        @QueryHandler(queryName = "exceptionQueryOnce")
+        public Flux<String> exceptionQueryOnce(String criteria) {
+            if (errorThrown.compareAndSet(false, true)) {
+                throw new RuntimeException("oops");
+            }
+            return Flux.just("correctNow");
         }
     }
 }

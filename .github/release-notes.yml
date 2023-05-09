@@ -13,4 +13,4 @@ changelog:
       labels: [ "Type: Incorrect Repository", "Type: Question" ]
   contributors:
     exclude:
-      names: [ "dependabot" ]
+      names: [ "dependabot", "dependabot[bot]" ]

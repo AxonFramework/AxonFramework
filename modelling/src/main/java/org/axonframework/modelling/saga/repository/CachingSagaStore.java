@@ -24,6 +24,7 @@ import org.axonframework.modelling.saga.SagaRepository;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -76,8 +77,14 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     @Override
     public Set<String> findSagas(Class<? extends T> sagaType, AssociationValue associationValue) {
         final String key = cacheKey(associationValue, sagaType);
-        associationsCache.putIfAbsent(key, delegate.findSagas(sagaType, associationValue));
-        return associationsCache.get(key);
+        return associationsCache.computeIfAbsent(
+                key,
+                () -> {
+                    // We copy the original collection in a thread-safe implementation, since the original might be
+                    // changed while the SagaManager is reading it using the insertSaga/deleteSaga methods.
+                    return new ConcurrentSkipListSet<>(delegate.findSagas(sagaType, associationValue));
+                }
+        );
     }
 
     @Override

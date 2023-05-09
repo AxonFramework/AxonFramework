@@ -1,6 +1,5 @@
 version: 2
 updates:
-# Updates for GitHub Actions, 'master' only.
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
@@ -9,46 +8,21 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-    - "Status: In Progress"
-  milestone: 78
+  milestone: 82
   reviewers:
     - "gklijs"
     - "Morlack"
     - "smcvb" # Main
-# Updates for `master`.
 - package-ecosystem: maven
   directory: "/"
   schedule:
     interval: daily
-  ignore:
-    - dependency-name: "*"
-      update-types: [ "version-update:semver-patch" ]
   open-pull-requests-limit: 5
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-    - "Status: In Progress"
-  milestone: 78
+  milestone: 82
   reviewers:
     - "gklijs"
     - "Morlack"
     - "smcvb" # Main
-# Patch and security updates for patch branch.
-- package-ecosystem: maven
-  directory: "/"
-  schedule:
-    interval: daily
-  ignore:
-    - dependency-name: "*"
-      update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
-  labels:
-    - "Type: Dependency Upgrade"
-    - "Priority 1: Must"
-    - "Status: In Progress"
-  milestone: 81
-  open-pull-requests-limit: 5
-  reviewers:
-    - "gklijs"
-    - "Morlack"
-    - "smcvb" # Main
-  target-branch: "axon-4.6.x"

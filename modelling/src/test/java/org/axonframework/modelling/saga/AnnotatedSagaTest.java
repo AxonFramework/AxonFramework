@@ -22,14 +22,15 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.NoMoreInterceptors;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Nonnull;
 import java.util.Set;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWith;
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,7 +52,8 @@ class AnnotatedSagaTest {
         testSaga = new StubAnnotatedSaga();
         testSubject = new AnnotatedSaga<>(
                 "id", Collections.emptySet(), testSaga,
-                new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class)
+                new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class),
+                NoMoreInterceptors.instance()
         );
     }
 
@@ -115,7 +117,8 @@ class AnnotatedSagaTest {
         StubAnnotatedSaga testSaga = new StubAnnotatedSagaWithExplicitAssociationRemoval();
         AnnotatedSaga<StubAnnotatedSaga> testSubject = new AnnotatedSaga<>(
                 "id", Collections.emptySet(), testSaga,
-                new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class)
+                new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class),
+                NoMoreInterceptors.instance()
         );
 
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));

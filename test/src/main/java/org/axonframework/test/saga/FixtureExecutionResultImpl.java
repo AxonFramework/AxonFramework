@@ -350,7 +350,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectNoScheduledDeadline(Instant from, Instant to, Object deadline) {
-        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(equalTo(deadline, fieldFilter)));
+        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(deepEquals(deadline, fieldFilter)));
     }
 
     @Override

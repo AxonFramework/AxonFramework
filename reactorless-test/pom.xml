@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2022. Axon Framework
+  ~ Copyright (c) 2010-2023. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@
     <parent>
         <artifactId>axon</artifactId>
         <groupId>org.axonframework</groupId>
-        <version>4.7.0-SNAPSHOT</version>
+        <version>4.8.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>axon-reactorless-test</artifactId>
-    <name>Axon Reactor-less tests</name>
+    <name>Axon Framework - Reactor-less Tests</name>
     <description>
         Module containing Axon Framework tests without Project Reactor present on the classpath. Does not contain any
         production code.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -83,6 +84,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
@@ -241,6 +243,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void queryReportsCorrectNonTransientException() throws ExecutionException, InterruptedException {
+        spanFactory.reset();
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(),
                                   "Faking non transient exception result")
@@ -261,8 +264,19 @@ class AxonServerQueryBusTest {
                      remoteQueryHandlingException.getErrorCode());
 
         verify(targetContextResolver).resolveContext(testQuery);
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
-        spanFactory.verifySpanHasException("AxonServerQueryBus.query", QueryExecutionException.class);
+        await().untilAsserted(() -> {
+            spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
+            spanFactory.verifySpanHasException("AxonServerQueryBus.query", QueryExecutionException.class);
+        });
+    }
+
+    @Test
+    void queryCloseConnectionOnCompletableFutureCancel() {
+        ResultStream<QueryResponse> resultStream = mock(ResultStream.class);
+        when(mockQueryChannel.query(any())).thenReturn(resultStream);
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        testSubject.query(testQuery).cancel(true);
+        verify(resultStream).close();
     }
 
     @Test
@@ -304,8 +318,10 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && -1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.scatterGather", testQuery);
-        spanFactory.verifySpanPropagated("AxonServerQueryBus.scatterGather", testQuery);
+        await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> {
+            spanFactory.verifySpanCompleted("AxonServerQueryBus.scatterGather", testQuery);
+            spanFactory.verifySpanPropagated("AxonServerQueryBus.scatterGather", testQuery);
+        });
     }
 
     @Test
@@ -330,8 +346,11 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery", testQuery);
-        spanFactory.verifySpanPropagated("AxonServerQueryBus.streamingQuery", testQuery);
+        await().atMost(Duration.ofSeconds(3))
+               .untilAsserted(() -> {
+                   spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery", testQuery);
+                   spanFactory.verifySpanPropagated("AxonServerQueryBus.streamingQuery", testQuery);
+               });
     }
 
     @Test
@@ -350,8 +369,11 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery");
-        spanFactory.verifySpanHasException("AxonServerQueryBus.streamingQuery", RuntimeException.class);
+        await().atMost(Duration.ofSeconds(3))
+               .untilAsserted(() -> {
+                   spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery");
+                   spanFactory.verifySpanHasException("AxonServerQueryBus.streamingQuery", RuntimeException.class);
+               });
     }
 
     @Test

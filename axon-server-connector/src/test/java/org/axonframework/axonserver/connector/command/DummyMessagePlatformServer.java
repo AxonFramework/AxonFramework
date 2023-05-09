@@ -29,9 +29,10 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.PlatformService;
+import org.axonframework.axonserver.connector.utils.PlatformService;
 import org.axonframework.axonserver.connector.event.EventStoreImpl;
 import org.axonframework.axonserver.connector.util.TcpUtil;
+import org.axonframework.axonserver.connector.utils.ContextInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,6 +101,7 @@ public class DummyMessagePlatformServer {
                               .addService(new CommandHandler())
                               .addService(eventStore)
                               .addService(new PlatformService(port))
+                              .intercept(new ContextInterceptor())
                               .build();
         server.start();
     }

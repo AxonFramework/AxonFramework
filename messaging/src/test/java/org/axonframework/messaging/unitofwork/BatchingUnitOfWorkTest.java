@@ -21,8 +21,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,16 +35,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.AFTER_COMMIT;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.CLEANUP;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.COMMIT;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.PREPARE_COMMIT;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.ROLLBACK;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link BatchingUnitOfWork}.
+ *
  * @author Rene de Waele
  */
 class BatchingUnitOfWorkTest {
@@ -59,7 +54,7 @@ class BatchingUnitOfWorkTest {
     }
 
     @Test
-    void executeTask() throws Exception {
+    void executeTask() {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new BatchingUnitOfWork<>(messages);
         subject.executeWithResult(() -> {
@@ -195,6 +190,7 @@ class BatchingUnitOfWorkTest {
                                                       .map(Message::getMetaData)
                                                       .collect(Collectors.toList());
         assertEquals(expectedPayloads.size(), actualPayloads.size());
+        //noinspection SuspiciousMethodCalls
         assertTrue(expectedPayloads.containsAll(actualPayloads));
         assertEquals(expectedExceptions.size(), actualExceptions.size());
         assertTrue(expectedExceptions.containsAll(actualExceptions));

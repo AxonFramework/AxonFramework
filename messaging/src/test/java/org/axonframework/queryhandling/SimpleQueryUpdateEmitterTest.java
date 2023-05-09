@@ -183,8 +183,8 @@ class SimpleQueryUpdateEmitterTest {
 
         spanFactory.verifySpanCompleted("SimpleQueryUpdateEmitter.emit");
         spanFactory.verifySpanHasType("SimpleQueryUpdateEmitter.emit", TestSpanFactory.TestSpanType.INTERNAL);
-        spanFactory.verifySpanCompleted("QueryUpdateEmitter.emit chatMessages");
-        spanFactory.verifySpanHasType("QueryUpdateEmitter.emit chatMessages", TestSpanFactory.TestSpanType.DISPATCH);
+        spanFactory.verifySpanCompleted("SimpleQueryUpdateEmitter.doEmit");
+        spanFactory.verifySpanHasType("SimpleQueryUpdateEmitter.doEmit", TestSpanFactory.TestSpanType.DISPATCH);
     }
 
     @Test

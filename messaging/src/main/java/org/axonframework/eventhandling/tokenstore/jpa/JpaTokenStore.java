@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.tokenstore.jpa;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.Segment;
@@ -42,14 +44,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.eventhandling.tokenstore.jpa.TokenEntry.clock;
 
 /**
  * Implementation of a token store that uses JPA to save and load tokens. This implementation uses {@link TokenEntry}
@@ -61,8 +62,13 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public class JpaTokenStore implements TokenStore {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaTokenStore.class);
+
     private static final String CONFIG_TOKEN_ID = "__config";
     private static final int CONFIG_SEGMENT = 0;
+
+    private static final String OWNER_PARAM = "owner";
+    private static final String PROCESSOR_NAME_PARAM = "processorName";
+    private static final String SEGMENT_PARAM = "segment";
 
     private final EntityManagerProvider entityManagerProvider;
     private final Serializer serializer;
@@ -139,9 +145,9 @@ public class JpaTokenStore implements TokenStore {
                                          .setParameter("token", tokenDataToStore)
                                          .setParameter("tokenType", tokenTypeToStore)
                                          .setParameter("timestamp", tokenToStore.timestampAsString())
-                                         .setParameter("owner", nodeId)
-                                         .setParameter("processorName", processorName)
-                                         .setParameter("segment", segment)
+                                         .setParameter(OWNER_PARAM, nodeId)
+                                         .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                         .setParameter(SEGMENT_PARAM, segment)
                                          .executeUpdate();
 
         if (updatedTokens == 0) {
@@ -161,8 +167,8 @@ public class JpaTokenStore implements TokenStore {
                              "UPDATE TokenEntry te SET te.owner = null " +
                                      "WHERE te.owner = :owner AND te.processorName = :processorName " +
                                      "AND te.segment = :segment")
-                     .setParameter("processorName", processorName).setParameter("segment", segment)
-                     .setParameter("owner", nodeId)
+                     .setParameter(PROCESSOR_NAME_PARAM, processorName).setParameter(SEGMENT_PARAM, segment)
+                     .setParameter(OWNER_PARAM, nodeId)
                      .executeUpdate();
     }
 
@@ -189,9 +195,9 @@ public class JpaTokenStore implements TokenStore {
                                            "DELETE FROM TokenEntry te " +
                                                    "WHERE te.owner = :owner AND te.processorName = :processorName " +
                                                    "AND te.segment = :segment")
-                                   .setParameter("processorName", processorName)
-                                   .setParameter("segment", segment)
-                                   .setParameter("owner", nodeId)
+                                   .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                   .setParameter(SEGMENT_PARAM, segment)
+                                   .setParameter(OWNER_PARAM, nodeId)
                                    .executeUpdate();
 
         if (updates == 0) {
@@ -219,10 +225,10 @@ public class JpaTokenStore implements TokenStore {
                                                         "WHERE te.processorName = :processorName " +
                                                         "AND te.segment = :segment " +
                                                         "AND te.owner = :owner")
-                                   .setParameter("processorName", processorName)
-                                   .setParameter("segment", segment)
-                                   .setParameter("owner", nodeId)
-                                   .setParameter("timestamp", formatInstant(TokenEntry.clock.instant()))
+                                   .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                   .setParameter(SEGMENT_PARAM, segment)
+                                   .setParameter(OWNER_PARAM, nodeId)
+                                   .setParameter("timestamp", formatInstant(clock.instant()))
                                    .executeUpdate();
 
         if (updates == 0) {
@@ -240,7 +246,7 @@ public class JpaTokenStore implements TokenStore {
                 "SELECT te.segment FROM TokenEntry te "
                         + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
                 Integer.class
-        ).setParameter("processorName", processorName).getResultList();
+        ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
 
         return resultList.stream().mapToInt(i -> i).toArray();
     }
@@ -253,7 +259,7 @@ public class JpaTokenStore implements TokenStore {
                 "SELECT te FROM TokenEntry te "
                         + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
                 TokenEntry.class
-        ).setParameter("processorName", processorName).getResultList();
+        ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
         int[] allSegments = resultList.stream()
                                       .mapToInt(TokenEntry::getSegment)
                                       .toArray();

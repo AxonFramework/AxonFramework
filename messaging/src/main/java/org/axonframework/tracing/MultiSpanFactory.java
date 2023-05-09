@@ -125,6 +125,12 @@ public class MultiSpanFactory implements SpanFactory {
         }
 
         @Override
+        public SpanScope makeCurrent() {
+            List<SpanScope> scopes = spans.stream().map(Span::makeCurrent).collect(Collectors.toList());
+            return () -> scopes.forEach(SpanScope::close);
+        }
+
+        @Override
         public void end() {
             spans.forEach(Span::end);
         }

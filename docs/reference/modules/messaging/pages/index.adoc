@@ -1,0 +1,55 @@
+= Messaging Module
+:navtitle: Messaging
+:page-needs-improvement: impl, ref
+:page-needs-impl: Improve the "Implementation" section. Explain the separation of concerns
+:page-needs-ref: Provide other relevant references.
+
+This module contains all necessary components and building blocks to provide scalable, robust, and hassle-free messaging between components.
+
+[graphviz#axon-arch-diagram, title="Messaging in the high-level application architecture"]
+....
+include::attachment$axonframework_overview.gv[]
+....
+
+
+== Design considerations
+
+Distinct components communicate between each other via messages. The intention is to ensure location transparency, meaning one component doesn't need to know the location of the other component. Location transparency, allows developers and operators to scale and distribute these components as necessary.
+
+Messaging is a straightforward concept. A producer creates a payload and packages it in a message. It then sends the message to some message bus which delivers it to a consumer. The consumer unpacks the message, extracts the payload, and does something with it.
+
+Implementing this concept, though, is far from simple and straightforward. A robust solution needs to consider multiple functional and non-functional requirements. Such as
+
+ - message types and their respective routing patterns
+ - message buses
+ - metadata
+ - correlation
+ - serialization
+ - error handling
+ - transactions
+ - ...
+
+== Implementation
+
+** xref:messages/messages.adoc[]
+** xref:routing/routing.adoc[]
+** xref:advanced_messaging/index.adoc[]
+
+== Reference
+
+.Related resources
+[%collapsible]
+====
+[cols="2h,10"]
+|===
+|Maven artifact
+|https://search.maven.org/search?q=g:org.axonframework%20and%20a:axon-messaging
+
+|Javadoc
+|https://apidocs.axoniq.io/latest/org/axonframework/messaging/package-summary.html
+
+|Source code
+|https://github.com/AxonFramework/AxonFramework/tree/master/messaging
+
+|===
+====

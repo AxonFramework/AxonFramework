@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.deadletter;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.axonframework.common.AxonException;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandler;
@@ -25,6 +26,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageIdentifier;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -35,6 +37,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -50,8 +53,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -84,13 +90,16 @@ public abstract class DeadLetteringEventIntegrationTest {
     private static final boolean SUCCEED_RETRY = true;
     private static final boolean FAIL = false;
     private static final boolean FAIL_RETRY = false;
+    private static final int DEFAULT_RETRIES = 1;
 
     private ProblematicEventHandlingComponent eventHandlingComponent;
     private SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue;
     private DeadLetteringEventHandlerInvoker deadLetteringInvoker;
     private InMemoryStreamableEventSource eventSource;
     private StreamingEventProcessor streamingProcessor;
+    private AtomicBoolean returnReferenceErrorFromPolicy = new AtomicBoolean(false);
     protected TransactionManager transactionManager;
+    private final AtomicInteger maxRetries = new AtomicInteger(DEFAULT_RETRIES);
 
     private ScheduledExecutorService executor;
 
@@ -114,9 +123,14 @@ public abstract class DeadLetteringEventIntegrationTest {
         // A policy that ensure a letter is only retried once by adding diagnostics.
         EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> {
             int retries = (int) letter.diagnostics().getOrDefault("retries", 0);
-            if (retries < 1) {
+            if (retries < maxRetries.get()) {
+                Throwable decisionThrowable = cause;
+                if (returnReferenceErrorFromPolicy.get()) {
+                    decisionThrowable = new ReferenceException(UUID.randomUUID());
+                }
                 return Decisions.enqueue(
-                        cause, l -> MetaData.with("retries", (int) l.diagnostics().getOrDefault("retries", 0) + 1)
+                        decisionThrowable,
+                        l -> MetaData.with("retries", (int) l.diagnostics().getOrDefault("retries", 0) + 1)
                 );
             } else {
                 return Decisions.evict();
@@ -164,6 +178,8 @@ public abstract class DeadLetteringEventIntegrationTest {
         if (!executorTerminated) {
             executor.shutdownNow();
         }
+        maxRetries.set(DEFAULT_RETRIES);
+        returnReferenceErrorFromPolicy.set(false);
     }
 
     /**
@@ -520,6 +536,79 @@ public abstract class DeadLetteringEventIntegrationTest {
         publishingThread.join();
     }
 
+    @Test
+    void processedDeadLetterIsResolvedAsParameterToEventHandlers() {
+        int expectedSuccessfulHandlingCount = 3;
+        String aggregateId = UUID.randomUUID().toString();
+        // Three events in sequence "aggregateId" succeed
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+        // On event in sequence "aggregateId" fails, causing the rest to fail, but succeed on a retry
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL, SUCCEED_RETRY)));
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY)));
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY)));
+
+        startProcessingEvent();
+
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> streamingProcessor.processingStatus().size() == 1);
+        //noinspection OptionalGetWithoutIsPresent
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> streamingProcessor.processingStatus().get(0).getCurrentPosition().getAsLong() >= 6);
+
+        assertTrue(eventHandlingComponent.initialHandlingWasSuccessful(aggregateId));
+        assertEquals(expectedSuccessfulHandlingCount,
+                     eventHandlingComponent.successfulInitialHandlingCount(aggregateId));
+        assertTrue(eventHandlingComponent.initialHandlingWasUnsuccessful(aggregateId));
+        assertEquals(1, eventHandlingComponent.unsuccessfulInitialHandlingCount(aggregateId));
+
+        assertTrue(deadLetterQueue.contains(aggregateId));
+
+        deadLetteringInvoker.process(deadLetter -> true);
+
+        assertEquals(3, eventHandlingComponent.resolvedDeadLetterParameterCount(aggregateId));
+    }
+
+    @Test
+    void deadLetterEventProcessingTaskIsUsingInterceptor() {
+        //needed to increase otherwise it would be evicted anyway
+        maxRetries.set(3);
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        deadLetteringInvoker.registerHandlerInterceptor(errorCatchingInterceptor(invoked));
+
+        String aggregateId = UUID.randomUUID().toString();
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL)));
+        startProcessingEvent();
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(10))
+               .until(() -> deadLetterQueue.size() == 1);
+
+        // component needs to be reset, so process will cause an exception again
+        eventHandlingComponent.handledEvent.clear();
+        eventHandlingComponent.firstTryFailures.clear();
+        deadLetteringInvoker.process(deadLetter -> true);
+        assertTrue(invoked.get());
+        assertEquals(0, deadLetterQueue.size());
+    }
+
+    @Test
+    void causeFromDecisionShouldBeStored() {
+        returnReferenceErrorFromPolicy.set(true);
+        String aggregateId = UUID.randomUUID().toString();
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL)));
+        startProcessingEvent();
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> deadLetterQueue.amountOfSequences() == 1);
+        DeadLetter<?> deadLetter = deadLetterQueue.deadLetters().iterator().next().iterator().next();
+        assertTrue(deadLetter.cause().isPresent());
+        String causeType = deadLetter.cause().get().type();
+        assertEquals(ReferenceException.class.getName(), causeType);
+    }
+
     private void publishEventsFor(String aggregateId,
                                   int immediateSuccessesPerAggregate,
                                   int failFirstAndThenSucceedPerAggregate,
@@ -547,9 +636,12 @@ public abstract class DeadLetteringEventIntegrationTest {
         private final Map<String, Integer> evaluationSuccesses = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> firstTryFailures = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> evaluationFailures = new ConcurrentSkipListMap<>();
+        private final Map<String, Integer> hasResolvedDeadLetterParameter = new ConcurrentSkipListMap<>();
 
         @EventHandler
-        public void on(DeadLetterableEvent event, @MessageIdentifier String eventIdentifier) {
+        public void on(DeadLetterableEvent event,
+                       @MessageIdentifier String eventIdentifier,
+                       DeadLetter<EventMessage<DeadLetterableEvent>> deadLetter) {
             // The aggregate identifier effectively references the sequence because of the configured SequencingPolicy.
             String sequenceId = event.getAggregateIdentifier();
 
@@ -566,6 +658,10 @@ public abstract class DeadLetteringEventIntegrationTest {
             } else {
                 // This is the second, third, ... time we get this event.
                 processEvaluationOf(event, sequenceId);
+            }
+
+            if (deadLetter != null) {
+                hasResolvedDeadLetterParameter.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
             }
         }
 
@@ -587,40 +683,44 @@ public abstract class DeadLetteringEventIntegrationTest {
             }
         }
 
-        public boolean initialHandlingWasSuccessful(String aggregateIdentifier) {
-            return firstTrySuccesses.containsKey(aggregateIdentifier);
+        public boolean initialHandlingWasSuccessful(String sequenceId) {
+            return firstTrySuccesses.containsKey(sequenceId);
         }
 
-        public int successfulInitialHandlingCount(String aggregateIdentifier) {
-            return initialHandlingWasSuccessful(aggregateIdentifier) ? firstTrySuccesses.get(aggregateIdentifier) : 0;
+        public int successfulInitialHandlingCount(String sequenceId) {
+            return initialHandlingWasSuccessful(sequenceId) ? firstTrySuccesses.get(sequenceId) : 0;
         }
 
-        public boolean evaluationWasSuccessful(String aggregateIdentifier) {
-            return evaluationSuccesses.containsKey(aggregateIdentifier);
+        public boolean evaluationWasSuccessful(String sequenceId) {
+            return evaluationSuccesses.containsKey(sequenceId);
         }
 
-        public int successfulEvaluationCount(String aggregateIdentifier) {
-            return evaluationWasSuccessful(aggregateIdentifier) ? evaluationSuccesses.get(aggregateIdentifier) : 0;
+        public int successfulEvaluationCount(String sequenceId) {
+            return evaluationWasSuccessful(sequenceId) ? evaluationSuccesses.get(sequenceId) : 0;
         }
 
-        public boolean initialHandlingWasUnsuccessful(String aggregateIdentifier) {
-            return firstTryFailures.containsKey(aggregateIdentifier);
+        public boolean initialHandlingWasUnsuccessful(String sequenceId) {
+            return firstTryFailures.containsKey(sequenceId);
         }
 
-        public int unsuccessfulInitialHandlingCount(String aggregateIdentifier) {
-            return initialHandlingWasUnsuccessful(aggregateIdentifier) ? firstTryFailures.get(aggregateIdentifier) : 0;
+        public int unsuccessfulInitialHandlingCount(String sequenceId) {
+            return initialHandlingWasUnsuccessful(sequenceId) ? firstTryFailures.get(sequenceId) : 0;
         }
 
-        public boolean evaluationWasUnsuccessful(String aggregateIdentifier) {
-            return evaluationFailures.containsKey(aggregateIdentifier);
+        public boolean evaluationWasUnsuccessful(String sequenceId) {
+            return evaluationFailures.containsKey(sequenceId);
         }
 
-        public int unsuccessfulEvaluationCount(String aggregateIdentifier) {
-            return evaluationWasUnsuccessful(aggregateIdentifier) ? evaluationFailures.get(aggregateIdentifier) : 0;
+        public int unsuccessfulEvaluationCount(String sequenceId) {
+            return evaluationWasUnsuccessful(sequenceId) ? evaluationFailures.get(sequenceId) : 0;
         }
 
-        public int overallSuccessfulHandlingCount(String aggregateIdentifier) {
-            return firstTrySuccesses.get(aggregateIdentifier) + evaluationSuccesses.get(aggregateIdentifier);
+        public int overallSuccessfulHandlingCount(String sequenceId) {
+            return firstTrySuccesses.get(sequenceId) + evaluationSuccesses.get(sequenceId);
+        }
+
+        public int resolvedDeadLetterParameterCount(String sequenceId) {
+            return hasResolvedDeadLetterParameter.get(sequenceId);
         }
     }
 
@@ -682,6 +782,27 @@ public abstract class DeadLetteringEventIntegrationTest {
                     ", shouldSucceed=" + shouldSucceed +
                     ", shouldSucceedOnEvaluation=" + shouldSucceedOnEvaluation +
                     '}';
+        }
+    }
+
+    private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
+        return (unitOfWork, chain) -> {
+            invoked.set(true);
+            try {
+                chain.proceed();
+            } catch (RuntimeException e) {
+                return unitOfWork;
+            }
+            return unitOfWork;
+        };
+    }
+
+    private static class ReferenceException extends AxonException {
+
+        private static final long serialVersionUID = 1380362964599517107L;
+
+        ReferenceException(UUID reference) {
+            super(reference.toString());
         }
     }
 }

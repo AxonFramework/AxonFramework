@@ -16,14 +16,27 @@
 
 package org.axonframework.modelling.saga.repository;
 
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.caching.Cache;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.AssociationValuesImpl;
+import org.axonframework.modelling.saga.Saga;
+import org.axonframework.modelling.saga.SagaRepository;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
@@ -98,9 +111,13 @@ public abstract class CachingSagaStoreTest {
 
         Set<String> actual = testSubject.findSagas(StubSaga.class, associationValue);
         assertEquals(singleton("id"), actual);
-        verify(associationsCache, atLeast(1)).get("org.axonframework.modelling.saga.repository.StubSaga/key=value");
-        verify(associationsCache).putIfAbsent("org.axonframework.modelling.saga.repository.StubSaga/key=value",
-                                              Collections.singleton("id"));
+        //noinspection unchecked
+        ArgumentCaptor<Supplier<?>> captor = ArgumentCaptor.forClass(Supplier.class);
+        verify(associationsCache, atLeast(1)).computeIfAbsent(
+                eq("org.axonframework.modelling.saga.repository.StubSaga/key=value"),
+                captor.capture()
+        );
+        assertEquals(Collections.singleton("id"), captor.getValue().get());
     }
 
     @Test
@@ -170,5 +187,84 @@ public abstract class CachingSagaStoreTest {
         testSubject.deleteSaga(StubSaga.class, testSagaId, singleton(testAssociationValue));
         assertFalse(sagaCache.containsKey(testSagaId));
         assertFalse(associationsCache.containsKey(expectedAssociationKey));
+    }
+
+    @Test
+    void canHandleConcurrentReadsAndWrites() {
+        int concurrentOperations = 32;
+
+        AssociationValue associationValue = new AssociationValue("StubSaga-id", "value");
+        Set<AssociationValue> associationValues = singleton(associationValue);
+        ExecutorService executor = Executors.newFixedThreadPool(16);
+
+        try {
+            IntStream.range(0, concurrentOperations)
+                     .mapToObj(i -> CompletableFuture.runAsync(
+                             () -> {
+                                 try {
+                                     String sagaId = IdentifierFactory.getInstance().generateIdentifier();
+
+                                     testSubject.insertSaga(
+                                             StubSaga.class, sagaId, mock(StubSaga.class), associationValues
+                                     );
+                                     testSubject.findSagas(StubSaga.class, associationValue);
+                                     testSubject.deleteSaga(
+                                             StubSaga.class, sagaId, associationValues
+                                     );
+                                 } catch (Exception e) {
+                                     throw new RuntimeException(e);
+                                 }
+                             },
+                             executor
+                     ))
+                     .reduce(CompletableFuture::allOf)
+                     .orElse(CompletableFuture.completedFuture(null))
+                     .get(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @Test
+    void canHandleConcurrentReadsAndWritesThroughAnnotatedSagaRepository() {
+        SagaRepository<StubSaga> sagaRepository = AnnotatedSagaRepository.<StubSaga>builder()
+                                                                         .sagaType(StubSaga.class)
+                                                                         .sagaStore(testSubject)
+                                                                         .build();
+        int concurrentOperations = 32;
+        ExecutorService executor = Executors.newFixedThreadPool(16);
+        AssociationValue associationValue = new AssociationValue("StubSaga-id", "value");
+
+        try {
+            IntStream.range(0, concurrentOperations)
+                     .mapToObj(i -> CompletableFuture.runAsync(
+                             () -> {
+                                 try {
+                                     UnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+                                     String sagaId = IdentifierFactory.getInstance().generateIdentifier();
+                                     // Create instances
+                                     Saga<StubSaga> saga = sagaRepository.createInstance(sagaId, StubSaga::new);
+                                     uow.execute(() -> saga.getAssociationValues().add(associationValue));
+                                     // Find Saga identifiers
+                                     Set<String> sagaIds = sagaRepository.find(associationValue);
+                                     // Load Sagas
+                                     DefaultUnitOfWork.startAndGet(null)
+                                                      .execute(() -> sagaIds.forEach(sagaRepository::load));
+                                 } catch (Exception e) {
+                                     throw new RuntimeException(e);
+                                 }
+                             },
+                             executor
+                     ))
+                     .reduce(CompletableFuture::allOf)
+                     .orElse(CompletableFuture.completedFuture(null))
+                     .get(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);
+        } finally {
+            executor.shutdown();
+        }
     }
 }

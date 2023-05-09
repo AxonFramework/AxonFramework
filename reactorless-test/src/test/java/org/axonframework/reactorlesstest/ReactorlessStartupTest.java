@@ -20,6 +20,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests starting a Spring Boot application without Project Reactor on the classpath.
  */
 @SpringBootTest
+@TestPropertySource(locations = "classpath:application.properties")
 class ReactorlessStartupTest {
 
     @Autowired

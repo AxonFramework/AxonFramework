@@ -67,5 +67,15 @@ public abstract class StringUtils {
     public static boolean nonEmpty(String s) {
         return !EMPTY_STRING.equals(s);
     }
+
+    /**
+     * Return the given {@code s}, with its first character lowercase.
+     *
+     * @param s The input string to adjust to a version with the first character as a lowercase.
+     * @return The input string, with first character lowercase.
+     */
+    public static String lowerCaseFirstCharacterOf(String s) {
+        return s.substring(0, 1).toLowerCase() + s.substring(1);
+    }
 }
 

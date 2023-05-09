@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import java.io.Serializable;
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 
 /**
  * Abstract implementation of the {@link org.axonframework.eventsourcing.SnapshotTrigger} that schedules snapshots on
@@ -40,7 +40,7 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serial
     /**
      * Instantiate a {@link AbstractSnapshotTrigger} based on the {@link Snapshotter} and aggregateType {@link Class<?>}.
      *
-     * @param snapshotter the {@link Snapshotter} for scheduling snapshots
+     * @param snapshotter   the {@link Snapshotter} for scheduling snapshots
      * @param aggregateType the {@link Class<?> of the aggregate that is creating a snapshot}
      */
     protected AbstractSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType) {

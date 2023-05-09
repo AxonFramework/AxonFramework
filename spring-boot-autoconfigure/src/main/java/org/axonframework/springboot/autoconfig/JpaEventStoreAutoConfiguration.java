@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
@@ -25,13 +26,11 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import javax.persistence.EntityManagerFactory;
 
 /**
  * Auto configuration class for Axon's JPA specific event store components.
@@ -39,12 +38,12 @@ import javax.persistence.EntityManagerFactory;
  * @author Sara Pelligrini
  * @since 4.0
  */
+@AutoConfiguration
 @ConditionalOnBean(EntityManagerFactory.class)
 @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventsourcing.eventstore.jpa"
 })
-@Configuration
 @AutoConfigureAfter(AxonServerAutoConfiguration.class)
 public class JpaEventStoreAutoConfiguration {
 

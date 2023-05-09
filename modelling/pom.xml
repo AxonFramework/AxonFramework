@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2022. Axon Framework
+  ~ Copyright (c) 2010-2023. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>4.7.0-SNAPSHOT</version>
+        <version>4.8.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>axon-modelling</artifactId>
 
-    <name>Axon Framework Modelling</name>
+    <name>Axon Framework - Modelling</name>
     <description>
         Module containing the necessary components to create domain models, like Aggregates and Sagas.
     </description>
@@ -54,6 +54,7 @@
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <optional>true</optional>
+            <scope>test</scope>
         </dependency>
 
         <!-- Optional dependencies -->
@@ -98,7 +99,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.hibernate.validator</groupId>
+            <groupId>org.hibernate</groupId>
             <artifactId>hibernate-validator</artifactId>
             <scope>test</scope>
         </dependency>
@@ -111,6 +112,11 @@
 
         <!-- JPA support -->
         <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>javax.persistence</groupId>
             <artifactId>javax.persistence-api</artifactId>
             <optional>true</optional>
@@ -119,7 +125,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

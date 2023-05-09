@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Id;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Version;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -39,10 +43,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
-import javax.persistence.Id;
-import javax.persistence.LockModeType;
-import javax.persistence.Version;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -148,26 +148,26 @@ class GenericJpaRepositoryTest {
         });
         CurrentUnitOfWork.commit();
 
-        List<EventMessage> publishedEvents = testEventBus.getPublishedEvents();
+        List<EventMessage<?>> publishedEvents = testEventBus.getPublishedEvents();
         assertEquals(3, publishedEvents.size());
 
-        EventMessage eventOne = publishedEvents.get(0);
+        EventMessage<?> eventOne = publishedEvents.get(0);
         assertTrue(eventOne instanceof DomainEventMessage);
-        DomainEventMessage domainEventOne = (DomainEventMessage) eventOne;
+        DomainEventMessage<?> domainEventOne = (DomainEventMessage<?>) eventOne;
         assertEquals("test1", domainEventOne.getPayload());
         assertEquals(0, domainEventOne.getSequenceNumber());
         assertEquals("id", domainEventOne.getAggregateIdentifier());
 
-        EventMessage eventTwo = publishedEvents.get(1);
+        EventMessage<?> eventTwo = publishedEvents.get(1);
         assertTrue(eventTwo instanceof DomainEventMessage);
-        DomainEventMessage domainEventTwo = (DomainEventMessage) eventTwo;
+        DomainEventMessage<?> domainEventTwo = (DomainEventMessage<?>) eventTwo;
         assertEquals("test2", domainEventTwo.getPayload());
         assertEquals(1, domainEventTwo.getSequenceNumber());
         assertEquals("id", domainEventTwo.getAggregateIdentifier());
 
-        EventMessage eventThree = publishedEvents.get(2);
+        EventMessage<?> eventThree = publishedEvents.get(2);
         assertTrue(eventThree instanceof DomainEventMessage);
-        DomainEventMessage domainEventThree = (DomainEventMessage) eventThree;
+        DomainEventMessage<?> domainEventThree = (DomainEventMessage<?>) eventThree;
         assertEquals("test3", domainEventThree.getPayload());
         assertEquals(2, domainEventThree.getSequenceNumber());
         assertEquals("id", domainEventThree.getAggregateIdentifier());
@@ -193,7 +193,7 @@ class GenericJpaRepositoryTest {
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<? extends EventMessage<?>>> eventCaptor =
-                ArgumentCaptor.forClass((Class<List<? extends EventMessage<?>>>) (Class) List.class);
+                ArgumentCaptor.forClass((Class<List<? extends EventMessage<?>>>) (Class<?>) List.class);
 
         verify(testEventBus).publish(eventCaptor.capture());
         List<? extends EventMessage<?>> capturedEvents = eventCaptor.getValue();
@@ -202,6 +202,46 @@ class GenericJpaRepositoryTest {
         EventMessage<?> eventOne = capturedEvents.get(0);
         assertFalse(eventOne instanceof DomainEventMessage);
         assertEquals("test2", eventOne.getPayload());
+    }
+
+    @Test
+    void aggregateDoesNotCreateSequenceNumbersWhenSequenceNumberGenerationIsDisabled() {
+        String expectedFirstPayload = "test1";
+        String expectedSecondPayload = "test2";
+        String expectedThirdPayload = "test3";
+
+        DomainSequenceAwareEventBus testEventBus = new DomainSequenceAwareEventBus();
+        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
+                                          .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                          .eventBus(testEventBus)
+                                          .identifierConverter(identifierConverter)
+                                          .disableSequenceNumberGeneration()
+                                          .build();
+
+        DefaultUnitOfWork.startAndGet(null)
+                         .executeWithResult(() -> {
+                             Aggregate<StubJpaAggregate> aggregate = testSubject.newInstance(
+                                     () -> new StubJpaAggregate("id", expectedFirstPayload, expectedSecondPayload)
+                             );
+                             aggregate.execute(e -> e.doSomething(expectedThirdPayload));
+                             return null;
+                         });
+        CurrentUnitOfWork.commit();
+
+        List<EventMessage<?>> publishedEvents = testEventBus.getPublishedEvents();
+        assertEquals(3, publishedEvents.size());
+
+        EventMessage<?> eventOne = publishedEvents.get(0);
+        assertFalse(eventOne instanceof DomainEventMessage);
+        assertEquals(expectedFirstPayload, eventOne.getPayload());
+
+        EventMessage<?> eventTwo = publishedEvents.get(1);
+        assertFalse(eventTwo instanceof DomainEventMessage);
+        assertEquals(expectedSecondPayload, eventTwo.getPayload());
+
+        EventMessage<?> eventThree = publishedEvents.get(2);
+        assertFalse(eventThree instanceof DomainEventMessage);
+        assertEquals(expectedThirdPayload, eventThree.getPayload());
     }
 
     @Test
@@ -299,10 +339,10 @@ class GenericJpaRepositoryTest {
         }
     }
 
-    private class DomainSequenceAwareEventBus extends SimpleEventBus implements DomainEventSequenceAware {
+    private static class DomainSequenceAwareEventBus extends SimpleEventBus implements DomainEventSequenceAware {
 
-        private List<EventMessage> publishedEvents = new ArrayList<>();
-        private Map<String, Long> sequencePerAggregate = new HashMap<>();
+        private final List<EventMessage<?>> publishedEvents = new ArrayList<>();
+        private final Map<String, Long> sequencePerAggregate = new HashMap<>();
 
         DomainSequenceAwareEventBus() {
             super(SimpleEventBus.builder());
@@ -314,7 +354,7 @@ class GenericJpaRepositoryTest {
             super.publish(events);
         }
 
-        List<EventMessage> getPublishedEvents() {
+        List<EventMessage<?>> getPublishedEvents() {
             return publishedEvents;
         }
 

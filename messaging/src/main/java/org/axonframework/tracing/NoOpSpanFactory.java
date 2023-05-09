@@ -73,11 +73,16 @@ public class NoOpSpanFactory implements SpanFactory {
         return message;
     }
 
-    static class NoOpSpan implements Span {
+    public static class NoOpSpan implements Span {
 
         @Override
         public Span start() {
             return this;
+        }
+
+        @Override
+        public SpanScope makeCurrent() {
+            return () -> {};
         }
 
         @Override

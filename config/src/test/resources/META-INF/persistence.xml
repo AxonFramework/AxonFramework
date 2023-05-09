@@ -15,10 +15,14 @@
   -->
 
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
-    <persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="defaultConfigurerJpaTestEventStore" transaction-type="RESOURCE_LOCAL">
         <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
         <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
+        <properties>
+            <property name="hibernate.connection.url" value="jdbc:hsqldb:mem:axontest"/>
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+        </properties>
     </persistence-unit>
 </persistence>

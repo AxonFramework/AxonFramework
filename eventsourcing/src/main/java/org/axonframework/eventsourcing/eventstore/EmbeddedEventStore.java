@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.lifecycle.Lifecycle;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.SpanFactory;
@@ -45,10 +47,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import javax.annotation.PreDestroy;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertPositive;
 
 /**
  * Implementation of an {@link EventStore} that stores and fetches events using an {@link EventStorageEngine}. If
@@ -71,7 +73,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Rene de Waele
  * @since 3.0
  */
-public class EmbeddedEventStore extends AbstractEventStore {
+public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);
 
@@ -133,7 +135,6 @@ public class EmbeddedEventStore extends AbstractEventStore {
     /**
      * Method to invoke when the application shuts down. This closes all event streams used for event store tracking.
      */
-    @PreDestroy
     public void shutDown() {
         tailingConsumers.forEach(IOUtils::closeQuietly);
         IOUtils.closeQuietly(producer);
@@ -181,6 +182,11 @@ public class EmbeddedEventStore extends AbstractEventStore {
         return node;
     }
 
+    @Override
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
+        handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS - 10, this::shutDown);
+    }
+
     private static class Node {
 
         private final long index;
@@ -201,7 +207,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
         private final Condition dataAvailableCondition = lock.newCondition();
         private final long fetchDelayNanos;
         private final int cachedEvents;
-        private volatile boolean shouldFetch, closed;
+        private volatile boolean shouldFetch;
+        private volatile boolean closed;
         private Stream<? extends TrackedEventMessage<?>> eventStream;
         private Node newest;
 
@@ -531,7 +538,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder cachedEvents(int cachedEvents) {
-            assertNonNull(cachedEvents, "{} may not be null");
+            assertPositive(cachedEvents, "The cached events count should be a positive number");
             this.cachedEvents = cachedEvents;
             return this;
         }
@@ -550,7 +557,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder fetchDelay(long fetchDelay) {
-            assertNonNull(fetchDelay, "{} may not be null");
+            assertPositive(fetchDelay, "The fetch delay should be a positive number");
             this.fetchDelay = fetchDelay;
             return this;
         }
@@ -569,7 +576,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder cleanupDelay(long cleanupDelay) {
-            assertNonNull(cleanupDelay, "{} may not be null");
+            assertPositive(cleanupDelay, "The clean-up delay should be a positive number");
             this.cleanupDelay = cleanupDelay;
             return this;
         }

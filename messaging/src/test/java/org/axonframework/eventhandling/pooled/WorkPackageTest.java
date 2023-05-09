@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -40,8 +41,8 @@ import java.util.List;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -59,7 +60,7 @@ class WorkPackageTest {
     private static final String PROCESSOR_NAME = "test";
 
     private TokenStore tokenStore;
-    private ExecutorService executorService;
+    private ScheduledExecutorService executorService;
     private TestEventFilter eventFilter;
     private TestBatchProcessor batchProcessor;
     private Segment segment;
@@ -76,7 +77,7 @@ class WorkPackageTest {
     @BeforeEach
     void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
-        executorService = spy(Executors.newScheduledThreadPool(1));
+        executorService = spy(new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(1)));
         eventFilter = new TestEventFilter();
         batchProcessor = new TestBatchProcessor();
         segment = Segment.ROOT_SEGMENT;

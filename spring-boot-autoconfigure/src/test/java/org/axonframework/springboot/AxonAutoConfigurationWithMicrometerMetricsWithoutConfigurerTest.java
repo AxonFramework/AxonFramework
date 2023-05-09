@@ -19,6 +19,9 @@ package org.axonframework.springboot;
 import com.codahale.metrics.MetricRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.axonframework.micrometer.GlobalMetricRegistry;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +39,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
-        JmxAutoConfiguration.class, WebClientAutoConfiguration.class, HibernateJpaAutoConfiguration.class,
-        DataSourceAutoConfiguration.class
+        AxonServerAutoConfiguration.class,
+        AxonServerBusAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class,
+        DataSourceAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class,
+        JmxAutoConfiguration.class,
+        WebClientAutoConfiguration.class
 })
 @TestPropertySource("classpath:test.metrics.application.properties")
 @ExtendWith(SpringExtension.class)

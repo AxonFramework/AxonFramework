@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.persistence.Basic;
+import jakarta.persistence.MappedSuperclass;
 import org.axonframework.serialization.Serializer;
-
-import javax.persistence.Basic;
-import javax.persistence.MappedSuperclass;
 
 /**
  * Abstract base class of a serialized domain event. Fields in this class contain JPA annotations that direct JPA event
@@ -28,13 +27,17 @@ import javax.persistence.MappedSuperclass;
  * @author Rene de Waele
  */
 @MappedSuperclass
+@javax.persistence.MappedSuperclass
 public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> implements DomainEventData<T> {
 
     @Basic
+    @javax.persistence.Basic
     private String type;
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String aggregateIdentifier;
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private long sequenceNumber;
 
     /**
