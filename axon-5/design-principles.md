@@ -1,28 +1,37 @@
 # Design principles
 
 ## Base
-- Use JDK17.
-- [Async-native / Project Reactor] throughout APIs intended for end-user actions.
-  There's a concern on debugging Project Reactor, though, as usual stack trace is lost.
-  Hence, when following this route, we should be certain to use 'check points' throughout VERY thoroughly.
-  Otherwise, issues, locally or at end users, will be a lot harder to figure out.
-  Whether we take a Java-async-native or Project Reactor approach, requires experimentation.
-- Decide upon project modularity. 
-* Decide upon project modularity.
+- Use JDK17 as the base.
+- Make the framework support reactive programming, but not enforce it.
+  In doing so, users can stick to what they're used (with Axon Framework 4) to or select Project Reactor.
+  To that end, the "edges" of the Framework allow a reactive solution.
+  In other words, both dispatching and handling, the users domain, should allow imperative and reactive programming.
+  Internally, we should not be biased upon a reactivestreams implementation, like Project Reactor, however.
+  This will provide us the most flexibility, without sacrificing the choices of the user.
+- Decide upon project modularity.
   E.g. should we split axon-messaging into events/commands/queries?
   Or move core components to axon-core?.
-* Extract Spring from main project into extension?
-* Extract JPA/JDBC from main project into extension?
+- Extract Spring, JPA, and JDBC from main project into extensions.
 * Selectively open up APIs to end users, to allow us to change things even after a release.
-  Thus, giving us more flexibility in designing (todo - discuss idea with Allard due to his API design experience).
+  Thus, giving us more flexibility in designing.
 
 ## UnitOfWork
 - UnitOfWork should not be accessible to end users. 
   Instead, they should only be able to interact with its lifecycle (e.g., add commit-phase operations) and context (to add resources).
   This guards against users accidentally invoking, for example, UnitOfWork#commit (which they should never do).
+- The UnitOfWork, or ProcessingLifecycle + ProcessingContext, are inclined to provide a means to support both reactive and imperative programming.
+  We can achieve this by letting the UoW implementation expected a Publisher and return a wrapped Publisher, used by every message handling method.
+  This custom Publisher will:
+  1. Allow us to support any reactivestreams implementation from a handler,
+  2. Allow us to map other results like `void`, `Object`, `CompletableFuture<Void>` and `CompletableFuture<Object>` to a `Publisher`, and
+  3. Allow us to hook into the `Publisher` steps with the UoW's lifecycle logic.
+- Note that this custom `Publisher` for the Framework is not intended to be a full implementation.
+  It just does the mapping from a given `Publisher` on too the one invoking the wrapper, and vice-versa.
+- To ensure correct context usage between imperative or reactive-styled programming, we should map any fields of the received edge context on too the Axon context.
+  For example, we should copy over the Project Reactor `Context` unto the `ProcessingContext`, and vice versa.
+  Doing so, we ensure that, for example, both Spring's Imperative and Reactive Transaction logic is maintained whenever the users code enters the framework.
 
-## Messaging
-- Dispatch Interceptors should allow reaction to the responses of handling the message(s).
+## Messages
 * Disconnect message name from payload type. 
   This means during handler subscription, that you need to provide a name. 
   Annotation based may default to the FQCN, still.
@@ -30,10 +39,30 @@
   This is already present at the moment, but it's part of the payloadType. 
   Exposes this directly allows a (cleaner) mapping from messages-to-namespace, and namespaces-to-context.
 * Usage of the namespaces may also allow an easier integration of multi tenancy within the core of the Framework.
-* A Message Handler should be capable of defining the business name of the message it handles,
-   and the type it wants to receive it in.
+
+## Message Buses
+- Bus implementations should allow provisioning of dispatch information.
+  For example, does a Message have a certain priority over others.
+- The Message Buses will provide a common approach to register "Message Handling Components" (MHC for short).
+  Some form of `HandlerRegistry` interface is thus reasonable, allow the registration of a MHC.
+  In doing so, we synchronize the three types of buses, whereas for Axon Framework 4, Event Processors are the oddball for this.
+- A Message Handling Component may in turn consist out of other Message Handling Components, if the layering so requires it.
+- We will provide distinct Gateway interfaces for the different types of outward interaction with the Framework.
+  For example, whenever a user sticks to the imperative proramming paradigm, the (regular) `CommandGateway` is used.
+  If a users prefers Project Reactor they should use the `ReactorCommandGateway`, clearly defining `Mono`/`Flux` operations.
+  And if a user would like to use Kotlin's coroutines, they should wire a distinct `CoroutineCommandGateway`.
+  Without doing so, we can not guarantee that we can map the respective context implementations (e.g., `ThreadLocal` or `Context` (Project Reactor)) over to Axon Framework's `ProcessingContext`.
+
+## Message Intercepting
+- Dispatch Interceptors should allow reaction to the responses of handling the message(s).
+  Or, distinct Result Interceptors should be present throughout the Framework's bus implementations.
+- Distinct interceptor support interfaces should not be necessary.
+  Instead, the constructors/builders of the respective bus implementations should allow provisioning of a a single instance.
+  This single instance internally represents the chain of interceptors to utilize before dispatching, handling, or result returning.
 
 ## Message Handling
+* A Message Handler should be capable of defining the business name of the message it handles,
+  and the type it wants to receive it in.
 - A generic form of "stateful message handler" is a beneficial for any message handler in the system.
   For example, stateful command handlers would be a way to deal differently with your Command Model than the current aggregate approach.
   Similarly, a stateful event handler can mitigate the situation where a users needs to wire the Repository manually.
@@ -92,7 +121,6 @@
   This point stems from the assumed lack of XStream serialization simplicity, that "simply works."
   Using another format, like Jackson, currently requires introduction of getter/setter logic; code that doesn't belong in an Aggregate.
 - Employee snapshotting in test fixtures.
-- [START HERE]
 
 ## Testing
 - Have Aggregate Test Fixtures ingest the Aggregate Configuration, to base the test suite on.
@@ -143,10 +171,10 @@
 * If we will remove stuff that's not already deprecated, of course. (Disruptor, ConflictResolution, Sagas)
 
 ## Rules
-- No ThreadLocals!
+- No ThreadLocals internal to the Framework! Only on the edges, purely for the imperative style.
 - No XStream! 
 - No static methods on our public APIs!
-- No locks / synchronized keywords!
-- No Thread#sleep!
+- No locks / `synchronized` keywords!
+- No `Thread#sleep`!
 - No Exception throwing in the functional-coding style!
-- No Schema maintenance!
+- No schema maintenance!
