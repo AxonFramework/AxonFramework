@@ -1,4 +1,5 @@
-# Design principles
+# Design Principles
+This document serves the purpose to track the design principles we land on while drafting Axon Framework 5.
 
 ## Base
 - Use JDK17 as the base.
@@ -14,6 +15,19 @@
 - Extract Spring, JPA, and JDBC from main project into extensions.
 * Selectively open up APIs to end users, to allow us to change things even after a release.
   Thus, giving us more flexibility in designing.
+
+## Deprecation
+* Should we pre-deprecate stuff that we'll remove in AF5?
+* If we will remove stuff that's not already deprecated, of course. (Disruptor, ConflictResolution, Sagas)
+
+## Rules
+- No ThreadLocals internal to the Framework! Only on the edges, purely for the imperative style.
+- No XStream!
+- No static methods on our public APIs!
+- No locks / `synchronized` keywords!
+- No `Thread#sleep`!
+- No Exception throwing in the functional-coding style!
+- No schema maintenance!
 
 ## UnitOfWork
 - UnitOfWork should not be accessible to end users. 
@@ -53,13 +67,6 @@
   And if a user would like to use Kotlin's coroutines, they should wire a distinct `CoroutineCommandGateway`.
   Without doing so, we can not guarantee that we can map the respective context implementations (e.g., `ThreadLocal` or `Context` (Project Reactor)) over to Axon Framework's `ProcessingContext`.
 
-## Message Intercepting
-- Dispatch Interceptors should allow reaction to the responses of handling the message(s).
-  Or, distinct Result Interceptors should be present throughout the Framework's bus implementations.
-- Distinct interceptor support interfaces should not be necessary.
-  Instead, the constructors/builders of the respective bus implementations should allow provisioning of a a single instance.
-  This single instance internally represents the chain of interceptors to utilize before dispatching, handling, or result returning.
-
 ## Message Handling
 * A Message Handler should be capable of defining the business name of the message it handles,
   and the type it wants to receive it in.
@@ -70,9 +77,52 @@
 - The described breakdown allows us to derive new combinations of message handlers.
   This should support any style/archetype of Message Handling Component.
 
+## Message Intercepting
+- Dispatch Interceptors should allow reaction to the responses of handling the message(s).
+  Or, distinct Result Interceptors should be present throughout the Framework's bus implementations.
+- Distinct interceptor support interfaces should not be necessary.
+  Instead, the constructors/builders of the respective bus implementations should allow provisioning of a a single instance.
+  This single instance internally represents the chain of interceptors to utilize before dispatching, handling, or result returning.
+
+## Commands / Command Modelling / Aggregates
+- (Annotated) aggregates as they currently exist inside Axon Framework should stick.
+  The underlying implementation will very likely differ, taking the "Kill the Aggregate!" presentation in mind.
+- Users should be able to configure an Aggregate through (1) Annotations, and (2) declarative configuration.
+  This declarative configuration allows users to be "more pure" on a DDD-level, as they do not have to use framework logic inside the model.
+  Furthermore, the declarative configuration allows definitions like "this event('s state) is handled by these methods," or "this command is handled by this function, resulting in these events."
+- The current AggregateLifecycle#apply method obstructs the fact it will *first* handle the event inside the aggregate and then move back to the command handler.
+  This obscures the fact subsequent tasks inside the command handler invoking *apply* can rely on that state change.
+  Although clarified in the JavaDoc, finding an explicit means to dictate "apply this event to the current state and then proceed."
+
 ## Event Processing / Token Maintenance 
 * Experiment whether we can remove the Event Processor to Processing Group layering.
   Thus, can we do without Processing Groups to simplify configuration?
+
+## Queries
+* Merge Direct and Scatter-Gather into the Streaming Query API.
+  We can achieve this by adjusting the (handler) cardinality of the Streaming Query operation.
+  E.g. cardinality of one would mean a direct query format, and N is scatter gather.
+  Intent for this approach is to simplify the Query API for users.
+- Simplify / rethink the subscription query API.
+  Explaining the AF4 format raises eyebrows for users at the moment.
+  So, seeing how we can either wrap the support in the Streaming Query API, is beneficial.
+  Note that it does serve a different purpose at the base: an initial response and updates (from N locations).
+
+## Stateful-EventHandler (Sagas / ProcessManager)
+- We drop the notion of Sagas in the framework, in favor for Stateful-EventHandlers.
+  The Stateful-EventHandlers follows the ["stateful message handler"](#message-handling) approach.
+  A component describing the "process" (in AF4 resolved by a Saga/ProcessManager) should be composable from these stateful-event-handlers.
+- We should no longer store sagas/processes ourselves.
+  Thus, whenever the process-archetype is used, the user should define how the state is stored and retrieved.
+
+## Deadlines
+- We agree that the current API, which assumes a DeadlineMessage to be an EventMessage, to be incorrect.
+  A DeadlineMessage should be its own Message entirely,
+  follow command routing rules when targeted towards an Aggregate and Event routing rules when targeted towards a Saga.
+- Taking note of the state message handler idea under "Message Handling"
+  should proof as a guideline to design the deadline support within Axon Framework 5.
+- We need to take into consideration that Deadlines are a technical solution to real world problem
+  and *are not* a concept that resides in Domain-Driven Design.
 
 ## Event Scheduling
 - Event scheduling should schedule the event inside the Event Store.
@@ -127,54 +177,5 @@
 - Aggregate Test Fixtures should, if configured, validate the given scenario's state with the snapshot state.
   Doing so, we guard users against incorrectly defining the snapshot state of their aggregates.
 
-## Commands / Command Modelling / Aggregates
-- (Annotated) aggregates as they currently exist inside Axon Framework should stick.
-  The underlying implementation will very likely differ, taking the "Kill the Aggregate!" presentation in mind.
-- Users should be able to configure an Aggregate through (1) Annotations, and (2) declarative configuration.
-  This declarative configuration allows users to be "more pure" on a DDD-level, as they do not have to use framework logic inside the model.
-  Furthermore, the declarative configuration allows definitions like "this event('s state) is handled by these methods," or "this command is handled by this function, resulting in these events."
-- The current AggregateLifecycle#apply method obstructs the fact it will *first* handle the event inside the aggregate and then move back to the command handler.
-  This obscures the fact subsequent tasks inside the command handler invoking *apply* can rely on that state change.
-  Although clarified in the JavaDoc, finding an explicit means to dictate "apply this event to the current state and then proceed."
-
-## Queries
-* Merge Direct and Scatter-Gather into the Streaming Query API.
-  We can achieve this by adjusting the (handler) cardinality of the Streaming Query operation.
-  E.g. cardinality of one would mean a direct query format, and N is scatter gather.
-  Intent for this approach is to simplify the Query API for users.
-- Simplify / rethink the subscription query API.
-  Explaining the AF4 format raises eyebrows for users at the moment.
-  So, seeing how we can either wrap the support in the Streaming Query API, is beneficial.
-  Note that it does serve a different purpose at the base: an initial response and updates (from N locations).
-
-## Stateful-EventHandler (Sagas / ProcessManager)
-- We drop the notion of Sagas in the framework, in favor for Stateful-EventHandlers.
-  The Stateful-EventHandlers follows the ["stateful message handler"](#message-handling) approach.
-  A component describing the "process" (in AF4 resolved by a Saga/ProcessManager) should be composable from these stateful-event-handlers.
-- We should no longer store sagas/processes ourselves. 
-  Thus, whenever the process-archetype is used, the user should define how the state is stored and retrieved.
-
-## Deadlines
-- We agree that the current API, which assumes a DeadlineMessage to be an EventMessage, to be incorrect.
-  A DeadlineMessage should be its own Message entirely,
-  follow command routing rules when targeted towards an Aggregate and Event routing rules when targeted towards a Saga.
-- Taking note of the state message handler idea under "Message Handling"
-  should proof as a guideline to design the deadline support within Axon Framework 5. 
-- We need to take into consideration that Deadlines are a technical solution to real world problem
-  and *are not* a concept that resides in Domain-Driven Design. 
-
 ## Monitoring / Tracing
 * 
-
-## Deprecation
-* Should we pre-deprecate stuff that we'll remove in AF5?
-* If we will remove stuff that's not already deprecated, of course. (Disruptor, ConflictResolution, Sagas)
-
-## Rules
-- No ThreadLocals internal to the Framework! Only on the edges, purely for the imperative style.
-- No XStream! 
-- No static methods on our public APIs!
-- No locks / `synchronized` keywords!
-- No `Thread#sleep`!
-- No Exception throwing in the functional-coding style!
-- No schema maintenance!
