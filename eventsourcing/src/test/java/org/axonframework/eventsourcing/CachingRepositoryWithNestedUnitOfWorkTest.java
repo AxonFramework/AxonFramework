@@ -16,9 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import net.sf.ehcache.CacheManager;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.common.caching.NoCache;
@@ -32,13 +29,24 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.ehcache.CacheManager;
+import org.ehcache.config.CacheConfiguration;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.config.units.MemoryUnit;
+import org.ehcache.core.Ehcache;
+import org.ehcache.core.EhcacheManager;
+import org.ehcache.core.config.DefaultConfiguration;
+import org.junit.jupiter.api.*;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -99,11 +107,25 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
     private Cache realCache;
     private AggregateFactory<TestAggregate> aggregateFactory;
     private EventStore eventStore;
+    private CacheManager cacheManager;
 
     @BeforeEach
     void setUp() {
-        final CacheManager cacheManager = CacheManager.getInstance();
-        realCache = new EhCacheAdapter(cacheManager.addCacheIfAbsent("name"));
+        Map<String, CacheConfiguration<?, ?>> caches = new HashMap<>();
+        DefaultConfiguration config = new DefaultConfiguration(caches, null);
+        cacheManager = new EhcacheManager(config);
+        cacheManager.init();
+        realCache = new EhCacheAdapter((Ehcache) cacheManager.createCache(
+                "name",
+                CacheConfigurationBuilder
+                        .newCacheConfigurationBuilder(
+                                Object.class,
+                                Object.class,
+                                ResourcePoolsBuilder
+                                        .newResourcePoolsBuilder()
+                                        .heap(1, MemoryUnit.MB)
+                                        .build())
+                        .build()));
 
 
         eventStore = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
@@ -122,13 +144,19 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         aggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
     }
 
+    @AfterEach
+    void tearDown() {
+        cacheManager.close();
+    }
+
+
     @Test
     void withoutCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                .aggregateFactory(aggregateFactory)
-                .eventStore(eventStore)
-                .cache(NoCache.INSTANCE)
-                .build();
+                                                   .aggregateFactory(aggregateFactory)
+                                                   .eventStore(eventStore)
+                                                   .cache(NoCache.INSTANCE)
+                                                   .build();
         executeComplexScenario("ComplexWithoutCache");
     }
 

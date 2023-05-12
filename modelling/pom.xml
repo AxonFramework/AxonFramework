@@ -147,7 +147,7 @@
         </dependency>
 
         <dependency>
-            <groupId>net.sf.ehcache</groupId>
+            <groupId>org.ehcache</groupId>
             <artifactId>ehcache</artifactId>
             <optional>true</optional>
         </dependency>

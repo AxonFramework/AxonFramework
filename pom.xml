@@ -86,7 +86,7 @@
         <hibernate-validator.8.version>8.0.0.Final</hibernate-validator.8.version>
         <disruptor.version>3.4.4</disruptor.version>
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
-        <ehcache.version>2.10.9.2</ehcache.version>
+        <ehcache.version>3.10.8</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
         <jobrunr.version>6.1.4</jobrunr.version>
         <c3p0.version>0.9.1.2</c3p0.version>
@@ -350,9 +350,15 @@
                 <version>${jobrunr.version}</version>
             </dependency>
             <dependency>
-                <groupId>net.sf.ehcache</groupId>
+                <groupId>org.ehcache</groupId>
                 <artifactId>ehcache</artifactId>
                 <version>${ehcache.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.glassfish.jaxb</groupId>
+                        <artifactId>jaxb-runtime</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>

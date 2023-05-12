@@ -16,10 +16,19 @@
 
 package org.axonframework.common.caching;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
+import org.ehcache.Cache;
+import org.ehcache.CacheManager;
+import org.ehcache.config.CacheConfiguration;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.config.units.MemoryUnit;
+import org.ehcache.core.Ehcache;
+import org.ehcache.core.EhcacheManager;
+import org.ehcache.core.config.DefaultConfiguration;
 import org.junit.jupiter.api.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,16 +46,29 @@ class EhCacheAdapterTest {
 
     @BeforeEach
     void setUp() {
-        Cache cache = new Cache("test", 100, false, false, 10, 10);
-        cacheManager = CacheManager.create();
-        cacheManager.addCache(cache);
+        Map<String, CacheConfiguration<?, ?>> caches = new HashMap<>();
+        DefaultConfiguration config = new DefaultConfiguration(caches, null);
+        cacheManager = new EhcacheManager(config);
+        cacheManager.init();
+        Cache cache = cacheManager
+                .createCache(
+                        "test",
+                        CacheConfigurationBuilder
+                                .newCacheConfigurationBuilder(
+                                        Object.class,
+                                        Object.class,
+                                        ResourcePoolsBuilder
+                                                .newResourcePoolsBuilder()
+                                                .heap(1, MemoryUnit.MB)
+                                                .build())
+                                .build());
 
-        testSubject = new EhCacheAdapter(cache);
+        testSubject = new EhCacheAdapter((Ehcache) cache);
     }
 
     @AfterEach
     void tearDown() {
-        cacheManager.shutdown();
+        cacheManager.close();
     }
 
     @Test
