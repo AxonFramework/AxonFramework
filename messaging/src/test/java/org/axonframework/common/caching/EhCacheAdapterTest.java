@@ -20,17 +20,21 @@ import org.ehcache.Cache;
 import org.ehcache.CacheManager;
 import org.ehcache.config.CacheConfiguration;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ExpiryPolicyBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.core.Ehcache;
 import org.ehcache.core.EhcacheManager;
 import org.ehcache.core.config.DefaultConfiguration;
 import org.junit.jupiter.api.*;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link EhCacheAdapter}.
@@ -40,8 +44,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class EhCacheAdapterTest {
 
     private EhCacheAdapter testSubject;
-
     private CacheManager cacheManager;
+    private org.axonframework.common.caching.Cache.EntryListener mockListener;
 
     @BeforeEach
     void setUp() {
@@ -56,14 +60,18 @@ class EhCacheAdapterTest {
                                 .newCacheConfigurationBuilder(
                                         Object.class,
                                         Object.class,
-                                        ResourcePoolsBuilder.heap(100L).build())
+                                        ResourcePoolsBuilder.heap(10L).build())
+                                .withExpiry(ExpiryPolicyBuilder.timeToIdleExpiration(Duration.ofMillis(200L)))
                                 .build());
 
         testSubject = new EhCacheAdapter((Ehcache) cache);
+        mockListener = mock(org.axonframework.common.caching.Cache.EntryListener.class);
+        testSubject.registerCacheEntryListener(mockListener);
     }
 
     @AfterEach
     void tearDown() {
+        reset(mockListener);
         cacheManager.close();
     }
 
@@ -112,5 +120,36 @@ class EhCacheAdapterTest {
         });
 
         assertTrue(invoked.get());
+    }
+
+    @Test
+    void entryListenerNotifiedOfCreationUpdateAndDeletion() {
+        Object value = new Object();
+        Object value2 = new Object();
+        testSubject.put("test1", value);
+        await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> verify(mockListener).onEntryCreated("test1", value));
+
+        testSubject.put("test1", value2);
+        await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> verify(mockListener).onEntryUpdated("test1",
+                                                                                                       value2));
+
+        testSubject.remove("test1");
+        await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> verify(mockListener).onEntryRemoved("test1"));
+
+        assertNull(testSubject.get("test1"));
+        verifyNoMoreInteractions(mockListener);
+    }
+
+    @Test
+    void entryListenerNotifiedOfExpired() {
+        Object value = new Object();
+
+        testSubject.put("test1", value);
+        await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> verify(mockListener).onEntryCreated("test1", value));
+        await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> {
+            testSubject.get("test1");
+            verify(mockListener).onEntryExpired("test1");
+        });
+        verifyNoMoreInteractions(mockListener);
     }
 }

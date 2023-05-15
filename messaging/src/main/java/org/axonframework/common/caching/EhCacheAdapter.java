@@ -23,10 +23,8 @@ import org.ehcache.event.CacheEventListener;
 import org.ehcache.event.EventFiring;
 import org.ehcache.event.EventOrdering;
 import org.ehcache.event.EventType;
-import org.ehcache.impl.events.CacheEventDispatcherImpl;
 
 import java.util.EnumSet;
-import java.util.concurrent.Executors;
 import java.util.function.UnaryOperator;
 
 /**
@@ -135,12 +133,7 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     protected Registration doRegisterListener(CacheEventListener listenerAdapter) {
-        CacheEventDispatcherImpl<Number, String> eventService = new CacheEventDispatcherImpl<>(
-                Executors.newCachedThreadPool(),
-                Executors.newSingleThreadScheduledExecutor()
-        );
-        eventService.setListenerSource(ehCache);
-        eventService.registerCacheEventListener(
+        ehCache.getRuntimeConfiguration().registerCacheEventListener(
                 listenerAdapter,
                 EventOrdering.ORDERED,
                 EventFiring.ASYNCHRONOUS,
@@ -148,7 +141,7 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
         );
         return () -> {
             try {
-                eventService.deregisterCacheEventListener(listenerAdapter);
+                ehCache.getRuntimeConfiguration().deregisterCacheEventListener(listenerAdapter);
             } catch (IllegalStateException e) {
                 return false;
             }
@@ -186,13 +179,11 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
                     delegate.onEntryUpdated(event.getKey(), event.getNewValue());
                     break;
                 case REMOVED:
+                case EVICTED:
                     delegate.onEntryRemoved(event.getKey());
                     break;
                 case EXPIRED:
                     delegate.onEntryExpired(event.getKey());
-                    break;
-                case EVICTED:
-                    //nothing needs to be done
                     break;
                 default:
                     throw new AssertionError("Unsupported event type " + event.getType());
