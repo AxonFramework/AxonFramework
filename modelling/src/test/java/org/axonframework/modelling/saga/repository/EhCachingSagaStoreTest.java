@@ -22,7 +22,6 @@ import org.ehcache.CacheManager;
 import org.ehcache.config.CacheConfiguration;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
-import org.ehcache.config.units.MemoryUnit;
 import org.ehcache.core.Ehcache;
 import org.ehcache.core.EhcacheManager;
 import org.ehcache.core.config.DefaultConfiguration;
@@ -74,10 +73,7 @@ class EhCachingSagaStoreTest extends CachingSagaStoreTest {
                                 .newCacheConfigurationBuilder(
                                         Object.class,
                                         Object.class,
-                                        ResourcePoolsBuilder
-                                                .newResourcePoolsBuilder()
-                                                .heap(1, MemoryUnit.MB)
-                                                .build())
+                                        ResourcePoolsBuilder.heap(100L).build())
                                 .build());
     }
 }
