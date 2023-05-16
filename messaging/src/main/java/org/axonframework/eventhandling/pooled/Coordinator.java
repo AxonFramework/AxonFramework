@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -707,6 +707,9 @@ class Coordinator {
             }
 
             try {
+                if (!eventStream.hasNextAvailable() && isDone()) {
+                    workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
+                }
                 coordinateWorkPackages();
                 errorWaitBackOff = 500;
                 processingGate.set(false);
@@ -717,11 +720,6 @@ class Coordinator {
                     // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
                     scheduleImmediateCoordinationTask();
                 } else if (isSpaceAvailable()) {
-                    // There is space, but no events to process. We seem to have caught up, some might be processed still.
-                    if (isDone()){
-                        workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
-                    }
-
                     if (!availabilityCallbackSupported) {
                         scheduleCoordinationTask(500);
                     } else {
