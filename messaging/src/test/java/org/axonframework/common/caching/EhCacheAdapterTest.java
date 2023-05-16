@@ -16,6 +16,7 @@
 
 package org.axonframework.common.caching;
 
+import org.axonframework.common.Registration;
 import org.ehcache.Cache;
 import org.ehcache.CacheManager;
 import org.ehcache.config.CacheConfiguration;
@@ -46,6 +47,7 @@ class EhCacheAdapterTest {
     private EhCacheAdapter testSubject;
     private CacheManager cacheManager;
     private org.axonframework.common.caching.Cache.EntryListener mockListener;
+    private Registration registration;
 
     @BeforeEach
     void setUp() {
@@ -66,7 +68,7 @@ class EhCacheAdapterTest {
 
         testSubject = new EhCacheAdapter((Ehcache) cache);
         mockListener = mock(org.axonframework.common.caching.Cache.EntryListener.class);
-        testSubject.registerCacheEntryListener(mockListener);
+        registration = testSubject.registerCacheEntryListener(mockListener);
     }
 
     @AfterEach
@@ -123,18 +125,33 @@ class EhCacheAdapterTest {
     }
 
     @Test
+    void putIfAbsentWorksCorrectly() {
+        Object value = new Object();
+        Object value2 = new Object();
+
+        testSubject.putIfAbsent("test1", value);
+        assertEquals(value, testSubject.get("test1"));
+
+        testSubject.putIfAbsent("test1", value2);
+        assertEquals(value, testSubject.get("test1"));
+    }
+
+
+    @Test
     void entryListenerNotifiedOfCreationUpdateAndDeletion() {
         Object value = new Object();
         Object value2 = new Object();
         testSubject.put("test1", value);
-        await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> verify(mockListener).onEntryCreated("test1", value));
+        await().atMost(Duration.ofMillis(300L)).untilAsserted(
+                () -> verify(mockListener).onEntryCreated("test1", value));
 
         testSubject.put("test1", value2);
-        await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> verify(mockListener).onEntryUpdated("test1",
-                                                                                                       value2));
+        await().atMost(Duration.ofMillis(300L)).untilAsserted(
+                () -> verify(mockListener).onEntryUpdated("test1", value2));
 
         testSubject.remove("test1");
-        await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> verify(mockListener).onEntryRemoved("test1"));
+        await().atMost(Duration.ofMillis(300L)).untilAsserted(
+                () -> verify(mockListener).onEntryRemoved("test1"));
 
         assertNull(testSubject.get("test1"));
         verifyNoMoreInteractions(mockListener);
@@ -145,11 +162,25 @@ class EhCacheAdapterTest {
         Object value = new Object();
 
         testSubject.put("test1", value);
-        await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> verify(mockListener).onEntryCreated("test1", value));
+        await().atMost(Duration.ofMillis(300L)).untilAsserted(
+                () -> verify(mockListener).onEntryCreated("test1", value));
         await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> {
             testSubject.get("test1");
             verify(mockListener).onEntryExpired("test1");
         });
+        verifyNoMoreInteractions(mockListener);
+    }
+
+    @Test
+    void entryListenerCanBeDeregistered() {
+        Object value = new Object();
+        Object value2 = new Object();
+        testSubject.put("test1", value);
+        await().atMost(Duration.ofMillis(300L)).untilAsserted(
+                () -> verify(mockListener).onEntryCreated("test1", value));
+        registration.cancel();
+
+        testSubject.put("test2", value2);
         verifyNoMoreInteractions(mockListener);
     }
 }

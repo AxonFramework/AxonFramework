@@ -136,7 +136,7 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
         ehCache.getRuntimeConfiguration().registerCacheEventListener(
                 listenerAdapter,
                 EventOrdering.ORDERED,
-                EventFiring.ASYNCHRONOUS,
+                EventFiring.SYNCHRONOUS,
                 EnumSet.allOf(EventType.class)
         );
         return () -> {
@@ -150,23 +150,12 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     }
 
     @SuppressWarnings("rawtypes")
-    private static class CacheEventListenerAdapter implements CacheEventListener, Cloneable {
+    private static class CacheEventListenerAdapter implements CacheEventListener {
 
-        private EntryListener delegate;
+        private final EntryListener delegate;
 
         public CacheEventListenerAdapter(EntryListener delegate) {
             this.delegate = delegate;
-        }
-
-        private void setDelegate(EntryListener delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public CacheEventListenerAdapter clone() throws CloneNotSupportedException {
-            CacheEventListenerAdapter clone = (CacheEventListenerAdapter) super.clone();
-            clone.setDelegate((EntryListener) delegate.clone());
-            return clone;
         }
 
         @Override
