@@ -711,12 +711,9 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
                                                                 Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
-        if (configuration != null) {
-            initializeProcessors();
-            Component<EventProcessor> eps = eventProcessors.get(processorName);
-            if (eps != null && eps.isInitialized()) {
-                eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
-            }
+        Component<EventProcessor> eps = eventProcessors.get(processorName);
+        if (eps != null && eps.isInitialized()) {
+            eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
         }
         this.handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
                                         .add(interceptorBuilder);
