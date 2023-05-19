@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import org.mockito.*;
 import org.mockito.stubbing.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -151,6 +150,7 @@ class CoordinatorTest {
         BlockingStream<TrackedEventMessage<?>> testStream = mock(BlockingStream.class);
         when(testStream.setOnAvailableCallback(any())).thenReturn(false);
         when(testStream.hasNextAvailable()).thenReturn(true)
+                                           .thenReturn(true)
                                            .thenReturn(false);
         //noinspection unchecked
         when(testStream.nextAvailable()).thenReturn(testEventOne)

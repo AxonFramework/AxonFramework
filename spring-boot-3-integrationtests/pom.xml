@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.0.6</version>
+        <version>3.1.0</version>
         <relativePath/>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -37,7 +37,7 @@
     <properties>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.1.0</maven-surefire-plugin.version>
-        <jobrunr.version>6.1.4</jobrunr.version>
+        <jobrunr.version>6.2.0</jobrunr.version>
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
         <jacoco.version>0.8.8</jacoco.version>
     </properties>
@@ -194,7 +194,7 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
-                <version>1.18.0</version>
+                <version>1.18.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
