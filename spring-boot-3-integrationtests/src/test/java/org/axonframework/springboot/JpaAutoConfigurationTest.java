@@ -18,9 +18,13 @@ package org.axonframework.springboot;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.config.EventProcessingModule;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
@@ -32,6 +36,7 @@ import org.springframework.test.context.ContextConfiguration;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -82,18 +87,32 @@ class JpaAutoConfigurationTest {
 
     @Test
     void setTokenStoreClaimTimeout() {
-        testContext
-                .withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=3000")
-                .run(context -> {
-                    Map<String, TokenStore> tokenStores =
-                            context.getBeansOfType(TokenStore.class);
-                    assertTrue(tokenStores.containsKey("tokenStore"));
-                    TokenStore tokenStore = tokenStores.get("tokenStore");
-                    TemporalAmount tokenClaimInterval = ReflectionUtils.getFieldValue(
-                            JpaTokenStore.class.getDeclaredField("claimTimeout"), tokenStore
-                    );
-                    assertEquals(Duration.ofSeconds(3L), tokenClaimInterval);
-                });
+        testContext.withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=3000")
+                   .run(context -> {
+                       Map<String, TokenStore> tokenStores =
+                               context.getBeansOfType(TokenStore.class);
+                       assertTrue(tokenStores.containsKey("tokenStore"));
+                       TokenStore tokenStore = tokenStores.get("tokenStore");
+                       TemporalAmount tokenClaimInterval = ReflectionUtils.getFieldValue(
+                               JpaTokenStore.class.getDeclaredField("claimTimeout"), tokenStore
+                       );
+                       assertEquals(Duration.ofSeconds(3L), tokenClaimInterval);
+                   });
+    }
+
+    @Test
+    void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
+        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
+                   .run(context -> {
+                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+                       assertNotNull(eventProcessingConfig);
+                       Optional<SequencedDeadLetterQueue<EventMessage<?>>> dlq =
+                               eventProcessingConfig.deadLetterQueue("first");
+                       assertTrue(dlq.isPresent());
+                       assertTrue(dlq.get() instanceof JpaSequencedDeadLetterQueue);
+                       dlq = eventProcessingConfig.deadLetterQueue("second");
+                       assertFalse(dlq.isPresent());
+                   });
     }
 
     @ContextConfiguration

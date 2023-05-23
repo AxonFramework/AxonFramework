@@ -1430,6 +1430,28 @@ class EventProcessingModuleTest {
         assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", resultDeadLetteringInvoker));
     }
 
+    @Test
+    void whenADeadLetterHasBeenRegisteredForASpecificGroupItWillBeUsedInsteadOfTheGenericOne(
+            @Mock SequencedDeadLetterQueue<EventMessage<?>> specificDeadLetterQueue,
+            @Mock SequencedDeadLetterQueue<EventMessage<?>> genericDeadLetterQueue
+    ) {
+        String processingGroup = "pooled-streaming";
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(processingGroup)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDeadLetterQueue(processingGroup, c -> specificDeadLetterQueue)
+                  .registerDeadLetterQueueProvider(p -> c -> genericDeadLetterQueue)
+                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+        Configuration config = configurer.start();
+
+        Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
+                config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
+        assertTrue(configuredDlq.isPresent());
+        assertEquals(specificDeadLetterQueue, configuredDlq.get());
+    }
+
     private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {
         return getField(object.getClass(), fieldName, object);
     }
