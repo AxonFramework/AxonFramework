@@ -106,7 +106,7 @@ public class EventProcessingModule
             TypeProcessingGroupSelector.defaultSelector(DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION);
     private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(EventProcessingModule::packageOfObject);
 
-    private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
+    private final Map<String, SagaConfigurer<?>> sagaConfigurations = new HashMap<>();
     private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
     private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
 
@@ -330,7 +330,7 @@ public class EventProcessingModule
     }
 
     private void registerSagaManagers(Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
-        sagaConfigurations.forEach(sc -> {
+        sagaConfigurations.values().forEach(sc -> {
             SagaConfiguration<?> sagaConfig = sc.initialize(configuration);
             String processingGroup = selectProcessingGroupByType(sagaConfig.type());
             String processorName = processorNameForProcessingGroup(processingGroup);
@@ -347,6 +347,7 @@ public class EventProcessingModule
                 && processingGroup.equals(processorName)
                 && !eventProcessorBuilders.containsKey(processorName)
                 && !tepConfigs.containsKey(processorName)
+                && !psepConfigs.containsKey(processorName)
                 && !tepConfigs.containsKey(CONFIGURED_DEFAULT_TEP_CONFIG);
     }
 
@@ -449,7 +450,8 @@ public class EventProcessingModule
     @Override
     public List<SagaConfiguration<?>> sagaConfigurations() {
         validateConfigInitialization();
-        return sagaConfigurations.stream().map(sc -> sc.initialize(configuration)).collect(Collectors.toList());
+        return sagaConfigurations.values().stream().map(sc -> sc.initialize(configuration))
+                                 .collect(Collectors.toList());
     }
 
     private String processorNameForProcessingGroup(String processingGroup) {
@@ -523,7 +525,7 @@ public class EventProcessingModule
     public <T> EventProcessingConfigurer registerSaga(Class<T> sagaType, Consumer<SagaConfigurer<T>> sagaConfigurer) {
         SagaConfigurer<T> configurer = SagaConfigurer.forType(sagaType);
         sagaConfigurer.accept(configurer);
-        this.sagaConfigurations.add(configurer);
+        this.sagaConfigurations.put(sagaType.getName(), configurer);
         return this;
     }
 
