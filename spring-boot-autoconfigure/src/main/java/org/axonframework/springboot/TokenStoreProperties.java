@@ -16,12 +16,14 @@ public class TokenStoreProperties {
     private Duration claimTimeout = Duration.ofSeconds(10);
 
     /**
-     * Gets the claim timeout as {@link Duration}. This is the amount of time this process will wait after which this
-     * process will force a claim of a {@link org.axonframework.eventhandling.TrackingToken}. Thus, if a claim has not
-     * been updated for the given {@code claimTimeout}, this process will 'steal' the claim. Defaults to a duration of
-     * 10 seconds.
+     * Gets the claim timeout as {@link Duration}. 
+     * <p>
+     * The claim timeout is the amount of time a {@link org.axonframework.eventhandling.StreamingEventProcessor StreamingEventProcessor's) 
+     * process will wait before it forces a claim of a {@link org.axonframework.eventhandling.TrackingToken}. 
+     * Thus, if a claim has not been updated for the given {@code claimTimeout}, this process will 'steal' the claim. 
+     * Defaults to a {@link Duration} of 10 seconds.
      *
-     * @return the clam timeout as {@link Duration}
+     * @return the claim timeout as {@link Duration}
      */
     public Duration getClaimTimeout() {
         return claimTimeout;
