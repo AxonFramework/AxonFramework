@@ -17,7 +17,7 @@
 package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.common.caching.Cache;
-import org.axonframework.common.caching.EhCacheAdapter;
+import org.axonframework.common.caching.EhCache3Adapter;
 import org.ehcache.CacheManager;
 import org.ehcache.config.CacheConfiguration;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
@@ -31,11 +31,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Concrete implementation of the {@link CachingSagaStoreTest} using the {@link EhCacheAdapter}.
+ * Concrete implementation of the {@link CachingSagaStoreTest} using the {@link EhCache3Adapter}.
  *
- * @author Steven van Beelen
+ * @author Gerard Klijs
  */
-class EhCachingSagaStoreTest extends CachingSagaStoreTest {
+class EhCache3SagaStoreTest extends CachingSagaStoreTest {
 
     private CacheManager cacheManager;
     private org.ehcache.core.Ehcache ehCache;
@@ -50,7 +50,7 @@ class EhCachingSagaStoreTest extends CachingSagaStoreTest {
         if (ehCache == null) {
             buildEhCache();
         }
-        return new EhCacheAdapter(ehCache);
+        return new EhCache3Adapter(ehCache);
     }
 
     @Override
@@ -58,7 +58,7 @@ class EhCachingSagaStoreTest extends CachingSagaStoreTest {
         if (ehCache == null) {
             buildEhCache();
         }
-        return new EhCacheAdapter(ehCache);
+        return new EhCache3Adapter(ehCache);
     }
 
     private void buildEhCache() {

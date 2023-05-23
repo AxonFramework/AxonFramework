@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.cache;
 
 import org.axonframework.common.caching.Cache;
-import org.axonframework.common.caching.EhCacheAdapter;
+import org.axonframework.common.caching.EhCache3Adapter;
 import org.ehcache.CacheManager;
 import org.ehcache.config.CacheConfiguration;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
@@ -35,7 +35,7 @@ import java.util.Map;
  *
  * @author Steven van Beelen
  */
-class EhCacheIntegrationTest extends CachingIntegrationTestSuite {
+class EhCache3IntegrationTest extends CachingIntegrationTestSuite {
 
     private CacheManager cacheManager;
 
@@ -56,7 +56,7 @@ class EhCacheIntegrationTest extends CachingIntegrationTestSuite {
 
     @Override
     public Cache buildCache(String name) {
-        return new EhCacheAdapter(createCache(name));
+        return new EhCache3Adapter(createCache(name));
     }
 
     private Ehcache createCache(String name) {

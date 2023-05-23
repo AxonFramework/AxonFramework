@@ -38,13 +38,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link EhCacheAdapter}.
+ * Test class validating the {@link EhCache3Adapter}.
  *
  * @author Steven van Beelen
  */
-class EhCacheAdapterTest {
+class EhCache3AdapterTest {
 
-    private EhCacheAdapter testSubject;
+    private EhCache3Adapter testSubject;
     private CacheManager cacheManager;
     private org.axonframework.common.caching.Cache.EntryListener mockListener;
     private Registration registration;
@@ -66,7 +66,7 @@ class EhCacheAdapterTest {
                                 .withExpiry(ExpiryPolicyBuilder.timeToIdleExpiration(Duration.ofMillis(200L)))
                                 .build());
 
-        testSubject = new EhCacheAdapter((Ehcache) cache);
+        testSubject = new EhCache3Adapter((Ehcache) cache);
         mockListener = mock(org.axonframework.common.caching.Cache.EntryListener.class);
         registration = testSubject.registerCacheEntryListener(mockListener);
     }

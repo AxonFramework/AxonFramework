@@ -30,11 +30,11 @@ import java.util.function.UnaryOperator;
 /**
  * Cache implementation that delegates all calls to an EhCache instance.
  *
- * @author Allard Buijze
- * @since 2.1.2
+ * @author Gerard Klijs
+ * @since 4.8.0
  */
 @SuppressWarnings("rawtypes")
-public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
+public class EhCache3Adapter extends AbstractCacheAdapter<CacheEventListener> {
 
     @SuppressWarnings("rawtypes")
     private final Ehcache ehCache;
@@ -45,7 +45,7 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
      * @param ehCache The cache instance to forward calls to
      */
     @SuppressWarnings("rawtypes")
-    public EhCacheAdapter(Ehcache ehCache) {
+    public EhCache3Adapter(Ehcache ehCache) {
         this.ehCache = ehCache;
     }
 
@@ -127,7 +127,7 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     @SuppressWarnings("rawtypes")
     @Override
     protected CacheEventListener createListenerAdapter(EntryListener cacheEntryListener) {
-        return new EhCacheAdapter.CacheEventListenerAdapter(cacheEntryListener);
+        return new EhCache3Adapter.CacheEventListenerAdapter(cacheEntryListener);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
