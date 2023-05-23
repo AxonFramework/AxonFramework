@@ -829,9 +829,8 @@ public interface EventProcessingConfigurer {
      * {@link EventProcessor}s created in this configuration.
      * <p>
      * The {@code deadLetterProvider} might return null if the given processing group name should not have a sequenced
-     * dead letter queue. An explicit set sequenced dead letter queue set using
-     * {@link #registerDeadLetterQueue(String, Function)} will always have precedence over the one provided by this
-     * provider.
+     * dead letter queue. An explicitly sequenced dead letter queue set using
+     * {@link #registerDeadLetterQueue(String, Function)} will always have precedence over the one provided by this method.
      *
      * @param deadLetterQueueProvider a builder {@link Function} that provides a {@link SequencedDeadLetterQueue} for a
      *                                processing group. It's possible to return null depending on the processing group.
