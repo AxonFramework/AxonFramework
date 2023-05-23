@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.legacyjpa;
 
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.legacyjpa.EntityManagerProvider;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore;
@@ -28,6 +29,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.test.context.ContextConfiguration;
 
+import java.time.Duration;
+import java.time.temporal.TemporalAmount;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -76,6 +79,22 @@ class JpaJavaxAutoConfigurationTest {
             assertEquals(SQLErrorCodesResolver.class,
                          persistenceExceptionResolvers.get("persistenceExceptionResolver").getClass());
         });
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void setTokenStoreClaimTimeout() {
+        testContext.withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=5s")
+                   .run(context -> {
+                       Map<String, TokenStore> tokenStores =
+                               context.getBeansOfType(TokenStore.class);
+                       assertTrue(tokenStores.containsKey("tokenStore"));
+                       TokenStore tokenStore = tokenStores.get("tokenStore");
+                       TemporalAmount tokenClaimInterval = ReflectionUtils.getFieldValue(
+                               JpaTokenStore.class.getDeclaredField("claimTimeout"), tokenStore
+                       );
+                       assertEquals(Duration.ofSeconds(5L), tokenClaimInterval);
+                   });
     }
 
     @ContextConfiguration

@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
@@ -50,9 +51,13 @@ import org.springframework.test.context.ContextConfiguration;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.temporal.TemporalAmount;
+import java.util.Map;
 import javax.sql.DataSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -72,9 +77,13 @@ public class JdbcAutoConfigurationTest {
                     assertThat(context).getBean(EventStore.class).isInstanceOf(EmbeddedEventStore.class);
                     assertThat(context).getBean(TokenStore.class).isInstanceOf(JdbcTokenStore.class);
                     assertThat(context).getBean(SagaStore.class).isInstanceOf(JdbcSagaStore.class);
-                    assertThat(context).getBean(TokenStore.class).isEqualTo(context.getBean(EventProcessingConfiguration.class).tokenStore("test"));
-                    assertThat(context).getBean(PersistenceExceptionResolver.class).isInstanceOf(JdbcSQLErrorCodesResolver.class);
-                    assertThat(context).getBean(ConnectionProvider.class).isInstanceOf(UnitOfWorkAwareConnectionProviderWrapper.class);
+                    assertThat(context).getBean(TokenStore.class)
+                                       .isEqualTo(context.getBean(EventProcessingConfiguration.class)
+                                                         .tokenStore("test"));
+                    assertThat(context).getBean(PersistenceExceptionResolver.class).isInstanceOf(
+                            JdbcSQLErrorCodesResolver.class);
+                    assertThat(context).getBean(ConnectionProvider.class).isInstanceOf(
+                            UnitOfWorkAwareConnectionProviderWrapper.class);
                 });
     }
 
@@ -132,6 +141,23 @@ public class JdbcAutoConfigurationTest {
                 .withUserConfiguration(Context.class, ExplicitEventBusContext.class)
                 .run(context -> assertThat(context).doesNotHaveBean(EventStorageEngine.class)
                                                    .doesNotHaveBean(EventStore.class));
+    }
+
+    @Test
+    void setTokenStoreClaimTimeout() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=10m")
+                .run(context -> {
+                    Map<String, TokenStore> tokenStores =
+                            context.getBeansOfType(TokenStore.class);
+                    assertTrue(tokenStores.containsKey("tokenStore"));
+                    TokenStore tokenStore = tokenStores.get("tokenStore");
+                    TemporalAmount tokenClaimInterval = ReflectionUtils.getFieldValue(
+                            JdbcTokenStore.class.getDeclaredField("claimTimeout"), tokenStore
+                    );
+                    assertEquals(Duration.ofMinutes(10L), tokenClaimInterval);
+                });
     }
 
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
