@@ -31,9 +31,11 @@ public class TokenStoreProperties {
 
 
     /**
-     * Sets the claim timeout as {@link Duration}. This is the amount of time this process will wait after which this
-     * process will force a claim of a {@link org.axonframework.eventhandling.TrackingToken}. Thus, if a claim has not
-     * been updated for the given {@code claimTimeout}, this process will 'steal' the claim.
+     * Sets the claim timeout as {@link Duration}.
+     * <p>
+     * The claim timeout is the amount of time a {@link org.axonframework.eventhandling.StreamingEventProcessor StreamingEventProcessor's) 
+     * process will wait before it forces a claim of a {@link org.axonframework.eventhandling.TrackingToken}. 
+     * Thus, if a claim has not been updated for the given {@code claimTimeout}, this process will 'steal' the claim. 
      *
      * @param claimTimeout the {@link Duration} of the default claim timeout
      */
