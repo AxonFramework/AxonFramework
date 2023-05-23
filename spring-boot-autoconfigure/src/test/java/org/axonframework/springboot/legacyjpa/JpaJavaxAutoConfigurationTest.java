@@ -84,7 +84,7 @@ class JpaJavaxAutoConfigurationTest {
     @SuppressWarnings("deprecation")
     @Test
     void setTokenStoreClaimTimeout() {
-        testContext.withPropertyValues("axon.tokenstore.claim-timeout=5s")
+        testContext.withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=5s")
                    .run(context -> {
                        Map<String, TokenStore> tokenStores =
                                context.getBeansOfType(TokenStore.class);

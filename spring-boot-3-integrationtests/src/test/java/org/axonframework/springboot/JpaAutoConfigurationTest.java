@@ -83,7 +83,7 @@ class JpaAutoConfigurationTest {
     @Test
     void setTokenStoreClaimTimeout() {
         testContext
-                .withPropertyValues("axon.tokenstore.claim-timeout=3000")
+                .withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=3000")
                 .run(context -> {
                     Map<String, TokenStore> tokenStores =
                             context.getBeansOfType(TokenStore.class);

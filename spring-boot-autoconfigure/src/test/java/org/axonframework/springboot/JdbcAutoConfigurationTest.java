@@ -147,7 +147,7 @@ public class JdbcAutoConfigurationTest {
     void setTokenStoreClaimTimeout() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
-                .withPropertyValues("axon.tokenstore.claim-timeout=10m")
+                .withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=10m")
                 .run(context -> {
                     Map<String, TokenStore> tokenStores =
                             context.getBeansOfType(TokenStore.class);
