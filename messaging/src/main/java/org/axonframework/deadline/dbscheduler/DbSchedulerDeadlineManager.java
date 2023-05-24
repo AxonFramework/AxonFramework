@@ -161,13 +161,12 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
         Span span = spanFactory.createInternalSpan(() -> "DbSchedulerDeadlineManager.cancelAll(" + deadlineName + ")");
-        runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
-            scheduler.fetchScheduledExecutionsForTask(
-                    TASK_NAME,
-                    DbSchedulerDeadlineDetails.class,
-                    cancelIfDeadlineMatches(deadlineName)
-            );
-        }));
+        runOnPrepareCommitOrNow(span.wrapRunnable(
+                () -> scheduler.fetchScheduledExecutionsForTask(
+                        TASK_NAME,
+                        DbSchedulerDeadlineDetails.class,
+                        cancelIfDeadlineMatches(deadlineName)
+                )));
     }
 
     private Consumer<ScheduledExecution<DbSchedulerDeadlineDetails>> cancelIfDeadlineMatches(
@@ -185,13 +184,14 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         Span span = spanFactory.createInternalSpan(
                 () -> "DbSchedulerDeadlineManager.cancelAllWithinScope(" + deadlineName + ")"
         );
-        runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
-            SerializedObject<String> serializedDescriptor = serializer.serialize(scope, String.class);
-            scheduler.fetchScheduledExecutionsForTask(
-                    TASK_NAME,
-                    DbSchedulerDeadlineDetails.class,
-                    cancelIfDeadlineAndScopeMatches(deadlineName, serializedDescriptor.getData()));
-        }));
+        runOnPrepareCommitOrNow(span.wrapRunnable(
+                () -> {
+                    SerializedObject<String> serializedDescriptor = serializer.serialize(scope, String.class);
+                    scheduler.fetchScheduledExecutionsForTask(
+                            TASK_NAME,
+                            DbSchedulerDeadlineDetails.class,
+                            cancelIfDeadlineAndScopeMatches(deadlineName, serializedDescriptor.getData()));
+                }));
     }
 
     private Consumer<ScheduledExecution<DbSchedulerDeadlineDetails>> cancelIfDeadlineAndScopeMatches(
@@ -211,7 +211,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
      *
      * @param deadlineDetails {@link DbSchedulerDeadlineDetails} containing the needed details to execute.
      */
-    @SuppressWarnings({"unchecked", "rawtypes", "Duplicates"})
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void execute(DbSchedulerDeadlineDetails deadlineDetails) {
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
         Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
@@ -239,7 +239,6 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         }
     }
 
-    @SuppressWarnings("Duplicates")
     private void executeScheduledDeadline(DeadlineMessage<?> deadlineMessage, ScopeDescriptor deadlineScope) {
         scopeAwareProvider.provideScopeAwareStream(deadlineScope)
                           .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
