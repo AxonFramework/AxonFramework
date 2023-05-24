@@ -55,6 +55,7 @@ import static org.axonframework.eventhandling.scheduling.dbscheduler.DbScheduler
  * @author Gerard Klijs
  * @since 4.8.0
  */
+@SuppressWarnings("Duplicates")
 public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
 
     private static final AtomicReference<DbSchedulerEventScheduler> eventSchedulerReference = new AtomicReference<>();

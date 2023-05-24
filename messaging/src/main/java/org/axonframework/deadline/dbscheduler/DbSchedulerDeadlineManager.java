@@ -68,6 +68,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @author Gerard Klijs
  * @since 4.8.0
  */
+@SuppressWarnings("Duplicates")
 public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = getLogger(DbSchedulerDeadlineManager.class);

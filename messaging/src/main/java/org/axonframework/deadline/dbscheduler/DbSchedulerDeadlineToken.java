@@ -32,6 +32,7 @@ import static java.lang.String.format;
  * @author Gerard Klijs
  * @since 4.8.0
  */
+@SuppressWarnings("Duplicates")
 public class DbSchedulerDeadlineToken implements ScheduleToken, TaskInstanceId {
 
     private static final long serialVersionUID = 7798276124742534225L;

@@ -39,6 +39,7 @@ import static java.lang.String.format;
  * @author Gerard Klijs
  * @since 4.8.0
  */
+@SuppressWarnings("Duplicates")
 public class DbSchedulerDeadlineDetails implements Serializable {
 
     private String deadlineName;
