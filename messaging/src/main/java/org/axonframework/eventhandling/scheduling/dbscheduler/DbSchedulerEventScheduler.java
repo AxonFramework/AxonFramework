@@ -207,7 +207,8 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         private EventBus eventBus;
 
         /**
-         * Sets the {@link Scheduler} used for scheduling and triggering purposes of the events.
+         * Sets the {@link Scheduler} used for scheduling and triggering purposes of the events. It should have this
+         * components {@link #task()} as one of its tasks to work.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the events
          * @return the current Builder instance, for fluent interfacing

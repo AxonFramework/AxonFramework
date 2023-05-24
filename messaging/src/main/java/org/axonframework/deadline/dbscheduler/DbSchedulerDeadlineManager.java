@@ -280,7 +280,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
-         * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
+         * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines. It should have this
+         * components {@link #task()} as one of its tasks to work.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
          * @return the current Builder instance, for fluent interfacing
