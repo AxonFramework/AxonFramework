@@ -102,6 +102,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.github.kagkarlsson</groupId>
+            <artifactId>db-scheduler</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
             <groupId>net.sf.ehcache</groupId>
             <artifactId>ehcache</artifactId>
             <scope>test</scope>
