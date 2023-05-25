@@ -29,14 +29,18 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 
+import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import javax.annotation.Nonnull;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.commandhandling.distributed.DistributedCommandBus.INITIAL_LOAD_FACTOR;
 import static org.junit.jupiter.api.Assertions.*;
@@ -64,12 +68,16 @@ class DistributedCommandBusTest {
     @Mock
     private Member mockMember;
 
+    private TestSpanFactory spanFactory;
+
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         testSubject = DistributedCommandBus.builder()
                                            .commandRouter(mockCommandRouter)
                                            .connector(mockConnector)
                                            .messageMonitor(mockMessageMonitor)
+                                           .spanFactory(spanFactory)
                                            .build();
     }
 
@@ -78,13 +86,22 @@ class DistributedCommandBusTest {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
         when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
         when(mockMessageMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
+        CountDownLatch waiter = new CountDownLatch(1);
 
-        testSubject.dispatch(testCommandMessage, NoOpCallback.INSTANCE);
+        testSubject.dispatch(testCommandMessage, (cm, result) -> {
+            spanFactory.verifySpanActive("DistributedCommandBus.dispatch", testCommandMessage);
+            waiter.countDown();
+        });
+        waiter.await();
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportSuccess();
+        await().atMost(Duration.ofSeconds(3l))
+               .untilAsserted(
+                       () -> spanFactory.verifySpanCompleted("DistributedCommandBus.dispatch")
+               );
     }
 
     @Test
@@ -131,8 +148,8 @@ class DistributedCommandBusTest {
         testSubject.dispatch(testCommandMessage);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
-        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
-        verify(mockConnector).send(eq(mockMember), eq(testCommandMessage));
+        verify(mockConnector, times(1)).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage));
         verify(mockMessageMonitor, never()).onMessageIngested(any());
         verify(mockMonitorCallback, never()).reportSuccess();
     }
@@ -145,6 +162,7 @@ class DistributedCommandBusTest {
         testSubject = DistributedCommandBus.builder()
                                            .commandRouter(mockCommandRouter)
                                            .connector(mockConnector)
+                                           .spanFactory(spanFactory)
                                            .build();
 
         testSubject.dispatch(testCommandMessage, callback);
@@ -160,7 +178,8 @@ class DistributedCommandBusTest {
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
+                     commandResultMessageCaptor.getValue().exceptionResult().getCause().getClass());
+        spanFactory.verifySpanHasException("DistributedCommandBus.dispatch", NoHandlerForCommandException.class);
     }
 
     @Test
@@ -202,7 +221,8 @@ class DistributedCommandBusTest {
         verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
+                     commandResultMessageCaptor.getValue().exceptionResult().getCause().getClass());
+        spanFactory.verifySpanHasException("DistributedCommandBus.dispatch", RuntimeException.class);
     }
 
     @Test

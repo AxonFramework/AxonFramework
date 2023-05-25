@@ -35,6 +35,10 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,14 +83,15 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final AtomicReference<CommandMessageFilter> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
     private final CommandCallback<Object, Object> defaultCommandCallback;
+    private final SpanFactory spanFactory;
 
     private volatile int loadFactor = INITIAL_LOAD_FACTOR;
 
     /**
      * Instantiate a Builder to be able to create a {@link DistributedCommandBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}. The {@link CommandRouter} and {@link
-     * CommandBusConnector} are <b>hard requirements</b> and as such should be provided.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}. The {@link CommandRouter} and
+     * {@link CommandBusConnector} are <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link DistributedCommandBus}
      */
@@ -97,8 +102,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     /**
      * Instantiate a {@link DistributedCommandBus} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link CommandRouter}, {@link CommandBusConnector} and {@link MessageMonitor} are not {@code
-     * null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the {@link CommandRouter}, {@link CommandBusConnector} and {@link MessageMonitor} are not
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link DistributedCommandBus} instance
      */
@@ -108,6 +113,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
         this.connector = builder.connector;
         this.messageMonitor = builder.messageMonitor;
         this.defaultCommandCallback = builder.defaultCommandCallback;
+        this.spanFactory = builder.spanFactory;
     }
 
     /**
@@ -120,8 +126,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
 
     /**
      * Shutdown the command bus asynchronously for dispatching commands to other instances. This process will wait for
-     * dispatched commands which have not received a response yet. This shutdown operation is performed in the {@link
-     * Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
+     * dispatched commands which have not received a response yet. This shutdown operation is performed in the
+     * {@link Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
      *
      * @return a completable future which is resolved once all command dispatching activities are completed
      */
@@ -137,33 +143,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
 
     @Override
     public <C> void dispatch(@Nonnull CommandMessage<C> command) {
-        if (defaultCommandCallback != null) {
-            dispatch(command, defaultCommandCallback);
-            return;
-        }
-
-        LoggingCallback loggingCallback = LoggingCallback.INSTANCE;
-        if (NoOpMessageMonitor.INSTANCE.equals(messageMonitor)) {
-            CommandMessage<? extends C> interceptedCommand = intercept(command);
-            Optional<Member> optionalDestination = commandRouter.findDestination(interceptedCommand);
-            if (optionalDestination.isPresent()) {
-                Member destination = optionalDestination.get();
-                try {
-                    connector.send(destination, interceptedCommand);
-                } catch (Exception e) {
-                    destination.suspect();
-                    loggingCallback.onResult(interceptedCommand, asCommandResultMessage(
-                            new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)
-                    ));
-                }
-            } else {
-                loggingCallback.onResult(interceptedCommand, asCommandResultMessage(new NoHandlerForCommandException(
-                        format("No node known to accept command [%s].", interceptedCommand.getCommandName())
-                )));
-            }
-        } else {
-            dispatch(command, loggingCallback);
-        }
+        logger.debug("Dispatch command [{}] with callback", command.getCommandName());
+        dispatch(command, defaultCommandCallback);
     }
 
     /**
@@ -177,25 +158,26 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
         CommandMessage<? extends C> interceptedCommand = intercept(command);
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
         Optional<Member> optionalDestination = commandRouter.findDestination(interceptedCommand);
-        if (optionalDestination.isPresent()) {
-            Member destination = optionalDestination.get();
-            try {
+        Span span = spanFactory.createDispatchSpan(() -> "DistributedCommandBus.dispatch", command).start();
+        try (SpanScope ignored = span.makeCurrent()) {
+            if (optionalDestination.isPresent()) {
+                Member destination = optionalDestination.get();
                 connector.send(destination,
                                interceptedCommand,
                                new MonitorAwareCallback<>(callback, messageMonitorCallback));
-            } catch (Exception e) {
-                messageMonitorCallback.reportFailure(e);
-                destination.suspect();
-                callback.onResult(interceptedCommand, asCommandResultMessage(
-                        new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)
-                ));
+                span.end();
+            } else {
+                throw new NoHandlerForCommandException(
+                        format("No node known to accept command [%s].", interceptedCommand.getCommandName())
+                );
             }
-        } else {
-            NoHandlerForCommandException exception = new NoHandlerForCommandException(
-                    format("No node known to accept command [%s].", interceptedCommand.getCommandName())
-            );
-            messageMonitorCallback.reportFailure(exception);
-            callback.onResult(interceptedCommand, asCommandResultMessage(exception));
+        } catch (Exception e) {
+            span.recordException(e).end();
+            messageMonitorCallback.reportFailure(e);
+            optionalDestination.ifPresent(Member::suspect);
+            callback.onResult(interceptedCommand, asCommandResultMessage(
+                    new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)
+            ));
         }
     }
 
@@ -285,15 +267,18 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     /**
      * Builder class to instantiate a {@link DistributedCommandBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}. The {@link CommandRouter} and {@link
-     * CommandBusConnector} are <b>hard requirements</b> and as such should be provided.
+     * The {@link CommandCallback} is defaulted to a {@link LoggingCallback}. The {@link MessageMonitor} is defaulted to
+     * a {@link NoOpMessageMonitor}. The {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}. The
+     * {@link CommandRouter} and {@link CommandBusConnector} are <b>hard requirements</b> and as such should be
+     * provided.
      */
     public static class Builder {
 
-        private CommandCallback<Object, Object> defaultCommandCallback = null;
+        private CommandCallback<Object, Object> defaultCommandCallback = LoggingCallback.INSTANCE;
         private CommandRouter commandRouter;
         private CommandBusConnector connector;
         private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link CommandRouter} used to determine the target node for each dispatched command.
@@ -335,15 +320,28 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
         }
 
         /**
-         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link
-         * #dispatch(CommandMessage)}. Defaults to using no callback, which requests the connectors to use a
-         * fire-and-forget strategy for dispatching event.
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
+         * {@link #dispatch(CommandMessage)}. Defaults to using a logging callback, which requests the connectors to use
+         * a fire-and-forget strategy for dispatching event.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder defaultCommandCallback(CommandCallback<Object, Object> defaultCommandCallback) {
             this.defaultCommandCallback = defaultCommandCallback;
+            return this;
+        }
+
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
             return this;
         }
 
