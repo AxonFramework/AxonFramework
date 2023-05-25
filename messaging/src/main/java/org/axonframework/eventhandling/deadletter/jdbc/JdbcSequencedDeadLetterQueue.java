@@ -233,6 +233,17 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     }
 
     /**
+     * Converts the given {@code sequenceIdentifier} to a {@link String}.
+     *
+     * @return The given {@code sequenceIdentifier} to a {@link String}.
+     */
+    private String toStringSequenceIdentifier(Object sequenceIdentifier) {
+        return sequenceIdentifier instanceof String
+                ? (String) sequenceIdentifier
+                : Integer.toString(sequenceIdentifier.hashCode());
+    }
+
+    /**
      * Builder class to instantiate an {@link JdbcSequencedDeadLetterQueue}.
      * <p>
      * The following defaults are set by the builder:
