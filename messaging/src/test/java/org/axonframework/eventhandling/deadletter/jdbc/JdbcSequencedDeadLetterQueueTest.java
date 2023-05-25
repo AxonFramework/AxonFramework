@@ -25,13 +25,19 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
 import org.axonframework.serialization.TestSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
+import org.junit.jupiter.api.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.Clock;
 import javax.sql.DataSource;
+
+import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Implementation of the {@link SequencedDeadLetterQueueTest}, validating the {@link JdbcSequencedDeadLetterQueue}.
@@ -43,20 +49,27 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 64;
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
 
+    private DataSource dataSource;
+    private TransactionManager transactionManager;
+    private JdbcSequencedDeadLetterQueue<EventMessage<?>> jdbcDeadLetterQueue;
+
+    private final DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
+
     @Override
     protected SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
-        DataSource dataSource = dataSource();
-        JdbcSequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue =
-                JdbcSequencedDeadLetterQueue.builder()
-                                            .processingGroup(TEST_PROCESSING_GROUP)
-                                            .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
-                                            .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
-                                            .connectionProvider(dataSource::getConnection)
-                                            .transactionManager(transactionManager(dataSource))
-                                            .serializer(TestSerializer.JACKSON.getSerializer())
-                                            .build();
-        deadLetterQueue.createSchema(new GenericDeadLetterTableFactory());
-        return deadLetterQueue;
+        dataSource = dataSource();
+        transactionManager = transactionManager(dataSource);
+        jdbcDeadLetterQueue = JdbcSequencedDeadLetterQueue.builder()
+                                                          .processingGroup(TEST_PROCESSING_GROUP)
+                                                          .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
+                                                          .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
+                                                          .connectionProvider(dataSource::getConnection)
+                                                          .schema(schema)
+                                                          .transactionManager(transactionManager)
+                                                          .genericSerializer(TestSerializer.JACKSON.getSerializer())
+                                                          .eventSerializer(TestSerializer.JACKSON.getSerializer())
+                                                          .build();
+        return jdbcDeadLetterQueue;
     }
 
     private DataSource dataSource() {
@@ -68,7 +81,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
     }
 
     private TransactionManager transactionManager(DataSource dataSource) {
-        PlatformTransactionManager platformTransactionManager = platformTransactionManager(dataSource);
+        PlatformTransactionManager platformTransactionManager = new DataSourceTransactionManager(dataSource);
         return () -> {
             TransactionStatus transaction =
                     platformTransactionManager.getTransaction(new DefaultTransactionDefinition());
@@ -86,8 +99,24 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
         };
     }
 
-    private PlatformTransactionManager platformTransactionManager(DataSource dataSource) {
-        return new DataSourceTransactionManager(dataSource);
+    @BeforeEach
+    void setUpJdbc() {
+        transactionManager.executeInTransaction(() -> {
+            // Clear current DLQ
+            Connection connection = null;
+            try {
+                connection = dataSource.getConnection();
+                //noinspection SqlDialectInspection,SqlNoDataSourceInspection
+                connection.prepareStatement("DROP TABLE IF EXISTS " + schema.deadLetterTable())
+                          .executeUpdate();
+            } catch (SQLException e) {
+                throw new IllegalStateException("Enable to retrieve a Connection to drop the dead-letter queue", e);
+            } finally {
+                closeQuietly(connection);
+            }
+            // Construct new DLQ
+            jdbcDeadLetterQueue.createSchema(new GenericDeadLetterTableFactory());
+        });
     }
 
     @Override
