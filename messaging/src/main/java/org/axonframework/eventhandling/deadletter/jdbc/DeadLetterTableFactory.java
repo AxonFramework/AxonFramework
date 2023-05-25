@@ -22,22 +22,44 @@ import java.sql.SQLException;
 
 /**
  * A functional interface to create a JDBC-specific {@link org.axonframework.messaging.deadletter.DeadLetter} entry
- * table.
+ * table with its indices.
  *
  * @author Steven van Beelen
  * @since 4.8.0
  */
-@FunctionalInterface
 public interface DeadLetterTableFactory {
 
     /**
      * Creates a {@link PreparedStatement} to use for construction of a
      * {@link org.axonframework.messaging.deadletter.DeadLetter} entry table.
+     * <p>
+     * It is expected that this statement at least constructs the required uniqueness constraints.
      *
-     * @param connection The connection to create the {@link PreparedStatement}.
+     * @param connection The connection to create the {@link PreparedStatement} with.
      * @param schema     The schema defining the table and column names.
-     * @return A {@link PreparedStatement statement} to create the table, ready to be executed.
+     * @return A {@link PreparedStatement statement} to create the table with, ready to be executed.
      * @throws SQLException when an exception occurs while creating the {@link PreparedStatement}.
      */
-    PreparedStatement create(Connection connection, DeadLetterSchema schema) throws SQLException;
+    PreparedStatement createTable(Connection connection, DeadLetterSchema schema) throws SQLException;
+
+    /**
+     * Creates a {@link PreparedStatement} to create an index for the {@link DeadLetterSchema#processingGroupColumn()}.
+     *
+     * @param connection The connection to create the {@link PreparedStatement} with.
+     * @param schema     The schema defining the table and column names.
+     * @return A {@link PreparedStatement statement} to create the index with, ready to be executed.
+     * @throws SQLException when an exception occurs while creating the {@link PreparedStatement}.
+     */
+    PreparedStatement createProcessingGroupIndex(Connection connection, DeadLetterSchema schema) throws SQLException;
+
+    /**
+     * Creates a {@link PreparedStatement} to create an index from the {@link DeadLetterSchema#processingGroupColumn()}
+     * and {@link DeadLetterSchema#sequenceIdentifierColumn()} combination.
+     *
+     * @param connection The connection to create the {@link PreparedStatement} with.
+     * @param schema     The schema defining the table and column names.
+     * @return A {@link PreparedStatement statement} to create the index with, ready to be executed.
+     * @throws SQLException when an exception occurs while creating the {@link PreparedStatement}.
+     */
+    PreparedStatement createSequenceIdentifierIndex(Connection connection, DeadLetterSchema schema) throws SQLException;
 }

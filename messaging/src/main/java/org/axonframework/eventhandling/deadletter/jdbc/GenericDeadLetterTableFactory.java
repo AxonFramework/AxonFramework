@@ -26,11 +26,12 @@ import java.sql.SQLException;
  * @author Steven van Beelen
  * @since 4.8.0
  */
+@SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
 
     @SuppressWarnings("SqlNoDataSourceInspection")
     @Override
-    public PreparedStatement create(Connection connection, DeadLetterSchema schema) throws SQLException {
+    public PreparedStatement createTable(Connection connection, DeadLetterSchema schema) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS " + schema.deadLetterTable() + " (\n" +
                 schema.deadLetterIdColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.processingGroupColumn() + " VARCHAR(255) NOT NULL,\n" +
@@ -43,27 +44,43 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
                 schema.payloadColumn() + " " + serializedDataType() + " NOT NULL,\n" +
-                schema.metaDataColumn() + " " + serializedDataType() + " ,\n" +
+                schema.metaDataColumn() + " " + serializedDataType() + ",\n" +
                 schema.aggregateTypeColumn() + " VARCHAR(255),\n" +
                 schema.aggregateIdentifierColumn() + " VARCHAR(255),\n" +
-                schema.sequenceNumberColumn() + " BIGINT NOT NULL,\n" +
+                schema.sequenceNumberColumn() + " BIGINT,\n" +
                 schema.tokenTypeColumn() + " VARCHAR(255),\n" +
-                schema.tokenColumn() + " " + serializedDataType() + " ,\n" +
+                schema.tokenColumn() + " " + serializedDataType() + ",\n" +
                 // TODO validate whether the above is the best way forward
                 schema.enqueuedAtColumn() + " " + timestampType() + " NOT NULL,\n" +
-                schema.lastTouchedColumn() + " " + timestampType() + " ,\n" +
-                schema.processingStartedColumn() + " " + timestampType() + " ,\n" +
+                schema.lastTouchedColumn() + " " + timestampType() + ",\n" +
+                schema.processingStartedColumn() + " " + timestampType() + ",\n" +
                 schema.causeTypeColumn() + " VARCHAR(255),\n" +
                 schema.causeMessageColumn() + " VARCHAR(255),\n" + // TODO large size for the message?
-                schema.diagnosticsColumn() + " " + serializedDataType() + " ,\n" +
-                "PRIMARY KEY (" + schema.deadLetterIdColumn() + "),\n" +
-                "UNIQUE (" + schema.processingGroupColumn() + "),\n" +
-                "UNIQUE (" + schema.processingGroupColumn() + "," + schema.sequenceIdentifierColumn() + "),\n" +
-                "UNIQUE (" +
-                schema.processingGroupColumn() + "," + schema.sequenceIdentifierColumn() + "," +
+                schema.diagnosticsColumn() + " " + serializedDataType() + ",\n" +
+                "CONSTRAINT PK PRIMARY KEY (" + schema.deadLetterIdColumn() + "),\n" +
+                "CONSTRAINT " + schema.sequenceIndexColumn() + "_INDEX UNIQUE (" +
+                schema.processingGroupColumn() + "," +
+                schema.sequenceIdentifierColumn() + "," +
                 schema.sequenceIndexColumn() +
-                ")\n" +
-                ")";
+                ")\n)";
+        return connection.prepareStatement(sql);
+    }
+
+    @Override
+    public PreparedStatement createProcessingGroupIndex(Connection connection,
+                                                        DeadLetterSchema schema) throws SQLException {
+        String sql = "CREATE INDEX " + schema.processingGroupColumn() + "_INDEX "
+                + "ON " + schema.deadLetterTable() + " "
+                + "(" + schema.processingGroupColumn() + ")";
+        return connection.prepareStatement(sql);
+    }
+
+    @Override
+    public PreparedStatement createSequenceIdentifierIndex(Connection connection,
+                                                           DeadLetterSchema schema) throws SQLException {
+        String sql = "CREATE INDEX " + schema.sequenceIdentifierColumn() + "_INDEX "
+                + "ON " + schema.deadLetterTable() + " "
+                + "(" + schema.processingGroupColumn() + "," + schema.sequenceIdentifierColumn() + ")";
         return connection.prepareStatement(sql);
     }
 
