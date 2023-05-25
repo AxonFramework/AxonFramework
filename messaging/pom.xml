@@ -149,13 +149,9 @@
         <dependency>
             <groupId>xom</groupId>
             <artifactId>xom</artifactId>
-            <version>1.3.8</version>
+            <version>1.3.9</version>
             <optional>true</optional>
             <exclusions>
-                <exclusion>
-                    <groupId>xml-apis</groupId>
-                    <artifactId>xml-apis</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>xalan</groupId>
                     <artifactId>xalan</artifactId>
