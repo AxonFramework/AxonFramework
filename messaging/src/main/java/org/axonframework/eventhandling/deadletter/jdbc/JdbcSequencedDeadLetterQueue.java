@@ -80,8 +80,12 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     private final ConnectionProvider connectionProvider;
     private final DeadLetterSchema schema;
     private final TransactionManager transactionManager;
-    private final Serializer serializer;
+    private final Serializer genericSerializer;
+    private final Serializer eventSerializer;
     private final Duration claimDuration;
+
+    // TODO get a feel whether this thing makes sense in it's current form
+    private final JdbcDeadLetterConverter<M> converter;
 
     protected JdbcSequencedDeadLetterQueue(Builder<M> builder) {
         builder.validate();
@@ -92,8 +96,17 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         this.connectionProvider = builder.connectionProvider;
         this.schema = builder.schema;
         this.transactionManager = builder.transactionManager;
-        this.serializer = builder.serializer;
+        this.genericSerializer = builder.genericSerializer;
+        this.eventSerializer = builder.eventSerializer;
         this.claimDuration = builder.claimDuration;
+
+        // TODO get a feel whether this thing makes sense in it's current form
+        this.converter = SimpleJdbcDeadLetterConverter.<M>builder()
+                                                      .processingGroup(builder.processingGroup)
+                                                      .schema(builder.schema)
+                                                      .genericSerializer(builder.genericSerializer)
+                                                      .eventSerializer(builder.eventSerializer)
+                                                      .build();
     }
 
     /**
@@ -110,8 +123,9 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
      * <p>
      * The {@link Builder#processingGroup(String) processing group},
      * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider},
-     * {@link Builder#transactionManager(TransactionManager) TransactionManager} and
-     * {@link Builder#serializer(Serializer) Serializer} are hard requirements and should be provided.
+     * {@link Builder#transactionManager(TransactionManager) TransactionManager},
+     * {@link Builder#genericSerializer(Serializer) generic Serializer}, and the
+     * {@link Builder#eventSerializer(Serializer) event Serializer} are hard requirements and should be provided.
      *
      * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
@@ -232,8 +246,9 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
      * <p>
      * The {@link Builder#processingGroup(String) processing group},
      * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider},
-     * {@link Builder#transactionManager(TransactionManager) TransactionManager} and
-     * {@link Builder#serializer(Serializer) Serializer} are hard requirements and should be provided.
+     * {@link Builder#transactionManager(TransactionManager) TransactionManager},
+     * {@link Builder#genericSerializer(Serializer) generic Serializer}, and the
+     * {@link Builder#eventSerializer(Serializer) event Serializer} are hard requirements and should be provided.
      *
      * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
@@ -247,7 +262,8 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         private ConnectionProvider connectionProvider;
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
         private TransactionManager transactionManager;
-        private Serializer serializer;
+        private Serializer genericSerializer;
+        private Serializer eventSerializer;
         private Duration claimDuration = Duration.ofSeconds(30);
 
         /**
@@ -359,15 +375,29 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         }
 
         /**
-         * Sets the {@link Serializer} to deserialize the events, metadata and diagnostics of the {@link DeadLetter}
-         * when storing it to a database.
+         * Sets the {@link Serializer} to (de)serialize the {@link org.axonframework.eventhandling.TrackingToken} (if
+         * present) of the event in the {@link DeadLetter} when storing it to the database.
          *
-         * @param serializer The serializer to use
+         * @param genericSerializer The serializer to use
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<M> serializer(Serializer serializer) {
-            assertNonNull(serializer, "The serializer may not be null");
-            this.serializer = serializer;
+        public Builder<M> genericSerializer(Serializer genericSerializer) {
+
+            assertNonNull(genericSerializer, "The generic serializer may not be null");
+            this.genericSerializer = genericSerializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} to (de)serialize the events, metadata and diagnostics of the {@link DeadLetter}
+         * when storing it to a database.
+         *
+         * @param eventSerializer The serializer to use
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<M> eventSerializer(Serializer eventSerializer) {
+            assertNonNull(eventSerializer, "The event serializer may not be null");
+            this.eventSerializer = eventSerializer;
             return this;
         }
 
@@ -390,7 +420,8 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
             assertNonEmpty(processingGroup, "The processingGroup is a hard requirement and should be non-empty");
             assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
-            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+            assertNonNull(genericSerializer, "The generic Serializer is a hard requirement and should be provided");
+            assertNonNull(eventSerializer, "The event Serializer is a hard requirement and should be provided");
         }
     }
 }
