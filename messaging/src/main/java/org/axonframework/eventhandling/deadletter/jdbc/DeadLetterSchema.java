@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling.deadletter.jdbc;
 
-import java.util.function.Function;
-
 import static org.axonframework.common.BuilderUtils.assertNonBlank;
 
 /**
