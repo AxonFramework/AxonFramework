@@ -130,7 +130,9 @@ public class EventProcessingModule
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
 
-    protected Configuration configuration;
+    protected Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
+
+    private Configuration configuration;
 
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
@@ -272,12 +274,21 @@ public class EventProcessingModule
                             });
         assignments.forEach((processingGroup, handlers) -> {
             String processorName = processorNameForProcessingGroup(processingGroup);
+            if (!deadLetterQueues.containsKey(processingGroup)) {
+                registerDefaultDeadLetterQueueIfPresent(processingGroup);
+            }
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>()).add(
                     c -> !deadLetterQueues.containsKey(processingGroup)
                             ? simpleInvoker(processingGroup, handlers)
                             : deadLetteringInvoker(processorName, processingGroup, handlers)
             );
         });
+    }
+
+    private void registerDefaultDeadLetterQueueIfPresent(String processingGroup) {
+        Optional.ofNullable(deadLetterQueueProvider.apply(processingGroup))
+                .ifPresent(deadLetterQueueFunction ->
+                                   registerDeadLetterQueue(processingGroup, deadLetterQueueFunction));
     }
 
     private SimpleEventHandlerInvoker simpleInvoker(String processingGroup, List<Object> handlers) {
@@ -497,6 +508,9 @@ public class EventProcessingModule
     @Override
     public Optional<SequencedDeadLetterQueue<EventMessage<?>>> deadLetterQueue(@Nonnull String processingGroup) {
         validateConfigInitialization();
+        if (!deadLetterQueues.containsKey(processingGroup)) {
+            registerDefaultDeadLetterQueueIfPresent(processingGroup);
+        }
         return deadLetterQueues.containsKey(processingGroup)
                 ? Optional.ofNullable(deadLetterQueues.get(processingGroup).get()) : Optional.empty();
     }
@@ -869,6 +883,13 @@ public class EventProcessingModule
             PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     ) {
         this.defaultPooledStreamingProcessorConfiguration = pooledStreamingProcessorConfiguration;
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerDeadLetterQueueProvider(
+            Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider) {
+        this.deadLetterQueueProvider = deadLetterQueueProvider;
         return this;
     }
 

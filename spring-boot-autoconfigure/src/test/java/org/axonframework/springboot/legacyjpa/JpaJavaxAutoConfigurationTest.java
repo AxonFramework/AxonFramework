@@ -18,9 +18,13 @@ package org.axonframework.springboot.legacyjpa;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.legacyjpa.EntityManagerProvider;
+import org.axonframework.config.EventProcessingModule;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.deadletter.legacyjpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.legacyjpa.SQLErrorCodesResolver;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.legacyjpa.JpaSagaStore;
 import org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider;
@@ -32,6 +36,7 @@ import org.springframework.test.context.ContextConfiguration;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -94,6 +99,21 @@ class JpaJavaxAutoConfigurationTest {
                                JpaTokenStore.class.getDeclaredField("claimTimeout"), tokenStore
                        );
                        assertEquals(Duration.ofSeconds(5L), tokenClaimInterval);
+                   });
+    }
+
+    @Test
+    void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
+        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
+                   .run(context -> {
+                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+                       assertNotNull(eventProcessingConfig);
+                       Optional<SequencedDeadLetterQueue<EventMessage<?>>> dlq =
+                               eventProcessingConfig.deadLetterQueue("first");
+                       assertTrue(dlq.isPresent());
+                       assertTrue(dlq.get() instanceof JpaSequencedDeadLetterQueue);
+                       dlq = eventProcessingConfig.deadLetterQueue("second");
+                       assertFalse(dlq.isPresent());
                    });
     }
 
