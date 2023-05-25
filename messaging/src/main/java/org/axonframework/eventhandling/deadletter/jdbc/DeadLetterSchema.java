@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.deadletter.jdbc;
 
+import java.util.function.Function;
+
 import static org.axonframework.common.BuilderUtils.assertNonBlank;
 
 /**
@@ -41,7 +43,7 @@ public class DeadLetterSchema {
     private final String payloadRevisionColumn;
     private final String payloadColumn;
     private final String metaDataColumn;
-    private final String typeColumn;
+    private final String aggregateTypeColumn;
     private final String aggregateIdentifierColumn;
     private final String sequenceNumberColumn;
     private final String tokenTypeColumn;
@@ -72,7 +74,7 @@ public class DeadLetterSchema {
         this.payloadRevisionColumn = builder.payloadRevisionColumn;
         this.payloadColumn = builder.payloadColumn;
         this.metaDataColumn = builder.metaDataColumn;
-        this.typeColumn = builder.typeColumn;
+        this.aggregateTypeColumn = builder.aggregateTypeColumn;
         this.aggregateIdentifierColumn = builder.aggregateIdentifierColumn;
         this.sequenceNumberColumn = builder.sequenceNumberColumn;
         this.tokenTypeColumn = builder.tokenTypeColumn;
@@ -220,7 +222,7 @@ public class DeadLetterSchema {
      * @return The configured {@code aggregateTypeColumn} name.
      */
     public String aggregateTypeColumn() {
-        return typeColumn;
+        return aggregateTypeColumn;
     }
 
     /**
@@ -333,7 +335,7 @@ public class DeadLetterSchema {
         private String payloadRevisionColumn = "payloadRevision";
         private String payloadColumn = "payload";
         private String metaDataColumn = "metaData";
-        private String typeColumn = "type";
+        private String aggregateTypeColumn = "type";
         private String aggregateIdentifierColumn = "aggregateIdentifier";
         private String sequenceNumberColumn = "sequenceNumber";
         private String tokenTypeColumn = "tokenType";
@@ -490,14 +492,14 @@ public class DeadLetterSchema {
         }
 
         /**
-         * Sets the name of the {@code type} column. Defaults to {@code type}.
+         * Sets the name of the {@code aggregateType} column. Defaults to {@code type}.
          *
-         * @param typeColumn The name for the {@code type} column.
+         * @param aggregateTypeColumn The name for the {@code aggregateType} column.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder typeColumn(String typeColumn) {
-            assertNonBlank(typeColumn, "The typeColumn should be not null or empty");
-            this.typeColumn = typeColumn;
+        public Builder aggregateTypeColumn(String aggregateTypeColumn) {
+            assertNonBlank(aggregateTypeColumn, "The aggregateTypeColumn should be not null or empty");
+            this.aggregateTypeColumn = aggregateTypeColumn;
             return this;
         }
 
