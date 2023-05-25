@@ -18,6 +18,7 @@ package org.axonframework.modelling.saga.repository;
 
 import net.sf.ehcache.CacheManager;
 import org.axonframework.common.caching.Cache;
+import org.axonframework.common.caching.EhCacheAdapter;
 import org.junit.jupiter.api.*;
 
 /**
