@@ -87,6 +87,7 @@
         <disruptor.version>3.4.4</disruptor.version>
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
+        <ehcache3.version>3.10.8</ehcache3.version>
         <quartz.version>2.3.2</quartz.version>
         <jobrunr.version>6.2.0</jobrunr.version>
         <c3p0.version>0.9.1.2</c3p0.version>
@@ -353,6 +354,17 @@
                 <groupId>net.sf.ehcache</groupId>
                 <artifactId>ehcache</artifactId>
                 <version>${ehcache.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ehcache</groupId>
+                <artifactId>ehcache</artifactId>
+                <version>${ehcache3.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.glassfish.jaxb</groupId>
+                        <artifactId>jaxb-runtime</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>

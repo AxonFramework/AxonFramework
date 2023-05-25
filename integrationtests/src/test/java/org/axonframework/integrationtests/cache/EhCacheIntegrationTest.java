@@ -22,7 +22,6 @@ import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.SizeOfPolicyConfiguration;
 import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.common.caching.EhCacheAdapter;
 import org.junit.jupiter.api.*;
 
 /**

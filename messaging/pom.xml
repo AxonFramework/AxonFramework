@@ -133,6 +133,12 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>org.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Serialization - XML -->
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
