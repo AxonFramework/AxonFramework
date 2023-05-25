@@ -310,7 +310,9 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
     @Override
     public boolean isFull(@Nonnull Object sequenceIdentifier) {
-        return false;
+        String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+        long numberInSequence = sequenceSize(sequenceId);
+        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequences() >= maxSequences;
     }
 
     @Override
@@ -320,12 +322,53 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
     @Override
     public long sequenceSize(@Nonnull Object sequenceIdentifier) {
-        return 0;
+        String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+        return executeQuery(
+                getConnection(),
+                c -> {
+                    String sql = "SELECT COUNT(*) "
+                            + "FROM " + schema.deadLetterTable() + " "
+                            + "WHERE " + schema.processingGroupColumn() + "=? "
+                            + "AND " + schema.sequenceIdentifierColumn() + "=?";
+                    PreparedStatement statement = c.prepareStatement(sql);
+                    statement.setString(1, processingGroup);
+                    statement.setString(2, sequenceId);
+                    return statement;
+                },
+                resultSet -> {
+                    if (resultSet.next()) {
+                        return resultSet.getLong(1);
+                    } else {
+                        return 0L;
+                    }
+                },
+                handleException(),
+                CLOSE_QUIETLY
+        );
     }
 
     @Override
     public long amountOfSequences() {
-        return 0;
+        return executeQuery(
+                getConnection(),
+                c -> {
+                    String sql = "SELECT COUNT(DISTINCT " + schema.sequenceIdentifierColumn() + ") "
+                            + "FROM " + schema.deadLetterTable() + " "
+                            + "WHERE " + schema.processingGroupColumn() + "=?";
+                    PreparedStatement statement = c.prepareStatement(sql);
+                    statement.setString(1, processingGroup);
+                    return statement;
+                },
+                resultSet -> {
+                    if (resultSet.next()) {
+                        return resultSet.getLong(1);
+                    } else {
+                        return 0L;
+                    }
+                },
+                handleException(),
+                CLOSE_QUIETLY
+        );
     }
 
     @Override
