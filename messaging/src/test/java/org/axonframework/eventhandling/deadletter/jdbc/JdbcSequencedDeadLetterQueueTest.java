@@ -143,4 +143,19 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
     protected void setClock(Clock clock) {
         GenericDeadLetter.clock = clock;
     }
+
+    @Override
+    protected void assertLetter(DeadLetter<? extends EventMessage<?>> expected,
+                                DeadLetter<? extends EventMessage<?>> actual) {
+        EventMessage<?> expectedMessage = expected.message();
+        EventMessage<?> actualMessage = actual.message();
+        assertEquals(expectedMessage.getPayload(), actualMessage.getPayload());
+        assertEquals(expectedMessage.getPayloadType(), actualMessage.getPayloadType());
+        assertEquals(expectedMessage.getMetaData(), actualMessage.getMetaData());
+        assertEquals(expectedMessage.getIdentifier(), actualMessage.getIdentifier());
+        assertEquals(expected.cause(), actual.cause());
+        assertEquals(expected.enqueuedAt(), actual.enqueuedAt());
+        assertEquals(expected.lastTouched(), actual.lastTouched());
+        assertEquals(expected.diagnostics(), actual.diagnostics());
+    }
 }

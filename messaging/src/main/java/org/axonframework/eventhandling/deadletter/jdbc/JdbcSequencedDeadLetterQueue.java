@@ -19,10 +19,12 @@ package org.axonframework.eventhandling.deadletter.jdbc;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
+import org.axonframework.common.jdbc.JdbcUtils;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
@@ -34,16 +36,18 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.*;
-import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
-import static org.axonframework.common.jdbc.JdbcUtils.executeUpdates;
+import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
  * JDBC-backed implementation of the {@link SequencedDeadLetterQueue}, used for storing dead letters containing
@@ -72,6 +76,8 @@ import static org.axonframework.common.jdbc.JdbcUtils.executeUpdates;
 public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements SequencedDeadLetterQueue<M> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private static final boolean CLOSE_QUIETLY = true;
 
     private final String processingGroup;
     private final int maxSequences;
@@ -169,9 +175,66 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     }
 
     @Override
-    public void enqueue(@Nonnull Object sequenceIdentifier, @Nonnull DeadLetter<? extends M> letter)
-            throws DeadLetterQueueOverflowException {
+    public void enqueue(@Nonnull Object sequenceIdentifier,
+                        @Nonnull DeadLetter<? extends M> letter) throws DeadLetterQueueOverflowException {
+        String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+        if (isFull(sequenceId)) {
+            throw new DeadLetterQueueOverflowException(
+                    "No room left to enqueue [" + letter.message() + "] for identifier ["
+                            + sequenceId + "] since the queue is full."
+            );
+        }
 
+        if (logger.isDebugEnabled()) {
+            Optional<Cause> optionalCause = letter.cause();
+            if (optionalCause.isPresent()) {
+                logger.info("Adding dead letter with message id [{}] because [{}].",
+                            letter.message().getIdentifier(), optionalCause.get());
+            } else {
+                logger.info(
+                        "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
+                        letter.message().getIdentifier(),
+                        sequenceId);
+            }
+        }
+
+        Connection connection = getConnection();
+        try {
+            executeUpdate(connection,
+                          c -> converter.enqueueStatement(sequenceId, letter, nextIndexForSequence(sequenceId), c),
+                          handleException());
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
+    private long nextIndexForSequence(String sequenceId) {
+        long maxIndex = maxIndexForSequence(sequenceId);
+        return maxIndex != 0 ? maxIndex + 1 : maxIndex;
+    }
+
+    private long maxIndexForSequence(String sequenceId) {
+        return transactionManager.fetchInTransaction(() -> executeQuery(
+                getConnection(),
+                c -> {
+                    String sql = "SELECT MAX(" + schema.sequenceIndexColumn() + ") "
+                            + "FROM " + schema.deadLetterTable() + " "
+                            + "WHERE " + schema.processingGroupColumn() + "= ? "
+                            + "AND " + schema.sequenceIdentifierColumn() + "= ?";
+                    PreparedStatement statement = c.prepareStatement(sql);
+                    statement.setString(1, processingGroup);
+                    statement.setString(2, sequenceId);
+                    return statement;
+                },
+                resultSet -> {
+                    if (resultSet.next()) {
+                        return resultSet.getLong(1);
+                    } else {
+                        return 0L;
+                    }
+                },
+                handleException()
+        ));
     }
 
     @Override
@@ -188,12 +251,56 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
     @Override
     public boolean contains(@Nonnull Object sequenceIdentifier) {
-        return false;
+        String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Validating existence of sequence identifier [{}].", sequenceId);
+        }
+
+        return executeQuery(getConnection(),
+                            connection -> {
+                                String sql = "SELECT COUNT(*) "
+                                        + "FROM " + schema.deadLetterTable() + " "
+                                        + "WHERE " + schema.processingGroupColumn() + " = ? "
+                                        + "AND " + schema.sequenceIdentifierColumn() + " = ? ";
+                                PreparedStatement statement = connection.prepareStatement(sql);
+                                statement.setString(1, processingGroup);
+                                statement.setString(2, sequenceId);
+                                return statement;
+                            },
+                            resultSet -> resultSet.next() && resultSet.getLong(1) > 0,
+                            handleException(),
+                            CLOSE_QUIETLY);
+    }
+
+    // TODO make this configurable, or use something like the PersistenceExceptionResolver
+    private static Function<SQLException, RuntimeException> handleException() {
+        return e -> {
+            System.out.println("SHEIZE");
+            return new RuntimeException(e);
+        };
     }
 
     @Override
     public Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
-        return null;
+        String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+        if (!contains(sequenceId)) {
+            return Collections.emptyList();
+        }
+
+        return executeQuery(getConnection(),
+                            connection -> {
+                                String sql = "SELECT * "
+                                        + "FROM " + schema.deadLetterTable() + " "
+                                        + "WHERE " + schema.processingGroupColumn() + " = ? "
+                                        + "AND " + schema.sequenceIdentifierColumn() + " = ? ";
+                                PreparedStatement statement = connection.prepareStatement(sql);
+                                statement.setString(1, processingGroup);
+                                statement.setString(2, sequenceId);
+                                return statement;
+                            },
+                            JdbcUtils.listResults(converter::convertToLetter),
+                            handleException(),
+                            CLOSE_QUIETLY);
     }
 
     @Override
