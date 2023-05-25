@@ -952,9 +952,9 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * that's requeued.
      */
     protected DeadLetter<M> generateRequeuedLetter(DeadLetter<M> original,
-                                                            Instant lastTouched,
-                                                            Throwable requeueCause,
-                                                            MetaData diagnostics) {
+                                                   Instant lastTouched,
+                                                   Throwable requeueCause,
+                                                   MetaData diagnostics) {
         setAndGetTime(lastTouched);
         return original.withCause(requeueCause)
                        .withDiagnostics(diagnostics)
