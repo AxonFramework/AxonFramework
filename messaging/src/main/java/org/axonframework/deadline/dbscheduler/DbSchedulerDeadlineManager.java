@@ -20,6 +20,7 @@ import com.github.kagkarlsson.scheduler.ScheduledExecution;
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
+import com.github.kagkarlsson.scheduler.task.TaskWithDataDescriptor;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -73,6 +74,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = getLogger(DbSchedulerDeadlineManager.class);
     private static final AtomicReference<DbSchedulerDeadlineManager> deadlineManagerReference = new AtomicReference<>();
+    private static final TaskWithDataDescriptor<DbSchedulerDeadlineDetails> taskDescriptor =
+            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerDeadlineDetails.class);
 
     private final ScopeAwareProvider scopeAwareProvider;
     private final Scheduler scheduler;
@@ -131,7 +134,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
                     deadlineScope,
                     interceptedDeadlineMessage,
                     serializer);
-            TaskInstance<?> taskInstance = task().instance(taskInstanceId.getId(), details);
+            TaskInstance<?> taskInstance = taskDescriptor.instance(taskInstanceId.getId(), details);
             scheduler.schedule(taskInstance, triggerDateTime);
             logger.debug("Task with id: [{}] was successfully created.", taskInstanceId.getId());
         }));

@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.scheduling.dbscheduler;
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
+import com.github.kagkarlsson.scheduler.task.TaskWithDataDescriptor;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -59,6 +60,8 @@ import static org.axonframework.eventhandling.scheduling.dbscheduler.DbScheduler
 public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
 
     private static final AtomicReference<DbSchedulerEventScheduler> eventSchedulerReference = new AtomicReference<>();
+    private static final TaskWithDataDescriptor<DbSchedulerEventData> taskDescriptor =
+            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerEventData.class);
     private final Scheduler scheduler;
     private final Serializer serializer;
     private final TransactionManager transactionManager;
@@ -106,7 +109,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
             } else {
                 data = detailsFromObject(event);
             }
-            TaskInstance<?> taskInstance = task().instance(taskInstanceId.getId(), data);
+            TaskInstance<?> taskInstance = taskDescriptor.instance(taskInstanceId.getId(), data);
             scheduler.schedule(taskInstance, triggerDateTime);
         } catch (Exception e) {
             throw new SchedulingException("An error occurred while scheduling an event.", e);
