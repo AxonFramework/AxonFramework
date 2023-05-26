@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.deadletter.jdbc;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
-import org.axonframework.common.jdbc.JdbcUtils;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter;
@@ -36,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Collections;
@@ -99,7 +97,8 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     private final Duration claimDuration;
 
     // TODO get a feel whether this thing makes sense in it's current form
-    private final JdbcDeadLetterConverter<M> converter;
+    private final DeadLetterStatementFactory<M> statementFactory;
+    private final DeadLetterResultSetConverter<M> converter;
 
     protected JdbcSequencedDeadLetterQueue(Builder<M> builder) {
         builder.validate();
@@ -115,12 +114,16 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         this.claimDuration = builder.claimDuration;
 
         // TODO get a feel whether this thing makes sense in it's current form
-        this.converter = SimpleJdbcDeadLetterConverter.<M>builder()
-                                                      .processingGroup(builder.processingGroup)
-                                                      .schema(builder.schema)
-                                                      .genericSerializer(builder.genericSerializer)
-                                                      .eventSerializer(builder.eventSerializer)
-                                                      .build();
+        this.statementFactory = SimpleDeadLetterStatementFactory.<M>builder()
+                                                                .processingGroup(builder.processingGroup)
+                                                                .schema(builder.schema)
+                                                                .genericSerializer(builder.genericSerializer)
+                                                                .eventSerializer(builder.eventSerializer)
+                                                                .build();
+        this.converter = SimpleDeadLetterResultSetConverter.<M>builder()
+                                                           .genericSerializer(builder.genericSerializer)
+                                                           .eventSerializer(builder.eventSerializer)
+                                                           .build();
     }
 
     /**
@@ -209,7 +212,9 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         Connection connection = getConnection();
         try {
             executeUpdate(connection,
-                          c -> converter.enqueueStatement(sequenceId, letter, nextIndexForSequence(sequenceId), c),
+                          c -> statementFactory.enqueueStatement(
+                                  c, sequenceId, letter, nextIndexForSequence(sequenceId)
+                          ),
                           handleException());
         } finally {
             closeQuietly(connection);
@@ -224,23 +229,8 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     private long maxIndexForSequence(String sequenceId) {
         return transactionManager.fetchInTransaction(() -> executeQuery(
                 getConnection(),
-                c -> {
-                    String sql = "SELECT MAX(" + schema.sequenceIndexColumn() + ") "
-                            + "FROM " + schema.deadLetterTable() + " "
-                            + "WHERE " + schema.processingGroupColumn() + "= ? "
-                            + "AND " + schema.sequenceIdentifierColumn() + "= ?";
-                    PreparedStatement statement = c.prepareStatement(sql);
-                    statement.setString(1, processingGroup);
-                    statement.setString(2, sequenceId);
-                    return statement;
-                },
-                resultSet -> {
-                    if (resultSet.next()) {
-                        return resultSet.getLong(1);
-                    } else {
-                        return 0L;
-                    }
-                },
+                connection -> statementFactory.maxIndexStatement(connection, sequenceId),
+                converter::convertToLong,
                 handleException()
         ));
     }
@@ -265,17 +255,8 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         }
 
         return executeQuery(getConnection(),
-                            connection -> {
-                                String sql = "SELECT COUNT(*) "
-                                        + "FROM " + schema.deadLetterTable() + " "
-                                        + "WHERE " + schema.processingGroupColumn() + " = ? "
-                                        + "AND " + schema.sequenceIdentifierColumn() + " = ? ";
-                                PreparedStatement statement = connection.prepareStatement(sql);
-                                statement.setString(1, processingGroup);
-                                statement.setString(2, sequenceId);
-                                return statement;
-                            },
-                            resultSet -> resultSet.next() && resultSet.getLong(1) > 0,
+                            connection -> statementFactory.containsStatement(connection, sequenceId),
+                            resultSet -> converter.convertToLong(resultSet) > 0,
                             handleException(),
                             CLOSE_QUIETLY);
     }
@@ -296,17 +277,8 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         }
 
         return executeQuery(getConnection(),
-                            connection -> {
-                                String sql = "SELECT * "
-                                        + "FROM " + schema.deadLetterTable() + " "
-                                        + "WHERE " + schema.processingGroupColumn() + " = ? "
-                                        + "AND " + schema.sequenceIdentifierColumn() + " = ? ";
-                                PreparedStatement statement = connection.prepareStatement(sql);
-                                statement.setString(1, processingGroup);
-                                statement.setString(2, sequenceId);
-                                return statement;
-                            },
-                            JdbcUtils.listResults(converter::convertToLetter),
+                            connection -> statementFactory.letterSequenceStatement(connection, sequenceId),
+                            listResults(converter::convertToLetter),
                             handleException(),
                             CLOSE_QUIETLY);
     }
@@ -331,52 +303,21 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     @Override
     public long sequenceSize(@Nonnull Object sequenceIdentifier) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        return executeQuery(
-                getConnection(),
-                c -> {
-                    String sql = "SELECT COUNT(*) "
-                            + "FROM " + schema.deadLetterTable() + " "
-                            + "WHERE " + schema.processingGroupColumn() + "=? "
-                            + "AND " + schema.sequenceIdentifierColumn() + "=?";
-                    PreparedStatement statement = c.prepareStatement(sql);
-                    statement.setString(1, processingGroup);
-                    statement.setString(2, sequenceId);
-                    return statement;
-                },
-                resultSet -> {
-                    if (resultSet.next()) {
-                        return resultSet.getLong(1);
-                    } else {
-                        return 0L;
-                    }
-                },
-                handleException(),
-                CLOSE_QUIETLY
+        return executeQuery(getConnection(),
+                            connection -> statementFactory.sequenceSizeStatement(connection, sequenceId),
+                            converter::convertToLong,
+                            handleException(),
+                            CLOSE_QUIETLY
         );
     }
 
     @Override
     public long amountOfSequences() {
-        return executeQuery(
-                getConnection(),
-                c -> {
-                    String sql = "SELECT COUNT(DISTINCT " + schema.sequenceIdentifierColumn() + ") "
-                            + "FROM " + schema.deadLetterTable() + " "
-                            + "WHERE " + schema.processingGroupColumn() + "=?";
-                    PreparedStatement statement = c.prepareStatement(sql);
-                    statement.setString(1, processingGroup);
-                    return statement;
-                },
-                resultSet -> {
-                    if (resultSet.next()) {
-                        return resultSet.getLong(1);
-                    } else {
-                        return 0L;
-                    }
-                },
-                handleException(),
-                CLOSE_QUIETLY
-        );
+        return executeQuery(getConnection(),
+                            statementFactory::amountOfSequencesStatement,
+                            converter::convertToLong,
+                            handleException(),
+                            CLOSE_QUIETLY);
     }
 
     @Override
