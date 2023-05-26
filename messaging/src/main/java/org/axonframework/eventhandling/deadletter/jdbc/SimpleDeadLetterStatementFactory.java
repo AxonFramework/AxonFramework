@@ -282,7 +282,7 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
 
     @Override
     public PreparedStatement clearStatement(Connection c) throws SQLException {
-        String sql = "DELETE * "
+        String sql = "DELETE "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=?";
         PreparedStatement statement = c.prepareStatement(sql);
