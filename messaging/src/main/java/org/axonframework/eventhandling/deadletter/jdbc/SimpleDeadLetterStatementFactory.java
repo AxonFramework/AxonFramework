@@ -20,72 +20,46 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.deadletter.ThrowableCause;
-import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class SimpleJdbcDeadLetterConverter<M extends EventMessage<?>> implements JdbcDeadLetterConverter<M> {
+@SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
+public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> implements DeadLetterStatementFactory<M> {
 
     private static final String COMMA = ", ";
-    // TODO move the indices to the schema perhaps
-    private static final int SEQUENCE_ID_INDEX = 3;
-    private static final int EVENT_MESSAGE_TYPE_INDEX = 6;
-    private static final int EVENT_TIMESTAMP_INDEX = 7;
-    private static final int PAYLOAD_TYPE_INDEX = 8;
-    private static final int PAYLOAD_REVISION_INDEX = 9;
-    private static final int PAYLOAD_INDEX = 10;
-    private static final int META_DATA_INDEX = 11;
-    private static final int AGGREGATE_TYPE_INDEX = 12;
-    private static final int AGGREGATE_ID_INDEX = 13;
-    private static final int TOKEN_TYPE_INDEX = 15;
-    private static final int TOKEN_INDEX = 16;
-    private static final int ENQUEUED_AT_INDEX = 17;
-    private static final int LAST_TOUCHED_INDEX = 18;
-    private static final int CAUSE_TYPE_INDEX = 20;
-    private static final int CAUSE_MESSAGE_INDEX = 21;
-    private static final int DIAGNOSTICS_INDEX = 22;
 
     private final String processingGroup;
     private final DeadLetterSchema schema;
     private final Serializer genericSerializer;
     private final Serializer eventSerializer;
 
-    protected SimpleJdbcDeadLetterConverter(Builder<M> builder) {
-        processingGroup = builder.processingGroup;
-        schema = builder.schema;
-        genericSerializer = builder.genericSerializer;
-        eventSerializer = builder.eventSerializer;
+    protected SimpleDeadLetterStatementFactory(Builder<M> builder) {
+        builder.validate();
+        this.processingGroup = builder.processingGroup;
+        this.schema = builder.schema;
+        this.genericSerializer = builder.genericSerializer;
+        this.eventSerializer = builder.eventSerializer;
     }
 
     public static <M extends EventMessage<?>> Builder<M> builder() {
@@ -93,10 +67,9 @@ public class SimpleJdbcDeadLetterConverter<M extends EventMessage<?>> implements
     }
 
     @Override
-    public PreparedStatement enqueueStatement(@Nonnull String sequenceIdentifier,
+    public PreparedStatement enqueueStatement(@Nonnull Connection connection, @Nonnull String sequenceIdentifier,
                                               @Nonnull DeadLetter<? extends M> letter,
-                                              long sequenceIndex,
-                                              @Nonnull Connection connection) throws SQLException {
+                                              long sequenceIndex) throws SQLException {
         String enqueueSql = enqueueSql(letter);
 
         M eventMessage = letter.message();
@@ -158,7 +131,7 @@ public class SimpleJdbcDeadLetterConverter<M extends EventMessage<?>> implements
                              .append(COMMA)
                              .append(schema.sequenceNumberColumn())
                              .append(COMMA);
-            fieldCount += SEQUENCE_ID_INDEX;
+            fieldCount += 3;
         }
         if (isTrackedEvent) {
             enqueueSqlBuilder.append(schema.tokenTypeColumn())
@@ -252,91 +225,84 @@ public class SimpleJdbcDeadLetterConverter<M extends EventMessage<?>> implements
     }
 
     @Override
-    public DeadLetter<? extends M> convertToLetter(ResultSet resultSet) throws SQLException {
-        EventMessage<?> eventMessage;
-        Message<?> serializedMessage = convertToSerializedMessage(resultSet);
-        String eventTimestampString = resultSet.getString(EVENT_TIMESTAMP_INDEX);
-        Supplier<Instant> timestampSupplier = () -> Instant.parse(eventTimestampString);
-
-        if (resultSet.getString(TOKEN_TYPE_INDEX) != null) {
-            TrackingToken trackingToken = convertToTrackingToken(resultSet);
-            if (resultSet.getString(AGGREGATE_ID_INDEX) != null) {
-                eventMessage = new GenericTrackedDomainEventMessage<>(trackingToken,
-                                                                      resultSet.getString(AGGREGATE_TYPE_INDEX),
-                                                                      resultSet.getString(AGGREGATE_ID_INDEX),
-                                                                      resultSet.getLong(TOKEN_TYPE_INDEX),
-                                                                      serializedMessage,
-                                                                      timestampSupplier);
-            } else {
-                eventMessage = new GenericTrackedEventMessage<>(trackingToken, serializedMessage, timestampSupplier);
-            }
-        } else if (resultSet.getString(AGGREGATE_ID_INDEX) != null) {
-            eventMessage = new GenericDomainEventMessage<>(resultSet.getString(AGGREGATE_TYPE_INDEX),
-                                                           resultSet.getString(AGGREGATE_ID_INDEX),
-                                                           resultSet.getLong(TOKEN_TYPE_INDEX),
-                                                           serializedMessage.getPayload(),
-                                                           serializedMessage.getMetaData(),
-                                                           serializedMessage.getIdentifier(),
-                                                           timestampSupplier.get());
-        } else {
-            eventMessage = new GenericEventMessage<>(serializedMessage, timestampSupplier);
-        }
-
-        Cause cause = null;
-        if (resultSet.getString(CAUSE_TYPE_INDEX) != null) {
-            cause = new ThrowableCause(resultSet.getString(CAUSE_TYPE_INDEX), resultSet.getString(CAUSE_MESSAGE_INDEX));
-        }
-        Instant enqueuedAt = Instant.parse(resultSet.getString(ENQUEUED_AT_INDEX));
-        Instant lastTouched = Instant.parse(resultSet.getString(LAST_TOUCHED_INDEX));
-        MetaData diagnostics = convertToDiagnostics(resultSet);
-
-        //noinspection unchecked
-        return (DeadLetter<? extends M>) new GenericDeadLetter<>(
-                resultSet.getString(SEQUENCE_ID_INDEX), eventMessage, cause, enqueuedAt, lastTouched, diagnostics
-        );
+    public PreparedStatement containsStatement(Connection connection, String sequenceId) throws SQLException {
+        String sql = "SELECT COUNT(*) "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.processingGroupColumn() + "=? "
+                + "AND " + schema.sequenceIdentifierColumn() + "=? ";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        statement.setString(2, sequenceId);
+        return statement;
     }
 
-    private SerializedMessage<?> convertToSerializedMessage(ResultSet resultSet) throws SQLException {
-        SerializedObject<byte[]> serializedPayload = convertToSerializedPayload(resultSet);
-        SerializedObject<byte[]> serializedMetaData = convertToSerializedMetaData(resultSet);
-        return new SerializedMessage<>(resultSet.getString(EVENT_MESSAGE_TYPE_INDEX),
-                                       serializedPayload,
-                                       serializedMetaData,
-                                       eventSerializer);
+    @Override
+    public PreparedStatement letterSequenceStatement(Connection connection, String sequenceId) throws SQLException {
+        String sql = "SELECT * "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.processingGroupColumn() + "=? "
+                + "AND " + schema.sequenceIdentifierColumn() + "=? ";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        statement.setString(2, sequenceId);
+        return statement;
     }
 
-    private SerializedObject<byte[]> convertToSerializedPayload(ResultSet resultSet) throws SQLException {
-        return new SimpleSerializedObject<>(resultSet.getBytes(PAYLOAD_INDEX),
-                                            byte[].class,
-                                            resultSet.getString(PAYLOAD_TYPE_INDEX),
-                                            resultSet.getString(PAYLOAD_REVISION_INDEX));
+    @Override
+    public PreparedStatement sizeStatement(Connection connection) throws SQLException {
+        String sql = "SELECT COUNT(*) "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.processingGroupColumn() + "=? ";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        return statement;
     }
 
-    private SerializedObject<byte[]> convertToSerializedMetaData(ResultSet resultSet) throws SQLException {
-        return new SimpleSerializedObject<>(resultSet.getBytes(META_DATA_INDEX),
-                                            byte[].class,
-                                            MetaData.class.getName(),
-                                            null);
+    @Override
+    public PreparedStatement sequenceSizeStatement(Connection connection, String sequenceId) throws SQLException {
+        String sql = "SELECT COUNT(*) "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.processingGroupColumn() + "=? "
+                + "AND " + schema.sequenceIdentifierColumn() + "=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        statement.setString(2, sequenceId);
+        return statement;
     }
 
-    private TrackingToken convertToTrackingToken(ResultSet resultSet) throws SQLException {
-        SerializedObject<byte[]> serializedToken = new SimpleSerializedObject<>(resultSet.getBytes(TOKEN_INDEX),
-                                                                                byte[].class,
-                                                                                resultSet.getString(TOKEN_TYPE_INDEX),
-                                                                                null);
-        return genericSerializer.deserialize(serializedToken);
+    @Override
+    public PreparedStatement amountOfSequencesStatement(Connection c) throws SQLException {
+        String sql = "SELECT COUNT(DISTINCT " + schema.sequenceIdentifierColumn() + ") "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.processingGroupColumn() + "=?";
+        PreparedStatement statement = c.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        return statement;
     }
 
-    private MetaData convertToDiagnostics(ResultSet resultSet) throws SQLException {
-        SerializedObject<byte[]> serializedDiagnostics =
-                new SimpleSerializedObject<>(resultSet.getBytes(DIAGNOSTICS_INDEX),
-                                             byte[].class,
-                                             MetaData.class.getName(),
-                                             null);
-        return eventSerializer.deserialize(serializedDiagnostics);
+    @Override
+    public PreparedStatement clearStatement(Connection c) throws SQLException {
+        String sql = "DELETE * "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.processingGroupColumn() + "=?";
+        PreparedStatement statement = c.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        return statement;
     }
 
-    public static class Builder<M extends EventMessage<?>> {
+    @Override
+    public PreparedStatement maxIndexStatement(Connection connection, String sequenceId) throws SQLException {
+        String sql = "SELECT MAX(" + schema.sequenceIndexColumn() + ") "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.processingGroupColumn() + "=? "
+                + "AND " + schema.sequenceIdentifierColumn() + "=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        statement.setString(2, sequenceId);
+        return statement;
+    }
+
+    protected static class Builder<M extends EventMessage<?>> {
 
         private String processingGroup;
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
@@ -399,8 +365,8 @@ public class SimpleJdbcDeadLetterConverter<M extends EventMessage<?>> implements
          *
          * @return A {@link JdbcSequencedDeadLetterQueue} as specified through this Builder.
          */
-        public SimpleJdbcDeadLetterConverter<M> build() {
-            return new SimpleJdbcDeadLetterConverter<>(this);
+        public SimpleDeadLetterStatementFactory<M> build() {
+            return new SimpleDeadLetterStatementFactory<>(this);
         }
 
         /**

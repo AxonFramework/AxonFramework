@@ -17,24 +17,20 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.deadletter.DeadLetter;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.annotation.Nonnull;
 
 /**
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public interface JdbcDeadLetterConverter<M extends EventMessage<?>> {
-
-    PreparedStatement enqueueStatement(@Nonnull String sequenceIdentifier,
-                                       @Nonnull DeadLetter<? extends M> letter,
-                                       long sequenceIndex,
-                                       @Nonnull Connection connection) throws SQLException;
+public interface DeadLetterResultSetConverter<M extends EventMessage<?>> {
 
     DeadLetter<? extends M> convertToLetter(ResultSet resultSet) throws SQLException;
+
+    long convertToLong(ResultSet resultSet) throws SQLException;
 }
