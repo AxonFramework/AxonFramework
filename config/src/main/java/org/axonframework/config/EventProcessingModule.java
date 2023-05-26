@@ -132,7 +132,7 @@ public class EventProcessingModule
 
     protected Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
 
-    private Configuration configuration;
+    protected Configuration configuration;
 
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
