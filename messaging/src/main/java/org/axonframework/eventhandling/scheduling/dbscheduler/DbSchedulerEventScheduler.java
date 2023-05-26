@@ -60,12 +60,15 @@ import static org.axonframework.eventhandling.scheduling.dbscheduler.DbScheduler
 public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
 
     private static final AtomicReference<DbSchedulerEventScheduler> eventSchedulerReference = new AtomicReference<>();
-    private static final TaskWithDataDescriptor<DbSchedulerEventData> taskDescriptor =
-            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerEventData.class);
+    private static final TaskWithDataDescriptor<DbSchedulerHumanReadableEventData> humanReadableTaskDescriptor =
+            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerHumanReadableEventData.class);
+    private static final TaskWithDataDescriptor<DbSchedulerBinaryEventData> binaryTaskDescriptor =
+            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerBinaryEventData.class);
     private final Scheduler scheduler;
     private final Serializer serializer;
     private final TransactionManager transactionManager;
     private final EventBus eventBus;
+    private final boolean useBinaryPojo;
 
     /**
      * Instantiate a {@link DbSchedulerEventScheduler} based on the fields contained in the
@@ -82,13 +85,15 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         serializer = builder.serializer;
         transactionManager = builder.transactionManager;
         eventBus = builder.eventBus;
+        useBinaryPojo = builder.useBinaryPojo;
         eventSchedulerReference.set(this);
     }
 
     /**
      * Instantiate a Builder to be able to create a {@link DbSchedulerEventScheduler}.
      * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}. The {@code useBinaryPojo} is
+     * defaulted to {@code true}.
      * <p>
      * The {@link Scheduler}, {@link Serializer} and {@link EventBus} are <b>hard requirements</b> and as such should be
      * provided.
@@ -103,13 +108,12 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         DbSchedulerScheduleToken taskInstanceId = new DbSchedulerScheduleToken(UUID.randomUUID().toString());
         try {
-            DbSchedulerEventData data;
-            if (event instanceof EventMessage) {
-                data = detailsFromEvent((EventMessage<?>) event);
+            TaskInstance<?> taskInstance;
+            if (useBinaryPojo) {
+                taskInstance = getBinaryTask(taskInstanceId, event);
             } else {
-                data = detailsFromObject(event);
+                taskInstance = getHumanReadableTask(taskInstanceId, event);
             }
-            TaskInstance<?> taskInstance = taskDescriptor.instance(taskInstanceId.getId(), data);
             scheduler.schedule(taskInstance, triggerDateTime);
         } catch (Exception e) {
             throw new SchedulingException("An error occurred while scheduling an event.", e);
@@ -117,9 +121,14 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         return taskInstanceId;
     }
 
-    @SuppressWarnings("raw")
-    public static Task<DbSchedulerEventData> task() {
-        return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerEventData.class)
+    /**
+     * Gives the {@link Task} using {@link DbSchedulerBinaryEventData} to publish an event via a {@link Scheduler}. To
+     * be able to execute the task, this should be added to the task list, used to create the scheduler.
+     *
+     * @return a {@link Task} to publish an event
+     */
+    public static Task<DbSchedulerHumanReadableEventData> humanReadableTask() {
+        return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerHumanReadableEventData.class)
                 .execute((ti, context) -> {
                     DbSchedulerEventScheduler eventScheduler = eventSchedulerReference.get();
                     if (isNull(eventScheduler)) {
@@ -130,24 +139,95 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
                 });
     }
 
-    private DbSchedulerEventData detailsFromObject(Object event) {
+    /**
+     * Gives the {@link Task} using {@link DbSchedulerHumanReadableEventData} to publish an event via a
+     * {@link Scheduler}. To be able to execute the task, this should be added to the task list, used to create the
+     * scheduler.
+     *
+     * @return a {@link Task} to publish an event
+     */
+    public static Task<DbSchedulerBinaryEventData> binaryTask() {
+        return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerBinaryEventData.class)
+                .execute((ti, context) -> {
+                    DbSchedulerEventScheduler eventScheduler = eventSchedulerReference.get();
+                    if (isNull(eventScheduler)) {
+                        throw new EventSchedulerNotSetException();
+                    }
+                    EventMessage<?> eventMessage = eventScheduler.fromDbSchedulerEventData(ti.getData());
+                    eventScheduler.publishEventMessage(eventMessage);
+                });
+    }
+
+    private TaskInstance<?> getBinaryTask(DbSchedulerScheduleToken taskInstanceId, Object event) {
+        DbSchedulerBinaryEventData data;
+        if (event instanceof EventMessage) {
+            data = binaryDataFromEvent((EventMessage<?>) event);
+        } else {
+            data = binaryDataFromObject(event);
+        }
+        return binaryTaskDescriptor.instance(taskInstanceId.getId(), data);
+    }
+
+    private DbSchedulerBinaryEventData binaryDataFromObject(Object event) {
+        SerializedObject<byte[]> serialized = serializer.serialize(event, byte[].class);
+        byte[] serializedPayload = serialized.getData();
+        String payloadClass = serialized.getType().getName();
+        String revision = serialized.getType().getRevision();
+        return new DbSchedulerBinaryEventData(serializedPayload, payloadClass, revision, null);
+    }
+
+    private DbSchedulerBinaryEventData binaryDataFromEvent(EventMessage<?> eventMessage) {
+        SerializedObject<byte[]> serialized = serializer.serialize(eventMessage.getPayload(), byte[].class);
+        byte[] serializedPayload = serialized.getData();
+        String payloadClass = serialized.getType().getName();
+        String revision = serialized.getType().getRevision();
+        byte[] serializedMetadata = serializer.serialize(eventMessage.getMetaData(), byte[].class).getData();
+        return new DbSchedulerBinaryEventData(serializedPayload, payloadClass, revision, serializedMetadata);
+    }
+
+    private TaskInstance<?> getHumanReadableTask(DbSchedulerScheduleToken taskInstanceId, Object event) {
+        DbSchedulerHumanReadableEventData data;
+        if (event instanceof EventMessage) {
+            data = humanReadableDataFromEvent((EventMessage<?>) event);
+        } else {
+            data = humanReadableDataFromObject(event);
+        }
+        return humanReadableTaskDescriptor.instance(taskInstanceId.getId(), data);
+    }
+
+    private DbSchedulerHumanReadableEventData humanReadableDataFromObject(Object event) {
         SerializedObject<String> serialized = serializer.serialize(event, String.class);
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
-        return new DbSchedulerEventData(serializedPayload, payloadClass, revision, null);
+        return new DbSchedulerHumanReadableEventData(serializedPayload, payloadClass, revision, null);
     }
 
-    private DbSchedulerEventData detailsFromEvent(EventMessage<?> eventMessage) {
+    private DbSchedulerHumanReadableEventData humanReadableDataFromEvent(EventMessage<?> eventMessage) {
         SerializedObject<String> serialized = serializer.serialize(eventMessage.getPayload(), String.class);
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
         String serializedMetadata = serializer.serialize(eventMessage.getMetaData(), String.class).getData();
-        return new DbSchedulerEventData(serializedPayload, payloadClass, revision, serializedMetadata);
+        return new DbSchedulerHumanReadableEventData(serializedPayload, payloadClass, revision, serializedMetadata);
     }
 
-    private EventMessage<?> fromDbSchedulerEventData(DbSchedulerEventData data) {
+    private EventMessage<?> fromDbSchedulerEventData(DbSchedulerBinaryEventData data) {
+        SimpleSerializedObject<byte[]> serializedObject = new SimpleSerializedObject<>(
+                data.getP(), byte[].class, data.getC(), data.getR()
+        );
+        Object deserializedPayload = serializer.deserialize(serializedObject);
+        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(deserializedPayload);
+        if (!isNull(data.getM())) {
+            SimpleSerializedObject<byte[]> serializedMetaData = new SimpleSerializedObject<>(
+                    data.getM(), byte[].class, MetaData.class.getName(), null
+            );
+            eventMessage = eventMessage.andMetaData(serializer.deserialize(serializedMetaData));
+        }
+        return eventMessage;
+    }
+
+    private EventMessage<?> fromDbSchedulerEventData(DbSchedulerHumanReadableEventData data) {
         SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
                 data.getSerializedPayload(), String.class, data.getPayloadClass(), data.getRevision()
         );
@@ -197,7 +277,8 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
     /**
      * Builder class to instantiate a {@link DbSchedulerEventScheduler}.
      * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}. The {@code useBinaryPojo} is
+     * defaulted to {@code true}.
      * <p>
      * The {@link Scheduler}, {@link Serializer} and {@link EventBus} are <b>hard requirements</b> and as such should be
      * provided.
@@ -208,10 +289,11 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         private Serializer serializer;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private EventBus eventBus;
+        private boolean useBinaryPojo = true;
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the events. It should have this
-         * components {@link #task()} as one of its tasks to work.
+         * components {@link #humanReadableTask()} as one of its tasks to work.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the events
          * @return the current Builder instance, for fluent interfacing
@@ -257,6 +339,18 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         public Builder eventBus(EventBus eventBus) {
             assertNonNull(eventBus, "EventBus may not be null");
             this.eventBus = eventBus;
+            return this;
+        }
+
+        /**
+         * Sets whether to use a pojo optimized for size, {@link DbSchedulerBinaryEventData}, compared to a pojo
+         * optimized for readability, {@link DbSchedulerEventScheduler}.
+         *
+         * @param useBinaryPojo a {@code boolean} to determine whether to use a binary format.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder useBinaryPojo(boolean useBinaryPojo) {
+            this.useBinaryPojo = useBinaryPojo;
             return this;
         }
 

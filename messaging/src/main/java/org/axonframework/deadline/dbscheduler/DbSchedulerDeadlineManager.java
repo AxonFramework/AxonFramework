@@ -31,6 +31,8 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.jobrunr.DeadlineDetails;
+import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryEventData;
+import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.InterceptorChain;
@@ -49,6 +51,7 @@ import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -74,14 +77,17 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = getLogger(DbSchedulerDeadlineManager.class);
     private static final AtomicReference<DbSchedulerDeadlineManager> deadlineManagerReference = new AtomicReference<>();
-    private static final TaskWithDataDescriptor<DbSchedulerDeadlineDetails> taskDescriptor =
-            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerDeadlineDetails.class);
+    private static final TaskWithDataDescriptor<DbSchedulerBinaryDeadlineDetails> binaryTaskDescriptor =
+            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerBinaryDeadlineDetails.class);
+    private static final TaskWithDataDescriptor<DbSchedulerHumanReadableDeadlineDetails> humanReadableTaskDescriptor =
+            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerHumanReadableDeadlineDetails.class);
 
     private final ScopeAwareProvider scopeAwareProvider;
     private final Scheduler scheduler;
     private final Serializer serializer;
     private final TransactionManager transactionManager;
     private final SpanFactory spanFactory;
+    private final boolean useBinaryPojo;
 
     /**
      * Instantiate a Builder to be able to create a {@link DbSchedulerDeadlineManager}.
@@ -89,6 +95,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
      * <p>
      * The {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}.
+     * <p>
+     * The {code useBinaryPojo} is defaulted to {@code true}.
      * <p>
      * The {@link Scheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as such
      * should be provided.
@@ -116,6 +124,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         this.serializer = builder.serializer;
         this.transactionManager = builder.transactionManager;
         this.spanFactory = builder.spanFactory;
+        this.useBinaryPojo = builder.useBinaryPojo;
         deadlineManagerReference.set(this);
     }
 
@@ -128,27 +137,80 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         Span span = spanFactory.createDispatchSpan(() -> "DbSchedulerDeadlineManager.schedule(" + deadlineName + ")",
                                                    deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
-            DeadlineMessage<Object> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
-            DbSchedulerDeadlineDetails details = DbSchedulerDeadlineDetails.serialized(
-                    deadlineName,
-                    deadlineScope,
-                    interceptedDeadlineMessage,
-                    serializer);
-            TaskInstance<?> taskInstance = taskDescriptor.instance(taskInstanceId.getId(), details);
+            DeadlineMessage<Object> message = processDispatchInterceptors(deadlineMessage);
+            TaskInstance<?> taskInstance;
+            if (useBinaryPojo) {
+                taskInstance = binaryTask(deadlineName, deadlineScope, message, taskInstanceId);
+            } else {
+                taskInstance = humanReadableTask(deadlineName, deadlineScope, message, taskInstanceId);
+            }
             scheduler.schedule(taskInstance, triggerDateTime);
             logger.debug("Task with id: [{}] was successfully created.", taskInstanceId.getId());
         }));
         return taskInstanceId.getId();
     }
 
-    public static Task<DbSchedulerDeadlineDetails> task() {
-        return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerDeadlineDetails.class)
-                .execute((ti, context) -> {
+    private TaskInstance<?> binaryTask(
+            String deadlineName,
+            ScopeDescriptor deadlineScope,
+            DeadlineMessage<Object> interceptedDeadlineMessage,
+            DbSchedulerDeadlineToken taskInstanceId
+    ) {
+        DbSchedulerBinaryDeadlineDetails details = DbSchedulerBinaryDeadlineDetails.serialized(
+                deadlineName,
+                deadlineScope,
+                interceptedDeadlineMessage,
+                serializer);
+        return binaryTaskDescriptor.instance(taskInstanceId.getId(), details);
+    }
+
+    private TaskInstance<?> humanReadableTask(
+            String deadlineName,
+            ScopeDescriptor deadlineScope,
+            DeadlineMessage<Object> interceptedDeadlineMessage,
+            DbSchedulerDeadlineToken taskInstanceId
+    ) {
+        DbSchedulerHumanReadableDeadlineDetails details = DbSchedulerHumanReadableDeadlineDetails.serialized(
+                deadlineName,
+                deadlineScope,
+                interceptedDeadlineMessage,
+                serializer);
+        return humanReadableTaskDescriptor.instance(taskInstanceId.getId(), details);
+    }
+
+    /**
+     * Gives the {@link Task} using {@link DbSchedulerBinaryDeadlineDetails} to execute a deadline via a
+     * {@link Scheduler}. To be able to execute the task, this should be added to the task list, used to create the
+     * scheduler.
+     *
+     * @return a {@link Task} to execute a deadline
+     */
+    public static Task<DbSchedulerBinaryDeadlineDetails> binaryTask() {
+        return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerBinaryDeadlineDetails.class)
+                .execute((taskInstance, context) -> {
                     DbSchedulerDeadlineManager deadlineManager = deadlineManagerReference.get();
                     if (isNull(deadlineManager)) {
                         throw new DeadlineManagerNotSetException();
                     }
-                    deadlineManager.execute(ti.getData());
+                    deadlineManager.execute(taskInstance.getData());
+                });
+    }
+
+    /**
+     * Gives the {@link Task} using {@link DbSchedulerHumanReadableDeadlineDetails} to execute a deadline via a
+     * {@link Scheduler}. To be able to execute the task, this should be added to the task list, used to create the
+     * scheduler.
+     *
+     * @return a {@link Task} to execute a deadline
+     */
+    public static Task<DbSchedulerHumanReadableDeadlineDetails> humanReadableTask() {
+        return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerHumanReadableDeadlineDetails.class)
+                .execute((taskInstance, context) -> {
+                    DbSchedulerDeadlineManager deadlineManager = deadlineManagerReference.get();
+                    if (isNull(deadlineManager)) {
+                        throw new DeadlineManagerNotSetException();
+                    }
+                    deadlineManager.execute(taskInstance.getData());
                 });
     }
 
@@ -164,15 +226,34 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
         Span span = spanFactory.createInternalSpan(() -> "DbSchedulerDeadlineManager.cancelAll(" + deadlineName + ")");
-        runOnPrepareCommitOrNow(span.wrapRunnable(
-                () -> scheduler.fetchScheduledExecutionsForTask(
-                        TASK_NAME,
-                        DbSchedulerDeadlineDetails.class,
-                        cancelIfDeadlineMatches(deadlineName)
-                )));
+        if (useBinaryPojo) {
+            runOnPrepareCommitOrNow(span.wrapRunnable(
+                    () -> scheduler.fetchScheduledExecutionsForTask(
+                            TASK_NAME,
+                            DbSchedulerBinaryDeadlineDetails.class,
+                            cancelIfBinaryDeadlineMatches(deadlineName)
+                    )));
+        } else {
+            runOnPrepareCommitOrNow(span.wrapRunnable(
+                    () -> scheduler.fetchScheduledExecutionsForTask(
+                            TASK_NAME,
+                            DbSchedulerHumanReadableDeadlineDetails.class,
+                            cancelIfHumanReadableDeadlineMatches(deadlineName)
+                    )));
+        }
     }
 
-    private Consumer<ScheduledExecution<DbSchedulerDeadlineDetails>> cancelIfDeadlineMatches(
+    private Consumer<ScheduledExecution<DbSchedulerBinaryDeadlineDetails>> cancelIfBinaryDeadlineMatches(
+            @Nonnull String deadlineName
+    ) {
+        return scheduledExecution -> {
+            if (deadlineName.equals(scheduledExecution.getData().getD())) {
+                scheduler.cancel(scheduledExecution.getTaskInstance());
+            }
+        };
+    }
+
+    private Consumer<ScheduledExecution<DbSchedulerHumanReadableDeadlineDetails>> cancelIfHumanReadableDeadlineMatches(
             @Nonnull String deadlineName
     ) {
         return scheduledExecution -> {
@@ -187,38 +268,79 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         Span span = spanFactory.createInternalSpan(
                 () -> "DbSchedulerDeadlineManager.cancelAllWithinScope(" + deadlineName + ")"
         );
-        runOnPrepareCommitOrNow(span.wrapRunnable(
-                () -> {
-                    SerializedObject<String> serializedDescriptor = serializer.serialize(scope, String.class);
-                    scheduler.fetchScheduledExecutionsForTask(
-                            TASK_NAME,
-                            DbSchedulerDeadlineDetails.class,
-                            cancelIfDeadlineAndScopeMatches(deadlineName, serializedDescriptor.getData()));
-                }));
+        if (useBinaryPojo) {
+            runOnPrepareCommitOrNow(span.wrapRunnable(
+                    () -> {
+                        SerializedObject<byte[]> serializedDescriptor = serializer.serialize(scope, byte[].class);
+                        scheduler.fetchScheduledExecutionsForTask(
+                                TASK_NAME,
+                                DbSchedulerBinaryDeadlineDetails.class,
+                                cancelIfDeadlineAndScopeMatches(deadlineName, serializedDescriptor.getData()));
+                    }));
+        } else {
+            runOnPrepareCommitOrNow(span.wrapRunnable(
+                    () -> {
+                        SerializedObject<String> serializedDescriptor = serializer.serialize(scope, String.class);
+                        scheduler.fetchScheduledExecutionsForTask(
+                                TASK_NAME,
+                                DbSchedulerHumanReadableDeadlineDetails.class,
+                                cancelIfDeadlineAndScopeMatches(deadlineName, serializedDescriptor.getData()));
+                    }));
+        }
     }
 
-    private Consumer<ScheduledExecution<DbSchedulerDeadlineDetails>> cancelIfDeadlineAndScopeMatches(
+    private Consumer<ScheduledExecution<DbSchedulerHumanReadableDeadlineDetails>> cancelIfDeadlineAndScopeMatches(
             @Nonnull String deadlineName,
             @Nonnull String scopeDescriptor
     ) {
         return scheduledExecution -> {
-            DbSchedulerDeadlineDetails data = scheduledExecution.getData();
+            DbSchedulerHumanReadableDeadlineDetails data = scheduledExecution.getData();
             if (deadlineName.equals(data.getDeadlineName()) && scopeDescriptor.equals(data.getScopeDescriptor())) {
                 scheduler.cancel(scheduledExecution.getTaskInstance());
             }
         };
     }
 
+    private Consumer<ScheduledExecution<DbSchedulerBinaryDeadlineDetails>> cancelIfDeadlineAndScopeMatches(
+            @Nonnull String deadlineName,
+            @Nonnull byte[] scopeDescriptor
+    ) {
+        return scheduledExecution -> {
+            DbSchedulerBinaryDeadlineDetails data = scheduledExecution.getData();
+            if (deadlineName.equals(data.getD()) && Arrays.equals(scopeDescriptor, data.getS())) {
+                scheduler.cancel(scheduledExecution.getTaskInstance());
+            }
+        };
+    }
+
     /**
-     * This function is used by the {@link #task()} to execute the deadline.
+     * This function is used by the {@link #binaryTask()} to execute the deadline.
      *
-     * @param deadlineDetails {@link DbSchedulerDeadlineDetails} containing the needed details to execute.
+     * @param deadlineDetails {@link DbSchedulerBinaryDeadlineDetails} containing the needed details to execute.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private void execute(DbSchedulerDeadlineDetails deadlineDetails) {
+    @SuppressWarnings("rawtypes")
+    private void execute(DbSchedulerBinaryDeadlineDetails deadlineDetails) {
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
+        ScopeDescriptor scopeDescriptor = deadlineDetails.getDeserializedScopeDescriptor(serializer);
+        execute(deadlineDetails.getD(), deadlineMessage, scopeDescriptor);
+    }
+
+    /**
+     * This function is used by the {@link #binaryTask()} to execute the deadline.
+     *
+     * @param deadlineDetails {@link DbSchedulerHumanReadableDeadlineDetails} containing the needed details to execute.
+     */
+    @SuppressWarnings("rawtypes")
+    private void execute(DbSchedulerHumanReadableDeadlineDetails deadlineDetails) {
+        GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
+        ScopeDescriptor scopeDescriptor = deadlineDetails.getDeserializedScopeDescriptor(serializer);
+        execute(deadlineDetails.getDeadlineName(), deadlineMessage, scopeDescriptor);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void execute(String deadlineName, GenericDeadlineMessage deadlineMessage, ScopeDescriptor scopeDescriptor) {
         Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
-        try (SpanScope unused = span.makeCurrent()) {
+        try (SpanScope ignored = span.makeCurrent()) {
             UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
@@ -227,16 +349,14 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
                     unitOfWork,
                     handlerInterceptors(),
                     interceptedDeadlineMessage -> {
-                        executeScheduledDeadline(interceptedDeadlineMessage,
-                                                 deadlineDetails.getDeserializedScopeDescriptor(serializer));
+                        executeScheduledDeadline(interceptedDeadlineMessage, scopeDescriptor);
                         return null;
                     });
             ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
             if (resultMessage.isExceptional()) {
                 Throwable e = resultMessage.exceptionResult();
                 span.recordException(e);
-                logger.warn("An error occurred while triggering deadline with name [{}].",
-                            deadlineDetails.getDeadlineName());
+                logger.warn("An error occurred while triggering deadline with name [{}].", deadlineName);
                 throw new DeadlineException("Failed to process", e);
             }
         }
@@ -267,8 +387,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     /**
      * Builder class to instantiate a {@link DbSchedulerDeadlineManager}.
      * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager} and the {@link SpanFactory}
-     * defaults to a {@link NoOpSpanFactory}.
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link SpanFactory} defaults
+     * to a {@link NoOpSpanFactory} and the {code useBinaryPojo} is defaulted to {@code true}.
      * <p>
      * The {@link JobScheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as
      * such should be provided.
@@ -280,10 +400,11 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         private Serializer serializer;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private boolean useBinaryPojo = true;
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines. It should have this
-         * components {@link #task()} as one of its tasks to work.
+         * components {@link #binaryTask()} as one of its tasks to work.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
          * @return the current Builder instance, for fluent interfacing
@@ -348,6 +469,18 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
+            return this;
+        }
+
+        /**
+         * Sets whether to use a pojo optimized for size, {@link DbSchedulerBinaryEventData}, compared to a pojo
+         * optimized for readability, {@link DbSchedulerEventScheduler}.
+         *
+         * @param useBinaryPojo a {@code boolean} to determine whether to use a binary format.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder useBinaryPojo(boolean useBinaryPojo) {
+            this.useBinaryPojo = useBinaryPojo;
             return this;
         }
 

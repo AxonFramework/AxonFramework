@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.scheduling.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
-import com.github.kagkarlsson.scheduler.SchedulerBuilder;
 import com.github.kagkarlsson.scheduler.task.Task;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
@@ -29,7 +28,6 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.TestSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.jobrunr.server.BackgroundJobServer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,13 +36,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,82 +48,46 @@ import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.utils.DbSchedulerTestUtil.getAndStartScheduler;
+import static org.axonframework.utils.DbSchedulerTestUtil.reCreateTable;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ContextConfiguration
 @ExtendWith(SpringExtension.class)
-class DbSchedulerEventSchedulerTest {
+abstract class AbstractDbSchedulerEventSchedulerTest {
 
     @Autowired
-    private DataSource dataSource;
+    protected DataSource dataSource;
 
     private List<EventMessage<?>> publishedMessages;
-    private DbSchedulerEventScheduler eventScheduler;
-    private BackgroundJobServer backgroundJobServer;
-    private Scheduler scheduler;
+    protected DbSchedulerEventScheduler eventScheduler;
+    protected Scheduler scheduler;
+
+    abstract Task<?> getTask();
+
+    abstract boolean useBinaryPojo();
 
     @AfterEach
     void cleanUp() {
-        if (eventScheduler != null) {
+        if (!Objects.isNull(eventScheduler)) {
             eventScheduler.shutdown();
-        }
-        if (!Objects.isNull(backgroundJobServer)) {
-            backgroundJobServer.stop();
-            backgroundJobServer = null;
+            eventScheduler = null;
         }
     }
-
-    private void reCreateTable() {
-        Connection connection;
-        try {
-            connection = dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        try (PreparedStatement statement = connection.prepareStatement("drop table if exists scheduled_tasks;")) {
-            statement.execute();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        try (PreparedStatement statement =
-                     connection.prepareStatement(
-                             "create table scheduled_tasks (\n"
-                                     + "  task_name varchar(40) not null,\n"
-                                     + "  task_instance varchar(40) not null,\n"
-                                     + "  task_data blob,\n"
-                                     + "  execution_time timestamp(6) not null,\n"
-                                     + "  picked BOOLEAN not null,\n"
-                                     + "  picked_by varchar(50),\n"
-                                     + "  last_success timestamp(6) null,\n"
-                                     + "  last_failure timestamp(6) null,\n"
-                                     + "  consecutive_failures INT,\n"
-                                     + "  last_heartbeat timestamp(6) null,\n"
-                                     + "  version BIGINT not null,\n"
-                                     + "  PRIMARY KEY (task_name, task_instance),\n"
-                                     + ")")) {
-            statement.execute();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 
     @BeforeEach
     void prepare() {
-        reCreateTable();
+        reCreateTable(dataSource);
         publishedMessages = new ArrayList<>();
         EventBus eventBus = new InMemoryEventBus(publishedMessages);
-        List<Task<?>> taskList = Collections.singletonList(DbSchedulerEventScheduler.task());
-        scheduler = spy(new SchedulerBuilder(dataSource, taskList)
-                                .threads(2)
-                                .pollingInterval(Duration.ofMillis(50L))
-                                .build());
+        scheduler = spy(getAndStartScheduler(dataSource, getTask()));
         eventScheduler = DbSchedulerEventScheduler
                 .builder()
                 .scheduler(scheduler)
                 .serializer(TestSerializer.JACKSON.getSerializer())
                 .eventBus(eventBus)
+                .useBinaryPojo(useBinaryPojo())
                 .build();
         scheduler.start();
     }

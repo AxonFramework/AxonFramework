@@ -1053,7 +1053,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
             this.correlationData = correlationData;
         }
 
-        @NotNull
+
         @Override
         public BiFunction<Integer, Message<?>, Message<?>> handle(@NotNull List<? extends Message<?>> messages) {
             return (i, m) -> m.andMetaData(MetaData.with(CUSTOM_CORRELATION_DATA_KEY, correlationData));

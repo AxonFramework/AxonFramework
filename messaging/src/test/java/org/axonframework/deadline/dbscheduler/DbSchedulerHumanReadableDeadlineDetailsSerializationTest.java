@@ -31,7 +31,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DbSchedulerDeadlineDetailsSerializationTest {
+class DbSchedulerHumanReadableDeadlineDetailsSerializationTest {
 
     private static final String TEST_DEADLINE_NAME = "deadline-name";
     private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
@@ -66,7 +66,7 @@ class DbSchedulerDeadlineDetailsSerializationTest {
         String expectedType = "aggregateType";
         String expectedIdentifier = "identifier";
         ScopeDescriptor descriptor = new TestScopeDescriptor(expectedType, expectedIdentifier);
-        DbSchedulerDeadlineDetails result = DbSchedulerDeadlineDetails.serialized(
+        DbSchedulerHumanReadableDeadlineDetails result = DbSchedulerHumanReadableDeadlineDetails.serialized(
                 TEST_DEADLINE_NAME, descriptor, message, serializer);
 
         assertEquals(TEST_DEADLINE_NAME, result.getDeadlineName());

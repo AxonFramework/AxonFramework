@@ -17,8 +17,6 @@
 package org.axonframework.integrationtests.deadline.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
-import com.github.kagkarlsson.scheduler.SchedulerBuilder;
-import com.github.kagkarlsson.scheduler.task.Task;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
@@ -35,19 +33,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import javax.sql.DataSource;
+
+import static org.axonframework.utils.DbSchedulerTestUtil.getAndStartScheduler;
+import static org.axonframework.utils.DbSchedulerTestUtil.reCreateTable;
 
 @ContextConfiguration
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(SpringExtension.class)
-class DbSchedulerDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
+class HumanReadableDbSchedulerDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
     @Autowired
     private DataSource dataSource;
@@ -63,13 +58,8 @@ class DbSchedulerDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
     @Override
     public DeadlineManager buildDeadlineManager(Configuration configuration) {
-        reCreateTable();
-        List<Task<?>> taskList = Collections.singletonList(DbSchedulerDeadlineManager.task());
-        scheduler = new SchedulerBuilder(dataSource, taskList)
-                .threads(2)
-                .pollingInterval(Duration.ofMillis(50L))
-                .build();
-        scheduler.start();
+        reCreateTable(dataSource);
+        scheduler = getAndStartScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask());
         return DbSchedulerDeadlineManager
                 .builder()
                 .scheduler(scheduler)
@@ -77,42 +67,8 @@ class DbSchedulerDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                 .serializer(TestSerializer.JACKSON.getSerializer())
                 .transactionManager(NoTransactionManager.INSTANCE)
                 .spanFactory(configuration.spanFactory())
+                .useBinaryPojo(false)
                 .build();
-    }
-
-    @SuppressWarnings("Duplicates")
-    private void reCreateTable() {
-        Connection connection;
-        try {
-            connection = dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        try (PreparedStatement statement = connection.prepareStatement("drop table if exists scheduled_tasks;")) {
-            statement.execute();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        try (PreparedStatement statement =
-                     connection.prepareStatement(
-                             "create table scheduled_tasks (\n"
-                                     + "  task_name varchar(40) not null,\n"
-                                     + "  task_instance varchar(40) not null,\n"
-                                     + "  task_data blob,\n"
-                                     + "  execution_time timestamp(6) not null,\n"
-                                     + "  picked BOOLEAN not null,\n"
-                                     + "  picked_by varchar(50),\n"
-                                     + "  last_success timestamp(6) null,\n"
-                                     + "  last_failure timestamp(6) null,\n"
-                                     + "  consecutive_failures INT,\n"
-                                     + "  last_heartbeat timestamp(6) null,\n"
-                                     + "  version BIGINT not null,\n"
-                                     + "  PRIMARY KEY (task_name, task_instance),\n"
-                                     + ")")) {
-            statement.execute();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @org.springframework.context.annotation.Configuration

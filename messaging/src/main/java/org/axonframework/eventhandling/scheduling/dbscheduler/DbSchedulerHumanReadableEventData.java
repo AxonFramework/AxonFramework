@@ -8,19 +8,20 @@ import static java.lang.String.format;
 /**
  * Pojo for the data needed by the db-scheduler Scheduler. This will need to be serializable by the
  * {@link com.github.kagkarlsson.scheduler.serializer.Serializer} configured on the
- * {@link com.github.kagkarlsson.scheduler.Scheduler}.
+ * {@link com.github.kagkarlsson.scheduler.Scheduler}. This one is used with the
+ * {@link DbSchedulerEventScheduler#humanReadableTask()}
  *
  * @author Gerard Klijs
  * @since 4.8.0
  */
-public class DbSchedulerEventData implements Serializable {
+public class DbSchedulerHumanReadableEventData implements Serializable {
 
     private String serializedPayload;
     private String payloadClass;
     private String revision;
     private String serializedMetadata;
 
-    DbSchedulerEventData(
+    DbSchedulerHumanReadableEventData(
             String serializedPayload,
             String payloadClass,
             String revision,
@@ -33,7 +34,7 @@ public class DbSchedulerEventData implements Serializable {
     }
 
     @SuppressWarnings("unused")
-    DbSchedulerEventData() {
+    DbSchedulerHumanReadableEventData() {
 
     }
 
@@ -136,7 +137,7 @@ public class DbSchedulerEventData implements Serializable {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        final DbSchedulerEventData other = (DbSchedulerEventData) obj;
+        final DbSchedulerHumanReadableEventData other = (DbSchedulerHumanReadableEventData) obj;
         return Objects.equals(this.serializedPayload, other.serializedPayload) &&
                 Objects.equals(this.payloadClass, other.payloadClass) &&
                 Objects.equals(this.revision, other.revision) &&

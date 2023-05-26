@@ -1,4 +1,4 @@
-package org.axonframework.deadline.dbscheduler;
+package org.axonframework.eventhandling.scheduling.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.serializer.GsonSerializer;
 import com.github.kagkarlsson.scheduler.serializer.JacksonSerializer;
@@ -13,22 +13,19 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DbSchedulerDeadlineDetailsTest {
+class BinaryEventDataTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
     void shouldBeSerializable(Serializer serializer) {
-        DbSchedulerDeadlineDetails expected = new DbSchedulerDeadlineDetails(
-                "deadlinename",
-                "someScope",
-                "org.axonframework.modelling.command.AggregateScopeDescriptor",
-                "{\"foo\":\"bar\"}",
-                "com.someCompany.api.ImportantEvent",
-                "1",
-                "{\"traceId\":\"1acc25e2-58a1-4dec-8b43-55388188500a\"}"
+        DbSchedulerBinaryEventData expected = new DbSchedulerBinaryEventData(
+                "payload".getBytes(),
+                "class",
+                "0",
+                "{\"foo\":\"bar\"}".getBytes()
         );
         byte[] serialized = serializer.serialize(expected);
-        DbSchedulerDeadlineDetails result = serializer.deserialize(DbSchedulerDeadlineDetails.class, serialized);
+        DbSchedulerBinaryEventData result = serializer.deserialize(DbSchedulerBinaryEventData.class, serialized);
         assertEquals(expected, result);
     }
 

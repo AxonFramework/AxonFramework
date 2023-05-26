@@ -22,11 +22,11 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineDetails;
+import org.axonframework.deadline.dbscheduler.DbSchedulerBinaryDeadlineDetails;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
-import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventData;
+import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryEventData;
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.serialization.Serializer;
@@ -51,13 +51,13 @@ import org.springframework.context.annotation.Bean;
 public class AxonDbSchedulerAutoConfiguration {
 
     @Bean
-    Task<DbSchedulerEventData> dbSchedulerEventDataTask() {
-        return DbSchedulerEventScheduler.task();
+    Task<DbSchedulerBinaryEventData> dbSchedulerBinaryEventDataTask() {
+        return DbSchedulerEventScheduler.binaryTask();
     }
 
     @Bean
-    Task<DbSchedulerDeadlineDetails> dbSchedulerDeadlineDetailsTask() {
-        return DbSchedulerDeadlineManager.task();
+    Task<DbSchedulerBinaryDeadlineDetails> dbSchedulerBinaryDeadlineDetailsTask() {
+        return DbSchedulerDeadlineManager.binaryTask();
     }
 
     @Bean
