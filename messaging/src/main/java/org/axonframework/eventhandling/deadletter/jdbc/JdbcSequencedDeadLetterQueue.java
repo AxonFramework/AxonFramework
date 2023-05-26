@@ -324,7 +324,12 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
     @Override
     public void clear() {
-
+        Connection connection = getConnection();
+        try {
+            executeUpdate(connection, statementFactory::clearStatement, handleException());
+        } finally {
+            closeQuietly(connection);
+        }
     }
 
     /**
