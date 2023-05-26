@@ -823,4 +823,21 @@ public interface EventProcessingConfigurer {
             return (config, builder) -> builder;
         }
     }
+
+    /**
+     * Register the given {@code deadLetterProvider} as a default to build a {@link SequencedDeadLetterQueue} for
+     * {@link EventProcessor}s created in this configuration.
+     * <p>
+     * The {@code deadLetterProvider} might return null if the given processing group name should not have a sequenced
+     * dead letter queue. An explicitly sequenced dead letter queue set using
+     * {@link #registerDeadLetterQueue(String, Function)} will always have precedence over the one provided by this method.
+     *
+     * @param deadLetterQueueProvider a builder {@link Function} that provides a {@link SequencedDeadLetterQueue} for a
+     *                                processing group. It's possible to return null depending on the processing group.
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    default EventProcessingConfigurer registerDeadLetterQueueProvider(
+            Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider) {
+        return this;
+    }
 }

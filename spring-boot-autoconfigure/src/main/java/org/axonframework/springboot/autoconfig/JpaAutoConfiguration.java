@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,13 @@ import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.springboot.TokenStoreProperties;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 
@@ -44,12 +46,19 @@ import javax.sql.DataSource;
  */
 @AutoConfiguration
 @ConditionalOnBean(EntityManagerFactory.class)
+@EnableConfigurationProperties(TokenStoreProperties.class)
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventhandling.tokenstore",
         "org.axonframework.eventhandling.deadletter.jpa",
         "org.axonframework.modelling.saga.repository.jpa",
 })
 public class JpaAutoConfiguration {
+
+    private final TokenStoreProperties tokenStoreProperties;
+
+    public JpaAutoConfiguration(TokenStoreProperties tokenStoreProperties) {
+        this.tokenStoreProperties = tokenStoreProperties;
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -63,6 +72,7 @@ public class JpaAutoConfiguration {
         return JpaTokenStore.builder()
                             .entityManagerProvider(entityManagerProvider)
                             .serializer(serializer)
+                            .claimTimeout(tokenStoreProperties.getClaimTimeout())
                             .build();
     }
 

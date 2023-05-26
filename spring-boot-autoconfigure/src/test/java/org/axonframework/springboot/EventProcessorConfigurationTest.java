@@ -161,6 +161,23 @@ class EventProcessorConfigurationTest {
                 });
     }
 
+    @Test
+    void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withPropertyValues(
+                        "axon.axonserver.enabled=false",
+                        "axon.eventhandling.processors.first.dlq.enabled=true"
+                )
+                .run(context -> {
+                    assertThat(context).hasSingleBean(EventProcessingModule.class);
+                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+
+                    assertTrue(eventProcessingConfig.deadLetterQueue("first").isPresent());
+                    assertFalse(eventProcessingConfig.deadLetterQueue("second").isPresent());
+                });
+    }
+
     @SuppressWarnings("unused")
     @ContextConfiguration
     @EnableAutoConfiguration
