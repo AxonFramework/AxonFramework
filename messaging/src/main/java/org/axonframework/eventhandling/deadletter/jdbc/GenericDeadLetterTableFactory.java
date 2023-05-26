@@ -36,7 +36,7 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.deadLetterIdColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.processingGroupColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.sequenceIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
-                schema.sequenceIndexColumn() + " VARCHAR(255) NOT NULL,\n" +
+                schema.sequenceIndexColumn() + " BIGINT NOT NULL,\n" +
                 // TODO validate whether the below is the best way forward
                 schema.messageTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
