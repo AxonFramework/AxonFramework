@@ -75,6 +75,14 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  */
 public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements SequencedDeadLetterQueue<M> {
 
+    // TODO make this configurable, or use something like the PersistenceExceptionResolver
+    private static Function<SQLException, RuntimeException> handleException() {
+        return e -> {
+            logger.warn("SHEIZE", e);
+            return new RuntimeException(e);
+        };
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final boolean CLOSE_QUIETLY = true;
