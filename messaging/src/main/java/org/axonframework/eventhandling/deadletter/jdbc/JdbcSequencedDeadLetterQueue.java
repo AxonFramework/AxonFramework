@@ -289,7 +289,11 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
     @Override
     public long size() {
-        return 0;
+        return executeQuery(getConnection(),
+                            statementFactory::sizeStatement,
+                            converter::convertToLong,
+                            handleException(),
+                            CLOSE_QUIETLY);
     }
 
     @Override
