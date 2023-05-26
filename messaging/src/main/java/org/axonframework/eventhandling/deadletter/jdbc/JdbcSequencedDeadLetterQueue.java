@@ -261,14 +261,6 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
                             CLOSE_QUIETLY);
     }
 
-    // TODO make this configurable, or use something like the PersistenceExceptionResolver
-    private static Function<SQLException, RuntimeException> handleException() {
-        return e -> {
-            System.out.println("SHEIZE");
-            return new RuntimeException(e);
-        };
-    }
-
     @Override
     public Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
