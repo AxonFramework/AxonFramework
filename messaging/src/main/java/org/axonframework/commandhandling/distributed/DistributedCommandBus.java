@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -164,8 +164,9 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
         try (SpanScope ignored = span.makeCurrent()) {
             if (optionalDestination.isPresent()) {
                 Member destination = optionalDestination.get();
+
                 connector.send(destination,
-                               interceptedCommand,
+                               spanFactory.propagateContext(interceptedCommand),
                                new MonitorAwareCallback<>(callback, messageMonitorCallback));
             } else {
                 throw new NoHandlerForCommandException(
@@ -176,9 +177,13 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
             span.recordException(e);
             messageMonitorCallback.reportFailure(e);
             optionalDestination.ifPresent(Member::suspect);
-            callback.onResult(interceptedCommand, asCommandResultMessage(
-                    new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)
-            ));
+            if (e instanceof NoHandlerForCommandException) {
+                callback.onResult(interceptedCommand, asCommandResultMessage(e));
+            } else {
+                callback.onResult(interceptedCommand, asCommandResultMessage(
+                        new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)
+                ));
+            }
         } finally {
             span.end();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,6 +102,10 @@ class DistributedCommandBusTest {
                .untilAsserted(
                        () -> spanFactory.verifySpanCompleted("DistributedCommandBus.dispatch")
                );
+        await().atMost(Duration.ofSeconds(3l))
+               .untilAsserted(
+                       () -> spanFactory.verifySpanPropagated("DistributedCommandBus.dispatch", testCommandMessage)
+               );
     }
 
     @Test
@@ -178,7 +182,7 @@ class DistributedCommandBusTest {
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().exceptionResult().getCause().getClass());
+                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
         spanFactory.verifySpanHasException("DistributedCommandBus.dispatch", NoHandlerForCommandException.class);
     }
 
@@ -221,7 +225,7 @@ class DistributedCommandBusTest {
         verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().exceptionResult().getCause().getClass());
+                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
         spanFactory.verifySpanHasException("DistributedCommandBus.dispatch", RuntimeException.class);
     }
 
