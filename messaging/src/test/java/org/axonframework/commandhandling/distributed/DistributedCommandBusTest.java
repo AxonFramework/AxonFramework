@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -282,6 +283,12 @@ class DistributedCommandBusTest {
         testSubject.updateLoadFactor(expectedLoadFactor);
 
         assertEquals(expectedLoadFactor, testSubject.getLoadFactor());
+    }
+
+    @Test
+    void shouldThrowWithNullDefaultCommandCallback() {
+        DistributedCommandBus.Builder builder = DistributedCommandBus.builder();
+        assertThrows(AxonConfigurationException.class, () -> builder.defaultCommandCallback(null));
     }
 
     private static class StubCommandBusConnector implements CommandBusConnector {

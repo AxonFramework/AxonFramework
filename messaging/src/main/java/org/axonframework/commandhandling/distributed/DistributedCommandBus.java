@@ -336,6 +336,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder defaultCommandCallback(CommandCallback<Object, Object> defaultCommandCallback) {
+            assertNonNull(defaultCommandCallback, "CommandCallback may not be null");
             this.defaultCommandCallback = defaultCommandCallback;
             return this;
         }
