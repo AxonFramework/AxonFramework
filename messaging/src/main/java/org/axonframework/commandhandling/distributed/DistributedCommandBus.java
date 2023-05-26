@@ -90,8 +90,10 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     /**
      * Instantiate a Builder to be able to create a {@link DistributedCommandBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}. The {@link CommandRouter} and
-     * {@link CommandBusConnector} are <b>hard requirements</b> and as such should be provided.
+     * The {@link CommandCallback} is defaulted to a {@link LoggingCallback}. The {@link MessageMonitor} is defaulted to
+     * a {@link NoOpMessageMonitor}. The {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}. The
+     * {@link CommandRouter} and {@link CommandBusConnector} are <b>hard requirements</b> and as such should be
+     * provided.
      *
      * @return a Builder to be able to create a {@link DistributedCommandBus}
      */
@@ -165,19 +167,20 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
                 connector.send(destination,
                                interceptedCommand,
                                new MonitorAwareCallback<>(callback, messageMonitorCallback));
-                span.end();
             } else {
                 throw new NoHandlerForCommandException(
                         format("No node known to accept command [%s].", interceptedCommand.getCommandName())
                 );
             }
         } catch (Exception e) {
-            span.recordException(e).end();
+            span.recordException(e);
             messageMonitorCallback.reportFailure(e);
             optionalDestination.ifPresent(Member::suspect);
             callback.onResult(interceptedCommand, asCommandResultMessage(
                     new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)
             ));
+        } finally {
+            span.end();
         }
     }
 
