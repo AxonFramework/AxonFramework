@@ -69,7 +69,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * {@link org.axonframework.serialization.upcasting.Upcaster upcasters} are not supported by this implementation, so
  * breaking changes for events messages stored in the queue should be avoided.
  *
- * @param <M>
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
  * @author Steven van Beelen
  * @since 4.8.0
  */
