@@ -133,7 +133,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
                            @Nullable Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
-        DbSchedulerDeadlineToken taskInstanceId = new DbSchedulerDeadlineToken(UUID.randomUUID().toString());
+        DbSchedulerDeadlineToken taskInstanceId = new DbSchedulerDeadlineToken(IdentifierFactory.getInstance().generateIdentifier());
         Span span = spanFactory.createDispatchSpan(() -> "DbSchedulerDeadlineManager.schedule(" + deadlineName + ")",
                                                    deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
