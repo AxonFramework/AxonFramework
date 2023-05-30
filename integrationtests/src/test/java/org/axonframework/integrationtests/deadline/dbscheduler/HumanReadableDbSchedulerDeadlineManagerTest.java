@@ -36,7 +36,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.Objects;
 import javax.sql.DataSource;
 
-import static org.axonframework.utils.DbSchedulerTestUtil.getAndStartScheduler;
+import static org.axonframework.utils.DbSchedulerTestUtil.getScheduler;
 import static org.axonframework.utils.DbSchedulerTestUtil.reCreateTable;
 
 @ContextConfiguration
@@ -59,7 +59,7 @@ class HumanReadableDbSchedulerDeadlineManagerTest extends AbstractDeadlineManage
     @Override
     public DeadlineManager buildDeadlineManager(Configuration configuration) {
         reCreateTable(dataSource);
-        scheduler = getAndStartScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask());
+        scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask());
         return DbSchedulerDeadlineManager
                 .builder()
                 .scheduler(scheduler)

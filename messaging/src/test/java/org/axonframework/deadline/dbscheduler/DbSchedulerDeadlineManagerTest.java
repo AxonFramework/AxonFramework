@@ -34,7 +34,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.utils.DbSchedulerTestUtil.getAndStartScheduler;
+import static org.axonframework.utils.DbSchedulerTestUtil.getScheduler;
 import static org.axonframework.utils.DbSchedulerTestUtil.reCreateTable;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,7 +52,8 @@ class DbSchedulerDeadlineManagerTest {
 
     @Test
     void binaryShouldFailWhenNotinitialized() {
-        Scheduler scheduler = getAndStartScheduler(dataSource, DbSchedulerDeadlineManager.binaryTask());
+        Scheduler scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.binaryTask());
+        scheduler.start();
         try {
             TaskInstance<DbSchedulerBinaryDeadlineDetails> instance =
                     DbSchedulerDeadlineManager.binaryTask()
@@ -72,7 +73,8 @@ class DbSchedulerDeadlineManagerTest {
 
     @Test
     void humanReadableShouldFailWhenNotinitialized() {
-        Scheduler scheduler = getAndStartScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask());
+        Scheduler scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask());
+        scheduler.start();
         try {
             TaskInstance<DbSchedulerHumanReadableDeadlineDetails> instance =
                     DbSchedulerDeadlineManager.humanReadableTask()

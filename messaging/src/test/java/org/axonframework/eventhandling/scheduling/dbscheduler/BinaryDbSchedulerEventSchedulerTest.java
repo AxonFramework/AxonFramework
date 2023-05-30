@@ -26,7 +26,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.utils.DbSchedulerTestUtil.getAndStartScheduler;
+import static org.axonframework.utils.DbSchedulerTestUtil.getScheduler;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BinaryDbSchedulerEventSchedulerTest extends AbstractDbSchedulerEventSchedulerTest {
@@ -45,7 +45,8 @@ class BinaryDbSchedulerEventSchedulerTest extends AbstractDbSchedulerEventSchedu
     @Test
     void whenNotInitializedThrow() {
         eventScheduler.shutdown();
-        scheduler = getAndStartScheduler(dataSource, getTask());
+        scheduler = getScheduler(dataSource, getTask());
+        scheduler.start();
         try {
             TaskInstance<DbSchedulerBinaryEventData> instance =
                     DbSchedulerEventScheduler.binaryTask()

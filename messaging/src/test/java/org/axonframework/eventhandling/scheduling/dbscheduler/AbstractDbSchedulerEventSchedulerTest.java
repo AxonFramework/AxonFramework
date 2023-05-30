@@ -48,7 +48,7 @@ import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.utils.DbSchedulerTestUtil.getAndStartScheduler;
+import static org.axonframework.utils.DbSchedulerTestUtil.getScheduler;
 import static org.axonframework.utils.DbSchedulerTestUtil.reCreateTable;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -81,7 +81,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         reCreateTable(dataSource);
         publishedMessages = new ArrayList<>();
         EventBus eventBus = new InMemoryEventBus(publishedMessages);
-        scheduler = spy(getAndStartScheduler(dataSource, getTask()));
+        scheduler = spy(getScheduler(dataSource, getTask()));
         eventScheduler = DbSchedulerEventScheduler
                 .builder()
                 .scheduler(scheduler)

@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.scheduling.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
+import com.github.kagkarlsson.scheduler.SchedulerState;
 import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
 import com.github.kagkarlsson.scheduler.task.TaskWithDataDescriptor;
@@ -39,6 +40,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
+import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -49,6 +51,7 @@ import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.GenericEventMessage.clock;
 import static org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerScheduleToken.TASK_NAME;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * EventScheduler implementation that delegates scheduling and triggering to a db-scheduler Scheduler.
@@ -59,6 +62,7 @@ import static org.axonframework.eventhandling.scheduling.dbscheduler.DbScheduler
 @SuppressWarnings("Duplicates")
 public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
 
+    private static final Logger logger = getLogger(DbSchedulerEventScheduler.class);
     private static final AtomicReference<DbSchedulerEventScheduler> eventSchedulerReference = new AtomicReference<>();
     private static final TaskWithDataDescriptor<DbSchedulerHumanReadableEventData> humanReadableTaskDescriptor =
             new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerHumanReadableEventData.class);
@@ -69,6 +73,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
     private final TransactionManager transactionManager;
     private final EventBus eventBus;
     private final boolean useBinaryPojo;
+    private final boolean startScheduler;
 
     /**
      * Instantiate a {@link DbSchedulerEventScheduler} based on the fields contained in the
@@ -86,6 +91,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         transactionManager = builder.transactionManager;
         eventBus = builder.eventBus;
         useBinaryPojo = builder.useBinaryPojo;
+        startScheduler = builder.startScheduler;
         eventSchedulerReference.set(this);
     }
 
@@ -257,6 +263,26 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         scheduler.cancel(reference);
     }
 
+    /**
+     * Will start the {@link Scheduler} depending on its current state and the value of {@code startScheduler},
+     */
+    public void start() {
+        if (!startScheduler) {
+            return;
+        }
+        SchedulerState state = scheduler.getSchedulerState();
+        if (state.isShuttingDown()) {
+            logger.warn("Scheduler is shutting down - will not attempting to start");
+            return;
+        }
+        if (state.isStarted()) {
+            logger.info("Scheduler already started - will not attempt to start again");
+            return;
+        }
+        logger.info("Triggering scheduler start");
+        scheduler.start();
+    }
+
     @Override
     public void shutdown() {
         scheduler.stop();
@@ -265,6 +291,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
 
     @Override
     public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
         lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
@@ -278,8 +305,8 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
     /**
      * Builder class to instantiate a {@link DbSchedulerEventScheduler}.
      * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}. The {@code useBinaryPojo} is
-     * defaulted to {@code true}.
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}. The {@code useBinaryPojo} and
+     * {@code startScheduler} are defaulted to {@code true}.
      * <p>
      * The {@link Scheduler}, {@link Serializer} and {@link EventBus} are <b>hard requirements</b> and as such should be
      * provided.
@@ -291,12 +318,14 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private EventBus eventBus;
         private boolean useBinaryPojo = true;
+        private boolean startScheduler = true;
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the events. It should have either
          * the {@link #binaryTask()} or the {@link #humanReadableTask()} from this class as one of its tasks to work.
          * Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use {@link #binaryTask()} else
-         * {@link #humanReadableTask()}.
+         * {@link #humanReadableTask()}. Depending on you application, you can manage when to start the scheduler, or
+         * leave {@code startScheduler} to true, to start it via the {@link Lifecycle}.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the events
          * @return the current Builder instance, for fluent interfacing
@@ -354,6 +383,18 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
          */
         public Builder useBinaryPojo(boolean useBinaryPojo) {
             this.useBinaryPojo = useBinaryPojo;
+            return this;
+        }
+
+        /**
+         * Sets whether to start the {@link Scheduler} using the {@link Lifecycle}, or to never start the scheduler from
+         * this component instead. defaults to {@code true}.
+         *
+         * @param startScheduler a {@code boolean} to determine whether to start the scheduler.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder startScheduler(boolean startScheduler) {
+            this.startScheduler = startScheduler;
             return this;
         }
 

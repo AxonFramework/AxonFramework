@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2023. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.utils;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
@@ -69,12 +85,11 @@ public abstract class DbSchedulerTestUtil {
      * @param task       the {@link Task} we want to test
      * @return a {@link Scheduler} that is started
      */
-    public static Scheduler getAndStartScheduler(DataSource dataSource, Task<?> task) {
+    public static Scheduler getScheduler(DataSource dataSource, Task<?> task) {
         Scheduler scheduler = new SchedulerBuilder(dataSource, Collections.singletonList(task))
                 .threads(2)
                 .pollingInterval(Duration.ofMillis(50L))
                 .build();
-        scheduler.start();
         return scheduler;
     }
 }

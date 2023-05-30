@@ -72,6 +72,7 @@ public class AxonDbSchedulerAutoConfiguration {
                                         .serializer(serializer)
                                         .transactionManager(transactionManager)
                                         .eventBus(eventBus)
+                                        .startScheduler(false)
                                         .build();
     }
 
@@ -90,6 +91,7 @@ public class AxonDbSchedulerAutoConfiguration {
                                          .serializer(serializer)
                                          .transactionManager(transactionManager)
                                          .spanFactory(spanFactory)
+                                         .startScheduler(false)
                                          .build();
     }
 }

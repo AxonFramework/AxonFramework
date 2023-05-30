@@ -18,6 +18,7 @@ package org.axonframework.deadline.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.ScheduledExecution;
 import com.github.kagkarlsson.scheduler.Scheduler;
+import com.github.kagkarlsson.scheduler.SchedulerState;
 import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
 import com.github.kagkarlsson.scheduler.task.TaskWithDataDescriptor;
@@ -90,6 +91,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
     private final TransactionManager transactionManager;
     private final SpanFactory spanFactory;
     private final boolean useBinaryPojo;
+    private final boolean startScheduler;
 
     /**
      * Instantiate a Builder to be able to create a {@link DbSchedulerDeadlineManager}.
@@ -98,7 +100,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * <p>
      * The {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}.
      * <p>
-     * The {code useBinaryPojo} is defaulted to {@code true}.
+     * The {@code useBinaryPojo} and {@code startScheduler} are defaulted to {@code true}.
      * <p>
      * The {@link Scheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as such
      * should be provided.
@@ -127,6 +129,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         this.transactionManager = builder.transactionManager;
         this.spanFactory = builder.spanFactory;
         this.useBinaryPojo = builder.useBinaryPojo;
+        this.startScheduler = builder.startScheduler;
         deadlineManagerReference.set(this);
     }
 
@@ -382,6 +385,26 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
                           });
     }
 
+    /**
+     * Will start the {@link Scheduler} depending on its current state and the value of {@code startScheduler},
+     */
+    public void start() {
+        if (!startScheduler) {
+            return;
+        }
+        SchedulerState state = scheduler.getSchedulerState();
+        if (state.isShuttingDown()) {
+            logger.warn("Scheduler is shutting down - will not attempting to start");
+            return;
+        }
+        if (state.isStarted()) {
+            logger.info("Scheduler already started - will not attempt to start again");
+            return;
+        }
+        logger.info("Triggering scheduler start");
+        scheduler.start();
+    }
+
     @Override
     public void shutdown() {
         scheduler.stop();
@@ -390,6 +413,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
 
     @Override
     public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
         lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
@@ -397,7 +421,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * Builder class to instantiate a {@link DbSchedulerDeadlineManager}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link SpanFactory} defaults
-     * to a {@link NoOpSpanFactory} and the {code useBinaryPojo} is defaulted to {@code true}.
+     * to a {@link NoOpSpanFactory}. The {@code useBinaryPojo} and {@code startScheduler} are defaulted to
+     * {@code true}.
      * <p>
      * The {@link JobScheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as
      * such should be provided.
@@ -410,12 +435,13 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
         private boolean useBinaryPojo = true;
+        private boolean startScheduler = true;
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of deadlines. It should have either
          * the {@link #binaryTask()} or the {@link #humanReadableTask()} from this class as one of its tasks to work.
          * Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use {@link #binaryTask()} else
-         * {@link #humanReadableTask()}.
+         * {@link #humanReadableTask()}. Depending on you application, you can manage when to start the scheduler, or leave {@code startScheduler} to true, to start it via the {@link Lifecycle}.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
          * @return the current Builder instance, for fluent interfacing
@@ -492,6 +518,18 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
          */
         public Builder useBinaryPojo(boolean useBinaryPojo) {
             this.useBinaryPojo = useBinaryPojo;
+            return this;
+        }
+
+        /**
+         * Sets whether to start the {@link Scheduler} using the {@link Lifecycle}, or to never start the scheduler from
+         * this component instead. defaults to {@code true}.
+         *
+         * @param startScheduler a {@code boolean} to determine whether to start the scheduler.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder startScheduler(boolean startScheduler) {
+            this.startScheduler = startScheduler;
             return this;
         }
 
