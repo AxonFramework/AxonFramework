@@ -38,6 +38,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -279,7 +281,27 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
     @Override
     public Iterable<Iterable<DeadLetter<? extends M>>> deadLetters() {
-        return null;
+        List<String> sequenceIdentifiers = executeQuery(getConnection(),
+                                                        statementFactory::sequenceIdentifiersStatement,
+                                                        listResults(resultSet -> resultSet.getString(1)),
+                                                        handleException(),
+                                                        CLOSE_QUIETLY);
+
+        return () -> {
+            Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
+            return new Iterator<Iterable<DeadLetter<? extends M>>>() {
+                @Override
+                public boolean hasNext() {
+                    return sequenceIterator.hasNext();
+                }
+
+                @Override
+                public Iterable<DeadLetter<? extends M>> next() {
+                    String next = sequenceIterator.next();
+                    return deadLetterSequence(next);
+                }
+            };
+        };
     }
 
     @Override

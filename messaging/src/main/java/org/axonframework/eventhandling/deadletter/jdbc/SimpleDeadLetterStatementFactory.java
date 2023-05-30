@@ -249,6 +249,24 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
     }
 
     @Override
+    public PreparedStatement sequenceIdentifiersStatement(Connection connection) throws SQLException {
+        String sql = "SELECT dl." + schema.sequenceIdentifierColumn() + " "
+                + "FROM " + schema.deadLetterTable() + " dl "
+                + "WHERE dl." + schema.processingGroupColumn() + "=? "
+                + "AND dl." + schema.sequenceIndexColumn() + "=("
+                + "SELECT MIN(dl2." + schema.sequenceIndexColumn() + ") "
+                + "FROM " + schema.deadLetterTable() + " dl2 "
+                + "WHERE dl2." + schema.processingGroupColumn() + "=dl." + schema.processingGroupColumn() + " "
+                + "AND dl2." + schema.sequenceIdentifierColumn() + "=dl." + schema.sequenceIdentifierColumn() + ") "
+                + "ORDER BY dl." + schema.lastTouchedColumn() + " "
+                + "ASC";
+
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        return statement;
+    }
+
+    @Override
     public PreparedStatement sizeStatement(Connection connection) throws SQLException {
         String sql = "SELECT COUNT(*) "
                 + "FROM " + schema.deadLetterTable() + " "
