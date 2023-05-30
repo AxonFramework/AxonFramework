@@ -82,7 +82,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
     }
 
     /**
-     * Created a new {@link DbSchedulerBinaryDeadlineDetails} object, using the supplied serializer where needed.
+     * Create a new {@link DbSchedulerBinaryDeadlineDetails} object, using the supplied serializer where needed.
      *
      * @param deadlineName The {@link String} with the name of the deadline.
      * @param descriptor   The {@link ScopeDescriptor} which tells what the scope is of the deadline.
