@@ -40,7 +40,7 @@ public class DbSchedulerScheduleToken implements ScheduleToken, TaskInstanceId {
     private final String id;
 
     /**
-     * Initialize a token for the given {@code jobIdentifier}.
+     * Initialize a token for the given {@code id}.
      *
      * @param id The identifier used when registering the job with DbScheduler.
      */
