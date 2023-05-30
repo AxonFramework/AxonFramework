@@ -16,7 +16,7 @@ import javax.sql.DataSource;
  *
  * @author Gerard Klijs
  */
-public class DbSchedulerTestUtil {
+public abstract class DbSchedulerTestUtil {
 
     private DbSchedulerTestUtil() {
         //prevent instantiation
