@@ -32,10 +32,10 @@ import javax.annotation.Nullable;
 import static java.lang.String.format;
 
 /**
- * Pojo that contains the needed for a {@link com.github.kagkarlsson.scheduler.task.Task} handling a deadline, will be
+ * Pojo that contains the needed information for a {@link com.github.kagkarlsson.scheduler.task.Task} handling a deadline. Will be
  * serialized and deserialized using the configured {@link Serializer} on the
- * {@link com.github.kagkarlsson.scheduler.Scheduler}. This one is used with the
- * {@link DbSchedulerDeadlineManager#humanReadableTask()}
+ * {@link com.github.kagkarlsson.scheduler.Scheduler}. This object is used with the
+ * {@link DbSchedulerDeadlineManager#humanReadableTask()}.
  *
  * @author Gerard Klijs
  * @since 4.8.0
