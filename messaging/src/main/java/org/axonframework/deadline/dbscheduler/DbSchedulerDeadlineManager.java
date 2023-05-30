@@ -344,7 +344,6 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
             UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
-            unitOfWork.onCleanup(uow -> span.end());
             InterceptorChain chain = new DefaultInterceptorChain<>(
                     unitOfWork,
                     handlerInterceptors(),
@@ -359,6 +358,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
                 logger.warn("An error occurred while triggering deadline with name [{}].", deadlineName);
                 throw new DeadlineException("Failed to process", e);
             }
+        } finally {
+            span.end();
         }
     }
 
@@ -403,8 +404,10 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         private boolean useBinaryPojo = true;
 
         /**
-         * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines. It should have this
-         * components {@link #binaryTask()} as one of its tasks to work.
+         * Sets the {@link Scheduler} used for scheduling and triggering purposes of deadlines. It should have this
+         * components {@link #binaryTask()} or {@link #humanReadableTask()} as one of its tasks to work. Which one
+         * depends on the setting of {@code useBinaryPojo}. When {@code true}, use {@link #binaryTask()} else
+         * {@link #humanReadableTask()}.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
          * @return the current Builder instance, for fluent interfacing

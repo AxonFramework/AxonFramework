@@ -194,11 +194,10 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
         DeadlineDetails deadlineDetails = serializer.deserialize(serializedDeadlineMetaData);
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
         Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
-        try (SpanScope unused = span.makeCurrent()) {
+        try (SpanScope ignored = span.makeCurrent()) {
             UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
-            unitOfWork.onCleanup(uow -> span.end());
             InterceptorChain chain = new DefaultInterceptorChain<>(
                     unitOfWork,
                     handlerInterceptors(),
@@ -215,6 +214,8 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                             deadlineDetails.getDeadlineName());
                 throw new DeadlineException("Failed to process", e);
             }
+        } finally {
+            span.end();
         }
     }
 
