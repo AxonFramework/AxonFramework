@@ -51,12 +51,12 @@ import org.springframework.context.annotation.Bean;
 public class AxonDbSchedulerAutoConfiguration {
 
     @Bean
-    Task<DbSchedulerBinaryEventData> dbSchedulerBinaryEventDataTask() {
+    public Task<DbSchedulerBinaryEventData> dbSchedulerBinaryEventDataTask() {
         return DbSchedulerEventScheduler.binaryTask();
     }
 
     @Bean
-    Task<DbSchedulerBinaryDeadlineDetails> dbSchedulerBinaryDeadlineDetailsTask() {
+    public Task<DbSchedulerBinaryDeadlineDetails> dbSchedulerBinaryDeadlineDetailsTask() {
         return DbSchedulerDeadlineManager.binaryTask();
     }
 

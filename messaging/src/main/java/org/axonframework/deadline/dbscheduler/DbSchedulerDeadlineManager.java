@@ -23,6 +23,7 @@ import com.github.kagkarlsson.scheduler.task.TaskInstance;
 import com.github.kagkarlsson.scheduler.task.TaskWithDataDescriptor;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;
@@ -33,6 +34,8 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.jobrunr.DeadlineDetails;
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryEventData;
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
+import org.axonframework.lifecycle.Lifecycle;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.InterceptorChain;
@@ -52,7 +55,6 @@ import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -73,7 +75,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @since 4.8.0
  */
 @SuppressWarnings("Duplicates")
-public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
+public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
 
     private static final Logger logger = getLogger(DbSchedulerDeadlineManager.class);
     private static final AtomicReference<DbSchedulerDeadlineManager> deadlineManagerReference = new AtomicReference<>();
@@ -133,7 +135,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
                            @Nullable Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
-        DbSchedulerDeadlineToken taskInstanceId = new DbSchedulerDeadlineToken(IdentifierFactory.getInstance().generateIdentifier());
+        String identifier = IdentifierFactory.getInstance().generateIdentifier();
+        DbSchedulerDeadlineToken taskInstanceId = new DbSchedulerDeadlineToken(identifier);
         Span span = spanFactory.createDispatchSpan(() -> "DbSchedulerDeadlineManager.schedule(" + deadlineName + ")",
                                                    deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
@@ -145,9 +148,9 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
                 taskInstance = humanReadableTask(deadlineName, deadlineScope, message, taskInstanceId);
             }
             scheduler.schedule(taskInstance, triggerDateTime);
-            logger.debug("Task with id: [{}] was successfully created.", taskInstanceId.getId());
+            logger.debug("Task with id: [{}] was successfully created.", identifier);
         }));
-        return taskInstanceId.getId();
+        return identifier;
     }
 
     private TaskInstance<?> binaryTask(
@@ -385,6 +388,11 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         deadlineManagerReference.set(null);
     }
 
+    @Override
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
+    }
+
     /**
      * Builder class to instantiate a {@link DbSchedulerDeadlineManager}.
      * <p>
@@ -404,9 +412,9 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         private boolean useBinaryPojo = true;
 
         /**
-         * Sets the {@link Scheduler} used for scheduling and triggering purposes of deadlines. It should have this
-         * components {@link #binaryTask()} or {@link #humanReadableTask()} as one of its tasks to work. Which one
-         * depends on the setting of {@code useBinaryPojo}. When {@code true}, use {@link #binaryTask()} else
+         * Sets the {@link Scheduler} used for scheduling and triggering purposes of deadlines. It should have either
+         * the {@link #binaryTask()} or the {@link #humanReadableTask()} from this class as one of its tasks to work.
+         * Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use {@link #binaryTask()} else
          * {@link #humanReadableTask()}.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines

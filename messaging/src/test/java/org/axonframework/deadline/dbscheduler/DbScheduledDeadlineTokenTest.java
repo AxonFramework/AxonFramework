@@ -16,13 +16,9 @@
 
 package org.axonframework.deadline.dbscheduler;
 
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.serialization.TestSerializer;
+import com.github.kagkarlsson.scheduler.task.TaskInstanceId;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
 
-import java.util.Collection;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,8 +28,8 @@ class DbScheduledDeadlineTokenTest {
     @Test
     void equalsIfSameUuidIsUsed() {
         String uuid = UUID.randomUUID().toString();
-        ScheduleToken one = new DbSchedulerDeadlineToken(uuid);
-        ScheduleToken other = new DbSchedulerDeadlineToken(uuid);
+        TaskInstanceId one = new DbSchedulerDeadlineToken(uuid);
+        TaskInstanceId other = new DbSchedulerDeadlineToken(uuid);
 
         assertEquals(one, other);
         assertEquals(one.toString(), other.toString());
@@ -42,22 +38,11 @@ class DbScheduledDeadlineTokenTest {
 
     @Test
     void notEqualsIfDifferentUuidIsUsed() {
-        ScheduleToken one = new DbSchedulerDeadlineToken(UUID.randomUUID().toString());
-        ScheduleToken other = new DbSchedulerDeadlineToken(UUID.randomUUID().toString());
+        TaskInstanceId one = new DbSchedulerDeadlineToken(UUID.randomUUID().toString());
+        TaskInstanceId other = new DbSchedulerDeadlineToken(UUID.randomUUID().toString());
 
         assertNotEquals(one, other);
         assertNotEquals(one.toString(), other.toString());
         assertNotEquals(one.hashCode(), other.hashCode());
-    }
-
-    @MethodSource("serializers")
-    @ParameterizedTest
-    void tokenShouldBeSerializable(TestSerializer serializer) {
-        ScheduleToken tokenToTest = new DbSchedulerDeadlineToken(UUID.randomUUID().toString());
-        assertEquals(tokenToTest, serializer.serializeDeserialize(tokenToTest));
-    }
-
-    public static Collection<TestSerializer> serializers() {
-        return TestSerializer.all();
     }
 }

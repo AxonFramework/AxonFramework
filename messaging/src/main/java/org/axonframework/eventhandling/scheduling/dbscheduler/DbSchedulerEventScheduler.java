@@ -22,6 +22,7 @@ import com.github.kagkarlsson.scheduler.task.TaskInstance;
 import com.github.kagkarlsson.scheduler.task.TaskWithDataDescriptor;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
@@ -41,7 +42,6 @@ import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
@@ -106,7 +106,8 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
 
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
-        DbSchedulerScheduleToken taskInstanceId = new DbSchedulerScheduleToken(UUID.randomUUID().toString());
+        String identifier = IdentifierFactory.getInstance().generateIdentifier();
+        DbSchedulerScheduleToken taskInstanceId = new DbSchedulerScheduleToken(identifier);
         try {
             TaskInstance<?> taskInstance;
             if (useBinaryPojo) {
@@ -292,8 +293,10 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         private boolean useBinaryPojo = true;
 
         /**
-         * Sets the {@link Scheduler} used for scheduling and triggering purposes of the events. It should have this
-         * components {@link #humanReadableTask()} as one of its tasks to work.
+         * Sets the {@link Scheduler} used for scheduling and triggering purposes of the events. It should have either
+         * the {@link #binaryTask()} or the {@link #humanReadableTask()} from this class as one of its tasks to work.
+         * Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use {@link #binaryTask()} else
+         * {@link #humanReadableTask()}.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the events
          * @return the current Builder instance, for fluent interfacing

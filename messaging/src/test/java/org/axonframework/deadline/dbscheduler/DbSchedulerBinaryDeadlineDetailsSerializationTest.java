@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,14 @@ import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,6 +44,14 @@ class DbSchedulerBinaryDeadlineDetailsSerializationTest {
     @SuppressWarnings("rawtypes")
     private static DeadlineMessage message;
 
+    public static Collection<TestSerializer> serializers() {
+        List<TestSerializer> testSerializerList = new ArrayList<>();
+        testSerializerList.add(TestSerializer.JAVA);
+        testSerializerList.add(TestSerializer.JACKSON);
+        testSerializerList.add(TestSerializer.XSTREAM);
+        return testSerializerList;
+    }
+
     @BeforeAll
     static void setUp() {
         Map<String, Object> map = new HashMap<>();
@@ -49,20 +62,10 @@ class DbSchedulerBinaryDeadlineDetailsSerializationTest {
                                         .withMetaData(metaData);
     }
 
-    @Test
-    void whenSerializedAndDeserializedAllPropertiesShouldBeTheSameUsingXStream() {
-        Serializer serializer = TestSerializer.XSTREAM.getSerializer();
-        testSerialisationWithSpecificSerializer(serializer);
-    }
-
-    @Test
-    void whenSerializedAndDeserializedAllPropertiesShouldBeTheSameUsingJackson() {
-        Serializer serializer = TestSerializer.JACKSON.getSerializer();
-        testSerialisationWithSpecificSerializer(serializer);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private void testSerialisationWithSpecificSerializer(Serializer serializer) {
+    @MethodSource("serializers")
+    @ParameterizedTest
+    void whenSerializedAndDeserializedAllPropertiesShouldBeTheSame(TestSerializer testSerializer) {
+        Serializer serializer = testSerializer.getSerializer();
         String expectedType = "aggregateType";
         String expectedIdentifier = "identifier";
         ScopeDescriptor descriptor = new TestScopeDescriptor(expectedType, expectedIdentifier);
@@ -71,8 +74,7 @@ class DbSchedulerBinaryDeadlineDetailsSerializationTest {
 
         assertEquals(TEST_DEADLINE_NAME, result.getD());
         assertEquals(descriptor, result.getDeserializedScopeDescriptor(serializer));
-        DeadlineMessage resultMessage = result.asDeadLineMessage(serializer);
-
+        DeadlineMessage<?> resultMessage = result.asDeadLineMessage(serializer);
         assertNotNull(resultMessage);
         assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.getPayload());
         assertEquals(metaData, resultMessage.getMetaData());

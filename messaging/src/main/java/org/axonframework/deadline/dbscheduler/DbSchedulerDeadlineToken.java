@@ -16,37 +16,29 @@
 
 package org.axonframework.deadline.dbscheduler;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.kagkarlsson.scheduler.task.TaskInstanceId;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
-
-import java.beans.ConstructorProperties;
 
 import static java.lang.String.format;
 
 /**
- * ScheduleToken implementation representing a scheduled DbScheduler Job.
+ * TaskInstanceId implementation representing a scheduled Deadline task.
  *
  * @author Gerard Klijs
  * @since 4.8.0
  */
 @SuppressWarnings("Duplicates")
-public class DbSchedulerDeadlineToken implements ScheduleToken, TaskInstanceId {
+public class DbSchedulerDeadlineToken implements TaskInstanceId {
 
-    private static final long serialVersionUID = 7798276124742534225L;
     static final String TASK_NAME = "AxonDeadline";
 
     private final String id;
 
     /**
-     * Initialize a token for the given {@code jobIdentifier}.
+     * Initialize a token for the given {@code id}.
      *
      * @param id The identifier used when registering the job with DbScheduler.
      */
-    @JsonCreator
-    @ConstructorProperties({"jobIdentifier", "groupIdentifier"})
     public DbSchedulerDeadlineToken(@JsonProperty("id") String id) {
         this.id = id;
     }
@@ -73,7 +65,6 @@ public class DbSchedulerDeadlineToken implements ScheduleToken, TaskInstanceId {
         return this.id.equals(other.id);
     }
 
-    @JsonIgnore
     @Override
     public String getTaskName() {
         return TASK_NAME;
