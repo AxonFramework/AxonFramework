@@ -176,7 +176,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
 
     /**
      * Returns the {@link DbSchedulerBinaryDeadlineDetails} as an {@link GenericDeadlineMessage}, with the {@code}
-     * timestamp set using the {@code GenericEventMessage.clock} to set to the current time.
+     * timestamp set using the {@code GenericEventMessage.clock}.
      *
      * @return the {@link GenericDeadlineMessage} with all the properties of this pojo, and a timestamp.
      */
