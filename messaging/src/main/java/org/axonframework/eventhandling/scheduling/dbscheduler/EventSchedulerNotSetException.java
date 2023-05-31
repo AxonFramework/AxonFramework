@@ -16,18 +16,19 @@
 
 package org.axonframework.eventhandling.scheduling.dbscheduler;
 
-import org.axonframework.common.AxonTransientException;
+import org.axonframework.common.AxonException;
 
 /**
- * Exception indicating a problem in the Event Scheduling mechanism.
+ * Exception indicating a problem in the Event Scheduling mechanism, more precisely the
+ * {@link DbSchedulerEventScheduler} wasn't initialized.
  *
  * @author Gerard Klijs
  * @since 4.8.0
  */
-public class EventSchedulerNotSetException extends AxonTransientException {
+public class EventSchedulerNotSetException extends AxonException {
 
     /**
-     * Initialize a EventSchedulerNotSetException with the given {@code message}.
+     * Initialize a EventSchedulerNotSetException.
      */
     public EventSchedulerNotSetException() {
         super("The DbSchedulerEventScheduler is not yet initialized");

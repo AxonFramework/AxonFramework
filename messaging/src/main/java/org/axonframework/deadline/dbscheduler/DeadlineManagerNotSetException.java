@@ -16,18 +16,19 @@
 
 package org.axonframework.deadline.dbscheduler;
 
-import org.axonframework.common.AxonTransientException;
+import org.axonframework.common.AxonException;
 
 /**
- * Exception indicating a problem in the Deadline manager mechanism.
+ * Exception indicating a problem in the Deadline manager mechanism, more precisely the
+ * {@link DbSchedulerDeadlineManager} wasn't initialized.
  *
  * @author Gerard Klijs
  * @since 4.8.0
  */
-public class DeadlineManagerNotSetException extends AxonTransientException {
+public class DeadlineManagerNotSetException extends AxonException {
 
     /**
-     * Initialize a DeadlineManagerNotSetException with the given {@code message}.
+     * Initialize a DeadlineManagerNotSetException.
      */
     public DeadlineManagerNotSetException() {
         super("The DbSchedulerDeadlineManager is not yet initialized");
