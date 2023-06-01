@@ -25,7 +25,6 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
@@ -37,7 +36,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -50,14 +48,12 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
 
     private static final String COMMA = ", ";
 
-    private final String processingGroup;
     private final DeadLetterSchema schema;
     private final Serializer genericSerializer;
     private final Serializer eventSerializer;
 
     protected SimpleDeadLetterStatementFactory(Builder<M> builder) {
         builder.validate();
-        this.processingGroup = builder.processingGroup;
         this.schema = builder.schema;
         this.genericSerializer = builder.genericSerializer;
         this.eventSerializer = builder.eventSerializer;
@@ -68,7 +64,9 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
     }
 
     @Override
-    public PreparedStatement enqueueStatement(@Nonnull Connection connection, @Nonnull String sequenceIdentifier,
+    public PreparedStatement enqueueStatement(@Nonnull Connection connection,
+                                              @Nonnull String processingGroup,
+                                              @Nonnull String sequenceIdentifier,
                                               @Nonnull DeadLetter<? extends M> letter,
                                               long sequenceIndex) throws SQLException {
         String enqueueSql = enqueueSql(letter);
@@ -79,7 +77,7 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
         PreparedStatement statement = connection.prepareStatement(enqueueSql);
         AtomicInteger fieldIndex = new AtomicInteger(1);
 
-        setIdFields(statement, fieldIndex, sequenceIdentifier, sequenceIndex);
+        setIdFields(statement, fieldIndex, processingGroup, sequenceIdentifier, sequenceIndex);
         setEventFields(statement, fieldIndex, eventMessage);
         if (isDomainEvent) {
             setDomainEventFields(statement, fieldIndex, (DomainEventMessage<?>) eventMessage);
@@ -167,6 +165,7 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
 
     private void setIdFields(PreparedStatement statement,
                              AtomicInteger fieldIndex,
+                             String processingGroup,
                              String sequenceIdentifier,
                              long sequenceIndex) throws SQLException {
         String deadLetterId = IdentifierFactory.getInstance().generateIdentifier();
@@ -226,7 +225,9 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
     }
 
     @Override
-    public PreparedStatement containsStatement(Connection connection, String sequenceId) throws SQLException {
+    public PreparedStatement containsStatement(@Nonnull Connection connection,
+                                               @Nonnull String processingGroup,
+                                               @Nonnull String sequenceId) throws SQLException {
         String sql = "SELECT COUNT(*) "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=? "
@@ -238,8 +239,9 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
     }
 
     @Override
-    public PreparedStatement letterSequenceStatement(Connection connection,
-                                                     String sequenceId,
+    public PreparedStatement letterSequenceStatement(@Nonnull Connection connection,
+                                                     @Nonnull String processingGroup,
+                                                     @Nonnull String sequenceId,
                                                      int firstResult,
                                                      int maxSize) throws SQLException {
         String sql = "SELECT * "
@@ -258,7 +260,8 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
     }
 
     @Override
-    public PreparedStatement sequenceIdentifiersStatement(Connection connection) throws SQLException {
+    public PreparedStatement sequenceIdentifiersStatement(@Nonnull Connection connection,
+                                                          @Nonnull String processingGroup) throws SQLException {
         String sql = "SELECT dl." + schema.sequenceIdentifierColumn() + " "
                 + "FROM " + schema.deadLetterTable() + " dl "
                 + "WHERE dl." + schema.processingGroupColumn() + "=? "
@@ -276,7 +279,8 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
     }
 
     @Override
-    public PreparedStatement sizeStatement(Connection connection) throws SQLException {
+    public PreparedStatement sizeStatement(@Nonnull Connection connection,
+                                           @Nonnull String processingGroup) throws SQLException {
         String sql = "SELECT COUNT(*) "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=? ";
@@ -286,7 +290,9 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
     }
 
     @Override
-    public PreparedStatement sequenceSizeStatement(Connection connection, String sequenceId) throws SQLException {
+    public PreparedStatement sequenceSizeStatement(@Nonnull Connection connection,
+                                                   @Nonnull String processingGroup,
+                                                   @Nonnull String sequenceId) throws SQLException {
         String sql = "SELECT COUNT(*) "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=? "
@@ -298,27 +304,31 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
     }
 
     @Override
-    public PreparedStatement amountOfSequencesStatement(Connection c) throws SQLException {
+    public PreparedStatement amountOfSequencesStatement(@Nonnull Connection connection,
+                                                        @Nonnull String processingGroup) throws SQLException {
         String sql = "SELECT COUNT(DISTINCT " + schema.sequenceIdentifierColumn() + ") "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=?";
-        PreparedStatement statement = c.prepareStatement(sql);
+        PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, processingGroup);
         return statement;
     }
 
     @Override
-    public PreparedStatement clearStatement(Connection c) throws SQLException {
+    public PreparedStatement clearStatement(@Nonnull Connection connection,
+                                            @Nonnull String processingGroup) throws SQLException {
         String sql = "DELETE "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=?";
-        PreparedStatement statement = c.prepareStatement(sql);
+        PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, processingGroup);
         return statement;
     }
 
     @Override
-    public PreparedStatement maxIndexStatement(Connection connection, String sequenceId) throws SQLException {
+    public PreparedStatement maxIndexStatement(@Nonnull Connection connection,
+                                               @Nonnull String processingGroup,
+                                               @Nonnull String sequenceId) throws SQLException {
         String sql = "SELECT MAX(" + schema.sequenceIndexColumn() + ") "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=? "
@@ -331,23 +341,9 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
 
     protected static class Builder<M extends EventMessage<?>> {
 
-        private String processingGroup;
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
         private Serializer genericSerializer;
         private Serializer eventSerializer;
-
-        /**
-         * Sets the processing group, which is used for storing and quering which event processor the deadlettered item
-         * belonged to.
-         *
-         * @param processingGroup The processing group of this {@link SequencedDeadLetterQueue}.
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder<M> processingGroup(String processingGroup) {
-            assertNonEmpty(processingGroup, "Can not set processingGroup to an empty String.");
-            this.processingGroup = processingGroup;
-            return this;
-        }
 
         /**
          * @param schema
@@ -403,7 +399,6 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
          *                                    specifications.
          */
         protected void validate() {
-            assertNonEmpty(processingGroup, "The processingGroup is a hard requirement and should be non-empty");
             assertNonNull(genericSerializer, "The generic Serializer is a hard requirement and should be provided");
             assertNonNull(eventSerializer, "The event Serializer is a hard requirement and should be provided");
         }

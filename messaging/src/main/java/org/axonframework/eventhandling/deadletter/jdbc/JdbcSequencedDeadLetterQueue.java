@@ -118,7 +118,6 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
         // TODO get a feel whether this thing makes sense in it's current form
         this.statementFactory = SimpleDeadLetterStatementFactory.<M>builder()
-                                                                .processingGroup(builder.processingGroup)
                                                                 .schema(builder.schema)
                                                                 .genericSerializer(builder.genericSerializer)
                                                                 .eventSerializer(builder.eventSerializer)
@@ -216,7 +215,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         try {
             executeUpdate(connection,
                           c -> statementFactory.enqueueStatement(
-                                  c, sequenceId, letter, nextIndexForSequence(sequenceId)
+                                  c, processingGroup, sequenceId, letter, nextIndexForSequence(sequenceId)
                           ),
                           handleException());
         } finally {
@@ -234,7 +233,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     private long maxIndexForSequence(String sequenceId) {
         return transactionManager.fetchInTransaction(() -> executeQuery(
                 getConnection(),
-                connection -> statementFactory.maxIndexStatement(connection, sequenceId),
+                connection -> statementFactory.maxIndexStatement(connection, processingGroup, sequenceId),
                 resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                 handleException()
         ));
@@ -260,7 +259,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         }
 
         return executeQuery(getConnection(),
-                            connection -> statementFactory.containsStatement(connection, sequenceId),
+                            connection -> statementFactory.containsStatement(connection, processingGroup, sequenceId),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L) > 0L,
                             handleException(),
                             CLOSE_QUIETLY);
@@ -278,7 +277,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
                 this::getConnection,
                 transactionManager,
                 (connection, firstResult, maxSize) -> statementFactory.letterSequenceStatement(
-                        connection, sequenceId, firstResult, maxSequenceSize
+                        connection, processingGroup, sequenceId, firstResult, maxSequenceSize
                 ),
                 converter::convertToLetter,
                 handleException(),
@@ -288,11 +287,13 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
     @Override
     public Iterable<Iterable<DeadLetter<? extends M>>> deadLetters() {
-        List<String> sequenceIdentifiers = executeQuery(getConnection(),
-                                                        statementFactory::sequenceIdentifiersStatement,
-                                                        listResults(resultSet -> resultSet.getString(1)),
-                                                        handleException(),
-                                                        CLOSE_QUIETLY);
+        List<String> sequenceIdentifiers = executeQuery(
+                getConnection(),
+                connection -> statementFactory.sequenceIdentifiersStatement(connection, processingGroup),
+                listResults(resultSet -> resultSet.getString(1)),
+                handleException(),
+                CLOSE_QUIETLY
+        );
 
         //noinspection DuplicatedCode
         return () -> {
@@ -322,7 +323,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     @Override
     public long size() {
         return executeQuery(getConnection(),
-                            statementFactory::sizeStatement,
+                            connection -> statementFactory.sizeStatement(connection, processingGroup),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                             handleException(),
                             CLOSE_QUIETLY);
@@ -332,7 +333,9 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     public long sequenceSize(@Nonnull Object sequenceIdentifier) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         return executeQuery(getConnection(),
-                            connection -> statementFactory.sequenceSizeStatement(connection, sequenceId),
+                            connection -> statementFactory.sequenceSizeStatement(
+                                    connection, processingGroup, sequenceId
+                            ),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                             handleException(),
                             CLOSE_QUIETLY
@@ -342,7 +345,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     @Override
     public long amountOfSequences() {
         return executeQuery(getConnection(),
-                            statementFactory::amountOfSequencesStatement,
+                            connection -> statementFactory.amountOfSequencesStatement(connection, processingGroup),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                             handleException(),
                             CLOSE_QUIETLY);
@@ -358,7 +361,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     public void clear() {
         Connection connection = getConnection();
         try {
-            executeUpdate(connection, statementFactory::clearStatement, handleException());
+            executeUpdate(connection, c -> statementFactory.clearStatement(c, processingGroup), handleException());
         } finally {
             closeQuietly(connection);
         }

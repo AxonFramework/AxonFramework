@@ -32,26 +32,39 @@ import javax.annotation.Nonnull;
  */
 public interface DeadLetterStatementFactory<M extends EventMessage<?>> {
 
-    PreparedStatement enqueueStatement(@Nonnull Connection connection, @Nonnull String sequenceIdentifier,
+    PreparedStatement enqueueStatement(@Nonnull Connection connection,
+                                       @Nonnull String processingGroup,
+                                       @Nonnull String sequenceIdentifier,
                                        @Nonnull DeadLetter<? extends M> letter,
                                        long sequenceIndex) throws SQLException;
 
-    PreparedStatement containsStatement(Connection connection, String sequenceId) throws SQLException;
+    PreparedStatement containsStatement(@Nonnull Connection connection,
+                                        @Nonnull String processingGroup,
+                                        @Nonnull String sequenceId) throws SQLException;
 
-    PreparedStatement letterSequenceStatement(Connection connection,
-                                              String sequenceId,
+    PreparedStatement letterSequenceStatement(@Nonnull Connection connection,
+                                              @Nonnull String processingGroup,
+                                              @Nonnull String sequenceId,
                                               int firstResult,
                                               int maxSize) throws SQLException;
 
-    PreparedStatement sequenceIdentifiersStatement(Connection connection) throws SQLException;
+    PreparedStatement sequenceIdentifiersStatement(@Nonnull Connection connection,
+                                                   @Nonnull String processingGroup) throws SQLException;
 
-    PreparedStatement sizeStatement(Connection connection) throws SQLException;
+    PreparedStatement sizeStatement(@Nonnull Connection connection,
+                                    @Nonnull String processingGroup) throws SQLException;
 
-    PreparedStatement sequenceSizeStatement(Connection connection, String sequenceId) throws SQLException;
+    PreparedStatement sequenceSizeStatement(@Nonnull Connection connection,
+                                            @Nonnull String processingGroup,
+                                            @Nonnull String sequenceId) throws SQLException;
 
-    PreparedStatement amountOfSequencesStatement(Connection c) throws SQLException;
+    PreparedStatement amountOfSequencesStatement(@Nonnull Connection connection,
+                                                 @Nonnull String processingGroup) throws SQLException;
 
-    PreparedStatement clearStatement(Connection c) throws SQLException;
+    PreparedStatement clearStatement(@Nonnull Connection connection,
+                                     @Nonnull String processingGroup) throws SQLException;
 
-    PreparedStatement maxIndexStatement(Connection connection, String sequenceId) throws SQLException;
+    PreparedStatement maxIndexStatement(@Nonnull Connection connection,
+                                        @Nonnull String processingGroup,
+                                        @Nonnull String sequenceId) throws SQLException;
 }
