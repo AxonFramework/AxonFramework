@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.serialization.SerializedObject;
@@ -31,6 +32,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
@@ -176,6 +178,29 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     }
 
     @Override
+    public PreparedStatement requeueStatement(@Nonnull Connection connection,
+                                              @Nonnull String letterIdentifier,
+                                              Cause cause,
+                                              @Nonnull Instant lastTouched,
+                                              MetaData diagnostics) throws SQLException {
+        String sql = "UPDATE " + schema.deadLetterTable() + " SET "
+                + schema.causeTypeColumn() + "=?, "
+                + schema.causeMessageColumn() + "=?, "
+                + schema.lastTouchedColumn() + "=?, "
+                + schema.diagnosticsColumn() + "=?, "
+                + schema.processingStartedColumn() + "=NULL "
+                + "WHERE " + schema.deadLetterIdColumn() + "=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, getOrDefault(cause, Cause::type, null));
+        statement.setString(2, getOrDefault(cause, Cause::message, null));
+        statement.setString(3, lastTouched.toString());
+        SerializedObject<byte[]> serializedDiagnostics = eventSerializer.serialize(diagnostics, byte[].class);
+        statement.setBytes(4, serializedDiagnostics.getData());
+        statement.setString(5, letterIdentifier);
+        return statement;
+    }
+
+    @Override
     public PreparedStatement containsStatement(@Nonnull Connection connection,
                                                @Nonnull String processingGroup,
                                                @Nonnull String sequenceId) throws SQLException {
@@ -199,7 +224,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=? "
                 + "AND " + schema.sequenceIdentifierColumn() + "=? "
-                + "AND " + schema.sequenceIndexColumn() + ">= " + firstResult + " "
+                + "AND " + schema.sequenceIndexColumn() + ">=" + firstResult + " "
                 + "LIMIT " + maxSize;
 
         PreparedStatement statement =

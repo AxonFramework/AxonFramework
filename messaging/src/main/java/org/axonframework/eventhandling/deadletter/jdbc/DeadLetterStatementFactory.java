@@ -17,11 +17,14 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.Instant;
 import javax.annotation.Nonnull;
 
 /**
@@ -39,6 +42,12 @@ public interface DeadLetterStatementFactory<E extends EventMessage<?>> {
 
     PreparedStatement evictStatement(@Nonnull Connection connection,
                                      @Nonnull String letterIdentifier) throws SQLException;
+
+    PreparedStatement requeueStatement(@Nonnull Connection connection,
+                                       @Nonnull String identifier,
+                                       Cause cause,
+                                       @Nonnull Instant lastTouched,
+                                       MetaData diagnostics) throws SQLException;
 
     PreparedStatement containsStatement(@Nonnull Connection connection,
                                         @Nonnull String processingGroup,
@@ -69,6 +78,4 @@ public interface DeadLetterStatementFactory<E extends EventMessage<?>> {
     PreparedStatement maxIndexStatement(@Nonnull Connection connection,
                                         @Nonnull String processingGroup,
                                         @Nonnull String sequenceId) throws SQLException;
-
-
 }

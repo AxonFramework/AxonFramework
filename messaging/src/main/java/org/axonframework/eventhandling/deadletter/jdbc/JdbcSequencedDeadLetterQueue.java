@@ -274,10 +274,46 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
     }
 
     @Override
-    public void requeue(@Nonnull DeadLetter<? extends E> letter,
-                        @Nonnull UnaryOperator<DeadLetter<? extends E>> letterUpdater)
-            throws NoSuchDeadLetterException {
+    public void requeue(
+            @Nonnull DeadLetter<? extends E> letter,
+            @Nonnull UnaryOperator<DeadLetter<? extends E>> letterUpdater
+    ) throws NoSuchDeadLetterException {
+        if (!(letter instanceof JdbcDeadLetter)) {
+            throw new WrongDeadLetterTypeException(
+                    String.format("Invoke requeue with a JdbcDeadLetter instance. Instead got: [%s]",
+                                  letter.getClass().getName())
+            );
+        }
+        //noinspection unchecked
+        JdbcDeadLetter<E> jdbcLetter = (JdbcDeadLetter<E>) letter;
+        String identifier = jdbcLetter.getId();
+        logger.info("Requeueing dead letter with id [{}] for processing group [{}] and sequence [{}]",
+                    identifier, processingGroup, jdbcLetter.getSequenceIdentifier());
+        DeadLetter<? extends E> updatedLetter = letterUpdater.apply(jdbcLetter).markTouched();
 
+        transactionManager.executeInTransaction(() -> {
+            Connection connection = getConnection();
+            try {
+                int updatedRows = executeUpdate(
+                        connection,
+                        c -> statementFactory.requeueStatement(c,
+                                                               identifier,
+                                                               updatedLetter.cause().orElse(null),
+                                                               updatedLetter.lastTouched(),
+                                                               updatedLetter.diagnostics()),
+                        handleException()
+                );
+                if (updatedRows == 0) {
+                    throw new NoSuchDeadLetterException("Cannot requeue [" + letter.message().getIdentifier()
+                                                                + "] since there is not matching entry in this queue.");
+                } else if (logger.isTraceEnabled()) {
+                    logger.trace("Requeued letter [{}] for sequence [{}].",
+                                 identifier, jdbcLetter.getSequenceIdentifier());
+                }
+            } finally {
+                closeQuietly(connection);
+            }
+        });
     }
 
     @Override
