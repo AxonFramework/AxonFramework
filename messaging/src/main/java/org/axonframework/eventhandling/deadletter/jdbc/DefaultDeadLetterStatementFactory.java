@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
@@ -44,15 +45,13 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 4.8.0
  */
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> implements DeadLetterStatementFactory<M> {
-
-    private static final String COMMA = ", ";
+public class DefaultDeadLetterStatementFactory<M extends EventMessage<?>> implements DeadLetterStatementFactory<M> {
 
     private final DeadLetterSchema schema;
     private final Serializer genericSerializer;
     private final Serializer eventSerializer;
 
-    protected SimpleDeadLetterStatementFactory(Builder<M> builder) {
+    protected DefaultDeadLetterStatementFactory(Builder<M> builder) {
         builder.validate();
         this.schema = builder.schema;
         this.genericSerializer = builder.genericSerializer;
@@ -69,98 +68,20 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
                                               @Nonnull String sequenceIdentifier,
                                               @Nonnull DeadLetter<? extends M> letter,
                                               long sequenceIndex) throws SQLException {
-        String enqueueSql = enqueueSql(letter);
-
-        M eventMessage = letter.message();
-        boolean isDomainEvent = eventMessage instanceof DomainEventMessage;
-        boolean isTrackedEvent = eventMessage instanceof TrackedEventMessage;
-        PreparedStatement statement = connection.prepareStatement(enqueueSql);
+        String sql = "INSERT INTO " + schema.deadLetterTable() + " "
+                + "(" + schema.deadLetterFields() + ") "
+                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        PreparedStatement statement = connection.prepareStatement(sql);
         AtomicInteger fieldIndex = new AtomicInteger(1);
+        M eventMessage = letter.message();
 
         setIdFields(statement, fieldIndex, processingGroup, sequenceIdentifier, sequenceIndex);
         setEventFields(statement, fieldIndex, eventMessage);
-        if (isDomainEvent) {
-            setDomainEventFields(statement, fieldIndex, (DomainEventMessage<?>) eventMessage);
-        }
-        if (isTrackedEvent) {
-            setTrackedEventFields(statement, fieldIndex, (TrackedEventMessage<?>) eventMessage);
-        }
+        setDomainEventFields(statement, fieldIndex, eventMessage);
+        setTrackedEventFields(statement, fieldIndex, eventMessage);
         setDeadLetterFields(statement, fieldIndex, letter);
 
         return statement;
-    }
-
-    private String enqueueSql(DeadLetter<? extends M> letter) {
-        M eventMessage = letter.message();
-        boolean isDomainEvent = eventMessage instanceof DomainEventMessage;
-        boolean isTrackedEvent = eventMessage instanceof TrackedEventMessage;
-        boolean hasCause = letter.cause().isPresent();
-
-        int fieldCount = 14;
-        StringBuilder enqueueSqlBuilder =
-                new StringBuilder().append("INSERT INTO ")
-                                   .append(schema.deadLetterTable())
-                                   .append(" (")
-                                   .append(schema.deadLetterIdColumn())
-                                   .append(COMMA)
-                                   .append(schema.processingGroupColumn())
-                                   .append(COMMA)
-                                   .append(schema.sequenceIdentifierColumn())
-                                   .append(COMMA)
-                                   .append(schema.sequenceIndexColumn())
-                                   .append(COMMA)
-                                   .append(schema.messageTypeColumn())
-                                   .append(COMMA)
-                                   .append(schema.eventIdentifierColumn())
-                                   .append(COMMA)
-                                   .append(schema.timeStampColumn())
-                                   .append(COMMA)
-                                   .append(schema.payloadTypeColumn())
-                                   .append(COMMA)
-                                   .append(schema.payloadRevisionColumn())
-                                   .append(COMMA)
-                                   .append(schema.payloadColumn())
-                                   .append(COMMA)
-                                   .append(schema.metaDataColumn())
-                                   .append(COMMA);
-        if (isDomainEvent) {
-            enqueueSqlBuilder.append(schema.aggregateTypeColumn())
-                             .append(COMMA)
-                             .append(schema.aggregateIdentifierColumn())
-                             .append(COMMA)
-                             .append(schema.sequenceNumberColumn())
-                             .append(COMMA);
-            fieldCount += 3;
-        }
-        if (isTrackedEvent) {
-            enqueueSqlBuilder.append(schema.tokenTypeColumn())
-                             .append(COMMA).append(schema.tokenColumn())
-                             .append(COMMA);
-            fieldCount += 2;
-        }
-        enqueueSqlBuilder.append(schema.enqueuedAtColumn())
-                         .append(COMMA)
-                         .append(schema.lastTouchedColumn())
-                         .append(COMMA);
-        if (hasCause) {
-            enqueueSqlBuilder.append(schema.causeTypeColumn())
-                             .append(COMMA)
-                             .append(schema.causeMessageColumn())
-                             .append(COMMA);
-            fieldCount += 2;
-        }
-        enqueueSqlBuilder.append(schema.diagnosticsColumn())
-                         .append(") ")
-                         .append("VALUES(");
-        for (int fieldNumber = 0; fieldNumber < fieldCount; fieldNumber++) {
-            enqueueSqlBuilder.append("?");
-            if (fieldCount - 1 != fieldNumber) {
-                enqueueSqlBuilder.append(COMMA);
-            }
-        }
-        enqueueSqlBuilder.append(")");
-
-        return enqueueSqlBuilder.toString();
     }
 
     private void setIdFields(PreparedStatement statement,
@@ -194,19 +115,42 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
 
     private void setDomainEventFields(PreparedStatement statement,
                                       AtomicInteger fieldIndex,
+                                      EventMessage<?> eventMessage) throws SQLException {
+        boolean isDomainEvent = eventMessage instanceof DomainEventMessage;
+        setDomainEventFields(statement, fieldIndex, isDomainEvent ? (DomainEventMessage<?>) eventMessage : null);
+    }
+
+    private void setDomainEventFields(PreparedStatement statement,
+                                      AtomicInteger fieldIndex,
                                       DomainEventMessage<?> eventMessage) throws SQLException {
-        statement.setString(fieldIndex.getAndIncrement(), eventMessage.getType());
-        statement.setString(fieldIndex.getAndIncrement(), eventMessage.getAggregateIdentifier());
-        statement.setLong(fieldIndex.getAndIncrement(), eventMessage.getSequenceNumber());
+        statement.setString(fieldIndex.getAndIncrement(),
+                            getOrDefault(eventMessage, DomainEventMessage::getType, null));
+        statement.setString(fieldIndex.getAndIncrement(),
+                            getOrDefault(eventMessage, DomainEventMessage::getAggregateIdentifier, null));
+        statement.setLong(fieldIndex.getAndIncrement(),
+                          getOrDefault(eventMessage, DomainEventMessage::getSequenceNumber, -1L));
     }
 
     private void setTrackedEventFields(PreparedStatement statement,
                                        AtomicInteger fieldIndex,
-                                       TrackedEventMessage<?> eventMessage) throws SQLException {
-        TrackingToken token = eventMessage.trackingToken();
-        SerializedObject<byte[]> serializedToken = genericSerializer.serialize(token, byte[].class);
-        statement.setString(fieldIndex.getAndIncrement(), serializedToken.getType().getName());
-        statement.setBytes(fieldIndex.getAndIncrement(), serializedToken.getData());
+                                       EventMessage<?> eventMessage) throws SQLException {
+        boolean isTrackedEvent = eventMessage instanceof TrackedEventMessage;
+        setTrackedEventFields(statement,
+                              fieldIndex,
+                              isTrackedEvent ? ((TrackedEventMessage<?>) eventMessage).trackingToken() : null);
+    }
+
+    private void setTrackedEventFields(PreparedStatement statement,
+                                       AtomicInteger fieldIndex,
+                                       TrackingToken token) throws SQLException {
+        if (token != null) {
+            SerializedObject<byte[]> serializedToken = genericSerializer.serialize(token, byte[].class);
+            statement.setString(fieldIndex.getAndIncrement(), serializedToken.getType().getName());
+            statement.setBytes(fieldIndex.getAndIncrement(), serializedToken.getData());
+        } else {
+            statement.setString(fieldIndex.getAndIncrement(), null);
+            statement.setBytes(fieldIndex.getAndIncrement(), null);
+        }
     }
 
     private void setDeadLetterFields(PreparedStatement statement,
@@ -214,12 +158,9 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
                                      DeadLetter<? extends M> letter) throws SQLException {
         statement.setString(fieldIndex.getAndIncrement(), letter.enqueuedAt().toString());
         statement.setString(fieldIndex.getAndIncrement(), letter.lastTouched().toString());
-        Optional<Cause> optionalCause = letter.cause();
-        if (optionalCause.isPresent()) {
-            Cause cause = optionalCause.get();
-            statement.setString(fieldIndex.getAndIncrement(), cause.type());
-            statement.setString(fieldIndex.getAndIncrement(), cause.message());
-        }
+        Optional<Cause> cause = letter.cause();
+        statement.setString(fieldIndex.getAndIncrement(), cause.map(Cause::type).orElse(null));
+        statement.setString(fieldIndex.getAndIncrement(), cause.map(Cause::message).orElse(null));
         SerializedObject<byte[]> serializedDiagnostics = eventSerializer.serialize(letter.diagnostics(), byte[].class);
         statement.setBytes(fieldIndex.getAndIncrement(), serializedDiagnostics.getData());
     }
@@ -384,12 +325,12 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
         }
 
         /**
-         * Initializes a {@link JdbcSequencedDeadLetterQueue} as specified through this Builder.
+         * Initializes a {@link DefaultDeadLetterStatementFactory} as specified through this Builder.
          *
-         * @return A {@link JdbcSequencedDeadLetterQueue} as specified through this Builder.
+         * @return A {@link DefaultDeadLetterStatementFactory} as specified through this Builder.
          */
-        public SimpleDeadLetterStatementFactory<M> build() {
-            return new SimpleDeadLetterStatementFactory<>(this);
+        public DefaultDeadLetterStatementFactory<M> build() {
+            return new DefaultDeadLetterStatementFactory<>(this);
         }
 
         /**

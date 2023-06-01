@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.deadletter.jdbc;
 
+import java.util.function.Function;
+
 import static org.axonframework.common.BuilderUtils.assertNonBlank;
 
 /**
@@ -53,6 +55,30 @@ public class DeadLetterSchema {
     private final String causeTypeColumn;
     private final String causeMessageColumn;
     private final String diagnosticsColumn;
+
+    private final Function<DeadLetterSchema, String> deadLetterFields = schema ->
+            String.join(",",
+                        schema.deadLetterIdColumn(),
+                        schema.processingGroupColumn(),
+                        schema.sequenceIdentifierColumn(),
+                        schema.sequenceIndexColumn(),
+                        schema.messageTypeColumn(),
+                        schema.eventIdentifierColumn(),
+                        schema.timeStampColumn(),
+                        schema.payloadTypeColumn(),
+                        schema.payloadRevisionColumn(),
+                        schema.payloadColumn(),
+                        schema.metaDataColumn(),
+                        schema.aggregateTypeColumn(),
+                        schema.aggregateIdentifierColumn(),
+                        schema.sequenceNumberColumn(),
+                        schema.tokenTypeColumn(),
+                        schema.tokenColumn(),
+                        schema.enqueuedAtColumn(),
+                        schema.lastTouchedColumn(),
+                        schema.causeTypeColumn(),
+                        schema.causeMessageColumn(),
+                        schema.diagnosticsColumn());
 
     /**
      * Instantiate a {@link DeadLetterSchema} based on the given {@link Builder builder}.
@@ -311,6 +337,16 @@ public class DeadLetterSchema {
      */
     public String diagnosticsColumn() {
         return diagnosticsColumn;
+    }
+
+    /**
+     * Return a comma separated list of dead letter column names to insert a dead letter into the
+     * {@link #deadLetterTable() dead letter table}.
+     *
+     * @return A comma separated list of dead letter column names.
+     */
+    public String deadLetterFields() {
+        return deadLetterFields.apply(this);
     }
 
     /**

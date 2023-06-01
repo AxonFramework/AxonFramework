@@ -117,11 +117,11 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         this.claimDuration = builder.claimDuration;
 
         // TODO get a feel whether this thing makes sense in it's current form
-        this.statementFactory = SimpleDeadLetterStatementFactory.<M>builder()
-                                                                .schema(builder.schema)
-                                                                .genericSerializer(builder.genericSerializer)
-                                                                .eventSerializer(builder.eventSerializer)
-                                                                .build();
+        this.statementFactory = DefaultDeadLetterStatementFactory.<M>builder()
+                                                                 .schema(builder.schema)
+                                                                 .genericSerializer(builder.genericSerializer)
+                                                                 .eventSerializer(builder.eventSerializer)
+                                                                 .build();
         this.converter = SimpleDeadLetterJdbcConverter.<M>builder()
                                                       .genericSerializer(builder.genericSerializer)
                                                       .eventSerializer(builder.eventSerializer)
