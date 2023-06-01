@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryE
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -51,12 +52,16 @@ import org.springframework.context.annotation.Bean;
 public class AxonDbSchedulerAutoConfiguration {
 
     @Bean
-    public Task<DbSchedulerBinaryEventData> dbSchedulerBinaryEventDataTask() {
+    @Qualifier("eventDataTask")
+    @ConditionalOnMissingQualifiedBean(beanClass = Task.class, qualifier = "eventDataTask")
+    public Task<DbSchedulerBinaryEventData> dbSchedulerEventDataTask() {
         return DbSchedulerEventScheduler.binaryTask();
     }
 
     @Bean
-    public Task<DbSchedulerBinaryDeadlineDetails> dbSchedulerBinaryDeadlineDetailsTask() {
+    @Qualifier("deadlineDetailsTask")
+    @ConditionalOnMissingQualifiedBean(beanClass = Task.class, qualifier = "deadlineDetailsTask")
+    public Task<DbSchedulerBinaryDeadlineDetails> dbSchedulerDeadlineDetailsTask() {
         return DbSchedulerDeadlineManager.binaryTask();
     }
 
