@@ -101,7 +101,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
     // TODO get a feel whether this thing makes sense in it's current form
     private final DeadLetterStatementFactory<M> statementFactory;
-    private final DeadLetterResultSetConverter<M> converter;
+    private final DeadLetterJdbcConverter<M> converter;
 
     protected JdbcSequencedDeadLetterQueue(Builder<M> builder) {
         builder.validate();
@@ -123,10 +123,10 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
                                                                 .genericSerializer(builder.genericSerializer)
                                                                 .eventSerializer(builder.eventSerializer)
                                                                 .build();
-        this.converter = SimpleDeadLetterResultSetConverter.<M>builder()
-                                                           .genericSerializer(builder.genericSerializer)
-                                                           .eventSerializer(builder.eventSerializer)
-                                                           .build();
+        this.converter = SimpleDeadLetterJdbcConverter.<M>builder()
+                                                      .genericSerializer(builder.genericSerializer)
+                                                      .eventSerializer(builder.eventSerializer)
+                                                      .build();
     }
 
     /**
@@ -235,7 +235,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         return transactionManager.fetchInTransaction(() -> executeQuery(
                 getConnection(),
                 connection -> statementFactory.maxIndexStatement(connection, sequenceId),
-                converter::convertToLong,
+                resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                 handleException()
         ));
     }
@@ -261,7 +261,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
         return executeQuery(getConnection(),
                             connection -> statementFactory.containsStatement(connection, sequenceId),
-                            resultSet -> converter.convertToLong(resultSet) > 0,
+                            resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L) > 0L,
                             handleException(),
                             CLOSE_QUIETLY);
     }
@@ -323,7 +323,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     public long size() {
         return executeQuery(getConnection(),
                             statementFactory::sizeStatement,
-                            converter::convertToLong,
+                            resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                             handleException(),
                             CLOSE_QUIETLY);
     }
@@ -333,7 +333,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         return executeQuery(getConnection(),
                             connection -> statementFactory.sequenceSizeStatement(connection, sequenceId),
-                            converter::convertToLong,
+                            resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                             handleException(),
                             CLOSE_QUIETLY
         );
@@ -343,7 +343,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     public long amountOfSequences() {
         return executeQuery(getConnection(),
                             statementFactory::amountOfSequencesStatement,
-                            converter::convertToLong,
+                            resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                             handleException(),
                             CLOSE_QUIETLY);
     }

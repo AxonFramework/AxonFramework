@@ -46,7 +46,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class SimpleDeadLetterResultSetConverter<M extends EventMessage<?>> implements DeadLetterResultSetConverter<M> {
+public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements DeadLetterJdbcConverter<M> {
 
     // TODO move the indices to the schema perhaps
     private static final int SEQUENCE_ID_INDEX = 3;
@@ -69,7 +69,7 @@ public class SimpleDeadLetterResultSetConverter<M extends EventMessage<?>> imple
     private final Serializer genericSerializer;
     private final Serializer eventSerializer;
 
-    protected SimpleDeadLetterResultSetConverter(Builder<M> builder) {
+    protected SimpleDeadLetterJdbcConverter(Builder<M> builder) {
         builder.validate();
         genericSerializer = builder.genericSerializer;
         eventSerializer = builder.eventSerializer;
@@ -164,11 +164,6 @@ public class SimpleDeadLetterResultSetConverter<M extends EventMessage<?>> imple
         return eventSerializer.deserialize(serializedDiagnostics);
     }
 
-    @Override
-    public long convertToLong(ResultSet resultSet) throws SQLException {
-        return resultSet.next() ? resultSet.getLong(1) : 0L;
-    }
-
     protected static class Builder<M extends EventMessage<?>> {
 
         private Serializer genericSerializer;
@@ -206,8 +201,8 @@ public class SimpleDeadLetterResultSetConverter<M extends EventMessage<?>> imple
          *
          * @return A {@link JdbcSequencedDeadLetterQueue} as specified through this Builder.
          */
-        public SimpleDeadLetterResultSetConverter<M> build() {
-            return new SimpleDeadLetterResultSetConverter<>(this);
+        public SimpleDeadLetterJdbcConverter<M> build() {
+            return new SimpleDeadLetterJdbcConverter<>(this);
         }
 
         /**

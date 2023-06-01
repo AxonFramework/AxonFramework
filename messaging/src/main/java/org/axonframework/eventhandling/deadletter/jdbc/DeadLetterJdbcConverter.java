@@ -28,9 +28,8 @@ import java.sql.SQLException;
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public interface DeadLetterResultSetConverter<M extends EventMessage<?>> {
+@FunctionalInterface
+public interface DeadLetterJdbcConverter<M extends EventMessage<?>> {
 
     DeadLetter<? extends M> convertToLetter(ResultSet resultSet) throws SQLException;
-
-    long convertToLong(ResultSet resultSet) throws SQLException;
 }
