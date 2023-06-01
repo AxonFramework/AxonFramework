@@ -38,7 +38,10 @@ public interface DeadLetterStatementFactory<M extends EventMessage<?>> {
 
     PreparedStatement containsStatement(Connection connection, String sequenceId) throws SQLException;
 
-    PreparedStatement letterSequenceStatement(Connection connection, String sequenceId) throws SQLException;
+    PreparedStatement letterSequenceStatement(Connection connection,
+                                              String sequenceId,
+                                              int firstResult,
+                                              int maxSize) throws SQLException;
 
     PreparedStatement sequenceIdentifiersStatement(Connection connection) throws SQLException;
 
