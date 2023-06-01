@@ -388,7 +388,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
 
         /**
          * Sets whether to start the {@link Scheduler} using the {@link Lifecycle}, or to never start the scheduler from
-         * this component instead. defaults to {@code true}.
+         * this component instead. Defaults to {@code true}.
          *
          * @param startScheduler a {@code boolean} to determine whether to start the scheduler.
          * @return the current Builder instance, for fluent interfacing
