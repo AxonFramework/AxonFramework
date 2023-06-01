@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.deadletter.jdbc;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
+import org.axonframework.common.jdbc.PagingJdbcIterable;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter;
@@ -90,7 +91,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     private final String processingGroup;
     private final int maxSequences;
     private final int maxSequenceSize;
-    private final int queryPageSize;
+    private final int pageSize;
     private final ConnectionProvider connectionProvider;
     private final DeadLetterSchema schema;
     private final TransactionManager transactionManager;
@@ -107,7 +108,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         this.processingGroup = builder.processingGroup;
         this.maxSequences = builder.maxSequences;
         this.maxSequenceSize = builder.maxSequenceSize;
-        this.queryPageSize = builder.queryPageSize;
+        this.pageSize = builder.pageSize;
         this.connectionProvider = builder.connectionProvider;
         this.schema = builder.schema;
         this.transactionManager = builder.transactionManager;
@@ -135,7 +136,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
      * <ul>
      *     <li>The {@link Builder#maxSequences(int) maximum amount of sequences} defaults to {@code 1024}.</li>
      *     <li>The {@link Builder#maxSequenceSize(int) maximum sequence size} defaults to {@code 1024}.</li>
-     *     <li>The {@link Builder#queryPageSize(int) query page size} defaults to {@code 100}.</li>
+     *     <li>The {@link Builder#pageSize(int) query page size} defaults to {@code 100}.</li>
      *     <li>The {@link Builder#schema(DeadLetterSchema) table's schema} defaults to a {@link DeadLetterSchema#defaultSchema()}.</li>
      *     <li>The {@link Builder#claimDuration(Duration) claim duration} defaults to 30 seconds.</li>
      * </ul>
@@ -272,11 +273,17 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
             return Collections.emptyList();
         }
 
-        return executeQuery(getConnection(),
-                            connection -> statementFactory.letterSequenceStatement(connection, sequenceId),
-                            listResults(converter::convertToLetter),
-                            handleException(),
-                            CLOSE_QUIETLY);
+        return new PagingJdbcIterable<>(
+                pageSize,
+                this::getConnection,
+                transactionManager,
+                (connection, firstResult, maxSize) -> statementFactory.letterSequenceStatement(
+                        connection, sequenceId, firstResult, maxSequenceSize
+                ),
+                converter::convertToLetter,
+                handleException(),
+                CLOSE_QUIETLY
+        );
     }
 
     @Override
@@ -287,6 +294,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
                                                         handleException(),
                                                         CLOSE_QUIETLY);
 
+        //noinspection DuplicatedCode
         return () -> {
             Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
             return new Iterator<Iterable<DeadLetter<? extends M>>>() {
@@ -374,7 +382,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
      * <ul>
      *     <li>The {@link Builder#maxSequences(int) maximum amount of sequences} defaults to {@code 1024}.</li>
      *     <li>The {@link Builder#maxSequenceSize(int) maximum sequence size} defaults to {@code 1024}.</li>
-     *     <li>The {@link Builder#queryPageSize(int) query page size} defaults to {@code 100}.</li>
+     *     <li>The {@link Builder#pageSize(int) page size} defaults to {@code 100}.</li>
      *     <li>The {@link Builder#schema(DeadLetterSchema) table's schema} defaults to a {@link DeadLetterSchema#defaultSchema()}.</li>
      *     <li>The {@link Builder#claimDuration(Duration) claim duration} defaults to 30 seconds.</li>
      * </ul>
@@ -393,7 +401,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         private String processingGroup;
         private int maxSequences = 1024;
         private int maxSequenceSize = 1024;
-        private int queryPageSize = 100;
+        private int pageSize = 100;
         private ConnectionProvider connectionProvider;
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
         private TransactionManager transactionManager;
@@ -467,12 +475,12 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
          * Modifies the page size used when retrieving a sequence of dead letters. Defaults to {@code 100} items in a
          * page.
          *
-         * @param queryPageSize The page size
+         * @param fetchSize The page size
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<M> queryPageSize(int queryPageSize) {
-            assertStrictPositive(queryPageSize, "The query page size must be at least 1.");
-            this.queryPageSize = queryPageSize;
+        public Builder<M> pageSize(int fetchSize) {
+            assertStrictPositive(fetchSize, "The fetch size must be at least 1.");
+            this.pageSize = fetchSize;
             return this;
         }
 

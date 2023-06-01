@@ -31,6 +31,7 @@ import org.axonframework.serialization.Serializer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -237,12 +238,20 @@ public class SimpleDeadLetterStatementFactory<M extends EventMessage<?>> impleme
     }
 
     @Override
-    public PreparedStatement letterSequenceStatement(Connection connection, String sequenceId) throws SQLException {
+    public PreparedStatement letterSequenceStatement(Connection connection,
+                                                     String sequenceId,
+                                                     int firstResult,
+                                                     int maxSize) throws SQLException {
         String sql = "SELECT * "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=? "
-                + "AND " + schema.sequenceIdentifierColumn() + "=? ";
-        PreparedStatement statement = connection.prepareStatement(sql);
+                + "AND " + schema.sequenceIdentifierColumn() + "=? "
+                + "AND " + schema.sequenceIndexColumn() + ">= " + firstResult + " "
+                + "LIMIT " + maxSize;
+
+        PreparedStatement statement =
+                connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+
         statement.setString(1, processingGroup);
         statement.setString(2, sequenceId);
         return statement;
