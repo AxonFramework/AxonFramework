@@ -48,29 +48,13 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements DeadLetterJdbcConverter<M> {
 
-    // TODO move the indices to the schema perhaps
-    private static final int SEQUENCE_ID_INDEX = 3;
-    private static final int EVENT_MESSAGE_TYPE_INDEX = 6;
-    private static final int EVENT_TIMESTAMP_INDEX = 7;
-    private static final int PAYLOAD_TYPE_INDEX = 8;
-    private static final int PAYLOAD_REVISION_INDEX = 9;
-    private static final int PAYLOAD_INDEX = 10;
-    private static final int META_DATA_INDEX = 11;
-    private static final int AGGREGATE_TYPE_INDEX = 12;
-    private static final int AGGREGATE_ID_INDEX = 13;
-    private static final int TOKEN_TYPE_INDEX = 15;
-    private static final int TOKEN_INDEX = 16;
-    private static final int ENQUEUED_AT_INDEX = 17;
-    private static final int LAST_TOUCHED_INDEX = 18;
-    private static final int CAUSE_TYPE_INDEX = 20;
-    private static final int CAUSE_MESSAGE_INDEX = 21;
-    private static final int DIAGNOSTICS_INDEX = 22;
-
+    private final DeadLetterSchema schema;
     private final Serializer genericSerializer;
     private final Serializer eventSerializer;
 
     protected SimpleDeadLetterJdbcConverter(Builder<M> builder) {
         builder.validate();
+        schema = builder.schema;
         genericSerializer = builder.genericSerializer;
         eventSerializer = builder.eventSerializer;
     }
@@ -83,25 +67,27 @@ public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements
     public DeadLetter<? extends M> convertToLetter(ResultSet resultSet) throws SQLException {
         EventMessage<?> eventMessage;
         Message<?> serializedMessage = convertToSerializedMessage(resultSet);
-        String eventTimestampString = resultSet.getString(EVENT_TIMESTAMP_INDEX);
+        String eventTimestampString = resultSet.getString(schema.timeStampColumn());
         Supplier<Instant> timestampSupplier = () -> Instant.parse(eventTimestampString);
 
-        if (resultSet.getString(TOKEN_TYPE_INDEX) != null) {
+        if (resultSet.getString(schema.tokenTypeColumn()) != null) {
             TrackingToken trackingToken = convertToTrackingToken(resultSet);
-            if (resultSet.getString(AGGREGATE_ID_INDEX) != null) {
-                eventMessage = new GenericTrackedDomainEventMessage<>(trackingToken,
-                                                                      resultSet.getString(AGGREGATE_TYPE_INDEX),
-                                                                      resultSet.getString(AGGREGATE_ID_INDEX),
-                                                                      resultSet.getLong(TOKEN_TYPE_INDEX),
-                                                                      serializedMessage,
-                                                                      timestampSupplier);
+            if (resultSet.getString(schema.aggregateIdentifierColumn()) != null) {
+                eventMessage = new GenericTrackedDomainEventMessage<>(
+                        trackingToken,
+                        resultSet.getString(schema.aggregateTypeColumn()),
+                        resultSet.getString(schema.aggregateIdentifierColumn()),
+                        resultSet.getLong(schema.sequenceNumberColumn()),
+                        serializedMessage,
+                        timestampSupplier
+                );
             } else {
                 eventMessage = new GenericTrackedEventMessage<>(trackingToken, serializedMessage, timestampSupplier);
             }
-        } else if (resultSet.getString(AGGREGATE_ID_INDEX) != null) {
-            eventMessage = new GenericDomainEventMessage<>(resultSet.getString(AGGREGATE_TYPE_INDEX),
-                                                           resultSet.getString(AGGREGATE_ID_INDEX),
-                                                           resultSet.getLong(TOKEN_TYPE_INDEX),
+        } else if (resultSet.getString(schema.aggregateIdentifierColumn()) != null) {
+            eventMessage = new GenericDomainEventMessage<>(resultSet.getString(schema.aggregateTypeColumn()),
+                                                           resultSet.getString(schema.aggregateIdentifierColumn()),
+                                                           resultSet.getLong(schema.sequenceNumberColumn()),
                                                            serializedMessage.getPayload(),
                                                            serializedMessage.getMetaData(),
                                                            serializedMessage.getIdentifier(),
@@ -111,53 +97,60 @@ public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements
         }
 
         Cause cause = null;
-        if (resultSet.getString(CAUSE_TYPE_INDEX) != null) {
-            cause = new ThrowableCause(resultSet.getString(CAUSE_TYPE_INDEX), resultSet.getString(CAUSE_MESSAGE_INDEX));
+        String causeType = resultSet.getString(schema.causeTypeColumn());
+        if (causeType != null) {
+            cause = new ThrowableCause(causeType, resultSet.getString(schema.causeMessageColumn()));
         }
-        Instant enqueuedAt = Instant.parse(resultSet.getString(ENQUEUED_AT_INDEX));
-        Instant lastTouched = Instant.parse(resultSet.getString(LAST_TOUCHED_INDEX));
+        Instant enqueuedAt = Instant.parse(resultSet.getString(schema.enqueuedAtColumn()));
+        Instant lastTouched = Instant.parse(resultSet.getString(schema.lastTouchedColumn()));
         MetaData diagnostics = convertToDiagnostics(resultSet);
 
         //noinspection unchecked
         return (DeadLetter<? extends M>) new GenericDeadLetter<>(
-                resultSet.getString(SEQUENCE_ID_INDEX), eventMessage, cause, enqueuedAt, lastTouched, diagnostics
+                resultSet.getString(schema.sequenceIdentifierColumn()),
+                eventMessage,
+                cause,
+                enqueuedAt,
+                lastTouched,
+                diagnostics
         );
     }
 
     private SerializedMessage<?> convertToSerializedMessage(ResultSet resultSet) throws SQLException {
         SerializedObject<byte[]> serializedPayload = convertToSerializedPayload(resultSet);
         SerializedObject<byte[]> serializedMetaData = convertToSerializedMetaData(resultSet);
-        return new SerializedMessage<>(resultSet.getString(EVENT_MESSAGE_TYPE_INDEX),
+        return new SerializedMessage<>(resultSet.getString(schema.eventIdentifierColumn()),
                                        serializedPayload,
                                        serializedMetaData,
                                        eventSerializer);
     }
 
     private SerializedObject<byte[]> convertToSerializedPayload(ResultSet resultSet) throws SQLException {
-        return new SimpleSerializedObject<>(resultSet.getBytes(PAYLOAD_INDEX),
+        return new SimpleSerializedObject<>(resultSet.getBytes(schema.payloadColumn()),
                                             byte[].class,
-                                            resultSet.getString(PAYLOAD_TYPE_INDEX),
-                                            resultSet.getString(PAYLOAD_REVISION_INDEX));
+                                            resultSet.getString(schema.payloadTypeColumn()),
+                                            resultSet.getString(schema.payloadRevisionColumn()));
     }
 
     private SerializedObject<byte[]> convertToSerializedMetaData(ResultSet resultSet) throws SQLException {
-        return new SimpleSerializedObject<>(resultSet.getBytes(META_DATA_INDEX),
+        return new SimpleSerializedObject<>(resultSet.getBytes(schema.metaDataColumn()),
                                             byte[].class,
                                             MetaData.class.getName(),
                                             null);
     }
 
     private TrackingToken convertToTrackingToken(ResultSet resultSet) throws SQLException {
-        SerializedObject<byte[]> serializedToken = new SimpleSerializedObject<>(resultSet.getBytes(TOKEN_INDEX),
-                                                                                byte[].class,
-                                                                                resultSet.getString(TOKEN_TYPE_INDEX),
-                                                                                null);
+        SerializedObject<byte[]> serializedToken =
+                new SimpleSerializedObject<>(resultSet.getBytes(schema.tokenColumn()),
+                                             byte[].class,
+                                             resultSet.getString(schema.tokenTypeColumn()),
+                                             null);
         return genericSerializer.deserialize(serializedToken);
     }
 
     private MetaData convertToDiagnostics(ResultSet resultSet) throws SQLException {
         SerializedObject<byte[]> serializedDiagnostics =
-                new SimpleSerializedObject<>(resultSet.getBytes(DIAGNOSTICS_INDEX),
+                new SimpleSerializedObject<>(resultSet.getBytes(schema.diagnosticsColumn()),
                                              byte[].class,
                                              MetaData.class.getName(),
                                              null);
@@ -166,8 +159,19 @@ public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements
 
     protected static class Builder<M extends EventMessage<?>> {
 
+        private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
         private Serializer genericSerializer;
         private Serializer eventSerializer;
+
+        /**
+         * @param schema
+         * @return The current Builder, for fluent interfacing.
+         */
+        public Builder<M> schema(DeadLetterSchema schema) {
+            assertNonNull(schema, "DeadLetterSchema may not be null");
+            this.schema = schema;
+            return this;
+        }
 
         /**
          * Sets the {@link Serializer} to (de)serialize the {@link org.axonframework.eventhandling.TrackingToken} (if
