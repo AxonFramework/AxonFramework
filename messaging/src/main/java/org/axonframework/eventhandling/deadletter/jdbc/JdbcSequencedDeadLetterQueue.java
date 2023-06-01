@@ -23,6 +23,7 @@ import org.axonframework.common.jdbc.PagingJdbcIterable;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter;
+import org.axonframework.eventhandling.deadletter.jpa.JpaDeadLetter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -30,6 +31,7 @@ import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,11 +72,11 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * {@link org.axonframework.serialization.upcasting.Upcaster upcasters} are not supported by this implementation, so
  * breaking changes for events messages stored in the queue should be avoided.
  *
- * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
+ * @param <E> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements SequencedDeadLetterQueue<M> {
+public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements SequencedDeadLetterQueue<E> {
 
     // TODO make this configurable, or use something like the PersistenceExceptionResolver
     private static Function<SQLException, RuntimeException> handleException() {
@@ -100,10 +102,10 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     private final Duration claimDuration;
 
     // TODO get a feel whether this thing makes sense in it's current form
-    private final DeadLetterStatementFactory<M> statementFactory;
-    private final DeadLetterJdbcConverter<M> converter;
+    private final DeadLetterStatementFactory<E> statementFactory;
+    private final DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter;
 
-    protected JdbcSequencedDeadLetterQueue(Builder<M> builder) {
+    protected JdbcSequencedDeadLetterQueue(Builder<E> builder) {
         builder.validate();
         this.processingGroup = builder.processingGroup;
         this.maxSequences = builder.maxSequences;
@@ -117,12 +119,12 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         this.claimDuration = builder.claimDuration;
 
         // TODO get a feel whether this thing makes sense in it's current form
-        this.statementFactory = DefaultDeadLetterStatementFactory.<M>builder()
+        this.statementFactory = DefaultDeadLetterStatementFactory.<E>builder()
                                                                  .schema(builder.schema)
                                                                  .genericSerializer(builder.genericSerializer)
                                                                  .eventSerializer(builder.eventSerializer)
                                                                  .build();
-        this.converter = SimpleDeadLetterJdbcConverter.<M>builder()
+        this.converter = SimpleDeadLetterJdbcConverter.<E>builder()
                                                       .genericSerializer(builder.genericSerializer)
                                                       .eventSerializer(builder.eventSerializer)
                                                       .build();
@@ -189,7 +191,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
 
     @Override
     public void enqueue(@Nonnull Object sequenceIdentifier,
-                        @Nonnull DeadLetter<? extends M> letter) throws DeadLetterQueueOverflowException {
+                        @Nonnull DeadLetter<? extends E> letter) throws DeadLetterQueueOverflowException {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         if (isFull(sequenceId)) {
             throw new DeadLetterQueueOverflowException(
@@ -240,13 +242,40 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     }
 
     @Override
-    public void evict(DeadLetter<? extends M> letter) {
+    public void evict(DeadLetter<? extends E> letter) {
+        if (!(letter instanceof JdbcDeadLetter)) {
+            throw new WrongDeadLetterTypeException(
+                    String.format("Invoke evict with a JdbcDeadLetter instance. Instead got: [%s]",
+                                  letter.getClass().getName())
+            );
+        }
+        //noinspection unchecked
+        JdbcDeadLetter<E> jdbcLetter = (JdbcDeadLetter<E>) letter;
+        String identifier = jdbcLetter.getId();
+        String sequenceIdentifier = jdbcLetter.getSequenceIdentifier();
+        logger.info("Evicting dead letter with id [{}] for processing group [{}] and sequence [{}]",
+                    identifier, processingGroup, sequenceIdentifier);
 
+        transactionManager.executeInTransaction(() -> {
+            Connection connection = getConnection();
+            try {
+                int deletedRows = executeUpdate(connection,
+                                                c -> statementFactory.evictStatement(c, identifier),
+                                                handleException());
+                if (deletedRows == 0) {
+                    logger.info("Dead letter with identifier [{}] for processing group [{}] "
+                                        + "and sequence [{}] was already evicted",
+                                identifier, processingGroup, sequenceIdentifier);
+                }
+            } finally {
+                closeQuietly(connection);
+            }
+        });
     }
 
     @Override
-    public void requeue(@Nonnull DeadLetter<? extends M> letter,
-                        @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater)
+    public void requeue(@Nonnull DeadLetter<? extends E> letter,
+                        @Nonnull UnaryOperator<DeadLetter<? extends E>> letterUpdater)
             throws NoSuchDeadLetterException {
 
     }
@@ -266,7 +295,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     }
 
     @Override
-    public Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
+    public Iterable<DeadLetter<? extends E>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         if (!contains(sequenceId)) {
             return Collections.emptyList();
@@ -286,7 +315,7 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     }
 
     @Override
-    public Iterable<Iterable<DeadLetter<? extends M>>> deadLetters() {
+    public Iterable<Iterable<DeadLetter<? extends E>>> deadLetters() {
         List<String> sequenceIdentifiers = executeQuery(
                 getConnection(),
                 connection -> statementFactory.sequenceIdentifiersStatement(connection, processingGroup),
@@ -298,14 +327,14 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
         //noinspection DuplicatedCode
         return () -> {
             Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
-            return new Iterator<Iterable<DeadLetter<? extends M>>>() {
+            return new Iterator<Iterable<DeadLetter<? extends E>>>() {
                 @Override
                 public boolean hasNext() {
                     return sequenceIterator.hasNext();
                 }
 
                 @Override
-                public Iterable<DeadLetter<? extends M>> next() {
+                public Iterable<DeadLetter<? extends E>> next() {
                     String next = sequenceIterator.next();
                     return deadLetterSequence(next);
                 }
@@ -352,8 +381,8 @@ public class JdbcSequencedDeadLetterQueue<M extends EventMessage<?>> implements 
     }
 
     @Override
-    public boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
-                           @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
+    public boolean process(@Nonnull Predicate<DeadLetter<? extends E>> sequenceFilter,
+                           @Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
         return false;
     }
 

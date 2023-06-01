@@ -27,7 +27,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedObject;
@@ -42,17 +41,18 @@ import java.util.function.Supplier;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
+ * @param <E> An implementation of {@link EventMessage}
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements DeadLetterJdbcConverter<M> {
+public class SimpleDeadLetterJdbcConverter<E extends EventMessage<?>>
+        implements DeadLetterJdbcConverter<E, JdbcDeadLetter<E>> {
 
     private final DeadLetterSchema schema;
     private final Serializer genericSerializer;
     private final Serializer eventSerializer;
 
-    protected SimpleDeadLetterJdbcConverter(Builder<M> builder) {
+    protected SimpleDeadLetterJdbcConverter(Builder<E> builder) {
         builder.validate();
         schema = builder.schema;
         genericSerializer = builder.genericSerializer;
@@ -64,7 +64,7 @@ public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements
     }
 
     @Override
-    public DeadLetter<? extends M> convertToLetter(ResultSet resultSet) throws SQLException {
+    public JdbcDeadLetter<E> convertToLetter(ResultSet resultSet) throws SQLException {
         EventMessage<?> eventMessage;
         Message<?> serializedMessage = convertToSerializedMessage(resultSet);
         String eventTimestampString = resultSet.getString(schema.timeStampColumn());
@@ -96,24 +96,27 @@ public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements
             eventMessage = new GenericEventMessage<>(serializedMessage, timestampSupplier);
         }
 
+        String deadLetterIdentifier = resultSet.getString(schema.deadLetterIdColumn());
+        long sequenceIndex = resultSet.getLong(schema.sequenceIndexColumn());
+        String sequenceIdentifier = resultSet.getString(schema.sequenceIdentifierColumn());
+        Instant enqueuedAt = Instant.parse(resultSet.getString(schema.enqueuedAtColumn()));
+        Instant lastTouched = Instant.parse(resultSet.getString(schema.lastTouchedColumn()));
         Cause cause = null;
         String causeType = resultSet.getString(schema.causeTypeColumn());
         if (causeType != null) {
             cause = new ThrowableCause(causeType, resultSet.getString(schema.causeMessageColumn()));
         }
-        Instant enqueuedAt = Instant.parse(resultSet.getString(schema.enqueuedAtColumn()));
-        Instant lastTouched = Instant.parse(resultSet.getString(schema.lastTouchedColumn()));
         MetaData diagnostics = convertToDiagnostics(resultSet);
 
         //noinspection unchecked
-        return (DeadLetter<? extends M>) new GenericDeadLetter<>(
-                resultSet.getString(schema.sequenceIdentifierColumn()),
-                eventMessage,
-                cause,
-                enqueuedAt,
-                lastTouched,
-                diagnostics
-        );
+        return new JdbcDeadLetter<>(deadLetterIdentifier,
+                                    sequenceIndex,
+                                    sequenceIdentifier,
+                                    enqueuedAt,
+                                    lastTouched,
+                                    cause,
+                                    diagnostics,
+                                    (E) eventMessage);
     }
 
     private SerializedMessage<?> convertToSerializedMessage(ResultSet resultSet) throws SQLException {
@@ -157,7 +160,7 @@ public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements
         return eventSerializer.deserialize(serializedDiagnostics);
     }
 
-    protected static class Builder<M extends EventMessage<?>> {
+    protected static class Builder<E extends EventMessage<?>> {
 
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
         private Serializer genericSerializer;
@@ -167,7 +170,7 @@ public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements
          * @param schema
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<M> schema(DeadLetterSchema schema) {
+        public Builder<E> schema(DeadLetterSchema schema) {
             assertNonNull(schema, "DeadLetterSchema may not be null");
             this.schema = schema;
             return this;
@@ -180,7 +183,7 @@ public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements
          * @param genericSerializer The serializer to use
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<M> genericSerializer(Serializer genericSerializer) {
+        public Builder<E> genericSerializer(Serializer genericSerializer) {
 
             assertNonNull(genericSerializer, "The generic serializer may not be null");
             this.genericSerializer = genericSerializer;
@@ -194,7 +197,7 @@ public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements
          * @param eventSerializer The serializer to use
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<M> eventSerializer(Serializer eventSerializer) {
+        public Builder<E> eventSerializer(Serializer eventSerializer) {
             assertNonNull(eventSerializer, "The event serializer may not be null");
             this.eventSerializer = eventSerializer;
             return this;
@@ -205,7 +208,7 @@ public class SimpleDeadLetterJdbcConverter<M extends EventMessage<?>> implements
          *
          * @return A {@link JdbcSequencedDeadLetterQueue} as specified through this Builder.
          */
-        public SimpleDeadLetterJdbcConverter<M> build() {
+        public SimpleDeadLetterJdbcConverter<E> build() {
             return new SimpleDeadLetterJdbcConverter<>(this);
         }
 

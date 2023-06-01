@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.serialization.SerializedObject;
@@ -40,18 +39,18 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
+ * @param <E> An implementation of {@link EventMessage} todo...
  * @author Steven van Beelen
  * @since 4.8.0
  */
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-public class DefaultDeadLetterStatementFactory<M extends EventMessage<?>> implements DeadLetterStatementFactory<M> {
+public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implements DeadLetterStatementFactory<E> {
 
     private final DeadLetterSchema schema;
     private final Serializer genericSerializer;
     private final Serializer eventSerializer;
 
-    protected DefaultDeadLetterStatementFactory(Builder<M> builder) {
+    protected DefaultDeadLetterStatementFactory(Builder<E> builder) {
         builder.validate();
         this.schema = builder.schema;
         this.genericSerializer = builder.genericSerializer;
@@ -66,14 +65,14 @@ public class DefaultDeadLetterStatementFactory<M extends EventMessage<?>> implem
     public PreparedStatement enqueueStatement(@Nonnull Connection connection,
                                               @Nonnull String processingGroup,
                                               @Nonnull String sequenceIdentifier,
-                                              @Nonnull DeadLetter<? extends M> letter,
+                                              @Nonnull DeadLetter<? extends E> letter,
                                               long sequenceIndex) throws SQLException {
         String sql = "INSERT INTO " + schema.deadLetterTable() + " "
                 + "(" + schema.deadLetterFields() + ") "
                 + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         PreparedStatement statement = connection.prepareStatement(sql);
         AtomicInteger fieldIndex = new AtomicInteger(1);
-        M eventMessage = letter.message();
+        E eventMessage = letter.message();
 
         setIdFields(statement, fieldIndex, processingGroup, sequenceIdentifier, sequenceIndex);
         setEventFields(statement, fieldIndex, eventMessage);
@@ -98,7 +97,7 @@ public class DefaultDeadLetterStatementFactory<M extends EventMessage<?>> implem
 
     private void setEventFields(PreparedStatement statement,
                                 AtomicInteger fieldIndex,
-                                M eventMessage) throws SQLException {
+                                E eventMessage) throws SQLException {
         SerializedObject<byte[]> serializedPayload =
                 eventSerializer.serialize(eventMessage.getPayload(), byte[].class);
         SerializedObject<byte[]> serializedMetaData =
@@ -155,7 +154,7 @@ public class DefaultDeadLetterStatementFactory<M extends EventMessage<?>> implem
 
     private void setDeadLetterFields(PreparedStatement statement,
                                      AtomicInteger fieldIndex,
-                                     DeadLetter<? extends M> letter) throws SQLException {
+                                     DeadLetter<? extends E> letter) throws SQLException {
         statement.setString(fieldIndex.getAndIncrement(), letter.enqueuedAt().toString());
         statement.setString(fieldIndex.getAndIncrement(), letter.lastTouched().toString());
         Optional<Cause> cause = letter.cause();
@@ -166,13 +165,24 @@ public class DefaultDeadLetterStatementFactory<M extends EventMessage<?>> implem
     }
 
     @Override
+    public PreparedStatement evictStatement(@Nonnull Connection connection,
+                                            @Nonnull String letterIdentifier) throws SQLException {
+        String sql = "DELETE "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.deadLetterIdColumn() + "=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, letterIdentifier);
+        return statement;
+    }
+
+    @Override
     public PreparedStatement containsStatement(@Nonnull Connection connection,
                                                @Nonnull String processingGroup,
                                                @Nonnull String sequenceId) throws SQLException {
         String sql = "SELECT COUNT(*) "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=? "
-                + "AND " + schema.sequenceIdentifierColumn() + "=? ";
+                + "AND " + schema.sequenceIdentifierColumn() + "=?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, processingGroup);
         statement.setString(2, sequenceId);
@@ -224,7 +234,7 @@ public class DefaultDeadLetterStatementFactory<M extends EventMessage<?>> implem
                                            @Nonnull String processingGroup) throws SQLException {
         String sql = "SELECT COUNT(*) "
                 + "FROM " + schema.deadLetterTable() + " "
-                + "WHERE " + schema.processingGroupColumn() + "=? ";
+                + "WHERE " + schema.processingGroupColumn() + "=?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, processingGroup);
         return statement;

@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.deadletter.jdbc;
 
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
@@ -23,6 +24,7 @@ import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
+import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.serialization.TestSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
@@ -119,6 +121,11 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
         });
     }
 
+    @Test
+    void invokingEvictWithNonJdbcDeadLetterThrowsWrongDeadLetterTypeException() {
+        assertThrows(WrongDeadLetterTypeException.class, () -> jdbcDeadLetterQueue.evict(generateInitialLetter()));
+    }
+
     @Override
     protected long maxSequences() {
         return MAX_SEQUENCES_AND_SEQUENCE_SIZE;
@@ -137,6 +144,26 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
     @Override
     protected DeadLetter<EventMessage<?>> generateFollowUpLetter() {
         return new GenericDeadLetter<>("sequenceIdentifier", generateEvent());
+    }
+
+    @Override
+    protected DeadLetter<EventMessage<?>> mapToQueueImplementation(DeadLetter<EventMessage<?>> deadLetter) {
+        if (deadLetter instanceof org.axonframework.eventhandling.deadletter.jdbc.JdbcDeadLetter) {
+            return deadLetter;
+        }
+        if (deadLetter instanceof GenericDeadLetter) {
+            return new JdbcDeadLetter<>(
+                    IdentifierFactory.getInstance().generateIdentifier(),
+                    0L,
+                    ((GenericDeadLetter<EventMessage<?>>) deadLetter).getSequenceIdentifier().toString(),
+                    deadLetter.enqueuedAt(),
+                    deadLetter.lastTouched(),
+                    deadLetter.cause().orElse(null),
+                    deadLetter.diagnostics(),
+                    deadLetter.message()
+            );
+        }
+        throw new IllegalArgumentException("Can not map dead letter of type " + deadLetter.getClass().getName());
     }
 
     @Override

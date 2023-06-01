@@ -17,19 +17,17 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.deadletter.DeadLetter;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
+ * @param <E> An implementation of {@link EventMessage} todo...
  * @author Steven van Beelen
  * @since 4.8.0
  */
 @FunctionalInterface
-public interface DeadLetterJdbcConverter<M extends EventMessage<?>> {
+public interface DeadLetterJdbcConverter<E extends EventMessage<?>, D extends JdbcDeadLetter<E>> {
 
-    DeadLetter<? extends M> convertToLetter(ResultSet resultSet) throws SQLException;
+    D convertToLetter(ResultSet resultSet) throws SQLException;
 }

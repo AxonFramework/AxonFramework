@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.deadletter.DeadLetter;
 
 import java.sql.Connection;
@@ -26,17 +25,20 @@ import java.sql.SQLException;
 import javax.annotation.Nonnull;
 
 /**
- * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
+ * @param <E> An implementation of {@link EventMessage} todo...
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public interface DeadLetterStatementFactory<M extends EventMessage<?>> {
+public interface DeadLetterStatementFactory<E extends EventMessage<?>> {
 
     PreparedStatement enqueueStatement(@Nonnull Connection connection,
                                        @Nonnull String processingGroup,
                                        @Nonnull String sequenceIdentifier,
-                                       @Nonnull DeadLetter<? extends M> letter,
+                                       @Nonnull DeadLetter<? extends E> letter,
                                        long sequenceIndex) throws SQLException;
+
+    PreparedStatement evictStatement(@Nonnull Connection connection,
+                                     @Nonnull String letterIdentifier) throws SQLException;
 
     PreparedStatement containsStatement(@Nonnull Connection connection,
                                         @Nonnull String processingGroup,
@@ -67,4 +69,6 @@ public interface DeadLetterStatementFactory<M extends EventMessage<?>> {
     PreparedStatement maxIndexStatement(@Nonnull Connection connection,
                                         @Nonnull String processingGroup,
                                         @Nonnull String sequenceId) throws SQLException;
+
+
 }
