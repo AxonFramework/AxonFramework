@@ -38,7 +38,15 @@ public class DbSchedulerBinaryEventData implements Serializable {
     private String r;
     private byte[] m;
 
-    DbSchedulerBinaryEventData(
+    /**
+     * Crates a new {@link DbSchedulerHumanReadableEventData} with all the fields set.
+     *
+     * @param serializedPayload  The {@code byte[]} with the payload.
+     * @param payloadClass       The {@link String} which tells what the class of the scope payload is.
+     * @param revision           The {@link String} with the revision value of the payload.
+     * @param serializedMetadata The {@code byte[]} containing the metadata about the deadline.
+     */
+    public DbSchedulerBinaryEventData(
             byte[] serializedPayload,
             String payloadClass,
             String revision,

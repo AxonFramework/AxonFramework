@@ -65,13 +65,13 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      * @param payload              The {@link String} with the payload. This can be null.
      * @param payloadClass         The {@link String} which tells what the class of the scope payload is.
      * @param payloadRevision      The {@link String} which tells what the revision of the scope payload is.
-     * @param metaData             The {@link String} containing the metadata about the deadline.
+     * @param metaData             The {@link String} containing the metadata about the deadline. This can be null.
      */
     @SuppressWarnings("squid:S107")
     public DbSchedulerBinaryDeadlineDetails(@Nonnull String deadlineName, @Nonnull byte[] scopeDescriptor,
                                             @Nonnull String scopeDescriptorClass, @Nullable byte[] payload,
                                             @Nullable String payloadClass, @Nullable String payloadRevision,
-                                            @Nonnull byte[] metaData) {
+                                            @Nullable byte[] metaData) {
         this.d = deadlineName;
         this.s = scopeDescriptor;
         this.sc = scopeDescriptorClass;

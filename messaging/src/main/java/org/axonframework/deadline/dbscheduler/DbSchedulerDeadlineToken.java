@@ -16,7 +16,6 @@
 
 package org.axonframework.deadline.dbscheduler;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.kagkarlsson.scheduler.task.TaskInstanceId;
 
 import static java.lang.String.format;
@@ -39,7 +38,7 @@ public class DbSchedulerDeadlineToken implements TaskInstanceId {
      *
      * @param id The identifier used when registering the job with DbScheduler.
      */
-    public DbSchedulerDeadlineToken(@JsonProperty("id") String id) {
+    public DbSchedulerDeadlineToken(String id) {
         this.id = id;
     }
 

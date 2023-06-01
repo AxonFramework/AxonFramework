@@ -64,13 +64,13 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
      * @param payload              The {@link String} with the payload. This can be null.
      * @param payloadClass         The {@link String} which tells what the class of the scope payload is.
      * @param payloadRevision      The {@link String} which tells what the revision of the scope payload is.
-     * @param metaData             The {@link String} containing the metadata about the deadline.
+     * @param metaData             The {@link String} containing the metadata about the deadline. This can be null.
      */
     @SuppressWarnings("squid:S107")
     public DbSchedulerHumanReadableDeadlineDetails(@Nonnull String deadlineName, @Nonnull String scopeDescriptor,
                                                    @Nonnull String scopeDescriptorClass, @Nullable String payload,
                                                    @Nullable String payloadClass, @Nullable String payloadRevision,
-                                                   @Nonnull String metaData) {
+                                                   @Nullable String metaData) {
         this.deadlineName = deadlineName;
         this.scopeDescriptor = scopeDescriptor;
         this.scopeDescriptorClass = scopeDescriptorClass;

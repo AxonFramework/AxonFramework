@@ -72,6 +72,7 @@ public class AxonDbSchedulerAutoConfiguration {
                                         .serializer(serializer)
                                         .transactionManager(transactionManager)
                                         .eventBus(eventBus)
+                                        //Set to false, as a DbSchedulerStarter is expected to start the scheduler.
                                         .startScheduler(false)
                                         .build();
     }
@@ -91,6 +92,7 @@ public class AxonDbSchedulerAutoConfiguration {
                                          .serializer(serializer)
                                          .transactionManager(transactionManager)
                                          .spanFactory(spanFactory)
+                                         //Set to false, as a DbSchedulerStarter is expected to start the scheduler.
                                          .startScheduler(false)
                                          .build();
     }

@@ -37,7 +37,15 @@ public class DbSchedulerHumanReadableEventData implements Serializable {
     private String revision;
     private String serializedMetadata;
 
-    DbSchedulerHumanReadableEventData(
+    /**
+     * Crates a new {@link DbSchedulerHumanReadableEventData} with all the fields set.
+     *
+     * @param serializedPayload  The {@link String} with the payload.
+     * @param payloadClass       The {@link String} which tells what the class of the scope payload is.
+     * @param revision           The {@link String} with the revision value of the payload.
+     * @param serializedMetadata The {@link String} containing the metadata about the deadline.
+     */
+    public DbSchedulerHumanReadableEventData(
             String serializedPayload,
             String payloadClass,
             String revision,
