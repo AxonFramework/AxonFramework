@@ -36,8 +36,11 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Clock;
+import java.time.Instant;
 import javax.sql.DataSource;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
+import static org.axonframework.common.DateTimeUtils.parseInstant;
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -181,8 +184,20 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
         assertEquals(expectedMessage.getMetaData(), actualMessage.getMetaData());
         assertEquals(expectedMessage.getIdentifier(), actualMessage.getIdentifier());
         assertEquals(expected.cause(), actual.cause());
-        assertEquals(expected.enqueuedAt(), actual.enqueuedAt());
-        assertEquals(expected.lastTouched(), actual.lastTouched());
+        assertEquals(formatExpected(expected.enqueuedAt()), actual.enqueuedAt());
+        assertEquals(formatExpected(expected.lastTouched()), actual.lastTouched());
         assertEquals(expected.diagnostics(), actual.diagnostics());
+    }
+
+    /**
+     * Format the expected {@link Instant} to align with the precision as dictated by the
+     * {@link org.axonframework.common.DateTimeUtils}. Required as the actual {@code Instants} underwent formatting by
+     * the {@link JdbcSequencedDeadLetterQueue} as well, whereas the {@code expected} value did not.
+     *
+     * @param expected The {@link Instant} to format according to the {@link org.axonframework.common.DateTimeUtils}.
+     * @return A formatted {@link Instant} according to the {@link org.axonframework.common.DateTimeUtils}.
+     */
+    private static Instant formatExpected(Instant expected) {
+        return parseInstant(formatInstant(expected));
     }
 }

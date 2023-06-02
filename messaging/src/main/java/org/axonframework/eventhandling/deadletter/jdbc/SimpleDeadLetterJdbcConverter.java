@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -68,7 +69,7 @@ public class SimpleDeadLetterJdbcConverter<E extends EventMessage<?>>
         EventMessage<?> eventMessage;
         Message<?> serializedMessage = convertToSerializedMessage(resultSet);
         String eventTimestampString = resultSet.getString(schema.timeStampColumn());
-        Supplier<Instant> timestampSupplier = () -> Instant.parse(eventTimestampString);
+        Supplier<Instant> timestampSupplier = () -> DateTimeUtils.parseInstant(eventTimestampString);
 
         if (resultSet.getString(schema.tokenTypeColumn()) != null) {
             TrackingToken trackingToken = convertToTrackingToken(resultSet);
@@ -99,8 +100,8 @@ public class SimpleDeadLetterJdbcConverter<E extends EventMessage<?>>
         String deadLetterIdentifier = resultSet.getString(schema.deadLetterIdentifierColumn());
         long sequenceIndex = resultSet.getLong(schema.sequenceIndexColumn());
         String sequenceIdentifier = resultSet.getString(schema.sequenceIdentifierColumn());
-        Instant enqueuedAt = Instant.parse(resultSet.getString(schema.enqueuedAtColumn()));
-        Instant lastTouched = Instant.parse(resultSet.getString(schema.lastTouchedColumn()));
+        Instant enqueuedAt = DateTimeUtils.parseInstant(resultSet.getString(schema.enqueuedAtColumn()));
+        Instant lastTouched = DateTimeUtils.parseInstant(resultSet.getString(schema.lastTouchedColumn()));
         Cause cause = null;
         String causeType = resultSet.getString(schema.causeTypeColumn());
         if (causeType != null) {

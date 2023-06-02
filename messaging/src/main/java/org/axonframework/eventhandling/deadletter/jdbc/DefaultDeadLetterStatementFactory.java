@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
@@ -106,8 +107,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                 eventSerializer.serialize(eventMessage.getMetaData(), byte[].class);
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getClass().getName());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getIdentifier());
-        // TODO Timestamp converter!
-        statement.setString(fieldIndex.getAndIncrement(), eventMessage.getTimestamp().toString());
+        statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(eventMessage.getTimestamp()));
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getName());
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getRevision());
         statement.setBytes(fieldIndex.getAndIncrement(), serializedPayload.getData());
@@ -157,8 +157,8 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     private void setDeadLetterFields(PreparedStatement statement,
                                      AtomicInteger fieldIndex,
                                      DeadLetter<? extends E> letter) throws SQLException {
-        statement.setString(fieldIndex.getAndIncrement(), letter.enqueuedAt().toString());
-        statement.setString(fieldIndex.getAndIncrement(), letter.lastTouched().toString());
+        statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(letter.enqueuedAt()));
+        statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(letter.lastTouched()));
         Optional<Cause> cause = letter.cause();
         statement.setString(fieldIndex.getAndIncrement(), cause.map(Cause::type).orElse(null));
         statement.setString(fieldIndex.getAndIncrement(), cause.map(Cause::message).orElse(null));
@@ -193,7 +193,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, getOrDefault(cause, Cause::type, null));
         statement.setString(2, getOrDefault(cause, Cause::message, null));
-        statement.setString(3, lastTouched.toString());
+        statement.setString(3, DateTimeUtils.formatInstant(lastTouched));
         SerializedObject<byte[]> serializedDiagnostics = eventSerializer.serialize(diagnostics, byte[].class);
         statement.setBytes(4, serializedDiagnostics.getData());
         statement.setString(5, letterIdentifier);
