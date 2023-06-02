@@ -594,9 +594,14 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertTrue(result);
         Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
 
-        assertLetter(firstTestLetter, resultSequence.pollFirst());
+        DeadLetter<? extends M> resultLetter = resultSequence.pollFirst();
+        assertNotNull(resultLetter);
+        assertLetter(firstTestLetter, resultLetter);
+
         for (int i = 0; i < loopSize; i++) {
-            assertLetter(expectedOrderList.get(i), resultSequence.pollFirst());
+            resultLetter = resultSequence.pollFirst();
+            assertNotNull(resultLetter);
+            assertLetter(expectedOrderList.get(i), resultLetter);
         }
     }
 
