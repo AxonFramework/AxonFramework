@@ -79,11 +79,11 @@ public interface DeadLetterStatementFactory<E extends EventMessage<?>> {
                                         @Nonnull String processingGroup,
                                         @Nonnull String sequenceId) throws SQLException;
 
-    PreparedStatement claimableLettersStatement(@Nonnull Connection connection,
-                                                @Nonnull String processingGroup,
-                                                @Nonnull Instant processingStartedLimit,
-                                                int offset,
-                                                int maxSize) throws SQLException;
+    PreparedStatement claimableSequencesStatement(@Nonnull Connection connection,
+                                                  @Nonnull String processingGroup,
+                                                  @Nonnull Instant processingStartedLimit,
+                                                  int offset,
+                                                  int maxSize) throws SQLException;
 
     PreparedStatement claimStatement(@Nonnull Connection connection,
                                      @Nonnull String letterIdentifier,

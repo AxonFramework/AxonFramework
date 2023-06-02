@@ -318,11 +318,11 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     }
 
     @Override
-    public PreparedStatement claimableLettersStatement(@Nonnull Connection connection,
-                                                       @Nonnull String processingGroup,
-                                                       @Nonnull Instant processingStartedLimit,
-                                                       int offset,
-                                                       int maxSize) throws SQLException {
+    public PreparedStatement claimableSequencesStatement(@Nonnull Connection connection,
+                                                         @Nonnull String processingGroup,
+                                                         @Nonnull Instant processingStartedLimit,
+                                                         int offset,
+                                                         int maxSize) throws SQLException {
         String sql = "SELECT * "
                 + "FROM " + schema.deadLetterTable() + " dl "
                 + "WHERE dl." + schema.processingGroupColumn() + "=? "
