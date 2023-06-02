@@ -22,13 +22,12 @@ import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.common.jdbc.PagingJdbcIterable;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter;
-import org.axonframework.eventhandling.deadletter.jpa.JpaDeadLetter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
+import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
@@ -40,6 +39,7 @@ import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -419,7 +419,163 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
     @Override
     public boolean process(@Nonnull Predicate<DeadLetter<? extends E>> sequenceFilter,
                            @Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
+        logger.debug("Received a request to process matching dead letters.");
+
+        Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(10);
+        JdbcDeadLetter<E> claimedLetter = null;
+        while (iterator.hasNext() && claimedLetter == null) {
+            JdbcDeadLetter<E> next = iterator.next();
+            if (sequenceFilter.test(next) && claimDeadLetter(next)) {
+                claimedLetter = next;
+            }
+        }
+
+        if (claimedLetter != null) {
+            return processInitialAndSubsequent(claimedLetter, processingTask);
+        }
+        logger.debug("Received a request to process dead letters but there are no matching or claimable sequences.");
         return false;
+    }
+
+    @Override
+    public boolean process(@Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
+        logger.debug("Received a request to process any dead letters.");
+        Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(1);
+        if (iterator.hasNext()) {
+            JdbcDeadLetter<E> deadLetter = iterator.next();
+            claimDeadLetter(deadLetter);
+            return processInitialAndSubsequent(deadLetter, processingTask);
+        }
+        logger.debug("Received a request to process dead letters but there are no claimable sequences.");
+        return false;
+    }
+
+    /**
+     * Fetches the first letter for each sequence in the provided {@code processingGroup} that is not claimed. Note that
+     * the first letters have the lowest {@link JdbcDeadLetter#getIndex() index} within their sequence.
+     * <p>
+     * A sequence is regarded claimable when {@link DeadLetterSchema#processingStartedColumn() processing started} is
+     * {@code null} or processing started is longer ago than the configured {@code claimDuration}.
+     *
+     * @param pageSize The size of the paging on the query. Lower is faster, but with many results a larger page is
+     *                 better.
+     * @return A list of first letters of each sequence.
+     */
+    private Iterator<? extends JdbcDeadLetter<E>> findClaimableSequences(int pageSize) {
+        return new PagingJdbcIterable<>(
+                pageSize,
+                this::getConnection,
+                transactionManager,
+                (connection, firstResult, maxSize) -> statementFactory.claimableSequencesStatement(
+                        connection, processingGroup, processingStartedLimit(), firstResult, maxSize
+                ),
+                converter::convertToLetter,
+                handleException(), CLOSE_QUIETLY
+        ).iterator();
+    }
+
+    /**
+     * Claims the provided {@code letter} in the database by setting the {@code processingStarted} property. Will check
+     * whether it was claimed successfully and return an appropriate boolean result.
+     *
+     * @return Whether the letter was successfully claimed or not.
+     */
+    private boolean claimDeadLetter(JdbcDeadLetter<E> letter) {
+        Instant processingStartedLimit = processingStartedLimit();
+        return transactionManager.fetchInTransaction(() -> {
+            Connection connection = getConnection();
+            try {
+                int updatedRows = executeUpdate(
+                        connection,
+                        c -> statementFactory.claimStatement(
+                                c, letter.getIdentifier(), GenericDeadLetter.clock.instant(), processingStartedLimit
+                        ),
+                        handleException()
+                );
+                if (updatedRows > 0) {
+                    logger.debug("Claimed dead letter with identifier [{}] to process.", letter.getIdentifier());
+                    return true;
+                }
+                logger.debug("Failed to claim dead letter with identifier [{}].", letter.getIdentifier());
+                return false;
+            } finally {
+                closeQuietly(connection);
+            }
+        });
+    }
+
+    /**
+     * Determines the time the {@code processingStarted} value a dead letter entry at least needs to have to stay
+     * claimed. The returned limit is based on the difference between the {@link GenericDeadLetter#clock} and the
+     * configurable {@link Builder#claimDuration claim duration}.
+     *
+     * @return The difference between the {@link GenericDeadLetter#clock} and the
+     * {@link Builder#claimDuration claim duration}.
+     */
+    private Instant processingStartedLimit() {
+        return GenericDeadLetter.clock.instant().minus(claimDuration);
+    }
+
+    /**
+     * Processes the given {@code initialLetter} using the provided {@code processingTask}.
+     * <p>
+     * When processing is successful this operation will automatically process all messages in the same
+     * {@link JdbcDeadLetter#getSequenceIdentifier()}, {@link #evict(DeadLetter) evicting} letters that succeed and
+     * stopping when the first one fails (and is {@link #requeue(DeadLetter, UnaryOperator) requeued}).
+     * <p>
+     * Will claim the next letter in the same sequence before removing the previous letter to prevent concurrency
+     * issues. Note that we should not use paging on the results here, since letters can be added to the end of the
+     * sequence before processing ends, and deletes would throw the ordering off.
+     *
+     * @param initialLetter  The dead letter to start processing.
+     * @param processingTask The task to use to process the dead letter, providing a decision afterwards.
+     * @return Whether processing all letters in this sequence was successful.
+     */
+    private boolean processInitialAndSubsequent(JdbcDeadLetter<E> initialLetter,
+                                                Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
+        JdbcDeadLetter<E> current = initialLetter;
+        while (current != null) {
+            logger.info("Processing dead letter with identifier [{}] at index [{}]",
+                        current.getIdentifier(), current.getIndex());
+            EnqueueDecision<E> decision = processingTask.apply(current);
+            if (!decision.shouldEnqueue()) {
+                JdbcDeadLetter<E> previous = current;
+                JdbcDeadLetter<E> next = findNext(previous.getSequenceIdentifier(), previous.getIndex());
+                if (next != null) {
+                    current = next;
+                    claimDeadLetter(current);
+                } else {
+                    current = null;
+                }
+                evict(previous);
+            } else {
+                requeue(current,
+                        letter -> decision.withDiagnostics(letter)
+                                          .withCause(decision.enqueueCause().orElse(null)));
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Finds the next dead letter matching the given {@code sequenceIdentifier} following the provided
+     * {@code sequenceIndex}.
+     *
+     * @param sequenceIdentifier The identifier of the sequence to find the next letter for.
+     * @param sequenceIndex      The index within the sequence to find the following letter for
+     * @return The next letter to process.
+     */
+    private JdbcDeadLetter<E> findNext(String sequenceIdentifier, long sequenceIndex) {
+        return transactionManager.fetchInTransaction(() -> executeQuery(
+                getConnection(),
+                connection -> statementFactory.nextLetterInSequenceStatement(
+                        connection, processingGroup, sequenceIdentifier, sequenceIndex
+                ),
+                resultSet -> resultSet.next() ? converter.convertToLetter(resultSet) : null,
+                handleException(),
+                CLOSE_QUIETLY
+        ));
     }
 
     @Override
