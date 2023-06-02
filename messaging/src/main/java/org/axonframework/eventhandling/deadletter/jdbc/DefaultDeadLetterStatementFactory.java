@@ -361,7 +361,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                 + schema.processingStartedColumn() + "=? "
                 + "WHERE " + schema.deadLetterIdentifierColumn() + "=? "
                 + "AND ("
-                + schema.processingStartedColumn() + "=NULL "
+                + schema.processingStartedColumn() + " IS NULL "
                 + "OR " + schema.processingStartedColumn() + "<?"
                 + ")";
         PreparedStatement statement = connection.prepareStatement(sql);
