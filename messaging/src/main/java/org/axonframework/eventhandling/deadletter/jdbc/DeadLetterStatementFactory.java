@@ -78,4 +78,20 @@ public interface DeadLetterStatementFactory<E extends EventMessage<?>> {
     PreparedStatement maxIndexStatement(@Nonnull Connection connection,
                                         @Nonnull String processingGroup,
                                         @Nonnull String sequenceId) throws SQLException;
+
+    PreparedStatement claimableLettersStatement(@Nonnull Connection connection,
+                                                @Nonnull String processingGroup,
+                                                @Nonnull Instant processingStartedLimit,
+                                                int offset,
+                                                int maxSize) throws SQLException;
+
+    PreparedStatement claimStatement(@Nonnull Connection connection,
+                                     @Nonnull String letterIdentifier,
+                                     @Nonnull Instant current,
+                                     @Nonnull Instant processingStartedLimit) throws SQLException;
+
+    PreparedStatement nextLetterInSequenceStatement(@Nonnull Connection connection,
+                                                    @Nonnull String processingGroup,
+                                                    @Nonnull String sequenceIdentifier,
+                                                    long sequenceIndex) throws SQLException;
 }

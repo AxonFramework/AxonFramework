@@ -317,6 +317,80 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
         return statement;
     }
 
+    @Override
+    public PreparedStatement claimableLettersStatement(@Nonnull Connection connection,
+                                                       @Nonnull String processingGroup,
+                                                       @Nonnull Instant processingStartedLimit,
+                                                       int offset,
+                                                       int maxSize) throws SQLException {
+        String sql = "SELECT * "
+                + "FROM " + schema.deadLetterTable() + " dl "
+                + "WHERE dl." + schema.processingGroupColumn() + "=? "
+                + "AND dl." + schema.sequenceIndexColumn() + ">=? "
+                + "AND dl." + schema.sequenceIndexColumn() + "="
+                + "("
+                + "SELECT MIN(dl2." + schema.sequenceIndexColumn() + ") "
+                + "FROM " + schema.deadLetterTable() + " dl2 "
+                + "WHERE dl2." + schema.processingGroupColumn() + "=dl." + schema.processingGroupColumn() + " "
+                + "AND dl2." + schema.sequenceIdentifierColumn() + "=dl." + schema.sequenceIdentifierColumn()
+                + ") "
+                + "AND ("
+                + "dl." + schema.processingStartedColumn() + " IS NULL "
+                + "OR dl." + schema.processingStartedColumn() + "<?"
+                + ") "
+                + "ORDER BY dl." + schema.lastTouchedColumn() + " "
+                + "ASC "
+                + "LIMIT ?";
+
+        PreparedStatement statement =
+                connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+
+        statement.setString(1, processingGroup);
+        statement.setInt(2, offset);
+        statement.setString(3, DateTimeUtils.formatInstant(processingStartedLimit));
+        statement.setInt(4, maxSize);
+        return statement;
+    }
+
+    @Override
+    public PreparedStatement claimStatement(@Nonnull Connection connection,
+                                            @Nonnull String letterIdentifier,
+                                            @Nonnull Instant current,
+                                            @Nonnull Instant processingStartedLimit) throws SQLException {
+        String sql = "UPDATE " + schema.deadLetterTable() + " SET "
+                + schema.processingStartedColumn() + "=? "
+                + "WHERE " + schema.deadLetterIdentifierColumn() + "=? "
+                + "AND ("
+                + schema.processingStartedColumn() + "=NULL "
+                + "OR " + schema.processingStartedColumn() + "<?"
+                + ")";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, DateTimeUtils.formatInstant(current));
+        statement.setString(2, letterIdentifier);
+        statement.setString(3, DateTimeUtils.formatInstant(processingStartedLimit));
+        return statement;
+    }
+
+    @Override
+    public PreparedStatement nextLetterInSequenceStatement(@Nonnull Connection connection,
+                                                           @Nonnull String processingGroup,
+                                                           @Nonnull String sequenceIdentifier,
+                                                           long sequenceIndex) throws SQLException {
+        String sql = "SELECT * "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.processingGroupColumn() + "=? "
+                + "AND " + schema.sequenceIdentifierColumn() + "=? "
+                + "AND " + schema.sequenceIndexColumn() + ">? "
+                + "ORDER BY " + schema.sequenceIndexColumn() + " "
+                + "ASC "
+                + "LIMIT 1";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        statement.setString(2, sequenceIdentifier);
+        statement.setLong(3, sequenceIndex);
+        return statement;
+    }
+
     protected static class Builder<M extends EventMessage<?>> {
 
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
