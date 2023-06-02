@@ -78,6 +78,16 @@
             <artifactId>jobrunr</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>com.github.kagkarlsson</groupId>
+            <artifactId>db-scheduler</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Query Handling -->
         <dependency>

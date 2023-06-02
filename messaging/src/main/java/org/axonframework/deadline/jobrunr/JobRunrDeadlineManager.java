@@ -25,6 +25,8 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
+import org.axonframework.lifecycle.Lifecycle;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.InterceptorChain;
@@ -64,7 +66,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @author Gerard Klijs
  * @since 4.7.0
  */
-public class JobRunrDeadlineManager extends AbstractDeadlineManager {
+public class JobRunrDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
 
     private static final Logger logger = getLogger(JobRunrDeadlineManager.class);
     protected static final String DELETE_REASON = "Deleted via Axon DeadlineManager API";
@@ -194,11 +196,10 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
         DeadlineDetails deadlineDetails = serializer.deserialize(serializedDeadlineMetaData);
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
         Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
-        try (SpanScope unused = span.makeCurrent()) {
+        try (SpanScope ignored = span.makeCurrent()) {
             UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
-            unitOfWork.onCleanup(uow -> span.end());
             InterceptorChain chain = new DefaultInterceptorChain<>(
                     unitOfWork,
                     handlerInterceptors(),
@@ -215,6 +216,8 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                             deadlineDetails.getDeadlineName());
                 throw new DeadlineException("Failed to process", e);
             }
+        } finally {
+            span.end();
         }
     }
 
@@ -238,6 +241,11 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     @Override
     public void shutdown() {
         jobScheduler.shutdown();
+    }
+
+    @Override
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
     /**
