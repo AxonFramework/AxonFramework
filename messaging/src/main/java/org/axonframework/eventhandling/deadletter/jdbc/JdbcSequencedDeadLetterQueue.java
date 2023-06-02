@@ -251,7 +251,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
         }
         //noinspection unchecked
         JdbcDeadLetter<E> jdbcLetter = (JdbcDeadLetter<E>) letter;
-        String identifier = jdbcLetter.getId();
+        String identifier = jdbcLetter.getIdentifier();
         String sequenceIdentifier = jdbcLetter.getSequenceIdentifier();
         logger.info("Evicting dead letter with id [{}] for processing group [{}] and sequence [{}]",
                     identifier, processingGroup, sequenceIdentifier);
@@ -286,7 +286,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
         }
         //noinspection unchecked
         JdbcDeadLetter<E> jdbcLetter = (JdbcDeadLetter<E>) letter;
-        String identifier = jdbcLetter.getId();
+        String identifier = jdbcLetter.getIdentifier();
         logger.info("Requeueing dead letter with id [{}] for processing group [{}] and sequence [{}]",
                     identifier, processingGroup, jdbcLetter.getSequenceIdentifier());
         DeadLetter<? extends E> updatedLetter = letterUpdater.apply(jdbcLetter).markTouched();

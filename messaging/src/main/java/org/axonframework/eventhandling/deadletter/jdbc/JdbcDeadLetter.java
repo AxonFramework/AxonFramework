@@ -40,7 +40,7 @@ import java.util.Optional;
  */
 public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> {
 
-    private final String id;
+    private final String identifier;
     private final Long index;
     private final String sequenceIdentifier;
     private final Instant enqueuedAt;
@@ -58,7 +58,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
      * @param message     The reconstructed {@link EventMessage}.
      */
     public JdbcDeadLetter(DeadLetterEntry entry, MetaData diagnostics, E message) {
-        this.id = entry.getDeadLetterId();
+        this.identifier = entry.getDeadLetterId();
         this.index = entry.getSequenceIndex();
         this.enqueuedAt = entry.getEnqueuedAt();
         this.lastTouched = entry.getLastTouched();
@@ -73,7 +73,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
     /**
      * Constructs a new {@link JdbcDeadLetter} with all possible parameters.
      *
-     * @param id                 The ID of the {@link DeadLetterEntry}.
+     * @param identifier                 The ID of the {@link DeadLetterEntry}.
      * @param index              The index of the {@link DeadLetterEntry}.
      * @param sequenceIdentifier The sequenceIdentifier of the {@link DeadLetterEntry}.
      * @param enqueuedAt         The time the message was enqueued.
@@ -83,7 +83,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
      * @param diagnostics        The diagnostics provided during enqueueing.
      * @param message            The message that was enqueued.
      */
-    JdbcDeadLetter(String id,
+    JdbcDeadLetter(String identifier,
                    Long index,
                    String sequenceIdentifier,
                    Instant enqueuedAt,
@@ -91,7 +91,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
                    Cause cause,
                    MetaData diagnostics,
                    E message) {
-        this.id = id;
+        this.identifier = identifier;
         this.index = index;
         this.sequenceIdentifier = sequenceIdentifier;
         this.enqueuedAt = enqueuedAt;
@@ -131,8 +131,8 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
      *
      * @return The identifier of this {@link JdbcDeadLetter}.
      */
-    public String getId() {
-        return id;
+    public String getIdentifier() {
+        return identifier;
     }
 
     /**
@@ -157,7 +157,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
 
     @Override
     public DeadLetter<E> markTouched() {
-        return new JdbcDeadLetter<>(id,
+        return new JdbcDeadLetter<>(identifier,
                                     index,
                                     sequenceIdentifier,
                                     enqueuedAt,
@@ -169,7 +169,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
 
     @Override
     public DeadLetter<E> withCause(Throwable requeueCause) {
-        return new JdbcDeadLetter<>(id,
+        return new JdbcDeadLetter<>(identifier,
                                     index,
                                     sequenceIdentifier,
                                     enqueuedAt,
@@ -181,7 +181,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
 
     @Override
     public DeadLetter<E> withDiagnostics(MetaData diagnostics) {
-        return new JdbcDeadLetter<>(id,
+        return new JdbcDeadLetter<>(identifier,
                                     index,
                                     sequenceIdentifier,
                                     enqueuedAt,
@@ -200,7 +200,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
             return false;
         }
         JdbcDeadLetter<?> that = (JdbcDeadLetter<?>) o;
-        return Objects.equals(id, that.id)
+        return Objects.equals(identifier, that.identifier)
                 && Objects.equals(index, that.index)
                 && Objects.equals(sequenceIdentifier, that.sequenceIdentifier)
                 && Objects.equals(enqueuedAt, that.enqueuedAt)
@@ -212,6 +212,20 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, index, sequenceIdentifier, enqueuedAt, lastTouched, cause, diagnostics, message);
+        return Objects.hash(identifier, index, sequenceIdentifier, enqueuedAt, lastTouched, cause, diagnostics, message);
+    }
+
+    @Override
+    public String toString() {
+        return "JdbcDeadLetter{" +
+                "identifier='" + identifier + '\'' +
+                ", index=" + index +
+                ", sequenceIdentifier='" + sequenceIdentifier + '\'' +
+                ", enqueuedAt=" + enqueuedAt +
+                ", lastTouched=" + lastTouched +
+                ", cause=" + cause +
+                ", diagnostics=" + diagnostics +
+                ", message=" + message +
+                '}';
     }
 }
