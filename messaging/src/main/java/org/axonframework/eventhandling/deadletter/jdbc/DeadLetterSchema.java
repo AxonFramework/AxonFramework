@@ -30,7 +30,7 @@ public class DeadLetterSchema {
 
     private final String deadLetterTable;
     // Dead letter identifying columns
-    private final String deadLetterIdColumn;
+    private final String deadLetterIdentifierColumn;
     private final String processingGroupColumn;
     private final String sequenceIdentifierColumn;
     private final String sequenceIndexColumn;
@@ -58,7 +58,7 @@ public class DeadLetterSchema {
 
     private final Function<DeadLetterSchema, String> deadLetterFields = schema ->
             String.join(",",
-                        schema.deadLetterIdColumn(),
+                        schema.deadLetterIdentifierColumn(),
                         schema.processingGroupColumn(),
                         schema.sequenceIdentifierColumn(),
                         schema.sequenceIndexColumn(),
@@ -87,7 +87,7 @@ public class DeadLetterSchema {
      */
     protected DeadLetterSchema(Builder builder) {
         this.deadLetterTable = builder.deadLetterTable;
-        this.deadLetterIdColumn = builder.deadLetterIdColumn;
+        this.deadLetterIdentifierColumn = builder.deadLetterIdentifierColumn;
         this.processingGroupColumn = builder.processingGroupColumn;
         this.sequenceIdentifierColumn = builder.sequenceIdentifierColumn;
         this.sequenceIndexColumn = builder.sequenceIndexColumn;
@@ -142,12 +142,12 @@ public class DeadLetterSchema {
     }
 
     /**
-     * Returns the configured {@code deadLetterIdColumn} name.
+     * Returns the configured {@code deadLetterIdentifierColumn} name.
      *
-     * @return The configured {@code deadLetterIdColumn} name.
+     * @return The configured {@code deadLetterIdentifierColumn} name.
      */
-    public String deadLetterIdColumn() {
-        return deadLetterIdColumn;
+    public String deadLetterIdentifierColumn() {
+        return deadLetterIdentifierColumn;
     }
 
     /**
@@ -358,7 +358,7 @@ public class DeadLetterSchema {
     public static class Builder {
 
         private String deadLetterTable = "DeadLetterEntry";
-        private String deadLetterIdColumn = "deadLetterId";
+        private String deadLetterIdentifierColumn = "deadLetterIdentifier";
         private String processingGroupColumn = "processingGroup";
         private String sequenceIdentifierColumn = "sequenceIdentifier";
         private String sequenceIndexColumn = "sequenceIndex";
@@ -394,14 +394,14 @@ public class DeadLetterSchema {
         }
 
         /**
-         * Sets the name of the {@code deadLetterId} column. Defaults to {@code deadLetterId}.
+         * Sets the name of the {@code deadLetterIdentifier} column. Defaults to {@code deadLetterIdentifier}.
          *
-         * @param deadLetterIdColumn The name for the {@code deadLetterId} column.
+         * @param deadLetterIdentifierColumn The name for the {@code deadLetterIdentifier} column.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder deadLetterIdColumn(String deadLetterIdColumn) {
-            assertNonBlank(deadLetterIdColumn, "The deadLetterIdColumn should be not null or empty");
-            this.deadLetterIdColumn = deadLetterIdColumn;
+        public Builder deadLetterIdentifierColumn(String deadLetterIdentifierColumn) {
+            assertNonBlank(deadLetterIdentifierColumn, "The deadLetterIdentifierColumn should be not null or empty");
+            this.deadLetterIdentifierColumn = deadLetterIdentifierColumn;
             return this;
         }
 

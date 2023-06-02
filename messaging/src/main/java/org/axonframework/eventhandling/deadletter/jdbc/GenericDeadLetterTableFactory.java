@@ -33,7 +33,7 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
     @Override
     public PreparedStatement createTable(Connection connection, DeadLetterSchema schema) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS " + schema.deadLetterTable() + " (\n" +
-                schema.deadLetterIdColumn() + " VARCHAR(255) NOT NULL,\n" +
+                schema.deadLetterIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.processingGroupColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.sequenceIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.sequenceIndexColumn() + " BIGINT NOT NULL,\n" +
@@ -57,7 +57,7 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.causeTypeColumn() + " VARCHAR(255),\n" +
                 schema.causeMessageColumn() + " VARCHAR(255),\n" + // TODO large size for the message?
                 schema.diagnosticsColumn() + " " + serializedDataType() + ",\n" +
-                "CONSTRAINT PK PRIMARY KEY (" + schema.deadLetterIdColumn() + "),\n" +
+                "CONSTRAINT PK PRIMARY KEY (" + schema.deadLetterIdentifierColumn() + "),\n" +
                 "CONSTRAINT " + schema.sequenceIndexColumn() + "_INDEX UNIQUE (" +
                 schema.processingGroupColumn() + "," +
                 schema.sequenceIdentifierColumn() + "," +

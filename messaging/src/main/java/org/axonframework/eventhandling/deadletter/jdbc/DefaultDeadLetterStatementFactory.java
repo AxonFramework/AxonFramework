@@ -171,7 +171,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                                             @Nonnull String letterIdentifier) throws SQLException {
         String sql = "DELETE "
                 + "FROM " + schema.deadLetterTable() + " "
-                + "WHERE " + schema.deadLetterIdColumn() + "=?";
+                + "WHERE " + schema.deadLetterIdentifierColumn() + "=?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, letterIdentifier);
         return statement;
@@ -189,7 +189,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                 + schema.lastTouchedColumn() + "=?, "
                 + schema.diagnosticsColumn() + "=?, "
                 + schema.processingStartedColumn() + "=NULL "
-                + "WHERE " + schema.deadLetterIdColumn() + "=?";
+                + "WHERE " + schema.deadLetterIdentifierColumn() + "=?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, getOrDefault(cause, Cause::type, null));
         statement.setString(2, getOrDefault(cause, Cause::message, null));

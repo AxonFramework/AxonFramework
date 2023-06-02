@@ -96,7 +96,7 @@ public class SimpleDeadLetterJdbcConverter<E extends EventMessage<?>>
             eventMessage = new GenericEventMessage<>(serializedMessage, timestampSupplier);
         }
 
-        String deadLetterIdentifier = resultSet.getString(schema.deadLetterIdColumn());
+        String deadLetterIdentifier = resultSet.getString(schema.deadLetterIdentifierColumn());
         long sequenceIndex = resultSet.getLong(schema.sequenceIndexColumn());
         String sequenceIdentifier = resultSet.getString(schema.sequenceIdentifierColumn());
         Instant enqueuedAt = Instant.parse(resultSet.getString(schema.enqueuedAtColumn()));
