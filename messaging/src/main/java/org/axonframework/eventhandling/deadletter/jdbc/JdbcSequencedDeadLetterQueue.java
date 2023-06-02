@@ -22,7 +22,6 @@ import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.common.jdbc.PagingJdbcIterable;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
@@ -50,6 +49,7 @@ import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
@@ -72,7 +72,8 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * {@link org.axonframework.serialization.upcasting.Upcaster upcasters} are not supported by this implementation, so
  * breaking changes for events messages stored in the queue should be avoided.
  *
- * @param <E> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
+ * @param <E> An implementation of {@link EventMessage} contained in the {@link DeadLetter dead-letters} within this
+ *            queue.
  * @author Steven van Beelen
  * @since 4.8.0
  */
@@ -91,43 +92,40 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
     private static final boolean CLOSE_QUIETLY = true;
 
     private final String processingGroup;
+    private final ConnectionProvider connectionProvider;
+    private final TransactionManager transactionManager;
+    private final DeadLetterSchema schema;
+    private final DeadLetterStatementFactory<E> statementFactory;
+    private final DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter;
     private final int maxSequences;
     private final int maxSequenceSize;
     private final int pageSize;
-    private final ConnectionProvider connectionProvider;
-    private final DeadLetterSchema schema;
-    private final TransactionManager transactionManager;
-    private final Serializer genericSerializer;
-    private final Serializer eventSerializer;
     private final Duration claimDuration;
 
-    // TODO get a feel whether this thing makes sense in it's current form
-    private final DeadLetterStatementFactory<E> statementFactory;
-    private final DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter;
-
+    /**
+     * Instantiate a JDBC-based {@link SequencedDeadLetterQueue} through the given {@link Builder builder}.
+     * <p>
+     * Will validate whether the {@link Builder#processingGroup(String) processing group},
+     * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider},
+     * {@link Builder#transactionManager(TransactionManager) TransactionManager},
+     * {@link Builder#statementFactory(DeadLetterStatementFactory) DeadLetterStatementFactory} and
+     * {@link Builder#converter(DeadLetterJdbcConverter) DeadLetterJdbcConverter} are set. If for either this is not the
+     * case an {@link AxonConfigurationException} is thrown.
+     *
+     * @param builder The {@link Builder} used to instantiate a {@link JdbcSequencedDeadLetterQueue} instance.
+     */
     protected JdbcSequencedDeadLetterQueue(Builder<E> builder) {
         builder.validate();
         this.processingGroup = builder.processingGroup;
+        this.connectionProvider = builder.connectionProvider;
+        this.transactionManager = builder.transactionManager;
+        this.schema = builder.schema;
+        this.statementFactory = builder.statementFactory();
+        this.converter = builder.converter();
         this.maxSequences = builder.maxSequences;
         this.maxSequenceSize = builder.maxSequenceSize;
         this.pageSize = builder.pageSize;
-        this.connectionProvider = builder.connectionProvider;
-        this.schema = builder.schema;
-        this.transactionManager = builder.transactionManager;
-        this.genericSerializer = builder.genericSerializer;
-        this.eventSerializer = builder.eventSerializer;
         this.claimDuration = builder.claimDuration;
-
-        // TODO get a feel whether this thing makes sense in it's current form
-        this.statementFactory = DefaultDeadLetterStatementFactory.<E>builder()
-                                                                 .schema(builder.schema)
-                                                                 .genericSerializer(builder.genericSerializer)
-                                                                 .eventSerializer(builder.eventSerializer)
-                                                                 .build();
-        this.converter = SimpleDeadLetterJdbcConverter.<E>builder()
-                                                      .genericSerializer(builder.genericSerializer)
-                                                      .eventSerializer(builder.eventSerializer)
-                                                      .build();
     }
 
     /**
@@ -135,24 +133,30 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
      * <p>
      * The following defaults are set by the builder:
      * <ul>
+     *     <li>The {@link Builder#schema(DeadLetterSchema) table's schema} defaults to a {@link DeadLetterSchema#defaultSchema()}.</li>
      *     <li>The {@link Builder#maxSequences(int) maximum amount of sequences} defaults to {@code 1024}.</li>
      *     <li>The {@link Builder#maxSequenceSize(int) maximum sequence size} defaults to {@code 1024}.</li>
-     *     <li>The {@link Builder#pageSize(int) query page size} defaults to {@code 100}.</li>
-     *     <li>The {@link Builder#schema(DeadLetterSchema) table's schema} defaults to a {@link DeadLetterSchema#defaultSchema()}.</li>
+     *     <li>The {@link Builder#pageSize(int) page size} defaults to {@code 100}.</li>
      *     <li>The {@link Builder#claimDuration(Duration) claim duration} defaults to 30 seconds.</li>
      * </ul>
      * <p>
      * The {@link Builder#processingGroup(String) processing group},
-     * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider},
-     * {@link Builder#transactionManager(TransactionManager) TransactionManager},
-     * {@link Builder#genericSerializer(Serializer) generic Serializer}, and the
-     * {@link Builder#eventSerializer(Serializer) event Serializer} are hard requirements and should be provided.
+     * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider}, and
+     * {@link Builder#transactionManager(TransactionManager) TransactionManager} are hard requirements and should be
+     * provided.
+     * <p>
+     * The {@link Builder#statementFactory(DeadLetterStatementFactory)} and
+     * {@link Builder#converter(DeadLetterJdbcConverter)} are also hard requirements, but users can choose to either set
+     * both explicitly or rely on the {@link DefaultDeadLetterStatementFactory} and
+     * {@link DefaultDeadLetterJdbcConverter} constructed through the
+     * {@link Builder#genericSerializer(Serializer) generic Serializer} and
+     * {@link Builder#eventSerializer(Serializer) event Serializer}.
      *
-     * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead letter} of this
+     * @param <E> The type of {@link EventMessage} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
      * @return A Builder that can construct an {@link JdbcSequencedDeadLetterQueue}.
      */
-    public static <M extends EventMessage<?>> Builder<M> builder() {
+    public static <E extends EventMessage<?>> Builder<E> builder() {
         return new Builder<>();
     }
 
@@ -604,152 +608,152 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
      * <p>
      * The following defaults are set by the builder:
      * <ul>
+     *     <li>The {@link Builder#schema(DeadLetterSchema) table's schema} defaults to a {@link DeadLetterSchema#defaultSchema()}.</li>
      *     <li>The {@link Builder#maxSequences(int) maximum amount of sequences} defaults to {@code 1024}.</li>
      *     <li>The {@link Builder#maxSequenceSize(int) maximum sequence size} defaults to {@code 1024}.</li>
      *     <li>The {@link Builder#pageSize(int) page size} defaults to {@code 100}.</li>
-     *     <li>The {@link Builder#schema(DeadLetterSchema) table's schema} defaults to a {@link DeadLetterSchema#defaultSchema()}.</li>
      *     <li>The {@link Builder#claimDuration(Duration) claim duration} defaults to 30 seconds.</li>
      * </ul>
      * <p>
      * The {@link Builder#processingGroup(String) processing group},
-     * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider},
-     * {@link Builder#transactionManager(TransactionManager) TransactionManager},
-     * {@link Builder#genericSerializer(Serializer) generic Serializer}, and the
-     * {@link Builder#eventSerializer(Serializer) event Serializer} are hard requirements and should be provided.
+     * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider}, and
+     * {@link Builder#transactionManager(TransactionManager) TransactionManager} are hard requirements and should be
+     * provided.
+     * <p>
+     * The {@link Builder#statementFactory(DeadLetterStatementFactory)} and
+     * {@link Builder#converter(DeadLetterJdbcConverter)} are also hard requirements, but users can choose to either set
+     * both explicitly or rely on the {@link DefaultDeadLetterStatementFactory} and
+     * {@link DefaultDeadLetterJdbcConverter} constructed through the
+     * {@link Builder#genericSerializer(Serializer) generic Serializer} and
+     * {@link Builder#eventSerializer(Serializer) event Serializer}.
      *
-     * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead letter} of this
+     * @param <E> The type of {@link EventMessage} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
      */
-    public static class Builder<M extends EventMessage<?>> {
+    public static class Builder<E extends EventMessage<?>> {
 
         private String processingGroup;
+        private ConnectionProvider connectionProvider;
+        private TransactionManager transactionManager;
+        private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
+        private DeadLetterStatementFactory<E> statementFactory;
+        private DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter;
+        private Serializer genericSerializer;
+        private Serializer eventSerializer;
         private int maxSequences = 1024;
         private int maxSequenceSize = 1024;
         private int pageSize = 100;
-        private ConnectionProvider connectionProvider;
-        private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
-        private TransactionManager transactionManager;
-        private Serializer genericSerializer;
-        private Serializer eventSerializer;
         private Duration claimDuration = Duration.ofSeconds(30);
 
         /**
-         * Sets the processing group, which is used for storing and quering which event processor the deadlettered item
-         * belonged to.
+         * Sets the processing group, which is used for storing and querying which processing group a dead-lettered
+         * {@link EventMessage} belonged to.
          *
          * @param processingGroup The processing group of this {@link SequencedDeadLetterQueue}.
-         * @return the current Builder instance, for fluent interfacing
+         * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<M> processingGroup(String processingGroup) {
+        public Builder<E> processingGroup(@Nonnull String processingGroup) {
             assertNonEmpty(processingGroup, "Can not set processingGroup to an empty String.");
             this.processingGroup = processingGroup;
             return this;
         }
 
         /**
-         * Sets the maximum number of unique sequences this {@link SequencedDeadLetterQueue} may contain.
-         * <p>
-         * The given {@code maxSequences} is required to be a positive number, higher or equal to {@code 128}. It
-         * defaults to {@code 1024}.
+         * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.
          *
-         * @param maxSequences The maximum amount of unique sequences for the queue under construction.
-         * @return The current Builder, for fluent interfacing.
+         * @param connectionProvider a {@link ConnectionProvider} which provides access to a JDBC connection
+         * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<M> maxSequences(int maxSequences) {
-            assertStrictPositive(maxSequences, "The maximum number of sequences should be larger or equal to 0");
-            this.maxSequences = maxSequences;
-            return this;
-        }
-
-        /**
-         * Sets the maximum amount of {@link DeadLetter letters} per unique sequences this
-         * {@link SequencedDeadLetterQueue} can store.
-         * <p>
-         * The given {@code maxSequenceSize} is required to be a positive number, higher or equal to {@code 128}. It
-         * defaults to {@code 1024}.
-         *
-         * @param maxSequenceSize The maximum amount of {@link DeadLetter letters} per unique  sequence.
-         * @return The current Builder, for fluent interfacing.
-         */
-        public Builder<M> maxSequenceSize(int maxSequenceSize) {
-            assertStrictPositive(maxSequenceSize,
-                                 "The maximum number of entries in a sequence should be larger or equal to 128");
-            this.maxSequenceSize = maxSequenceSize;
-            return this;
-        }
-
-        /**
-         * Sets the claim duration, which is the time a message gets locked when processing and waiting for it to
-         * complete. Other invocations of the {@link #process(Predicate, Function)} method will be unable to process a
-         * sequence while the claim is active. Its default is 30 seconds.
-         * <p>
-         * Claims are automatically released once the item is requeued, the claim time is a backup policy in case of
-         * unforeseen trouble such as down database connections.
-         *
-         * @param claimDuration The longest claim duration allowed.
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder<M> claimDuration(Duration claimDuration) {
-            assertNonNull(claimDuration, "Claim duration can not be set to null.");
-            this.claimDuration = claimDuration;
-            return this;
-        }
-
-        /**
-         * Modifies the page size used when retrieving a sequence of dead letters. Defaults to {@code 100} items in a
-         * page.
-         *
-         * @param fetchSize The page size
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder<M> pageSize(int fetchSize) {
-            assertStrictPositive(fetchSize, "The fetch size must be at least 1.");
-            this.pageSize = fetchSize;
-            return this;
-        }
-
-        /**
-         * @param connectionProvider
-         * @return The current Builder, for fluent interfacing.
-         */
-        public Builder<M> connectionProvider(ConnectionProvider connectionProvider) {
+        public Builder<E> connectionProvider(@Nonnull ConnectionProvider connectionProvider) {
             assertNonNull(connectionProvider, "ConnectionProvider may not be null");
             this.connectionProvider = connectionProvider;
             return this;
         }
 
         /**
-         * @param schema
+         * Sets the {@link TransactionManager} used to manage transaction around fetching dead-letter data.
+         *
+         * @param transactionManager A {@link TransactionManager} used to manage transaction around fetching dead-letter
+         *                           data.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<E> transactionManager(@Nonnull TransactionManager transactionManager) {
+            assertNonNull(transactionManager, "The TransactionManager may not be null");
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Sets the {@link DeadLetterSchema} used to constructs the table and indices required by this
+         * {@link SequencedDeadLetterQueue}.
+         * <p>
+         * The {@code schema} will be used to construct the {@link DeadLetterStatementFactory} when it is not explicitly
+         * configured.
+         * <p>
+         * Defaults to the default {@link DeadLetterSchema#defaultSchema() schema} configuration.
+         *
+         * @param schema The {@link DeadLetterSchema} used to constructs the table and indices required by this
+         *               dead-letter queue.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<M> schema(DeadLetterSchema schema) {
+        public Builder<E> schema(@Nonnull DeadLetterSchema schema) {
             assertNonNull(schema, "DeadLetterSchema may not be null");
             this.schema = schema;
             return this;
         }
 
         /**
-         * Sets the {@link TransactionManager} used to manage transaction around fetching event data. Required by
-         * certain databases for reading blob data.
+         * Sets the {@link DeadLetterStatementFactory} used to construct all
+         * {@link java.sql.PreparedStatement PreparedStatements} executed by this {@link SequencedDeadLetterQueue}.
+         * <p>
+         * When the {@code statementFactory} is not explicitly configured, this builder defaults to the
+         * {@link DefaultDeadLetterStatementFactory}. To construct the {@code DefaultDeadLetterStatementFactory}, the
+         * configured {@link #schema(DeadLetterSchema) schema},
+         * {@link #genericSerializer(Serializer) generic Serializer}, and
+         * {@link #eventSerializer(Serializer) event Serializer} are used.
          *
-         * @param transactionManager a {@link TransactionManager} used to manage transaction around fetching event data
-         * @return the current Builder instance, for fluent interfacing
+         * @param statementFactory The {@link DeadLetterStatementFactory} used to construct all
+         *                         {@link java.sql.PreparedStatement PreparedStatements} executed by this
+         *                         {@link SequencedDeadLetterQueue}.
+         * @return The current Builder, for fluent interfacing.
          */
-        public Builder<M> transactionManager(TransactionManager transactionManager) {
-            assertNonNull(transactionManager, "TransactionManager may not be null");
-            this.transactionManager = transactionManager;
+        public Builder<E> statementFactory(@Nonnull DeadLetterStatementFactory<E> statementFactory) {
+            assertNonNull(statementFactory, "The DeadLetterStatementFactory may not be null");
+            this.statementFactory = statementFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link DeadLetterJdbcConverter} used to convert a {@link java.sql.ResultSet} into a
+         * {@link JdbcDeadLetter} implementation. The {@code converter} is, for example, used to service the
+         * {@link #deadLetters()} and {@link #deadLetterSequence(Object)} operations.
+         * <p>
+         * When the {@code converter} is not explicitly configured, this builder defaults to the
+         * {@link DefaultDeadLetterJdbcConverter}. To construct the {@code DefaultDeadLetterJdbcConverter}, the
+         * configured {@link #genericSerializer(Serializer) generic Serializer}, and
+         * {@link #eventSerializer(Serializer) event Serializer} are used.
+         *
+         * @param converter The {@link DeadLetterJdbcConverter} used to convert a {@link java.sql.ResultSet} into a
+         *                  {@link JdbcDeadLetter} implementation.
+         * @return The current Builder, for fluent interfacing.
+         */
+        public Builder<E> converter(@Nonnull DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter) {
+            assertNonNull(converter, "The DeadLetterJdbcConverter may not be null");
+            this.converter = converter;
             return this;
         }
 
         /**
          * Sets the {@link Serializer} to (de)serialize the {@link org.axonframework.eventhandling.TrackingToken} (if
          * present) of the event in the {@link DeadLetter} when storing it to the database.
+         * <p>
+         * The {@code genericSerializer} will be used to construct the {@link DeadLetterStatementFactory} and/or
+         * {@link DeadLetterJdbcConverter} when either of them are not explicitly configured.
          *
-         * @param genericSerializer The serializer to use
-         * @return the current Builder instance, for fluent interfacing
+         * @param genericSerializer The serializer to use.
+         * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<M> genericSerializer(Serializer genericSerializer) {
-
+        public Builder<E> genericSerializer(@Nonnull Serializer genericSerializer) {
             assertNonNull(genericSerializer, "The generic serializer may not be null");
             this.genericSerializer = genericSerializer;
             return this;
@@ -758,13 +762,80 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
         /**
          * Sets the {@link Serializer} to (de)serialize the events, metadata and diagnostics of the {@link DeadLetter}
          * when storing it to a database.
+         * <p>
+         * The {@code eventSerializer} will be used to construct the {@link DeadLetterStatementFactory} and/or
+         * {@link DeadLetterJdbcConverter} when either of them are not explicitly configured.
          *
-         * @param eventSerializer The serializer to use
-         * @return the current Builder instance, for fluent interfacing
+         * @param eventSerializer The serializer to use.
+         * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<M> eventSerializer(Serializer eventSerializer) {
+        public Builder<E> eventSerializer(@Nonnull Serializer eventSerializer) {
             assertNonNull(eventSerializer, "The event serializer may not be null");
             this.eventSerializer = eventSerializer;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of unique sequences this {@link SequencedDeadLetterQueue} may contain.
+         * <p>
+         * The given {@code maxSequences} is required to be a positive number. The maximum number of unique sequences
+         * defaults to {@code 1024}.
+         *
+         * @param maxSequences The maximum amount of unique sequences for the queue under construction.
+         * @return The current Builder, for fluent interfacing.
+         */
+        public Builder<E> maxSequences(int maxSequences) {
+            assertStrictPositive(maxSequences, "The maximum number of sequences should be larger than 0");
+            this.maxSequences = maxSequences;
+            return this;
+        }
+
+        /**
+         * Sets the maximum amount of {@link DeadLetter letters} per unique sequences this
+         * {@link SequencedDeadLetterQueue} can store.
+         * <p>
+         * The given {@code maxSequenceSize} is required to be a positive number. The maximum amount of letters per
+         * unique sequence defaults to {@code 1024}.
+         *
+         * @param maxSequenceSize The maximum amount of {@link DeadLetter letters} per unique  sequence.
+         * @return The current Builder, for fluent interfacing.
+         */
+        public Builder<E> maxSequenceSize(int maxSequenceSize) {
+            assertStrictPositive(maxSequenceSize,
+                                 "The maximum number of entries in a sequence should be larger than 0");
+            this.maxSequenceSize = maxSequenceSize;
+            return this;
+        }
+
+        /**
+         * Sets the claim duration, which is the time a dead-letter gets locked when processing and waiting for it to
+         * complete. Other invocations of the {@link #process(Predicate, Function)} method will be unable to process a
+         * sequence while the claim is active. The claim duration defaults to 30 seconds.
+         * <p>
+         * Claims are automatically released once the item is requeued. Thus, the claim time is a backup policy in case
+         * of unforeseen trouble such as database connection issues.
+         *
+         * @param claimDuration The longest claim duration allowed.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<E> claimDuration(@Nonnull Duration claimDuration) {
+            assertNonNull(claimDuration, "Claim duration can not be set to null.");
+            this.claimDuration = claimDuration;
+            return this;
+        }
+
+        /**
+         * Modifies the page size used when retrieving a sequence of dead letters.
+         * <p>
+         * Used during the {@link #deadLetterSequence(Object)} and {@link #deadLetters()} operations. Defaults to a
+         * {@code 100}.
+         *
+         * @param pageSize The page size used when retrieving a sequence of dead letters.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<E> pageSize(int pageSize) {
+            assertStrictPositive(pageSize, "The page size  should be larger than 0.");
+            this.pageSize = pageSize;
             return this;
         }
 
@@ -773,8 +844,43 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
          *
          * @return A {@link JdbcSequencedDeadLetterQueue} as specified through this Builder.
          */
-        public JdbcSequencedDeadLetterQueue<M> build() {
+        public JdbcSequencedDeadLetterQueue<E> build() {
             return new JdbcSequencedDeadLetterQueue<>(this);
+        }
+
+        /**
+         * Retrieve the {@link DeadLetterStatementFactory} for this {@link SequencedDeadLetterQueue}.
+         * <p>
+         * When not set explicitly through {@link #statementFactory(DeadLetterStatementFactory)} a
+         * {@link DefaultDeadLetterStatementFactory} is constructed based on the
+         * {@link #schema(DeadLetterSchema) schema}, {@link #genericSerializer(Serializer) generic Serializer}, and
+         * {@link #eventSerializer(Serializer) event Serializer}.
+         *
+         * @return The {@link DeadLetterStatementFactory} as defined within this builder.
+         */
+        private DeadLetterStatementFactory<E> statementFactory() {
+            return getOrDefault(statementFactory, DefaultDeadLetterStatementFactory.<E>builder()
+                                                                                   .schema(schema)
+                                                                                   .genericSerializer(genericSerializer)
+                                                                                   .eventSerializer(eventSerializer)
+                                                                                   .build());
+        }
+
+        /**
+         * Retrieve the {@link DeadLetterJdbcConverter} for this {@link SequencedDeadLetterQueue}.
+         * <p>
+         * When not set explicitly through {@link #converter(DeadLetterJdbcConverter)} a
+         * {@link DefaultDeadLetterJdbcConverter} is constructed based on the
+         * {@link #genericSerializer(Serializer) generic Serializer}, and
+         * {@link #eventSerializer(Serializer) event Serializer}.
+         *
+         * @return The {@link DeadLetterJdbcConverter} as defined within this builder.
+         */
+        private DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter() {
+            return getOrDefault(converter, () -> DefaultDeadLetterJdbcConverter.<E>builder()
+                                                                               .genericSerializer(genericSerializer)
+                                                                               .eventSerializer(eventSerializer)
+                                                                               .build());
         }
 
         /**
@@ -784,11 +890,29 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
          *                                    specifications.
          */
         protected void validate() {
-            assertNonEmpty(processingGroup, "The processingGroup is a hard requirement and should be non-empty");
+            assertNonEmpty(processingGroup, "The processing group is a hard requirement and should be non-empty");
             assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
-            assertNonNull(genericSerializer, "The generic Serializer is a hard requirement and should be provided");
-            assertNonNull(eventSerializer, "The event Serializer is a hard requirement and should be provided");
+            if (statementFactory == null) {
+                assertNonNull(
+                        genericSerializer,
+                        "The generic Serializer is a hard requirement when the DeadLetterStatementFactory is not provided"
+                );
+                assertNonNull(
+                        eventSerializer,
+                        "The event Serializer is a hard requirement when the DeadLetterStatementFactory is not provided"
+                );
+            }
+            if (converter == null) {
+                assertNonNull(
+                        genericSerializer,
+                        "The generic Serializer is a hard requirement when the DeadLetterJdbcConverter is not provided"
+                );
+                assertNonNull(
+                        eventSerializer,
+                        "The event Serializer is a hard requirement when the DeadLetterJdbcConverter is not provided"
+                );
+            }
         }
     }
 }

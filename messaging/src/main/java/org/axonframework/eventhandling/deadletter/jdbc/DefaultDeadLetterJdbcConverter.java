@@ -46,21 +46,21 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class SimpleDeadLetterJdbcConverter<E extends EventMessage<?>>
+public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
         implements DeadLetterJdbcConverter<E, JdbcDeadLetter<E>> {
 
     private final DeadLetterSchema schema;
     private final Serializer genericSerializer;
     private final Serializer eventSerializer;
 
-    protected SimpleDeadLetterJdbcConverter(Builder<E> builder) {
+    protected DefaultDeadLetterJdbcConverter(Builder<E> builder) {
         builder.validate();
         schema = builder.schema;
         genericSerializer = builder.genericSerializer;
         eventSerializer = builder.eventSerializer;
     }
 
-    public static <M extends EventMessage<?>> Builder<M> builder() {
+    public static <E extends EventMessage<?>> Builder<E> builder() {
         return new Builder<>();
     }
 
@@ -209,8 +209,8 @@ public class SimpleDeadLetterJdbcConverter<E extends EventMessage<?>>
          *
          * @return A {@link JdbcSequencedDeadLetterQueue} as specified through this Builder.
          */
-        public SimpleDeadLetterJdbcConverter<E> build() {
-            return new SimpleDeadLetterJdbcConverter<>(this);
+        public DefaultDeadLetterJdbcConverter<E> build() {
+            return new DefaultDeadLetterJdbcConverter<>(this);
         }
 
         /**
