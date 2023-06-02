@@ -218,20 +218,22 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     public PreparedStatement letterSequenceStatement(@Nonnull Connection connection,
                                                      @Nonnull String processingGroup,
                                                      @Nonnull String sequenceId,
-                                                     int firstResult,
+                                                     int offset,
                                                      int maxSize) throws SQLException {
         String sql = "SELECT * "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.processingGroupColumn() + "=? "
                 + "AND " + schema.sequenceIdentifierColumn() + "=? "
-                + "AND " + schema.sequenceIndexColumn() + ">=" + firstResult + " "
-                + "LIMIT " + maxSize;
+                + "AND " + schema.sequenceIndexColumn() + ">=? "
+                + "LIMIT ?";
 
         PreparedStatement statement =
                 connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 
         statement.setString(1, processingGroup);
         statement.setString(2, sequenceId);
+        statement.setInt(3, offset);
+        statement.setInt(4, maxSize);
         return statement;
     }
 

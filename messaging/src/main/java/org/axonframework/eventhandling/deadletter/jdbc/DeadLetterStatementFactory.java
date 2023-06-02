@@ -56,7 +56,7 @@ public interface DeadLetterStatementFactory<E extends EventMessage<?>> {
     PreparedStatement letterSequenceStatement(@Nonnull Connection connection,
                                               @Nonnull String processingGroup,
                                               @Nonnull String sequenceId,
-                                              int firstResult,
+                                              int offset,
                                               int maxSize) throws SQLException;
 
     PreparedStatement sequenceIdentifiersStatement(@Nonnull Connection connection,

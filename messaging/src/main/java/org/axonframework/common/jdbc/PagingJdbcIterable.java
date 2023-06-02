@@ -114,7 +114,7 @@ public class PagingJdbcIterable<R> implements Iterable<R> {
 
             List<R> results = transactionManager.fetchInTransaction(
                     () -> executeQuery(connectionProvider.get(),
-                                       connection -> sqlBuilder.apply(connection, page * pageSize, page),
+                                       connection -> sqlBuilder.apply(connection, page * pageSize, pageSize),
                                        listResults(resultConverter),
                                        errorHandler,
                                        closeConnection)
@@ -138,11 +138,11 @@ public class PagingJdbcIterable<R> implements Iterable<R> {
 
         /**
          * Create a new {@link PreparedStatement} using the given {@code connection}.
-         *
+         * todo jdoc
          * @param connection the connection that will be used to create the statement
          * @return a new statement ready for execution
          * @throws SQLException if the statement could not be created
          */
-        PreparedStatement apply(Connection connection, int firstResult, int maxSize) throws SQLException;
+        PreparedStatement apply(Connection connection, int offset, int maxSize) throws SQLException;
     }
 }
