@@ -89,7 +89,7 @@
         <ehcache.version>2.10.9.2</ehcache.version>
         <ehcache3.version>3.10.8</ehcache3.version>
         <quartz.version>2.3.2</quartz.version>
-        <jobrunr.version>6.2.0</jobrunr.version>
+        <jobrunr.version>6.2.1</jobrunr.version>
         <db-scheduler.version>11.7</db-scheduler.version>
         <gson.version>2.8.9</gson.version>
         <c3p0.version>0.9.1.2</c3p0.version>
