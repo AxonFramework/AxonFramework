@@ -53,21 +53,24 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
- * JDBC-backed implementation of the {@link SequencedDeadLetterQueue}, used for storing dead letters containing
- * {@link EventMessage Eventmessages} durably as a {@link DeadLetterEntry}.
+ * A JDBC-based implementation of the {@link SequencedDeadLetterQueue}, used for storing dead letters containing
+ * {@link EventMessage event messages} durably. Use the {@link #createSchema(DeadLetterTableFactory)} operation to build
+ * the table and indices required by this {@code SequencedDeadLetterQueue}, providing the desired
+ * {@link DeadLetterTableFactory}. The {@link java.sql.PreparedStatement statements} used by this queues methods can be
+ * optimized by providing a custom {@link DeadLetterStatementFactory}.
  * <p>
  * Keeps the insertion order intact by saving an incremented index within each unique sequence, backed by the
- * {@link DeadLetterEntry#getSequenceIndex()} property. Each sequence is uniquely identified by the sequence identifier,
- * stored in the {@link DeadLetterEntry#getSequenceIdentifier()} field.
+ * {@link DeadLetterSchema#sequenceIndexColumn() index} property. Each sequence is uniquely identified by the sequence
+ * identifier, stored in the {@link DeadLetterSchema#sequenceIdentifierColumn()} sequence identifier} field.
  * <p>
  * When processing an item, single execution across all applications is guaranteed by setting the
- * {@link DeadLetterEntry#getProcessingStarted()} property, locking other processes out of the sequence for the
- * configured {@code claimDuration} (30 seconds by default).
+ * {@link DeadLetterSchema#processingStartedColumn() processing started} property, locking other processes out of the
+ * sequence for the configured {@code claimDuration} (30 seconds by default).
  * <p>
- * The stored {@link DeadLetterEntry entries} are converted to a {@link JpaDeadLetter} when they need to be processed or
- * filtered. In order to restore the original {@link EventMessage} a matching {@link DeadLetterJpaConverter} is used.
- * The default supports all {@code EventMessage} implementations provided by the framework. If you have a custom
- * variant, you have to build your own.
+ * The stored entries are converted to a {@link JdbcDeadLetter} when they need to be processed or filtered. In order to
+ * restore the original {@link EventMessage} the {@link DeadLetterJdbcConverter} is used. The default supports all
+ * {@code EventMessage} implementations provided by the framework. If you have a custom variant, you have to build your
+ * own.
  * <p>
  * {@link org.axonframework.serialization.upcasting.Upcaster upcasters} are not supported by this implementation, so
  * breaking changes for events messages stored in the queue should be avoided.
@@ -456,7 +459,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
 
     /**
      * Fetches the first letter for each sequence in the provided {@code processingGroup} that is not claimed. Note that
-     * the first letters have the lowest {@link JdbcDeadLetter#getIndex() index} within their sequence.
+     * the first letters have the lowest {@link DeadLetterSchema#sequenceIndexColumn() index} within their sequence.
      * <p>
      * A sequence is regarded claimable when {@link DeadLetterSchema#processingStartedColumn() processing started} is
      * {@code null} or processing started is longer ago than the configured {@code claimDuration}.
@@ -479,8 +482,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
     }
 
     /**
-     * Claims the provided {@code letter} in the database by setting the {@code processingStarted} property. Will check
-     * whether it was claimed successfully and return an appropriate boolean result.
+     * Claims the provided {@code letter} in the database by setting the
+     * {@link DeadLetterSchema#processingStartedColumn() processing started} property. Will check whether it was claimed
+     * successfully and return an appropriate boolean result.
      *
      * @return Whether the letter was successfully claimed or not.
      */
@@ -509,9 +513,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
     }
 
     /**
-     * Determines the time the {@code processingStarted} value a dead letter entry at least needs to have to stay
-     * claimed. The returned limit is based on the difference between the {@link GenericDeadLetter#clock} and the
-     * configurable {@link Builder#claimDuration claim duration}.
+     * Determines the time the {@link DeadLetterSchema#processingStartedColumn() processing started} value a dead letter
+     * entry at least needs to have to stay claimed. The returned limit is based on the difference between the
+     * {@link GenericDeadLetter#clock} and the configurable {@link Builder#claimDuration claim duration}.
      *
      * @return The difference between the {@link GenericDeadLetter#clock} and the
      * {@link Builder#claimDuration claim duration}.
@@ -524,7 +528,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
      * Processes the given {@code initialLetter} using the provided {@code processingTask}.
      * <p>
      * When processing is successful this operation will automatically process all messages in the same
-     * {@link JdbcDeadLetter#getSequenceIdentifier()}, {@link #evict(DeadLetter) evicting} letters that succeed and
+     * {@link DeadLetterSchema#sequenceIdentifierColumn()}, {@link #evict(DeadLetter) evicting} letters that succeed and
      * stopping when the first one fails (and is {@link #requeue(DeadLetter, UnaryOperator) requeued}).
      * <p>
      * Will claim the next letter in the same sequence before removing the previous letter to prevent concurrency
@@ -532,7 +536,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
      * sequence before processing ends, and deletes would throw the ordering off.
      *
      * @param initialLetter  The dead letter to start processing.
-     * @param processingTask The task to use to process the dead letter, providing a decision afterwards.
+     * @param processingTask The task to use to process the dead letter, providing a decision afterward.
      * @return Whether processing all letters in this sequence was successful.
      */
     private boolean processInitialAndSubsequent(JdbcDeadLetter<E> initialLetter,
