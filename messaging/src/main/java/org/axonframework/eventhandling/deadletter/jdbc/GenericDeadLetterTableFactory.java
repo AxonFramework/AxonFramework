@@ -39,7 +39,7 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.sequenceIndexColumn() + " BIGINT NOT NULL,\n" +
                 schema.messageTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
-                schema.timeStampColumn() + " " + timestampType() + " NOT NULL,\n" +
+                schema.timestampColumn() + " " + timestampType() + " NOT NULL,\n" +
                 schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
                 schema.payloadColumn() + " " + serializedDataType() + " NOT NULL,\n" +
@@ -99,7 +99,7 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
      * Returns the SQL to describe the type for timestamp columns.
      * <p>
      * Used for the {@link DeadLetterSchema#enqueuedAtColumn()}, {@link DeadLetterSchema#lastTouchedColumn()},
-     * {@link DeadLetterSchema#processingGroupColumn()}, and the {@link DeadLetterSchema#timeStampColumn()}. Defaults to
+     * {@link DeadLetterSchema#processingGroupColumn()}, and the {@link DeadLetterSchema#timestampColumn()}. Defaults to
      * {@code VARCHAR(255)}.
      *
      * @return The SQL to describe the type for timestamp columns.

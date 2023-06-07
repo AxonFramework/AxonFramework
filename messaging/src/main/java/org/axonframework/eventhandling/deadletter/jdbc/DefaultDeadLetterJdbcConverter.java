@@ -68,7 +68,7 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
     public JdbcDeadLetter<E> convertToLetter(ResultSet resultSet) throws SQLException {
         EventMessage<?> eventMessage;
         Message<?> serializedMessage = convertToSerializedMessage(resultSet);
-        String eventTimestampString = resultSet.getString(schema.timeStampColumn());
+        String eventTimestampString = resultSet.getString(schema.timestampColumn());
         Supplier<Instant> timestampSupplier = () -> DateTimeUtils.parseInstant(eventTimestampString);
 
         if (resultSet.getString(schema.tokenTypeColumn()) != null) {

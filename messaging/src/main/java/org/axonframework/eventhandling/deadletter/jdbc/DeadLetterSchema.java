@@ -21,7 +21,8 @@ import java.util.function.Function;
 import static org.axonframework.common.BuilderUtils.assertNonBlank;
 
 /**
- * Schema description for {@link org.axonframework.messaging.deadletter.DeadLetter} entry table in JDBC.
+ * Schema description for an {@link org.axonframework.eventhandling.EventMessage} holding
+ * {@link org.axonframework.messaging.deadletter.DeadLetter} entry table in JDBC.
  *
  * @author Steven van Beelen
  * @since 4.8.0
@@ -35,10 +36,9 @@ public class DeadLetterSchema {
     private final String sequenceIdentifierColumn;
     private final String sequenceIndexColumn;
     // Event Message columns
-    // TODO move the event message columns to a DeadLetterEventSchema, perhaps?
     private final String messageTypeColumn;
     private final String eventIdentifierColumn;
-    private final String timeStampColumn;
+    private final String timestampColumn;
     private final String payloadTypeColumn;
     private final String payloadRevisionColumn;
     private final String payloadColumn;
@@ -64,7 +64,7 @@ public class DeadLetterSchema {
                         schema.sequenceIndexColumn(),
                         schema.messageTypeColumn(),
                         schema.eventIdentifierColumn(),
-                        schema.timeStampColumn(),
+                        schema.timestampColumn(),
                         schema.payloadTypeColumn(),
                         schema.payloadRevisionColumn(),
                         schema.payloadColumn(),
@@ -93,7 +93,7 @@ public class DeadLetterSchema {
         this.sequenceIndexColumn = builder.sequenceIndexColumn;
         this.messageTypeColumn = builder.messageTypeColumn;
         this.eventIdentifierColumn = builder.eventIdentifierColumn;
-        this.timeStampColumn = builder.timeStampColumn;
+        this.timestampColumn = builder.timeStampColumn;
         this.payloadTypeColumn = builder.payloadTypeColumn;
         this.payloadRevisionColumn = builder.payloadRevisionColumn;
         this.payloadColumn = builder.payloadColumn;
@@ -133,207 +133,207 @@ public class DeadLetterSchema {
     }
 
     /**
-     * Returns the configured {@code deadLetterTable} name.
+     * Returns the configured {@code deadLetter} table name.
      *
-     * @return The configured {@code deadLetterTable} name.
+     * @return The configured {@code deadLetter} table name.
      */
     public String deadLetterTable() {
         return deadLetterTable;
     }
 
     /**
-     * Returns the configured {@code deadLetterIdentifierColumn} name.
+     * Returns the configured {@code deadLetterIdentifier} column name.
      *
-     * @return The configured {@code deadLetterIdentifierColumn} name.
+     * @return The configured {@code deadLetterIdentifier} column name.
      */
     public String deadLetterIdentifierColumn() {
         return deadLetterIdentifierColumn;
     }
 
     /**
-     * Returns the configured {@code processingGroupColumn} name.
+     * Returns the configured {@code processingGroup} column name.
      *
-     * @return The configured {@code processingGroupColumn} name.
+     * @return The configured {@code processingGroup} column name.
      */
     public String processingGroupColumn() {
         return processingGroupColumn;
     }
 
     /**
-     * Returns the configured {@code sequenceIdentifierColumn} name.
+     * Returns the configured {@code sequenceIdentifier} column name.
      *
-     * @return The configured {@code sequenceIdentifierColumn} name.
+     * @return The configured {@code sequenceIdentifier} column name.
      */
     public String sequenceIdentifierColumn() {
         return sequenceIdentifierColumn;
     }
 
     /**
-     * Returns the configured {@code sequenceIndexColumn} name.
+     * Returns the configured {@code sequenceIndex} column name.
      *
-     * @return The configured {@code sequenceIndexColumn} name.
+     * @return The configured {@code sequenceIndex} column name.
      */
     public String sequenceIndexColumn() {
         return sequenceIndexColumn;
     }
 
     /**
-     * Returns the configured {@code messageTypeColumn} name.
+     * Returns the configured {@code messageType} column name.
      *
-     * @return The configured {@code messageTypeColumn} name.
+     * @return The configured {@code messageType} column name.
      */
     public String messageTypeColumn() {
         return messageTypeColumn;
     }
 
     /**
-     * Returns the configured {@code eventIdentifierColumn} name.
+     * Returns the configured {@code eventIdentifier} column name.
      *
-     * @return The configured {@code eventIdentifierColumn} name.
+     * @return The configured {@code eventIdentifier} column name.
      */
     public String eventIdentifierColumn() {
         return eventIdentifierColumn;
     }
 
     /**
-     * Returns the configured {@code timeStampColumn} name.
+     * Returns the configured {@code timestamp} column name.
      *
-     * @return The configured {@code timeStampColumn} name.
+     * @return The configured {@code timestamp} column name.
      */
-    public String timeStampColumn() {
-        return timeStampColumn;
+    public String timestampColumn() {
+        return timestampColumn;
     }
 
     /**
-     * Returns the configured {@code payloadTypeColumn} name.
+     * Returns the configured {@code payloadType} column name.
      *
-     * @return The configured {@code payloadTypeColumn} name.
+     * @return The configured {@code payloadType} column name.
      */
     public String payloadTypeColumn() {
         return payloadTypeColumn;
     }
 
     /**
-     * Returns the configured {@code payloadRevisionColumn} name.
+     * Returns the configured {@code payloadRevision} column name.
      *
-     * @return The configured {@code payloadRevisionColumn} name.
+     * @return The configured {@code payloadRevision} column name.
      */
     public String payloadRevisionColumn() {
         return payloadRevisionColumn;
     }
 
     /**
-     * Returns the configured {@code payloadColumn} name.
+     * Returns the configured {@code payload} column name.
      *
-     * @return The configured {@code payloadColumn} name.
+     * @return The configured {@code payload} column name.
      */
     public String payloadColumn() {
         return payloadColumn;
     }
 
     /**
-     * Returns the configured {@code metaDataColumn} name.
+     * Returns the configured {@code metaData} column name.
      *
-     * @return The configured {@code metaDataColumn} name.
+     * @return The configured {@code metaData} column name.
      */
     public String metaDataColumn() {
         return metaDataColumn;
     }
 
     /**
-     * Returns the configured {@code aggregateTypeColumn} name.
+     * Returns the configured {@code aggregateType} column name.
      *
-     * @return The configured {@code aggregateTypeColumn} name.
+     * @return The configured {@code aggregateType} column name.
      */
     public String aggregateTypeColumn() {
         return aggregateTypeColumn;
     }
 
     /**
-     * Returns the configured {@code aggregateIdentifierColumn} name.
+     * Returns the configured {@code aggregateIdentifier} column name.
      *
-     * @return The configured {@code aggregateIdentifierColumn} name.
+     * @return The configured {@code aggregateIdentifier} column name.
      */
     public String aggregateIdentifierColumn() {
         return aggregateIdentifierColumn;
     }
 
     /**
-     * Returns the configured {@code sequenceNumberColumn} name.
+     * Returns the configured {@code sequenceNumber} column name.
      *
-     * @return The configured {@code sequenceNumberColumn} name.
+     * @return The configured {@code sequenceNumber} column name.
      */
     public String sequenceNumberColumn() {
         return sequenceNumberColumn;
     }
 
     /**
-     * Returns the configured {@code tokenTypeColumn} name.
+     * Returns the configured {@code tokenType} column name.
      *
-     * @return The configured {@code tokenTypeColumn} name.
+     * @return The configured {@code tokenType} column name.
      */
     public String tokenTypeColumn() {
         return tokenTypeColumn;
     }
 
     /**
-     * Returns the configured {@code tokenColumn} name.
+     * Returns the configured {@code token} column name.
      *
-     * @return The configured {@code tokenColumn} name.
+     * @return The configured {@code token} column name.
      */
     public String tokenColumn() {
         return tokenColumn;
     }
 
     /**
-     * Returns the configured {@code enqueuedAtColumn} name.
+     * Returns the configured {@code enqueuedAt} column name.
      *
-     * @return The configured {@code enqueuedAtColumn} name.
+     * @return The configured {@code enqueuedAt} column name.
      */
     public String enqueuedAtColumn() {
         return enqueuedAtColumn;
     }
 
     /**
-     * Returns the configured {@code lastTouchedColumn} name.
+     * Returns the configured {@code lastTouched} column name.
      *
-     * @return The configured {@code lastTouchedColumn} name.
+     * @return The configured {@code lastTouched} column name.
      */
     public String lastTouchedColumn() {
         return lastTouchedColumn;
     }
 
     /**
-     * Returns the configured {@code processingStartedColumn} name.
+     * Returns the configured {@code processingStarted} column name.
      *
-     * @return The configured {@code processingStartedColumn} name.
+     * @return The configured {@code processingStarted} column name.
      */
     public String processingStartedColumn() {
         return processingStartedColumn;
     }
 
     /**
-     * Returns the configured {@code causeTypeColumn} name.
+     * Returns the configured {@code causeType} column name.
      *
-     * @return The configured {@code causeTypeColumn} name.
+     * @return The configured {@code causeType} column name.
      */
     public String causeTypeColumn() {
         return causeTypeColumn;
     }
 
     /**
-     * Returns the configured {@code causeMessageColumn} name.
+     * Returns the configured {@code causeMessage} column name.
      *
-     * @return The configured {@code causeMessageColumn} name.
+     * @return The configured {@code causeMessage} column name.
      */
     public String causeMessageColumn() {
         return causeMessageColumn;
     }
 
     /**
-     * Returns the configured {@code diagnosticsColumn} name.
+     * Returns the configured {@code diagnostics} column name.
      *
-     * @return The configured {@code diagnosticsColumn} name.
+     * @return The configured {@code diagnostics} column name.
      */
     public String diagnosticsColumn() {
         return diagnosticsColumn;
