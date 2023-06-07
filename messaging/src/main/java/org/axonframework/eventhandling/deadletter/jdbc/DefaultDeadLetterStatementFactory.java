@@ -42,7 +42,18 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * @param <E> An implementation of {@link EventMessage} todo...
+ * Default implementation of the {@link DeadLetterStatementFactory} used by the {@link JdbcSequencedDeadLetterQueue}
+ * Constructs {@link PreparedStatement PreparedStatements} that are compatible with most databases.
+ * <p>
+ * This factory expects a {@link DeadLetterSchema} to base the table and columns names used for <b>all</b>
+ * {@code PreparedStatements}. Uses the configurable {@code genericSerializer} to serialize
+ * {@link TrackingToken TrackingTokens} in {@link TrackedEventMessage} instances. Furthermore, this factory uses the
+ * {@code eventSerializer} to serialize the {@link EventMessage#getPayload() event payload},
+ * {@link EventMessage#getMetaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} of any
+ * {@code DeadLetter}.
+ *
+ * @param <E> An implementation of {@link EventMessage} within the {@link DeadLetter} this factory constructs
+ *            {@link PreparedStatement PreparedStatements} for.
  * @author Steven van Beelen
  * @since 4.8.0
  */
@@ -53,6 +64,15 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     private final Serializer genericSerializer;
     private final Serializer eventSerializer;
 
+    /**
+     * Instantiate a default {@link DeadLetterStatementFactory} based on the given {@code builder}.
+     * <p>
+     * Will validate whether the {@link Builder#genericSerializer(Serializer) generic Serializer} and
+     * {@link Builder#eventSerializer(Serializer) event Serializer} are set. If for either this is not the case an
+     * {@link AxonConfigurationException} is thrown.
+     *
+     * @param builder The {@link Builder} used to instantiate a {@link DefaultDeadLetterStatementFactory} instance.
+     */
     protected DefaultDeadLetterStatementFactory(Builder<E> builder) {
         builder.validate();
         this.schema = builder.schema;
@@ -60,7 +80,18 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
         this.eventSerializer = builder.eventSerializer;
     }
 
-    public static <M extends EventMessage<?>> Builder<M> builder() {
+    /**
+     * Instantiate a builder to construct a {@link DefaultDeadLetterStatementFactory}.
+     * <p>
+     * The {@link Builder#schema(DeadLetterSchema) schema} is defaulted to a {@link DeadLetterSchema#defaultSchema()}.
+     * The {@link Builder#genericSerializer(Serializer) generic Serializer} and
+     * {@link Builder#eventSerializer(Serializer) event Serializer} are hard requirements and should be provided.
+     *
+     * @param <E> An implementation of {@link EventMessage} within the {@link DeadLetter} this factory constructs
+     *            {@link PreparedStatement PreparedStatements} for.
+     * @return A builder that con construct a {@link DefaultDeadLetterStatementFactory}.
+     */
+    public static <E extends EventMessage<?>> Builder<E> builder() {
         return new Builder<>();
     }
 
@@ -167,13 +198,27 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     }
 
     @Override
+    public PreparedStatement maxIndexStatement(@Nonnull Connection connection,
+                                               @Nonnull String processingGroup,
+                                               @Nonnull String sequenceId) throws SQLException {
+        String sql = "SELECT MAX(" + schema.sequenceIndexColumn() + ") "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.processingGroupColumn() + "=? "
+                + "AND " + schema.sequenceIdentifierColumn() + "=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        statement.setString(2, sequenceId);
+        return statement;
+    }
+
+    @Override
     public PreparedStatement evictStatement(@Nonnull Connection connection,
-                                            @Nonnull String letterIdentifier) throws SQLException {
+                                            @Nonnull String identifier) throws SQLException {
         String sql = "DELETE "
                 + "FROM " + schema.deadLetterTable() + " "
                 + "WHERE " + schema.deadLetterIdentifierColumn() + "=?";
         PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setString(1, letterIdentifier);
+        statement.setString(1, identifier);
         return statement;
     }
 
@@ -293,31 +338,6 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     }
 
     @Override
-    public PreparedStatement clearStatement(@Nonnull Connection connection,
-                                            @Nonnull String processingGroup) throws SQLException {
-        String sql = "DELETE "
-                + "FROM " + schema.deadLetterTable() + " "
-                + "WHERE " + schema.processingGroupColumn() + "=?";
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setString(1, processingGroup);
-        return statement;
-    }
-
-    @Override
-    public PreparedStatement maxIndexStatement(@Nonnull Connection connection,
-                                               @Nonnull String processingGroup,
-                                               @Nonnull String sequenceId) throws SQLException {
-        String sql = "SELECT MAX(" + schema.sequenceIndexColumn() + ") "
-                + "FROM " + schema.deadLetterTable() + " "
-                + "WHERE " + schema.processingGroupColumn() + "=? "
-                + "AND " + schema.sequenceIdentifierColumn() + "=?";
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setString(1, processingGroup);
-        statement.setString(2, sequenceId);
-        return statement;
-    }
-
-    @Override
     public PreparedStatement claimableSequencesStatement(@Nonnull Connection connection,
                                                          @Nonnull String processingGroup,
                                                          @Nonnull Instant processingStartedLimit,
@@ -354,7 +374,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
 
     @Override
     public PreparedStatement claimStatement(@Nonnull Connection connection,
-                                            @Nonnull String letterIdentifier,
+                                            @Nonnull String identifier,
                                             @Nonnull Instant current,
                                             @Nonnull Instant processingStartedLimit) throws SQLException {
         String sql = "UPDATE " + schema.deadLetterTable() + " SET "
@@ -366,7 +386,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                 + ")";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, DateTimeUtils.formatInstant(current));
-        statement.setString(2, letterIdentifier);
+        statement.setString(2, identifier);
         statement.setString(3, DateTimeUtils.formatInstant(processingStartedLimit));
         return statement;
     }
@@ -391,17 +411,42 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
         return statement;
     }
 
-    protected static class Builder<M extends EventMessage<?>> {
+    @Override
+    public PreparedStatement clearStatement(@Nonnull Connection connection,
+                                            @Nonnull String processingGroup) throws SQLException {
+        String sql = "DELETE "
+                + "FROM " + schema.deadLetterTable() + " "
+                + "WHERE " + schema.processingGroupColumn() + "=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, processingGroup);
+        return statement;
+    }
+
+    /**
+     * Builder class to instantiate a {@link DefaultDeadLetterStatementFactory}.
+     * <p>
+     * The {@link Builder#schema(DeadLetterSchema) schema} is defaulted to a {@link DeadLetterSchema#defaultSchema()}.
+     * The {@link Builder#genericSerializer(Serializer) generic Serializer} and
+     * {@link Builder#eventSerializer(Serializer) event Serializer} are hard requirements and should be provided.
+     *
+     * @param <E> An implementation of {@link EventMessage} within the {@link DeadLetter} this factory constructs
+     *            {@link PreparedStatement PreparedStatements} for.
+     */
+    protected static class Builder<E extends EventMessage<?>> {
 
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
         private Serializer genericSerializer;
         private Serializer eventSerializer;
 
         /**
-         * @param schema
+         * Sets the given {@code schema} used to define the table and column names used when constructing <b>all</b>
+         * {@link PreparedStatement PreparedStatements}. Defaults to a {@link DeadLetterSchema#defaultSchema()}.
+         *
+         * @param schema The {@link DeadLetterSchema} used to define the table and column names used when constructing
+         *               <b>all</b> {@link PreparedStatement PreparedStatements}.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<M> schema(DeadLetterSchema schema) {
+        public Builder<E> schema(DeadLetterSchema schema) {
             assertNonNull(schema, "DeadLetterSchema may not be null");
             this.schema = schema;
             return this;
@@ -409,13 +454,14 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
 
 
         /**
-         * Sets the {@link Serializer} to (de)serialize the {@link org.axonframework.eventhandling.TrackingToken} (if
-         * present) of the event in the {@link DeadLetter} when storing it to the database.
+         * Sets the {@link Serializer} to serialize the {@link TrackingToken} of a {@link TrackedEventMessage} instance
+         * in the {@link DeadLetter} when storing it to the database.
          *
-         * @param genericSerializer The serializer to use
-         * @return the current Builder instance, for fluent interfacing
+         * @param genericSerializer The serializer to use for {@link TrackingToken TrackingTokens} in a
+         *                          {@link TrackedEventMessage}.
+         * @return The current Builder, for fluent interfacing.
          */
-        public Builder<M> genericSerializer(Serializer genericSerializer) {
+        public Builder<E> genericSerializer(Serializer genericSerializer) {
 
             assertNonNull(genericSerializer, "The generic serializer may not be null");
             this.genericSerializer = genericSerializer;
@@ -423,13 +469,16 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
         }
 
         /**
-         * Sets the {@link Serializer} to (de)serialize the events, metadata and diagnostics of the {@link DeadLetter}
-         * when storing it to a database.
+         * Sets the {@link Serializer} to serialize the {@link EventMessage#getPayload() event payload},
+         * {@link EventMessage#getMetaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} of the
+         * {@link DeadLetter} when storing it to a database.
          *
-         * @param eventSerializer The serializer to use
-         * @return the current Builder instance, for fluent interfacing
+         * @param eventSerializer The serializer to use for {@link EventMessage#getPayload() event payload}s,
+         *                        {@link EventMessage#getMetaData() MetaData} instances, and
+         *                        {@link DeadLetter#diagnostics() diagnostics}.
+         * @return The current Builder, for fluent interfacing.
          */
-        public Builder<M> eventSerializer(Serializer eventSerializer) {
+        public Builder<E> eventSerializer(Serializer eventSerializer) {
             assertNonNull(eventSerializer, "The event serializer may not be null");
             this.eventSerializer = eventSerializer;
             return this;
@@ -440,7 +489,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
          *
          * @return A {@link DefaultDeadLetterStatementFactory} as specified through this Builder.
          */
-        public DefaultDeadLetterStatementFactory<M> build() {
+        public DefaultDeadLetterStatementFactory<E> build() {
             return new DefaultDeadLetterStatementFactory<>(this);
         }
 
