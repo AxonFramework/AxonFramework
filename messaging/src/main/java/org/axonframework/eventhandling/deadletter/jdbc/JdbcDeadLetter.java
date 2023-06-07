@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -33,7 +32,7 @@ import java.util.Optional;
  * should only be changed using the {@link #withCause(Throwable)}, {@link #withDiagnostics(MetaData)} and
  * {@link #markTouched()} functions. These reconstruct a new object with the specified new properties.
  *
- * @param <E> The {@link EventMessage} type of the contained message.
+ * @param <E> The {@link EventMessage} contained in this {@link DeadLetter}.
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @since 4.8.0
@@ -41,7 +40,7 @@ import java.util.Optional;
 public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> {
 
     private final String identifier;
-    private final Long index;
+    private final long sequenceIndex;
     private final String sequenceIdentifier;
     private final Instant enqueuedAt;
     private final Instant lastTouched;
@@ -50,49 +49,28 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
     private final E message;
 
     /**
-     * Constructs a new {@link JdbcDeadLetter} from a {@link DeadLetterEntry}, deserialized diagnostics and a
-     * reconstructed message.
-     *
-     * @param entry       The {@link DeadLetterEntry} to construct this letter from.
-     * @param diagnostics The deserialized diagnostics {@link MetaData}.
-     * @param message     The reconstructed {@link EventMessage}.
-     */
-    public JdbcDeadLetter(DeadLetterEntry entry, MetaData diagnostics, E message) {
-        this.identifier = entry.getDeadLetterId();
-        this.index = entry.getSequenceIndex();
-        this.enqueuedAt = entry.getEnqueuedAt();
-        this.lastTouched = entry.getLastTouched();
-        this.sequenceIdentifier = entry.getSequenceIdentifier();
-        this.cause = entry.getCauseType() != null
-                ? new ThrowableCause(entry.getCauseType(), entry.getCauseMessage())
-                : null;
-        this.diagnostics = diagnostics;
-        this.message = message;
-    }
-
-    /**
      * Constructs a new {@link JdbcDeadLetter} with all possible parameters.
      *
-     * @param identifier                 The ID of the {@link DeadLetterEntry}.
-     * @param index              The index of the {@link DeadLetterEntry}.
-     * @param sequenceIdentifier The sequenceIdentifier of the {@link DeadLetterEntry}.
-     * @param enqueuedAt         The time the message was enqueued.
-     * @param lastTouched        The time the message was last touched.
-     * @param cause              The cause of enqueueing, can be null if it was queued because there was another message
-     *                           in the same {@code sequenceIdentifier} queued.
+     * @param identifier         The identifier of the dead letter.
+     * @param index              The index of the dead letter.
+     * @param sequenceIdentifier The sequence identifier of the dead letter.
+     * @param enqueuedAt         The time the letter was enqueued.
+     * @param lastTouched        The time the letter was last touched.
+     * @param cause              The cause of enqueueing, can be null if it was queued because there was another letter
+     *                           in the same sequence (based on the {@code sequenceIdentifier}).
      * @param diagnostics        The diagnostics provided during enqueueing.
      * @param message            The message that was enqueued.
      */
-    JdbcDeadLetter(String identifier,
-                   Long index,
-                   String sequenceIdentifier,
-                   Instant enqueuedAt,
-                   Instant lastTouched,
-                   Cause cause,
-                   MetaData diagnostics,
-                   E message) {
+    public JdbcDeadLetter(String identifier,
+                          long index,
+                          String sequenceIdentifier,
+                          Instant enqueuedAt,
+                          Instant lastTouched,
+                          Cause cause,
+                          MetaData diagnostics,
+                          E message) {
         this.identifier = identifier;
-        this.index = index;
+        this.sequenceIndex = index;
         this.sequenceIdentifier = sequenceIdentifier;
         this.enqueuedAt = enqueuedAt;
         this.lastTouched = lastTouched;
@@ -141,13 +119,13 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
      *
      * @return The index of this {@link JdbcDeadLetter}.
      */
-    public Long getIndex() {
-        return index;
+    public long getSequenceIndex() {
+        return sequenceIndex;
     }
 
     /**
      * The sequence identifier of this {@link DeadLetter}. If letters belong to the same sequence, they should be
-     * handled sequentially at all times. This is ensured by the {@link #getIndex()} property.
+     * handled sequentially at all times. This ordering is maintained through the {@link #getSequenceIndex()} property.
      *
      * @return The sequence identifier of this {@link DeadLetter}.
      */
@@ -158,7 +136,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
     @Override
     public DeadLetter<E> markTouched() {
         return new JdbcDeadLetter<>(identifier,
-                                    index,
+                                    sequenceIndex,
                                     sequenceIdentifier,
                                     enqueuedAt,
                                     GenericDeadLetter.clock.instant(),
@@ -170,7 +148,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
     @Override
     public DeadLetter<E> withCause(Throwable requeueCause) {
         return new JdbcDeadLetter<>(identifier,
-                                    index,
+                                    sequenceIndex,
                                     sequenceIdentifier,
                                     enqueuedAt,
                                     GenericDeadLetter.clock.instant(),
@@ -182,7 +160,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
     @Override
     public DeadLetter<E> withDiagnostics(MetaData diagnostics) {
         return new JdbcDeadLetter<>(identifier,
-                                    index,
+                                    sequenceIndex,
                                     sequenceIdentifier,
                                     enqueuedAt,
                                     GenericDeadLetter.clock.instant(),
@@ -201,7 +179,7 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
         }
         JdbcDeadLetter<?> that = (JdbcDeadLetter<?>) o;
         return Objects.equals(identifier, that.identifier)
-                && Objects.equals(index, that.index)
+                && Objects.equals(sequenceIndex, that.sequenceIndex)
                 && Objects.equals(sequenceIdentifier, that.sequenceIdentifier)
                 && Objects.equals(enqueuedAt, that.enqueuedAt)
                 && Objects.equals(lastTouched, that.lastTouched)
@@ -212,14 +190,21 @@ public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> 
 
     @Override
     public int hashCode() {
-        return Objects.hash(identifier, index, sequenceIdentifier, enqueuedAt, lastTouched, cause, diagnostics, message);
+        return Objects.hash(identifier,
+                            sequenceIndex,
+                            sequenceIdentifier,
+                            enqueuedAt,
+                            lastTouched,
+                            cause,
+                            diagnostics,
+                            message);
     }
 
     @Override
     public String toString() {
         return "JdbcDeadLetter{" +
                 "identifier='" + identifier + '\'' +
-                ", index=" + index +
+                ", sequenceIndex=" + sequenceIndex +
                 ", sequenceIdentifier='" + sequenceIdentifier + '\'' +
                 ", enqueuedAt=" + enqueuedAt +
                 ", lastTouched=" + lastTouched +

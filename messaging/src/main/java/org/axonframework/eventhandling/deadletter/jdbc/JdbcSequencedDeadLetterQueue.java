@@ -548,11 +548,11 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
         JdbcDeadLetter<E> current = initialLetter;
         while (current != null) {
             logger.info("Processing dead letter with identifier [{}] at index [{}]",
-                        current.getIdentifier(), current.getIndex());
+                        current.getIdentifier(), current.getSequenceIndex());
             EnqueueDecision<E> decision = processingTask.apply(current);
             if (!decision.shouldEnqueue()) {
                 JdbcDeadLetter<E> previous = current;
-                JdbcDeadLetter<E> next = findNext(previous.getSequenceIdentifier(), previous.getIndex());
+                JdbcDeadLetter<E> next = findNext(previous.getSequenceIdentifier(), previous.getSequenceIndex());
                 if (next != null) {
                     current = next;
                     claimDeadLetter(current);
