@@ -46,8 +46,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * Constructs {@link PreparedStatement PreparedStatements} that are compatible with most databases.
  * <p>
  * This factory expects a {@link DeadLetterSchema} to base the table and columns names used for <b>all</b>
- * {@code PreparedStatements}. Uses the configurable {@code genericSerializer} to serialize
- * {@link TrackingToken TrackingTokens} in {@link TrackedEventMessage} instances. Furthermore, this factory uses the
+ * {@code PreparedStatements}. Furthermore, it uses the configurable {@code genericSerializer} to serialize
+ * {@link TrackingToken TrackingTokens} in {@link TrackedEventMessage} instances. Lastly, this factory uses the
  * {@code eventSerializer} to serialize the {@link EventMessage#getPayload() event payload},
  * {@link EventMessage#getMetaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} of any
  * {@code DeadLetter}.
