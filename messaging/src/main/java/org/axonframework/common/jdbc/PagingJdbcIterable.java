@@ -20,7 +20,6 @@ import org.axonframework.common.transaction.TransactionManager;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -30,11 +29,12 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.axonframework.common.jdbc.JdbcUtils.*;
+import static org.axonframework.common.jdbc.JdbcUtils.executeQuery;
+import static org.axonframework.common.jdbc.JdbcUtils.listResults;
 
 /**
- * Enables iterating through a JPA query using paging while lazily mapping the results when necessary. Paging is taken
- * care of automatically, fetching the next page when the items run out to iterate through.
+ * Enables iterating through a JDBC query using paging. Paging is taken care of automatically through the provided
+ * {@link PagingStatementSupplier}, fetching the next page when the items run out to iterate through.
  * <p>
  * Do not use this for paging when you care about concurrent deletes. If you loaded a page, delete an item from it, and
  * load the next, you will miss an item during iteration.
@@ -52,35 +52,34 @@ public class PagingJdbcIterable<R> implements Iterable<R> {
     private final int pageSize;
     private final Supplier<Connection> connectionProvider;
     private final TransactionManager transactionManager;
-    private final PagingSqlFunction sqlBuilder;
+    private final PagingStatementSupplier pagingQuerySupplier;
     private final JdbcUtils.SqlResultConverter<R> resultConverter;
     private final Function<SQLException, RuntimeException> errorHandler;
-    private final boolean closeConnection;
 
     /**
-     * Constructs a new {@link Iterable} using the provided {@code querySupplier} to construct queries when a new page
-     * needs to be fetched. Items are lazily mapped by the provided {@code resultConverter} when iterating.
+     * Construct a new {@link Iterable} of type {@code R}, utilizing paging queries to retrieve the entries.
      *
-     * @param closeConnection
-     * @param pageSize           The size of the pages.
-     * @param transactionManager The {@link TransactionManager} to use when fetching items.
-     * @param resultConverter    The mapping function to map items to the desired representation.
+     * @param transactionManager  The {@link TransactionManager} used to execute the paging query.
+     * @param connectionProvider  The supplier of the {@link Connection} used by the given {@code pagingQuerySupplier}.
+     * @param pagingQuerySupplier A factory function supply the paging {@link PreparedStatement} to execute.
+     * @param pageSize            The size of the pages to retrieve. Used to calculate the {@code offset} and
+     *                            {@code maxSize} of the paging query
+     * @param resultConverter     The converter of the {@link java.sql.ResultSet} into entries of type {@code R}.
+     * @param errorHandler        The error handler to deal with exceptions when executing a paging
+     *                            {@link PreparedStatement}.
      */
-    public PagingJdbcIterable(int pageSize,
+    public PagingJdbcIterable(TransactionManager transactionManager,
                               Supplier<Connection> connectionProvider,
-                              TransactionManager transactionManager,
-                              PagingSqlFunction sqlBuilder,
+                              PagingStatementSupplier pagingQuerySupplier,
+                              int pageSize,
                               JdbcUtils.SqlResultConverter<R> resultConverter,
-                              Function<SQLException, RuntimeException> errorHandler,
-                              boolean closeConnection
-    ) {
-        this.pageSize = pageSize;
-        this.connectionProvider = connectionProvider;
+                              Function<SQLException, RuntimeException> errorHandler) {
         this.transactionManager = transactionManager;
-        this.sqlBuilder = sqlBuilder;
+        this.connectionProvider = connectionProvider;
+        this.pagingQuerySupplier = pagingQuerySupplier;
+        this.pageSize = pageSize;
         this.resultConverter = resultConverter;
         this.errorHandler = errorHandler;
-        this.closeConnection = closeConnection;
     }
 
     /**
@@ -114,10 +113,9 @@ public class PagingJdbcIterable<R> implements Iterable<R> {
 
             List<R> results = transactionManager.fetchInTransaction(
                     () -> executeQuery(connectionProvider.get(),
-                                       connection -> sqlBuilder.apply(connection, page * pageSize, pageSize),
+                                       connection -> pagingQuerySupplier.apply(connection, page * pageSize, pageSize),
                                        listResults(resultConverter),
-                                       errorHandler,
-                                       closeConnection)
+                                       errorHandler)
             );
             currentPage = new ArrayDeque<>(results);
             page++;
@@ -130,18 +128,21 @@ public class PagingJdbcIterable<R> implements Iterable<R> {
     }
 
     /**
-     * Describes a function that creates a new {@link PreparedStatement} that pages results based on the
-     * {@code firstResult} and {@code maxSize}, ready to be executed.
+     * Describes a function that creates a new {@link PreparedStatement} that pages results through the given
+     * {@code offset} and {@code maxSize}, ready to be executed.
      */
     @FunctionalInterface
-    public interface PagingSqlFunction {
+    public interface PagingStatementSupplier {
 
         /**
-         * Create a new {@link PreparedStatement} using the given {@code connection}.
-         * todo jdoc
-         * @param connection the connection that will be used to create the statement
-         * @return a new statement ready for execution
-         * @throws SQLException if the statement could not be created
+         * Create a new {@link PreparedStatement} using the given {@code connection}, paging through the provided
+         * {@code offset} and {@code maxSize}.
+         *
+         * @param connection The connection that will be used to create the {@link PreparedStatement}.
+         * @param offset     The offset from where to start the page.
+         * @param maxSize    The maximum size of the page, resulting in the maximum page size.
+         * @return A paging {@link PreparedStatement} ready for execution.
+         * @throws SQLException When the statement could not be created.
          */
         PreparedStatement apply(Connection connection, int offset, int maxSize) throws SQLException;
     }

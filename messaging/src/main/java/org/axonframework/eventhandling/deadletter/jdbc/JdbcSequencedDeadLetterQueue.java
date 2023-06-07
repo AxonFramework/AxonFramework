@@ -342,15 +342,14 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
         }
 
         return new PagingJdbcIterable<>(
-                pageSize,
-                this::getConnection,
                 transactionManager,
+                this::getConnection,
                 (connection, firstResult, maxSize) -> statementFactory.letterSequenceStatement(
                         connection, processingGroup, sequenceId, firstResult, maxSequenceSize
                 ),
+                pageSize,
                 converter::convertToLetter,
-                e -> new JdbcException("Failed to retrieve dead letters for sequence [" + sequenceId + "]", e),
-                CLOSE_QUIETLY
+                e -> new JdbcException("Failed to retrieve dead letters for sequence [" + sequenceId + "]", e)
         );
     }
 
@@ -471,15 +470,14 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
      */
     private Iterator<? extends JdbcDeadLetter<E>> findClaimableSequences(int pageSize) {
         return new PagingJdbcIterable<>(
-                pageSize,
-                this::getConnection,
                 transactionManager,
+                this::getConnection,
                 (connection, firstResult, maxSize) -> statementFactory.claimableSequencesStatement(
                         connection, processingGroup, processingStartedLimit(), firstResult, maxSize
                 ),
+                pageSize,
                 converter::convertToLetter,
-                e -> new JdbcException("Failed to find any claimable sequences for processing", e),
-                CLOSE_QUIETLY
+                e -> new JdbcException("Failed to find any claimable sequences for processing", e)
         ).iterator();
     }
 
