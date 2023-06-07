@@ -104,7 +104,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
      * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider},
      * {@link Builder#transactionManager(TransactionManager) TransactionManager},
      * {@link Builder#statementFactory(DeadLetterStatementFactory) DeadLetterStatementFactory} and
-     * {@link Builder#converter(DeadLetterJdbcConverter) DeadLetterJdbcConverter} are set. If for either this is not the
+     * {@link Builder#converter(DeadLetterJdbcConverter) DeadLetterJdbcConverter} are set. If for any this is not the
      * case an {@link AxonConfigurationException} is thrown.
      *
      * @param builder The {@link Builder} used to instantiate a {@link JdbcSequencedDeadLetterQueue} instance.
