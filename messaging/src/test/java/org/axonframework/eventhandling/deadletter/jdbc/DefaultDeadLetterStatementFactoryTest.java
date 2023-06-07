@@ -30,28 +30,28 @@ import static org.junit.jupiter.api.Assertions.*;
 class DefaultDeadLetterStatementFactoryTest {
 
     @Test
-    void testBuildWithNullSchemaThrowsAxonConfigurationException() {
+    void buildWithNullSchemaThrowsAxonConfigurationException() {
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder = DefaultDeadLetterStatementFactory.builder();
 
         assertThrows(AxonConfigurationException.class, () -> testBuilder.schema(null));
     }
 
     @Test
-    void testBuildWithNullGenericSerializerThrowsAxonConfigurationException() {
+    void buildWithNullGenericSerializerThrowsAxonConfigurationException() {
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder = DefaultDeadLetterStatementFactory.builder();
 
         assertThrows(AxonConfigurationException.class, () -> testBuilder.genericSerializer(null));
     }
 
     @Test
-    void testBuildWithNullEventSerializerThrowsAxonConfigurationException() {
+    void buildWithNullEventSerializerThrowsAxonConfigurationException() {
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder = DefaultDeadLetterStatementFactory.builder();
 
         assertThrows(AxonConfigurationException.class, () -> testBuilder.eventSerializer(null));
     }
 
     @Test
-    void testBuildWithoutTheGenericSerializerThrowsAxonConfigurationException() {
+    void buildWithoutTheGenericSerializerThrowsAxonConfigurationException() {
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder =
                 DefaultDeadLetterStatementFactory.builder()
                                                  .eventSerializer(TestSerializer.JACKSON.getSerializer());
@@ -60,7 +60,7 @@ class DefaultDeadLetterStatementFactoryTest {
     }
 
     @Test
-    void testBuildWithoutTheEventSerializerThrowsAxonConfigurationException() {
+    void buildWithoutTheEventSerializerThrowsAxonConfigurationException() {
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder =
                 DefaultDeadLetterStatementFactory.builder()
                                                  .genericSerializer(TestSerializer.JACKSON.getSerializer());
