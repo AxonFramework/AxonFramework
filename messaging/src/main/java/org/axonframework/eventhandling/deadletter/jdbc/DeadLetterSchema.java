@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.deadletter.jdbc;
 
 import java.util.function.Function;
 
-import static org.axonframework.common.BuilderUtils.assertNonBlank;
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 
 /**
  * Schema description for an {@link org.axonframework.eventhandling.EventMessage} holding
@@ -364,7 +364,7 @@ public class DeadLetterSchema {
         private String sequenceIndexColumn = "sequenceIndex";
         private String messageTypeColumn = "messageType";
         private String eventIdentifierColumn = "eventIdentifier";
-        private String timeStampColumn = "timeStamp";
+        private String timeStampColumn = "timestamp";
         private String payloadTypeColumn = "payloadType";
         private String payloadRevisionColumn = "payloadRevision";
         private String payloadColumn = "payload";
@@ -388,7 +388,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder deadLetterTable(String deadLetterTable) {
-            assertNonBlank(deadLetterTable, "The DeadLetterEntryColumn should be not null or empty");
+            assertNonEmpty(deadLetterTable, "The DeadLetterEntryColumn should be not null or empty");
             this.deadLetterTable = deadLetterTable;
             return this;
         }
@@ -400,7 +400,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder deadLetterIdentifierColumn(String deadLetterIdentifierColumn) {
-            assertNonBlank(deadLetterIdentifierColumn, "The deadLetterIdentifierColumn should be not null or empty");
+            assertNonEmpty(deadLetterIdentifierColumn, "The deadLetterIdentifierColumn should be not null or empty");
             this.deadLetterIdentifierColumn = deadLetterIdentifierColumn;
             return this;
         }
@@ -412,7 +412,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder processingGroupColumn(String processingGroupColumn) {
-            assertNonBlank(processingGroupColumn, "The processingGroupColumn should be not null or empty");
+            assertNonEmpty(processingGroupColumn, "The processingGroupColumn should be not null or empty");
             this.processingGroupColumn = processingGroupColumn;
             return this;
         }
@@ -424,7 +424,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder sequenceIdentifierColumn(String sequenceIdentifierColumn) {
-            assertNonBlank(sequenceIdentifierColumn, "The sequenceIdentifierColumn should be not null or empty");
+            assertNonEmpty(sequenceIdentifierColumn, "The sequenceIdentifierColumn should be not null or empty");
             this.sequenceIdentifierColumn = sequenceIdentifierColumn;
             return this;
         }
@@ -436,7 +436,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder sequenceIndexColumn(String sequenceIndexColumn) {
-            assertNonBlank(sequenceIndexColumn, "The sequenceIndexColumn should be not null or empty");
+            assertNonEmpty(sequenceIndexColumn, "The sequenceIndexColumn should be not null or empty");
             this.sequenceIndexColumn = sequenceIndexColumn;
             return this;
         }
@@ -448,7 +448,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageTypeColumn(String messageTypeColumn) {
-            assertNonBlank(messageTypeColumn, "The messageTypeColumn should be not null or empty");
+            assertNonEmpty(messageTypeColumn, "The messageTypeColumn should be not null or empty");
             this.messageTypeColumn = messageTypeColumn;
             return this;
         }
@@ -460,20 +460,20 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder eventIdentifierColumn(String eventIdentifierColumn) {
-            assertNonBlank(eventIdentifierColumn, "The eventIdentifierColumn should be not null or empty");
+            assertNonEmpty(eventIdentifierColumn, "The eventIdentifierColumn should be not null or empty");
             this.eventIdentifierColumn = eventIdentifierColumn;
             return this;
         }
 
         /**
-         * Sets the name of the {@code timeStamp} column. Defaults to {@code timeStamp}.
+         * Sets the name of the {@code timestamp} column. Defaults to {@code timestamp}.
          *
-         * @param timeStampColumn The name for the {@code timeStamp} column.
+         * @param timestampColumn The name for the {@code timeStamp} column.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder timeStampColumn(String timeStampColumn) {
-            assertNonBlank(timeStampColumn, "The timeStampColumn should be not null or empty");
-            this.timeStampColumn = timeStampColumn;
+        public Builder timestampColumn(String timestampColumn) {
+            assertNonEmpty(timestampColumn, "The timestampColumn should be not null or empty");
+            this.timeStampColumn = timestampColumn;
             return this;
         }
 
@@ -484,7 +484,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder payloadTypeColumn(String payloadTypeColumn) {
-            assertNonBlank(payloadTypeColumn, "The payloadTypeColumn should be not null or empty");
+            assertNonEmpty(payloadTypeColumn, "The payloadTypeColumn should be not null or empty");
             this.payloadTypeColumn = payloadTypeColumn;
             return this;
         }
@@ -496,7 +496,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder payloadRevisionColumn(String payloadRevisionColumn) {
-            assertNonBlank(payloadRevisionColumn, "The payloadRevisionColumn should be not null or empty");
+            assertNonEmpty(payloadRevisionColumn, "The payloadRevisionColumn should be not null or empty");
             this.payloadRevisionColumn = payloadRevisionColumn;
             return this;
         }
@@ -508,7 +508,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder payloadColumn(String payloadColumn) {
-            assertNonBlank(payloadColumn, "The payloadColumn should be not null or empty");
+            assertNonEmpty(payloadColumn, "The payloadColumn should be not null or empty");
             this.payloadColumn = payloadColumn;
             return this;
         }
@@ -520,7 +520,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder metaDataColumn(String metaDataColumn) {
-            assertNonBlank(metaDataColumn, "The metaDataColumn should be not null or empty");
+            assertNonEmpty(metaDataColumn, "The metaDataColumn should be not null or empty");
             this.metaDataColumn = metaDataColumn;
             return this;
         }
@@ -532,7 +532,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder aggregateTypeColumn(String aggregateTypeColumn) {
-            assertNonBlank(aggregateTypeColumn, "The aggregateTypeColumn should be not null or empty");
+            assertNonEmpty(aggregateTypeColumn, "The aggregateTypeColumn should be not null or empty");
             this.aggregateTypeColumn = aggregateTypeColumn;
             return this;
         }
@@ -544,7 +544,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder aggregateIdentifierColumn(String aggregateIdentifierColumn) {
-            assertNonBlank(aggregateIdentifierColumn, "The aggregateIdentifierColumn should be not null or empty");
+            assertNonEmpty(aggregateIdentifierColumn, "The aggregateIdentifierColumn should be not null or empty");
             this.aggregateIdentifierColumn = aggregateIdentifierColumn;
             return this;
         }
@@ -556,7 +556,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder sequenceNumberColumn(String sequenceNumberColumn) {
-            assertNonBlank(sequenceNumberColumn, "The sequenceNumberColumn should be not null or empty");
+            assertNonEmpty(sequenceNumberColumn, "The sequenceNumberColumn should be not null or empty");
             this.sequenceNumberColumn = sequenceNumberColumn;
             return this;
         }
@@ -568,7 +568,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder tokenTypeColumn(String tokenTypeColumn) {
-            assertNonBlank(tokenTypeColumn, "The tokenTypeColumn should be not null or empty");
+            assertNonEmpty(tokenTypeColumn, "The tokenTypeColumn should be not null or empty");
             this.tokenTypeColumn = tokenTypeColumn;
             return this;
         }
@@ -580,7 +580,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder tokenColumn(String tokenColumn) {
-            assertNonBlank(tokenColumn, "The tokenColumn should be not null or empty");
+            assertNonEmpty(tokenColumn, "The tokenColumn should be not null or empty");
             this.tokenColumn = tokenColumn;
             return this;
         }
@@ -592,7 +592,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder enqueuedAtColumn(String enqueuedAtColumn) {
-            assertNonBlank(enqueuedAtColumn, "The enqueuedAtColumn should be not null or empty");
+            assertNonEmpty(enqueuedAtColumn, "The enqueuedAtColumn should be not null or empty");
             this.enqueuedAtColumn = enqueuedAtColumn;
             return this;
         }
@@ -604,7 +604,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder lastTouchedColumn(String lastTouchedColumn) {
-            assertNonBlank(lastTouchedColumn, "The lastTouchedColumn should be not null or empty");
+            assertNonEmpty(lastTouchedColumn, "The lastTouchedColumn should be not null or empty");
             this.lastTouchedColumn = lastTouchedColumn;
             return this;
         }
@@ -616,7 +616,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder processingStartedColumn(String processingStartedColumn) {
-            assertNonBlank(processingStartedColumn, "The processingStartedColumn should be not null or empty");
+            assertNonEmpty(processingStartedColumn, "The processingStartedColumn should be not null or empty");
             this.processingStartedColumn = processingStartedColumn;
             return this;
         }
@@ -628,7 +628,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder causeTypeColumn(String causeTypeColumn) {
-            assertNonBlank(causeTypeColumn, "The causeTypeColumn should be not null or empty");
+            assertNonEmpty(causeTypeColumn, "The causeTypeColumn should be not null or empty");
             this.causeTypeColumn = causeTypeColumn;
             return this;
         }
@@ -640,7 +640,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder causeMessageColumn(String causeMessageColumn) {
-            assertNonBlank(causeMessageColumn, "The causeMessageColumn should be not null or empty");
+            assertNonEmpty(causeMessageColumn, "The causeMessageColumn should be not null or empty");
             this.causeMessageColumn = causeMessageColumn;
             return this;
         }
@@ -652,7 +652,7 @@ public class DeadLetterSchema {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder diagnosticsColumn(String diagnosticsColumn) {
-            assertNonBlank(diagnosticsColumn, "The diagnosticsColumn should be not null or empty");
+            assertNonEmpty(diagnosticsColumn, "The diagnosticsColumn should be not null or empty");
             this.diagnosticsColumn = diagnosticsColumn;
             return this;
         }
