@@ -37,7 +37,6 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.processingGroupColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.sequenceIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.sequenceIndexColumn() + " BIGINT NOT NULL,\n" +
-                // TODO validate whether the below is the best way forward
                 schema.messageTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.timeStampColumn() + " " + timestampType() + " NOT NULL,\n" +
@@ -50,12 +49,11 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.sequenceNumberColumn() + " BIGINT,\n" +
                 schema.tokenTypeColumn() + " VARCHAR(255),\n" +
                 schema.tokenColumn() + " " + serializedDataType() + ",\n" +
-                // TODO validate whether the above is the best way forward
                 schema.enqueuedAtColumn() + " " + timestampType() + " NOT NULL,\n" +
                 schema.lastTouchedColumn() + " " + timestampType() + ",\n" +
                 schema.processingStartedColumn() + " " + timestampType() + ",\n" +
                 schema.causeTypeColumn() + " VARCHAR(255),\n" +
-                schema.causeMessageColumn() + " VARCHAR(255),\n" + // TODO large size for the message?
+                schema.causeMessageColumn() + " VARCHAR(1023),\n" +
                 schema.diagnosticsColumn() + " " + serializedDataType() + ",\n" +
                 "CONSTRAINT PK PRIMARY KEY (" + schema.deadLetterIdentifierColumn() + "),\n" +
                 "CONSTRAINT " + schema.sequenceIndexColumn() + "_INDEX UNIQUE (" +

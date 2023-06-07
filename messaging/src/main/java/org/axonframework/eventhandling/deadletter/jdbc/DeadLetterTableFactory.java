@@ -22,7 +22,7 @@ import java.sql.SQLException;
 
 /**
  * A functional interface to create a JDBC-specific {@link org.axonframework.messaging.deadletter.DeadLetter} entry
- * table with its indices.
+ * table and its indices.
  *
  * @author Steven van Beelen
  * @since 4.8.0
