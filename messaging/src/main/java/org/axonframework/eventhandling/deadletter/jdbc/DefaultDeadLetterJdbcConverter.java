@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
@@ -34,6 +35,7 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -42,7 +44,18 @@ import java.util.function.Supplier;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * @param <E> An implementation of {@link EventMessage}
+ * Default implementation of the {@link DeadLetterJdbcConverter}, converting {@link ResultSet ResultSets} into
+ * {@link JdbcDeadLetter} instances.
+ * <p>
+ * This converter expects a {@link DeadLetterSchema} to define the column names / labels used to retrieve the fields
+ * from the {@link ResultSet}. Furthermore, it uses the configurable {@code genericSerializer} to deserialize
+ * {@link TrackingToken TrackingTokens} for {@link TrackedEventMessage} instances. Lastly, this factory uses the
+ * {@code eventSerializer} to deserialize the {@link EventMessage#getPayload() event payload},
+ * {@link EventMessage#getMetaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} for the
+ * {@code JdbcDeadLetter} to return.
+ *
+ * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation this
+ *            converter converts.
  * @author Steven van Beelen
  * @since 4.8.0
  */
@@ -53,6 +66,15 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
     private final Serializer genericSerializer;
     private final Serializer eventSerializer;
 
+    /**
+     * Instantiate a default {@link DeadLetterJdbcConverter} based on the given {@code builder}.
+     * <p>
+     * Will validate whether the {@link Builder#genericSerializer(Serializer) generic Serializer} and
+     * {@link Builder#eventSerializer(Serializer) event Serializer} are set. If for either this is not the case an
+     * {@link AxonConfigurationException} is thrown.
+     *
+     * @param builder The {@link Builder} used to instantiate a {@link DefaultDeadLetterJdbcConverter} instance.
+     */
     protected DefaultDeadLetterJdbcConverter(Builder<E> builder) {
         builder.validate();
         schema = builder.schema;
@@ -60,6 +82,17 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
         eventSerializer = builder.eventSerializer;
     }
 
+    /**
+     * Instantiate a builder to construct a {@link DefaultDeadLetterJdbcConverter}.
+     * <p>
+     * The {@link Builder#schema(DeadLetterSchema) schema} is defaulted to a {@link DeadLetterSchema#defaultSchema()}.
+     * The {@link Builder#genericSerializer(Serializer) generic Serializer} and
+     * {@link Builder#eventSerializer(Serializer) event Serializer} are hard requirements and should be provided.
+     *
+     * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation
+     *            this converter converts.
+     * @return A builder that con construct a {@link DefaultDeadLetterJdbcConverter}.
+     */
     public static <E extends EventMessage<?>> Builder<E> builder() {
         return new Builder<>();
     }
@@ -161,6 +194,16 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
         return eventSerializer.deserialize(serializedDiagnostics);
     }
 
+    /**
+     * Builder class to instantiate a {@link DefaultDeadLetterJdbcConverter}.
+     * <p>
+     * The {@link Builder#schema(DeadLetterSchema) schema} is defaulted to a {@link DeadLetterSchema#defaultSchema()}.
+     * The {@link Builder#genericSerializer(Serializer) generic Serializer} and
+     * {@link Builder#eventSerializer(Serializer) event Serializer} are hard requirements and should be provided.
+     *
+     * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation
+     *            this converter converts.
+     */
     protected static class Builder<E extends EventMessage<?>> {
 
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
@@ -168,7 +211,11 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
         private Serializer eventSerializer;
 
         /**
-         * @param schema
+         * Sets the given {@code schema} used to define the column names / labels with to return fields from the
+         * {@link ResultSet}. Defaults to a {@link DeadLetterSchema#defaultSchema()}.
+         *
+         * @param schema The {@link DeadLetterSchema} used to define the table and column names used when constructing
+         *               <b>all</b> {@link PreparedStatement PreparedStatements}.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<E> schema(DeadLetterSchema schema) {
@@ -178,36 +225,38 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
         }
 
         /**
-         * Sets the {@link Serializer} to (de)serialize the {@link org.axonframework.eventhandling.TrackingToken} (if
-         * present) of the event in the {@link DeadLetter} when storing it to the database.
+         * Sets the {@link Serializer} to deserialize the {@link TrackingToken} of a {@link TrackedEventMessage}
+         * instance.
          *
-         * @param genericSerializer The serializer to use
-         * @return the current Builder instance, for fluent interfacing
+         * @param genericSerializer The serializer used to deserialize {@link TrackingToken TrackingTokens} with
+         * @return The current Builder, for fluent interfacing.
          */
         public Builder<E> genericSerializer(Serializer genericSerializer) {
-
-            assertNonNull(genericSerializer, "The generic serializer may not be null");
+            assertNonNull(genericSerializer, "The generic Serializer may not be null");
             this.genericSerializer = genericSerializer;
             return this;
         }
 
         /**
-         * Sets the {@link Serializer} to (de)serialize the events, metadata and diagnostics of the {@link DeadLetter}
-         * when storing it to a database.
+         * Sets the {@link Serializer} to deserialize {@link EventMessage#getPayload() event payloads},
+         * {@link EventMessage#getMetaData() MetaData} instances, and {@link DeadLetter#diagnostics() diagnostics}
+         * with.
          *
-         * @param eventSerializer The serializer to use
-         * @return the current Builder instance, for fluent interfacing
+         * @param eventSerializer The serializer used to deserialize {@link EventMessage#getPayload() event payloads},
+         *                        {@link EventMessage#getMetaData() MetaData} instances, and
+         *                        {@link DeadLetter#diagnostics() diagnostics} with.
+         * @return The current Builder, for fluent interfacing.
          */
         public Builder<E> eventSerializer(Serializer eventSerializer) {
-            assertNonNull(eventSerializer, "The event serializer may not be null");
+            assertNonNull(eventSerializer, "The event Serializer may not be null");
             this.eventSerializer = eventSerializer;
             return this;
         }
 
         /**
-         * Initializes a {@link JdbcSequencedDeadLetterQueue} as specified through this Builder.
+         * Initializes a {@link DefaultDeadLetterJdbcConverter} as specified through this Builder.
          *
-         * @return A {@link JdbcSequencedDeadLetterQueue} as specified through this Builder.
+         * @return A {@link DefaultDeadLetterJdbcConverter} as specified through this Builder.
          */
         public DefaultDeadLetterJdbcConverter<E> build() {
             return new DefaultDeadLetterJdbcConverter<>(this);
