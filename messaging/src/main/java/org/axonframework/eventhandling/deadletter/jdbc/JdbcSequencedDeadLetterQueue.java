@@ -226,7 +226,6 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
     }
 
     private long nextIndexForSequence(String sequenceId) {
-        // todo implement solution to start at zero
         long nextIndex = maxIndexForSequence(sequenceId) + 1;
         logger.debug("Next index for [{}] is [{}]", sequenceId, nextIndex);
         return nextIndex;
