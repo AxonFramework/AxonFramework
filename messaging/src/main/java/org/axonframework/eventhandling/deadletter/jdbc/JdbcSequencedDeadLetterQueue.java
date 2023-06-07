@@ -889,6 +889,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
          */
         private DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter() {
             return getOrDefault(converter, () -> DefaultDeadLetterJdbcConverter.<E>builder()
+                                                                               .schema(schema)
                                                                                .genericSerializer(genericSerializer)
                                                                                .eventSerializer(eventSerializer)
                                                                                .build());
