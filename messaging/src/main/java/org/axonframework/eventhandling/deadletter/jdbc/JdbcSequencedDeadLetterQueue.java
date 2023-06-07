@@ -82,14 +82,6 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  */
 public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements SequencedDeadLetterQueue<E> {
 
-    // TODO make this configurable, or use something like the PersistenceExceptionResolver
-    private static Function<SQLException, RuntimeException> handleException() {
-        return e -> {
-            logger.warn("SHEIZE", e);
-            return new RuntimeException(e);
-        };
-    }
-
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final boolean CLOSE_QUIETLY = true;
@@ -226,7 +218,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                           c -> statementFactory.enqueueStatement(
                                   c, processingGroup, sequenceId, letter, nextIndexForSequence(sequenceId)
                           ),
-                          handleException());
+                          e -> new JdbcException("Failed to enqueue dead letter with with message id ["
+                                                         + letter.message().getIdentifier() + "]", e));
         } finally {
             closeQuietly(connection);
         }
@@ -244,7 +237,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                 getConnection(),
                 connection -> statementFactory.maxIndexStatement(connection, processingGroup, sequenceId),
                 resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
-                handleException()
+                e -> new JdbcException("Failed to uncover the maximum index for sequence [" + sequenceId + "]", e)
         ));
     }
 
@@ -268,7 +261,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
             try {
                 int deletedRows = executeUpdate(connection,
                                                 c -> statementFactory.evictStatement(c, identifier),
-                                                handleException());
+                                                e -> new JdbcException(
+                                                        "Failed to evict letter with message id ["
+                                                                + letter.message().getIdentifier() + "]", e
+                                                ));
                 if (deletedRows == 0) {
                     logger.info("Dead letter with identifier [{}] for processing group [{}] "
                                         + "and sequence [{}] was already evicted",
@@ -308,7 +304,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                                                                updatedLetter.cause().orElse(null),
                                                                updatedLetter.lastTouched(),
                                                                updatedLetter.diagnostics()),
-                        handleException()
+                        e -> new JdbcException("Failed to requeue letter with message id ["
+                                                       + letter.message().getIdentifier() + "]", e)
                 );
                 if (updatedRows == 0) {
                     throw new NoSuchDeadLetterException("Cannot requeue [" + letter.message().getIdentifier()
@@ -333,7 +330,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
         return executeQuery(getConnection(),
                             connection -> statementFactory.containsStatement(connection, processingGroup, sequenceId),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L) > 0L,
-                            handleException(),
+                            e -> new JdbcException("Failed to validate whether there are letters "
+                                                           + "present for sequence [" + sequenceId + "]", e),
                             CLOSE_QUIETLY);
     }
 
@@ -352,7 +350,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                         connection, processingGroup, sequenceId, firstResult, maxSequenceSize
                 ),
                 converter::convertToLetter,
-                handleException(),
+                e -> new JdbcException("Failed to retrieve dead letters for sequence [" + sequenceId + "]", e),
                 CLOSE_QUIETLY
         );
     }
@@ -363,7 +361,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                 getConnection(),
                 connection -> statementFactory.sequenceIdentifiersStatement(connection, processingGroup),
                 listResults(resultSet -> resultSet.getString(1)),
-                handleException(),
+                e -> new JdbcException("Failed to retrieve all sequence identifiers", e),
                 CLOSE_QUIETLY
         );
 
@@ -397,7 +395,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
         return executeQuery(getConnection(),
                             connection -> statementFactory.sizeStatement(connection, processingGroup),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
-                            handleException(),
+                            e -> new JdbcException("Failed to check the total number of dead letters", e),
                             CLOSE_QUIETLY);
     }
 
@@ -409,7 +407,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                                     connection, processingGroup, sequenceId
                             ),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
-                            handleException(),
+                            e -> new JdbcException(
+                                    "Failed to check the number of dead letters in sequence [" + sequenceId + "]", e
+                            ),
                             CLOSE_QUIETLY
         );
     }
@@ -419,7 +419,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
         return executeQuery(getConnection(),
                             connection -> statementFactory.amountOfSequencesStatement(connection, processingGroup),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
-                            handleException(),
+                            e -> new JdbcException(
+                                    "Failed to check the number of dead letter sequences in this queue", e
+                            ),
                             CLOSE_QUIETLY);
     }
 
@@ -477,7 +479,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                         connection, processingGroup, processingStartedLimit(), firstResult, maxSize
                 ),
                 converter::convertToLetter,
-                handleException(), CLOSE_QUIETLY
+                e -> new JdbcException("Failed to find any claimable sequences for processing", e),
+                CLOSE_QUIETLY
         ).iterator();
     }
 
@@ -498,7 +501,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                         c -> statementFactory.claimStatement(
                                 c, letter.getIdentifier(), GenericDeadLetter.clock.instant(), processingStartedLimit
                         ),
-                        handleException()
+                        e -> new JdbcException(
+                                "Failed to claim JDBC dead letter [" + letter.getIdentifier() + "] for processing", e
+                        )
                 );
                 if (updatedRows > 0) {
                     logger.debug("Claimed dead letter with identifier [{}] to process.", letter.getIdentifier());
@@ -581,7 +586,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
                         connection, processingGroup, sequenceIdentifier, sequenceIndex
                 ),
                 resultSet -> resultSet.next() ? converter.convertToLetter(resultSet) : null,
-                handleException(),
+                e -> new JdbcException(
+                        "Failed to find the next dead letter in sequence [" + sequenceIdentifier + "] for processing", e
+                ),
                 CLOSE_QUIETLY
         ));
     }
@@ -590,7 +597,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
     public void clear() {
         Connection connection = getConnection();
         try {
-            executeUpdate(connection, c -> statementFactory.clearStatement(c, processingGroup), handleException());
+            executeUpdate(connection,
+                          c -> statementFactory.clearStatement(c, processingGroup),
+                          e -> new JdbcException("Failed to clear out all dead letters for "
+                                                         + "processing group [" + processingGroup + "]", e));
         } finally {
             closeQuietly(connection);
         }
