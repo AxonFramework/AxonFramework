@@ -18,17 +18,22 @@ package org.axonframework.springboot.autoconfig.legacyjpa;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.legacyjpa.EntityManagerProvider;
+import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.deadletter.legacyjpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.legacyjpa.SQLErrorCodesResolver;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.legacyjpa.JpaSagaStore;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.TokenStoreProperties;
 import org.axonframework.springboot.autoconfig.JdbcAutoConfiguration;
 import org.axonframework.springboot.autoconfig.JpaAutoConfiguration;
+import org.axonframework.springboot.util.DeadLetterQueueProviderConfigurerModule;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -44,7 +49,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 
 /**
- * Auto configuration class for Axon's JPA specific infrastructure components.
+ * Autoconfiguration class for Axon's JPA specific infrastructure components.
  *
  * @author Allard Buijze
  * @since 3.0.3
@@ -98,8 +103,28 @@ public class JpaJavaxAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(DataSource.class)
-    public PersistenceExceptionResolver persistenceExceptionResolver(DataSource dataSource)
-            throws SQLException {
+    public PersistenceExceptionResolver persistenceExceptionResolver(DataSource dataSource) throws SQLException {
         return new SQLErrorCodesResolver(dataSource);
+    }
+
+    @Bean(name = "deadLetterQueueProviderConfigurerModule")
+    @ConditionalOnMissingBean(name = "deadLetterQueueProviderConfigurerModule")
+    public DeadLetterQueueProviderConfigurerModule deadLetterQueueProviderConfigurerModule(
+            EventProcessorProperties eventProcessorProperties,
+            EntityManagerProvider entityManagerProvider,
+            TransactionManager transactionManager,
+            Serializer genericSerializer,
+            @Qualifier("eventSerializer") Serializer eventSerializer
+    ) {
+        return new DeadLetterQueueProviderConfigurerModule(
+                eventProcessorProperties,
+                processingGroup -> config -> JpaSequencedDeadLetterQueue.builder()
+                                                                        .processingGroup(processingGroup)
+                                                                        .entityManagerProvider(entityManagerProvider)
+                                                                        .transactionManager(transactionManager)
+                                                                        .genericSerializer(genericSerializer)
+                                                                        .eventSerializer(eventSerializer)
+                                                                        .build()
+        );
     }
 }
