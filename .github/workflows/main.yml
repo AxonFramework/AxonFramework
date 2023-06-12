@@ -72,6 +72,12 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_TOKEN_ID }}
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN_PASS }}
 
+      - name: Anchore Container Scan (under validation)
+        uses: anchore/scan-action@v3
+        with:
+          path: "."
+          fail-build: false
+
       - name: Notify success to Slack
         if: success()
         env:

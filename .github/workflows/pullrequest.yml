@@ -55,3 +55,9 @@ jobs:
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Anchore Container Scan (under validation)
+        uses: anchore/scan-action@v3
+        with:
+          path: "."
+          fail-build: false
