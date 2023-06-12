@@ -56,6 +56,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Test Summary (under validation)
+        uses: test-summary/action@v2
+        with:
+          paths: "**/target/surefire-reports/TEST-*.xml"
+          show: all
+        if: always() # This allows the build step to fail -- due to failing tests -- but still produce a test summary.
+
       - name: Anchore Container Scan (under validation)
         uses: anchore/scan-action@v3
         with:
