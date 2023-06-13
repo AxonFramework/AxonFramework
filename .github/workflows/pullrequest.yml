@@ -59,7 +59,7 @@ jobs:
       - name: Anchore Container Scan (under validation)
         uses: anchore/scan-action@v3
         with:
-          path: "."
+          path: "*/target/*.jar"
           output-format: "json"
           fail-build: false
       - name: Anchore Container Scan JSON report (under validation)
