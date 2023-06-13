@@ -65,7 +65,7 @@ jobs:
         uses: test-summary/action@v2
         with:
           paths: "**/target/surefire-reports/TEST-*.xml"
-          show: all
+          show: "fail, skip"
 #          output: "-"
         if: always() # This allows the build step to fail -- due to failing tests -- but still produce a test summary.
 
