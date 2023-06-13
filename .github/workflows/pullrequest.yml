@@ -64,6 +64,6 @@ jobs:
           fail-build: false
       - name: Anchore Container Scan JSON report (under validation)
         run: |
-          echo lets cat ${{ steps.scan.outputs.json }} 
-          cat ${{ steps.scan.outputs.json }}
-          echo done catting ${{ steps.scan.outputs.json }}
+          echo lets cat outputs [${{ steps.scan.outputs }}] 
+          cat ${{ steps.scan.outputs }}
+          echo done catting outputs [${{ steps.scan.outputs }}]
