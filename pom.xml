@@ -79,7 +79,7 @@
         <spring.boot.version>2.7.12</spring.boot.version>
         <mockito.version>4.11.0</mockito.version>
         <projectreactor.version>3.5.6</projectreactor.version>
-        <micrometer.version>1.11.0</micrometer.version>
+        <micrometer.version>1.11.1</micrometer.version>
         <dropwizard.metrics.version>4.2.13</dropwizard.metrics.version>
         <jackson.version>2.13.4</jackson.version>
         <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
