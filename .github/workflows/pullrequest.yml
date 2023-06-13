@@ -68,9 +68,3 @@ jobs:
           show: "fail, skip"
 #          output: "-"
         if: always() # This allows the build step to fail -- due to failing tests -- but still produce a test summary.
-
-      - name: Anchore Container Scan (under validation)
-        uses: anchore/scan-action@v3
-        with:
-          path: "."
-          fail-build: false
