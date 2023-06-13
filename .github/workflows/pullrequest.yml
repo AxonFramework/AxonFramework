@@ -60,4 +60,7 @@ jobs:
         uses: anchore/scan-action@v3
         with:
           path: "."
+          output-format: "json"
           fail-build: false
+      - name: Anchore Container Scan JSON report (under validation)
+        run: cat ${{ steps.scan.outputs.json }}
