@@ -865,6 +865,7 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
             <id>java11-modules</id>
             <activation>
@@ -882,6 +883,42 @@
             <modules>
                 <module>spring-boot-3-integrationtests</module>
             </modules>
+        </profile>
+
+        <profile>
+            <!--Profile dedicated towards updating the versions of _all_ modules.-->
+            <!--Doing so we ensure unmentioned <modules> modules are also updated.-->
+            <id>update-versions</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>versions-maven-plugin</artifactId>
+                        <version>2.16.0</version>
+                        <executions>
+                            <execution>
+                                <id>update-versions</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>set</goal>
+                                </goals>
+                                <configuration>
+                                    <!--Parent version is already updated prior to the deploy phase.-->
+                                    <!--Hence we can set it directly.-->
+                                    <newVersion>${parent.version}</newVersion>
+                                    <processAllModules>true</processAllModules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 
