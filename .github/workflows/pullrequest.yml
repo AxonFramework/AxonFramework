@@ -56,6 +56,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Write to workflow job summary (TEST)
+        run: |
+          SUMMARY=$'# Testing Job Summary\n## Second Level Heading\nHello GitHub'
+          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+
       - name: Test Summary (under validation)
         uses: test-summary/action@v2
         with:
