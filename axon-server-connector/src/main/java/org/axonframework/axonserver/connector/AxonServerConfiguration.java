@@ -23,7 +23,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -144,8 +146,8 @@ public class AxonServerConfiguration {
     private int processorsNotificationInitialDelay = 5000;
 
     /**
-     * An {@link EventCipher} which is used to encrypt and decrypt events and snapshots. Defaults to {@link
-     * EventCipher#EventCipher()}.
+     * An {@link EventCipher} which is used to encrypt and decrypt events and snapshots. Defaults to
+     * {@link EventCipher#EventCipher()}.
      *
      * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
      * connector</a>
@@ -164,8 +166,8 @@ public class AxonServerConfiguration {
     private long keepAliveTime = 1_000;
 
     /**
-     * An {@code int} indicating the maximum number of Aggregate snapshots which will be retrieved. Defaults to {@code
-     * 1}.
+     * An {@code int} indicating the maximum number of Aggregate snapshots which will be retrieved. Defaults to
+     * {@code 1}.
      */
     private int snapshotPrefetch = 1;
 
@@ -229,6 +231,11 @@ public class AxonServerConfiguration {
      * Axon Server.
      */
     private HeartbeatConfiguration heartbeat = new HeartbeatConfiguration();
+
+    /**
+     * Properties describing the settings for {@link org.axonframework.eventhandling.EventProcessor EventProcessors}.
+     */
+    private EventProcessorConfiguration eventProcessorConfiguration = new EventProcessorConfiguration();
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -538,6 +545,24 @@ public class AxonServerConfiguration {
     }
 
     /**
+     * Return the configured {@link EventProcessorConfiguration} of this application for Axon Server.
+     *
+     * @return The configured {@link EventProcessorConfiguration} of this application for Axon Server.
+     */
+    public EventProcessorConfiguration getEventProcessorConfiguration() {
+        return eventProcessorConfiguration;
+    }
+
+    /**
+     * Set the {@link EventProcessorConfiguration} of this application for Axon Server
+     *
+     * @param eventProcessorConfiguration The {@link EventProcessorConfiguration} to set for this application.
+     */
+    public void setEventProcessorConfiguration(EventProcessorConfiguration eventProcessorConfiguration) {
+        this.eventProcessorConfiguration = eventProcessorConfiguration;
+    }
+
+    /**
      * Configuration class for Flow Control of specific message types.
      *
      * @author Gerlo Hesselink
@@ -660,6 +685,94 @@ public class AxonServerConfiguration {
 
         public void setTimeout(long timeout) {
             this.timeout = timeout;
+        }
+    }
+
+    public static class EventProcessorConfiguration {
+
+        /**
+         * The configuration of each of the processors. The key is the name of the processor, the value represents the
+         * settings to use for the processor with that name.
+         */
+        private final Map<String, ProcessorSettings> processors = new HashMap<>();
+
+        /**
+         * Returns the settings for each of the configured processors, by name.
+         *
+         * @return the settings for each of the configured processors, by name.
+         */
+        public Map<String, ProcessorSettings> getProcessors() {
+            return processors;
+        }
+
+        public static class ProcessorSettings {
+
+            /**
+             * Configures the desired load balancing strategy for this event processor.
+             * <p>
+             * The load balancing strategy tells Axon Server how to share the event handling load among all available
+             * application instances running this event processor, by moving segments from one instance to another. Note
+             * that load balancing is <b>only</b> supported for
+             * {@link org.axonframework.eventhandling.StreamingEventProcessor StreamingEventProcessors}, as only
+             * {@code StreamingEventProcessors} are capable of splitting the event handling load in segments.
+             * <p>
+             * Defaults to {@link LoadBalancingStrategy#DISABLED}.
+             */
+            private LoadBalancingStrategy loadBalancingStrategy = LoadBalancingStrategy.DISABLED;
+
+            /**
+             * Returns the {@link LoadBalancingStrategy load balancing strategy} for this event processor. Defaults to
+             * {@link LoadBalancingStrategy#DISABLED}.
+             *
+             * @return The {@link LoadBalancingStrategy load balancing strategy} for this event processor.
+             */
+            public LoadBalancingStrategy getLoadBalancingStrategy() {
+                return loadBalancingStrategy;
+            }
+
+            /**
+             * Sets the {@link LoadBalancingStrategy load balancing strategy} for this event processor.
+             *
+             * @param loadBalancingStrategy The {@link LoadBalancingStrategy load balancing strategy} for this event
+             *                              processor.
+             */
+            public void setLoadBalancingStrategy(LoadBalancingStrategy loadBalancingStrategy) {
+                this.loadBalancingStrategy = loadBalancingStrategy;
+            }
+        }
+
+        /**
+         * The possible load balancing strategies for
+         * {@link org.axonframework.eventhandling.StreamingEventProcessor StreamingEventProcessors}.
+         */
+        public enum LoadBalancingStrategy {
+            /**
+             * Indication that load balancing is <em>disabled</em> for a given
+             * {@link org.axonframework.eventhandling.StreamingEventProcessor}.
+             */
+            DISABLED("disabled"),
+            /**
+             * Indication that load balancing for a given
+             * {@link org.axonframework.eventhandling.StreamingEventProcessor} is done based on the number of threads.
+             * Setting this strategy results in an equal dispersion of segments over the available threads per
+             * {@code StreamingEventProcessor} instance.
+             */
+            THREAD_NUMBER("threadNumber");
+
+            private final String description;
+
+            LoadBalancingStrategy(String description) {
+                this.description = description;
+            }
+
+            /**
+             * Describes this load balancing strategy.
+             *
+             * @return The description of this load balancing strategy.
+             */
+            public String describe() {
+                return description;
+            }
         }
     }
 
