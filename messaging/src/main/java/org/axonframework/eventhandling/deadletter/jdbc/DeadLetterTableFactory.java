@@ -54,7 +54,7 @@ public interface DeadLetterTableFactory {
 
     /**
      * Creates a {@link PreparedStatement} to create an index from the {@link DeadLetterSchema#processingGroupColumn()}
-     * and {@link DeadLetterSchema#sequenceIdentifierColumn()} combination.
+     * and {@link DeadLetterSchema#sequenceIdentifierColumn()} combination. This index should ensure uniqueness on the database level.
      *
      * @param connection The connection to create the {@link PreparedStatement} with.
      * @param schema     The schema defining the table and column names.

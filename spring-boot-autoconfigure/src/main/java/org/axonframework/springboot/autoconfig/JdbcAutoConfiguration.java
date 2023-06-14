@@ -154,7 +154,7 @@ public class JdbcAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(name = "deadLetterQueueProviderConfigurerModule")
+    @ConditionalOnMissingBean
     public DeadLetterQueueProviderConfigurerModule deadLetterQueueProviderConfigurerModule(
             EventProcessorProperties eventProcessorProperties,
             ConnectionProvider connectionProvider,

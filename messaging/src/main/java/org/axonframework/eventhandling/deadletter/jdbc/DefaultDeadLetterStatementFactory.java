@@ -51,6 +51,9 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * {@code eventSerializer} to serialize the {@link EventMessage#getPayload() event payload},
  * {@link EventMessage#getMetaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} of any
  * {@code DeadLetter}.
+ * <p>
+ * This factory and the {@link DeadLetterJdbcConverter} must use the same {@link Serializer Serializers} and
+ * {@code DeadLetterSchema} for the applicable fields.
  *
  * @param <E> An implementation of {@link EventMessage} within the {@link DeadLetter} this factory constructs
  *            {@link PreparedStatement PreparedStatements} for.

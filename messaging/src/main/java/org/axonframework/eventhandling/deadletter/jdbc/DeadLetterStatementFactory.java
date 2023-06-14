@@ -239,7 +239,7 @@ public interface DeadLetterStatementFactory<E extends EventMessage<?>> {
     /**
      * Constructs the {@link PreparedStatement} used to claim a {@link DeadLetter} entry.
      * <p>
-     * Claiming a {@code DeadLetter} ensure only a single thread
+     * Claiming a {@code DeadLetter} ensures only a single thread
      * {@link JdbcSequencedDeadLetterQueue#process(Function) processes} the {@code DeadLetter}. This operation typically
      * updates the {@link DeadLetterSchema#processingStartedColumn() processing started} field with the given
      * {@code current} {@link Instant}, marking it as claimed for a certain timeframe.

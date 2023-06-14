@@ -38,6 +38,7 @@ import javax.annotation.Nonnull;
  * {@link EventProcessorProperties.Dlq#isEnabled() dead-letter queue is enabled} will receive the provided dead-letter
  * queue.
  *
+ * @author Gerard Klijs
  * @author Steven van Beelen
  * @since 4.8.0
  */

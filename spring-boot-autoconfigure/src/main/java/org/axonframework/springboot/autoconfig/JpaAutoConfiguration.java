@@ -98,8 +98,8 @@ public class JpaAutoConfiguration {
         return new SQLErrorCodesResolver(dataSource);
     }
 
-    @Bean(name = "deadLetterQueueProviderConfigurerModule")
-    @ConditionalOnMissingBean(name = "deadLetterQueueProviderConfigurerModule")
+    @Bean
+    @ConditionalOnMissingBean
     public DeadLetterQueueProviderConfigurerModule deadLetterQueueProviderConfigurerModule(
             EventProcessorProperties eventProcessorProperties,
             EntityManagerProvider entityManagerProvider,
