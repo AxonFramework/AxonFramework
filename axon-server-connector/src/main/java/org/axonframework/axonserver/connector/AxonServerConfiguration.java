@@ -549,6 +549,7 @@ public class AxonServerConfiguration {
      *
      * @return The configured {@link EventProcessorConfiguration} of this application for Axon Server.
      */
+    @ConfigurationProperties(prefix = "axon.axonserver.eventhandling")
     public EventProcessorConfiguration getEventProcessorConfiguration() {
         return eventProcessorConfiguration;
     }
