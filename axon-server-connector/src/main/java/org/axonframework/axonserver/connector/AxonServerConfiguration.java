@@ -717,62 +717,29 @@ public class AxonServerConfiguration {
              * {@link org.axonframework.eventhandling.StreamingEventProcessor StreamingEventProcessors}, as only
              * {@code StreamingEventProcessors} are capable of splitting the event handling load in segments.
              * <p>
-             * Defaults to {@link LoadBalancingStrategy#DISABLED}.
+             * As the strategies names may change per Axon Server version it is recommended to check the documentation
+             * for the possible strategies.
+             * <p>
+             * Defaults to {@code "disabled"}.
              */
-            private LoadBalancingStrategy loadBalancingStrategy = LoadBalancingStrategy.DISABLED;
+            private String loadBalancingStrategy = "disabled";
 
             /**
-             * Returns the {@link LoadBalancingStrategy load balancing strategy} for this event processor. Defaults to
-             * {@link LoadBalancingStrategy#DISABLED}.
+             * Returns the load balancing strategy for this event processor. Defaults to {@code "disabled"}.
              *
-             * @return The {@link LoadBalancingStrategy load balancing strategy} for this event processor.
+             * @return The load balancing strategy for this event processor.
              */
-            public LoadBalancingStrategy getLoadBalancingStrategy() {
+            public String getLoadBalancingStrategy() {
                 return loadBalancingStrategy;
             }
 
             /**
-             * Sets the {@link LoadBalancingStrategy load balancing strategy} for this event processor.
+             * Sets the load balancing strategy for this event processor.
              *
-             * @param loadBalancingStrategy The {@link LoadBalancingStrategy load balancing strategy} for this event
-             *                              processor.
+             * @param loadBalancingStrategy The load balancing strategy for this event processor.
              */
-            public void setLoadBalancingStrategy(LoadBalancingStrategy loadBalancingStrategy) {
+            public void setLoadBalancingStrategy(String loadBalancingStrategy) {
                 this.loadBalancingStrategy = loadBalancingStrategy;
-            }
-        }
-
-        /**
-         * The possible load balancing strategies for
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor StreamingEventProcessors}.
-         */
-        public enum LoadBalancingStrategy {
-            /**
-             * Indication that load balancing is <em>disabled</em> for a given
-             * {@link org.axonframework.eventhandling.StreamingEventProcessor}.
-             */
-            DISABLED("disabled"),
-            /**
-             * Indication that load balancing for a given
-             * {@link org.axonframework.eventhandling.StreamingEventProcessor} is done based on the number of threads.
-             * Setting this strategy results in an equal dispersion of segments over the available threads per
-             * {@code StreamingEventProcessor} instance.
-             */
-            THREAD_NUMBER("threadNumber");
-
-            private final String description;
-
-            LoadBalancingStrategy(String description) {
-                this.description = description;
-            }
-
-            /**
-             * Describes this load balancing strategy.
-             *
-             * @return The description of this load balancing strategy.
-             */
-            public String describe() {
-                return description;
             }
         }
     }

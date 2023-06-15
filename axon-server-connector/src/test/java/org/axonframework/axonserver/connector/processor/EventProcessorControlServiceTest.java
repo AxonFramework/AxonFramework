@@ -45,6 +45,7 @@ class EventProcessorControlServiceTest {
     private static final String THAT_PROCESSOR = "that-processor";
     private static final String NON_EXISTING = "non-existing";
     private static final String TOKEN_STORE_IDENTIFIER = "some-identifier";
+    private static final String LOAD_BALANCING_STRATEGY = "some-strategy";
 
     private AxonServerConnectionManager connectionManager;
     private EventProcessingConfiguration processingConfiguration;
@@ -76,7 +77,7 @@ class EventProcessorControlServiceTest {
         adminChannel = mock(AdminChannel.class);
         CompletableFuture<Void> loadBalancingResult = new CompletableFuture<>();
         loadBalancingResult.complete(null);
-        when(adminChannel.loadBalanceEventProcessor(anyString(), anyString(), anyString()))
+        when(adminChannel.setAutoLoadBalanceStrategy(anyString(), anyString(), anyString()))
                 .thenReturn(loadBalancingResult);
         when(connection.adminChannel()).thenReturn(adminChannel);
     }
@@ -113,6 +114,7 @@ class EventProcessorControlServiceTest {
 
         AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings testSetting =
                 new AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings();
+        testSetting.setLoadBalancingStrategy(LOAD_BALANCING_STRATEGY);
         processorSettings.put(THIS_PROCESSOR, testSetting);
         processorSettings.put(NON_EXISTING, testSetting);
 
@@ -120,15 +122,15 @@ class EventProcessorControlServiceTest {
 
         verify(connectionManager).getConnection(CONTEXT);
         verify(connection).adminChannel();
-        verify(adminChannel).loadBalanceEventProcessor(
+        verify(adminChannel).setAutoLoadBalanceStrategy(
                 THIS_PROCESSOR,
                 TOKEN_STORE_IDENTIFIER,
-                AxonServerConfiguration.EventProcessorConfiguration.LoadBalancingStrategy.DISABLED.name()
+                LOAD_BALANCING_STRATEGY
         );
         // There is no registered strategy for THAT_PROCESSOR.
-        verify(adminChannel, never()).loadBalanceEventProcessor(eq(THAT_PROCESSOR), anyString(), anyString());
+        verify(adminChannel, never()).setAutoLoadBalanceStrategy(eq(THAT_PROCESSOR), anyString(), anyString());
         // There is no Event Processor called NON_EXISTING.
-        verify(adminChannel, never()).loadBalanceEventProcessor(eq(NON_EXISTING), anyString(), anyString());
+        verify(adminChannel, never()).setAutoLoadBalanceStrategy(eq(NON_EXISTING), anyString(), anyString());
     }
 
     @Test
@@ -143,6 +145,7 @@ class EventProcessorControlServiceTest {
 
         AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings testSetting =
                 new AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings();
+        testSetting.setLoadBalancingStrategy(LOAD_BALANCING_STRATEGY);
         processorSettings.put(THIS_PROCESSOR, testSetting);
         processorSettings.put(THAT_PROCESSOR, testSetting);
 

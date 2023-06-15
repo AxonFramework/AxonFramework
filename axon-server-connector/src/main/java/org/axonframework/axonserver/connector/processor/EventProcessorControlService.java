@@ -67,9 +67,8 @@ public class EventProcessorControlService implements Lifecycle {
      * This service adds processor instruction handlers to the {@link ControlChannel} of the
      * {@link AxonServerConnectionManager#getDefaultContext() default context}. Doing so ensures operation like the
      * {@link EventProcessor#start() start} and {@link EventProcessor#shutDown() shutdown} can be triggered through Axon
-     * Server. Furthermore, it sets the configured
-     * {@link AxonServerConfiguration.EventProcessorConfiguration.LoadBalancingStrategy load balancing strategies}
-     * through the {@link AdminChannel}  of the default context.
+     * Server. Furthermore, it sets the configured load balancing strategies} through the {@link AdminChannel}  of the
+     * default context.
      *
      * @param axonServerConnectionManager  A {@link AxonServerConnectionManager} from which to retrieve the
      *                                     {@link ControlChannel} and {@link AdminChannel}.
@@ -94,9 +93,7 @@ public class EventProcessorControlService implements Lifecycle {
      * This service adds processor instruction handlers to the {@link ControlChannel} of the given {@code context}.
      * Doing so ensures operation like the {@link EventProcessor#start() start} and
      * {@link EventProcessor#shutDown() shutdown} can be triggered through Axon Server. Furthermore, it sets the
-     * configured
-     * {@link AxonServerConfiguration.EventProcessorConfiguration.LoadBalancingStrategy load balancing strategies}
-     * through the {@link AdminChannel}  of the {@code context}.
+     * configured load balancing strategies} through the {@link AdminChannel}  of the {@code context}.
      *
      * @param axonServerConnectionManager  A {@link AxonServerConnectionManager} from which to retrieve the
      *                                     {@link ControlChannel} and {@link AdminChannel}.
@@ -121,9 +118,7 @@ public class EventProcessorControlService implements Lifecycle {
      * This service adds processor instruction handlers to the {@link ControlChannel} of the given {@code context}.
      * Doing so ensures operation like the {@link EventProcessor#start() start} and
      * {@link EventProcessor#shutDown() shutdown} can be triggered through Axon Server. Furthermore, it sets the
-     * configured
-     * {@link AxonServerConfiguration.EventProcessorConfiguration.LoadBalancingStrategy load balancing strategies}
-     * through the {@link AdminChannel}  of the {@code context}.
+     * configured load balancing strategies through the {@link AdminChannel}  of the {@code context}.
      *
      * @param axonServerConnectionManager  A {@link AxonServerConnectionManager} from which to retrieve the
      *                                     {@link ControlChannel} and {@link AdminChannel}.
@@ -173,7 +168,7 @@ public class EventProcessorControlService implements Lifecycle {
     private void setLoadBalancingStrategies(AxonServerConnection connection, Set<String> processorNames) {
         AdminChannel adminChannel = connection.adminChannel();
 
-        Map<String, AxonServerConfiguration.EventProcessorConfiguration.LoadBalancingStrategy> strategiesPerProcessor =
+        Map<String, String> strategiesPerProcessor =
                 processorConfig.entrySet()
                                .stream()
                                .filter(entry -> {
@@ -195,15 +190,15 @@ public class EventProcessorControlService implements Lifecycle {
                 return;
             }
 
-            adminChannel.setAutoLoadBalanceStrategy(processorName, tokenStoreIdentifier.get(), strategy.describe())
+            adminChannel.setAutoLoadBalanceStrategy(processorName, tokenStoreIdentifier.get(), strategy)
                         .whenComplete((r, e) -> {
                             if (e == null) {
                                 logger.debug("Successfully requested to automatically balance processor [{}]"
-                                                     + " with strategy [{}].", processorName, strategy.describe());
+                                                     + " with strategy [{}].", processorName, strategy);
                                 return;
                             }
                             logger.warn("Requesting to automatically balance processor [{}] with strategy [{}] failed.",
-                                        processorName, strategy.describe(), e);
+                                        processorName, strategy, e);
                         });
         });
     }
