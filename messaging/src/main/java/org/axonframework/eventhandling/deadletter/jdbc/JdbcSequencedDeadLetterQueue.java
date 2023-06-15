@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -166,8 +167,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
     public void createSchema(DeadLetterTableFactory tableFactory) {
         Connection connection = getConnection();
         try {
-            tableFactory.createTableStatement(connection, schema)
-                        .executeBatch();
+            Statement tableStatement = tableFactory.createTableStatement(connection, schema);
+            try {
+                tableStatement.executeBatch();
+            } finally {
+                closeQuietly(tableStatement);
+            }
         } catch (SQLException e) {
             throw new JdbcException("Failed to create the dead-letter entry table or indices", e);
         } finally {

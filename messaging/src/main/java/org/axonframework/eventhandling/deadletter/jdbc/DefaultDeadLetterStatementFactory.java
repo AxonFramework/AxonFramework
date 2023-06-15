@@ -252,14 +252,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     public PreparedStatement containsStatement(@Nonnull Connection connection,
                                                @Nonnull String processingGroup,
                                                @Nonnull String sequenceId) throws SQLException {
-        String sql = "SELECT COUNT(*) "
-                + "FROM " + schema.deadLetterTable() + " "
-                + "WHERE " + schema.processingGroupColumn() + "=? "
-                + "AND " + schema.sequenceIdentifierColumn() + "=?";
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setString(1, processingGroup);
-        statement.setString(2, sequenceId);
-        return statement;
+        return sequenceSizeStatement(connection, processingGroup, sequenceId);
     }
 
     @Override

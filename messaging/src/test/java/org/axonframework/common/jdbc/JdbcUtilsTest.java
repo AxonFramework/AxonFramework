@@ -22,7 +22,6 @@ import java.sql.ResultSet;
 
 import static org.axonframework.common.jdbc.JdbcUtils.nextAndExtract;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -58,7 +57,7 @@ class JdbcUtilsTest {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(true);
-        when(resultSet.getObject(eq(1), eq(Long.class))).thenReturn(null);
+        when(resultSet.getObject(1, Long.class)).thenReturn(null);
         assertNull(nextAndExtract(resultSet, 1, Long.class));
     }
 
@@ -68,7 +67,7 @@ class JdbcUtilsTest {
         Long defaultValue = 42L;
 
         when(resultSet.next()).thenReturn(true);
-        when(resultSet.getObject(eq(1), eq(Long.class))).thenReturn(null);
+        when(resultSet.getObject(1, Long.class)).thenReturn(null);
         assertEquals(defaultValue, nextAndExtract(resultSet, 1, Long.class, defaultValue));
     }
 
@@ -83,7 +82,7 @@ class JdbcUtilsTest {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(true);
-        when(resultSet.getObject(eq(1), eq(Long.class))).thenReturn(10L);
+        when(resultSet.getObject(1, Long.class)).thenReturn(10L);
         assertEquals(Long.valueOf(10L), nextAndExtract(resultSet, 1, Long.class));
     }
 
@@ -102,7 +101,7 @@ class JdbcUtilsTest {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(true);
-        when(resultSet.getObject(eq(1), eq(Long.class))).thenReturn(0L);
+        when(resultSet.getObject(1, Long.class)).thenReturn(0L);
         when(resultSet.wasNull()).thenReturn(true);
         assertNull(nextAndExtract(resultSet, 1, Long.class));
     }
@@ -113,7 +112,7 @@ class JdbcUtilsTest {
         Long defaultValue = 42L;
 
         when(resultSet.next()).thenReturn(true);
-        when(resultSet.getObject(eq(1), eq(Long.class))).thenReturn(0L);
+        when(resultSet.getObject(1, Long.class)).thenReturn(0L);
         when(resultSet.wasNull()).thenReturn(true);
         assertEquals(defaultValue, nextAndExtract(resultSet, 1, Long.class, defaultValue));
     }

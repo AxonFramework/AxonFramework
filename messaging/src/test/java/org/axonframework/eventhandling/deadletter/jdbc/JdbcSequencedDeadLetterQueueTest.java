@@ -202,7 +202,8 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
 
     @Test
     void invokingEvictWithNonJdbcDeadLetterThrowsWrongDeadLetterTypeException() {
-        assertThrows(WrongDeadLetterTypeException.class, () -> jdbcDeadLetterQueue.evict(generateInitialLetter()));
+        DeadLetter<EventMessage<?>> testLetter = generateInitialLetter();
+        assertThrows(WrongDeadLetterTypeException.class, () -> jdbcDeadLetterQueue.evict(testLetter));
     }
 
     @SuppressWarnings("DataFlowIssue")
