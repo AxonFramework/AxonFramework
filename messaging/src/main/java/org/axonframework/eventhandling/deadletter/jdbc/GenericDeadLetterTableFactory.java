@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * A {@link DeadLetterTableFactory} implementation compatible with most databases.
@@ -31,8 +31,23 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
 
     @SuppressWarnings("SqlNoDataSourceInspection")
     @Override
-    public PreparedStatement createTable(Connection connection, DeadLetterSchema schema) throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS " + schema.deadLetterTable() + " (\n" +
+    public Statement createTableStatement(Connection connection, DeadLetterSchema schema) throws SQLException {
+        Statement statement = connection.createStatement();
+        statement.addBatch(createTableSql(schema));
+        statement.addBatch(processingGroupIndexSql(schema));
+        statement.addBatch(sequenceIdentifierIndexSql(schema));
+        return statement;
+    }
+
+    /**
+     * Constructs the SQL to create a dead-letter table, using the given {@code schema} to deduce the table and column
+     * names.
+     *
+     * @param schema The schema defining the table and column names.
+     * @return The SQL to construct the dead-letter table.
+     */
+    protected String createTableSql(DeadLetterSchema schema) {
+        return "CREATE TABLE IF NOT EXISTS " + schema.deadLetterTable() + " (\n" +
                 schema.deadLetterIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.processingGroupColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.sequenceIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
@@ -61,25 +76,35 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.sequenceIdentifierColumn() + "," +
                 schema.sequenceIndexColumn() +
                 ")\n)";
-        return connection.prepareStatement(sql);
     }
 
-    @Override
-    public PreparedStatement createProcessingGroupIndex(Connection connection,
-                                                        DeadLetterSchema schema) throws SQLException {
-        String sql = "CREATE INDEX " + schema.processingGroupColumn() + "_INDEX "
+    /**
+     * Constructs the SQL to create an index of the {@link DeadLetterSchema#processingGroupColumn() processing group} ,
+     * using the given {@code schema} to deduce the table and column names.
+     *
+     * @param schema The schema defining the table and column names.
+     * @return The SQL to construct the index for the {@link DeadLetterSchema#processingGroupColumn() processing group}
+     * for the dead-letter table.
+     */
+    protected String processingGroupIndexSql(DeadLetterSchema schema) {
+        return "CREATE INDEX " + schema.processingGroupColumn() + "_INDEX "
                 + "ON " + schema.deadLetterTable() + " "
                 + "(" + schema.processingGroupColumn() + ")";
-        return connection.prepareStatement(sql);
     }
 
-    @Override
-    public PreparedStatement createSequenceIdentifierIndex(Connection connection,
-                                                           DeadLetterSchema schema) throws SQLException {
-        String sql = "CREATE INDEX " + schema.sequenceIdentifierColumn() + "_INDEX "
+    /**
+     * Constructs the SQL to create an index for the {@link DeadLetterSchema#processingGroupColumn() processing group}
+     * and {@link DeadLetterSchema#sequenceIdentifierColumn() sequence indentifier} combination, using the given
+     * {@code schema} to deduce the table and column names.
+     *
+     * @param schema The schema defining the table and column names.
+     * @return The SQL to construct the index for {@link DeadLetterSchema#processingGroupColumn() processing group} and
+     * {@link DeadLetterSchema#sequenceIdentifierColumn() combination for the dead-letter table.
+     */
+    protected String sequenceIdentifierIndexSql(DeadLetterSchema schema) {
+        return "CREATE INDEX " + schema.sequenceIdentifierColumn() + "_INDEX "
                 + "ON " + schema.deadLetterTable() + " "
                 + "(" + schema.processingGroupColumn() + "," + schema.sequenceIdentifierColumn() + ")";
-        return connection.prepareStatement(sql);
     }
 
     /**

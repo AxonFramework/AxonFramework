@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * A functional interface to create a JDBC-specific {@link org.axonframework.messaging.deadletter.DeadLetter} entry
@@ -27,39 +27,22 @@ import java.sql.SQLException;
  * @author Steven van Beelen
  * @since 4.8.0
  */
+@FunctionalInterface
 public interface DeadLetterTableFactory {
 
     /**
-     * Creates a {@link PreparedStatement} to use for construction of a
-     * {@link org.axonframework.messaging.deadletter.DeadLetter} entry table.
+     * Creates a {@link Statement} to use for construction of a
+     * {@link org.axonframework.messaging.deadletter.DeadLetter} entry table and its indices.
      * <p>
-     * It is expected that this statement at least constructs the required uniqueness constraints.
+     * The returned {@code Statement} typically contains several SQL statements and hence the invoker is inclined to
+     * execute the {@code Statement} as a batch by invoking {@link Statement#executeBatch()}. Furthermore, it is
+     * expected that this statement at least constructs the required uniqueness constraints.
      *
-     * @param connection The connection to create the {@link PreparedStatement} with.
+     * @param connection The connection to create the {@link Statement} with.
      * @param schema     The schema defining the table and column names.
-     * @return A {@link PreparedStatement statement} to create the table with, ready to be executed.
-     * @throws SQLException when an exception occurs while creating the {@link PreparedStatement}.
+     * @return A {@link Statement statement} to create the table and its indices with, ready to be
+     * {@link Statement#executeBatch() executed}.
+     * @throws SQLException when an exception occurs while creating the {@link Statement}.
      */
-    PreparedStatement createTable(Connection connection, DeadLetterSchema schema) throws SQLException;
-
-    /**
-     * Creates a {@link PreparedStatement} to create an index for the {@link DeadLetterSchema#processingGroupColumn()}.
-     *
-     * @param connection The connection to create the {@link PreparedStatement} with.
-     * @param schema     The schema defining the table and column names.
-     * @return A {@link PreparedStatement statement} to create the index with, ready to be executed.
-     * @throws SQLException when an exception occurs while creating the {@link PreparedStatement}.
-     */
-    PreparedStatement createProcessingGroupIndex(Connection connection, DeadLetterSchema schema) throws SQLException;
-
-    /**
-     * Creates a {@link PreparedStatement} to create an index from the {@link DeadLetterSchema#processingGroupColumn()}
-     * and {@link DeadLetterSchema#sequenceIdentifierColumn()} combination. This index should ensure uniqueness on the database level.
-     *
-     * @param connection The connection to create the {@link PreparedStatement} with.
-     * @param schema     The schema defining the table and column names.
-     * @return A {@link PreparedStatement statement} to create the index with, ready to be executed.
-     * @throws SQLException when an exception occurs while creating the {@link PreparedStatement}.
-     */
-    PreparedStatement createSequenceIdentifierIndex(Connection connection, DeadLetterSchema schema) throws SQLException;
+    Statement createTableStatement(Connection connection, DeadLetterSchema schema) throws SQLException;
 }

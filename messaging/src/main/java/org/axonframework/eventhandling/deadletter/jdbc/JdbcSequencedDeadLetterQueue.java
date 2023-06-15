@@ -166,15 +166,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
     public void createSchema(DeadLetterTableFactory tableFactory) {
         Connection connection = getConnection();
         try {
-            executeUpdates(
-                    connection,
-                    e -> {
-                        throw new JdbcException("Failed to create the dead-letter entry table or indices", e);
-                    },
-                    c -> tableFactory.createTable(c, schema),
-                    c -> tableFactory.createProcessingGroupIndex(c, schema),
-                    c -> tableFactory.createSequenceIdentifierIndex(c, schema)
-            );
+            tableFactory.createTableStatement(connection, schema)
+                        .executeBatch();
+        } catch (SQLException e) {
+            throw new JdbcException("Failed to create the dead-letter entry table or indices", e);
         } finally {
             closeQuietly(connection);
         }
