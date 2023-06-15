@@ -195,14 +195,14 @@ public class EventProcessorControlService implements Lifecycle {
                 return;
             }
 
-            adminChannel.loadBalanceEventProcessor(processorName, tokenStoreIdentifier.get(), strategy.describe())
+            adminChannel.setAutoLoadBalanceStrategy(processorName, tokenStoreIdentifier.get(), strategy.describe())
                         .whenComplete((r, e) -> {
                             if (e == null) {
-                                logger.debug("Successfully requested to balance processor [{}] with strategy [{}].",
-                                             processorName, strategy.describe());
+                                logger.debug("Successfully requested to automatically balance processor [{}]"
+                                                     + " with strategy [{}].", processorName, strategy.describe());
                                 return;
                             }
-                            logger.warn("Requesting to balance processor [{}] with strategy [{}] failed.",
+                            logger.warn("Requesting to automatically balance processor [{}] with strategy [{}] failed.",
                                         processorName, strategy.describe(), e);
                         });
         });
