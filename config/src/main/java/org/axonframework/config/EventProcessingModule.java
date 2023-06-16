@@ -337,10 +337,10 @@ public class EventProcessingModule
             String processingGroup = selectProcessingGroupByType(sagaConfig.type());
             String processorName = processorNameForProcessingGroup(processingGroup);
             // The Event Processor type is unknown as it is not build yet, so we check for both TEP or PSEP configs.
-            if (noTepCustomization(sagaConfig.type(), processingGroup, processorName)) {
+            if (noTepCustomization(processorName)) {
                 registerTrackingEventProcessorConfiguration(processorName, config -> DEFAULT_SAGA_TEP_CONFIG);
             }
-            if (noPsepCustomization(sagaConfig.type(), processingGroup, processorName)) {
+            if (noPsepCustomization(processorName)) {
                 registerPooledStreamingEventProcessorConfiguration(processorName, DEFAULT_SAGA_PSEP_CONFIG);
             }
 
@@ -349,18 +349,14 @@ public class EventProcessingModule
         });
     }
 
-    private boolean noTepCustomization(Class<?> type, String processingGroup, String processorName) {
-        return DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION.apply(type).equals(processingGroup)
-                && processingGroup.equals(processorName)
-                && !eventProcessorBuilders.containsKey(processorName)
+    private boolean noTepCustomization(String processorName) {
+        return !eventProcessorBuilders.containsKey(processorName)
                 && !tepConfigs.containsKey(processorName)
                 && !tepConfigs.containsKey(CONFIGURED_DEFAULT_TEP_CONFIG);
     }
 
-    private boolean noPsepCustomization(Class<?> type, String processingGroup, String processorName) {
-        return DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION.apply(type).equals(processingGroup)
-                && processingGroup.equals(processorName)
-                && !eventProcessorBuilders.containsKey(processorName)
+    private boolean noPsepCustomization(String processorName) {
+        return !eventProcessorBuilders.containsKey(processorName)
                 && !psepConfigs.containsKey(processorName)
                 && !psepConfigs.containsKey(CONFIGURED_DEFAULT_PSEP_CONFIG);
     }
