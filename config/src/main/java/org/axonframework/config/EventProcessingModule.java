@@ -65,6 +65,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -132,6 +133,7 @@ public class EventProcessingModule
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     private Configuration configuration;
 
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
@@ -211,7 +213,15 @@ public class EventProcessingModule
      * processors have already been initialized, this method does nothing.
      */
     private void initializeProcessors() {
-        if (eventProcessors.isEmpty()) {
+        if (initialized.get()) {
+            return;
+        }
+
+        synchronized (initialized) {
+            if (initialized.get()) {
+                return;
+            }
+
             instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
 
             Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
@@ -219,12 +229,14 @@ public class EventProcessingModule
             registerSagaManagers(handlerInvokers);
 
             handlerInvokers.forEach((processorName, invokers) -> {
-                Component<EventProcessor> eventProcessorComponent =
-                        new Component<>(configuration, processorName, c -> buildEventProcessor(invokers, processorName));
+                Component<EventProcessor> eventProcessorComponent = new Component<>(
+                        configuration, processorName, c -> buildEventProcessor(invokers, processorName)
+                );
                 eventProcessors.put(processorName, eventProcessorComponent);
             });
 
             eventProcessors.values().forEach(Component::get);
+            initialized.set(true);
         }
     }
 
