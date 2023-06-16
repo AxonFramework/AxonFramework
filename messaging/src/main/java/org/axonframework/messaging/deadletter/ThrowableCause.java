@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.deadletter;
 
+import org.axonframework.common.AxonException;
+
 import java.util.Objects;
 
 /**
@@ -25,7 +27,13 @@ import java.util.Objects;
  * @author Mitchel Herrijgers
  * @since 4.6.0
  */
-public class ThrowableCause implements Cause {
+public class ThrowableCause extends AxonException implements Cause {
+
+    /**
+     * The default size of {@code 1023} to truncate a {@link Throwable#getMessage()} to, to fit into typical dead-letter
+     * storages.
+     */
+    public static final int TRUNCATED_MESSAGE_SIZE = 1023;
 
     private final String type;
     private final String message;
@@ -37,6 +45,7 @@ public class ThrowableCause implements Cause {
      * @param throwable The throwable to base this cause on.
      */
     public ThrowableCause(Throwable throwable) {
+        super(throwable.getMessage(), throwable);
         this.type = throwable.getClass().getName();
         this.message = throwable.getMessage();
     }
@@ -48,8 +57,52 @@ public class ThrowableCause implements Cause {
      * @param message The message of this cause.
      */
     public ThrowableCause(String type, String message) {
+        super(message);
         this.type = type;
         this.message = message;
+    }
+
+    /**
+     * Return the given {@code cause} as a {@link ThrowableCause}.
+     * <p>
+     * If the given {@code cause} is an instance of {@link ThrowableCause} it is returned as is. Otherwise, this method
+     * constructs a new instance through {@link #ThrowableCause(Throwable)}.
+     *
+     * @param cause The {@link Throwable} to map to a {@link ThrowableCause}.
+     * @return A {@link ThrowableCause} based on the given {@code cause}, or the {@code cause} as-is if it is an
+     * instance of {@code ThrowableCause}.
+     */
+    public static ThrowableCause asCause(Throwable cause) {
+        return cause instanceof ThrowableCause ? (ThrowableCause) cause : new ThrowableCause(cause);
+    }
+
+    /**
+     * Construct a {@link ThrowableCause} based on the given {@code throwable}, truncating the message to a maximum size
+     * of {@link #TRUNCATED_MESSAGE_SIZE}.
+     * <p>
+     * Should be used to ensure the {@link Cause} fits in the desired dead-letter storage solution.
+     *
+     * @param throwable The {@link Throwable} to adjust to a {@link ThrowableCause}.
+     * @return A {@link ThrowableCause} based on the given {@code throwable} for which the message is truncated to
+     * {@link #TRUNCATED_MESSAGE_SIZE}.
+     */
+    public static ThrowableCause truncated(Throwable throwable) {
+        return truncated(throwable, TRUNCATED_MESSAGE_SIZE);
+    }
+
+    /**
+     * Construct a {@link ThrowableCause} based on the given {@code throwable}, truncating the message to the given
+     * {@code messageSize}.
+     * <p>
+     * Should be used to ensure the {@link Cause} fits in the desired dead-letter storage solution.
+     *
+     * @param throwable   The {@link Throwable} to adjust to a {@link ThrowableCause}.
+     * @param messageSize The size to truncate the {@link Throwable#getMessage()} to, to be able to fit in databases.
+     * @return A {@link ThrowableCause} based on the given {@code throwable} for which the message is truncated to given
+     * {@code messageSize}.
+     */
+    public static ThrowableCause truncated(Throwable throwable, int messageSize) {
+        return new ThrowableCause(throwable.getClass().getName(), throwable.getMessage().substring(0, messageSize));
     }
 
     @Override
