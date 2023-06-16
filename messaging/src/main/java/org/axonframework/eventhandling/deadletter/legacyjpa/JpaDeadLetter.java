@@ -178,7 +178,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
                                    sequenceIdentifier,
                                    enqueuedAt,
                                    GenericDeadLetter.clock.instant(),
-                                   requeueCause != null ? new ThrowableCause(requeueCause) : cause,
+                                   requeueCause != null ? ThrowableCause.asCause(requeueCause) : cause,
                                    diagnostics,
                                    message);
     }
