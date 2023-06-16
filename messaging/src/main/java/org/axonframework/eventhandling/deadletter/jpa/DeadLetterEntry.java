@@ -81,6 +81,7 @@ public class DeadLetterEntry {
     private Instant processingStarted;
 
     private String causeType;
+    @Column(length = 1023)
     private String causeMessage;
 
     @Basic
