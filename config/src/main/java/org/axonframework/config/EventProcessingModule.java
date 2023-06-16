@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -110,7 +111,7 @@ public class EventProcessingModule
     private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
     private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
 
-    protected final Object initSync = new Object();
+    protected final AtomicBoolean initialized = new AtomicBoolean(false);
     protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
     protected final Map<String, DeadLetteringEventHandlerInvoker> deadLetteringEventHandlerInvokers = new HashMap<>();
 
@@ -210,12 +211,12 @@ public class EventProcessingModule
      * processors have already been initialized, this method does nothing.
      */
     private void initializeProcessors() {
-        if (!eventProcessors.isEmpty()) {
+        if (initialized.get()) {
             return;
         }
 
-        synchronized (initSync) {
-            if (!eventProcessors.isEmpty()) {
+        synchronized (initialized) {
+            if (initialized.get()) {
                 return;
             }
 
@@ -233,6 +234,7 @@ public class EventProcessingModule
             });
 
             eventProcessors.values().forEach(Component::get);
+            initialized.set(true);
         }
     }
 
