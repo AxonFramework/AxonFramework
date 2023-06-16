@@ -111,7 +111,6 @@ public class EventProcessingModule
     private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
     private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
 
-    protected final AtomicBoolean initialized = new AtomicBoolean(false);
     protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
     protected final Map<String, DeadLetteringEventHandlerInvoker> deadLetteringEventHandlerInvokers = new HashMap<>();
 
@@ -131,6 +130,7 @@ public class EventProcessingModule
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     private Configuration configuration;
 
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
