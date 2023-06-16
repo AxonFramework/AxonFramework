@@ -601,28 +601,18 @@ public interface Configurer extends LifecycleOperations {
     }
 
     /**
-     * Returns the constructed Configuration built using this configurer, ready to {@link #start()}.
-     * <p>
-     * It is not recommended to change any configuration on this Configurer once this method is called.
-     * <p>
-     * Note that while {@link ModuleConfiguration#initialize(Configuration) initialize}
-     * {@link ModuleConfiguration ModuleConfigurations} (e.g. the {@link AggregateConfigurer} and
-     * {@link EventProcessingConfigurer}) as well. Furthermore, {@code ModuleConfigurations} will typically stage
-     * construction and wiring during {@link LifecycleHandler LifecycleHandlers}. As such, although all components are
-     * set, not everything can be expected to be present without {@link #start() starting} the returned
-     * {@link Configuration}.
+     * Returns the completely initialized Configuration built using this configurer. It is not recommended to change
+     * any configuration on this Configurer once this method is called.
      *
-     * @return The constructed {@link Configuration}.
+     * @return the fully initialized Configuration
      */
     Configuration buildConfiguration();
 
     /**
-     * {@link #buildConfiguration() Builds} the {@link Configuration} and starts it immediately, triggering any
-     * registered {@link LifecycleHandler LifecycleHandlers}.
-     * <p>
-     * It is not recommended to change any configuration on this {@link Configurer} once this method is called.
+     * Builds the configuration and starts it immediately. It is not recommended to change any configuration on this
+     * Configurer once this method is called.
      *
-     * @return The started {@link Configuration}.
+     * @return The started configuration
      */
     default Configuration start() {
         Configuration configuration = buildConfiguration();

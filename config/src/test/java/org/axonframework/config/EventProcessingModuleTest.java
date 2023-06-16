@@ -1097,7 +1097,7 @@ class EventProcessingModuleTest {
                           (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
-        Configuration config = configurer.start();
+        Configuration config = configurer.buildConfiguration();
 
         Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()

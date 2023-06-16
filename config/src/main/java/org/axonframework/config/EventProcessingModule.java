@@ -389,6 +389,7 @@ public class EventProcessingModule
     @Override
     public Map<String, EventProcessor> eventProcessors() {
         validateConfigInitialization();
+        initializeProcessors();
         Map<String, EventProcessor> result = new HashMap<>(eventProcessors.size());
         eventProcessors.forEach((name, component) -> result.put(name, component.get()));
         return result;
