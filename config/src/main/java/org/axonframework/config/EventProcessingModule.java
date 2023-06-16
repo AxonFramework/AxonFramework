@@ -49,6 +49,7 @@ import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -170,9 +171,10 @@ public class EventProcessingModule
     );
     @SuppressWarnings({"unchecked", "rawtypes"})
     private final Component<EnqueuePolicy<EventMessage<?>>> defaultDeadLetterPolicy = new Component<>(
-            () -> configuration,
-            "deadLetterPolicy",
-            c -> c.getComponent(EnqueuePolicy.class, () -> (letter, cause) -> Decisions.enqueue(cause))
+            () -> configuration, "deadLetterPolicy",
+            c -> c.getComponent(EnqueuePolicy.class,
+                                () -> (letter, cause) -> Decisions.enqueue(ThrowableCause.truncated(cause))
+            )
     );
     @SuppressWarnings("unchecked")
     private final Component<StreamableMessageSource<TrackedEventMessage<?>>> defaultStreamableSource =
