@@ -77,6 +77,8 @@ class EventProcessorControlServiceTest {
         adminChannel = mock(AdminChannel.class);
         CompletableFuture<Void> loadBalancingResult = new CompletableFuture<>();
         loadBalancingResult.complete(null);
+        when(adminChannel.loadBalanceEventProcessor(anyString(), anyString(), anyString()))
+                .thenReturn(loadBalancingResult);
         when(adminChannel.setAutoLoadBalanceStrategy(anyString(), anyString(), anyString()))
                 .thenReturn(loadBalancingResult);
         when(connection.adminChannel()).thenReturn(adminChannel);
@@ -122,14 +124,56 @@ class EventProcessorControlServiceTest {
 
         verify(connectionManager).getConnection(CONTEXT);
         verify(connection).adminChannel();
-        verify(adminChannel).setAutoLoadBalanceStrategy(
+        verify(adminChannel).loadBalanceEventProcessor(
                 THIS_PROCESSOR,
                 TOKEN_STORE_IDENTIFIER,
                 LOAD_BALANCING_STRATEGY
         );
         // There is no registered strategy for THAT_PROCESSOR.
+        verify(adminChannel, never()).loadBalanceEventProcessor(eq(THAT_PROCESSOR), anyString(), anyString());
+        // There is no Event Processor called NON_EXISTING.
+        verify(adminChannel, never()).loadBalanceEventProcessor(eq(NON_EXISTING), anyString(), anyString());
+        // Nobody turned on automatic balancing
+        verify(adminChannel, never()).setAutoLoadBalanceStrategy(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void startSetsAutomaticLoadBalancingForMatchingProcessorsThroughAdminChannel() {
+        Map<String, EventProcessor> eventProcessors = new HashMap<>();
+        eventProcessors.put(THIS_PROCESSOR, mock(EventProcessor.class));
+        eventProcessors.put(THAT_PROCESSOR, mock(EventProcessor.class));
+        when(processingConfiguration.eventProcessors()).thenReturn(eventProcessors);
+        TokenStore tokenStore = mock(TokenStore.class);
+        when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.of(TOKEN_STORE_IDENTIFIER));
+        when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
+
+        AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings testSetting =
+                new AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings();
+        testSetting.setLoadBalancingStrategy(LOAD_BALANCING_STRATEGY);
+        testSetting.setAutomaticBalancing(true);
+        processorSettings.put(THIS_PROCESSOR, testSetting);
+        processorSettings.put(NON_EXISTING, testSetting);
+
+        testSubject.start();
+
+        verify(connectionManager).getConnection(CONTEXT);
+        verify(connection).adminChannel();
+        verify(adminChannel).loadBalanceEventProcessor(
+                THIS_PROCESSOR,
+                TOKEN_STORE_IDENTIFIER,
+                LOAD_BALANCING_STRATEGY
+        );
+        verify(adminChannel).setAutoLoadBalanceStrategy(
+                THIS_PROCESSOR,
+                TOKEN_STORE_IDENTIFIER,
+                LOAD_BALANCING_STRATEGY
+        );
+
+        // There is no registered strategy for THAT_PROCESSOR.
+        verify(adminChannel, never()).loadBalanceEventProcessor(eq(THAT_PROCESSOR), anyString(), anyString());
         verify(adminChannel, never()).setAutoLoadBalanceStrategy(eq(THAT_PROCESSOR), anyString(), anyString());
         // There is no Event Processor called NON_EXISTING.
+        verify(adminChannel, never()).loadBalanceEventProcessor(eq(NON_EXISTING), anyString(), anyString());
         verify(adminChannel, never()).setAutoLoadBalanceStrategy(eq(NON_EXISTING), anyString(), anyString());
     }
 

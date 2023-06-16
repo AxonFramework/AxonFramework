@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -725,6 +725,15 @@ public class AxonServerConfiguration {
             private String loadBalancingStrategy = "disabled";
 
             /**
+             * A {@code boolean} dictating whether the configured
+             * {@link #getLoadBalancingStrategy() load balancing strategy} is set to be automatically triggered through
+             * Axon Server.
+             * <p>
+             * Note that this is an Axon Server Enterprise feature only! Defaults to {@code false}.
+             */
+            private boolean automaticBalancing = false;
+
+            /**
              * Returns the load balancing strategy for this event processor. Defaults to {@code "disabled"}.
              *
              * @return The load balancing strategy for this event processor.
@@ -740,6 +749,25 @@ public class AxonServerConfiguration {
              */
             public void setLoadBalancingStrategy(String loadBalancingStrategy) {
                 this.loadBalancingStrategy = loadBalancingStrategy;
+            }
+
+            /**
+             * Returns whether automatic load balancing is configured, yes or no.
+             *
+             * @return Whether automatic load balancing is configured, yes or no.
+             */
+            public boolean shouldAutomaticallyBalance() {
+                return automaticBalancing;
+            }
+
+            /**
+             * Sets the automatic load balancing strategy to the given {@code automaticBalancing}.
+             *
+             * @param automaticBalancing The {@code boolean} to set as to whether automatic load balancing is enabled or
+             *                           disabled.
+             */
+            public void setAutomaticBalancing(boolean automaticBalancing) {
+                this.automaticBalancing = automaticBalancing;
             }
         }
     }

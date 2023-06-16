@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,23 +183,38 @@ public class EventProcessorControlService implements Lifecycle {
                                .collect(toMap(Map.Entry::getKey, entry -> entry.getValue().getLoadBalancingStrategy()));
 
         strategiesPerProcessor.forEach((processorName, strategy) -> {
-            Optional<String> tokenStoreIdentifier = tokenStoreIdentifierFor(processorName);
-            if (!tokenStoreIdentifier.isPresent()) {
+            Optional<String> optionalIdentifier = tokenStoreIdentifierFor(processorName);
+            if (!optionalIdentifier.isPresent()) {
                 logger.warn("Cannot find token store identifier for processor [{}]. "
                                     + "Load balancing cannot be configured without this identifier.", processorName);
                 return;
             }
+            String tokenStoreIdentifier = optionalIdentifier.get();
 
-            adminChannel.setAutoLoadBalanceStrategy(processorName, tokenStoreIdentifier.get(), strategy)
+            adminChannel.loadBalanceEventProcessor(processorName, tokenStoreIdentifier, strategy)
                         .whenComplete((r, e) -> {
                             if (e == null) {
-                                logger.debug("Successfully requested to automatically balance processor [{}]"
+                                logger.debug("Successfully requested to load balance processor [{}]"
                                                      + " with strategy [{}].", processorName, strategy);
                                 return;
                             }
-                            logger.warn("Requesting to automatically balance processor [{}] with strategy [{}] failed.",
+                            logger.warn("Requesting to load balance processor [{}] with strategy [{}] failed.",
                                         processorName, strategy, e);
                         });
+            if (processorConfig.get(processorName).shouldAutomaticallyBalance()) {
+                adminChannel.setAutoLoadBalanceStrategy(processorName, tokenStoreIdentifier, strategy)
+                            .whenComplete((r, e) -> {
+                                if (e == null) {
+                                    logger.debug("Successfully requested to automatically balance processor [{}]"
+                                                         + " with strategy [{}].", processorName, strategy);
+                                    return;
+                                }
+                                logger.warn(
+                                        "Requesting to automatically balance processor [{}] with strategy [{}] failed.",
+                                        processorName, strategy, e
+                                );
+                            });
+            }
         });
     }
 
