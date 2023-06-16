@@ -272,7 +272,11 @@ class FixtureTest_RegularParams {
                         .when(new StrangeCommand("aggregateId"))
                         .expectSuccessfulHandlerExecution()
         );
-        assertTrue(e.getMessage().contains("but got <exception of type [StrangeCommandReceivedException]>"));
+        String resultMessage = e.getMessage();
+        assertTrue(
+                resultMessage.contains("but got <exception of type [StrangeCommandReceivedException]>"),
+                resultMessage
+        );
     }
 
     @Test
@@ -289,9 +293,15 @@ class FixtureTest_RegularParams {
                         .when(new TestCommand("aggregateId"))
                         .expectException(RuntimeException.class)
         );
-        assertTrue(e.getMessage().contains("The command handler returned normally, but an exception was expected"));
-        assertTrue(e.getMessage().contains(
-                "<an instance of java.lang.RuntimeException> but returned with <null>"));
+        String resultMessage = e.getMessage();
+        assertTrue(
+                resultMessage.contains("The command handler returned normally, but an exception was expected"),
+                resultMessage
+        );
+        assertTrue(
+                resultMessage.contains("<an instance of java.lang.RuntimeException>,\n but got <null>"),
+                resultMessage
+        );
     }
 
     @Test
@@ -306,7 +316,11 @@ class FixtureTest_RegularParams {
                         .when(new TestCommand("aggregateId"))
                         .expectResultMessagePayload("some")
         );
-        assertTrue(e.getMessage().contains("<Message with payload <\"some\">> but got <Message with payload <null>>"), e.getMessage());
+        String resultMessage = e.getMessage();
+        assertTrue(
+                resultMessage.contains("<Message with payload <\"some\">>,\n but got <Message with payload <null>>."),
+                resultMessage
+        );
     }
 
     @Test
@@ -322,8 +336,12 @@ class FixtureTest_RegularParams {
                         .when(new StrangeCommand("aggregateId"))
                         .expectException(IOException.class)
         );
-        assertTrue(e.getMessage().contains(
-                "<an instance of java.io.IOException> but got <exception of type [StrangeCommandReceivedException]>"));
+        String resultMessage = e.getMessage();
+        assertTrue(
+                resultMessage.contains("<an instance of java.io.IOException>,\n "
+                                               + "but got <exception of type [StrangeCommandReceivedException]>"),
+                resultMessage
+        );
     }
 
     @Test

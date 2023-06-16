@@ -34,7 +34,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * The reporter generates extensive human readable reports of what the expected outcome of a test was, and what the
+ * The reporter generates extensive human-readable reports of what the expected outcome of a test was, and what the
  * actual results were.
  *
  * @author Allard Buijze
@@ -77,11 +77,11 @@ public class Reporter {
     public void reportWrongEvent(Collection<?> actualEvents, StringDescription expectation, Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events.");
-        sb.append("Expected :")
+        sb.append("Expected:")
           .append(NEWLINE)
           .append(expectation)
           .append(NEWLINE)
-          .append("But got");
+          .append(" But got");
         if (actualEvents.isEmpty()) {
             sb.append(" none");
         } else {
@@ -113,14 +113,14 @@ public class Reporter {
      */
     public void reportWrongEvent(Collection<?> actualEvents, Description expectation, Description mismatch, Throwable probableCause) {
         StringBuilder sb = new StringBuilder("The published events do not match the expected events.");
-        sb.append("Expected :");
-        sb.append(NEWLINE);
-        sb.append(expectation);
-        sb.append(NEWLINE);
-        sb.append("Did not match:");
-        sb.append(NEWLINE);
-        sb.append(mismatch);
-        sb.append(NEWLINE);
+        sb.append("Expected <")
+          .append(expectation)
+          .append(">,")
+          .append(NEWLINE)
+          .append(" but got <")
+          .append(mismatch)
+          .append(">.")
+          .append(NEWLINE);
         sb.append("Actual Sequence of events:");
         if (actualEvents.isEmpty()) { 
             sb.append(" no events emitted");
@@ -148,11 +148,15 @@ public class Reporter {
         StringBuilder sb = new StringBuilder("The command handler threw an unexpected exception");
         sb.append(NEWLINE)
           .append(NEWLINE)
-          .append("Expected <") //NOSONAR
+          .append("Expected <")
           .append(expectation.toString())
-          .append("> but got <exception of type [")
+          .append(">,")
+          .append(NEWLINE)
+          .append(" but got <exception of type [")
           .append(actualException.getClass().getSimpleName())
-          .append("]>. Stack trace follows:")
+          .append("]>.")
+          .append(NEWLINE)
+          .append("Stack trace follows:")
           .append(NEWLINE);
         writeStackTrace(actualException, sb);
         sb.append(NEWLINE);
@@ -169,11 +173,13 @@ public class Reporter {
         StringBuilder sb = new StringBuilder("The command handler returned an unexpected value");
         sb.append(NEWLINE)
           .append(NEWLINE)
-          .append("Expected <"); //NOSONAR
-        sb.append(expectation.toString());
-        sb.append("> but got <");
+          .append("Expected <")
+          .append(expectation.toString())
+          .append(">,")
+          .append(NEWLINE)
+          .append(" but got <");
         describe(actual, sb);
-        sb.append(">")
+        sb.append(">.")
           .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
@@ -188,11 +194,13 @@ public class Reporter {
         StringBuilder sb = new StringBuilder("The command handler returned normally, but an exception was expected");
         sb.append(NEWLINE)
           .append(NEWLINE)
-          .append("Expected <"); //NOSONAR
-        sb.append(description.toString());
-        sb.append("> but returned with <");
+          .append("Expected <")
+          .append(description.toString())
+          .append(">,")
+          .append(NEWLINE)
+          .append(" but got <");
         describe(actualReturnValue, sb);
-        sb.append(">")
+        sb.append(">.")
           .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
@@ -207,11 +215,15 @@ public class Reporter {
         StringBuilder sb = new StringBuilder("The command handler threw an exception, but not of the expected type")
                 .append(NEWLINE)
                 .append(NEWLINE)
-                .append("Expected <") //NOSONAR
+                .append("Expected <")
                 .append(description.toString())
-                .append("> but got <exception of type [")
+                .append(">,")
+                .append(NEWLINE)
+                .append(" but got <exception of type [")
                 .append(actualException.getClass().getSimpleName())
-                .append("]>. Stacktrace follows: ")
+                .append("]>.")
+                .append(NEWLINE)
+                .append("Stack trace follows:")
                 .append(NEWLINE);
         writeStackTrace(actualException, sb);
         sb.append(NEWLINE);
@@ -226,15 +238,17 @@ public class Reporter {
      */
     public void reportWrongExceptionMessage(Throwable actualException, Description description) {
         throw new AxonAssertionError("The command handler threw an exception, but not with expected message"
-                                             + NEWLINE +
-                                             NEWLINE +
-                                             "Expected <" + //NOSONAR
-                                             description.toString() +
-                                             "> but got <message [" +
-                                             actualException.getMessage() +
-                                             "]>." +
-                                             NEWLINE +
-                                             NEWLINE);
+                                             + NEWLINE
+                                             + NEWLINE
+                                             + "Expected <"
+                                             + description.toString()
+                                             + ">, "
+                                             + NEWLINE
+                                             + " but got <message ["
+                                             + actualException.getMessage()
+                                             + "]>."
+                                             + NEWLINE
+                                             + NEWLINE);
     }
 
     /**
@@ -245,15 +259,17 @@ public class Reporter {
      */
     public void reportWrongExceptionDetails(Object details, Description description) {
         throw new AxonAssertionError("The command handler threw an exception, but not with expected details"
-                                             + NEWLINE +
-                                             NEWLINE +
-                                             "Expected <" + //NOSONAR
-                                             description.toString() +
-                                             "> but got <details [" +
-                                             details +
-                                             "]>." +
-                                             NEWLINE +
-                                             NEWLINE);
+                                             + NEWLINE
+                                             + NEWLINE
+                                             + "Expected <"
+                                             + description.toString()
+                                             + ">,"
+                                             + NEWLINE
+                                             + " but got <details ["
+                                             + details
+                                             + "]>."
+                                             + NEWLINE
+                                             + NEWLINE);
     }
 
     /**
@@ -265,15 +281,19 @@ public class Reporter {
      */
     public void reportDifferentPayloads(Class<?> messageType, Object actual, Object expected) {
         throw new AxonAssertionError("One of the messages contained a different payload than expected"
-                                             + NEWLINE + NEWLINE
+                                             + NEWLINE
+                                             + NEWLINE
                                              + "The message of type [" + messageType.getSimpleName() + "] "
                                              + "was not as expected."
                                              + NEWLINE
-                                             + "Expected <" //NOSONAR
+                                             + "Expected <"
                                              + nullSafeToString(expected)
-                                             + "> but got <"
+                                             + ">,"
+                                             + NEWLINE
+                                             + " but got <"
                                              + nullSafeToString(actual)
-                                             + ">"
+                                             + ">."
+                                             + NEWLINE
                                              + NEWLINE);
     }
 
@@ -302,11 +322,13 @@ public class Reporter {
 
         sb.append("was not as expected.")
           .append(NEWLINE)
-          .append("Expected <") //NOSONAR
+          .append("Expected <")
           .append(nullSafeToString(expected))
-          .append("> but got <")
+          .append(">,")
+          .append(NEWLINE)
+          .append(" but got <")
           .append(nullSafeToString(actual))
-          .append(">")
+          .append(">.")
           .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }

@@ -90,9 +90,9 @@ public class RepositoryContentValidator<T> {
      */
     public void assertActiveSagas(int expected) {
         if (expected != sagaStore.size()) {
-            throw new AxonAssertionError(format("Wrong number of active sagas. Expected <%s>, got <%s>.",
-                                                expected,
-                                                sagaStore.size()));
+            throw new AxonAssertionError(format(
+                    "Wrong number of active sagas.\nExpected <%s>,\n but got <%s>.", expected, sagaStore.size()
+            ));
         }
     }
 }

@@ -98,7 +98,8 @@ public class DeadlineManagerValidator {
         matcher.describeTo(expected);
         describe(scheduledDeadlines, actual);
         throw new AxonAssertionError(format(
-                "Did not find a deadline at the given deadline manager. \nExpected:\n<%s> at <%s>\nGot:%s\n",
+                "Did not find a deadline at the given deadline manager.\n"
+                        + "Expected <%s> at <%s>,\n but got <%s>.\n",
                 expected, scheduledTime, actual
         ));
     }
@@ -114,7 +115,7 @@ public class DeadlineManagerValidator {
                 Description unexpected = new StringDescription();
                 matcher.describeTo(unexpected);
                 throw new AxonAssertionError(format(
-                        "Unexpected matching deadline found at the given deadline manager. \nGot:%s\n",
+                        "Unexpected matching deadline found at the given deadline manager.\nGot <%s>.\n",
                         unexpected
                 ));
             }
@@ -148,7 +149,8 @@ public class DeadlineManagerValidator {
             matcher.describeTo(expected);
             describe(triggeredDeadlines, actual);
             throw new AxonAssertionError(format(
-                    "Expected deadlines were not triggered at the given deadline manager. \nExpected:\n<%s>\nGot:%s\n",
+                    "Expected deadlines were not triggered at the given deadline manager.\n"
+                            + "Expected <%s>,\n but got <%s>.\n",
                     expected, actual
             ));
         }
@@ -233,9 +235,10 @@ public class DeadlineManagerValidator {
                                                           Matcher<? extends Iterable<?>> deadlinesMatcher) {
         List<ScheduledDeadlineInfo> triggeredDeadlines = deadlineManager.getTriggeredDeadlines();
         if (triggeredDeadlines.size() != numberOfExpectedDeadlines) {
-            throw new AxonAssertionError(format("Got wrong number of triggered deadlines. Expected <%s>, got <%s>",
-                                                numberOfExpectedDeadlines,
-                                                triggeredDeadlines.size()));
+            throw new AxonAssertionError(format(
+                    "Got wrong number of triggered deadlines.\nExpected <%s>,\n but got <%s>.",
+                    numberOfExpectedDeadlines, triggeredDeadlines.size()
+            ));
         }
         assertTriggeredDeadlinesMatching(deadlinesMatcher);
     }
@@ -246,7 +249,9 @@ public class DeadlineManagerValidator {
     public void assertNoScheduledDeadlines() {
         List<ScheduledDeadlineInfo> scheduledDeadlines = deadlineManager.getScheduledDeadlines();
         if (scheduledDeadlines != null && !scheduledDeadlines.isEmpty()) {
-            throw new AxonAssertionError("Expected no scheduled deadlines, got " + scheduledDeadlines.size());
+            throw new AxonAssertionError(
+                    "Expected no scheduled deadlines, but got " + scheduledDeadlines.size() + " deadlines."
+            );
         }
     }
 

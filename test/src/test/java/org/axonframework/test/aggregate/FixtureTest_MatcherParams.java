@@ -99,7 +99,10 @@ class FixtureTest_MatcherParams {
                         .when(new StrangeCommand("aggregateId"))
                         .expectResultMessageMatching(new DoesMatch<>())
         );
-        assertTrue(e.getMessage().contains("but got <exception of type [StrangeCommandReceivedException]>"));
+        String resultMessage = e.getMessage();
+        assertTrue(
+                resultMessage.contains("but got <exception of type [StrangeCommandReceivedException]>"), resultMessage
+        );
     }
 
     @Test
@@ -115,9 +118,12 @@ class FixtureTest_MatcherParams {
                         .when(new TestCommand("aggregateId"))
                         .expectException(new DoesMatch<>())
         );
-        assertTrue(e.getMessage().contains("The command handler returned normally, but an exception was expected"));
-        assertTrue(e.getMessage().contains(
-                "<anything> but returned with <null>"));
+        String resultMessage = e.getMessage();
+        assertTrue(
+                resultMessage.contains("The command handler returned normally, but an exception was expected"),
+                resultMessage
+        );
+        assertTrue(resultMessage.contains("<anything>,\n but got <null>"), resultMessage);
     }
 
     @Test
@@ -133,7 +139,12 @@ class FixtureTest_MatcherParams {
                         .when(new TestCommand("aggregateId"))
                         .expectResultMessageMatching(new DoesNotMatch<>())
         );
-        assertTrue(e.getMessage().contains("<something you can never give me> but got <GenericCommandResultMessage{payload={null}"));
+        String resultMessage = e.getMessage();
+        assertTrue(
+                resultMessage.contains("<something you can never give me>,\n"
+                                               + " but got <GenericCommandResultMessage{payload={null}"),
+                resultMessage
+        );
     }
 
     @Test
@@ -149,8 +160,12 @@ class FixtureTest_MatcherParams {
                         .when(new StrangeCommand("aggregateId"))
                         .expectException(new DoesNotMatch<>())
         );
-        assertTrue(e.getMessage().contains(
-                "<something you can never give me> but got <exception of type [StrangeCommandReceivedException]>"));
+        String resultMessage = e.getMessage();
+        assertTrue(
+                resultMessage.contains("<something you can never give me>,\n"
+                                               + " but got <exception of type [StrangeCommandReceivedException]>"),
+                resultMessage
+        );
     }
 
     @Test
