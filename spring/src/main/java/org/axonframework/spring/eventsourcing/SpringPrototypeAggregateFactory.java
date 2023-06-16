@@ -166,7 +166,16 @@ public class SpringPrototypeAggregateFactory<T>
     @SuppressWarnings("unchecked")
     @Override
     public void afterPropertiesSet() {
-        arePrototypeBeans();
+        // Only when there are no subtypes can we be certain the set prototypeBeanName is an existing bean definition.
+        // This stems from the intent that the root of a polymorphic aggregate is abstract, leading to no bean definition.
+        if (subtypes.isEmpty() && !applicationContext.isPrototype(prototypeBeanName)) {
+            throw new IncompatibleAggregateException(format(
+                    "Cannot initialize repository '%s'. "
+                            + "The bean with name '%s' does not have the 'prototype' scope.",
+                    beanName, prototypeBeanName
+            ));
+        }
+
         AggregateModel<T> model;
         if (applicationContext.getBeanNamesForType(Configuration.class).length > 0) {
             Configuration configuration = applicationContext.getBean(Configuration.class);
@@ -199,29 +208,13 @@ public class SpringPrototypeAggregateFactory<T>
             @Override
             protected T postProcessInstance(T aggregate) {
                 applicationContext.getAutowireCapableBeanFactory()
-                                  .configureBean(aggregate, subtypes.get(aggregate.getClass()));
+                                  .configureBean(aggregate, beanNameFor(aggregate.getClass()));
                 return aggregate;
             }
-        };
-    }
 
-    private void arePrototypeBeans() {
-        if (!subtypes.isEmpty()) {
-            subtypes.values().forEach(subtypeBeanName -> {
-                if (!applicationContext.isPrototype(subtypeBeanName)) {
-                    throw new IncompatibleAggregateException(format(
-                            "Cannot initialize repository '%s'. "
-                                    + "The aggregate subtype bean with name '%s' does not have the 'prototype' scope.",
-                            beanName, subtypeBeanName
-                    ));
-                }
-            });
-        } else if (!applicationContext.isPrototype(prototypeBeanName)) {
-            throw new IncompatibleAggregateException(format(
-                    "Cannot initialize repository '%s'. "
-                            + "The bean with name '%s' does not have the 'prototype' scope.",
-                    beanName, prototypeBeanName
-            ));
-        }
+            private String beanNameFor(Class<?> aggregateClass) {
+                return aggregateClass != aggregateType ? subtypes.get(aggregateClass) : prototypeBeanName;
+            }
+        };
     }
 }
