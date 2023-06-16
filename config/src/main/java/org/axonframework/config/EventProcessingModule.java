@@ -110,6 +110,7 @@ public class EventProcessingModule
     private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
     private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
 
+    protected final Object initSync = new Object();
     protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
     protected final Map<String, DeadLetteringEventHandlerInvoker> deadLetteringEventHandlerInvokers = new HashMap<>();
 
@@ -209,7 +210,15 @@ public class EventProcessingModule
      * processors have already been initialized, this method does nothing.
      */
     private void initializeProcessors() {
-        if (eventProcessors.isEmpty()) {
+        if (!eventProcessors.isEmpty()) {
+            return;
+        }
+
+        synchronized (initSync) {
+            if (!eventProcessors.isEmpty()) {
+                return;
+            }
+
             instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
 
             Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
@@ -217,8 +226,9 @@ public class EventProcessingModule
             registerSagaManagers(handlerInvokers);
 
             handlerInvokers.forEach((processorName, invokers) -> {
-                Component<EventProcessor> eventProcessorComponent =
-                        new Component<>(configuration, processorName, c -> buildEventProcessor(invokers, processorName));
+                Component<EventProcessor> eventProcessorComponent = new Component<>(
+                        configuration, processorName, c -> buildEventProcessor(invokers, processorName)
+                );
                 eventProcessors.put(processorName, eventProcessorComponent);
             });
 
