@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,9 @@ public class EventProcessingModule
             TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
     private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
             DEFAULT_TEP_CONFIG.andInitialTrackingToken(StreamableMessageSource::createHeadToken);
+    private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
+    private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =
+            (config, builder) -> builder.initialToken(StreamableMessageSource::createHeadToken);
     private static final Function<Class<?>, String> DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION =
             c -> c.getSimpleName() + "Processor";
 
@@ -193,7 +196,6 @@ public class EventProcessingModule
                             TrackingEventProcessorConfiguration::forSingleThreadedProcessing
                     )
             );
-    protected PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration = noOp();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
@@ -334,20 +336,29 @@ public class EventProcessingModule
             SagaConfiguration<?> sagaConfig = sc.initialize(configuration);
             String processingGroup = selectProcessingGroupByType(sagaConfig.type());
             String processorName = processorNameForProcessingGroup(processingGroup);
-            if (noSagaProcessorCustomization(sagaConfig.type(), processingGroup, processorName)) {
+            // The Event Processor type is unknown as it is not build yet, so we check for both TEP or PSEP configs.
+            if (noTepCustomization(processorName)) {
                 registerTrackingEventProcessorConfiguration(processorName, config -> DEFAULT_SAGA_TEP_CONFIG);
             }
+            if (noPsepCustomization(processorName)) {
+                registerPooledStreamingEventProcessorConfiguration(processorName, DEFAULT_SAGA_PSEP_CONFIG);
+            }
+
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
                            .add(c -> sagaConfig.manager());
         });
     }
 
-    private boolean noSagaProcessorCustomization(Class<?> type, String processingGroup, String processorName) {
-        return DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION.apply(type).equals(processingGroup)
-                && processingGroup.equals(processorName)
-                && !eventProcessorBuilders.containsKey(processorName)
+    private boolean noTepCustomization(String processorName) {
+        return !eventProcessorBuilders.containsKey(processorName)
                 && !tepConfigs.containsKey(processorName)
                 && !tepConfigs.containsKey(CONFIGURED_DEFAULT_TEP_CONFIG);
+    }
+
+    private boolean noPsepCustomization(String processorName) {
+        return !eventProcessorBuilders.containsKey(processorName)
+                && !psepConfigs.containsKey(processorName)
+                && !psepConfigs.containsKey(CONFIGURED_DEFAULT_PSEP_CONFIG);
     }
 
     private EventProcessor buildEventProcessor(List<Function<Configuration, EventHandlerInvoker>> builderFunctions,
@@ -863,7 +874,7 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
             PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     ) {
-        this.defaultPooledStreamingProcessorConfiguration = pooledStreamingProcessorConfiguration;
+        this.psepConfigs.put(CONFIGURED_DEFAULT_PSEP_CONFIG, pooledStreamingProcessorConfiguration);
         return this;
     }
 
@@ -980,10 +991,12 @@ public class EventProcessingModule
                                                  return workerExecutor;
                                              })
                                              .spanFactory(config.spanFactory());
-        return defaultPooledStreamingProcessorConfiguration.andThen(psepConfigs.getOrDefault(name, noOp()))
-                                                           .andThen(processorConfiguration)
-                                                           .apply(config, builder)
-                                                           .build();
+
+        return psepConfigs.getOrDefault(CONFIGURED_DEFAULT_PSEP_CONFIG, noOp())
+                          .andThen(psepConfigs.getOrDefault(name, noOp()))
+                          .andThen(processorConfiguration)
+                          .apply(config, builder)
+                          .build();
     }
 
     private ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {

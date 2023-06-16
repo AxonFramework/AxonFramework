@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -673,33 +673,6 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomProcessingGroup(
-            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
-            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
-    ) throws NoSuchFieldException {
-        configurer.eventProcessing()
-                  .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> mockedSource)
-                  .registerSaga(CustomSaga.class);
-        Configuration config = configurer.start();
-
-        Optional<TrackingEventProcessor> resultTep = config.eventProcessingConfiguration().eventProcessor(
-                "my-saga-processing-group", TrackingEventProcessor.class
-        );
-        assertTrue(resultTep.isPresent());
-        TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
-        assertEquals(1, tepSegmentsSize);
-
-        Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(mockedSourceForVerification);
-        // In absence of the default Saga Config, the stream starts at the tail
-        verify(mockedSourceForVerification).createTailToken();
-        verify(mockedSourceForVerification, times(0)).createHeadToken();
-    }
-
-    @Test
     void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomProcessor(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
@@ -806,6 +779,158 @@ class EventProcessingModuleTest {
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
         tepInitialTokenBuilder.apply(mockedSourceForVerification);
+        // In absence of the default Saga Config, the stream starts at the tail
+        verify(mockedSourceForVerification).createTailToken();
+        verify(mockedSourceForVerification, times(0)).createHeadToken();
+    }
+
+    @Test
+    void sagaPooledStreamingProcessorConstructionUsesDefaultSagaProcessorConfigIfNoCustomizationIsPresent(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
+    ) throws NoSuchFieldException {
+        configurer.eventProcessing()
+                  .usingPooledStreamingEventProcessors()
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .registerSaga(Object.class);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> resultPsep =
+                config.eventProcessingConfiguration()
+                      .eventProcessor("ObjectProcessor", PooledStreamingEventProcessor.class);
+        assertTrue(resultPsep.isPresent());
+
+        PooledStreamingEventProcessor psep = resultPsep.get();
+        long tokenClaimInterval =
+                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("tokenClaimInterval"), psep);
+        assertEquals(5000L, tokenClaimInterval);
+
+        Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
+                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
+        initialToken.apply(mockedSourceForVerification);
+        verify(mockedSourceForVerification, times(0)).createTailToken();
+        // The default Saga Config starts the stream at the head
+        verify(mockedSourceForVerification).createHeadToken();
+    }
+
+    @Test
+    void sagaPooledStreamingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomProcessor(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
+    ) throws NoSuchFieldException {
+        configurer.eventProcessing()
+                  .assignProcessingGroup(someGroup -> "custom-processor")
+                  .registerPooledStreamingEventProcessor("custom-processor", config -> mockedSource)
+                  .registerSaga(CustomSaga.class);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> resultPsep =
+                config.eventProcessingConfiguration()
+                      .eventProcessor("custom-processor", PooledStreamingEventProcessor.class);
+        assertTrue(resultPsep.isPresent());
+
+        PooledStreamingEventProcessor psep = resultPsep.get();
+        long tokenClaimInterval =
+                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("tokenClaimInterval"), psep);
+        assertEquals(5000L, tokenClaimInterval);
+
+        Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
+                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
+        initialToken.apply(mockedSourceForVerification);
+        // In absence of the default Saga Config, the stream starts at the tail
+        verify(mockedSourceForVerification).createTailToken();
+        verify(mockedSourceForVerification, times(0)).createHeadToken();
+    }
+
+    @Test
+    void sagaPooledStreamingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomPooledStreamingProcessorBuilder(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
+    ) throws NoSuchFieldException {
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration testPsepConfig =
+                (config, builder) -> builder.maxClaimedSegments(4);
+        configurer.eventProcessing()
+                  .registerPooledStreamingEventProcessor("ObjectProcessor", config -> mockedSource, testPsepConfig)
+                  .registerSaga(Object.class);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> resultPsep =
+                config.eventProcessingConfiguration()
+                      .eventProcessor("ObjectProcessor", PooledStreamingEventProcessor.class);
+        assertTrue(resultPsep.isPresent());
+
+        PooledStreamingEventProcessor psep = resultPsep.get();
+        int maxClaimedSegments =
+                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("maxClaimedSegments"), psep);
+        assertEquals(4, maxClaimedSegments);
+
+        Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
+                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
+        initialToken.apply(mockedSourceForVerification);
+        // In absence of the default Saga Config, the stream starts at the tail
+        verify(mockedSourceForVerification).createTailToken();
+        verify(mockedSourceForVerification, times(0)).createHeadToken();
+    }
+
+    @Test
+    void sagaPooledStreamingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomConfigInstance(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
+    ) throws NoSuchFieldException {
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration testPsepConfig =
+                (config, builder) -> builder.maxClaimedSegments(4);
+        configurer.eventProcessing()
+                  .usingPooledStreamingEventProcessors()
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .registerSaga(Object.class)
+                  .registerPooledStreamingEventProcessorConfiguration("ObjectProcessor", testPsepConfig);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> resultPsep =
+                config.eventProcessingConfiguration()
+                      .eventProcessor("ObjectProcessor", PooledStreamingEventProcessor.class);
+        assertTrue(resultPsep.isPresent());
+
+        PooledStreamingEventProcessor psep = resultPsep.get();
+        int maxClaimedSegments =
+                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("maxClaimedSegments"), psep);
+        assertEquals(4, maxClaimedSegments);
+
+        Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
+                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
+        initialToken.apply(mockedSourceForVerification);
+        // In absence of the default Saga Config, the stream starts at the tail
+        verify(mockedSourceForVerification).createTailToken();
+        verify(mockedSourceForVerification, times(0)).createHeadToken();
+    }
+
+    @Test
+    void sagaPooledStreamingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomDefaultConfig(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
+    ) throws NoSuchFieldException {
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
+                (config, builder) -> builder.maxClaimedSegments(4);
+        configurer.eventProcessing()
+                  .usingPooledStreamingEventProcessors(psepConfig)
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .registerSaga(Object.class);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> resultPsep =
+                config.eventProcessingConfiguration()
+                      .eventProcessor("ObjectProcessor", PooledStreamingEventProcessor.class);
+        assertTrue(resultPsep.isPresent());
+
+        PooledStreamingEventProcessor psep = resultPsep.get();
+        int maxClaimedSegments = getFieldValue(
+                PooledStreamingEventProcessor.class.getDeclaredField("maxClaimedSegments"), psep
+        );
+        assertEquals(4, maxClaimedSegments);
+
+        Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
+                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
+        initialToken.apply(mockedSourceForVerification);
         // In absence of the default Saga Config, the stream starts at the tail
         verify(mockedSourceForVerification).createTailToken();
         verify(mockedSourceForVerification, times(0)).createHeadToken();
