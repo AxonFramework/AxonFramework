@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -144,8 +146,8 @@ public class AxonServerConfiguration {
     private int processorsNotificationInitialDelay = 5000;
 
     /**
-     * An {@link EventCipher} which is used to encrypt and decrypt events and snapshots. Defaults to {@link
-     * EventCipher#EventCipher()}.
+     * An {@link EventCipher} which is used to encrypt and decrypt events and snapshots. Defaults to
+     * {@link EventCipher#EventCipher()}.
      *
      * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
      * connector</a>
@@ -164,8 +166,8 @@ public class AxonServerConfiguration {
     private long keepAliveTime = 1_000;
 
     /**
-     * An {@code int} indicating the maximum number of Aggregate snapshots which will be retrieved. Defaults to {@code
-     * 1}.
+     * An {@code int} indicating the maximum number of Aggregate snapshots which will be retrieved. Defaults to
+     * {@code 1}.
      */
     private int snapshotPrefetch = 1;
 
@@ -229,6 +231,11 @@ public class AxonServerConfiguration {
      * Axon Server.
      */
     private HeartbeatConfiguration heartbeat = new HeartbeatConfiguration();
+
+    /**
+     * Properties describing the settings for {@link org.axonframework.eventhandling.EventProcessor EventProcessors}.
+     */
+    private EventProcessorConfiguration eventProcessorConfiguration = new EventProcessorConfiguration();
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -538,6 +545,25 @@ public class AxonServerConfiguration {
     }
 
     /**
+     * Return the configured {@link EventProcessorConfiguration} of this application for Axon Server.
+     *
+     * @return The configured {@link EventProcessorConfiguration} of this application for Axon Server.
+     */
+    @ConfigurationProperties(prefix = "axon.axonserver.eventhandling")
+    public EventProcessorConfiguration getEventProcessorConfiguration() {
+        return eventProcessorConfiguration;
+    }
+
+    /**
+     * Set the {@link EventProcessorConfiguration} of this application for Axon Server
+     *
+     * @param eventProcessorConfiguration The {@link EventProcessorConfiguration} to set for this application.
+     */
+    public void setEventProcessorConfiguration(EventProcessorConfiguration eventProcessorConfiguration) {
+        this.eventProcessorConfiguration = eventProcessorConfiguration;
+    }
+
+    /**
      * Configuration class for Flow Control of specific message types.
      *
      * @author Gerlo Hesselink
@@ -660,6 +686,89 @@ public class AxonServerConfiguration {
 
         public void setTimeout(long timeout) {
             this.timeout = timeout;
+        }
+    }
+
+    public static class EventProcessorConfiguration {
+
+        /**
+         * The configuration of each of the processors. The key is the name of the processor, the value represents the
+         * settings to use for the processor with that name.
+         */
+        private final Map<String, ProcessorSettings> processors = new HashMap<>();
+
+        /**
+         * Returns the settings for each of the configured processors, by name.
+         *
+         * @return the settings for each of the configured processors, by name.
+         */
+        public Map<String, ProcessorSettings> getProcessors() {
+            return processors;
+        }
+
+        public static class ProcessorSettings {
+
+            /**
+             * Configures the desired load balancing strategy for this event processor.
+             * <p>
+             * The load balancing strategy tells Axon Server how to share the event handling load among all available
+             * application instances running this event processor, by moving segments from one instance to another. Note
+             * that load balancing is <b>only</b> supported for
+             * {@link org.axonframework.eventhandling.StreamingEventProcessor StreamingEventProcessors}, as only
+             * {@code StreamingEventProcessors} are capable of splitting the event handling load in segments.
+             * <p>
+             * As the strategies names may change per Axon Server version it is recommended to check the documentation
+             * for the possible strategies.
+             * <p>
+             * Defaults to {@code "disabled"}.
+             */
+            private String loadBalancingStrategy = "disabled";
+
+            /**
+             * A {@code boolean} dictating whether the configured
+             * {@link #getLoadBalancingStrategy() load balancing strategy} is set to be automatically triggered through
+             * Axon Server.
+             * <p>
+             * Note that this is an Axon Server Enterprise feature only! Defaults to {@code false}.
+             */
+            private boolean automaticBalancing = false;
+
+            /**
+             * Returns the load balancing strategy for this event processor. Defaults to {@code "disabled"}.
+             *
+             * @return The load balancing strategy for this event processor.
+             */
+            public String getLoadBalancingStrategy() {
+                return loadBalancingStrategy;
+            }
+
+            /**
+             * Sets the load balancing strategy for this event processor.
+             *
+             * @param loadBalancingStrategy The load balancing strategy for this event processor.
+             */
+            public void setLoadBalancingStrategy(String loadBalancingStrategy) {
+                this.loadBalancingStrategy = loadBalancingStrategy;
+            }
+
+            /**
+             * Returns whether automatic load balancing is configured, yes or no.
+             *
+             * @return Whether automatic load balancing is configured, yes or no.
+             */
+            public boolean shouldAutomaticallyBalance() {
+                return automaticBalancing;
+            }
+
+            /**
+             * Sets the automatic load balancing strategy to the given {@code automaticBalancing}.
+             *
+             * @param automaticBalancing The {@code boolean} to set as to whether automatic load balancing is enabled or
+             *                           disabled.
+             */
+            public void setAutomaticBalancing(boolean automaticBalancing) {
+                this.automaticBalancing = automaticBalancing;
+            }
         }
     }
 
