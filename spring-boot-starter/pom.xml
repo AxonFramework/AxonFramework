@@ -19,12 +19,12 @@
     <parent>
         <artifactId>axon</artifactId>
         <groupId>org.axonframework</groupId>
-        <version>4.7.6</version>
+        <version>4.7.7-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>axon-spring-boot-starter</artifactId>
-    <version>4.7.6</version>
+    <version>4.7.7-SNAPSHOT</version>
 
     <name>Spring Boot Starter module for Axon Framework</name>
 
