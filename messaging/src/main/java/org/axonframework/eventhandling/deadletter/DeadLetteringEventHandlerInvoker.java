@@ -107,8 +107,7 @@ public class DeadLetteringEventHandlerInvoker
     public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
         if (!super.sequencingPolicyMatchesSegment(message, segment)) {
             logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].",
-                         message.getIdentifier(),
-                         segment);
+                         message.getIdentifier(), segment);
             return;
         }
 
