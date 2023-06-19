@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,9 +90,9 @@ public class RepositoryContentValidator<T> {
      */
     public void assertActiveSagas(int expected) {
         if (expected != sagaStore.size()) {
-            throw new AxonAssertionError(format("Wrong number of active sagas. Expected <%s>, got <%s>.",
-                                                expected,
-                                                sagaStore.size()));
+            throw new AxonAssertionError(format(
+                    "Wrong number of active sagas.\nExpected <%s>,\n but got <%s>.", expected, sagaStore.size()
+            ));
         }
     }
 }
