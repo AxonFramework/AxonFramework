@@ -43,6 +43,7 @@ import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
 
 /**
  * Implementation of an {@link EventHandlerInvoker} utilizing a {@link SequencedDeadLetterQueue} to enqueue
@@ -89,7 +90,8 @@ public class DeadLetteringEventHandlerInvoker
     /**
      * Instantiate a builder to construct a {@link DeadLetteringEventHandlerInvoker}.
      * <p>
-     * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} when invoked, the
+     * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the
+     * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter, the
      * {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
      * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to
      * {@code false}. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, and a
@@ -104,14 +106,16 @@ public class DeadLetteringEventHandlerInvoker
     @Override
     public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
         if (!super.sequencingPolicyMatchesSegment(message, segment)) {
-            logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].", message.getIdentifier(), segment);
+            logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].",
+                         message.getIdentifier(), segment);
             return;
         }
 
         Object sequenceIdentifier = super.sequenceIdentifier(message);
         if (queue.enqueueIfPresent(sequenceIdentifier, () -> new GenericDeadLetter<>(sequenceIdentifier, message))) {
             if (logger.isInfoEnabled()) {
-                logger.info("Event with id [{}] is added to the dead-letter queue since its queue id [{}] is already present.",
+                logger.info("Event with id [{}] is added to the dead-letter queue "
+                                    + "since its queue id [{}] is already present.",
                             message.getIdentifier(), sequenceIdentifier);
             }
         } else {
@@ -164,7 +168,8 @@ public class DeadLetteringEventHandlerInvoker
     /**
      * Builder class to instantiate a {@link DeadLetteringEventHandlerInvoker}.
      * <p>
-     * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} when invoked, the
+     * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the
+     * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter, the
      * {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
      * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to
      * {@code false}. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, and a
@@ -173,7 +178,7 @@ public class DeadLetteringEventHandlerInvoker
     public static class Builder extends SimpleEventHandlerInvoker.Builder<Builder> {
 
         private SequencedDeadLetterQueue<EventMessage<?>> queue;
-        private EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> Decisions.enqueue(cause);
+        private EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> Decisions.enqueue(truncated(cause));
         private TransactionManager transactionManager;
         private boolean allowReset = false;
 
@@ -199,7 +204,8 @@ public class DeadLetteringEventHandlerInvoker
         /**
          * Sets the {@link EnqueuePolicy} this {@link EventHandlerInvoker} uses to decide whether a
          * {@link DeadLetter dead letter} should be added to the {@link SequencedDeadLetterQueue}. Defaults to returning
-         * {@link Decisions#enqueue(Throwable)} when invoked for any dead letter.
+         * {@link Decisions#enqueue(Throwable)} that truncates the {@link Throwable#getMessage()} size to {@code 1024}
+         * characters when invoked for any dead letter.
          *
          * @param enqueuePolicy The {@link EnqueuePolicy} this {@link EventHandlerInvoker} uses to decide whether a
          *                      {@link DeadLetter dead letter} should be added to the {@link SequencedDeadLetterQueue}.
