@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,15 +35,15 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.test.server.AxonServerContainer;
+import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.PullPolicy;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Queue;
@@ -72,24 +72,24 @@ class MessagePriorityIntegrationTest {
     private static final int PRIORITY = 42;
     private static final int REGULAR = 0;
 
-    @SuppressWarnings("resource")
     @Container
-    private static final GenericContainer<?> axonServer =
-            new GenericContainer<>(DockerImageName.parse("axoniq/axonserver"))
-                    .withExposedPorts(HTTP_PORT, GRPC_PORT)
-                    .withEnv("AXONIQ_AXONSERVER_NAME", "axonserver")
-                    .withEnv("AXONIQ_AXONSERVER_HOSTNAME", HOSTNAME)
-                    .withEnv("AXONIQ_AXONSERVER_DEVMODE_ENABLED", "true")
+    private static final AxonServerContainer axonServer =
+            new AxonServerContainer(DockerImageName.parse("axoniq/axonserver:latest-dev"))
+                    .withAxonServerName("axonserver")
+                    .withAxonServerHostname(HOSTNAME)
+                    .withDevMode(true)
                     .withEnv("AXONIQ_AXONSERVER_INSTRUCTION-CACHE-TIMEOUT", "1000")
                     .withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)))
-                    .withNetworkAliases("axonserver")
-                    .withNetwork(Network.newNetwork())
-                    .waitingFor(Wait.forHttp("/actuator/health").forPort(HTTP_PORT))
-                    .waitingFor(Wait.forLogMessage(".*Started AxonServer.*", 1));
+                    .withNetworkAliases("axonserver");
 
     private AxonServerConnectionManager connectionManager;
     private AxonServerCommandBus commandBus;
     private AxonServerQueryBus queryBus;
+
+    @BeforeAll
+    static void beforeAll() throws IOException {
+        AxonServerContainerUtils.initCluster(HOSTNAME, axonServer.getMappedPort(HTTP_PORT));
+    }
 
     @BeforeEach
     void setUp() {
@@ -98,7 +98,6 @@ class MessagePriorityIntegrationTest {
         String server = axonServer.getHost() + ":" + axonServer.getMappedPort(GRPC_PORT);
         AxonServerConfiguration configuration = AxonServerConfiguration.builder()
                                                                        .componentName("messagePriority")
-                                                                       .context("test")
                                                                        .servers(server)
                                                                        .build();
         configuration.setCommandThreads(1);
