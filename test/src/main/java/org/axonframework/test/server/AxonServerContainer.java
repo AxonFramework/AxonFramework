@@ -16,30 +16,34 @@
 
 package org.axonframework.test.server;
 
+import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Constructs a single node AxonServer Enterprise Edition (EE) for testing.
+ * Constructs an Axon Server container for testing.
+ * <p>
+ * By default, it starts in a single-node configuration.
  *
  * @author Lucas Campos
- * @since 4.6.0
- * @deprecated In favor of {@link AxonServerContainer} following the merger of Standard and Enterprise edition into a
- * single version.
+ * @author Steven van Beelen
+ * @author 4.8.0
  */
-@Deprecated
-public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> extends GenericContainer<SELF> {
+public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
 
-    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("axoniq/axonserver-enterprise");
+    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("axoniq/axonserver");
+
     private static final int AXON_SERVER_HTTP_PORT = 8024;
     private static final int AXON_SERVER_GRPC_PORT = 8124;
 
     private static final String WAIT_FOR_LOG_MESSAGE = ".*Started AxonServer.*";
+    private static final String HEALTH_ENDPOINT = "/actuator/health";
 
     private static final String LICENCE_DEFAULT_LOCATION = "/axonserver/config/axoniq.license";
     private static final String CONFIGURATION_DEFAULT_LOCATION = "/axonserver/config/axonserver.properties";
@@ -49,6 +53,7 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
     private static final String AXONIQ_AXONSERVER_NAME = "AXONIQ_AXONSERVER_NAME";
     private static final String AXONIQ_AXONSERVER_INTERNAL_HOSTNAME = "AXONIQ_AXONSERVER_INTERNAL_HOSTNAME";
     private static final String AXONIQ_AXONSERVER_HOSTNAME = "AXONIQ_AXONSERVER_HOSTNAME";
+    private static final String AXONIQ_AXONSERVER_DEVMODE_ENABLED = "AXONIQ_AXONSERVER_DEVMODE_ENABLED";
 
     private static final String AXON_SERVER_ADDRESS_TEMPLATE = "%s:%s";
 
@@ -58,29 +63,32 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
     private String axonServerName;
     private String axonServerInternalHostname;
     private String axonServerHostname;
+    private boolean devMode;
 
     /**
-     * Initialize AxonServer EE with a given docker image.
+     * Initialize Axon Server with the given {@code dockerImageName}.
      *
-     * @param dockerImageName name of the docker image
+     * @param dockerImageName The name of the Docker image to initialize this test container with.
      */
-    public AxonServerEEContainer(final String dockerImageName) {
+    public AxonServerContainer(final String dockerImageName) {
         this(DockerImageName.parse(dockerImageName));
     }
 
     /**
-     * Initialize AxonServer EE with a given docker image.
+     * Initialize Axon Server with the given {@code dockerImageName}.
      *
-     * @param dockerImageName name of the docker image
+     * @param dockerImageName The {@link DockerImageName} to initialize this test container with.
      */
-    public AxonServerEEContainer(final DockerImageName dockerImageName) {
+    public AxonServerContainer(final DockerImageName dockerImageName) {
         super(dockerImageName);
 
         dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME);
 
-        withExposedPorts(AXON_SERVER_HTTP_PORT, AXON_SERVER_GRPC_PORT);
-        waitingFor(Wait.forLogMessage(WAIT_FOR_LOG_MESSAGE, 1));
-        withEnv(AXONIQ_LICENSE, LICENCE_DEFAULT_LOCATION);
+        //noinspection resource | ignore from AutoClosable on GenericContainer
+        withExposedPorts(AXON_SERVER_HTTP_PORT, AXON_SERVER_GRPC_PORT)
+                .withEnv(AXONIQ_LICENSE, LICENCE_DEFAULT_LOCATION)
+                .waitingFor(Wait.forLogMessage(WAIT_FOR_LOG_MESSAGE, 1))
+                .waitingFor(Wait.forHttp(HEALTH_ENDPOINT).forPort(AXON_SERVER_HTTP_PORT));
     }
 
     @Override
@@ -91,18 +99,31 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
         withOptionalEnv(AXONIQ_AXONSERVER_NAME, axonServerName);
         withOptionalEnv(AXONIQ_AXONSERVER_HOSTNAME, axonServerHostname);
         withOptionalEnv(AXONIQ_AXONSERVER_INTERNAL_HOSTNAME, axonServerInternalHostname);
+        //noinspection resource | ignore from AutoClosable on GenericContainer
+        withEnv(AXONIQ_AXONSERVER_DEVMODE_ENABLED, String.valueOf(devMode));
+    }
+
+    @Override
+    protected void doStart() {
+        super.doStart();
+        try {
+            AxonServerContainerUtils.initCluster(getHost(), getHttpPort());
+        } catch (IOException e) {
+            throw new ContainerLaunchException("Axon Server cluster initialization failed.", e);
+        }
     }
 
     /**
-     * Map (effectively replace) directory in Docker with the content of resourceLocation if resource location is not
-     * null
+     * Map (effectively replace) a directory in Docker with the content of {@code resourceLocation} if the resource
+     * location is not {@code null}.
      * <p>
-     * Protected to allow for changing implementation by extending the class
+     * Protected to allow for changing implementation by extending the class.
      *
-     * @param pathNameInContainer path in docker
-     * @param resourceLocation    relative classpath to resource
+     * @param pathNameInContainer The path in docker.
+     * @param resourceLocation    The relative classpath to the resource.
      */
     protected void optionallyCopyResourceToContainer(String pathNameInContainer, String resourceLocation) {
+        //noinspection resource | ignore from AutoClosable on GenericContainer
         Optional.ofNullable(resourceLocation)
                 .map(MountableFile::forClasspathResource)
                 .ifPresent(mountableFile -> withCopyFileToContainer(mountableFile, pathNameInContainer));
@@ -113,93 +134,118 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
      * <p>
      * Protected to allow for changing implementation by extending the class
      *
-     * @param key   environment key value, usually a constant
-     * @param value environment value to be set
+     * @param key   Environment value key, usually a constant.
+     * @param value Environment value to be set.
      */
     protected void withOptionalEnv(String key, String value) {
+        //noinspection resource | ignore from AutoClosable on GenericContainer
         Optional.ofNullable(value)
                 .ifPresent(v -> withEnv(key, value));
     }
 
     /**
-     * Initialize AxonServer EE with a given license.
+     * Initialize this Axon Server test container with a license file retrieved from the given {@code licensePath}.
      *
-     * @param licensePath path to the license file.
-     * @return Container itself for fluent API.
+     * @param licensePath The path to the license file.
+     * @return This container itself for fluent API.
      */
-    public SELF withLicense(String licensePath) {
+    public AxonServerContainer withLicense(String licensePath) {
         this.licensePath = licensePath;
         return self();
     }
 
     /**
-     * Initialize AxonServer EE with a given configuration file.
+     * Initialize this Axon Server test container with a configuration file retrieved from the given
+     * {@code configurationPath}.
      *
-     * @param configurationPath path to the configuration file.
-     * @return Container itself for fluent API.
+     * @param configurationPath The path to the configuration file.
+     * @return This container itself for fluent API.
      */
-    public SELF withConfiguration(String configurationPath) {
+    public AxonServerContainer withConfiguration(String configurationPath) {
         this.configurationPath = configurationPath;
         return self();
     }
 
     /**
-     * Initialize AxonServer EE with a given cluster template configuration file.
+     * Initialize this Axon Server test container with a cluster template configuration file retrieved from the given
+     * {@code clusterTemplatePath}.
      *
-     * @param clusterTemplatePath path to the cluster template file.
-     * @return Container itself for fluent API.
+     * @param clusterTemplatePath The path to the cluster template file.
+     * @return This container itself for fluent API.
      */
-    public SELF withClusterTemplate(String clusterTemplatePath) {
+    public AxonServerContainer withClusterTemplate(String clusterTemplatePath) {
         this.clusterTemplatePath = clusterTemplatePath;
         return self();
     }
 
     /**
-     * Initialize AxonServer EE with a given Axon Server Name.
+     * Initialize this Axon Server test container with the given {@code axonServerName}.
      *
-     * @param axonServerName name of the Axon Server.
-     * @return Container itself for fluent API.
+     * @param axonServerName The name of the Axon Server instance.
+     * @return This container itself for fluent API.
      */
-    public SELF withAxonServerName(String axonServerName) {
+    public AxonServerContainer withAxonServerName(String axonServerName) {
         this.axonServerName = axonServerName;
         return self();
     }
 
     /**
-     * Initialize AxonServer EE with a given Axon Server Internal Hostname.
+     * Initialize this Axon Server test container with the given {@code axonServerInternalHostname}.
      *
-     * @param axonServerInternalHostname internal hostname of the Axon Server.
-     * @return Container itself for fluent API.
+     * @param axonServerInternalHostname The internal hostname of the Axon Server instance.
+     * @return This container itself for fluent API.
      */
-    public SELF withAxonServerInternalHostname(String axonServerInternalHostname) {
+    public AxonServerContainer withAxonServerInternalHostname(String axonServerInternalHostname) {
         this.axonServerInternalHostname = axonServerInternalHostname;
         return self();
     }
 
     /**
-     * Initialize AxonServer EE with a given Axon Server Hostname.
+     * Initialize this Axon Server test container with the given {@code axonServerHostname}.
      *
-     * @param axonServerHostname hostname of the Axon Server.
-     * @return Container itself for fluent API.
+     * @param axonServerHostname The hostname of the Axon Server instance.
+     * @return This container itself for fluent API.
      */
-    public SELF withAxonServerHostname(String axonServerHostname) {
+    public AxonServerContainer withAxonServerHostname(String axonServerHostname) {
         this.axonServerHostname = axonServerHostname;
         return self();
     }
 
     /**
-     * Returns the mapped GRPC port used by this Axon Server container.
+     * Initialize this Axon Server test container with the given {@code devMode}.
+     * <p>
+     * Development mode enables some features for development convenience. Default value is {@code false}.
      *
-     * @return mapped GRPC port.
+     * @param devMode A {@code boolean} dictating whether to enable development mode, yes or no.
+     * @return This container itself for fluent API.
+     */
+    public AxonServerContainer withDevMode(boolean devMode) {
+        this.devMode = devMode;
+        return self();
+    }
+
+    /**
+     * Returns the mapped Http port used by this Axon Server container.
+     *
+     * @return The mapped Http port used by this Axon Server container.
+     */
+    public Integer getHttpPort() {
+        return this.getMappedPort(AXON_SERVER_HTTP_PORT);
+    }
+
+    /**
+     * Returns the mapped gRPC port used by this Axon Server container.
+     *
+     * @return The mapped gRPC port used by this Axon Server container.
      */
     public Integer getGrpcPort() {
         return this.getMappedPort(AXON_SERVER_GRPC_PORT);
     }
 
     /**
-     * Returns the Axon Server's address container in a host:port format.
+     * Returns the container address in a {@code host:port} format.
      *
-     * @return address in host:port format.
+     * @return The container address in a {@code host:port} format.
      */
     public String getAxonServerAddress() {
         return String.format(AXON_SERVER_ADDRESS_TEMPLATE,
@@ -218,13 +264,14 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
         if (!super.equals(o)) {
             return false;
         }
-        AxonServerEEContainer<?> that = (AxonServerEEContainer<?>) o;
+        AxonServerContainer that = (AxonServerContainer) o;
         return Objects.equals(licensePath, that.licensePath)
                 && Objects.equals(configurationPath, that.configurationPath)
                 && Objects.equals(clusterTemplatePath, that.clusterTemplatePath)
                 && Objects.equals(axonServerName, that.axonServerName)
                 && Objects.equals(axonServerInternalHostname, that.axonServerInternalHostname)
-                && Objects.equals(axonServerHostname, that.axonServerHostname);
+                && Objects.equals(axonServerHostname, that.axonServerHostname)
+                && Objects.equals(devMode, that.devMode);
     }
 
     @Override
@@ -235,18 +282,20 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
                             clusterTemplatePath,
                             axonServerName,
                             axonServerInternalHostname,
-                            axonServerHostname);
+                            axonServerHostname,
+                            devMode);
     }
 
     @Override
     public String toString() {
-        return "AxonServerEEContainer{" +
+        return "AxonServerContainer{" +
                 "licensePath='" + licensePath + '\'' +
                 ", configurationPath='" + configurationPath + '\'' +
                 ", clusterTemplatePath='" + clusterTemplatePath + '\'' +
                 ", axonServerName='" + axonServerName + '\'' +
                 ", axonServerInternalHostname='" + axonServerInternalHostname + '\'' +
                 ", axonServerHostname='" + axonServerHostname + '\'' +
+                ", devMode='" + devMode + '\'' +
                 '}';
     }
 }

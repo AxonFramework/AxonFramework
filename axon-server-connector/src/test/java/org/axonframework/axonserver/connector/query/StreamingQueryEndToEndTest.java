@@ -33,6 +33,7 @@ import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -60,6 +61,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 class StreamingQueryEndToEndTest {
 
+    private static final int HTTP_PORT = 8024;
+    private static final int GRPC_PORT = 8124;
+    private static final String HOSTNAME = "localhost";
+
     private static String axonServerAddress;
     private static String nonStreamingAxonServerAddress;
 
@@ -70,37 +75,33 @@ class StreamingQueryEndToEndTest {
     private Registration nonStreamingSubscription;
 
     @Container
-    private static final GenericContainer<?> axonServerContainer =
-            new GenericContainer<>(System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver"))
-                    .withExposedPorts(8024, 8124)
-                    .withEnv("AXONIQ_AXONSERVER_NAME", "axonserver")
-                    .withEnv("AXONIQ_AXONSERVER_HOSTNAME", "localhost")
-                    .withEnv("AXONIQ_AXONSERVER_DEVMODE_ENABLED", "true")
+    private static final AxonServerContainer axonServerContainer =
+            new AxonServerContainer("axoniq/axonserver:latest-dev")
+                    .withAxonServerName("axonserver")
+                    .withAxonServerHostname(HOSTNAME)
+                    .withDevMode(true)
                     .withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)))
                     .withNetwork(Network.newNetwork())
-                    .withNetworkAliases("axonserver")
-                    .waitingFor(Wait.forHttp("/actuator/health").forPort(8024));
+                    .withNetworkAliases("axonserver");
 
+    @SuppressWarnings("resource")
     @Container
     private static final GenericContainer<?> nonStreamingAxonServerContainer =
             new GenericContainer<>(System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver:4.5.10"))
-                    .withExposedPorts(8024, 8124)
+                    .withExposedPorts(HTTP_PORT, GRPC_PORT)
                     .withEnv("AXONIQ_AXONSERVER_NAME", "axonserver")
-                    .withEnv("AXONIQ_AXONSERVER_HOSTNAME", "localhost")
+                    .withEnv("AXONIQ_AXONSERVER_HOSTNAME", HOSTNAME)
                     .withEnv("AXONIQ_AXONSERVER_DEVMODE_ENABLED", "true")
                     .withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)))
                     .withNetwork(Network.newNetwork())
                     .withNetworkAliases("axonserver")
-                    .waitingFor(Wait.forHttp("/actuator/health").forPort(8024));
+                    .waitingFor(Wait.forHttp("/actuator/health").forPort(HTTP_PORT));
 
     @BeforeAll
     static void initialize() {
-        axonServerAddress = axonServerContainer.getHost()
-                + ":" +
-                axonServerContainer.getMappedPort(8124);
+        axonServerAddress = axonServerContainer.getHost() + ":" + axonServerContainer.getGrpcPort();
         nonStreamingAxonServerAddress = nonStreamingAxonServerContainer.getHost()
-                + ":" +
-                nonStreamingAxonServerContainer.getMappedPort(8124);
+                + ":" + nonStreamingAxonServerContainer.getMappedPort(GRPC_PORT);
     }
 
     @BeforeEach
