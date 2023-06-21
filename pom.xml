@@ -586,7 +586,7 @@
                     <localCheckout>true</localCheckout>
                     <mavenExecutorId>forked-path</mavenExecutorId>
                     <pushChanges>false</pushChanges>
-                    <releaseProfiles>release-sign-artifacts, release-javadoc</releaseProfiles>
+                    <releaseProfiles>release-sign-artifacts,release-javadoc</releaseProfiles>
                 </configuration>
             </plugin>
             <plugin>
