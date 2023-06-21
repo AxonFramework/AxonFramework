@@ -231,7 +231,14 @@ public class EventProcessorControlService implements Lifecycle {
         ));
     }
 
-    private Supplier<EventProcessorInfo> infoSupplier(EventProcessor processor) {
+    /**
+     * Constructs an {@link EventProcessorInfo} for the given {@code processor}. Typically results in a
+     * {@link StreamingEventProcessor} or {@link SubscribingEventProcessor} specific instance.
+     *
+     * @param processor The {@link EventProcessor} to construct a {@link EventProcessorInfo} for.
+     * @return A {@link Supplier} of {@link EventProcessorInfo}, based on the given {@code processor}.
+     */
+    protected Supplier<EventProcessorInfo> infoSupplier(EventProcessor processor) {
         if (processor instanceof StreamingEventProcessor) {
             return () -> StreamingEventProcessorInfoMessage.describe((StreamingEventProcessor) processor);
         } else if (processor instanceof SubscribingEventProcessor) {
