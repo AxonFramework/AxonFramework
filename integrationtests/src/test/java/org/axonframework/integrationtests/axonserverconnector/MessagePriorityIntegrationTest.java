@@ -36,14 +36,12 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.testcontainers.images.PullPolicy;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Queue;
@@ -65,7 +63,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 class MessagePriorityIntegrationTest {
 
-    private static final int HTTP_PORT = 8024;
     private static final int GRPC_PORT = 8124;
     private static final String HOSTNAME = "localhost";
 
@@ -86,10 +83,10 @@ class MessagePriorityIntegrationTest {
     private AxonServerCommandBus commandBus;
     private AxonServerQueryBus queryBus;
 
-    @BeforeAll
-    static void beforeAll() throws IOException {
-        AxonServerContainerUtils.initCluster(HOSTNAME, axonServer.getMappedPort(HTTP_PORT));
-    }
+//    @BeforeAll
+//    static void beforeAll() throws IOException {
+//        AxonServerContainerUtils.initCluster(HOSTNAME, axonServer.getMappedPort(HTTP_PORT));
+//    }
 
     @BeforeEach
     void setUp() {

@@ -16,21 +16,20 @@
 
 package org.axonframework.test.server;
 
+import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
  * Constructs an Axon Server container for testing.
  * <p>
- * By default, it starts in a single-node configuration. Note that to be able to utilize the container the cluster needs
- * to be initialized, for which you can use the {@link AxonServerContainerUtils#initCluster(String, int)} operation.
- * Furthermore, there are other tasks present in the {@link AxonServerContainerUtils}, like
- * {@link AxonServerContainerUtils#createContext(String, String, int)}, that can help with testing.
+ * By default, it starts in a single-node configuration.
  *
  * @author Lucas Campos
  * @author Steven van Beelen
@@ -88,7 +87,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
         withExposedPorts(AXON_SERVER_HTTP_PORT, AXON_SERVER_GRPC_PORT)
                 .withEnv(AXONIQ_LICENSE, LICENCE_DEFAULT_LOCATION)
                 .waitingFor(Wait.forLogMessage(WAIT_FOR_LOG_MESSAGE, 1))
-                .waitingFor(Wait.forHttp(HEALTH_ENDPOINT).forPort(8024));
+                .waitingFor(Wait.forHttp(HEALTH_ENDPOINT).forPort(AXON_SERVER_HTTP_PORT));
     }
 
     @Override
@@ -101,6 +100,16 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
         withOptionalEnv(AXONIQ_AXONSERVER_INTERNAL_HOSTNAME, axonServerInternalHostname);
         //noinspection resource | ignore from AutoClosable on GenericContainer
         withEnv(AXONIQ_AXONSERVER_DEVMODE_ENABLED, String.valueOf(devMode));
+    }
+
+    @Override
+    protected void doStart() {
+        super.doStart();
+        try {
+            AxonServerContainerUtils.initCluster(axonServerHostname, getMappedPort(AXON_SERVER_HTTP_PORT));
+        } catch (IOException e) {
+            throw new ContainerLaunchException("Axon Server cluster initialization failed.", e);
+        }
     }
 
     /**

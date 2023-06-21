@@ -34,7 +34,6 @@ import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -47,7 +46,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -100,12 +98,10 @@ class StreamingQueryEndToEndTest {
                     .waitingFor(Wait.forHttp("/actuator/health").forPort(HTTP_PORT));
 
     @BeforeAll
-    static void initialize() throws IOException {
+    static void initialize() {
         axonServerAddress = axonServerContainer.getHost() + ":" + axonServerContainer.getMappedPort(GRPC_PORT);
         nonStreamingAxonServerAddress = nonStreamingAxonServerContainer.getHost()
                 + ":" + nonStreamingAxonServerContainer.getMappedPort(GRPC_PORT);
-
-        AxonServerContainerUtils.initCluster(HOSTNAME, axonServerContainer.getMappedPort(HTTP_PORT));
     }
 
     @BeforeEach
