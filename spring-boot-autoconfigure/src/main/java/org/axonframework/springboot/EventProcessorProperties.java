@@ -330,7 +330,7 @@ public class EventProcessorProperties {
 
         /**
          * Enables creation and configuring a {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}.
-         * Will bu used to configure the {@code registerDeadLetterQueueProvider} such that only groups set to enabled
+         * Will be used to configure the {@code registerDeadLetterQueueProvider} such that only groups set to enabled
          * will have a sequenced dead letter queue. Defaults to "false".
          */
         private boolean enabled = false;

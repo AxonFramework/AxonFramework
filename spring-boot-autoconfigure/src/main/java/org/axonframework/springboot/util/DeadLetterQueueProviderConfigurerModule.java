@@ -34,9 +34,8 @@ import javax.annotation.Nonnull;
  * <p>
  * Does so through invoking the
  * {@link org.axonframework.config.EventProcessingConfigurer#registerDeadLetterQueueProvider(Function)} operation,
- * utilizing the given {@code deadLetterQueueProvider}. Only processing groups for which the
- * {@link EventProcessorProperties.Dlq#isEnabled() dead-letter queue is enabled} will receive the provided dead-letter
- * queue.
+ * utilizing the given {@code deadLetterQueueProvider}. Only processing groups for which the dead-letter queue is
+ * {@link EventProcessorProperties.Dlq#isEnabled() enabled} will receive the provided dead-letter queue.
  *
  * @author Gerard Klijs
  * @author Steven van Beelen
@@ -52,8 +51,8 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
      * decide which processing groups receive the {@link SequencedDeadLetterQueue} from the given
      * {@code deadLetterQueueProvider}.
      *
-     * @param eventProcessorProperties The properties dictating for which processing groups the
-     *                                 {@link EventProcessorProperties.Dlq#isEnabled() dead-letter queue is enabled}.
+     * @param eventProcessorProperties The properties dictating for which processing groups the dead-letter queue is
+     *                                 {@link EventProcessorProperties.Dlq#isEnabled() enabled}.
      * @param deadLetterQueueProvider  The function providing the {@link SequencedDeadLetterQueue}.
      */
     public DeadLetterQueueProviderConfigurerModule(
