@@ -582,11 +582,10 @@
                 <artifactId>maven-release-plugin</artifactId>
                 <version>3.0.1</version>
                 <configuration>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <localCheckout>true</localCheckout>
                     <mavenExecutorId>forked-path</mavenExecutorId>
+                    <localCheckout>true</localCheckout>
                     <pushChanges>false</pushChanges>
-                    <releaseProfiles>release-sign-artifacts,release-javadoc</releaseProfiles>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
                 </configuration>
             </plugin>
             <plugin>
@@ -665,6 +664,12 @@
     <profiles>
         <profile>
             <id>release-sign-artifacts</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -812,7 +817,14 @@
         </profile>
 
         <profile>
-            <id>release-javadoc</id>
+            <id>javadoc</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+
             <build>
                 <plugins>
                     <plugin>
