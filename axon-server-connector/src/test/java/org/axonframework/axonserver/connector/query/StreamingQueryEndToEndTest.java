@@ -99,7 +99,7 @@ class StreamingQueryEndToEndTest {
 
     @BeforeAll
     static void initialize() {
-        axonServerAddress = axonServerContainer.getHost() + ":" + axonServerContainer.getMappedPort(GRPC_PORT);
+        axonServerAddress = axonServerContainer.getHost() + ":" + axonServerContainer.getGrpcPort();
         nonStreamingAxonServerAddress = nonStreamingAxonServerContainer.getHost()
                 + ":" + nonStreamingAxonServerContainer.getMappedPort(GRPC_PORT);
     }

@@ -38,6 +38,7 @@ import java.util.Optional;
 public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
 
     private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("axoniq/axonserver");
+
     private static final int AXON_SERVER_HTTP_PORT = 8024;
     private static final int AXON_SERVER_GRPC_PORT = 8124;
 
@@ -106,7 +107,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
     protected void doStart() {
         super.doStart();
         try {
-            AxonServerContainerUtils.initCluster(axonServerHostname, getMappedPort(AXON_SERVER_HTTP_PORT));
+            AxonServerContainerUtils.initCluster(getHost(), getHttpPort());
         } catch (IOException e) {
             throw new ContainerLaunchException("Axon Server cluster initialization failed.", e);
         }
@@ -224,9 +225,18 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
     }
 
     /**
-     * Returns the mapped GRPC port used by this Axon Server container.
+     * Returns the mapped Http port used by this Axon Server container.
      *
-     * @return The mapped GRPC port used by this Axon Server container.
+     * @return The mapped Http port used by this Axon Server container.
+     */
+    public Integer getHttpPort() {
+        return this.getMappedPort(AXON_SERVER_HTTP_PORT);
+    }
+
+    /**
+     * Returns the mapped gRPC port used by this Axon Server container.
+     *
+     * @return The mapped gRPC port used by this Axon Server container.
      */
     public Integer getGrpcPort() {
         return this.getMappedPort(AXON_SERVER_GRPC_PORT);

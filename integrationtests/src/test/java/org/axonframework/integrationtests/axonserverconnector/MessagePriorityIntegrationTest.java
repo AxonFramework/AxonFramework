@@ -63,7 +63,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 class MessagePriorityIntegrationTest {
 
-    private static final int GRPC_PORT = 8124;
     private static final String HOSTNAME = "localhost";
 
     private static final int PRIORITY = 42;
@@ -83,16 +82,11 @@ class MessagePriorityIntegrationTest {
     private AxonServerCommandBus commandBus;
     private AxonServerQueryBus queryBus;
 
-//    @BeforeAll
-//    static void beforeAll() throws IOException {
-//        AxonServerContainerUtils.initCluster(HOSTNAME, axonServer.getMappedPort(HTTP_PORT));
-//    }
-
     @BeforeEach
     void setUp() {
         Serializer serializer = JacksonSerializer.defaultSerializer();
 
-        String server = axonServer.getHost() + ":" + axonServer.getMappedPort(GRPC_PORT);
+        String server = axonServer.getHost() + ":" + axonServer.getGrpcPort();
         AxonServerConfiguration configuration = AxonServerConfiguration.builder()
                                                                        .componentName("messagePriority")
                                                                        .servers(server)

@@ -44,37 +44,6 @@ import java.util.function.Predicate;
 class AxonServerContainerUtils {
 
     /**
-     * Retrieves all the contexts of the Axon Server instance located at the given {@code hostname} and {@code port}
-     * combination.
-     *
-     * @param hostname The hostname of the Axon Server instance to create the given {@code context} of.
-     * @param port     The port of the Axon Server instance to create the given {@code context} of.
-     * @return All the contexts of the Axon Server instances located at the given {@code hostname} and {@code port}
-     * combination.
-     * @throws IOException When there are issues with the HTTP connection to the Axon Server instance at the given
-     *                     {@code hostname} and {@code port}.
-     */
-    static List<String> contexts(String hostname, int port) throws IOException {
-        final URL url = new URL(String.format("http://%s:%d/v1/public/context", hostname, port));
-        HttpURLConnection connection = null;
-        try {
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestProperty("Accept", "application/json");
-            connection.setDoOutput(true);
-            connection.setRequestMethod("GET");
-
-            int responseCode = connection.getResponseCode();
-            Assert.isTrue(200 == responseCode, () -> "The response code [" + responseCode + "] did not match 200.");
-
-            return contexts(connection);
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-    }
-
-    /**
      * Initialize the cluster of the Axon Server instance located at the given {@code hostname} and {@code port}
      * combination.
      * <p>
@@ -105,6 +74,37 @@ class AxonServerContainerUtils {
                 hostname, port,
                 contexts -> contexts.contains("_admin") && contexts.contains("default")
         );
+    }
+
+    /**
+     * Retrieves all the contexts of the Axon Server instance located at the given {@code hostname} and {@code port}
+     * combination.
+     *
+     * @param hostname The hostname of the Axon Server instance to create the given {@code context} of.
+     * @param port     The port of the Axon Server instance to create the given {@code context} of.
+     * @return All the contexts of the Axon Server instances located at the given {@code hostname} and {@code port}
+     * combination.
+     * @throws IOException When there are issues with the HTTP connection to the Axon Server instance at the given
+     *                     {@code hostname} and {@code port}.
+     */
+    static List<String> contexts(String hostname, int port) throws IOException {
+        final URL url = new URL(String.format("http://%s:%d/v1/public/context", hostname, port));
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setDoOutput(true);
+            connection.setRequestMethod("GET");
+
+            int responseCode = connection.getResponseCode();
+            Assert.isTrue(200 == responseCode, () -> "The response code [" + responseCode + "] did not match 200.");
+
+            return contexts(connection);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
     }
 
     private static List<String> contexts(HttpURLConnection connection) throws IOException {
