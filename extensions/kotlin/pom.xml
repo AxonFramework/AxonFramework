@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2022. Axon Framework
+  ~ Copyright (c) 2010-2023. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -351,7 +351,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-release-plugin</artifactId>
-          <version>3.0.1</version>
+          <version>2.5.3</version>
           <configuration>
             <mavenExecutorId>forked-path</mavenExecutorId>
             <localCheckout>true</localCheckout>
