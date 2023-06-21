@@ -27,8 +27,10 @@ import java.util.Optional;
 /**
  * Constructs an Axon Server container for testing.
  * <p>
- * By default, it starts in a single-node configuration. Note that to be able to utilize the container, the cluster
- * needs to be initialized.
+ * By default, it starts in a single-node configuration. Note that to be able to utilize the container the cluster needs
+ * to be initialized, for which you can use the {@link AxonServerContainerUtils#initCluster(String, int)} operation.
+ * Furthermore, there are other tasks present in the {@link AxonServerContainerUtils}, like
+ * {@link AxonServerContainerUtils#createContext(String, String, int)}, that can help with testing.
  *
  * @author Lucas Campos
  * @author Steven van Beelen
