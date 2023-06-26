@@ -6,7 +6,7 @@ recipeList:
   - org.openrewrite.maven.UpgradeDependencyVersion:
       groupId: org.axonframework
       artifactId: "*"
-      newVersion: 4.x
+      newVersion: 4.7.x
   # Move all classes from org.axonframework.common.jpa to org.axonframework.common.legacyjpa
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.axonframework.common.jpa
