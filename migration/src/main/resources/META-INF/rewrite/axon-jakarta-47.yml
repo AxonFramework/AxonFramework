@@ -6,7 +6,7 @@ recipeList:
   - org.openrewrite.maven.UpgradeDependencyVersion:
       groupId: org.axonframework
       artifactId: "*"
-      newVersion: 4.x
+      newVersion: 4.7.x
   # Include the Jakarta migration recipe
   - org.openrewrite.java.migrate.jakarta.JavaxMigrationToJakarta
   # Swap 4.6 dependencies for 4.7 dependencies
