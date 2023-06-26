@@ -37,7 +37,7 @@
       ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
     </sonar.coverage.jacoco.xmlReportPaths>
 
-    <axon.version>4.7.0</axon.version>
+    <axon.version>4.8.0</axon.version>
     <kotlin.version>1.7.20</kotlin.version>
     <jackson-kotlin.version>2.14.1</jackson-kotlin.version>
     <kotlin-logging.version>3.0.5</kotlin-logging.version>
