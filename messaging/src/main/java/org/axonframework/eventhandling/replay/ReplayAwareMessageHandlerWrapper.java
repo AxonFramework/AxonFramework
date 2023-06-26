@@ -19,14 +19,16 @@ package org.axonframework.eventhandling.replay;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.AllowReplay;
 import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Member;
 import java.util.Map;
-import javax.annotation.Nonnull;
+import java.util.Optional;
 
 import static java.util.Collections.singletonMap;
 
@@ -59,6 +61,10 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
     }
 
     private static class ReplayBlockingMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> {
+
+        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+        public static final Optional<Boolean> NO_REPLAY = Optional.of(Boolean.FALSE);
+
         public ReplayBlockingMessageHandlingMember(MessageHandlingMember<T> original) {
             super(original);
         }
@@ -69,6 +75,15 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
                 return null;
             }
             return super.handle(message, target);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <R> Optional<R> attribute(String attributeKey) {
+            if (HandlerAttributes.ALLOW_REPLAY.equals(attributeKey)) {
+                return (Optional<R>) NO_REPLAY;
+            }
+            return super.attribute(attributeKey);
         }
     }
 }
