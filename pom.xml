@@ -143,7 +143,7 @@
         <maven-assembly.version>3.6.0</maven-assembly.version>
         <maven-clean.version>3.3.1</maven-clean.version>
         <maven-compiler.version>3.11.0</maven-compiler.version>
-        <maven-deploy.version>3.0.0</maven-deploy.version>
+        <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.3.0</maven-enforcer.version>
         <maven-failsafe.version>3.1.2</maven-failsafe.version>
         <maven-gpg.version>3.1.0</maven-gpg.version>
