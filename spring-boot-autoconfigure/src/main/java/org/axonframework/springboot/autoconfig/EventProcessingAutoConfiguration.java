@@ -35,7 +35,8 @@ import org.springframework.context.annotation.Bean;
         "org.axonframework.springboot.autoconfig.JpaAutoConfiguration",
         "org.axonframework.springboot.autoconfig.JdbcAutoConfiguration",
         "org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration",
-        "org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration"
+        "org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration",
+        "org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration",
 })
 public class EventProcessingAutoConfiguration {
 

@@ -16,6 +16,7 @@ org.axonframework.springboot.autoconfig.MetricsAutoConfiguration
 org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration
 org.axonframework.springboot.autoconfig.NoOpTransactionAutoConfiguration
 org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration
+org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration
 org.axonframework.springboot.autoconfig.OpenTelemetryAutoConfiguration
 org.axonframework.springboot.autoconfig.TransactionAutoConfiguration
 org.axonframework.springboot.autoconfig.XStreamAutoConfiguration
