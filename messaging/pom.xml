@@ -67,12 +67,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-cbor</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Event Handling -->
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
