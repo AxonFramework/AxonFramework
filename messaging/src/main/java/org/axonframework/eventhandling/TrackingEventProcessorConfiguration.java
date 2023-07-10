@@ -47,7 +47,7 @@ public class TrackingEventProcessorConfiguration {
     private final int maxThreadCount;
     private int batchSize;
     private int initialSegmentCount;
-    private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder = StreamableMessageSource::createTailToken;
+    private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
     private Function<String, ThreadFactory> threadFactory;
     private long tokenClaimInterval;
     private int eventAvailabilityTimeout = 1000;
@@ -84,6 +84,7 @@ public class TrackingEventProcessorConfiguration {
         this.tokenClaimInterval = DEFAULT_TOKEN_CLAIM_INTERVAL;
         this.autoStart = true;
         this.workerTerminationTimeout = DEFAULT_WORKER_TERMINATION_TIMEOUT_MS;
+        this.initialTrackingTokenBuilder = messageSource -> ReplayToken.createReplayToken(messageSource.createTailToken());
     }
 
     /**
