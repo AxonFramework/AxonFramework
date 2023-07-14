@@ -470,7 +470,7 @@ public class JdbcTokenStore implements TokenStore {
                                        int segment, boolean forUpdate) throws SQLException {
         final String sql = "SELECT " +
                 String.join(", ", schema.processorNameColumn(), schema.segmentColumn(), schema.tokenColumn(),
-                            schema.tokenTypeColumn(), schema.timestampColumn(), schema.ownerColum()) + " FROM " +
+                            schema.tokenTypeColumn(), schema.timestampColumn(), schema.ownerColumn()) + " FROM " +
                 schema.tokenTable() + " WHERE " + schema.processorNameColumn() + " = ? AND " + schema.segmentColumn() +
                 " = ? " + (forUpdate ? "FOR UPDATE" : "");
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -493,7 +493,7 @@ public class JdbcTokenStore implements TokenStore {
      */
     protected void updateToken(Connection connection, ResultSet resultSet, TrackingToken token, String processorName,
                                int segment) throws SQLException {
-        final String sql = "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColum() + " = ?, " +
+        final String sql = "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColumn() + " = ?, " +
                 schema.tokenColumn() + " = ?, " + schema.tokenTypeColumn() + " = ?, " + schema.timestampColumn() +
                 " = ? WHERE " + schema.processorNameColumn() + " = ? AND " + schema.segmentColumn() + " = ?";
         if (resultSet.next()) {
@@ -536,7 +536,7 @@ public class JdbcTokenStore implements TokenStore {
      * @throws SQLException                when an exception occurs while claiming the token entry
      */
     protected TrackingToken claimToken(Connection connection, AbstractTokenEntry<?> entry) throws SQLException {
-        final String sql = "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColum() + " = ?, " +
+        final String sql = "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColumn() + " = ?, " +
                 schema.timestampColumn() + " = ? WHERE " + schema.processorNameColumn() + " = ? AND " +
                 schema.segmentColumn() + " = ?";
         if (!entry.claim(nodeId, claimTimeout)) {
@@ -641,12 +641,12 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
-     * Returns a {@link PreparedStatement} for the count of segments that can be found after searching for the {@code splitSegmentId} and {@code mergableSegmetnId}.
+     * Returns a {@link PreparedStatement} for the count of segments that can be found after searching for the {@code splitSegmentId} and {@code mergeableSegmentId}.
      *
      * @param connection    the connection to the underlying database
      * @param processorName the name of the processor to load or insert a token entry for
      * @param splitSegmentId the id of the split candidate segment
-     * @param mergeableSegmentId the id of the merge candiate segment
+     * @param mergeableSegmentId the id of the merge candidate segment
      * @return The PreparedStatement to execute
      * @throws SQLException when an Exception occurs in building the {@link PreparedStatement}
      */
@@ -700,7 +700,7 @@ public class JdbcTokenStore implements TokenStore {
                                              int segment) throws SQLException {
         final String sql = "INSERT INTO " + schema.tokenTable() + " (" + schema.processorNameColumn() + "," +
                 schema.segmentColumn() + "," + schema.timestampColumn() + "," + schema.tokenColumn() + "," +
-                schema.tokenTypeColumn() + "," + schema.ownerColum() + ") VALUES (?,?,?,?,?,?)";
+                schema.tokenTypeColumn() + "," + schema.ownerColumn() + ") VALUES (?,?,?,?,?,?)";
         AbstractTokenEntry<?> entry = new GenericTokenEntry<>(token, serializer, contentType, processorName, segment);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -727,7 +727,7 @@ public class JdbcTokenStore implements TokenStore {
         return new GenericTokenEntry<>(readSerializedData(resultSet, schema.tokenColumn()),
                                        resultSet.getString(schema.tokenTypeColumn()),
                                        resultSet.getString(schema.timestampColumn()),
-                                       resultSet.getString(schema.ownerColum()),
+                                       resultSet.getString(schema.ownerColumn()),
                                        resultSet.getString(schema.processorNameColumn()),
                                        resultSet.getInt(schema.segmentColumn()), contentType);
     }
@@ -745,9 +745,9 @@ public class JdbcTokenStore implements TokenStore {
     protected PreparedStatement releaseClaim(Connection connection, String processorName,
                                              int segment) throws SQLException {
         final String sql =
-                "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColum() + " = ?, " + schema.timestampColumn() +
+                "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColumn() + " = ?, " + schema.timestampColumn() +
                         " = ? WHERE " + schema.processorNameColumn() + " = ? AND " + schema.segmentColumn() +
-                        " = ? AND " + schema.ownerColum() + " = ?";
+                        " = ? AND " + schema.ownerColumn() + " = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, null);
         preparedStatement.setString(2, formatInstant(AbstractTokenEntry.clock.instant()));
@@ -772,7 +772,7 @@ public class JdbcTokenStore implements TokenStore {
         final String sql =
                 "DELETE FROM " + schema.tokenTable() +
                         " WHERE " + schema.processorNameColumn() + " = ? AND " + schema.segmentColumn() +
-                        " = ? AND " + schema.ownerColum() + " = ?";
+                        " = ? AND " + schema.ownerColumn() + " = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, processorName);
         preparedStatement.setInt(2, segment);
