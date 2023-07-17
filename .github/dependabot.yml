@@ -8,7 +8,7 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-  milestone: 82
+  milestone: 94
   reviewers:
     - "gklijs"
     - "Morlack"
@@ -21,7 +21,7 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-  milestone: 82
+  milestone: 94
   reviewers:
     - "gklijs"
     - "Morlack"

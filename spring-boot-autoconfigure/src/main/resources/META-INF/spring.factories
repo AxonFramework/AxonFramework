@@ -6,10 +6,8 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.springboot.autoconfig.AxonJobRunrAutoConfiguration,\
   org.axonframework.springboot.autoconfig.AxonDbSchedulerAutoConfiguration,\
   org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration,\
-  org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxDeadLetterProviderAutoConfiguration,\
   org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxEventStoreAutoConfiguration,\
   org.axonframework.springboot.autoconfig.JpaAutoConfiguration,\
-    org.axonframework.springboot.autoconfig.JpaDeadLetterProviderAutoConfiguration,\
   org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration,\
   org.axonframework.springboot.autoconfig.JdbcAutoConfiguration,\
   org.axonframework.springboot.autoconfig.TransactionAutoConfiguration,\

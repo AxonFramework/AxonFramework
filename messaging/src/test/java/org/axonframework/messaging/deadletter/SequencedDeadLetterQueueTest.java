@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -594,9 +594,14 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertTrue(result);
         Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
 
-        assertLetter(firstTestLetter, resultSequence.pollFirst());
+        DeadLetter<? extends M> resultLetter = resultSequence.pollFirst();
+        assertNotNull(resultLetter);
+        assertLetter(firstTestLetter, resultLetter);
+
         for (int i = 0; i < loopSize; i++) {
-            assertLetter(expectedOrderList.get(i), resultSequence.pollFirst());
+            resultLetter = resultSequence.pollFirst();
+            assertNotNull(resultLetter);
+            assertLetter(expectedOrderList.get(i), resultLetter);
         }
     }
 
@@ -951,10 +956,15 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * @return A {@link DeadLetter} implementation expected by the test subject based on the given {@code original}
      * that's requeued.
      */
-    protected abstract DeadLetter<M> generateRequeuedLetter(DeadLetter<M> original,
-                                                            Instant lastTouched,
-                                                            Throwable requeueCause,
-                                                            MetaData diagnostics);
+    protected DeadLetter<M> generateRequeuedLetter(DeadLetter<M> original,
+                                                   Instant lastTouched,
+                                                   Throwable requeueCause,
+                                                   MetaData diagnostics) {
+        setAndGetTime(lastTouched);
+        return original.withCause(requeueCause)
+                       .withDiagnostics(diagnostics)
+                       .markTouched();
+    }
 
     /**
      * Set the current time for testing to {@link Instant#now()} and return this {@code Instant}.

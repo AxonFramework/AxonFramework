@@ -1025,7 +1025,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                               "indicate that a wrong aggregate is being triggered.");
                           } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
                               throw new EventStoreException(format("Unexpected sequence number on stored event. " +
-                                                                           "Expected %s, but got %s.",
+                                                                           "Expected %s, \n but got %s.",
                                                                    lastEvent.getSequenceNumber() + 1,
                                                                    event.getSequenceNumber()));
                           }

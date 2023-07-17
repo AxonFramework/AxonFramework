@@ -81,6 +81,8 @@ public class DeadLetterEntry {
     private Instant processingStarted;
 
     private String causeType;
+    @Column(length = 1023)
+    @javax.persistence.Column(length = 1023)
     private String causeMessage;
 
     @Basic
@@ -90,7 +92,6 @@ public class DeadLetterEntry {
     @javax.persistence.Lob
     @javax.persistence.Column(length = 10000)
     private byte[] diagnostics;
-
 
     /**
      * Constructor required by JPA. Do not use.

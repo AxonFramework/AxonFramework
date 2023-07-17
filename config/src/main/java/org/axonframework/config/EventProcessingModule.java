@@ -50,6 +50,7 @@ import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -66,6 +67,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -94,6 +96,9 @@ public class EventProcessingModule
             TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
     private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
             DEFAULT_TEP_CONFIG.andInitialTrackingToken(StreamableMessageSource::createHeadToken);
+    private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
+    private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =
+            (config, builder) -> builder.initialToken(StreamableMessageSource::createHeadToken);
     private static final Function<Class<?>, String> DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION =
             c -> c.getSimpleName() + "Processor";
 
@@ -107,7 +112,7 @@ public class EventProcessingModule
             TypeProcessingGroupSelector.defaultSelector(DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION);
     private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(EventProcessingModule::packageOfObject);
 
-    private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
+    private final Map<String, SagaConfigurer<?>> sagaConfigurations = new HashMap<>();
     private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
     private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
 
@@ -129,9 +134,9 @@ public class EventProcessingModule
     protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
-
     protected Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     protected Configuration configuration;
 
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
@@ -170,9 +175,10 @@ public class EventProcessingModule
     );
     @SuppressWarnings({"unchecked", "rawtypes"})
     private final Component<EnqueuePolicy<EventMessage<?>>> defaultDeadLetterPolicy = new Component<>(
-            () -> configuration,
-            "deadLetterPolicy",
-            c -> c.getComponent(EnqueuePolicy.class, () -> (letter, cause) -> Decisions.enqueue(cause))
+            () -> configuration, "deadLetterPolicy",
+            c -> c.getComponent(EnqueuePolicy.class,
+                                () -> (letter, cause) -> Decisions.enqueue(ThrowableCause.truncated(cause))
+            )
     );
     @SuppressWarnings("unchecked")
     private final Component<StreamableMessageSource<TrackedEventMessage<?>>> defaultStreamableSource =
@@ -196,7 +202,6 @@ public class EventProcessingModule
                             TrackingEventProcessorConfiguration::forSingleThreadedProcessing
                     )
             );
-    protected PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration = noOp();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
@@ -212,7 +217,15 @@ public class EventProcessingModule
      * processors have already been initialized, this method does nothing.
      */
     private void initializeProcessors() {
-        if (eventProcessors.isEmpty()) {
+        if (initialized.get()) {
+            return;
+        }
+
+        synchronized (initialized) {
+            if (initialized.get()) {
+                return;
+            }
+
             instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
 
             Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
@@ -220,12 +233,14 @@ public class EventProcessingModule
             registerSagaManagers(handlerInvokers);
 
             handlerInvokers.forEach((processorName, invokers) -> {
-                Component<EventProcessor> eventProcessorComponent =
-                        new Component<>(configuration, processorName, c -> buildEventProcessor(invokers, processorName));
+                Component<EventProcessor> eventProcessorComponent = new Component<>(
+                        configuration, processorName, c -> buildEventProcessor(invokers, processorName)
+                );
                 eventProcessors.put(processorName, eventProcessorComponent);
             });
 
             eventProcessors.values().forEach(Component::get);
+            initialized.set(true);
         }
     }
 
@@ -343,24 +358,33 @@ public class EventProcessingModule
     }
 
     private void registerSagaManagers(Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
-        sagaConfigurations.forEach(sc -> {
+        sagaConfigurations.values().forEach(sc -> {
             SagaConfiguration<?> sagaConfig = sc.initialize(configuration);
             String processingGroup = selectProcessingGroupByType(sagaConfig.type());
             String processorName = processorNameForProcessingGroup(processingGroup);
-            if (noSagaProcessorCustomization(sagaConfig.type(), processingGroup, processorName)) {
+            // The Event Processor type is unknown as it is not build yet, so we check for both TEP or PSEP configs.
+            if (noTepCustomization(processorName)) {
                 registerTrackingEventProcessorConfiguration(processorName, config -> DEFAULT_SAGA_TEP_CONFIG);
             }
+            if (noPsepCustomization(processorName)) {
+                registerPooledStreamingEventProcessorConfiguration(processorName, DEFAULT_SAGA_PSEP_CONFIG);
+            }
+
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
                            .add(c -> sagaConfig.manager());
         });
     }
 
-    private boolean noSagaProcessorCustomization(Class<?> type, String processingGroup, String processorName) {
-        return DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION.apply(type).equals(processingGroup)
-                && processingGroup.equals(processorName)
-                && !eventProcessorBuilders.containsKey(processorName)
+    private boolean noTepCustomization(String processorName) {
+        return !eventProcessorBuilders.containsKey(processorName)
                 && !tepConfigs.containsKey(processorName)
                 && !tepConfigs.containsKey(CONFIGURED_DEFAULT_TEP_CONFIG);
+    }
+
+    private boolean noPsepCustomization(String processorName) {
+        return !eventProcessorBuilders.containsKey(processorName)
+                && !psepConfigs.containsKey(processorName)
+                && !psepConfigs.containsKey(CONFIGURED_DEFAULT_PSEP_CONFIG);
     }
 
     private EventProcessor buildEventProcessor(List<Function<Configuration, EventHandlerInvoker>> builderFunctions,
@@ -466,7 +490,8 @@ public class EventProcessingModule
     @Override
     public List<SagaConfiguration<?>> sagaConfigurations() {
         validateConfigInitialization();
-        return sagaConfigurations.stream().map(sc -> sc.initialize(configuration)).collect(Collectors.toList());
+        return sagaConfigurations.values().stream().map(sc -> sc.initialize(configuration))
+                                 .collect(Collectors.toList());
     }
 
     private String processorNameForProcessingGroup(String processingGroup) {
@@ -543,7 +568,7 @@ public class EventProcessingModule
     public <T> EventProcessingConfigurer registerSaga(Class<T> sagaType, Consumer<SagaConfigurer<T>> sagaConfigurer) {
         SagaConfigurer<T> configurer = SagaConfigurer.forType(sagaType);
         sagaConfigurer.accept(configurer);
-        this.sagaConfigurations.add(configurer);
+        this.sagaConfigurations.put(sagaType.getName(), configurer);
         return this;
     }
 
@@ -882,7 +907,7 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
             PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     ) {
-        this.defaultPooledStreamingProcessorConfiguration = pooledStreamingProcessorConfiguration;
+        this.psepConfigs.put(CONFIGURED_DEFAULT_PSEP_CONFIG, pooledStreamingProcessorConfiguration);
         return this;
     }
 
@@ -1006,10 +1031,12 @@ public class EventProcessingModule
                                                  return workerExecutor;
                                              })
                                              .spanFactory(config.spanFactory());
-        return defaultPooledStreamingProcessorConfiguration.andThen(psepConfigs.getOrDefault(name, noOp()))
-                                                           .andThen(processorConfiguration)
-                                                           .apply(config, builder)
-                                                           .build();
+
+        return psepConfigs.getOrDefault(CONFIGURED_DEFAULT_PSEP_CONFIG, noOp())
+                          .andThen(psepConfigs.getOrDefault(name, noOp()))
+                          .andThen(processorConfiguration)
+                          .apply(config, builder)
+                          .build();
     }
 
     private ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {

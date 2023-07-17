@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static org.axonframework.test.saga.DescriptionUtils.describe;
  */
 public class EventValidator implements EventMessageHandler {
 
-    private final List<EventMessage> publishedEvents = new ArrayList<>();
+    private final List<EventMessage<?>> publishedEvents = new ArrayList<>();
     private final EventBus eventBus;
     private final FieldFilter fieldFilter;
     private boolean recording = false;
@@ -66,7 +66,7 @@ public class EventValidator implements EventMessageHandler {
             StringDescription actualDescription = new StringDescription();
             matcher.describeTo(expectedDescription);
             describe(publishedEvents, actualDescription);
-            throw new AxonAssertionError(format("Published events did not match.\nExpected:\n<%s>\n\nGot:\n<%s>\n",
+            throw new AxonAssertionError(format("Published events did not match.\nExpected <%s>,\n but got <%s>\n",
                                                 expectedDescription, actualDescription));
         }
     }
@@ -79,16 +79,16 @@ public class EventValidator implements EventMessageHandler {
     public void assertPublishedEvents(Object... expected) {
         if (publishedEvents.size() != expected.length) {
             throw new AxonAssertionError(format(
-                    "Got wrong number of events published. Expected <%s>, got <%s>",
-                    expected.length,
-                    publishedEvents.size()));
+                    "Got wrong number of events published.\nExpected <%s>,\n but got <%s>.",
+                    expected.length, publishedEvents.size()
+            ));
         }
 
         assertPublishedEventsMatching(payloadsMatching(exactSequenceOf(createEqualToMatchers(expected))));
     }
 
     @Override
-    public Object handle(EventMessage event) {
+    public Object handle(EventMessage<?> event) {
         publishedEvents.add(event);
         return null;
     }

@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.0</version>
+        <version>3.1.1</version>
         <relativePath/>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -32,14 +32,15 @@
     <description>
         Module containing integration tests using Spring Boot 3. Does not contain any production code.
     </description>
-    <version>4.8.0-SNAPSHOT</version>
+    <version>4.9.0-SNAPSHOT</version>
 
     <properties>
-        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
-        <jobrunr.version>6.2.1</jobrunr.version>
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
-        <jacoco.version>0.8.8</jacoco.version>
+        <jobrunr.version>6.2.3</jobrunr.version>
+        <jacoco-maven.version>0.8.8</jacoco-maven.version>
+        <maven-compiler.version>3.11.0</maven-compiler.version>
+        <maven-deploy.version>3.1.1</maven-deploy.version>
+        <maven-surefire.version>3.1.2</maven-surefire.version>
     </properties>
 
     <dependencies>
@@ -205,7 +206,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
+                <version>${maven-compiler.version}</version>
                 <configuration>
                     <source>17</source>
                     <target>17</target>
@@ -217,14 +218,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <version>${maven-deploy-plugin.version}</version>
+                <version>${maven-deploy.version}</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven-surefire-plugin.version}</version>
+                <version>${maven-surefire.version}</version>
                 <configuration>
                     <!--suppress MavenModelInspection -->
                     <argLine>-Djava.awt.headless=true ${surefireArgLine}</argLine>
@@ -234,7 +235,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco.version}</version>
+                <version>${jacoco-maven.version}</version>
                 <executions>
                     <execution>
                         <id>prepare-agent-for-unit-tests</id>
