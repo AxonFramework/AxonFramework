@@ -910,20 +910,35 @@
                         <artifactId>versions-maven-plugin</artifactId>
                         <version>${versions-maven.version}</version>
                         <executions>
-                            <!-- Updates coverage-report & hibernate-6-integrationtests since they are child modules -->
+                            <!-- Updates coverage-report since its parent isn't the main pom -->
                             <execution>
-                                <id>update-child-modules</id>
+                                <id>update-coverage-report</id>
                                 <phase>package</phase>
                                 <goals>
-                                    <goal>update-child-modules</goal>
+                                    <goal>set</goal>
                                 </goals>
                                 <configuration>
+                                    <artifactId>axon-coverage-report</artifactId>
                                     <generateBackupPoms>false</generateBackupPoms>
+                                    <newVersion>${project.parent.version}</newVersion>
+                                </configuration>
+                            </execution>
+                            <!-- Updates hibernate-6-integrationtests since its parent isn't the main pom -->
+                            <execution>
+                                <id>update-hibernate-6-integrationtests</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>set</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactId>axon-hibernate-6-integrationtests</artifactId>
+                                    <generateBackupPoms>false</generateBackupPoms>
+                                    <newVersion>${project.parent.version}</newVersion>
                                 </configuration>
                             </execution>
                             <!-- Updates spring-boot-3-integrationtests since its parent isn't the main pom -->
                             <execution>
-                                <id>update-non-axon-parent-modules</id>
+                                <id>update-spring-boot-3-integrationtests</id>
                                 <phase>package</phase>
                                 <goals>
                                     <goal>set</goal>
