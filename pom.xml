@@ -910,12 +910,29 @@
                         <artifactId>versions-maven-plugin</artifactId>
                         <version>${versions-maven.version}</version>
                         <executions>
+                            <!-- Updates coverage-report & hibernate-6-integrationtests since they are child modules -->
                             <execution>
-                                <id>update-versions</id>
-                                <phase>deploy</phase>
+                                <id>update-child-modules</id>
+                                <phase>package</phase>
                                 <goals>
                                     <goal>update-child-modules</goal>
                                 </goals>
+                                <configuration>
+                                    <generateBackupPoms>false</generateBackupPoms>
+                                </configuration>
+                            </execution>
+                            <!-- Updates spring-boot-3-integrationtests since its parent isn't the main pom -->
+                            <execution>
+                                <id>update-non-axon-parent-modules</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>set</goal>
+                                </goals>
+                                <configuration>
+                                    <generateBackupPoms>false</generateBackupPoms>
+                                    <newVersion>${project.parent.version}</newVersion>
+                                    <processAllModules>true</processAllModules>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
