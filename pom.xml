@@ -900,8 +900,11 @@
         </profile>
 
         <profile>
-            <!--Profile dedicated towards updating the versions of _all_ modules.-->
-            <!--Doing so we ensure unmentioned <modules> modules are also updated.-->
+            <!--
+            Profile dedicated towards updating the versions of _all_ modules.
+            Doing so we ensure unmentioned <modules> modules are also updated, like axon-coverage-report,
+            axon-hibernate-6-integrationtests, and axon-spring-boot-3-integrationtests
+            -->
             <id>update-versions</id>
             <build>
                 <plugins>
@@ -910,43 +913,14 @@
                         <artifactId>versions-maven-plugin</artifactId>
                         <version>${versions-maven.version}</version>
                         <executions>
-                            <!-- Updates coverage-report since its parent isn't the main pom -->
                             <execution>
-                                <id>update-coverage-report</id>
-                                <phase>package</phase>
+                                <id>update-non-parent-versions</id>
+                                <phase>deploy</phase>
                                 <goals>
-                                    <goal>set</goal>
+                                    <goal>update-child-modules</goal>
                                 </goals>
                                 <configuration>
-                                    <artifactId>axon-coverage-report</artifactId>
                                     <generateBackupPoms>false</generateBackupPoms>
-                                    <newVersion>${project.parent.version}</newVersion>
-                                </configuration>
-                            </execution>
-                            <!-- Updates hibernate-6-integrationtests since its parent isn't the main pom -->
-                            <execution>
-                                <id>update-hibernate-6-integrationtests</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>set</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactId>axon-hibernate-6-integrationtests</artifactId>
-                                    <generateBackupPoms>false</generateBackupPoms>
-                                    <newVersion>${project.parent.version}</newVersion>
-                                </configuration>
-                            </execution>
-                            <!-- Updates spring-boot-3-integrationtests since its parent isn't the main pom -->
-                            <execution>
-                                <id>update-spring-boot-3-integrationtests</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>set</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactId>axon-spring-boot-3-integrationtests</artifactId>
-                                    <generateBackupPoms>false</generateBackupPoms>
-                                    <newVersion>${project.parent.version}</newVersion>
                                 </configuration>
                             </execution>
                         </executions>
