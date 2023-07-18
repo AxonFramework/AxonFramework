@@ -154,6 +154,7 @@
         <maven-source.version>3.3.0</maven-source.version>
         <maven-surefire.version>3.1.2</maven-surefire.version>
         <maven-resources.version>3.3.1</maven-resources.version>
+        <versions-maven.version>2.16.0</versions-maven.version>
     </properties>
 
     <dependencies>
@@ -673,7 +674,7 @@
                     <localCheckout>true</localCheckout>
                     <pushChanges>false</pushChanges>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <releaseProfiles>javadoc,release-sign-artifacts</releaseProfiles>
+                    <releaseProfiles>javadoc,release-sign-artifacts,update-versions</releaseProfiles>
                 </configuration>
             </plugin>
             <plugin>
@@ -901,31 +902,19 @@
             <!--Profile dedicated towards updating the versions of _all_ modules.-->
             <!--Doing so we ensure unmentioned <modules> modules are also updated.-->
             <id>update-versions</id>
-            <activation>
-                <property>
-                    <name>performRelease</name>
-                    <value>true</value>
-                </property>
-            </activation>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>versions-maven-plugin</artifactId>
-                        <version>2.16.0</version>
+                        <version>${versions-maven.version}</version>
                         <executions>
                             <execution>
                                 <id>update-versions</id>
                                 <phase>deploy</phase>
                                 <goals>
-                                    <goal>set</goal>
+                                    <goal>update-child-modules</goal>
                                 </goals>
-                                <configuration>
-                                    <!--Parent version is already updated prior to the deploy phase.-->
-                                    <!--Hence we can set it directly.-->
-                                    <newVersion>${parent.version}</newVersion>
-                                    <processAllModules>true</processAllModules>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
