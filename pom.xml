@@ -668,13 +668,31 @@
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>${maven-release.version}</version>
-                <configuration>
-                    <mavenExecutorId>forked-path</mavenExecutorId>
-                    <localCheckout>true</localCheckout>
-                    <pushChanges>false</pushChanges>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <releaseProfiles>javadoc,release-sign-artifacts</releaseProfiles>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>prepare</id>
+                        <goals>
+                            <goal>prepare</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>-DskipTests</arguments>
+                            <mavenExecutorId>forked-path</mavenExecutorId>
+                            <pushChanges>false</pushChanges>
+                            <autoVersionSubmodules>true</autoVersionSubmodules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>perform</id>
+                        <goals>
+                            <goal>perform</goal>
+                        </goals>
+                        <configuration>
+                            <mavenExecutorId>forked-path</mavenExecutorId>
+                            <localCheckout>true</localCheckout>
+                            <releaseProfiles>javadoc,release-sign-artifacts</releaseProfiles>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
