@@ -929,9 +929,9 @@
                                     <goal>set</goal>
                                 </goals>
                                 <configuration>
+                                    <artifactId>axon-spring-boot-3-integrationtests</artifactId>
                                     <generateBackupPoms>false</generateBackupPoms>
                                     <newVersion>${project.parent.version}</newVersion>
-                                    <processAllModules>true</processAllModules>
                                 </configuration>
                             </execution>
                         </executions>
