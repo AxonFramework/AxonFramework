@@ -669,7 +669,6 @@
                 <artifactId>maven-release-plugin</artifactId>
                 <version>${maven-release.version}</version>
                 <configuration>
-                    <arguments>-DskipTests</arguments>
                     <mavenExecutorId>forked-path</mavenExecutorId>
                     <localCheckout>true</localCheckout>
                     <pushChanges>false</pushChanges>
