@@ -154,7 +154,6 @@
         <maven-source.version>3.3.0</maven-source.version>
         <maven-surefire.version>3.1.2</maven-surefire.version>
         <maven-resources.version>3.3.1</maven-resources.version>
-        <versions-maven.version>2.16.0</versions-maven.version>
     </properties>
 
     <dependencies>
@@ -675,7 +674,7 @@
                     <localCheckout>true</localCheckout>
                     <pushChanges>false</pushChanges>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <releaseProfiles>javadoc,release-sign-artifacts,update-versions</releaseProfiles>
+                    <releaseProfiles>javadoc,release-sign-artifacts</releaseProfiles>
                 </configuration>
             </plugin>
             <plugin>
@@ -892,36 +891,6 @@
                                     <!--suppress MavenModelInspection -->
                                     <goal>sign</goal>
                                 </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <!--
-            Profile dedicated towards updating the versions of _all_ modules.
-            Doing so we ensure unmentioned <modules> modules are also updated, like axon-coverage-report,
-            axon-hibernate-6-integrationtests, and axon-spring-boot-3-integrationtests
-            -->
-            <id>update-versions</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>versions-maven-plugin</artifactId>
-                        <version>${versions-maven.version}</version>
-                        <executions>
-                            <execution>
-                                <id>update-non-parent-versions</id>
-                                <phase>deploy</phase>
-                                <goals>
-                                    <goal>update-child-modules</goal>
-                                </goals>
-                                <configuration>
-                                    <generateBackupPoms>false</generateBackupPoms>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
