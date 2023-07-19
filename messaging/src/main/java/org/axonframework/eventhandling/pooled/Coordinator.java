@@ -104,7 +104,7 @@ class Coordinator {
 
     /**
      * Instantiate a Builder to be able to create a {@link Coordinator}. This builder <b>does not</b> validate the
-     * fields. Hence any fields provided should be validated by the user of the {@link Builder}.
+     * fields. Hence, any fields provided should be validated by the user of the {@link Builder}.
      *
      * @return a Builder to be able to create a {@link Coordinator}
      */
@@ -548,7 +548,7 @@ class Coordinator {
          *                            start up
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder initialSegmentCount(int initialSegmentCount) {
+        Builder initialSegmentCount(int initialSegmentCount) {
             this.initialSegmentCount = initialSegmentCount;
             return this;
         }
@@ -561,7 +561,7 @@ class Coordinator {
          *                     {@link StreamableMessageSource}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder initialToken(
+        Builder initialToken(
                 Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken
         ) {
             this.initialToken = initialToken;
@@ -676,12 +676,14 @@ class Coordinator {
                 return;
             }
 
+            // Abort WorkPackages for which releaseUntil() has been invoked
             workPackages.entrySet().stream()
                         .filter(entry -> isSegmentBlockedFromClaim(entry.getKey()))
                         .map(Map.Entry::getValue)
                         .forEach(workPackage -> abortWorkPackage(workPackage, null));
 
             if (!coordinatorTasks.isEmpty()) {
+                // Process any available coordinator tasks.
                 CoordinatorTask task = coordinatorTasks.remove();
                 logger.debug("Processor [{}] found task [{}] to run.", name, task.getDescription());
                 task.run()
@@ -694,8 +696,8 @@ class Coordinator {
             }
 
             if (eventStream == null || unclaimedSegmentValidationThreshold <= clock.instant().toEpochMilli()) {
+                // Claim new segments, construct work packages per new segment, and open stream based on lowest segment
                 unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
-
                 try {
                     Map<Segment, TrackingToken> newSegments = claimNewSegments();
                     TrackingToken streamStartPosition = lastScheduledToken;
@@ -734,6 +736,7 @@ class Coordinator {
             }
 
             try {
+                // Coordinate events to work packages and reschedule this coordinator
                 if (!eventStream.hasNextAvailable() && isDone()) {
                     workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
                 }
@@ -855,7 +858,7 @@ class Coordinator {
         /**
          * Start coordinating work to the {@link WorkPackage}s. This firstly means retrieving events from the
          * {@link StreamableMessageSource}, check whether the event can be handled by any of them and if so, schedule
-         * these events to all the {@code WorkPackage}s. The {@code WorkPackage}s will state whether they''ll actually
+         * these events to all the {@code WorkPackage}s. The {@code WorkPackage}s will state whether they'll actually
          * handle the event through their response on {@link WorkPackage#scheduleEvent(TrackedEventMessage)}. If none of
          * the {@code WorkPackage}s can handle the event it will be ignored.
          * <p>
