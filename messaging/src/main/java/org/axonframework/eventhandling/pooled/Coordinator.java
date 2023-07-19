@@ -93,6 +93,7 @@ class Coordinator {
     private final int maxClaimedSegments;
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
+    private final boolean coordinatorExtendsClaims;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState;
@@ -128,6 +129,7 @@ class Coordinator {
         this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
+        this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
     }
 
     /**
@@ -383,6 +385,7 @@ class Coordinator {
                 StreamableMessageSource::createTailToken;
         private Runnable shutdownAction = () -> {
         };
+        private boolean coordinatorExtendsClaims = false;
 
         /**
          * The name of the processor this service coordinates for.
@@ -574,6 +577,30 @@ class Coordinator {
          */
         Builder onShutdown(Runnable shutdownAction) {
             this.shutdownAction = shutdownAction;
+            return this;
+        }
+
+        /**
+         * Enabled this coordinator to {@link WorkPackage#extendClaim() extend the claims} of its
+         * {@link WorkPackage WorkPackages}.
+         * <p>
+         * Enabling "coordinator claim extension" is an optimization as it relieves this effort from the
+         * {@code WorkPackage}. Toggling this feature may be particularly useful whenever the event handling task of the
+         * {@code WorkPackage} is lengthy. Either because of a hefty event handling component or because of a large
+         * {@link PooledStreamingEventProcessor.Builder#batchSize(int)}.
+         * <p>
+         * In both scenarios, there's a window of opportunity that the {@code WorkPackage} is not fast enough in
+         * extending the claim itself. Not being able to do so potentially causes token stealing by other instances of
+         * this coordinator's {@link PooledStreamingEventProcessor}, thus overburdening the overall event processing
+         * task.
+         * <p>
+         * Note that enabling this feature will result in more frequent invocation of the {@link TokenStore} to update
+         * the tokens.
+         *
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        Builder enabledCoordinatorClaimExtension() {
+            this.coordinatorExtendsClaims = true;
             return this;
         }
 
