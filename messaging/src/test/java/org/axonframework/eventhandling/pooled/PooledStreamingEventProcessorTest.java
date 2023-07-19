@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -66,6 +67,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -1214,5 +1216,96 @@ class PooledStreamingEventProcessorTest {
             Thread.sleep(1000);
             return null;
         }).when(stubEventHandler).handle(any(), any());
+    }
+
+    @Test
+    void coordinatorExtendsClaimsEarlierForBusyWorkPackages() throws Exception {
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
+                                                           .enabledCoordinatorClaimExtension()));
+
+        AtomicBoolean isWaiting = new AtomicBoolean(false);
+        CountDownLatch handleLatch = new CountDownLatch(1);
+        mockEventHandlerInvoker();
+        doAnswer(invocation -> {
+            // Waiting for the latch to simulate a slow/busy WorkPackage.
+            isWaiting.set(true);
+            return handleLatch.await(5, TimeUnit.SECONDS);
+        }).when(stubEventHandler)
+          .handle(any(), any());
+
+        List<EventMessage<Integer>> events = IntStream.range(0, 42)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+
+        testSubject.start();
+
+        // Wait until we've reached the blocking WorkPackage before validating if the token is extended.
+        // Otherwise, the WorkPackage may extend the token itself.
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofSeconds(5))
+               .until(isWaiting::get);
+
+        // As the WorkPackage is blocked, we can verify if the claim is extended, but not stored.
+        verify(tokenStore, timeout(5000)).extendClaim(PROCESSOR_NAME, 0);
+        verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+
+        // Unblock the WorkPackage after successful validation
+        handleLatch.countDown();
+
+        // Processing finished...
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofSeconds(5))
+               .until(() -> testSubject.processingStatus().get(0).isCaughtUp());
+        // Validate the token is stored
+        verify(tokenStore, timeout(5000)).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+    }
+
+    @Test
+    void coordinatorExtendingClaimFailsAndAbortsWorkPackage() throws Exception {
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
+                                                           .enabledCoordinatorClaimExtension()));
+        String expectedExceptionMessage = "bummer";
+        doThrow(new RuntimeException(expectedExceptionMessage))
+                .when(tokenStore)
+                .extendClaim(PROCESSOR_NAME, 0);
+
+        AtomicBoolean isWaiting = new AtomicBoolean(false);
+        CountDownLatch handleLatch = new CountDownLatch(1);
+        mockEventHandlerInvoker();
+        doAnswer(invocation -> {
+            // Waiting for the latch to simulate a slow/busy WorkPackage.
+            isWaiting.set(true);
+            return handleLatch.await(5, TimeUnit.SECONDS);
+        }).when(stubEventHandler)
+          .handle(any(), any());
+
+        List<EventMessage<Integer>> events = IntStream.range(0, 42)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+
+        testSubject.start();
+
+        // Wait until we've reached the blocking WorkPackage before validating if the token is extended.
+        // Otherwise, the WorkPackage may extend the token itself.
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofSeconds(5))
+               .until(isWaiting::get);
+
+        // As the WorkPackage is blocked, we can verify if the claim is extended, but not stored.
+        verify(tokenStore, timeout(5000)).extendClaim(PROCESSOR_NAME, 0);
+        verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+
+        // Although the WorkPackage is waiting, the Coordinator should in the meantime fail with extending the claim.
+        // This updates the processing status of the WorkPackage.
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofSeconds(5))
+               .until(() -> testSubject.processingStatus().get(0)
+                                       .getError()
+                                       .getMessage().equals(expectedExceptionMessage));
+
+        // Unblock the WorkPackage after successful validation
+        handleLatch.countDown();
     }
 }
