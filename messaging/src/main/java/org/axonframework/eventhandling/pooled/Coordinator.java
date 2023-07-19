@@ -642,8 +642,11 @@ class Coordinator {
      * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
      * sense means:
      * <ol>
-     *     <li>Validating if there are {@link CoordinatorTask}s to run, and run a single one if there are any.</li>
-     *     <li>Periodically checking for unclaimed segments, claim these and start a {@link WorkPackage} per claim.</li>
+     *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
+     *     <li>{@link WorkPackage#extendClaim() Extend the claims} of all {@code WorkPackages} to relieve them of this effort.
+     *     This is an optimization activated through {@link Builder#enabledCoordinatorClaimExtension()}.</li>
+     *     <li>Validating if there are {@link CoordinatorTask CoordinatorTasks} to run, and run a single one if there are any.</li>
+     *     <li>Periodically checking for unclaimed segments, claim these and start a {@code WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
      *     <li>Reading events from the stream.</li>
      *     <li>Scheduling read events for each {@code WorkPackage} through {@link WorkPackage#scheduleEvent(TrackedEventMessage)}.</li>
@@ -681,6 +684,24 @@ class Coordinator {
                         .filter(entry -> isSegmentBlockedFromClaim(entry.getKey()))
                         .map(Map.Entry::getValue)
                         .forEach(workPackage -> abortWorkPackage(workPackage, null));
+
+            if (coordinatorExtendsClaims) {
+                logger.debug("Processor [{}] extending all claims of active Work Packages.", name);
+                // Extend the claims of each work package, relieving this effort from the work package as an optimization
+                workPackages.values()
+                            .stream()
+                            .filter(workPackage -> !workPackage.isAbortTriggered())
+                            .forEach(workPackage -> {
+                                try {
+                                    workPackage.extendClaim();
+                                } catch (Exception e) {
+                                    logger.warn("Error while extending claim for Work Package [{}]-[{}]. "
+                                                        + "Aborting Work Package...",
+                                                workPackage.segment().getSegmentId(), name, e);
+                                    workPackage.abort(e);
+                                }
+                            });
+            }
 
             if (!coordinatorTasks.isEmpty()) {
                 // Process any available coordinator tasks.
