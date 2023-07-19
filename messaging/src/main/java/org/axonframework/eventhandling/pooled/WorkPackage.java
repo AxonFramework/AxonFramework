@@ -315,16 +315,22 @@ class WorkPackage {
                 if (lastStoredToken != lastConsumedToken) {
                     transactionManager.executeInTransaction(() -> storeToken(lastConsumedToken));
                 } else {
-                    transactionManager.executeInTransaction(this::extendClaim);
+                    transactionManager.executeInTransaction(() -> {
+                        extendClaim();
+                        // We update lastClaimExtension here as extendClaim() may be invoked from the outside
+                        lastClaimExtension = clock.instant().toEpochMilli();
+                    });
                 }
             }
         }
     }
 
-    private void extendClaim() {
+    /**
+     * Extend the claim of the {@link TrackingToken} owned by this work package.
+     */
+    public void extendClaim() {
         logger.debug("Work Package [{}]-[{}] will extend its token claim.", name, segment.getSegmentId());
         tokenStore.extendClaim(name, segment.getSegmentId());
-        lastClaimExtension = clock.instant().toEpochMilli();
     }
 
     private void storeToken(TrackingToken token) {
