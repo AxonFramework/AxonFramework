@@ -379,8 +379,7 @@ class Coordinator {
         private Clock clock = GenericEventMessage.clock;
         private int maxClaimedSegments;
         private int initialSegmentCount = 16;
-        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
-                StreamableMessageSource::createTailToken;
+        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
         private Runnable shutdownAction = () -> {
         };
 

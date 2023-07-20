@@ -19,7 +19,24 @@ package org.axonframework.integrationtests.eventhandling;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.EventTrackerStatus;
+import org.axonframework.eventhandling.EventTrackerStatusChangeListener;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.MultiEventHandlerInvoker;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -43,7 +60,19 @@ import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -65,10 +94,35 @@ import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertUntil;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
-import static org.axonframework.integrationtests.utils.EventTestUtils.*;
+import static org.axonframework.integrationtests.utils.EventTestUtils.AGGREGATE;
+import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
+import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.intThat;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
@@ -619,7 +673,8 @@ class TrackingEventProcessorTest {
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
         assertThat(
                 tokenStore.fetchToken(testSubject.getName(), 0),
-                CoreMatchers.anyOf(CoreMatchers.nullValue(), CoreMatchers.equalTo(eventBus.createTailToken()))
+                CoreMatchers.anyOf(CoreMatchers.nullValue(),
+                                   CoreMatchers.equalTo(TrackingEventProcessorConfiguration.forSingleThreadedProcessing().getInitialTrackingToken().apply(eventBus)))
         );
     }
 
@@ -867,8 +922,11 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handle(any());
 
-        eventBus.publish(createEvents(4));
         testSubject.start();
+        awaitProcessorStarted();
+
+        eventBus.publish(createEvents(4));
+
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
         testSubject.shutDown();
         MyResetContext one = new MyResetContext("one");
@@ -949,12 +1007,16 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handle(any());
 
-        eventBus.publish(createEvents(4));
         testSubject.start();
+        awaitProcessorStarted();
+
+        eventBus.publish(createEvents(4));
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+
         testSubject.shutDown();
         testSubject.resetTokens(source -> new GlobalSequenceTrackingToken(1L));
         testSubject.start();
+
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(6, handled.size()));
         assertFalse(handledInRedelivery.contains(handled.get(0)));
         assertFalse(handledInRedelivery.contains(handled.get(1)));
@@ -1069,8 +1131,9 @@ class TrackingEventProcessorTest {
         }).when(mockHandler).handle(any());
 
         testSubject.resetTokens();
-
         testSubject.start();
+        awaitProcessorStarted();
+
         eventBus.publish(createEvents(4));
         assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
         assertEquals(0, handledInRedelivery.size());
@@ -1080,6 +1143,10 @@ class TrackingEventProcessorTest {
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > 0);
 
         verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
+    }
+
+    private void awaitProcessorStarted() {
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
     }
 
     @SuppressWarnings("unchecked")
@@ -1958,9 +2025,10 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handle(any());
 
+        testSubject.start();
+        awaitProcessorStarted();
         // ensure some events have been handled by the TEP
         eventBus.publish(createEvents(numberOfEvents));
-        testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(numberOfEvents, handled.size()));
         assertEquals(0, handledInRedelivery.size());
 
@@ -1992,7 +2060,6 @@ class TrackingEventProcessorTest {
                 () -> {
                     assertTrue(testSubject.processingStatus().get(segmentId).isCaughtUp());
                     assertTrue(testSubject.processingStatus().get(segmentId).isReplaying());
-                    assertFalse(testSubject.isReplaying());
                 }
         );
     }
@@ -2045,6 +2112,60 @@ class TrackingEventProcessorTest {
         assertWithin(testWorkerTerminationTimeout * 2, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
         assertFalse(createdThreads.get(0).isAlive());
         assertFalse(createdThreads.get(1).isAlive());
+    }
+
+    @Test
+    void testExistingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+        //noinspection resource
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        eventBus.publish(createEvent(0));
+        eventBus.publish(createEvent(1));
+        eventBus.publish(createEvent(2));
+
+        testSubject.start();
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
+        TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
+        assertTrue(ReplayToken.isReplay(trackingToken),
+                   "Not a replay token: " + trackingToken);
+    }
+
+    @Test
+    void testEventsPublishedAfterProcessorStartAreNotConsideredReplayed() throws Exception {
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch finished = new CountDownLatch(2);
+        //noinspection resource
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> started.countDown());
+            unitOfWork.onCleanup(uow -> finished.countDown());
+            return interceptorChain.proceed();
+        }));
+        eventBus.publish(createEvent(0));
+//        eventBus.publish(createEvent(1));
+
+        doAnswer(i -> {
+            System.out.println("Token stored: " + i.getArgument(0));
+            return i.callRealMethod();
+        }).when(tokenStore).storeToken(any(), anyString(), anyInt());
+        doAnswer(i -> {
+            System.out.println("Token initialized: " + i.getArgument(2));
+            return i.callRealMethod();
+        }).when(tokenStore).initializeTokenSegments(anyString(), anyInt(), any());
+
+        testSubject.start();
+
+        started.await();
+
+        eventBus.publish(createEvent(2));
+
+        assertTrue(finished.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
+        TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
+        assertFalse(ReplayToken.isReplay(trackingToken),
+                    "Not a replay token: " + trackingToken);
     }
 
     private void waitForStatus(String description,

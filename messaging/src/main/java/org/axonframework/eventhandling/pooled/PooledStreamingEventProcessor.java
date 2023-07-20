@@ -45,6 +45,7 @@ import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.Arrays;
@@ -59,7 +60,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
-import javax.annotation.Nonnull;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -441,7 +441,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private Clock clock = GenericEventMessage.clock;
 
         protected Builder() {
-            initialToken(messageSource -> ReplayToken.createReplayToken(messageSource.createTailToken()));
+            initialToken(ms -> ReplayToken.createReplayToken(ms.createHeadToken()));
             rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
         }
 
