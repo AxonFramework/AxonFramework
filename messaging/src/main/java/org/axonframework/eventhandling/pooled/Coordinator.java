@@ -599,7 +599,7 @@ class Coordinator {
          *
          * @return The current Builder instance, for fluent interfacing.
          */
-        Builder enabledCoordinatorClaimExtension() {
+        Builder enableCoordinatorClaimExtension() {
             this.coordinatorExtendsClaims = true;
             return this;
         }
@@ -644,7 +644,7 @@ class Coordinator {
      * <ol>
      *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
      *     <li>{@link WorkPackage#extendClaimIfThresholdIsMet() Extend the claims} of all {@code WorkPackages} to relieve them of this effort.
-     *     This is an optimization activated through {@link Builder#enabledCoordinatorClaimExtension()}.</li>
+     *     This is an optimization activated through {@link Builder#enableCoordinatorClaimExtension()}.</li>
      *     <li>Validating if there are {@link CoordinatorTask CoordinatorTasks} to run, and run a single one if there are any.</li>
      *     <li>Periodically checking for unclaimed segments, claim these and start a {@code WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>

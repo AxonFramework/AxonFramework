@@ -154,7 +154,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                            .initialSegmentCount(builder.initialSegmentCount)
                            .initialToken(initialToken);
         if (builder.coordinatorExtendsClaims) {
-            coordinatorBuilder.enabledCoordinatorClaimExtension();
+            coordinatorBuilder.enableCoordinatorClaimExtension();
         }
         this.coordinator = coordinatorBuilder.build();
 
@@ -743,7 +743,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder enabledCoordinatorClaimExtension() {
+        public Builder enableCoordinatorClaimExtension() {
             this.coordinatorExtendsClaims = true;
             return this;
         }

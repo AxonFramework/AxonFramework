@@ -1221,7 +1221,7 @@ class PooledStreamingEventProcessorTest {
     @Test
     void coordinatorExtendsClaimsEarlierForBusyWorkPackages() throws Exception {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
-                                                           .enabledCoordinatorClaimExtension()));
+                                                           .enableCoordinatorClaimExtension()));
 
         AtomicBoolean isWaiting = new AtomicBoolean(false);
         CountDownLatch handleLatch = new CountDownLatch(1);
@@ -1264,7 +1264,7 @@ class PooledStreamingEventProcessorTest {
     @Test
     void coordinatorExtendingClaimFailsAndAbortsWorkPackage() throws Exception {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
-                                                           .enabledCoordinatorClaimExtension()));
+                                                           .enableCoordinatorClaimExtension()));
         String expectedExceptionMessage = "bummer";
         doThrow(new RuntimeException(expectedExceptionMessage))
                 .when(tokenStore)
