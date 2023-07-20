@@ -43,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -90,7 +91,8 @@ class WorkPackage {
     private TrackingToken lastDeliveredToken; // For use only by event delivery threads, like Coordinator
     private TrackingToken lastConsumedToken;
     private TrackingToken lastStoredToken;
-    private long lastClaimExtension;
+    private AtomicLong lastClaimExtension;
+    private AtomicBoolean processingEvents;
 
     private final Queue<ProcessingEntry> processingQueue = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean scheduled = new AtomicBoolean();
@@ -124,7 +126,8 @@ class WorkPackage {
         this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
 
         this.lastConsumedToken = builder.initialToken;
-        this.lastClaimExtension = System.currentTimeMillis();
+        this.lastClaimExtension = new AtomicLong(clock.instant().toEpochMilli());
+        this.processingEvents = new AtomicBoolean(false);
     }
 
     /**
@@ -300,44 +303,51 @@ class WorkPackage {
         if (!eventBatch.isEmpty()) {
             logger.debug("Work Package [{}]-[{}] is processing a batch of {} events.",
                          segment.getSegmentId(), name, eventBatch.size());
-            UnitOfWork<TrackedEventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventBatch);
-            unitOfWork.attachTransaction(transactionManager);
-            unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
-            unitOfWork.resources().put(lastTokenResourceKey, lastConsumedToken);
-            unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
-            unitOfWork.afterCommit(
-                    u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken))
-            );
-            batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
+            try {
+                processingEvents.set(true);
+                UnitOfWork<TrackedEventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventBatch);
+                unitOfWork.attachTransaction(transactionManager);
+                unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
+                unitOfWork.resources().put(lastTokenResourceKey, lastConsumedToken);
+                unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
+                unitOfWork.afterCommit(
+                        u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken))
+                );
+                batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
+            } finally {
+                processingEvents.set(false);
+            }
         } else {
             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
-            if (lastClaimExtension < clock.instant().toEpochMilli() - claimExtensionThreshold) {
-                if (lastStoredToken != lastConsumedToken) {
-                    transactionManager.executeInTransaction(() -> storeToken(lastConsumedToken));
-                } else {
-                    transactionManager.executeInTransaction(() -> {
-                        extendClaim();
-                        // We update lastClaimExtension here as extendClaim() may be invoked from the outside
-                        lastClaimExtension = clock.instant().toEpochMilli();
-                    });
-                }
+            if (claimExtensionThresholdMet() && lastStoredToken != lastConsumedToken) {
+                transactionManager.executeInTransaction(() -> storeToken(lastConsumedToken));
+            } else {
+                extendClaimIfThresholdIsMet();
             }
         }
     }
 
     /**
-     * Extend the claim of the {@link TrackingToken} owned by this work package.
+     * Extend the claim of the {@link TrackingToken} owned by this {@code WorkPackage}, if the configurable
+     * {@link PooledStreamingEventProcessor.Builder#claimExtensionThreshold(long) claim extension threshold} is met.
      */
-    public void extendClaim() {
-        logger.debug("Work Package [{}]-[{}] will extend its token claim.", name, segment.getSegmentId());
-        tokenStore.extendClaim(name, segment.getSegmentId());
+    public void extendClaimIfThresholdIsMet() {
+        if (claimExtensionThresholdMet()) {
+            logger.debug("Work Package [{}]-[{}] will extend its token claim.", name, segment.getSegmentId());
+            transactionManager.executeInTransaction(() -> tokenStore.extendClaim(name, segment.getSegmentId()));
+            lastClaimExtension.set(clock.instant().toEpochMilli());
+        }
+    }
+
+    private boolean claimExtensionThresholdMet() {
+        return lastClaimExtension.get() < clock.instant().toEpochMilli() - claimExtensionThreshold;
     }
 
     private void storeToken(TrackingToken token) {
         logger.debug("Work Package [{}]-[{}] will store token [{}].", name, segment.getSegmentId(), token);
         tokenStore.storeToken(token, name, segment.getSegmentId());
         lastStoredToken = token;
-        lastClaimExtension = clock.instant().toEpochMilli();
+        lastClaimExtension.set(clock.instant().toEpochMilli());
     }
 
     /**
@@ -402,7 +412,7 @@ class WorkPackage {
      * abort reason once the {@code WorkPackage} has finished any processing that may had been started already.
      * <p>
      * If this {@code WorkPackage} was already aborted in another request, the returned {@code CompletableFuture} will
-     * complete with the exception of the first request.
+     * complete with exception for the first request.
      * <p>
      * An aborted {@code WorkPackage} cannot be restarted.
      *
@@ -440,6 +450,15 @@ class WorkPackage {
         // Reschedule the worker to ensure the abort flag is processed
         scheduleWorker();
         return abortTask;
+    }
+
+    /**
+     * Returns whether this {@code WorkPackage} is actively processing events.
+     *
+     * @return Whether this {@code WorkPackage} is actively processing events.
+     */
+    public boolean isProcessingEvents() {
+        return processingEvents.get();
     }
 
     /**

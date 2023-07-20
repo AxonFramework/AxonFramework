@@ -726,7 +726,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         /**
-         * Enables the {@link Coordinator} to {@link WorkPackage#extendClaim() extend the claims} of its
+         * Enables the {@link Coordinator} to {@link WorkPackage#extendClaimIfThresholdIsMet() extend the claims} of its
          * {@link WorkPackage WorkPackages}.
          * <p>
          * Enabling "coordinator claim extension" is an optimization as it relieves this effort from the

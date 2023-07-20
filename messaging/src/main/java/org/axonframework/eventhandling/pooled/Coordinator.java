@@ -581,7 +581,7 @@ class Coordinator {
         }
 
         /**
-         * Enabled this coordinator to {@link WorkPackage#extendClaim() extend the claims} of its
+         * Enabled this coordinator to {@link WorkPackage#extendClaimIfThresholdIsMet() extend the claims} of its
          * {@link WorkPackage WorkPackages}.
          * <p>
          * Enabling "coordinator claim extension" is an optimization as it relieves this effort from the
@@ -643,7 +643,7 @@ class Coordinator {
      * sense means:
      * <ol>
      *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
-     *     <li>{@link WorkPackage#extendClaim() Extend the claims} of all {@code WorkPackages} to relieve them of this effort.
+     *     <li>{@link WorkPackage#extendClaimIfThresholdIsMet() Extend the claims} of all {@code WorkPackages} to relieve them of this effort.
      *     This is an optimization activated through {@link Builder#enabledCoordinatorClaimExtension()}.</li>
      *     <li>Validating if there are {@link CoordinatorTask CoordinatorTasks} to run, and run a single one if there are any.</li>
      *     <li>Periodically checking for unclaimed segments, claim these and start a {@code WorkPackage} per claim.</li>
@@ -687,13 +687,15 @@ class Coordinator {
 
             if (coordinatorExtendsClaims) {
                 logger.debug("Processor [{}] extending all claims of active Work Packages.", name);
-                // Extend the claims of each work package, relieving this effort from the work package as an optimization
+                // Extend the claims of each work package busy processing events.
+                // Doing so relieves this effort from the work package as an optimization.
                 workPackages.values()
                             .stream()
                             .filter(workPackage -> !workPackage.isAbortTriggered())
+                            .filter(WorkPackage::isProcessingEvents)
                             .forEach(workPackage -> {
                                 try {
-                                    workPackage.extendClaim();
+                                    workPackage.extendClaimIfThresholdIsMet();
                                 } catch (Exception e) {
                                     logger.warn("Error while extending claim for Work Package [{}]-[{}]. "
                                                         + "Aborting Work Package...",
