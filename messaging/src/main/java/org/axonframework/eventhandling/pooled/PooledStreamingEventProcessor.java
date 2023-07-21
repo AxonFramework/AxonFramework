@@ -136,27 +136,24 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         this.batchSize = builder.batchSize;
         this.clock = builder.clock;
 
-        Coordinator.Builder coordinatorBuilder =
-                Coordinator.builder()
-                           .name(name)
-                           .messageSource(messageSource)
-                           .tokenStore(tokenStore)
-                           .transactionManager(transactionManager)
-                           .executorService(builder.coordinatorExecutorBuilder.apply(name))
-                           .workPackageFactory(this::spawnWorker)
-                           .eventFilter(event -> canHandleType(event.getPayloadType()))
-                           .onMessageIgnored(this::reportIgnored)
-                           .processingStatusUpdater(this::statusUpdater)
-                           .tokenClaimInterval(tokenClaimInterval)
-                           .claimExtensionThreshold(claimExtensionThreshold)
-                           .clock(clock)
-                           .maxClaimedSegments(maxClaimedSegments)
-                           .initialSegmentCount(builder.initialSegmentCount)
-                           .initialToken(initialToken);
-        if (builder.coordinatorExtendsClaims) {
-            coordinatorBuilder.enableCoordinatorClaimExtension();
-        }
-        this.coordinator = coordinatorBuilder.build();
+        this.coordinator = Coordinator.builder()
+                                      .name(name)
+                                      .messageSource(messageSource)
+                                      .tokenStore(tokenStore)
+                                      .transactionManager(transactionManager)
+                                      .executorService(builder.coordinatorExecutorBuilder.apply(name))
+                                      .workPackageFactory(this::spawnWorker)
+                                      .eventFilter(event -> canHandleType(event.getPayloadType()))
+                                      .onMessageIgnored(this::reportIgnored)
+                                      .processingStatusUpdater(this::statusUpdater)
+                                      .tokenClaimInterval(tokenClaimInterval)
+                                      .claimExtensionThreshold(claimExtensionThreshold)
+                                      .clock(clock)
+                                      .maxClaimedSegments(maxClaimedSegments)
+                                      .initialSegmentCount(builder.initialSegmentCount)
+                                      .initialToken(initialToken)
+                                      .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
+                                      .build();
 
         //noinspection resource
         registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
@@ -731,8 +728,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * <p>
          * Enabling "coordinator claim extension" is an optimization as it relieves this effort from the
          * {@code WorkPackage}. Toggling this feature may be particularly useful whenever the event handling task of the
-         * {@code WorkPackage} is lengthy. Either because of a hefty event handling component or because of a large
-         * {@link PooledStreamingEventProcessor.Builder#batchSize(int)}.
+         * {@code WorkPackage} is <b>lengthy</b>. Either because of a hefty event handling component or because of a
+         * large {@link PooledStreamingEventProcessor.Builder#batchSize(int)}.
+         * <p>
+         * An example of a lengthy processing tasks is whenever handling a batch of events exceeds half the
+         * {@code claimTimeout} of the {@link TokenStore}. The {@code claimTimeout} defaults to 10 seconds for all
+         * durable {@code TokenStore} implementations.
          * <p>
          * In both scenarios, there's a window of opportunity that the {@code WorkPackage} is not fast enough in
          * extending the claim itself. Not being able to do so potentially causes token stealing by other instances of

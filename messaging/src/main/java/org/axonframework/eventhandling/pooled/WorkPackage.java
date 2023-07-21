@@ -91,8 +91,8 @@ class WorkPackage {
     private TrackingToken lastDeliveredToken; // For use only by event delivery threads, like Coordinator
     private TrackingToken lastConsumedToken;
     private TrackingToken lastStoredToken;
-    private AtomicLong lastClaimExtension;
-    private AtomicBoolean processingEvents;
+    private final AtomicLong nextClaimExtension;
+    private final AtomicBoolean processingEvents;
 
     private final Queue<ProcessingEntry> processingQueue = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean scheduled = new AtomicBoolean();
@@ -101,7 +101,7 @@ class WorkPackage {
 
     /**
      * Instantiate a Builder to be able to create a {@link WorkPackage}. This builder <b>does not</b> validate the
-     * fields. Hence any fields provided should be validated by the user of the {@link WorkPackage.Builder}.
+     * fields. Hence, any fields provided should be validated by the user of the {@link WorkPackage.Builder}.
      *
      * @return a Builder to be able to create a {@link WorkPackage}
      */
@@ -126,8 +126,12 @@ class WorkPackage {
         this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
 
         this.lastConsumedToken = builder.initialToken;
-        this.lastClaimExtension = new AtomicLong(clock.instant().toEpochMilli());
+        this.nextClaimExtension = new AtomicLong(now() + claimExtensionThreshold);
         this.processingEvents = new AtomicBoolean(false);
+    }
+
+    private long now() {
+        return clock.instant().toEpochMilli();
     }
 
     /**
@@ -319,7 +323,7 @@ class WorkPackage {
             }
         } else {
             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
-            if (claimExtensionThresholdMet() && lastStoredToken != lastConsumedToken) {
+            if (lastStoredToken != lastConsumedToken && now() > nextClaimExtension.get()) {
                 transactionManager.executeInTransaction(() -> storeToken(lastConsumedToken));
             } else {
                 extendClaimIfThresholdIsMet();
@@ -332,22 +336,18 @@ class WorkPackage {
      * {@link PooledStreamingEventProcessor.Builder#claimExtensionThreshold(long) claim extension threshold} is met.
      */
     public void extendClaimIfThresholdIsMet() {
-        if (claimExtensionThresholdMet()) {
+        if (now() > nextClaimExtension.get()) {
             logger.debug("Work Package [{}]-[{}] will extend its token claim.", name, segment.getSegmentId());
             transactionManager.executeInTransaction(() -> tokenStore.extendClaim(name, segment.getSegmentId()));
-            lastClaimExtension.set(clock.instant().toEpochMilli());
+            nextClaimExtension.set(now() + claimExtensionThreshold);
         }
-    }
-
-    private boolean claimExtensionThresholdMet() {
-        return lastClaimExtension.get() < clock.instant().toEpochMilli() - claimExtensionThreshold;
     }
 
     private void storeToken(TrackingToken token) {
         logger.debug("Work Package [{}]-[{}] will store token [{}].", name, segment.getSegmentId(), token);
         tokenStore.storeToken(token, name, segment.getSegmentId());
         lastStoredToken = token;
-        lastClaimExtension.set(clock.instant().toEpochMilli());
+        nextClaimExtension.set(now() + claimExtensionThreshold);
     }
 
     /**

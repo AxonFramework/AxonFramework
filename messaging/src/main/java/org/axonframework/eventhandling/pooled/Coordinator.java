@@ -582,25 +582,14 @@ class Coordinator {
 
         /**
          * Enabled this coordinator to {@link WorkPackage#extendClaimIfThresholdIsMet() extend the claims} of its
-         * {@link WorkPackage WorkPackages}.
-         * <p>
-         * Enabling "coordinator claim extension" is an optimization as it relieves this effort from the
-         * {@code WorkPackage}. Toggling this feature may be particularly useful whenever the event handling task of the
-         * {@code WorkPackage} is lengthy. Either because of a hefty event handling component or because of a large
-         * {@link PooledStreamingEventProcessor.Builder#batchSize(int)}.
-         * <p>
-         * In both scenarios, there's a window of opportunity that the {@code WorkPackage} is not fast enough in
-         * extending the claim itself. Not being able to do so potentially causes token stealing by other instances of
-         * this coordinator's {@link PooledStreamingEventProcessor}, thus overburdening the overall event processing
-         * task.
-         * <p>
-         * Note that enabling this feature will result in more frequent invocation of the {@link TokenStore} to update
-         * the tokens.
+         * {@link WorkPackage WorkPackages}. Defaults to {@code false}.
          *
+         * @param coordinatorExtendsClaims A flag dictating whether this coordinator will
+         *                                 {@link WorkPackage#extendClaimIfThresholdIsMet() extend claims}.
          * @return The current Builder instance, for fluent interfacing.
          */
-        Builder enableCoordinatorClaimExtension() {
-            this.coordinatorExtendsClaims = true;
+        Builder coordinatorClaimExtension(boolean coordinatorExtendsClaims) {
+            this.coordinatorExtendsClaims = coordinatorExtendsClaims;
             return this;
         }
 
@@ -644,7 +633,7 @@ class Coordinator {
      * <ol>
      *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
      *     <li>{@link WorkPackage#extendClaimIfThresholdIsMet() Extend the claims} of all {@code WorkPackages} to relieve them of this effort.
-     *     This is an optimization activated through {@link Builder#enableCoordinatorClaimExtension()}.</li>
+     *     This is an optimization activated through {@link Builder#coordinatorClaimExtension()}.</li>
      *     <li>Validating if there are {@link CoordinatorTask CoordinatorTasks} to run, and run a single one if there are any.</li>
      *     <li>Periodically checking for unclaimed segments, claim these and start a {@code WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>

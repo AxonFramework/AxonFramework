@@ -131,7 +131,7 @@ class PooledStreamingEventProcessorTest {
                                              .coordinatorExecutor(coordinatorExecutor)
                                              .workerExecutor(workerExecutor)
                                              .initialSegmentCount(8)
-                                             .claimExtensionThreshold(1000)
+                                             .claimExtensionThreshold(500)
                                              .spanFactory(spanFactory);
         return customization.apply(processorBuilder).build();
     }
