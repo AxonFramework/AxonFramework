@@ -124,7 +124,7 @@
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
         <spring.version>5.3.29</spring.version>
-        <spring.boot.version>2.7.13</spring.boot.version>
+        <spring.boot.version>2.7.14</spring.boot.version>
         <spring-security.version>5.7.3</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.2.0</awaitility.version>
