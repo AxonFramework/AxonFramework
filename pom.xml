@@ -393,6 +393,7 @@
                 <artifactId>reactive-streams</artifactId>
                 <version>${reactive.streams.spec.version}</version>
             </dependency>
+            <!-- Reactive -->
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-core</artifactId>
@@ -426,6 +427,7 @@
                 <artifactId>dom4j</artifactId>
                 <version>${dom4j.version}</version>
             </dependency>
+            <!-- Serialization -->
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
@@ -613,6 +615,17 @@
                     </archiverConfig>
                 </configuration>
             </plugin>
+            <!-- package -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${maven-assembly.version}</version>
+                <configuration>
+                    <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
+                    <archiverConfig>
+                        <duplicateBehavior>skip</duplicateBehavior>
+                    </archiverConfig>
+                </configuration>
+            </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven-jar.version}</version>
@@ -636,6 +649,11 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <!-- deploy -->
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>${maven-deploy.version}</version>
             </plugin>
             <!-- deploy -->
             <plugin>
