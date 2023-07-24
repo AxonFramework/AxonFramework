@@ -655,11 +655,6 @@
                 <artifactId>maven-deploy-plugin</artifactId>
                 <version>${maven-deploy.version}</version>
             </plugin>
-            <!-- deploy -->
-            <plugin>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>${maven-deploy.version}</version>
-            </plugin>
             <plugin>
                 <!-- just to make sure deployed artifacts are always built (and tested) using JDK 8+ -->
                 <artifactId>maven-enforcer-plugin</artifactId>
