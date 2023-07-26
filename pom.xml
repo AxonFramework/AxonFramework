@@ -102,7 +102,7 @@
         <slf4j.version>2.0.7</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.13</dropwizard.metrics.version>
-        <micrometer.version>1.11.1</micrometer.version>
+        <micrometer.version>1.11.2</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.14.5</byte-buddy.version>
         <commons-io.version>2.13.0</commons-io.version>
@@ -111,7 +111,7 @@
         <javassist.version>3.29.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.5.7</projectreactor.version>
+        <projectreactor.version>3.5.8</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <dom4j.version>2.1.4</dom4j.version>
@@ -123,7 +123,7 @@
         <jobrunr.version>6.2.3</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
-        <spring.version>5.3.28</spring.version>
+        <spring.version>5.3.29</spring.version>
         <spring.boot.version>2.7.13</spring.boot.version>
         <spring-security.version>5.7.3</spring-security.version>
         <!-- Testing -->
@@ -669,10 +669,13 @@
                 <artifactId>maven-release-plugin</artifactId>
                 <version>${maven-release.version}</version>
                 <configuration>
+                    <!-- prepare goal configuration -->
                     <mavenExecutorId>forked-path</mavenExecutorId>
-                    <localCheckout>true</localCheckout>
                     <pushChanges>false</pushChanges>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <!-- perform goal configuration -->
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <localCheckout>true</localCheckout>
                     <releaseProfiles>javadoc,release-sign-artifacts</releaseProfiles>
                 </configuration>
             </plugin>
