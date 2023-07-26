@@ -20,13 +20,15 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.messaging.StreamableMessageSource;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
-import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Configuration object for the {@link TrackingEventProcessor}. The TrackingEventProcessorConfiguration provides access
@@ -207,13 +209,13 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
-     * Sets the shutdown timeout to terminate active workers. This is used for both the graceful termination and the 
-     * potential forced termination of active workers. It is thus possible that it is used twice during the shutdown 
+     * Sets the shutdown timeout to terminate active workers. This is used for both the graceful termination and the
+     * potential forced termination of active workers. It is thus possible that it is used twice during the shutdown
      * phase. Defaults to 5000ms.
      *
-     * @param workerTerminationTimeout the timeout for workers to terminate on a shutdown in milliseconds
+     * @param workerTerminationTimeoutInMilliseconds the timeout for workers to terminate on a shutdown in milliseconds
+     *
      * @return {@code this} for method chaining
-     * 
      * @deprecated Use {@link #andWorkerTerminationTimeout(long, TimeUnit)} instead.
      */
     @Deprecated

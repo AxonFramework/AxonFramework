@@ -93,6 +93,7 @@ class Coordinator {
     private final int maxClaimedSegments;
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
+    private final boolean coordinatorExtendsClaims;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState;
@@ -103,7 +104,7 @@ class Coordinator {
 
     /**
      * Instantiate a Builder to be able to create a {@link Coordinator}. This builder <b>does not</b> validate the
-     * fields. Hence any fields provided should be validated by the user of the {@link Builder}.
+     * fields. Hence, any fields provided should be validated by the user of the {@link Builder}.
      *
      * @return a Builder to be able to create a {@link Coordinator}
      */
@@ -128,6 +129,7 @@ class Coordinator {
         this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
+        this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
     }
 
     /**
@@ -382,6 +384,7 @@ class Coordinator {
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
         private Runnable shutdownAction = () -> {
         };
+        private boolean coordinatorExtendsClaims = false;
 
         /**
          * The name of the processor this service coordinates for.
@@ -542,22 +545,29 @@ class Coordinator {
          *
          * @param initialSegmentCount an {@code int} specifying the initial segment count used to create segments on
          *                            start up
+         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder initialSegmentCount(int initialSegmentCount) {
+        Builder initialSegmentCount(int initialSegmentCount) {
             this.initialSegmentCount = initialSegmentCount;
             return this;
         }
 
         /**
-         * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. Defaults to
-         * {@link StreamableMessageSource::createTailToken}
+         * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. Defaults to an automatic
+         * replay since the start of the stream.
+         * <p>
+         * More specically, it default to a ReplayToken that starts streaming from the Tail
+         * ({@link StreamableMessageSource#createTailToken()}) with the replay
+         * flag enabled until the Head ({@link StreamableMessageSource#createHeadToken()}) at the moment of
+         * initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
          *                     {@link StreamableMessageSource}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder initialToken(
+        Builder initialToken(
                 Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken
         ) {
             this.initialToken = initialToken;
@@ -569,10 +579,25 @@ class Coordinator {
          * actions. Defaults to a no-op.
          *
          * @param shutdownAction the action to perform when the coordinator is shut down
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder onShutdown(Runnable shutdownAction) {
             this.shutdownAction = shutdownAction;
+            return this;
+        }
+
+        /**
+         * Enabled this coordinator to {@link WorkPackage#extendClaimIfThresholdIsMet() extend the claims} of its
+         * {@link WorkPackage WorkPackages}. Defaults to {@code false}.
+         *
+         * @param coordinatorExtendsClaims A flag dictating whether this coordinator will
+         *                                 {@link WorkPackage#extendClaimIfThresholdIsMet() extend claims}.
+         *
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        Builder coordinatorClaimExtension(boolean coordinatorExtendsClaims) {
+            this.coordinatorExtendsClaims = coordinatorExtendsClaims;
             return this;
         }
 
@@ -611,11 +636,15 @@ class Coordinator {
 
     /**
      * A {@link Runnable} defining the entire coordination process dealt with by a {@link Coordinator}. This task will
-     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
+     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in
+     * this
      * sense means:
      * <ol>
-     *     <li>Validating if there are {@link CoordinatorTask}s to run, and run a single one if there are any.</li>
-     *     <li>Periodically checking for unclaimed segments, claim these and start a {@link WorkPackage} per claim.</li>
+     *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
+     *     <li>{@link WorkPackage#extendClaimIfThresholdIsMet() Extend the claims} of all {@code WorkPackages} to relieve them of this effort.
+     *     This is an optimization activated through {@link Builder#coordinatorClaimExtension()}.</li>
+     *     <li>Validating if there are {@link CoordinatorTask CoordinatorTasks} to run, and run a single one if there are any.</li>
+     *     <li>Periodically checking for unclaimed segments, claim these and start a {@code WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
      *     <li>Reading events from the stream.</li>
      *     <li>Scheduling read events for each {@code WorkPackage} through {@link WorkPackage#scheduleEvent(TrackedEventMessage)}.</li>
@@ -648,12 +677,34 @@ class Coordinator {
                 return;
             }
 
+            // Abort WorkPackages for which releaseUntil() has been invoked
             workPackages.entrySet().stream()
                         .filter(entry -> isSegmentBlockedFromClaim(entry.getKey()))
                         .map(Map.Entry::getValue)
                         .forEach(workPackage -> abortWorkPackage(workPackage, null));
 
+            if (coordinatorExtendsClaims) {
+                logger.debug("Processor [{}] extending all claims of active Work Packages.", name);
+                // Extend the claims of each work package busy processing events.
+                // Doing so relieves this effort from the work package as an optimization.
+                workPackages.values()
+                            .stream()
+                            .filter(workPackage -> !workPackage.isAbortTriggered())
+                            .filter(WorkPackage::isProcessingEvents)
+                            .forEach(workPackage -> {
+                                try {
+                                    workPackage.extendClaimIfThresholdIsMet();
+                                } catch (Exception e) {
+                                    logger.warn("Error while extending claim for Work Package [{}]-[{}]. "
+                                                        + "Aborting Work Package...",
+                                                workPackage.segment().getSegmentId(), name, e);
+                                    workPackage.abort(e);
+                                }
+                            });
+            }
+
             if (!coordinatorTasks.isEmpty()) {
+                // Process any available coordinator tasks.
                 CoordinatorTask task = coordinatorTasks.remove();
                 logger.debug("Processor [{}] found task [{}] to run.", name, task.getDescription());
                 task.run()
@@ -666,8 +717,8 @@ class Coordinator {
             }
 
             if (eventStream == null || unclaimedSegmentValidationThreshold <= clock.instant().toEpochMilli()) {
+                // Claim new segments, construct work packages per new segment, and open stream based on lowest segment
                 unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
-
                 try {
                     Map<Segment, TrackingToken> newSegments = claimNewSegments();
                     TrackingToken streamStartPosition = lastScheduledToken;
@@ -677,7 +728,7 @@ class Coordinator {
                         TrackingToken otherUnwrapped = WrappedToken.unwrapLowerBound(token);
 
                         streamStartPosition = streamStartPosition == null || otherUnwrapped == null
-                                ? null : streamStartPosition.lowerBound(otherUnwrapped);
+                                              ? null : streamStartPosition.lowerBound(otherUnwrapped);
                         logger.debug("Processor [{}] claimed {} for processing.", name, segment);
                         workPackages.computeIfAbsent(segment.getSegmentId(),
                                                      wp -> workPackageFactory.apply(segment, token));
@@ -706,6 +757,7 @@ class Coordinator {
             }
 
             try {
+                // Coordinate events to work packages and reschedule this coordinator
                 if (!eventStream.hasNextAvailable() && isDone()) {
                     workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
                 }
@@ -827,7 +879,7 @@ class Coordinator {
         /**
          * Start coordinating work to the {@link WorkPackage}s. This firstly means retrieving events from the
          * {@link StreamableMessageSource}, check whether the event can be handled by any of them and if so, schedule
-         * these events to all the {@code WorkPackage}s. The {@code WorkPackage}s will state whether they''ll actually
+         * these events to all the {@code WorkPackage}s. The {@code WorkPackage}s will state whether they'll actually
          * handle the event through their response on {@link WorkPackage#scheduleEvent(TrackedEventMessage)}. If none of
          * the {@code WorkPackage}s can handle the event it will be ignored.
          * <p>
