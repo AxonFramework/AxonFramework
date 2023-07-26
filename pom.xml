@@ -124,7 +124,7 @@
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
         <spring.version>5.3.29</spring.version>
-        <spring.boot.version>2.7.13</spring.boot.version>
+        <spring.boot.version>2.7.14</spring.boot.version>
         <spring-security.version>5.7.3</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.2.0</awaitility.version>
@@ -393,6 +393,7 @@
                 <artifactId>reactive-streams</artifactId>
                 <version>${reactive.streams.spec.version}</version>
             </dependency>
+            <!-- Reactive -->
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-core</artifactId>
@@ -426,6 +427,7 @@
                 <artifactId>dom4j</artifactId>
                 <version>${dom4j.version}</version>
             </dependency>
+            <!-- Serialization -->
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
@@ -600,6 +602,17 @@
                         <exclude>**/*IntegrationTest_*.java</exclude>
                         <exclude>**/*IntegrationTests_*.java</exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <!-- package -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${maven-assembly.version}</version>
+                <configuration>
+                    <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
+                    <archiverConfig>
+                        <duplicateBehavior>skip</duplicateBehavior>
+                    </archiverConfig>
                 </configuration>
             </plugin>
             <!-- package -->
