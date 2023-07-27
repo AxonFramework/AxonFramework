@@ -22,6 +22,13 @@
         <sonar.skip>true</sonar.skip>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <!-- exclude this jar from ever making into a public maven repository -->

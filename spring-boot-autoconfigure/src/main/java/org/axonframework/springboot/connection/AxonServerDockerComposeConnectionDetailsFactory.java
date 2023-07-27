@@ -13,14 +13,14 @@ import org.springframework.boot.docker.compose.service.connection.DockerComposeC
  * @author Allard Buijze
  * @since 4.9
  */
-public class AxonServerConnectionDetailsFactory extends DockerComposeConnectionDetailsFactory<AxonServerConnectionDetails> {
+public class AxonServerDockerComposeConnectionDetailsFactory extends DockerComposeConnectionDetailsFactory<AxonServerConnectionDetails> {
 
-    private static final Logger logger = LoggerFactory.getLogger(AxonServerConnectionDetailsFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(AxonServerDockerComposeConnectionDetailsFactory.class);
 
     /**
      * Initializes the factory to look for containers running the "axoniq/axonserver" image.
      */
-    public AxonServerConnectionDetailsFactory() {
+    public AxonServerDockerComposeConnectionDetailsFactory() {
         super("axoniq/axonserver", "io.axoniq.axonserver.connector.AxonServerConnectionFactory");
     }
 
