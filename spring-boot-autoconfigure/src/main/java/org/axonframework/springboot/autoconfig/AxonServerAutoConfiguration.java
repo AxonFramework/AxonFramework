@@ -35,10 +35,12 @@ import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.TagsConfigurationProperties;
+import org.axonframework.springboot.connection.AxonServerConnectionDetails;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
@@ -66,10 +68,20 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
 
+    @ConditionalOnMissingBean(AxonServerConnectionDetails.class)
     @Bean
     public AxonServerConfiguration axonServerConfiguration() {
         AxonServerConfiguration configuration = new AxonServerConfiguration();
         configuration.setComponentName(clientName(applicationContext.getId()));
+        return configuration;
+    }
+
+    @ConditionalOnBean(AxonServerConnectionDetails.class)
+    @Bean
+    public AxonServerConfiguration axonServerConfigurationWithConnectionDetails(AxonServerConnectionDetails connectionDetails) {
+        AxonServerConfiguration configuration = new AxonServerConfiguration();
+        configuration.setComponentName(clientName(applicationContext.getId()));
+        configuration.setServers(connectionDetails.routingServers());
         return configuration;
     }
 

@@ -20,3 +20,5 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration, \
   org.axonframework.springboot.autoconfig.AxonTracingAutoConfiguration, \
   org.axonframework.springboot.autoconfig.OpenTelemetryAutoConfiguration
+org.springframework.boot.autoconfigure.service.connection.ConnectionDetailsFactory=\
+  org.axonframework.springboot.connection.AxonServerConnectionDetailsFactory

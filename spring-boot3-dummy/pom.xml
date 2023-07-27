@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.axonframework</groupId>
+        <artifactId>axon</artifactId>
+        <version>4.9.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>axon-spring-boot3-dummy</artifactId>
+    <name>Spring Boot 3 compiler dummy</name>
+    <description>
+        Module that contains shells of certain classes from Spring Boot 3 to allow dependent classes in the framework
+        to compile against those classes using JDK 8. This allows Axon Framework to maintain a baseline of JDK 8, while
+        providing specific Spring Boot 3 features that would otherwise require JDK 17 to compile.
+    </description>
+    <build>
+        <plugins>
+            <!-- exclude this jar from ever making into a public maven repository -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <!-- exclude this jar from ever making into a local maven repository -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
