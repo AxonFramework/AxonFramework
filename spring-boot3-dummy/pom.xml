@@ -16,6 +16,12 @@
         to compile against those classes using JDK 8. This allows Axon Framework to maintain a baseline of JDK 8, while
         providing specific Spring Boot 3 features that would otherwise require JDK 17 to compile.
     </description>
+
+    <properties>
+        <!-- sonar analysis of these classes doesn't make sense -->
+        <sonar.skip>true</sonar.skip>
+    </properties>
+
     <build>
         <plugins>
             <!-- exclude this jar from ever making into a public maven repository -->
