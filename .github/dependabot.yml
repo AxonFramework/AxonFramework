@@ -12,7 +12,7 @@ updates:
   reviewers:
     - "CodeDrivenMitch"
     - "gklijs"
-    - "smcvb" # Main
+    - "smcvb"
 - package-ecosystem: maven
   directory: "/"
   schedule:
@@ -25,4 +25,4 @@ updates:
   reviewers:
     - "CodeDrivenMitch"
     - "gklijs"
-    - "smcvb" # Main
+    - "smcvb"
