@@ -9,8 +9,10 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
   reviewers:
-    - "sandjelkovic" # Main
-    - "Morlack"
+    - "CodeDrivenMitch"
+    - "gklijs"
+    - "sandjelkovic"
+    - "smcvb"
   milestone: 6
 - package-ecosystem: maven
   directory: "/"
@@ -21,6 +23,8 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
   reviewers:
-    - "sandjelkovic" # Main
-    - "Morlack"
+    - "CodeDrivenMitch"
+    - "gklijs"
+    - "sandjelkovic"
+    - "smcvb"
   milestone: 6
