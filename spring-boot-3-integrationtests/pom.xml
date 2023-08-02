@@ -17,26 +17,25 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.1</version>
-        <relativePath/>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.axonframework</groupId>
+        <artifactId>axon</artifactId>
+        <version>4.9.0-SNAPSHOT</version>
+    </parent>
 
-    <groupId>org.axonframework</groupId>
     <artifactId>axon-spring-boot-3-integrationtests</artifactId>
 
     <name>Axon Framework - Spring Boot 3 Integration Tests</name>
     <description>
         Module containing integration tests using Spring Boot 3. Does not contain any production code.
     </description>
-    <version>4.9.0-SNAPSHOT</version>
 
     <properties>
-        <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
         <jobrunr.version>6.2.3</jobrunr.version>
+        <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
+        <spring-boot-3.version>3.1.2</spring-boot-3.version>
+        <!-- Build / Plugin -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
         <maven-compiler.version>3.11.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
@@ -71,7 +70,6 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
         <!-- Spring -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -127,14 +125,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-log4j2</artifactId>
         </dependency>
-
         <!-- Serialization -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
             <scope>test</scope>
         </dependency>
-
         <!-- Database -->
         <dependency>
             <groupId>org.hsqldb</groupId>
@@ -153,20 +149,19 @@
             <version>${mysql-connector-java.version}</version>
             <scope>test</scope>
         </dependency>
-
         <!-- Reactor -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Other -->
         <dependency>
             <groupId>org.jobrunr</groupId>
             <artifactId>jobrunr</artifactId>
             <version>${jobrunr.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Testing -->
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -193,9 +188,16 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-parent</artifactId>
+                <version>${spring-boot-3.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
-                <version>1.18.3</version>
+                <version>${testcontainers.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -204,6 +206,7 @@
 
     <build>
         <plugins>
+            <!-- compile -->
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler.version}</version>
@@ -215,14 +218,7 @@
                     <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>${maven-deploy.version}</version>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
+            <!-- test -->
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire.version}</version>
@@ -231,7 +227,6 @@
                     <argLine>-Djava.awt.headless=true ${surefireArgLine}</argLine>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -249,6 +244,14 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <!-- deploy -->
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>${maven-deploy.version}</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>

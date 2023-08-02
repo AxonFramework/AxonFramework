@@ -43,7 +43,7 @@ public class Oracle11TokenTableFactory implements TokenTableFactory {
                 schema.tokenColumn() + " " + " BLOB NULL,\n" +
                 schema.tokenTypeColumn() + " VARCHAR(255) NULL,\n" +
                 schema.timestampColumn() + " VARCHAR(255) NULL,\n" +
-                schema.ownerColum() + " VARCHAR(255) NULL,\n" +
+                schema.ownerColumn() + " VARCHAR(255) NULL,\n" +
                 "PRIMARY KEY (" + schema.processorNameColumn() + "," + schema.segmentColumn() + ")\n" +
                 ")";
         return connection.prepareStatement(sql);
