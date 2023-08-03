@@ -17,6 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
@@ -54,11 +55,13 @@ class ObjectMapperAutoConfigurationTest {
     @Test
     void eventSerializerIsOfTypeJacksonSerializerAndUsesDefaultAxonObjectMapperBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
+        final CBORMapper cborMapper = applicationContext.getBean("defaultAxonCborMapper", CBORMapper.class);
+
         final Serializer eventSerializer = applicationContext.getBean("eventSerializer", Serializer.class);
         final ObjectMapper objectMapper = applicationContext.getBean("defaultAxonObjectMapper", ObjectMapper.class);
 
         assertTrue(serializer instanceof JacksonSerializer);
-        assertEquals(objectMapper, ((JacksonSerializer) serializer).getObjectMapper());
+        assertEquals(cborMapper, ((JacksonSerializer) serializer).getObjectMapper());
         assertTrue(eventSerializer instanceof JacksonSerializer);
         assertEquals(objectMapper, ((JacksonSerializer) eventSerializer).getObjectMapper());
     }
