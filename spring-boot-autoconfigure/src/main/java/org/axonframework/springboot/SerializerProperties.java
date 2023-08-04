@@ -133,6 +133,13 @@ public class SerializerProperties {
          */
         JACKSON,
         /**
+         * Uses Jackson's {@link com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper} to serialize objects into CBOR.
+         * This format is not human-readable, but can save on the size of messages. When using this Serializer, make
+         * sure your tables are BLOBs, not CLOBs, as converting the {@code byte[]} to a {@code String} will corrupt the
+         * data.
+         */
+        CBOR,
+        /**
          * Uses the Java Serialization API (see {@link java.io.ObjectOutputStream}) to write objects. The Java
          * serializer's output is not interoperable and should really be only used in very specific cases. It is not
          * recommended to use this serializer as an Event Serializer, as it could cause Events to be stored in format
