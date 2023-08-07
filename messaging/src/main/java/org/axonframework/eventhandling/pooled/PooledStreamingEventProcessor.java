@@ -439,7 +439,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder;
         private Function<String, ScheduledExecutorService> workerExecutorBuilder;
         private int initialSegmentCount = 16;
-        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
+        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
+                ms -> ReplayToken.createReplayToken(ms.createHeadToken());
         private long tokenClaimInterval = 5000;
         private int maxClaimedSegments = Short.MAX_VALUE;
         private long claimExtensionThreshold = 5000;
@@ -448,7 +449,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private boolean coordinatorExtendsClaims = false;
 
         protected Builder() {
-            initialToken(ms -> ReplayToken.createReplayToken(ms.createHeadToken()));
             rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
         }
 
