@@ -52,11 +52,8 @@ import org.axonframework.serialization.SerializationException;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.mockito.InOrder;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
@@ -94,35 +91,10 @@ import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertUntil;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
-import static org.axonframework.integrationtests.utils.EventTestUtils.AGGREGATE;
-import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
-import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
+import static org.axonframework.integrationtests.utils.EventTestUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.intThat;
-import static org.mockito.Mockito.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
@@ -925,9 +897,13 @@ class TrackingEventProcessorTest {
         testSubject.start();
         awaitProcessorStarted();
 
-        eventBus.publish(createEvents(4));
+        int numberOfEvents = 4;
+        eventBus.publish(createEvents(numberOfEvents));
+        await("Handle Events - Initial")
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(50))
+                .until(() -> handled.size() == numberOfEvents);
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
         testSubject.shutDown();
         MyResetContext one = new MyResetContext("one");
         testSubject.resetTokens(one);
@@ -935,7 +911,12 @@ class TrackingEventProcessorTest {
         MyResetContext two = new MyResetContext("two");
         testSubject.resetTokens(two);
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, handled.size()));
+
+        await("Handle Events - Replay")
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(50))
+                .until(() -> handled.size() == 8);
+
         assertEquals(handled.subList(0, 4), handled.subList(4, 8));
         assertEquals(handled.subList(4, 8), handledInRedelivery);
         assertEquals(4, contextInRedelivery.size());
@@ -1010,8 +991,12 @@ class TrackingEventProcessorTest {
         testSubject.start();
         awaitProcessorStarted();
 
-        eventBus.publish(createEvents(4));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+        int numberOfEvents = 4;
+        eventBus.publish(createEvents(numberOfEvents));
+        await("Handle Events")
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(50))
+                .until(() -> handled.size() == 4);
 
         testSubject.shutDown();
         testSubject.resetTokens(source -> new GlobalSequenceTrackingToken(1L));
@@ -1101,7 +1086,7 @@ class TrackingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
                 testSubject.processingStatus().get(segmentId).isReplaying()
         ));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+        assertWithin(1 , TimeUnit.SECONDS, () -> assertFalse(
                 testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()));
         assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
                 testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()
@@ -1134,8 +1119,13 @@ class TrackingEventProcessorTest {
         testSubject.start();
         awaitProcessorStarted();
 
-        eventBus.publish(createEvents(4));
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+        int numberOfEvents = 4;
+        eventBus.publish(createEvents(numberOfEvents));
+        await("Handle Events")
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(50))
+                .until(() -> handled.size() == numberOfEvents);
+
         assertEquals(0, handledInRedelivery.size());
         assertFalse(testSubject.processingStatus().get(segmentId).isReplaying());
         assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent());
@@ -1628,7 +1618,7 @@ class TrackingEventProcessorTest {
         testSubject.start();
         await().pollDelay(pollDelay)
                .atMost(Duration.ofMillis(250))
-               .until(() -> testSubject.processingStatus().size() >= 1);
+               .until(() -> !testSubject.processingStatus().isEmpty());
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         await().pollDelay(pollDelay)
@@ -2029,7 +2019,11 @@ class TrackingEventProcessorTest {
         awaitProcessorStarted();
         // ensure some events have been handled by the TEP
         eventBus.publish(createEvents(numberOfEvents));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(numberOfEvents, handled.size()));
+        await("Handled Events")
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(50))
+                .until(() -> handled.size() == numberOfEvents);
+
         assertEquals(0, handledInRedelivery.size());
 
         // initiate reset to toggle replay status

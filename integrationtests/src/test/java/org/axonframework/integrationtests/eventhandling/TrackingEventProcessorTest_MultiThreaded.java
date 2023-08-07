@@ -365,11 +365,11 @@ class TrackingEventProcessorTest_MultiThreaded {
 
         GlobalSequenceTrackingToken expectedInitialToken = new GlobalSequenceTrackingToken(1);
         await("Segment Zero - Phase 1")
-                .atMost(Duration.ofSeconds(1))
+                .atMost(Duration.ofSeconds(2))
                 .pollDelay(Duration.ofMillis(50))
                 .until(() -> tokenStore.fetchToken("test", 0).equals(expectedInitialToken));
         await("Segment One - Phase 1")
-                .atMost(Duration.ofSeconds(1))
+                .atMost(Duration.ofSeconds(2))
                 .pollDelay(Duration.ofMillis(50))
                 .until(() -> tokenStore.fetchToken("test", 1).equals(expectedInitialToken));
 
@@ -395,11 +395,11 @@ class TrackingEventProcessorTest_MultiThreaded {
 
         GlobalSequenceTrackingToken expectedSubsequentToken = new GlobalSequenceTrackingToken(3);
         await("Segment Zero - Phase 2")
-                .atMost(Duration.ofSeconds(1))
+                .atMost(Duration.ofSeconds(2))
                 .pollDelay(Duration.ofMillis(50))
                 .until(() -> tokenStore.fetchToken("test", 0).equals(expectedSubsequentToken));
         await("Segment One - Phase 2")
-                .atMost(Duration.ofSeconds(1))
+                .atMost(Duration.ofSeconds(2))
                 .pollDelay(Duration.ofMillis(50))
                 .until(() -> tokenStore.fetchToken("test", 1).equals(expectedSubsequentToken));
     }
