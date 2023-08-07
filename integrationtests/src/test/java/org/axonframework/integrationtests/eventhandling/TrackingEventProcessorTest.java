@@ -2115,7 +2115,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testExistingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
+    void existingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(3);
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
@@ -2130,12 +2130,11 @@ class TrackingEventProcessorTest {
 
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
         TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
-        assertTrue(ReplayToken.isReplay(trackingToken),
-                   "Not a replay token: " + trackingToken);
+        assertTrue(ReplayToken.isReplay(trackingToken), "Not a replay token: " + trackingToken);
     }
 
     @Test
-    void testEventsPublishedAfterProcessorStartAreNotConsideredReplayed() throws Exception {
+    void eventsPublishedAfterProcessorStartAreNotConsideredReplayed() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch finished = new CountDownLatch(2);
         //noinspection resource
@@ -2145,16 +2144,9 @@ class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         eventBus.publish(createEvent(0));
-//        eventBus.publish(createEvent(1));
 
-        doAnswer(i -> {
-            System.out.println("Token stored: " + i.getArgument(0));
-            return i.callRealMethod();
-        }).when(tokenStore).storeToken(any(), anyString(), anyInt());
-        doAnswer(i -> {
-            System.out.println("Token initialized: " + i.getArgument(2));
-            return i.callRealMethod();
-        }).when(tokenStore).initializeTokenSegments(anyString(), anyInt(), any());
+        doAnswer(i -> i.callRealMethod()).when(tokenStore).storeToken(any(), anyString(), anyInt());
+        doAnswer(i -> i.callRealMethod()).when(tokenStore).initializeTokenSegments(anyString(), anyInt(), any());
 
         testSubject.start();
 
@@ -2164,8 +2156,7 @@ class TrackingEventProcessorTest {
 
         assertTrue(finished.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
         TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
-        assertFalse(ReplayToken.isReplay(trackingToken),
-                    "Not a replay token: " + trackingToken);
+        assertFalse(ReplayToken.isReplay(trackingToken), "Not a replay token: " + trackingToken);
     }
 
     private void waitForStatus(String description,
