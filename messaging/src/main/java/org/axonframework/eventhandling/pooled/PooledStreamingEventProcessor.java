@@ -45,7 +45,6 @@ import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.Arrays;
@@ -60,6 +59,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -626,11 +626,15 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         /**
          * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. The function will be
          * given the configured {@link StreamableMessageSource}' so that its methods can be invoked for token creation.
-         * Defaults to {@link StreamableMessageSource#createTailToken()}.
+         * <p>
+         * Defaults to an automatic replay since the start of the stream.
+         * <p>
+         * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
+         * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
+         * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
          *
-         * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given {@link
-         *                     StreamableMessageSource}
-         *
+         * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
+         *                     {@link StreamableMessageSource}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder initialToken(

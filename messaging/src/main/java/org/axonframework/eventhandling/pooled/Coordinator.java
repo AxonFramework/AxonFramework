@@ -557,14 +557,12 @@ class Coordinator {
          * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. Defaults to an automatic
          * replay since the start of the stream.
          * <p>
-         * More specically, it default to a ReplayToken that starts streaming from the Tail
-         * ({@link StreamableMessageSource#createTailToken()}) with the replay
-         * flag enabled until the Head ({@link StreamableMessageSource#createHeadToken()}) at the moment of
-         * initialization is reached.
+         * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
+         * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
+         * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
          *                     {@link StreamableMessageSource}
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder initialToken(
