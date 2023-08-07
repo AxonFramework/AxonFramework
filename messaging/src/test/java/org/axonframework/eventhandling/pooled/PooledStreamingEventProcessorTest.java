@@ -1234,7 +1234,7 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
-    void testExistingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
+    void existingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
         setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
 
         CountDownLatch countDownLatch = new CountDownLatch(3);
@@ -1256,7 +1256,7 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
-    void testEventsPublishedAfterProcessorStartAreNotConsideredReplayed() throws Exception {
+    void eventsPublishedAfterProcessorStartAreNotConsideredReplayed() throws Exception {
         setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
 
         CountDownLatch countDownLatch = new CountDownLatch(3);
