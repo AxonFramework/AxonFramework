@@ -37,8 +37,10 @@ import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,9 +71,29 @@ import java.util.stream.Stream;
 
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.intThat;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link PooledStreamingEventProcessor}.
@@ -347,7 +369,7 @@ class PooledStreamingEventProcessorTest {
     }
 
     private long tokenPosition(TrackingToken token) {
-        return token == null ? 0 : token.position().orElseThrow(IllegalArgumentException::new);
+        return token == null ? 0 : token.position().orElse(0);
     }
 
     @Test
@@ -1153,9 +1175,9 @@ class PooledStreamingEventProcessorTest {
         List<EventMessage<Integer>> events = IntStream.range(0, 100)
                                                       .mapToObj(GenericEventMessage::new)
                                                       .collect(Collectors.toList());
-        events.forEach(stubMessageSource::publishMessage);
-
         testSubject.start();
+
+        events.forEach(stubMessageSource::publishMessage);
 
         assertWithin(
                 1, TimeUnit.SECONDS,
@@ -1210,6 +1232,52 @@ class PooledStreamingEventProcessorTest {
         //It should have taken 2 seconds (rounded down) or more this will fail, want changed to normal mock, then it goes faster
         assertTrue(Duration.between(startedProcessing.get(), now).getSeconds() >= 2);
     }
+
+    @Test
+    void existingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
+        setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
+
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+        //noinspection resource
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        IntStream.range(0, 3)
+                 .mapToObj(GenericEventMessage::new)
+                 .forEach(stubMessageSource::publishMessage);
+
+        testSubject.start();
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
+        TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
+        assertTrue(ReplayToken.isReplay(trackingToken),
+                   "Not a replay token: " + trackingToken);
+    }
+
+    @Test
+    void eventsPublishedAfterProcessorStartAreNotConsideredReplayed() throws Exception {
+        setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
+
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+        //noinspection resource
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(0));
+        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(1));
+
+        testSubject.start();
+
+        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(2));
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
+        TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
+        assertFalse(ReplayToken.isReplay(trackingToken),
+                    "Not a replay token: " + trackingToken);
+    }
+
 
     private void mockSlowEventHandler() throws Exception {
         doAnswer(invocation -> {

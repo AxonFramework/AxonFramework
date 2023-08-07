@@ -381,8 +381,7 @@ class Coordinator {
         private Clock clock = GenericEventMessage.clock;
         private int maxClaimedSegments;
         private int initialSegmentCount = 16;
-        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
-                StreamableMessageSource::createTailToken;
+        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
@@ -546,6 +545,7 @@ class Coordinator {
          *
          * @param initialSegmentCount an {@code int} specifying the initial segment count used to create segments on
          *                            start up
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder initialSegmentCount(int initialSegmentCount) {
@@ -554,8 +554,12 @@ class Coordinator {
         }
 
         /**
-         * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. Defaults to
-         * {@link StreamableMessageSource::createTailToken}
+         * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. Defaults to an automatic
+         * replay since the start of the stream.
+         * <p>
+         * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
+         * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
+         * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
          *                     {@link StreamableMessageSource}
@@ -573,6 +577,7 @@ class Coordinator {
          * actions. Defaults to a no-op.
          *
          * @param shutdownAction the action to perform when the coordinator is shut down
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder onShutdown(Runnable shutdownAction) {
@@ -586,6 +591,7 @@ class Coordinator {
          *
          * @param coordinatorExtendsClaims A flag dictating whether this coordinator will
          *                                 {@link WorkPackage#extendClaimIfThresholdIsMet() extend claims}.
+         *
          * @return The current Builder instance, for fluent interfacing.
          */
         Builder coordinatorClaimExtension(boolean coordinatorExtendsClaims) {
@@ -628,7 +634,8 @@ class Coordinator {
 
     /**
      * A {@link Runnable} defining the entire coordination process dealt with by a {@link Coordinator}. This task will
-     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
+     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in
+     * this
      * sense means:
      * <ol>
      *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
@@ -719,7 +726,7 @@ class Coordinator {
                         TrackingToken otherUnwrapped = WrappedToken.unwrapLowerBound(token);
 
                         streamStartPosition = streamStartPosition == null || otherUnwrapped == null
-                                ? null : streamStartPosition.lowerBound(otherUnwrapped);
+                                              ? null : streamStartPosition.lowerBound(otherUnwrapped);
                         logger.debug("Processor [{}] claimed {} for processing.", name, segment);
                         workPackages.computeIfAbsent(segment.getSegmentId(),
                                                      wp -> workPackageFactory.apply(segment, token));

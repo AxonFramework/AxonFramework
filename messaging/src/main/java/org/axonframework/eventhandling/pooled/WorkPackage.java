@@ -417,6 +417,7 @@ class WorkPackage {
      * An aborted {@code WorkPackage} cannot be restarted.
      *
      * @param abortReason the reason to request the {@link WorkPackage} to abort
+     *
      * @return a {@link CompletableFuture} that completes with the first reason once the {@link WorkPackage} has stopped
      * processing
      */
