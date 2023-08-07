@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -41,6 +42,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -363,15 +365,22 @@ class TrackingEventProcessorTest_MultiThreaded {
         assertTrue(countDownLatch.await(5, SECONDS), "Expected 2 invocations on Event Handler by now");
         assertEquals(2, acknowledgeByThread.eventCount());
 
-        GlobalSequenceTrackingToken expectedInitialToken = new GlobalSequenceTrackingToken(1);
         await("Segment Zero - Phase 1")
                 .atMost(Duration.ofSeconds(2))
                 .pollDelay(Duration.ofMillis(50))
-                .until(() -> tokenStore.fetchToken("test", 0).equals(expectedInitialToken));
+                .until(() -> {
+                    TrackingToken fetchedToken = tokenStore.fetchToken("test", 0);
+                    OptionalLong position = fetchedToken.position();
+                    return position.isPresent() && position.getAsLong() == 1;
+                });
         await("Segment One - Phase 1")
                 .atMost(Duration.ofSeconds(2))
                 .pollDelay(Duration.ofMillis(50))
-                .until(() -> tokenStore.fetchToken("test", 1).equals(expectedInitialToken));
+                .until(() -> {
+                    TrackingToken fetchedToken = tokenStore.fetchToken("test", 1);
+                    OptionalLong position = fetchedToken.position();
+                    return position.isPresent() && position.getAsLong() == 1;
+                });
 
         CompletableFuture<Void> shutdown = testSubject.shutdownAsync();
         await("Shutdown")
