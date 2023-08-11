@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,11 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -52,6 +56,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @since 4.0
  */
 public class CommandSerializer {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final AxonServerConfiguration configuration;
     private final Serializer messageSerializer;
@@ -127,8 +133,14 @@ public class CommandSerializer {
             Throwable throwable = commandResultMessage.exceptionResult();
             responseBuilder.setErrorCode(ErrorCode.getCommandExecutionErrorCode(throwable).errorCode());
             responseBuilder.setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable));
-            commandResultMessage.exceptionDetails()
-                                .ifPresent(details -> responseBuilder.setPayload(objectSerializer.apply(details)));
+            Optional<Object> optionalDetails = commandResultMessage.exceptionDetails();
+            if (optionalDetails.isPresent()) {
+                responseBuilder.setPayload(objectSerializer.apply(optionalDetails.get()));
+            } else {
+                logger.warn("Serializing exception [{}] without details.", throwable.getClass(), throwable);
+                logger.info("To share exceptional information with the recipient it is recommended to wrap the "
+                                    + "exception in a CommandExecutionException with provided details.");
+            }
         } else if (commandResultMessage.getPayload() != null) {
             responseBuilder.setPayload(objectSerializer.apply(commandResultMessage.getPayload()));
         }
