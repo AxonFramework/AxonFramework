@@ -135,7 +135,7 @@ public class CommandSerializer {
             responseBuilder.setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable));
             Optional<Object> optionalDetails = commandResultMessage.exceptionDetails();
             if (optionalDetails.isPresent()) {
-                optionalDetails.map(details -> responseBuilder.setPayload(objectSerializer.apply(details)));
+                responseBuilder.setPayload(objectSerializer.apply(optionalDetails.get()));
             } else {
                 logger.warn("Serializing exception [{}] without details.", throwable.getClass(), throwable);
                 logger.info("To share exceptional information with the recipient it is recommended to wrap the "

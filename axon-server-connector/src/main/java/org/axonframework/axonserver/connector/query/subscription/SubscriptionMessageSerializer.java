@@ -144,9 +144,7 @@ public class SubscriptionMessageSerializer {
             );
             Optional<Object> optionalDetails = subscriptionQueryUpdateMessage.exceptionDetails();
             if (optionalDetails.isPresent()) {
-                optionalDetails.map(
-                        details -> updateMessageBuilder.setPayload(exceptionDetailsSerializer.apply(details))
-                );
+                updateMessageBuilder.setPayload(exceptionDetailsSerializer.apply(optionalDetails.get()));
             } else {
                 logger.warn("Serializing exception [{}] without details.", exceptionResult.getClass(), exceptionResult);
                 logger.info("To share exceptional information with the recipient it is recommended to wrap the "
@@ -250,7 +248,7 @@ public class SubscriptionMessageSerializer {
             );
             Optional<Object> optionalDetails = initialResult.exceptionDetails();
             if (optionalDetails.isPresent()) {
-                optionalDetails.map(details -> responseBuilder.setPayload(exceptionDetailsSerializer.apply(details)));
+                responseBuilder.setPayload(exceptionDetailsSerializer.apply(optionalDetails.get()));
             } else {
                 logger.warn("Serializing exception [{}] without details.", exceptionResult.getClass(), exceptionResult);
                 logger.info("To share exceptional information with the recipient it is recommended to wrap the "
