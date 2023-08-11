@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,11 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.invoke.MethodHandles;
+import java.util.Optional;
 
 /**
  * Converter between Axon Framework {@link QueryMessage} and {@link QueryResponseMessage} and Axon Server gRPC {@link
@@ -42,6 +47,8 @@ import org.axonframework.serialization.Serializer;
  * @since 4.0
  */
 public class QuerySerializer {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Serializer messageSerializer;
     private final Serializer serializer;
@@ -179,8 +186,14 @@ public class QuerySerializer {
             responseBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
-            queryResponse.exceptionDetails()
-                         .ifPresent(details -> responseBuilder.setPayload(exceptionDetailsSerializer.apply(details)));
+            Optional<Object> optionalDetails = queryResponse.exceptionDetails();
+            if (optionalDetails.isPresent()) {
+                optionalDetails.map(details -> responseBuilder.setPayload(exceptionDetailsSerializer.apply(details)));
+            } else {
+                logger.warn("Serializing exception [{}] without details.", exceptionResult.getClass(), exceptionResult);
+                logger.info("To share exceptional information with the recipient it is recommended to wrap the "
+                                    + "exception in a QueryExecutionException with provided details.");
+            }
         } else {
             responseBuilder.setPayload(payloadSerializer.apply(queryResponse));
         }
