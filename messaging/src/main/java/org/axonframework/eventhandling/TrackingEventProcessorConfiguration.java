@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,12 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.eventhandling.ReplayToken.createReplayToken;
 
 /**
- * Configuration object for the {@link TrackingEventProcessor}. The TrackingEventProcessorConfiguration provides access
- * to the options to tweak various settings. Instances are not thread-safe and should not be altered after they have
- * been used to initialize a TrackingEventProcessor.
+ * Configuration object for the {@link TrackingEventProcessor}. The {@code TrackingEventProcessorConfiguration} provides
+ * access to the options to tweak various settings. Instances are not thread-safe and should not be altered after they
+ * have been used to initialize a {@code TrackingEventProcessor}.
  *
  * @author Christophe Bouhier
  * @author Allard Buijze
@@ -47,7 +48,7 @@ public class TrackingEventProcessorConfiguration {
     private final int maxThreadCount;
     private int batchSize;
     private int initialSegmentCount;
-    private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder = StreamableMessageSource::createTailToken;
+    private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
     private Function<String, ThreadFactory> threadFactory;
     private long tokenClaimInterval;
     private int eventAvailabilityTimeout = 1000;
@@ -58,7 +59,7 @@ public class TrackingEventProcessorConfiguration {
     /**
      * Initialize a configuration with single threaded processing.
      *
-     * @return a Configuration prepared for single threaded processing
+     * @return A Configuration prepared for single threaded processing.
      */
     public static TrackingEventProcessorConfiguration forSingleThreadedProcessing() {
         return new TrackingEventProcessorConfiguration(DEFAULT_THREAD_COUNT);
@@ -69,8 +70,8 @@ public class TrackingEventProcessorConfiguration {
      * processor will start for processing, as well as the initial number of segments that will be created when the
      * processor is first started.
      *
-     * @param threadCount the number of segments to process in parallel
-     * @return a newly created configuration
+     * @param threadCount The number of segments to process in parallel.
+     * @return A newly created configuration.
      */
     public static TrackingEventProcessorConfiguration forParallelProcessing(int threadCount) {
         return new TrackingEventProcessorConfiguration(threadCount);
@@ -84,11 +85,14 @@ public class TrackingEventProcessorConfiguration {
         this.tokenClaimInterval = DEFAULT_TOKEN_CLAIM_INTERVAL;
         this.autoStart = true;
         this.workerTerminationTimeout = DEFAULT_WORKER_TERMINATION_TIMEOUT_MS;
+        this.initialTrackingTokenBuilder = messageSource -> createReplayToken(messageSource.createHeadToken());
     }
 
     /**
+     * Set the maximum number of events that may be processed in a single transaction. Defaults to {@code 1}.
+     *
      * @param batchSize The maximum number of events to process in a single batch.
-     * @return {@code this} for method chaining
+     * @return {@code this} for method chaining.
      */
     public TrackingEventProcessorConfiguration andBatchSize(int batchSize) {
         Assert.isTrue(batchSize > 0, () -> "Batch size must be greater or equal to 1");
@@ -97,8 +101,15 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
+     * Sets the initial number of segments for asynchronous processing. Will be combined with the
+     * {@link #andInitialTrackingToken(Function) initial tracking token} builder method for fresh
+     * {@link TrackingEventProcessor TrackingEventProcessors}.
+     * <p>
+     * This value is <em>only</em> used whenever there are no {@link TrackingToken TrackingTokens} present for the
+     * {@code TrackingEventProcessor} this configuration is used on.
+     *
      * @param segmentsSize The number of segments requested for handling asynchronous processing of events.
-     * @return {@code this} for method chaining
+     * @return {@code this} for method chaining.
      */
     public TrackingEventProcessorConfiguration andInitialSegmentsCount(int segmentsSize) {
         this.initialSegmentCount = segmentsSize;
@@ -106,14 +117,15 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
-     * Sets the ThreadFactory to use to create the threads to process events on. Each Segment will be processed by a
-     * separate thread.
+     * Sets the {@link ThreadFactory} to use to create the {@link Thread Threads} to process events on. Each segment
+     * will be processed by a separate thread.
      *
-     * @param threadFactory The factory to create threads with
-     * @return {@code this} for method chaining
+     * @param threadFactory The {@link ThreadFactory} to create {@link Thread Threads} with.
+     * @return {@code this} for method chaining.
      */
     public TrackingEventProcessorConfiguration andThreadFactory(
-            @Nonnull Function<String, ThreadFactory> threadFactory) {
+            @Nonnull Function<String, ThreadFactory> threadFactory
+    ) {
         this.threadFactory = threadFactory;
         return this;
     }
@@ -134,9 +146,9 @@ public class TrackingEventProcessorConfiguration {
      * <p>
      * The given value must be strictly larger than 0, and may not exceed {@code Integer.MAX_VALUE} milliseconds.
      *
-     * @param interval The interval in which claims on segments need to be extended
-     * @param unit     The unit in which the interval is expressed
-     * @return {@code this} for method chaining
+     * @param interval The interval in which claims on segments need to be extended.
+     * @param unit     The unit in which the interval is expressed.
+     * @return {@code this} for method chaining.
      */
     public TrackingEventProcessorConfiguration andEventAvailabilityTimeout(long interval, TimeUnit unit) {
         long i = unit.toMillis(interval);
@@ -148,14 +160,21 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
-     * Sets the Builder to use to create the initial tracking token. This token is used by the processor as a starting
-     * point.
+     * Sets the builder to use to create the initial {@link TrackingToken}. This token is used by the processor as a
+     * starting point.
+     * <p>
+     * Defaults to an automatic replay since the start of the stream.
+     * <p>
+     * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
+     * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
+     * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
      *
-     * @param initialTrackingTokenBuilder The Builder of initial tracking token
-     * @return {@code this} for method chaining
+     * @param initialTrackingTokenBuilder The builder of the initial {@link TrackingToken}.
+     * @return {@code this} for method chaining.
      */
     public TrackingEventProcessorConfiguration andInitialTrackingToken(
-            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder) {
+            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder
+    ) {
         this.initialTrackingTokenBuilder = initialTrackingTokenBuilder;
         return this;
     }
@@ -163,9 +182,9 @@ public class TrackingEventProcessorConfiguration {
     /**
      * Sets the time to wait after a failed attempt to claim any token, before making another attempt.
      *
-     * @param tokenClaimInterval The time to wait in between attempts to claim a token
-     * @param timeUnit           The unit of time
-     * @return {@code this} for method chaining
+     * @param tokenClaimInterval The time to wait in between attempts to claim a token.
+     * @param timeUnit           The unit of time.
+     * @return {@code this} for method chaining.
      */
     public TrackingEventProcessorConfiguration andTokenClaimInterval(long tokenClaimInterval,
                                                                      @Nonnull TimeUnit timeUnit) {
@@ -183,7 +202,7 @@ public class TrackingEventProcessorConfiguration {
      *
      * @param autoStart {@code true} to automatically start the processor (the default), {@code false} if the
      *                  application will start the processor itself.
-     * @return {@code this} for method chaining
+     * @return {@code this} for method chaining.
      */
     public TrackingEventProcessorConfiguration andAutoStart(boolean autoStart) {
         this.autoStart = autoStart;
@@ -192,10 +211,11 @@ public class TrackingEventProcessorConfiguration {
 
     /**
      * Sets the {@link EventTrackerStatusChangeListener} which will be called on {@link EventTrackerStatus} changes.
+     * <p>
      * Defaults to {@link EventTrackerStatusChangeListener#noOp()}.
      *
-     * @param eventTrackerStatusChangeListener the {@link EventTrackerStatusChangeListener} to use
-     * @return {@code this} for method chaining
+     * @param eventTrackerStatusChangeListener The {@link EventTrackerStatusChangeListener} to use.
+     * @return {@code this} for method chaining.
      */
     public TrackingEventProcessorConfiguration andEventTrackerStatusChangeListener(
             @Nonnull EventTrackerStatusChangeListener eventTrackerStatusChangeListener
@@ -206,65 +226,80 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
-     * Sets the shutdown timeout to terminate active workers. This is used for both the graceful termination and the 
-     * potential forced termination of active workers. It is thus possible that it is used twice during the shutdown 
-     * phase. Defaults to 5000ms.
+     * Sets the shutdown timeout to terminate active workers.
+     * <p>
+     * This is used for both the graceful termination and the potential forced termination of active workers. It is thus
+     * possible that it is used twice during the shutdown phase. Defaults to 5000ms.
      *
-     * @param workerTerminationTimeout the timeout for workers to terminate on a shutdown in milliseconds
-     * @return {@code this} for method chaining
-     * 
+     * @param workerTerminationTimeoutInMilliseconds The timeout for workers to terminate on a shutdown in
+     *                                               milliseconds.
+     * @return {@code this} for method chaining.
      * @deprecated Use {@link #andWorkerTerminationTimeout(long, TimeUnit)} instead.
      */
     @Deprecated
-    public TrackingEventProcessorConfiguration andWorkerTerminationTimeout(long workerTerminationTimeoutInMilliseconds) {
-    	return andWorkerTerminationTimeout(workerTerminationTimeoutInMilliseconds, TimeUnit.MILLISECONDS);
+    public TrackingEventProcessorConfiguration andWorkerTerminationTimeout(
+            long workerTerminationTimeoutInMilliseconds) {
+        return andWorkerTerminationTimeout(workerTerminationTimeoutInMilliseconds, TimeUnit.MILLISECONDS);
     }
-    
+
     /**
-     * Sets the shutdown timeout to terminate active workers. This is used for both the graceful termination and the 
-     * potential forced termination of active workers. It is thus possible that it is used twice during the shutdown 
-     * phase. Defaults to 5000ms.
+     * Sets the shutdown timeout to terminate active workers.
+     * <p>
+     * This is used for both the graceful termination and the potential forced termination of active workers. It is thus
+     * possible that it is used twice during the shutdown phase. Defaults to 5000ms.
      *
-     * @param workerTerminationTimeout the timeout for workers to terminate on a shutdown.
-     * @param timeUnit           The unit of time
-     * @return {@code this} for method chaining
+     * @param workerTerminationTimeout The timeout for workers to terminate on a shutdown.
+     * @param timeUnit                 The unit of time.
+     * @return {@code this} for method chaining.
      */
-    public TrackingEventProcessorConfiguration andWorkerTerminationTimeout(long workerTerminationTimeout, TimeUnit timeUnit) {
+    public TrackingEventProcessorConfiguration andWorkerTerminationTimeout(long workerTerminationTimeout,
+                                                                           TimeUnit timeUnit) {
         assertStrictPositive(workerTerminationTimeout, "The worker termination timeout should be strictly positive");
         this.workerTerminationTimeout = timeUnit.toMillis(workerTerminationTimeout);
         return this;
     }
 
     /**
-     * @return the maximum number of events to process in a single batch.
+     * Return the maximum number of events to process in a single batch.
+     *
+     * @return The maximum number of events to process in a single batch.
      */
     public int getBatchSize() {
         return batchSize;
     }
 
     /**
-     * @return the number of segments requested for handling asynchronous processing of events.
+     * Return the number of segments requested for handling asynchronous processing of events.
+     *
+     * @return The number of segments requested for handling asynchronous processing of events.
      */
     public int getInitialSegmentsCount() {
         return initialSegmentCount;
     }
 
     /**
-     * @return the Builder of initial tracking token
+     * Return the builder function of the initial {@link TrackingToken}.
+     *
+     * @return The builder of initial {@link TrackingToken}.
      */
     public Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> getInitialTrackingToken() {
         return initialTrackingTokenBuilder;
     }
 
     /**
-     * @return the pool size of core threads as per {@link ThreadPoolExecutor#getCorePoolSize()}
+     * Return the pool size of core threads as per {@link ThreadPoolExecutor#getCorePoolSize()}.
+     *
+     * @return the pool size of core threads as per {@link ThreadPoolExecutor#getCorePoolSize()}.
      */
     public int getMaxThreadCount() {
         return maxThreadCount;
     }
 
     /**
-     * @return the time, in milliseconds, that a processor should wait for available events before going into a cycle of
+     * Return the time, in milliseconds, that a processor should wait for available events before going into a cycle of
+     * updating claims and checking for incoming instructions.
+     *
+     * @return The time, in milliseconds, that a processor should wait for available events before going into a cycle of
      * updating claims and checking for incoming instructions.
      */
     public int getEventAvailabilityTimeout() {
@@ -272,10 +307,11 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
-     * Provides the ThreadFactory to use to construct Threads for the processor with given {@code processorName}
+     * Provides the {@link ThreadFactory} to use to construct {@link Thread Threads} for the processor with given
+     * {@code processorName}.
      *
-     * @param processorName The name of the processor for which to return the ThreadFactory
-     * @return the thread factory configured
+     * @param processorName The name of the processor for which to return the {@link ThreadFactory}.
+     * @return The configured {@link ThreadFactory}.
      */
     public ThreadFactory getThreadFactory(String processorName) {
         return threadFactory.apply(processorName);
@@ -285,7 +321,7 @@ public class TrackingEventProcessorConfiguration {
      * Returns the time, in milliseconds, the processor should wait after a failed attempt to claim any segments for
      * processing. Generally, this means all segments are claimed.
      *
-     * @return the time, in milliseconds, to wait in between attempts to claim a token
+     * @return The time, in milliseconds, to wait in between attempts to claim a token.
      * @see #andTokenClaimInterval(long, TimeUnit)
      */
     public long getTokenClaimInterval() {
@@ -293,7 +329,9 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
-     * @return {@code} true if the processor should be started automatically by the framework.
+     * Return a {@code boolean} dictating whether the processor should start automatically when the application starts.
+     *
+     * @return {@code true} if the processor should be started automatically by the framework.
      */
     public boolean isAutoStart() {
         return autoStart;
@@ -303,7 +341,7 @@ public class TrackingEventProcessorConfiguration {
      * Returns the {@link EventTrackerStatusChangeListener} defined in this configuration, to be called whenever an
      * {@link EventTrackerStatus} change occurs.
      *
-     * @return the {@link EventTrackerStatusChangeListener} defined in this configuration
+     * @return The {@link EventTrackerStatusChangeListener} defined in this configuration.
      */
     public EventTrackerStatusChangeListener getEventTrackerStatusChangeListener() {
         return eventTrackerStatusChangeListener;
@@ -312,7 +350,7 @@ public class TrackingEventProcessorConfiguration {
     /**
      * Returns the timeout to terminate workers during a {@link TrackingEventProcessor#shutDown()}.
      *
-     * @return the timeout to terminate workers during a {@link TrackingEventProcessor#shutDown()}
+     * @return The timeout to terminate workers during a {@link TrackingEventProcessor#shutDown()}.
      */
     public long getWorkerTerminationTimeout() {
         return workerTerminationTimeout;

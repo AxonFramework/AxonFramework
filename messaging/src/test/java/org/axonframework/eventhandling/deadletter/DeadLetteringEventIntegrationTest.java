@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.deadletter;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.axonframework.common.AxonException;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandler;
@@ -25,12 +26,15 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageIdentifier;
+import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
@@ -40,6 +44,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
@@ -51,6 +56,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import static org.awaitility.Awaitility.await;
@@ -86,6 +93,31 @@ public abstract class DeadLetteringEventIntegrationTest {
     private static final boolean SUCCEED_RETRY = true;
     private static final boolean FAIL = false;
     private static final boolean FAIL_RETRY = false;
+    private static final int DEFAULT_RETRIES = 1;
+    private static final String BLOB_OF_TEXT = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "
+            + "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
+            + "Gravida quis blandit turpis cursus in. "
+            + "Nulla facilisi etiam dignissim diam quis enim lobortis scelerisque fermentum. "
+            + "Egestas maecenas pharetra convallis posuere morbi leo urna. "
+            + "Dictumst quisque sagittis purus sit amet volutpat consequat. "
+            + "At volutpat diam ut venenatis tellus in metus vulputate eu. "
+            + "Imperdiet dui accumsan sit amet nulla facilisi. Eget est lorem ipsum dolor sit amet. "
+            + "Vestibulum morbi blandit cursus risus at ultrices mi tempus imperdiet. "
+            + "Sed tempus urna et pharetra pharetra massa massa. Dolor magna eget est lorem. "
+            + "Purus semper eget duis at tellus. "
+            + "Tincidunt augue interdum velit euismod in pellentesque massa placerat duis."
+            + "\n\n"
+            + "Quis ipsum suspendisse ultrices gravida dictum fusce ut. "
+            + "Nascetur ridiculus mus mauris vitae ultricies leo integer malesuada. "
+            + "Sit amet purus gravida quis blandit turpis cursus in. "
+            + "Gravida rutrum quisque non tellus. "
+            + "Eros donec ac odio tempor orci dapibus. "
+            + "Dictum varius duis at consectetur lorem donec massa sapien."
+            + "Tincidunt arcu non sodales neque sodales ut etiam sit amet. "
+            + "Sagittis aliquam malesuada bibendum arcu vitae. "
+            + "Vel turpis nunc eget lorem dolor sed viverra. "
+            + "In egestas erat imperdiet sed euismod nisi. "
+            + "Lorem ipsum dolor sit amet consectetur.";
 
     private ProblematicEventHandlingComponent eventHandlingComponent;
     private SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue;
@@ -93,8 +125,10 @@ public abstract class DeadLetteringEventIntegrationTest {
     private InMemoryStreamableEventSource eventSource;
     private StreamingEventProcessor streamingProcessor;
     protected TransactionManager transactionManager;
+    private final AtomicInteger maxRetries = new AtomicInteger(DEFAULT_RETRIES);
 
     private ScheduledExecutorService executor;
+    private final AtomicBoolean returnReferenceErrorFromPolicy = new AtomicBoolean(false);
 
     /**
      * Constructs the {@link SequencedDeadLetterQueue} implementation used during the integration test.
@@ -116,9 +150,14 @@ public abstract class DeadLetteringEventIntegrationTest {
         // A policy that ensure a letter is only retried once by adding diagnostics.
         EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> {
             int retries = (int) letter.diagnostics().getOrDefault("retries", 0);
-            if (retries < 1) {
+            if (retries < maxRetries.get()) {
+                Throwable decisionThrowable = cause;
+                if (returnReferenceErrorFromPolicy.get()) {
+                    decisionThrowable = new ReferenceException(UUID.randomUUID());
+                }
                 return Decisions.enqueue(
-                        cause, l -> MetaData.with("retries", (int) l.diagnostics().getOrDefault("retries", 0) + 1)
+                        ThrowableCause.truncated(decisionThrowable),
+                        l -> MetaData.with("retries", (int) l.diagnostics().getOrDefault("retries", 0) + 1)
                 );
             } else {
                 return Decisions.evict();
@@ -166,6 +205,8 @@ public abstract class DeadLetteringEventIntegrationTest {
         if (!executorTerminated) {
             executor.shutdownNow();
         }
+        maxRetries.set(DEFAULT_RETRIES);
+        returnReferenceErrorFromPolicy.set(false);
     }
 
     /**
@@ -558,6 +599,67 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertEquals(3, eventHandlingComponent.resolvedDeadLetterParameterCount(aggregateId));
     }
 
+    @Test
+    void deadLetterEventProcessingTaskIsUsingInterceptor() {
+        //needed to increase otherwise it would be evicted anyway
+        maxRetries.set(3);
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        deadLetteringInvoker.registerHandlerInterceptor(errorCatchingInterceptor(invoked));
+
+        String aggregateId = UUID.randomUUID().toString();
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL)));
+        startProcessingEvent();
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(10))
+               .until(() -> deadLetterQueue.size() == 1);
+
+        // component needs to be reset, so process will cause an exception again
+        eventHandlingComponent.handledEvent.clear();
+        eventHandlingComponent.firstTryFailures.clear();
+        deadLetteringInvoker.process(deadLetter -> true);
+        assertTrue(invoked.get());
+        assertEquals(0, deadLetterQueue.size());
+    }
+
+    @Test
+    void causeFromDecisionShouldBeStored() {
+        returnReferenceErrorFromPolicy.set(true);
+        String aggregateId = UUID.randomUUID().toString();
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL)));
+        startProcessingEvent();
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> deadLetterQueue.amountOfSequences() == 1);
+        DeadLetter<?> deadLetter = deadLetterQueue.deadLetters().iterator().next().iterator().next();
+        assertTrue(deadLetter.cause().isPresent());
+        String causeType = deadLetter.cause().get().type();
+        assertEquals(ReferenceException.class.getName(), causeType);
+    }
+
+    @Test
+    void largeThrowableMessageIsTruncatedUponCauseCreation() {
+        String aggregateId = UUID.randomUUID().toString();
+        String truncatedText = "truncated-text";
+        String testCauseMessage = BLOB_OF_TEXT + truncatedText;
+
+        eventSource.publishMessage(
+                asEventMessage(new DeadLetterableEvent(aggregateId, FAIL, FAIL, testCauseMessage))
+        );
+
+        startProcessingEvent();
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> deadLetterQueue.amountOfSequences() == 1);
+
+        DeadLetter<?> deadLetter = deadLetterQueue.deadLetters().iterator().next().iterator().next();
+        Optional<Cause> optionalCause = deadLetter.cause();
+        assertTrue(optionalCause.isPresent());
+        String resultMessage = optionalCause.get().message();
+        assertNotEquals(testCauseMessage, resultMessage);
+        assertFalse(resultMessage.contains(truncatedText));
+        assertTrue(resultMessage.contains(BLOB_OF_TEXT.substring(0, 10)));
+    }
+
     private void publishEventsFor(String aggregateId,
                                   int immediateSuccessesPerAggregate,
                                   int failFirstAndThenSucceedPerAggregate,
@@ -619,7 +721,10 @@ public abstract class DeadLetteringEventIntegrationTest {
                 firstTrySuccesses.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
             } else {
                 firstTryFailures.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
-                throw new RuntimeException("Initial handling failed. Let's dead letter event [" + sequenceId + "].");
+                throw new RuntimeException(
+                        "Initial handling failed. Let's dead letter event [" + sequenceId + "].\n"
+                                + event.getCauseMessage()
+                );
             }
         }
 
@@ -628,7 +733,9 @@ public abstract class DeadLetteringEventIntegrationTest {
                 evaluationSuccesses.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
             } else {
                 evaluationFailures.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
-                throw new RuntimeException("Evaluation failed. Let's dead letter event [" + sequenceId + "].");
+                throw new RuntimeException(
+                        "Evaluation failed. Let's dead letter event [" + sequenceId + "].\n" + event.getCauseMessage()
+                );
             }
         }
 
@@ -678,19 +785,28 @@ public abstract class DeadLetteringEventIntegrationTest {
         private final String aggregateIdentifier;
         private final boolean shouldSucceed;
         private final boolean shouldSucceedOnEvaluation;
+        private final String causeMessage;
 
         private DeadLetterableEvent(String aggregateIdentifier,
                                     boolean shouldSucceed) {
             this(aggregateIdentifier, shouldSucceed, true);
         }
 
+        private DeadLetterableEvent(String aggregateIdentifier,
+                                    boolean shouldSucceed,
+                                    boolean shouldSucceedOnEvaluation) {
+            this(aggregateIdentifier, shouldSucceed, shouldSucceedOnEvaluation, "");
+        }
+
         @JsonCreator
         public DeadLetterableEvent(@JsonProperty("aggregateIdentifier") String aggregateIdentifier,
                                    @JsonProperty("shouldSucceed") boolean shouldSucceed,
-                                   @JsonProperty("shouldSucceedOnEvaluation") boolean shouldSucceedOnEvaluation) {
+                                   @JsonProperty("shouldSucceedOnEvaluation") boolean shouldSucceedOnEvaluation,
+                                   @JsonProperty("causeMessage") String causeMessage) {
             this.aggregateIdentifier = aggregateIdentifier;
             this.shouldSucceed = shouldSucceed;
             this.shouldSucceedOnEvaluation = shouldSucceedOnEvaluation;
+            this.causeMessage = causeMessage;
         }
 
         public String getAggregateIdentifier() {
@@ -705,6 +821,10 @@ public abstract class DeadLetteringEventIntegrationTest {
             return shouldSucceedOnEvaluation;
         }
 
+        public String getCauseMessage() {
+            return causeMessage;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -714,14 +834,15 @@ public abstract class DeadLetteringEventIntegrationTest {
                 return false;
             }
             DeadLetterableEvent that = (DeadLetterableEvent) o;
-            return shouldSucceed == that.shouldSucceed
-                    && shouldSucceedOnEvaluation == that.shouldSucceedOnEvaluation
-                    && Objects.equals(aggregateIdentifier, that.aggregateIdentifier);
+            return shouldSucceed == that.shouldSucceed && shouldSucceedOnEvaluation == that.shouldSucceedOnEvaluation
+                    && Objects.equals(aggregateIdentifier, that.aggregateIdentifier) && Objects.equals(
+                    causeMessage,
+                    that.causeMessage);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(aggregateIdentifier, shouldSucceed, shouldSucceedOnEvaluation);
+            return Objects.hash(aggregateIdentifier, shouldSucceed, shouldSucceedOnEvaluation, causeMessage);
         }
 
         @Override
@@ -730,7 +851,29 @@ public abstract class DeadLetteringEventIntegrationTest {
                     "aggregateIdentifier='" + aggregateIdentifier + '\'' +
                     ", shouldSucceed=" + shouldSucceed +
                     ", shouldSucceedOnEvaluation=" + shouldSucceedOnEvaluation +
+                    ", causeMessage='" + causeMessage + '\'' +
                     '}';
+        }
+    }
+
+    private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
+        return (unitOfWork, chain) -> {
+            invoked.set(true);
+            try {
+                chain.proceed();
+            } catch (RuntimeException e) {
+                return unitOfWork;
+            }
+            return unitOfWork;
+        };
+    }
+
+    private static class ReferenceException extends AxonException {
+
+        private static final long serialVersionUID = 1380362964599517107L;
+
+        ReferenceException(UUID reference) {
+            super(reference.toString());
         }
     }
 }

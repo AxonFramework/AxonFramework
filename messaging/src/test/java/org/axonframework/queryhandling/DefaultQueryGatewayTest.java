@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -466,6 +466,21 @@ class DefaultQueryGatewayTest {
         StepVerifier.create(testSubject.streamingQuery("query", String.class))
                 .expectErrorMatches(t->t instanceof IllegalStateException && t.getMessage().equals("test"))
                 .verify();
+    }
+
+    @Test
+    void dispatchStreamingQueryWithMetaData() {
+        when(mockBus.streamingQuery(any())).thenReturn(Flux.empty());
+
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>("Query", String.class).andMetaData(MetaData.with("key", "value"));
+
+        StepVerifier.create(testSubject.streamingQuery(testQuery, String.class))
+                    .verifyComplete();
+
+        verify(mockBus).streamingQuery(argThat(
+                streamingQuery -> "value".equals(streamingQuery.getMetaData().get("key"))
+        ));
     }
 
     @SuppressWarnings({"unused", "SameParameterValue"})

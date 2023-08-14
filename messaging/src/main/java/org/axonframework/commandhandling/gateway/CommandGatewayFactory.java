@@ -52,46 +52,78 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
- * Factory that creates Gateway implementations from custom interface definitions. The behavior of the method is defined
- * by the parameters, declared exceptions and return type of the method.
+ * Factory that creates {@link CommandGateway} implementations from custom interface definitions. The behavior of the
+ * method is defined by the parameters, declared exceptions and return type of the method.
  * <p/>
- * <em>Supported parameter types:</em><ul> <li>The first parameter of the method is considered the payload of the
- * message. If the first parameter is a Message itself, a new message is created using the payload and metadata of the
- * message passed as parameter.</li> <li>Parameters that are annotated with {@link MetaDataValue @MetaDataValue} will
- * cause the parameter values to be added as meta data values to the outgoing message.</li> <li>If the last two
- * parameters are of type {@link Long long} and {@link TimeUnit}, they are considered to represent the timeout for the
- * command. The method will block for as long as the command requires to execute, or until the timeout expires.</li>
+ * <em>Supported parameter types:</em>
+ * <ul>
+ *     <li>
+ *         The first parameter of the method is considered the payload of the message.
+ *         If the first parameter is a {@link org.axonframework.messaging.Message} implementation itself,
+ *          a new {@code Message} is created using the payload and {@link org.axonframework.messaging.MetaData} of the {@code Message} passed as parameter.
+ *     </li>
+ *     <li>
+ *         Parameters that are annotated with {@link MetaDataValue} will cause the parameter values to be added as {@code MetaData} values to the outgoing {@code Message}.
+ *     </li>
+ *     <li>
+ *         If the last two parameters are of type {@link Long long} and {@link TimeUnit}, they are considered to represent the timeout for the command.
+ *         The method will block for as long as the command requires to execute, or until the timeout expires.
+ *     </li>
  * </ul>
  * <p/>
- * <em>Effect of return values</em><ul> <li>{@code void} return types are always allowed. Unless another parameter
- * makes
- * the method blocking, void methods are non-blocking by default.</li> <li>Declaring a {@link Future} return type will
- * always result in a non-blocking operation. A future is returned that allows you to retrieve the execution's result at
- * your own convenience. Note that declared exceptions and timeouts are ignored.</li> <li>Any other return type will
- * cause the dispatch to block (optionally with timeout) until a result is available</li> </ul>
+ * <em>Effect of return values:</em>
+ * <ul>
+ *     <li>
+ *         {@link Void void} return types are always allowed.
+ *         Unless another parameter makes the method blocking, {@code void} methods are non-blocking by default.
+ *     </li>
+ *     <li>
+ *         Declaring a {@link Future}, {@link CompletableFuture}, or {@link CompletionStage} return type will result in a non-blocking operation, given that the configured {@link CommandBus} is asynchronous.
+ *         For example, when the provided {@code CommandBus} is a {@link org.axonframework.commandhandling.SimpleCommandBus}, the returned {@code Future} is still blocking.
+ *         The returned {@code Future} allows you to retrieve the execution's result at your own convenience.
+ *         Note that declared exceptions and timeouts are ignored.
+ *     </li>
+ *     <li>
+ *         Any other return type will cause the dispatch to block (optionally with timeout) until a result is available.
+ *     </li>
+ * </ul>
  * <p/>
- * <em>Effect of declared exceptions</em> <ul> <li>Any checked exception declared on the method will cause it to block
- * (optionally with timeout). If the command results in a declared checked exception, that exception is thrown from the
- * method.</li> <li>Declaring a {@link TimeoutException} will throw that exception when a configured timeout expires. If
- * no such exception is declared, but a timeout is configured, the method will return {@code null}.</li> <li>Declaring
- * an {@link InterruptedException} will throw that exception when a thread blocked while waiting for a response is
- * interrupted. Not declaring the exception will have the method return {@code null} when a blocked thread is
- * interrupted. Note that when no InterruptedException is declared, the interrupt flag is set back on the interrupted
- * thread</li> </ul>
+ * <em>Effect of declared exceptions:</em>
+ * <ul>
+ *     <li>
+ *         Any checked exception declared on the method will cause it to block (optionally with timeout).
+ *         If the command results in a declared checked exception, that exception is thrown from the method.
+ *     </li>
+ *     <li>
+ *         Declaring a {@link TimeoutException} will throw that exception when a configured timeout expires.
+ *         If no such exception is declared, but a timeout is configured, the method will return {@code null}.
+ *     </li>
+ *     <li>
+ *         Declaring an {@link InterruptedException} will throw that exception when a thread blocked while waiting for a response is interrupted.
+ *         Not declaring the exception will have the method return {@code null} when a blocked thread is interrupted.
+ *         Note that when no {@code InterruptedException} is declared, the interrupt flag is set back on the interrupted thread.
+ *     </li>
+ * </ul>
  * <p/>
- * <em>Effect of unchecked exceptions</em> <ul> <li>Any unchecked exception thrown during command handling will cause
- * it
- * to block. If the method is blocking (see below) the unchecked exception will be thrown from the method</li> </ul>
+ * <em>Effect of unchecked exceptions:</em>
+ * <ul>
+ *     <li>
+ *         Any unchecked exception thrown during command handling will cause it to block.
+ *         If the method is blocking (see below) the unchecked exception will be thrown from the method.
+ *     </li>
+ * </ul>
  * <p/>
  * Finally, the {@link Timeout @Timeout} annotation can be used to define a timeout on a method. This will always cause
  * a method invocation to block until a response is available, or the timeout expires.
  * <p/>
- * Any method will be blocking if: <ul> <li>It declares a return type other than {@code void} or {@code Future},
- * or</li>
- * <li>It declares an exception, or</li> <li>The last two parameters are of type {@link TimeUnit} and {@link Long
- * long},
- * or</li> <li>The method is annotated with {@link Timeout @Timeout}</li> </ul> In other cases, the method is
- * non-blocking and will return immediately after dispatching a command.
+ * Any method will be blocking if:
+ * <ul>
+ *     <li> It declares a return type other than {@code void} or {@code Future}, or </li>
+ *     <li>It declares an exception, or</li>
+ *     <li>the last two parameters are of type {@link TimeUnit} and {@link Long long}, or</li>
+ *     <li>The method is annotated with {@link Timeout @Timeout}.</li>
+ * </ul>
+ * In other cases, the method is non-blocking and will return immediately after dispatching a command.
  * <p/>
  * This factory is thread safe once configured, and so are the gateways it creates.
  *
@@ -103,7 +135,6 @@ public class CommandGatewayFactory {
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
-
     private final List<CommandCallback<?, ?>> commandCallbacks;
 
     /**
@@ -112,7 +143,7 @@ public class CommandGatewayFactory {
      * Will assert that the {@link CommandBus} is not {@code null}, and will throw an {@link AxonConfigurationException}
      * if it is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link CommandGatewayFactory} instance
+     * @param builder The {@link Builder} used to instantiate a {@link CommandGatewayFactory} instance.
      */
     protected CommandGatewayFactory(Builder builder) {
         builder.validate();
@@ -131,7 +162,7 @@ public class CommandGatewayFactory {
      * <p>
      * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link CommandGatewayFactory}
+     * @return A Builder to be able to create a {@link CommandGatewayFactory}.
      */
     public static Builder builder() {
         return new Builder();
@@ -141,13 +172,13 @@ public class CommandGatewayFactory {
      * Creates a gateway instance for the given {@code gatewayInterface}. The returned instance is a Proxy that
      * implements that interface.
      *
-     * @param gatewayInterface The interface declaring the gateway methods
-     * @param <T>              The interface declaring the gateway methods
-     * @return A Proxy implementation implementing the given interface
+     * @param gatewayInterface The interface declaring the gateway methods.
+     * @param <T>              The interface declaring the gateway methods.
+     * @return A Proxy implementation implementing the given interface.
      */
     @SuppressWarnings("unchecked")
     public <T> T createGateway(Class<T> gatewayInterface) {
-        Map<Method, InvocationHandler> dispatchers = new HashMap<>();
+        Map<Method, InvocationHandler<?>> dispatchers = new HashMap<>();
         for (Method gatewayMethod : gatewayInterface.getMethods()) {
             MetaDataExtractor[] extractors = extractMetaData(gatewayMethod.getParameters());
 
@@ -220,13 +251,14 @@ public class CommandGatewayFactory {
     }
 
     /**
-     * Wraps the given {@code delegate} in an InvocationHandler that wraps exceptions not declared on the method in a
-     * {@link org.axonframework.commandhandling.CommandExecutionException}.
+     * Wraps the given {@code delegate} in an {@link InvocationHandler} that wraps exceptions not declared on the method
+     * in a {@link org.axonframework.commandhandling.CommandExecutionException}.
      *
-     * @param delegate           The delegate to invoke that potentially throws exceptions
-     * @param declaredExceptions The exceptions declared on the method signature
-     * @param <R>                The response type of the command handler
-     * @return an InvocationHandler that wraps undeclared exceptions in a {@code CommandExecutionException}
+     * @param delegate           The delegate to invoke that potentially throws exceptions.
+     * @param declaredExceptions The exceptions declared on the method signature.
+     * @param <R>                The response type of the command handler.
+     * @return An {@link InvocationHandler} that wraps undeclared exceptions in a
+     * {@link org.axonframework.commandhandling.CommandExecutionException}.
      */
     protected <R> InvocationHandler<R> wrapUndeclaredExceptions(final InvocationHandler<R> delegate,
                                                                 final Class<?>[] declaredExceptions) {
@@ -234,76 +266,76 @@ public class CommandGatewayFactory {
     }
 
     /**
-     * Wrap the given {@code delegate} in an InvocationHandler that returns immediately after invoking the {@code
-     * delegate}.
+     * Wrap the given {@code delegate} in an {@link InvocationHandler} that returns immediately after invoking the
+     * {@code delegate}.
      *
-     * @param delegate The delegate to invoke, potentially throwing an InterruptedException when invoked
-     * @param <R>      The response type of the command handler
-     * @return an InvocationHandler that wraps returns immediately after invoking the delegate
+     * @param delegate The delegate to invoke, potentially throwing an InterruptedException when invoked.
+     * @param <R>      The response type of the command handler.
+     * @return An {@link InvocationHandler} that wraps returns immediately after invoking the delegate.
      */
     protected <R> InvocationHandler<R> wrapToFireAndForget(final InvocationHandler<CompletableFuture<R>> delegate) {
         return new FireAndForget<>(delegate);
     }
 
     /**
-     * Wraps the given {@code delegate} and waits for the result in the Future to become available. No explicit timeout
-     * is provided for the waiting.
+     * Wraps the given {@code delegate} and waits for the result in the {@link CompletableFuture} to become available.
+     * No explicit timeout is provided for the waiting.
      *
-     * @param delegate The delegate to invoke, returning a Future
-     * @param <R>      The result of the command handler
-     * @return the result of the Future, either a return value or an exception
+     * @param delegate The delegate to invoke, returning a {@link CompletableFuture}
+     * @param <R>      The result of the command handler.
+     * @return The result of the {@link CompletableFuture}, either a return value or an exception.
      */
     protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<CompletableFuture<R>> delegate) {
         return new WaitForResult<>(delegate);
     }
 
     /**
-     * Wraps the given {@code delegate} and waits for the result in the Future to become available, with given {@code
-     * timeout} and {@code timeUnit}.
+     * Wraps the given {@code delegate} and waits for the result in the {@link CompletableFuture} to become available,
+     * with given {@code timeout} and {@code timeUnit}.
      *
-     * @param delegate The delegate to invoke, returning a Future
-     * @param timeout  The amount of time to wait for the result to become available
-     * @param timeUnit The unit of time to wait
-     * @param <R>      The result of the command handler
-     * @return the result of the Future, either a return value or an exception
+     * @param delegate The delegate to invoke, returning a {@link CompletableFuture}.
+     * @param timeout  The amount of time to wait for the result to become available.
+     * @param timeUnit The unit of time to wait.
+     * @param <R>      The result of the command handler.
+     * @return The result of the {@link CompletableFuture}, either a return value or an exception.
      */
     protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(InvocationHandler<CompletableFuture<R>> delegate,
-                                                                    long timeout, TimeUnit timeUnit) {
+                                                                    long timeout,
+                                                                    TimeUnit timeUnit) {
         return new WaitForResultWithFixedTimeout<>(delegate, timeout, timeUnit);
     }
 
     /**
-     * Wraps the given {@code delegate} and waits for the result in the Future to become available using given indices
-     * to resolve the parameters that provide the timeout to use.
+     * Wraps the given {@code delegate} and waits for the result in the {@link CompletableFuture} to become available
+     * using given indices to resolve the parameters that provide the timeout to use.
      *
-     * @param delegate      The delegate to invoke, returning a Future
-     * @param timeoutIndex  The index of the argument providing the timeout
-     * @param timeUnitIndex The index of the argument providing the time unit
-     * @param <R>           The result of the command handler
-     * @return the result of the Future, either a return value or an exception
+     * @param delegate      The delegate to invoke, returning a {@link CompletableFuture}.
+     * @param timeoutIndex  The index of the argument providing the timeout.
+     * @param timeUnitIndex The index of the argument providing the time unit.
+     * @param <R>           The result of the command handler.
+     * @return The result of the {@link CompletableFuture}, either a return value or an exception.
      */
     protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
-            final InvocationHandler<CompletableFuture<R>> delegate, int timeoutIndex, int timeUnitIndex) {
+            final InvocationHandler<CompletableFuture<R>> delegate,
+            int timeoutIndex,
+            int timeUnitIndex
+    ) {
         return new WaitForResultWithTimeoutInArguments<>(delegate, timeoutIndex, timeUnitIndex);
-    }
-
-    private boolean contains(Class<?>[] declaredExceptions, Class<?> exceptionClass) {
-        return Stream.of(declaredExceptions)
-                     .anyMatch(declaredException -> declaredException.isAssignableFrom(exceptionClass));
     }
 
     /**
      * Registers the {@code callback}, which is invoked for each sent command, unless Axon is able to detect that the
      * result of the command does not match the type accepted by the callback.
      * <p/>
-     * Axon will check the signature of the onResult() method and only invoke the callback if the actual result of the
-     * command is an instance of that type. If Axon is unable to detect the type, the callback is always invoked,
-     * potentially causing {@link java.lang.ClassCastException}.
+     * Axon will check the signature of the {@link CommandCallback#onResult(CommandMessage, CommandResultMessage)}
+     * method and only invoke the callback if the actual result of the command is an instance of that type. If Axon is
+     * unable to detect the type, the callback is always invoked, potentially causing
+     * {@link java.lang.ClassCastException}.
      *
-     * @param callback     The callback to register
-     * @param responseType The actual response type of the command
-     * @param <R>          The type of return value the callback is interested in
-     * @return this instance for further configuration
+     * @param callback     The callback to register.
+     * @param responseType The actual response type of the command.
+     * @param <R>          The type of return value the callback is interested in.
+     * @return This instance for further configuration.
      */
     public <C, R> CommandGatewayFactory registerCommandCallback(CommandCallback<C, R> callback,
                                                                 ResponseType<R> responseType) {
@@ -316,10 +348,11 @@ public class CommandGatewayFactory {
      * Gateways created by this factory.
      *
      * @param dispatchInterceptor The interceptor to register.
-     * @return this instance for further configuration
+     * @return This instance for further configuration.
      */
     public CommandGatewayFactory registerDispatchInterceptor(
-            MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor) {
+            MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor
+    ) {
         this.dispatchInterceptors.add(dispatchInterceptor);
         return this;
     }
@@ -343,27 +376,28 @@ public class CommandGatewayFactory {
     /**
      * Interface towards the mechanism that handles a method call on a gateway interface method.
      *
-     * @param <R> The return type of the method invocation
+     * @param <R> The return type of the method invocation.
      */
     public interface InvocationHandler<R> {
 
         /**
-         * Handle the invocation of the given {@code invokedMethod}, invoked on given {@code proxy} with given {@code
-         * args}.
+         * Handle the invocation of the given {@code invokedMethod}, invoked on given {@code proxy} with given
+         * {@code args}.
          *
-         * @param proxy         The proxy on which the method was invoked
-         * @param invokedMethod The method being invoked
-         * @param args          The arguments of the invocation
-         * @return the return value of the invocation
-         * @throws Exception any exceptions that occurred while processing the invocation
+         * @param proxy         The proxy on which the method was invoked.
+         * @param invokedMethod The method being invoked.
+         * @param args          The arguments of the invocation.
+         * @return The return value of the invocation.
+         * @throws Exception Any exceptions that occurred while processing the invocation.
          */
         R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception;
     }
 
-    private static class GatewayInvocationHandler extends AbstractCommandGateway
+    private static class GatewayInvocationHandler
+            extends AbstractCommandGateway
             implements java.lang.reflect.InvocationHandler {
 
-        private final Map<Method, InvocationHandler> dispatchers;
+        private final Map<Method, InvocationHandler<?>> dispatchers;
 
         protected GatewayInvocationHandler(Builder builder) {
             super(builder);
@@ -376,7 +410,7 @@ public class CommandGatewayFactory {
          * The {@code dispatchInterceptors} are defaulted to an empty list. The {@link CommandBus} is a <b>hard
          * requirements</b> and as such should be provided.
          *
-         * @return a Builder to be able to create a {@link GatewayInvocationHandler}
+         * @return A Builder to be able to create a {@link GatewayInvocationHandler}.
          */
         public static Builder builder() {
             return new Builder();
@@ -387,14 +421,14 @@ public class CommandGatewayFactory {
             if (Object.class.equals(method.getDeclaringClass())) {
                 return method.invoke(this, args);
             } else {
-                final InvocationHandler invocationHandler = dispatchers.get(method);
+                final InvocationHandler<?> invocationHandler = dispatchers.get(method);
                 return invocationHandler.invoke(proxy, method, args);
             }
         }
 
         private static class Builder extends AbstractCommandGateway.Builder {
 
-            private Map<Method, InvocationHandler> dispatchers;
+            private Map<Method, InvocationHandler<?>> dispatchers;
 
             @Override
             public Builder commandBus(@Nonnull CommandBus commandBus) {
@@ -410,14 +444,16 @@ public class CommandGatewayFactory {
 
             @Override
             public Builder dispatchInterceptors(
-                    MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
+                    MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors
+            ) {
                 super.dispatchInterceptors(dispatchInterceptors);
                 return this;
             }
 
             @Override
             public Builder dispatchInterceptors(
-                    List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
+                    List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
+            ) {
                 super.dispatchInterceptors(dispatchInterceptors);
                 return this;
             }
@@ -428,7 +464,7 @@ public class CommandGatewayFactory {
              * @param dispatchers {@code dispatchers} containing the methods to delegate commands to
              * @return the current Builder instance, for fluent interfacing
              */
-            public Builder dispatchers(Map<Method, InvocationHandler> dispatchers) {
+            public Builder dispatchers(Map<Method, InvocationHandler<?>> dispatchers) {
                 this.dispatchers = new HashMap<>(dispatchers);
                 return this;
             }
@@ -444,15 +480,15 @@ public class CommandGatewayFactory {
         }
     }
 
-    private static class DispatchOnInvocationHandler<C, R> extends AbstractCommandGateway
+    private static class DispatchOnInvocationHandler<C, R>
+            extends AbstractCommandGateway
             implements InvocationHandler<CompletableFuture<R>> {
 
         private final MetaDataExtractor[] metaDataExtractors;
         private final List<CommandCallback<? super C, ? super R>> commandCallbacks;
         private final boolean forceCallbacks;
 
-        @SuppressWarnings("unchecked")
-        protected DispatchOnInvocationHandler(Builder builder) {
+        protected DispatchOnInvocationHandler(Builder<C, R> builder) {
             super(builder);
             this.metaDataExtractors = builder.metaDataExtractors; // NOSONAR
             this.commandCallbacks = builder.commandCallbacks;
@@ -465,10 +501,10 @@ public class CommandGatewayFactory {
          * The {@code dispatchInterceptors} are defaulted to an empty list. The {@link CommandBus} is a <b>hard
          * requirements</b> and as such should be provided.
          *
-         * @return a Builder to be able to create a {@link DispatchOnInvocationHandler}
+         * @return A Builder to be able to create a {@link DispatchOnInvocationHandler}.
          */
-        public static Builder builder() {
-            return new Builder();
+        public static <C, R> Builder<C, R> builder() {
+            return new Builder<>();
         }
 
         @SuppressWarnings("unchecked")
@@ -530,24 +566,26 @@ public class CommandGatewayFactory {
 
             @Override
             public Builder dispatchInterceptors(
-                    MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
+                    MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors
+            ) {
                 super.dispatchInterceptors(dispatchInterceptors);
                 return this;
             }
 
             @Override
             public Builder dispatchInterceptors(
-                    List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
+                    List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
+            ) {
                 super.dispatchInterceptors(dispatchInterceptors);
                 return this;
             }
 
             /**
-             * Sets the {@code metaDataExtractors}, used to extract any MetaData parameters and store them in the {@link
-             * CommandMessage}.
+             * Sets the {@code metaDataExtractors}, used to extract any {@link org.axonframework.messaging.MetaData}
+             * parameters and store them in the {@link CommandMessage}.
              *
-             * @param metaDataExtractors an array of {@link MetaDataExtractor}
-             * @return the current Builder instance, for fluent interfacing
+             * @param metaDataExtractors An array of {@link MetaDataExtractor MetaDataExtractors}.
+             * @return The current Builder instance, for fluent interfacing.
              */
             public Builder metaDataExtractors(MetaDataExtractor[] metaDataExtractors) {
                 this.metaDataExtractors = metaDataExtractors;
@@ -558,9 +596,9 @@ public class CommandGatewayFactory {
              * Sets the {@code commandCallbacks}, a {@link List} of type {@link CommandCallback}, which are called upon
              * success and failure of handling a command.
              *
-             * @param commandCallbacks the {@code commandCallbacks} which are called upon success and failure of
-             *                         handling a command
-             * @return the current Builder instance, for fluent interfacing
+             * @param commandCallbacks The {@code commandCallbacks} which are called upon success and failure of
+             *                         handling a command.
+             * @return The current Builder instance, for fluent interfacing.
              */
             public Builder commandCallbacks(List<CommandCallback<? super C, ? super R>> commandCallbacks) {
                 this.commandCallbacks = commandCallbacks;
@@ -571,8 +609,8 @@ public class CommandGatewayFactory {
              * Toggles {@code forceCallbacks}, which will force a {@link CommandCallback} to be hit after handling a
              * command.
              *
-             * @param forceCallbacks a {@code boolean} specifying whether {@link CommandCallback}s should be made
-             * @return the current Builder instance, for fluent interfacing
+             * @param forceCallbacks A {@code boolean} specifying whether {@link CommandCallback}s should be made.
+             * @return The current Builder instance, for fluent interfacing.
              */
             public Builder forceCallbacks(boolean forceCallbacks) {
                 this.forceCallbacks = forceCallbacks;
@@ -582,10 +620,10 @@ public class CommandGatewayFactory {
             /**
              * Initializes a {@link DispatchOnInvocationHandler} as specified through this Builder.
              *
-             * @return a {@link DispatchOnInvocationHandler} as specified through this Builder
+             * @return A {@link DispatchOnInvocationHandler} as specified through this Builder.
              */
-            public DispatchOnInvocationHandler build() {
-                return new DispatchOnInvocationHandler(this);
+            public DispatchOnInvocationHandler<C, R> build() {
+                return new DispatchOnInvocationHandler<>(this);
             }
         }
     }
@@ -594,7 +632,6 @@ public class CommandGatewayFactory {
 
         private final List<CommandCallback<? super C, ? super R>> callbacks;
 
-        @SuppressWarnings("unchecked")
         public CompositeCallback(List<CommandCallback<? super C, ? super R>> callbacks) {
             this.callbacks = new ArrayList<>(callbacks);
         }
@@ -639,44 +676,8 @@ public class CommandGatewayFactory {
             }
             return new CommandExecutionException(
                     "Command execution resulted in a checked exception that was " + "not declared on the gateway",
-                    e);
-        }
-    }
-
-    private static class NullOnTimeout<R> implements InvocationHandler<R> {
-
-        private final InvocationHandler<R> delegate;
-
-        private NullOnTimeout(InvocationHandler<R> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
-            try {
-                return delegate.invoke(proxy, invokedMethod, args);
-            } catch (TimeoutException timeout) {
-                return null;
-            }
-        }
-    }
-
-    private static class NullOnInterrupted<R> implements InvocationHandler<R> {
-
-        private final InvocationHandler<R> delegate;
-
-        private NullOnInterrupted(InvocationHandler<R> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
-            try {
-                return delegate.invoke(proxy, invokedMethod, args);
-            } catch (InterruptedException timeout) {
-                Thread.currentThread().interrupt();
-                return null;
-            }
+                    e
+            );
         }
     }
 
@@ -686,7 +687,8 @@ public class CommandGatewayFactory {
         private final long timeout;
         private final TimeUnit timeUnit;
 
-        private WaitForResultWithFixedTimeout(InvocationHandler<CompletableFuture<R>> delegate, long timeout,
+        private WaitForResultWithFixedTimeout(InvocationHandler<CompletableFuture<R>> delegate,
+                                              long timeout,
                                               TimeUnit timeUnit) {
             this.delegate = delegate;
             this.timeout = timeout;
@@ -705,7 +707,8 @@ public class CommandGatewayFactory {
         private final int timeoutIndex;
         private final int timeUnitIndex;
 
-        private WaitForResultWithTimeoutInArguments(InvocationHandler<CompletableFuture<R>> delegate, int timeoutIndex,
+        private WaitForResultWithTimeoutInArguments(InvocationHandler<CompletableFuture<R>> delegate,
+                                                    int timeoutIndex,
                                                     int timeUnitIndex) {
             this.delegate = delegate;
             this.timeoutIndex = timeoutIndex;
@@ -783,7 +786,6 @@ public class CommandGatewayFactory {
         private final CommandCallback<C, R> delegate;
         private final ResponseType<R> parameterType;
 
-        @SuppressWarnings("unchecked")
         public TypeSafeCallbackWrapper(CommandCallback<C, R> delegate, ResponseType<R> responseType) {
             this.delegate = delegate;
             parameterType = responseType;
@@ -812,8 +814,8 @@ public class CommandGatewayFactory {
         /**
          * Sets the {@link CommandBus} on which to dispatch {@link CommandMessage}s.
          *
-         * @param commandBus the {@link CommandBus} on which to dispatch {@link CommandMessage}s
-         * @return the current Builder instance, for fluent interfacing
+         * @param commandBus The {@link CommandBus} on which to dispatch {@link CommandMessage}s.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder commandBus(CommandBus commandBus) {
             assertNonNull(commandBus, "CommandBus may not be null");
@@ -825,8 +827,8 @@ public class CommandGatewayFactory {
          * Sets the {@link RetryScheduler} which will decide whether to reschedule commands. May be {@code null} to
          * report failures without rescheduling.
          *
-         * @param retryScheduler the {@link RetryScheduler} which will decide whether to reschedule commands
-         * @return the current Builder instance, for fluent interfacing
+         * @param retryScheduler The {@link RetryScheduler} which will decide whether to reschedule commands.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder retryScheduler(RetryScheduler retryScheduler) {
             this.retryScheduler = retryScheduler;
@@ -838,12 +840,13 @@ public class CommandGatewayFactory {
          * the {@link CommandBus}. Note that the given {@code dispatchInterceptors} are applied only on commands sent
          * through gateways that have been created using this factory.
          *
-         * @param dispatchInterceptors an array of {@link MessageDispatchInterceptor}s which are invoked before
-         *                             dispatching a {@link CommandMessage} on the {@link CommandBus}
-         * @return the current Builder instance, for fluent interfacing
+         * @param dispatchInterceptors An array of {@link MessageDispatchInterceptor}s which are invoked before
+         *                             dispatching a {@link CommandMessage} on the {@link CommandBus}.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder dispatchInterceptors(
-                MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
+                MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors
+        ) {
             return dispatchInterceptors(Arrays.asList(dispatchInterceptors));
         }
 
@@ -852,12 +855,13 @@ public class CommandGatewayFactory {
          * the {@link CommandBus}. Note that the given {@code dispatchInterceptors} are applied only on commands sent
          * through gateways that have been created using this factory.
          *
-         * @param dispatchInterceptors a {@link List} of {@link MessageDispatchInterceptor}s which are invoked before
-         *                             dispatching a {@link CommandMessage} on the {@link CommandBus}
-         * @return the current Builder instance, for fluent interfacing
+         * @param dispatchInterceptors A {@link List} of {@link MessageDispatchInterceptor}s which are invoked before
+         *                             dispatching a {@link CommandMessage} on the {@link CommandBus}.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder dispatchInterceptors(
-                List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
+                List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
+        ) {
             this.dispatchInterceptors = dispatchInterceptors;
             return this;
         }
@@ -865,7 +869,7 @@ public class CommandGatewayFactory {
         /**
          * Initializes a {@link CommandGatewayFactory} as specified through this Builder.
          *
-         * @return a {@link CommandGatewayFactory} as specified through this Builder
+         * @return A {@link CommandGatewayFactory} as specified through this Builder.
          */
         public CommandGatewayFactory build() {
             return new CommandGatewayFactory(this);
@@ -874,8 +878,8 @@ public class CommandGatewayFactory {
         /**
          * Validates whether the fields contained in this Builder are set accordingly.
          *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
+         * @throws AxonConfigurationException If one field is asserted to be incorrect according to the Builder's
+         *                                    specifications.
          */
         protected void validate() throws AxonConfigurationException {
             assertNonNull(commandBus, "The CommandBus is a hard requirement and should be provided");

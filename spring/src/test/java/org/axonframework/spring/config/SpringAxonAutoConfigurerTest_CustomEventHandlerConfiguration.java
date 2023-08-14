@@ -176,7 +176,6 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
             public List<String> received = new ArrayList<>();
             private EventBus eventBus;
 
-            @Autowired
             public MyEventHandler(EventBus eventBus) {
                 this.eventBus = eventBus;
             }

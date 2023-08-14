@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema;
+import org.axonframework.eventhandling.deadletter.jdbc.JdbcSequencedDeadLetterQueue;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
@@ -35,25 +37,36 @@ import org.axonframework.modelling.saga.repository.jdbc.JdbcSagaStore;
 import org.axonframework.modelling.saga.repository.jdbc.SagaSqlSchema;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
+import org.axonframework.springboot.EventProcessorProperties;
+import org.axonframework.springboot.TokenStoreProperties;
+import org.axonframework.springboot.util.DeadLetterQueueProviderConfigurerModule;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 import javax.sql.DataSource;
 
 /**
- * Auto configuration class for Axon's JDBC specific infrastructure components.
+ * Autoconfiguration class for Axon's JDBC specific infrastructure components.
  *
  * @author Allard Buijze
  * @since 3.1
  */
 @AutoConfiguration
 @ConditionalOnBean(DataSource.class)
+@EnableConfigurationProperties(TokenStoreProperties.class)
 @AutoConfigureAfter(value = {JpaAutoConfiguration.class, JpaEventStoreAutoConfiguration.class})
 public class JdbcAutoConfiguration {
+
+    private final TokenStoreProperties tokenStoreProperties;
+
+    public JdbcAutoConfiguration(TokenStoreProperties tokenStoreProperties) {
+        this.tokenStoreProperties = tokenStoreProperties;
+    }
 
     @Bean
     @ConditionalOnMissingBean({EventStorageEngine.class, EventSchema.class})
@@ -102,11 +115,13 @@ public class JdbcAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
-    public TokenStore tokenStore(ConnectionProvider connectionProvider, Serializer serializer, TokenSchema tokenSchema) {
+    public TokenStore tokenStore(ConnectionProvider connectionProvider, Serializer serializer,
+                                 TokenSchema tokenSchema) {
         return JdbcTokenStore.builder()
                              .connectionProvider(connectionProvider)
                              .schema(tokenSchema)
                              .serializer(serializer)
+                             .claimTimeout(tokenStoreProperties.getClaimTimeout())
                              .build();
     }
 
@@ -130,5 +145,34 @@ public class JdbcAutoConfiguration {
                             .sqlSchema(schema)
                             .serializer(serializer)
                             .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DeadLetterSchema deadLetterSchema() {
+        return DeadLetterSchema.defaultSchema();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DeadLetterQueueProviderConfigurerModule deadLetterQueueProviderConfigurerModule(
+            EventProcessorProperties eventProcessorProperties,
+            ConnectionProvider connectionProvider,
+            TransactionManager transactionManager,
+            DeadLetterSchema schema,
+            @Qualifier("eventSerializer") Serializer eventSerializer,
+            Serializer genericSerializer
+    ) {
+        return new DeadLetterQueueProviderConfigurerModule(
+                eventProcessorProperties,
+                processingGroup -> config -> JdbcSequencedDeadLetterQueue.builder()
+                                                                         .processingGroup(processingGroup)
+                                                                         .connectionProvider(connectionProvider)
+                                                                         .transactionManager(transactionManager)
+                                                                         .schema(schema)
+                                                                         .genericSerializer(genericSerializer)
+                                                                         .eventSerializer(eventSerializer)
+                                                                         .build()
+        );
     }
 }

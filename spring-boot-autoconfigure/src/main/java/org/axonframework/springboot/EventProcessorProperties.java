@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,8 +123,13 @@ public class EventProcessorProperties {
         private String sequencingPolicy;
 
         /**
-         * Returns the name of the bean that should be used as source for Event Messages. If not provided, the {@link
-         * org.axonframework.eventhandling.EventBus} is used as source.
+         * The {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} settings that will be used for this processing group.
+         */
+        private Dlq dlq = new Dlq();
+
+        /**
+         * Returns the name of the bean that should be used as source for Event Messages. If not provided, the
+         * {@link org.axonframework.eventhandling.EventBus} is used as source.
          *
          * @return the name of the bean that should be used as source for Event Messages.
          */
@@ -300,6 +305,54 @@ public class EventProcessorProperties {
          */
         public void setSequencingPolicy(String sequencingPolicy) {
             this.sequencingPolicy = sequencingPolicy;
+        }
+
+        /**
+         * Retrieves the AutoConfiguration settings for the sequenced dead letter queue settings.
+         *
+         * @return the AutoConfiguration settings for the sequenced dead letter queue settings
+         */
+        public Dlq getDlq() {
+            return dlq;
+        }
+
+        /**
+         * Defines the AutoConfiguration settings for the sequenced dead letter queue.
+         *
+         * @param dlq the sequenced dead letter queue settings settings for the token store.
+         */
+        public void setDlq(Dlq dlq) {
+            this.dlq = dlq;
+        }
+    }
+
+    public static class Dlq {
+
+        /**
+         * Enables creation and configuring a {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}.
+         * Will be used to configure the {@code registerDeadLetterQueueProvider} such that only groups set to enabled
+         * will have a sequenced dead letter queue. Defaults to "false".
+         */
+        private boolean enabled = false;
+
+        /**
+         * Indicates whether creating and configuring a
+         * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} is enabled.
+         *
+         * @return true if creating the queue is enabled, false if otherwise
+         */
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        /**
+         * Enables (if {@code true}, default) or disables (if {@code false}) creating a
+         * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}.
+         *
+         * @param enabled whether to enable token store creation
+         */
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
     }
 }

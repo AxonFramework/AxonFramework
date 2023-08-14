@@ -1,0 +1,23 @@
+name: Trigger documentation build
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify AxonIQ Library
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.LIBRARY_DEVBOT_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'AxonIQ',
+              repo: 'axoniq-library-site',
+              workflow_id: 'publish.yml',
+              ref: 'main'
+            })

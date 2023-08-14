@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessageHandler;
 import org.axonframework.messaging.MessageHandler;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.SmartLifecycle;
@@ -83,7 +84,7 @@ public class CommandHandlerSubscriber implements ApplicationContextAware, SmartL
     @Override
     @SuppressWarnings("unchecked")
     public void start() {
-        if (commandBus == null && !applicationContext.getBeansOfType(CommandBus.class).isEmpty()) {
+        if (commandBus == null && !beansOfTypeIncludingAncestors(applicationContext, CommandBus.class).isEmpty()) {
             commandBus = applicationContext.getBean(CommandBus.class);
         }
         if (commandHandlers == null) {

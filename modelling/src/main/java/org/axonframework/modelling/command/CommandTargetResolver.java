@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,20 @@ import javax.annotation.Nonnull;
 public interface CommandTargetResolver {
 
     /**
-     * Returns the Aggregate Identifier and optionally the expected version of the aggregate on which the given {@code
-     * command} should be executed. The version may be {@code null} if no specific version is required.
+     * Returns the Aggregate Identifier and optionally the expected version of the aggregate on which the given
+     * {@code command} should be executed.
+     * <p>
+     * The version may be {@code null} if no specific version is required. Furthermore, the returned
+     * {@link VersionedAggregateIdentifier} may be null entirely when the given {@code command} is targeted towards a
+     * {@link CreationPolicy} annotated command handler that (optionally) constructs a new aggregate instance.
      *
-     * @param command The command from which to extract the identifier and version
-     * @return a {@link VersionedAggregateIdentifier} instance reflecting the aggregate to execute the command on
-     * @throws IllegalArgumentException if the command is not formatted correctly to extract this information
+     * @param command The command from which to extract the identifier and version.
+     * @return A {@link VersionedAggregateIdentifier} instance reflecting the aggregate to execute the command on, or
+     * {@code null} when the {@code command} is targeted towards a {@link CreationPolicy} annotated command handler that
+     * constructs a new aggregate instance.
+     * @throws IllegalArgumentException If the command is not formatted correctly to extract this information.
+     * @see AggregateCreationPolicy#ALWAYS
+     * @see AggregateCreationPolicy#CREATE_IF_MISSING
      */
     VersionedAggregateIdentifier resolveTarget(@Nonnull CommandMessage<?> command);
 }

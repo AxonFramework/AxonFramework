@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,18 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
-import org.mockito.stubbing.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -43,11 +44,21 @@ import java.util.concurrent.TimeUnit;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.eventhandling.Segment.computeSegment;
 import static org.axonframework.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link Coordinator}.
@@ -82,6 +93,7 @@ class CoordinatorTest {
                                  .transactionManager(NoTransactionManager.instance())
                                  .executorService(executorService)
                                  .workPackageFactory((segment, trackingToken) -> workPackage)
+                                 .initialToken(es -> ReplayToken.createReplayToken(es.createHeadToken()))
                                  .eventFilter(eventMessage -> true)
                                  .maxClaimedSegments(SEGMENT_IDS.length)
                                  .build();
@@ -151,6 +163,7 @@ class CoordinatorTest {
         BlockingStream<TrackedEventMessage<?>> testStream = mock(BlockingStream.class);
         when(testStream.setOnAvailableCallback(any())).thenReturn(false);
         when(testStream.hasNextAvailable()).thenReturn(true)
+                                           .thenReturn(true)
                                            .thenReturn(false);
         //noinspection unchecked
         when(testStream.nextAvailable()).thenReturn(testEventOne)

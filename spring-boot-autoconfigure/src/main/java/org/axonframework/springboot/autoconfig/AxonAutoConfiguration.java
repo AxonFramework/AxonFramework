@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
@@ -84,6 +85,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -181,7 +184,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                        SerializerProperties.SerializerType serializerType) {
         switch (serializerType) {
             case JACKSON:
-                Map<String, ObjectMapper> objectMapperBeans = applicationContext.getBeansOfType(ObjectMapper.class);
+                Map<String, ObjectMapper> objectMapperBeans = beansOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
                 ObjectMapper objectMapper = objectMapperBeans.containsKey("defaultAxonObjectMapper")
                                             ? objectMapperBeans.get("defaultAxonObjectMapper")
                                             : objectMapperBeans.values().stream().findFirst()
@@ -192,12 +195,24 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                         .converter(converter)
                                         .objectMapper(objectMapper)
                                         .build();
+            case CBOR:
+                Map<String, CBORMapper> cborMapperBeans = beansOfTypeIncludingAncestors(applicationContext, CBORMapper.class);
+                ObjectMapper cborMapper = cborMapperBeans.containsKey("defaultAxonCborObjectMapper")
+                        ? cborMapperBeans.get("defaultAxonCborObjectMapper")
+                        : cborMapperBeans.values().stream().findFirst()
+                        .orElseThrow(() -> new NoSuchBeanDefinitionException(CBORMapper.class));
+                ChainingConverter cborConverter = new ChainingConverter(beanClassLoader);
+                return JacksonSerializer.builder()
+                        .revisionResolver(revisionResolver)
+                        .converter(cborConverter)
+                        .objectMapper(cborMapper)
+                        .build();
             case JAVA:
                 return JavaSerializer.builder().revisionResolver(revisionResolver).build();
             case XSTREAM:
             case DEFAULT:
             default:
-                Map<String, XStream> xStreamBeans = applicationContext.getBeansOfType(XStream.class);
+                Map<String, XStream> xStreamBeans = beansOfTypeIncludingAncestors(applicationContext, XStream.class);
                 XStream xStream = xStreamBeans.containsKey("defaultAxonXStream")
                         ? xStreamBeans.get("defaultAxonXStream")
                         : xStreamBeans.values().stream().findFirst()

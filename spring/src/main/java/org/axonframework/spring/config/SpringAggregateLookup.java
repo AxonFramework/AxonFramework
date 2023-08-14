@@ -21,7 +21,6 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.config.Configuration;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
-import org.axonframework.spring.modelling.SpringRepositoryFactoryBean;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,10 +35,10 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.core.ResolvableType;
 
-import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
@@ -107,11 +106,15 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
         String[] beanNamesForType = beanFactory.getBeanNamesForType(type);
         if (beanNamesForType.length == 0) {
             throw new AxonConfigurationException(format("There are no spring beans for '%s' defined.", type.getName()));
+        } else if (beanNamesForType.length != 1) {
+            logger.debug(
+                    "There are {} beans defined for type [{}], making this a polymorphic aggregate. "
+                            + "There is a high likelihood the root is an abstract class, so no bean name is found. "
+                            + "Hence we default to simple name of the root type.",
+                    beanNamesForType.length, type.getName()
+            );
+            return lowerCaseFirstCharacterOf(type.getSimpleName());
         } else {
-            if (beanNamesForType.length != 1) {
-                logger.debug("There are {} beans defined for '{}', making this a polymorphic aggregate.",
-                             beanNamesForType.length, type.getName());
-            }
             return beanNamesForType[0];
         }
     }
@@ -144,6 +147,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
         //noinspection TypeParameterExplicitlyExtendsObject
         for (Map.Entry<SpringAggregate<? super Object>, Map<Class<? extends Object>, String>> aggregate : hierarchy.entrySet()) {
             Class<?> aggregateType = aggregate.getKey().getClassType();
+            Map<Class<?>, String> aggregateSubtypes = aggregate.getValue();
             String aggregatePrototype = aggregate.getKey().getBeanName();
 
             String registrarBeanName = aggregatePrototype + "$$Registrar";
@@ -152,17 +156,39 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
                 break;
             }
 
-            BeanDefinition beanDefinition = beanFactory.getBeanDefinition(aggregatePrototype);
-            if (beanDefinition.isPrototype() && aggregateType != null) {
+            if (hasSubtypesOrIsPrototype(aggregateSubtypes, beanFactory, aggregatePrototype) && aggregateType != null) {
                 AnnotationUtils.findAnnotationAttributes(aggregateType, Aggregate.class)
                                .map(props -> buildAggregateBeanDefinition(
-                                       beanFactory, aggregateType, aggregatePrototype, aggregate.getValue(), props
+                                       beanFactory, aggregateType, aggregatePrototype, aggregateSubtypes, props
                                ))
                                .ifPresent(registrarBeanDefinition -> bdRegistry.registerBeanDefinition(
                                        registrarBeanName, registrarBeanDefinition
                                ));
             }
         }
+    }
+
+    /**
+     * When there are subtypes present we are dealing with a polymorphic aggregate. In those cases the root class should
+     * be {@code abstract}, causing Spring to <b>not</b> add the {@link Aggregate} class to the
+     * {@link org.springframework.context.ApplicationContext}. Due to this, there is no {@link BeanDefinition} present
+     * to begin with. As such, we skip the {@link BeanDefinition#isPrototype()} check whenever there are subtypes. If
+     * there are <b>no</b> subtypes, the {@code aggregatePrototype} is expected to reference a prototype
+     * {@code BeanDefinition}.
+     *
+     * @param aggregateSubtypes  The collection of subtypes found for the given {@code aggregatePrototype}. May be
+     *                           empty.
+     * @param beanFactory        The bean factory to retrieve the prototype {@link BeanDefinition} from, based on the
+     *                           given {@code aggregatePrototype}.
+     * @param aggregatePrototype The bean name of the {@link BeanDefinition}, expected to be a
+     *                           {@link BeanDefinition#isPrototype() prototype bean}.
+     * @return Whether there are subtypes present or whether the {@code aggregatePrototype} is a prototype
+     * {@link BeanDefinition}.
+     */
+    private static boolean hasSubtypesOrIsPrototype(Map<Class<?>, String> aggregateSubtypes,
+                                                    ConfigurableListableBeanFactory beanFactory,
+                                                    String aggregatePrototype) {
+        return !aggregateSubtypes.isEmpty() || beanFactory.getBeanDefinition(aggregatePrototype).isPrototype();
     }
 
     private BeanDefinition buildAggregateBeanDefinition(ConfigurableListableBeanFactory registry,
@@ -202,11 +228,10 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             } else {
                 ((BeanDefinitionRegistry) registry).registerBeanDefinition(
                         repositoryName,
-                        BeanDefinitionBuilder.rootBeanDefinition(SpringRepositoryFactoryBean.class)
+                        BeanDefinitionBuilder.rootBeanDefinition(BeanHelper.class)
                                              .addConstructorArgValue(aggregateType)
-                                             .addPropertyValue(
-                                                     "configuration", new RuntimeBeanReference(Configuration.class)
-                                             )
+                                             .addConstructorArgValue(new RuntimeBeanReference(Configuration.class))
+                                             .setFactoryMethod("repository")
                                              .applyCustomizers(bd -> {
                                                  ResolvableType resolvableRepositoryType =
                                                          forClassWithGenerics(Repository.class, aggregateType);
@@ -223,6 +248,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
                     BeanDefinitionBuilder.genericBeanDefinition(SpringPrototypeAggregateFactory.class)
                                          // using static method to avoid ambiguous constructor resolution in Spring AOT
                                          .setFactoryMethod("withSubtypeSupport")
+                                         .addConstructorArgValue(aggregateType)
                                          .addConstructorArgValue(aggregateBeanName)
                                          .addConstructorArgValue(subTypes)
                                          .getBeanDefinition()

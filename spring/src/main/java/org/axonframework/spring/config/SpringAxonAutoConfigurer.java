@@ -25,7 +25,16 @@ import org.axonframework.common.legacyjpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.*;
+import org.axonframework.config.AggregateConfigurer;
+import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.EventProcessingModule;
+import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.config.ProcessingGroup;
+import org.axonframework.config.TagsConfiguration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
@@ -76,14 +85,18 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
@@ -341,11 +354,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                                             .getBeanDefinition());
 
                     if (!registry.isBeanNameInUse(factoryName)) {
-                        registry.registerBeanDefinition(factoryName,
-                                                        genericBeanDefinition(SpringPrototypeAggregateFactory.class)
-                                                                .addConstructorArgValue(aggregatePrototype)
-                                                                .addConstructorArgValue(aggregate.getValue())
-                                                                .getBeanDefinition());
+                        registry.registerBeanDefinition(
+                                factoryName,
+                                genericBeanDefinition(SpringPrototypeAggregateFactory.class)
+                                        .addConstructorArgValue(aggregateType)
+                                        .addConstructorArgValue(aggregatePrototype)
+                                        .addConstructorArgValue(aggregate.getValue())
+                                        .getBeanDefinition()
+                        );
                     }
                     aggregateConfigurer.configureAggregateFactory(
                             c -> beanFactory.getBean(factoryName, AggregateFactory.class)

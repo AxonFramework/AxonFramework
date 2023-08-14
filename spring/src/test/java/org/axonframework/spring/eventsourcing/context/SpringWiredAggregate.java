@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.domain;
+package org.axonframework.spring.eventsourcing.context;
 
+import org.axonframework.spring.stereotype.Aggregate;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -23,13 +24,14 @@ import org.springframework.context.ApplicationContextAware;
 import javax.annotation.Nonnull;
 
 /**
+ * Plain aggregate wired through Spring with the {@link Aggregate} annotation.
+ *
  * @author Allard Buijze
  */
+@Aggregate
 public class SpringWiredAggregate implements ApplicationContextAware {
 
     private transient ApplicationContext context;
-    private transient String springConfiguredName;
-    private transient boolean initialized;
 
     public SpringWiredAggregate() {
     }
@@ -38,25 +40,8 @@ public class SpringWiredAggregate implements ApplicationContextAware {
         return context;
     }
 
-    public String getSpringConfiguredName() {
-        return springConfiguredName;
-    }
-
-    public boolean isInitialized() {
-        return initialized;
-    }
-
-    public void setSpringConfiguredName(String springConfiguredName) {
-        this.springConfiguredName = springConfiguredName;
-    }
-
     @Override
     public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
         this.context = applicationContext;
     }
-
-    public void initialize() {
-        this.initialized = true;
-    }
-
 }

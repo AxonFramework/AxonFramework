@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,10 @@ import java.util.Optional;
  *
  * @author Lucas Campos
  * @since 4.6.0
+ * @deprecated In favor of {@link AxonServerContainer} following the merger of Standard and Enterprise edition into a
+ * single version.
  */
+@Deprecated
 public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> extends GenericContainer<SELF> {
 
     private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("axoniq/axonserver-enterprise");

@@ -90,14 +90,14 @@ class GlobalMetricRegistryTest {
 
     @Test
     void createEventProcessorMonitorWithTags() {
-        MessageMonitor<? super EventMessage<?>> monitor1 = subject.registerEventProcessor("test1", message -> Tags
-                .of(TagsUtil.PAYLOAD_TYPE_TAG,
-                    message.getPayloadType()
-                           .getSimpleName()));
-        MessageMonitor<? super EventMessage<?>> monitor2 = subject.registerEventProcessor("test2", message -> Tags
-                .of(TagsUtil.PAYLOAD_TYPE_TAG,
-                    message.getPayloadType()
-                           .getSimpleName()));
+        MessageMonitor<? super EventMessage<?>> monitor1 = subject.registerEventProcessor(
+                "test1",
+                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()),
+                message -> Tags.empty());
+        MessageMonitor<? super EventMessage<?>> monitor2 = subject.registerEventProcessor(
+                "test2",
+                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()),
+                message -> Tags.empty());
 
         monitor1.onMessageIngested(asEventMessage("test")).reportSuccess();
         monitor2.onMessageIngested(asEventMessage("test")).reportSuccess();

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,12 +33,10 @@ import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.axonframework.test.server.AxonServerContainer;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -55,13 +53,17 @@ import java.util.concurrent.ExecutionException;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * End-to-end tests for Streaming Query functionality. They include backwards compatibility end-to-end tests as well.
  */
 @Testcontainers
 class StreamingQueryEndToEndTest {
+
+    private static final int HTTP_PORT = 8024;
+    private static final int GRPC_PORT = 8124;
+    private static final String HOSTNAME = "localhost";
 
     private static String axonServerAddress;
     private static String nonStreamingAxonServerAddress;
@@ -73,37 +75,33 @@ class StreamingQueryEndToEndTest {
     private Registration nonStreamingSubscription;
 
     @Container
-    private static final GenericContainer<?> axonServerContainer =
-            new GenericContainer<>(System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver"))
-                    .withExposedPorts(8024, 8124)
-                    .withEnv("AXONIQ_AXONSERVER_NAME", "axonserver")
-                    .withEnv("AXONIQ_AXONSERVER_HOSTNAME", "localhost")
-                    .withEnv("AXONIQ_AXONSERVER_DEVMODE_ENABLED", "true")
+    private static final AxonServerContainer axonServerContainer =
+            new AxonServerContainer("axoniq/axonserver:latest-dev")
+                    .withAxonServerName("axonserver")
+                    .withAxonServerHostname(HOSTNAME)
+                    .withDevMode(true)
                     .withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)))
                     .withNetwork(Network.newNetwork())
-                    .withNetworkAliases("axonserver")
-                    .waitingFor(Wait.forHttp("/actuator/health").forPort(8024));
+                    .withNetworkAliases("axonserver");
 
+    @SuppressWarnings("resource")
     @Container
     private static final GenericContainer<?> nonStreamingAxonServerContainer =
             new GenericContainer<>(System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver:4.5.10"))
-                    .withExposedPorts(8024, 8124)
+                    .withExposedPorts(HTTP_PORT, GRPC_PORT)
                     .withEnv("AXONIQ_AXONSERVER_NAME", "axonserver")
-                    .withEnv("AXONIQ_AXONSERVER_HOSTNAME", "localhost")
+                    .withEnv("AXONIQ_AXONSERVER_HOSTNAME", HOSTNAME)
                     .withEnv("AXONIQ_AXONSERVER_DEVMODE_ENABLED", "true")
                     .withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)))
                     .withNetwork(Network.newNetwork())
                     .withNetworkAliases("axonserver")
-                    .waitingFor(Wait.forHttp("/actuator/health").forPort(8024));
+                    .waitingFor(Wait.forHttp("/actuator/health").forPort(HTTP_PORT));
 
     @BeforeAll
     static void initialize() {
-        axonServerAddress = axonServerContainer.getHost()
-                + ":" +
-                axonServerContainer.getMappedPort(8124);
+        axonServerAddress = axonServerContainer.getHost() + ":" + axonServerContainer.getGrpcPort();
         nonStreamingAxonServerAddress = nonStreamingAxonServerContainer.getHost()
-                + ":" +
-                nonStreamingAxonServerContainer.getMappedPort(8124);
+                + ":" + nonStreamingAxonServerContainer.getMappedPort(GRPC_PORT);
     }
 
     @BeforeEach
@@ -174,7 +172,9 @@ class StreamingQueryEndToEndTest {
         int count = 100;
 
         StepVerifier.create(Flux.range(0, count)
-                                .flatMap(i -> streamingQueryPayloads(new GenericStreamingQueryMessage<>(new FluxQuery(), String.class), supportsStreaming)))
+                                .flatMap(i -> streamingQueryPayloads(new GenericStreamingQueryMessage<>(new FluxQuery(),
+                                                                                                        String.class),
+                                                                     supportsStreaming)))
                     .expectNextCount(count * 1000)
                     .verifyComplete();
     }
@@ -198,7 +198,7 @@ class StreamingQueryEndToEndTest {
 
         StepVerifier.create(streamingQueryPayloads(query, true))
                     .expectErrorMatches(t -> t instanceof QueryExecutionException
-                            && t.getMessage().startsWith("No suitable handler"))
+                            && t.getMessage().startsWith("Error starting stream"))
                     .verify();
     }
 

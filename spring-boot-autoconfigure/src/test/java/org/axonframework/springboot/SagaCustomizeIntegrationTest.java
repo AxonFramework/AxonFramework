@@ -33,7 +33,6 @@ import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.SpringBootConfiguration;
@@ -45,7 +44,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.*;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.jmx.support.RegistrationPolicy;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -65,7 +63,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Marc Gathier
  */
 @SpringBootTest(properties = "spring.main.banner-mode=off")
-@ExtendWith(SpringExtension.class)
 @SpringBootConfiguration
 @EnableAutoConfiguration(exclude = {
         AxonServerAutoConfiguration.class,

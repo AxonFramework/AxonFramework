@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,18 +25,23 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 
+import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import javax.annotation.Nonnull;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.commandhandling.distributed.DistributedCommandBus.INITIAL_LOAD_FACTOR;
 import static org.junit.jupiter.api.Assertions.*;
@@ -64,12 +69,16 @@ class DistributedCommandBusTest {
     @Mock
     private Member mockMember;
 
+    private TestSpanFactory spanFactory;
+
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         testSubject = DistributedCommandBus.builder()
                                            .commandRouter(mockCommandRouter)
                                            .connector(mockConnector)
                                            .messageMonitor(mockMessageMonitor)
+                                           .spanFactory(spanFactory)
                                            .build();
     }
 
@@ -78,13 +87,26 @@ class DistributedCommandBusTest {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
         when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
         when(mockMessageMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
+        CountDownLatch waiter = new CountDownLatch(1);
 
-        testSubject.dispatch(testCommandMessage, NoOpCallback.INSTANCE);
+        testSubject.dispatch(testCommandMessage, (cm, result) -> {
+            spanFactory.verifySpanActive("DistributedCommandBus.dispatch", testCommandMessage);
+            waiter.countDown();
+        });
+        waiter.await();
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportSuccess();
+        await().atMost(Duration.ofSeconds(3l))
+               .untilAsserted(
+                       () -> spanFactory.verifySpanCompleted("DistributedCommandBus.dispatch")
+               );
+        await().atMost(Duration.ofSeconds(3l))
+               .untilAsserted(
+                       () -> spanFactory.verifySpanPropagated("DistributedCommandBus.dispatch", testCommandMessage)
+               );
     }
 
     @Test
@@ -131,8 +153,8 @@ class DistributedCommandBusTest {
         testSubject.dispatch(testCommandMessage);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
-        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
-        verify(mockConnector).send(eq(mockMember), eq(testCommandMessage));
+        verify(mockConnector, times(1)).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage));
         verify(mockMessageMonitor, never()).onMessageIngested(any());
         verify(mockMonitorCallback, never()).reportSuccess();
     }
@@ -145,6 +167,7 @@ class DistributedCommandBusTest {
         testSubject = DistributedCommandBus.builder()
                                            .commandRouter(mockCommandRouter)
                                            .connector(mockConnector)
+                                           .spanFactory(spanFactory)
                                            .build();
 
         testSubject.dispatch(testCommandMessage, callback);
@@ -161,6 +184,7 @@ class DistributedCommandBusTest {
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
+        spanFactory.verifySpanHasException("DistributedCommandBus.dispatch", NoHandlerForCommandException.class);
     }
 
     @Test
@@ -203,6 +227,7 @@ class DistributedCommandBusTest {
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
+        spanFactory.verifySpanHasException("DistributedCommandBus.dispatch", RuntimeException.class);
     }
 
     @Test
@@ -258,6 +283,12 @@ class DistributedCommandBusTest {
         testSubject.updateLoadFactor(expectedLoadFactor);
 
         assertEquals(expectedLoadFactor, testSubject.getLoadFactor());
+    }
+
+    @Test
+    void shouldThrowWithNullDefaultCommandCallback() {
+        DistributedCommandBus.Builder builder = DistributedCommandBus.builder();
+        assertThrows(AxonConfigurationException.class, () -> builder.defaultCommandCallback(null));
     }
 
     private static class StubCommandBusConnector implements CommandBusConnector {

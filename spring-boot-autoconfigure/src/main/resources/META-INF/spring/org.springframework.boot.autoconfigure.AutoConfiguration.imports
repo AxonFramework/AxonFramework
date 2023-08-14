@@ -1,4 +1,5 @@
 org.axonframework.springboot.autoconfig.AxonAutoConfiguration
+org.axonframework.springboot.autoconfig.AxonDbSchedulerAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonJobRunrAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration
@@ -15,6 +16,7 @@ org.axonframework.springboot.autoconfig.MetricsAutoConfiguration
 org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration
 org.axonframework.springboot.autoconfig.NoOpTransactionAutoConfiguration
 org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration
+org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration
 org.axonframework.springboot.autoconfig.OpenTelemetryAutoConfiguration
 org.axonframework.springboot.autoconfig.TransactionAutoConfiguration
 org.axonframework.springboot.autoconfig.XStreamAutoConfiguration

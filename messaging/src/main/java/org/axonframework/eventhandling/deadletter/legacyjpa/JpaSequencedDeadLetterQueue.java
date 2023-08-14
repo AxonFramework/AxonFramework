@@ -534,7 +534,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     }
 
     /**
-     * Fetches the next maximum index for a sequence that should be used when inserting a new item into the databse for
+     * Fetches the next maximum index for a sequence that should be used when inserting a new item into the database for
      * this {@code sequence}.
      *
      * @param sequenceIdentifier The identifier of the sequence to fetch the next index for.
@@ -619,7 +619,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
         }
 
         /**
-         * Sets the processing group, which is used for storing and quering which event processor the deadlettered item
+         * Sets the processing group, which is used for storing and querying which event processor the deadlettered item
          * belonged to.
          *
          * @param processingGroup The processing group of this {@link SequencedDeadLetterQueue}.

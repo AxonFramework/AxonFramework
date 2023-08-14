@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
     private GenericDeadLetter(GenericDeadLetter<M> delegate, Throwable requeueCause) {
         this(delegate.sequenceIdentifier,
              delegate.message(),
-             requeueCause != null ? new ThrowableCause(requeueCause) : delegate.cause,
+             requeueCause != null ? ThrowableCause.asCause(requeueCause) : delegate.cause,
              delegate.enqueuedAt(),
              clock.instant(),
              delegate.diagnostics());
