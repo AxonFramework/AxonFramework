@@ -8,7 +8,7 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-  milestone: 94
+  milestone: 95
   reviewers:
     - "CodeDrivenMitch"
     - "gklijs"
@@ -21,7 +21,7 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-  milestone: 94
+  milestone: 95
   reviewers:
     - "CodeDrivenMitch"
     - "gklijs"
