@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2010-2023. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.messaging.annotation;
+
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.interceptors.ResultHandler;
+
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
+
+/**
+ * ParameterResolverFactory that provides support for Parameters where the result of Handler execution is expected to
+ * be injected. This is only possible in interceptor handlers that need to act on the result of downstream interceptors
+ * or the regular handler.
+ * <p>
+ * The {@link ResultHandler @ResultHandler} Meta-Annotation needs to be placed on handlers that support interacting with
+ * the result type in its parameters.
+ *
+ * @author Allard Buijze
+ * @since 4.4
+ */
+public class ResultParameterResolverFactory implements ParameterResolverFactory {
+
+
+    private static final ThreadLocal<Object> REGISTERED_RESULT = new ThreadLocal<>();
+    private static final Object IGNORE_RESULT_PARAMETER_MARKER = new Object();
+
+    /**
+     * Calls the given {@code action} (typically a handler invocation) such that the given {@code result} is available
+     * for injection as parameter
+     *
+     * @param result The result to make available for parameter injection
+     * @param action The action to take
+     *
+     * @return the result of the action
+     * @throws Exception any exception thrown while executing the {@code action}
+     */
+    public static Object callWithResult(Object result, Callable<?> action) throws Exception {
+        Object previous = REGISTERED_RESULT.get();
+        REGISTERED_RESULT.set(result);
+        try {
+            return action.call();
+        } finally {
+            if (previous == null) {
+                REGISTERED_RESULT.remove();
+            } else {
+                REGISTERED_RESULT.set(previous);
+            }
+        }
+    }
+
+    /**
+     * Performs the given {@code action} ignoring any parameters expecting a result type. This is typically used to
+     * detect whether a handler is suitable for invocation prior to the result value being available.
+     *
+     * @param action The action to perform
+     * @param <T>    The type of result expected from the action
+     *
+     * @return the result returned by the given action
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T ignoringResultParameters(Supplier<T> action) {
+        try {
+            return (T) callWithResult(IGNORE_RESULT_PARAMETER_MARKER, action::get);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            // oh dear... this shouldn't be possible
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public ParameterResolver<Object> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+        if (Exception.class.isAssignableFrom(parameters[parameterIndex].getType())
+                && AnnotationUtils.isAnnotationPresent(executable, ResultHandler.class)) {
+            return new ExceptionResultParameterResolver(parameters[parameterIndex].getType());
+        }
+        return null;
+    }
+
+    private static class ExceptionResultParameterResolver implements ParameterResolver<Object> {
+
+        private final Class<?> parameterType;
+
+        private ExceptionResultParameterResolver(Class<?> resultType) {
+            this.parameterType = resultType;
+        }
+
+        @Override
+        public Object resolveParameterValue(Message<?> message) {
+            return REGISTERED_RESULT.get();
+        }
+
+        @Override
+        public boolean matches(Message<?> message) {
+            // we must always match, because this parameter is based on execution result
+            Object registeredResult = REGISTERED_RESULT.get();
+
+            return IGNORE_RESULT_PARAMETER_MARKER.equals(registeredResult) || parameterType.isInstance(registeredResult);
+        }
+    }
+}
