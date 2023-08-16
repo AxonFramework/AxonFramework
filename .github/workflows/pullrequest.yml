@@ -14,11 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - java-version: 8
-            sonar-enabled: false
-          - java-version: 11
-            sonar-enabled: false
-          - java-version: 17
+          - java-version: 21
             sonar-enabled: true
 
     steps:

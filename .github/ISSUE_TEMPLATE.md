@@ -5,9 +5,9 @@ Prior to starting off, please read the following:
 ## Usage Questions
 
 If you are having difficulty using Axon Framework,
- please consider checking Axon's Reference Guide first if it answers your question: https://docs.axoniq.io
+ please consider checking AxonIQ's Library first if it answers your question: https://library.axoniq.io/
  
-When the Reference Guide does not cover the specific question you have, take the following into account:
+When the library does not cover the specific question you have, take the following into account:
 - GitHub is *not* intended for usages questions, instead:
 - Drop a questions on AxonIQ's forum: https://discuss.axoniq.io/
 - Or place a new question on StackOverflow, using the `axon` tag.
