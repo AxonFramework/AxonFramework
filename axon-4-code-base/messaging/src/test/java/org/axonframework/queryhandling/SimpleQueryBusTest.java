@@ -34,8 +34,8 @@ import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.core.Disposable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.Mono;
 
 import java.lang.reflect.Type;
 import java.time.Duration;

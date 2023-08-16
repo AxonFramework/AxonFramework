@@ -19,9 +19,9 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import java.util.concurrent.CompletableFuture;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.Mono;
 import reactor.util.concurrent.Queues;
 
 import java.lang.reflect.Type;
@@ -75,20 +75,20 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
     <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> query);
 
     /**
-     * Builds a {@link Publisher} of responses to the given {@code query}. The actual query is not dispatched until
+     * Builds a {@link CompletableFuture} of responses to the given {@code query}. The actual query is not dispatched until
      * there is a subscription to the result. The query is dispatched to a single query handler. Implementations may opt
      * for invoking several query handlers and then choosing a response from single one for performance or resilience
      * reasons.
      * <p>
-     * When no handlers are available that can answer the given {@code query}, the return Publisher will be completed
+     * When no handlers are available that can answer the given {@code query}, the return CompletableFuture will be completed
      * with a {@link NoHandlerForQueryException}.
      *
      * @param query the streaming query message
      * @param <Q>   the payload type of the streaming query
      * @param <R>   the response type of the streaming query
-     * @return a Publisher of responses
+     * @return a CompletableFuture of responses
      */
-    default <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
+    default <Q, R> CompletableFuture<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
         throw new UnsupportedOperationException("Streaming query is not supported by this QueryBus.");
     }
 

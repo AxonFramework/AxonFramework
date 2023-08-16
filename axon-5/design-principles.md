@@ -34,13 +34,13 @@ This document serves the purpose to track the design principles we land on while
   Instead, they should only be able to interact with its lifecycle (e.g., add commit-phase operations) and context (to add resources).
   This guards against users accidentally invoking, for example, UnitOfWork#commit (which they should never do).
 - The UnitOfWork, or ProcessingLifecycle + ProcessingContext, are inclined to provide a means to support both reactive and imperative programming.
-  We can achieve this by letting the UoW implementation expected a Publisher and return a wrapped Publisher, used by every message handling method.
-  This custom Publisher will:
+  We can achieve this by letting the UoW implementation expected a CompletableFuture and return a wrapped CompletableFuture, used by every message handling method.
+  This custom CompletableFuture will:
   1. Allow us to support any reactivestreams implementation from a handler,
-  2. Allow us to map other results like `void`, `Object`, `CompletableFuture<Void>` and `CompletableFuture<Object>` to a `Publisher`, and
-  3. Allow us to hook into the `Publisher` steps with the UoW's lifecycle logic.
-- Note that this custom `Publisher` for the Framework is not intended to be a full implementation.
-  It just does the mapping from a given `Publisher` on too the one invoking the wrapper, and vice-versa.
+  2. Allow us to map other results like `void`, `Object`, `CompletableFuture<Void>` and `CompletableFuture<Object>` to a `CompletableFuture`, and
+  3. Allow us to hook into the `CompletableFuture` steps with the UoW's lifecycle logic.
+- Note that this custom `CompletableFuture` for the Framework is not intended to be a full implementation.
+  It just does the mapping from a given `CompletableFuture` on too the one invoking the wrapper, and vice-versa.
 - To ensure correct context usage between imperative or reactive-styled programming, we should map any fields of the received edge context on too the Axon context.
   For example, we should copy over the Project Reactor `Context` unto the `ProcessingContext`, and vice versa.
   Doing so, we ensure that, for example, both Spring's Imperative and Reactive Transaction logic is maintained whenever the users code enters the framework.

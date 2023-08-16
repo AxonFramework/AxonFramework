@@ -27,9 +27,9 @@ import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
-import reactor.core.publisher.Mono;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.FluxSink;
+import reactor.core.CompletableFuture.Mono;
 
 /**
  * A {@link SubscriptionQueryResult} that emits initial response and update when subscription query response message is

@@ -43,7 +43,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.PullPolicy;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import reactor.core.publisher.Flux;
+import reactor.core.CompletableFuture.Flux;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;

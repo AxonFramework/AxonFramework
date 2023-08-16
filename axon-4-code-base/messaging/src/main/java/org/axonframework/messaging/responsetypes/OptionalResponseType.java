@@ -19,8 +19,8 @@ package org.axonframework.messaging.responsetypes;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.ReflectionUtils;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Mono;
+import java.util.concurrent.CompletableFuture;
+import reactor.core.CompletableFuture.Mono;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
@@ -76,8 +76,8 @@ public class OptionalResponseType<R> extends AbstractResponseType<Optional<R>> {
         } else if (response != null && projectReactorOnClassPath()) {
             if (Mono.class.isAssignableFrom(response.getClass())) {
                 return Optional.ofNullable((R) ((Mono) response).block());
-            } else if (Publisher.class.isAssignableFrom(response.getClass())) {
-                return Optional.ofNullable((R) Mono.from((Publisher) response).block());
+            } else if (CompletableFuture.class.isAssignableFrom(response.getClass())) {
+                return Optional.ofNullable((R) Mono.from((CompletableFuture) response).block());
             }
         }
         return Optional.ofNullable((R) expectedResponseType.cast(response));

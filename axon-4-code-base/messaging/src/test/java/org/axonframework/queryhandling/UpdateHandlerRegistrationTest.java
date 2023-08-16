@@ -17,7 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.junit.jupiter.api.*;
-import reactor.core.publisher.Flux;
+import reactor.core.CompletableFuture.Flux;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 

@@ -38,12 +38,12 @@ import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.SpanScope;
-import org.reactivestreams.Publisher;
+import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.Signal;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.Mono;
+import reactor.core.CompletableFuture.Signal;
 import reactor.util.context.Context;
 
 import java.lang.reflect.Type;
@@ -182,7 +182,7 @@ public class SimpleQueryBus implements QueryBus {
     @Nonnull
     private <Q, R> CompletableFuture<QueryResponseMessage<R>> doQuery(
             @Nonnull QueryMessage<Q, R> query) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
+        Assert.isFalse(CompletableFuture.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
                        () -> "Direct query does not support Flux as a return type.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
@@ -230,7 +230,7 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
+    public <Q, R> CompletableFuture<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
         Span span = spanFactory.createChildHandlerSpan(() -> "SimpleQueryBus.streamingQuery", query).start();
         try (SpanScope unused = span.makeCurrent()) {
             AtomicReference<Throwable> lastError = new AtomicReference<>();
@@ -396,7 +396,7 @@ public class SimpleQueryBus implements QueryBus {
     @Override
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(@Nonnull QueryMessage<Q, R> query, long timeout,
                                                                 @Nonnull TimeUnit unit) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
+        Assert.isFalse(CompletableFuture.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
                        () -> "Scatter-Gather query does not support Flux as a return type.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
@@ -503,14 +503,14 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     private <Q, I, U> void assertSubQueryResponseTypes(SubscriptionQueryMessage<Q, I, U> query) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
+        Assert.isFalse(CompletableFuture.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
                        () -> "Subscription Query query does not support Flux as a return type.");
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
+        Assert.isFalse(CompletableFuture.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
                        () -> "Subscription Query query does not support Flux as an update type.");
     }
 
     private <I, U> DefaultSubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> getSubscriptionQueryResult(
-            Publisher<QueryResponseMessage<I>> initialResult,
+            CompletableFuture<QueryResponseMessage<I>> initialResult,
             UpdateHandlerRegistration<U> updateHandlerRegistration
     ) {
         return new DefaultSubscriptionQueryResult<>(Mono.from(initialResult),
@@ -551,7 +551,7 @@ public class SimpleQueryBus implements QueryBus {
         });
     }
 
-    private <Q, R> ResultMessage<Publisher<QueryResponseMessage<R>>> interceptAndInvokeStreaming(
+    private <Q, R> ResultMessage<CompletableFuture<QueryResponseMessage<R>>> interceptAndInvokeStreaming(
             StreamingQueryMessage<Q, R> query,
             MessageHandler<? super StreamingQueryMessage<?, R>> handler, Span span) {
         try (SpanScope unused = span.makeCurrent()) {
@@ -641,7 +641,7 @@ public class SimpleQueryBus implements QueryBus {
                             .collect(Collectors.toList());
     }
 
-    private <Q, R> Publisher<MessageHandler<? super QueryMessage<?, ?>>> getStreamingHandlersForMessage(
+    private <Q, R> CompletableFuture<MessageHandler<? super QueryMessage<?, ?>>> getStreamingHandlersForMessage(
             StreamingQueryMessage<Q, R> queryMessage) {
         return Flux.fromIterable(getHandlersForMessage(queryMessage));
     }

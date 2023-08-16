@@ -29,8 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class DisruptorCommandBusBuilderTest {
 
     @Test
-    void setIllegalPublisherThreadCount() {
-        assertThrows(AxonConfigurationException.class, () -> DisruptorCommandBus.builder().publisherThreadCount(0));
+    void setIllegalCompletableFutureThreadCount() {
+        assertThrows(AxonConfigurationException.class, () -> DisruptorCommandBus.builder().CompletableFutureThreadCount(0));
     }
 
     @Test

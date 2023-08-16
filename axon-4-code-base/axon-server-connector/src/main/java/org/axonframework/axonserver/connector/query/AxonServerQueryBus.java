@@ -19,7 +19,7 @@ package org.axonframework.axonserver.connector.query;
 import io.axoniq.axonserver.connector.FlowControl;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.connector.ResultStream;
-import io.axoniq.axonserver.connector.ResultStreamPublisher;
+import io.axoniq.axonserver.connector.ResultStreamCompletableFuture;
 import io.axoniq.axonserver.connector.impl.CloseAwareReplyChannel;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
@@ -81,12 +81,12 @@ import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.SpanScope;
-import org.reactivestreams.Publisher;
+import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.SignalType;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.Mono;
+import reactor.core.CompletableFuture.SignalType;
 import reactor.core.scheduler.Scheduler;
 
 import java.lang.invoke.MethodHandles;
@@ -175,7 +175,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     }
 
     @Override
-    public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
+    public <Q, R> CompletableFuture<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
         Span span = spanFactory.createDispatchSpan(() -> "AxonServerQueryBus.streamingQuery", query).start();
         try (SpanScope unused = span.makeCurrent()) {
             StreamingQueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(query);
@@ -188,7 +188,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                     activity -> Mono.just(dispatchInterceptors.intercept(queryWithContext))
                                     .flatMapMany(intercepted ->
                                                          Mono.just(serializeStreaming(intercepted, priority))
-                                                             .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
+                                                             .flatMapMany(queryRequest -> new ResultStreamCompletableFuture<>(
                                                                      () -> sendRequest(intercepted, queryRequest)))
                                                              .concatMap(queryResponse -> deserialize(intercepted,
                                                                                                      queryResponse))
@@ -251,7 +251,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         Span span = spanFactory.createDispatchSpan(() -> "AxonServerQueryBus.query", queryMessage).start();
         try (SpanScope unused = span.makeCurrent()) {
             QueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(queryMessage);
-            Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
+            Assert.isFalse(CompletableFuture.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
                            () -> "The direct query does not support Flux as a return type.");
             shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
@@ -351,7 +351,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                           .query(queryRequest);
     }
 
-    private <R> Publisher<QueryResponseMessage<R>> deserialize(StreamingQueryMessage<?, R> queryMessage,
+    private <R> CompletableFuture<QueryResponseMessage<R>> deserialize(StreamingQueryMessage<?, R> queryMessage,
                                                                QueryResponse queryResponse) {
         //noinspection unchecked
         Class<R> expectedResponseType = (Class<R>) queryMessage.getResponseType().getExpectedResponseType();
@@ -389,7 +389,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(@Nonnull QueryMessage<Q, R> queryMessage,
                                                                 long timeout,
                                                                 @Nonnull TimeUnit timeUnit) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
+        Assert.isFalse(CompletableFuture.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
                        () -> "The scatter-Gather query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
@@ -451,9 +451,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             @Nonnull SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
     ) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
+        Assert.isFalse(CompletableFuture.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
                        () -> "The subscription Query query does not support Flux as a return type.");
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
+        Assert.isFalse(CompletableFuture.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
                        () -> "The subscription Query query does not support Flux as an update type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"

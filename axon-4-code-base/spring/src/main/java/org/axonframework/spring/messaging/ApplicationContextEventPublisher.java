@@ -31,18 +31,18 @@ import javax.annotation.Nonnull;
  * Component that forward events received from a {@link SubscribableMessageSource} as Spring {@link ApplicationEvent} to
  * the ApplicationContext.
  */
-public class ApplicationContextEventPublisher implements InitializingBean, ApplicationContextAware {
+public class ApplicationContextEventCompletableFuture implements InitializingBean, ApplicationContextAware {
 
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private ApplicationContext applicationContext;
 
     /**
-     * Initialize the publisher to forward events received from the given {@code messageSource} to the application
+     * Initialize the CompletableFuture to forward events received from the given {@code messageSource} to the application
      * context that this bean is part of.
      *
      * @param messageSource The source to subscribe to.
      */
-    public ApplicationContextEventPublisher(SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+    public ApplicationContextEventCompletableFuture(SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
         this.messageSource = messageSource;
     }
 

@@ -33,10 +33,10 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.util.ClasspathResolver;
-import org.reactivestreams.Publisher;
+import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
+import reactor.core.CompletableFuture.Flux;
 
 import java.lang.invoke.MethodHandles;
 import java.util.List;
@@ -190,8 +190,8 @@ class QueryProcessingTask implements Runnable, FlowControl {
                 originalQueryMessage,
                 originalQueryMessage.getQueryName(),
                 (Class<R>) originalQueryMessage.getResponseType().getExpectedResponseType());
-        Publisher<QueryResponseMessage<R>> resultPublisher = localSegment.streamingQuery(streamingQueryMessage);
-        setResult(streamableFluxResult(resultPublisher));
+        CompletableFuture<QueryResponseMessage<R>> resultCompletableFuture = localSegment.streamingQuery(streamingQueryMessage);
+        setResult(streamableFluxResult(resultCompletableFuture));
     }
 
     private <Q, R, T> void directQuery(QueryMessage<Q, R> queryMessage) {
@@ -241,8 +241,8 @@ class QueryProcessingTask implements Runnable, FlowControl {
         responseHandler.complete();
     }
 
-    private <R> StreamableResponse streamableFluxResult(Publisher<QueryResponseMessage<R>> resultPublisher) {
-        return new StreamableFluxResponse(Flux.from(resultPublisher),
+    private <R> StreamableResponse streamableFluxResult(CompletableFuture<QueryResponseMessage<R>> resultCompletableFuture) {
+        return new StreamableFluxResponse(Flux.from(resultCompletableFuture),
                                           responseHandler,
                                           serializer,
                                           queryRequest.getMessageIdentifier(),

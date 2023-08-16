@@ -23,9 +23,9 @@ import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import java.util.concurrent.CompletableFuture;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.Optional;
@@ -434,7 +434,7 @@ class DefaultQueryGatewayTest {
 
     @Test
     void streamingQueryIsLazy() {
-        Publisher<QueryResponseMessage<Object>> response = Flux.just(
+        CompletableFuture<QueryResponseMessage<Object>> response = Flux.just(
                 new GenericQueryResponseMessage("a"),
                 new GenericQueryResponseMessage("b"),
                 new GenericQueryResponseMessage("c")

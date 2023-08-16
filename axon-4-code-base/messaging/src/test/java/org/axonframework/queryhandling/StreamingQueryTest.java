@@ -19,8 +19,8 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.junit.jupiter.api.*;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;

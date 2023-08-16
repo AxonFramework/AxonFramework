@@ -19,10 +19,10 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.responsetypes.PublisherResponseType;
+import org.axonframework.messaging.responsetypes.CompletableFutureResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
+import java.util.concurrent.CompletableFuture;
+import reactor.core.CompletableFuture.Flux;
 
 import java.util.Map;
 
@@ -35,7 +35,7 @@ import java.util.Map;
  * @author Stefan Dragisic
  * @since 4.6.0
  */
-public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, Publisher<R>>
+public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, CompletableFuture<R>>
         implements StreamingQueryMessage<Q, R> {
 
     /**
@@ -46,7 +46,7 @@ public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, P
      * @param responseType The expected response type
      */
     public GenericStreamingQueryMessage(Q payload, Class<R> responseType) {
-        this(payload, new PublisherResponseType<>(responseType));
+        this(payload, new CompletableFutureResponseType<>(responseType));
     }
 
     /**
@@ -57,7 +57,7 @@ public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, P
      * @param responseType The expected response type
      */
     public GenericStreamingQueryMessage(Q payload, String queryName, Class<R> responseType) {
-        this(payload, queryName, new PublisherResponseType<>(responseType));
+        this(payload, queryName, new CompletableFutureResponseType<>(responseType));
     }
 
     /**
@@ -67,7 +67,7 @@ public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, P
      * @param payload      The payload expressing the query
      * @param responseType The expected response type
      */
-    public GenericStreamingQueryMessage(Q payload, ResponseType<Publisher<R>> responseType) {
+    public GenericStreamingQueryMessage(Q payload, ResponseType<CompletableFuture<R>> responseType) {
         super(payload, responseType);
     }
 
@@ -78,7 +78,7 @@ public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, P
      * @param queryName    The name identifying the query to execute
      * @param responseType The expected response type
      */
-    public GenericStreamingQueryMessage(Q payload, String queryName, ResponseType<Publisher<R>> responseType) {
+    public GenericStreamingQueryMessage(Q payload, String queryName, ResponseType<CompletableFuture<R>> responseType) {
         this(new GenericMessage<>(payload, MetaData.emptyInstance()), queryName, responseType);
     }
 
@@ -90,7 +90,7 @@ public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, P
      * @param responseType The expected response type
      */
     public GenericStreamingQueryMessage(Message<Q> delegate, String queryName, Class<R> responseType) {
-        this(delegate, queryName, new PublisherResponseType<>(responseType));
+        this(delegate, queryName, new CompletableFutureResponseType<>(responseType));
     }
 
     /**
@@ -101,7 +101,7 @@ public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, P
      * @param queryName    The name identifying the query to execute
      * @param responseType The expected response type
      */
-    public GenericStreamingQueryMessage(Message<Q> delegate, String queryName, ResponseType<Publisher<R>> responseType) {
+    public GenericStreamingQueryMessage(Message<Q> delegate, String queryName, ResponseType<CompletableFuture<R>> responseType) {
         super(delegate, queryName, responseType);
     }
 

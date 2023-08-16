@@ -150,12 +150,12 @@ public class DisruptorCommandBus implements CommandBus {
 
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
     private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors;
-    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors;
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> CompletableFutureInterceptors;
     private final ExecutorService executorService;
     private final boolean rescheduleOnCorruptState;
     private final long coolingDownPeriod;
     private final CommandTargetResolver commandTargetResolver;
-    private final int publisherCount;
+    private final int CompletableFutureCount;
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
     private final Disruptor<CommandHandlingEntry> disruptor;
     private final CommandHandlerInvoker[] commandHandlerInvokers;
@@ -173,7 +173,7 @@ public class DisruptorCommandBus implements CommandBus {
      * <li>The {@code rescheduleCommandsOnCorruptState} defaults to {@code true}.</li>
      * <li>The {@code coolingDownPeriod} defaults to {@code 1000}.</li>
      * <li>The {@link CommandTargetResolver} defaults to an {@link AnnotationCommandTargetResolver}.</li>
-     * <li>The {@code publisherThreadCount} defaults to {@code 1}.</li>
+     * <li>The {@code CompletableFutureThreadCount} defaults to {@code 1}.</li>
      * <li>The {@link MessageMonitor} defaults to {@link NoOpMessageMonitor#INSTANCE}.</li>
      * <li>The {@link RollbackConfiguration} defaults to {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}.</li>
      * <li>The {@code bufferSize} defaults to {@code 4096}.</li>
@@ -190,7 +190,7 @@ public class DisruptorCommandBus implements CommandBus {
      * The {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration}, {@link ProducerType},
      * {@link WaitStrategy} and {@link Cache} are a <b>hard requirements</b>. Thus setting them to {@code null} will
      * result in an {@link AxonConfigurationException}.
-     * Additionally, the {@code coolingDownPeriod}, {@code publisherThreadCount}, {@code bufferSize} and
+     * Additionally, the {@code coolingDownPeriod}, {@code CompletableFutureThreadCount}, {@code bufferSize} and
      * {@code invokerThreadCount} have a positive number constraint, thus will also result in an
      * AxonConfigurationException if set otherwise.
      *
@@ -207,7 +207,7 @@ public class DisruptorCommandBus implements CommandBus {
      * <p>
      * Will assert that the {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration}, {@link
      * ProducerType}, {@link WaitStrategy} and {@link Cache} are not {@code null}. Additional verification is done on
-     * the the {@code coolingDownPeriod}, {@code publisherThreadCount}, {@code bufferSize} and {@code
+     * the the {@code coolingDownPeriod}, {@code CompletableFutureThreadCount}, {@code bufferSize} and {@code
      * invokerThreadCount} to check whether they are positive numbers. If any of these checks fails, an {@link
      * AxonConfigurationException} will be thrown.
      *
@@ -218,7 +218,7 @@ public class DisruptorCommandBus implements CommandBus {
 
         dispatchInterceptors = new CopyOnWriteArrayList<>(builder.dispatchInterceptors);
         invokerInterceptors = new CopyOnWriteArrayList<>(builder.invokerInterceptors);
-        publisherInterceptors = new ArrayList<>(builder.publisherInterceptors);
+        CompletableFutureInterceptors = new ArrayList<>(builder.CompletableFutureInterceptors);
 
         Executor executor = builder.executor;
         if (executor == null) {
@@ -232,12 +232,12 @@ public class DisruptorCommandBus implements CommandBus {
         commandTargetResolver = builder.commandTargetResolver;
         defaultCommandCallback = builder.defaultCommandCallback;
 
-        // Configure publisher Threads
-        EventPublisher[] publishers = initializePublisherThreads(builder.publisherThreadCount,
+        // Configure CompletableFuture Threads
+        EventCompletableFuture[] CompletableFutures = initializeCompletableFutureThreads(builder.CompletableFutureThreadCount,
                                                                  executor,
                                                                  builder.transactionManager,
                                                                  builder.rollbackConfiguration);
-        publisherCount = publishers.length;
+        CompletableFutureCount = CompletableFutures.length;
         messageMonitor = builder.messageMonitor;
         duplicateCommandHandlerResolver = builder.duplicateCommandHandlerResolver;
 
@@ -250,17 +250,17 @@ public class DisruptorCommandBus implements CommandBus {
         commandHandlerInvokers = initializeInvokerThreads(builder.invokerThreadCount, builder.cache);
 
         disruptor.setDefaultExceptionHandler(new ExceptionHandler());
-        disruptor.handleEventsWith(commandHandlerInvokers).then(publishers);
+        disruptor.handleEventsWith(commandHandlerInvokers).then(CompletableFutures);
         disruptor.start();
     }
 
-    private EventPublisher[] initializePublisherThreads(int publisherThreadCount,
+    private EventCompletableFuture[] initializeCompletableFutureThreads(int CompletableFutureThreadCount,
                                                         Executor executor,
                                                         TransactionManager transactionManager,
                                                         RollbackConfiguration rollbackConfiguration) {
-        EventPublisher[] publishers = new EventPublisher[publisherThreadCount];
-        Arrays.setAll(publishers, t -> new EventPublisher(executor, transactionManager, rollbackConfiguration, t));
-        return publishers;
+        EventCompletableFuture[] CompletableFutures = new EventCompletableFuture[CompletableFutureThreadCount];
+        Arrays.setAll(CompletableFutures, t -> new EventCompletableFuture(executor, transactionManager, rollbackConfiguration, t));
+        return CompletableFutures;
     }
 
     private CommandHandlerInvoker[] initializeInvokerThreads(int invokerThreadCount, Cache cache) {
@@ -313,28 +313,28 @@ public class DisruptorCommandBus implements CommandBus {
 
         RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
         int invokerSegment = 0;
-        int publisherSegment = 0;
-        if (commandHandlerInvokers.length > 1 || publisherCount > 1) {
+        int CompletableFutureSegment = 0;
+        if (commandHandlerInvokers.length > 1 || CompletableFutureCount > 1) {
             String aggregateIdentifier = commandTargetResolver.resolveTarget(command).getIdentifier();
             if (aggregateIdentifier != null) {
                 int idHash = aggregateIdentifier.hashCode() & Integer.MAX_VALUE;
                 if (commandHandlerInvokers.length > 1) {
                     invokerSegment = idHash % commandHandlerInvokers.length;
                 }
-                if (publisherCount > 1) {
-                    publisherSegment = idHash % publisherCount;
+                if (CompletableFutureCount > 1) {
+                    CompletableFutureSegment = idHash % CompletableFutureCount;
                 }
             }
         }
         long sequence = ringBuffer.next();
         try {
             CommandHandlingEntry event = ringBuffer.get(sequence);
-            event.reset(command, commandHandler, invokerSegment, publisherSegment,
+            event.reset(command, commandHandler, invokerSegment, CompletableFutureSegment,
                         new BlacklistDetectingCallback<C, R>(
                                 callback, disruptor.getRingBuffer(), this::doDispatch, rescheduleOnCorruptState
                         ),
                         invokerInterceptors,
-                        publisherInterceptors);
+                        CompletableFutureInterceptors);
         } finally {
             ringBuffer.publish(sequence);
         }
@@ -612,7 +612,7 @@ public class DisruptorCommandBus implements CommandBus {
      * <li>The {@code rescheduleCommandsOnCorruptState} defaults to {@code true}.</li>
      * <li>The {@code coolingDownPeriod} defaults to {@code 1000}.</li>
      * <li>The {@link CommandTargetResolver} defaults to an {@link AnnotationCommandTargetResolver}.</li>
-     * <li>The {@code publisherThreadCount} defaults to {@code 1}.</li>
+     * <li>The {@code CompletableFutureThreadCount} defaults to {@code 1}.</li>
      * <li>The {@link MessageMonitor} defaults to {@link NoOpMessageMonitor#INSTANCE}.</li>
      * <li>The {@link RollbackConfiguration} defaults to {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}.</li>
      * <li>The {@code bufferSize} defaults to {@code 4096}.</li>
@@ -629,7 +629,7 @@ public class DisruptorCommandBus implements CommandBus {
      * The {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration}, {@link ProducerType},
      * {@link WaitStrategy} and {@link Cache} are a <b>hard requirements</b>. Thus setting them to {@code null} will
      * result in an {@link AxonConfigurationException}.
-     * Additionally, the {@code coolingDownPeriod}, {@code publisherThreadCount}, {@code bufferSize} and
+     * Additionally, the {@code coolingDownPeriod}, {@code CompletableFutureThreadCount}, {@code bufferSize} and
      * {@code invokerThreadCount} have a positive number constraint, thus will also result in an
      * AxonConfigurationException if set otherwise.
      */
@@ -639,7 +639,7 @@ public class DisruptorCommandBus implements CommandBus {
 
         private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors =
                 new ArrayList<>();
-        private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors =
+        private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> CompletableFutureInterceptors =
                 new ArrayList<>();
         private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors =
                 new ArrayList<>();
@@ -647,7 +647,7 @@ public class DisruptorCommandBus implements CommandBus {
         private boolean rescheduleCommandsOnCorruptState = true;
         private long coolingDownPeriod = 1000;
         private CommandTargetResolver commandTargetResolver = AnnotationCommandTargetResolver.builder().build();
-        private int publisherThreadCount = 1;
+        private int CompletableFutureThreadCount = 1;
         private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private TransactionManager transactionManager;
         private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
@@ -665,7 +665,7 @@ public class DisruptorCommandBus implements CommandBus {
          * executes the command handler.
          * <p/>
          * Note that this is *not* the thread that stores and publishes the generated events. See {@link
-         * #publisherInterceptors(java.util.List)}.
+         * #CompletableFutureInterceptors(java.util.List)}.
          *
          * @param invokerInterceptors the {@link MessageHandlerInterceptor}s to invoke when handling an incoming
          *                            command
@@ -684,13 +684,13 @@ public class DisruptorCommandBus implements CommandBus {
          * {@link DisruptorCommandBus} during the publication of changes. The interceptors are invoked by the thread
          * that also stores and publishes the events.
          *
-         * @param publisherInterceptors the {@link MessageHandlerInterceptor}s to invoke when handling an incoming
+         * @param CompletableFutureInterceptors the {@link MessageHandlerInterceptor}s to invoke when handling an incoming
          *                              command
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder publisherInterceptors(List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors) {
-            this.publisherInterceptors.clear();
-            this.publisherInterceptors.addAll(publisherInterceptors);
+        public Builder CompletableFutureInterceptors(List<MessageHandlerInterceptor<CommandMessage<?>>> CompletableFutureInterceptors) {
+            this.CompletableFutureInterceptors.clear();
+            this.CompletableFutureInterceptors.addAll(CompletableFutureInterceptors);
             return this;
         }
 
@@ -766,7 +766,7 @@ public class DisruptorCommandBus implements CommandBus {
         /**
          * Sets the {@link CommandTargetResolver} that must be used to indicate which Aggregate instance will be invoked
          * by an incoming command. The {@link DisruptorCommandBus} only uses this value if {@link
-         * #invokerThreadCount(int)}}, or {@link #publisherThreadCount(int)} is greater than {@code 1}.
+         * #invokerThreadCount(int)}}, or {@link #CompletableFutureThreadCount(int)} is greater than {@code 1}.
          * <p/>
          * Defaults to an {@link AnnotationCommandTargetResolver} instance.
          *
@@ -787,12 +787,12 @@ public class DisruptorCommandBus implements CommandBus {
          * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount
          * of I/O that the process requires. If no I/O is involved, a good starting value is {@code [processors / 2]}.
          *
-         * @param publisherThreadCount the number of Threads to use for publishing as an {@code int}
+         * @param CompletableFutureThreadCount the number of Threads to use for publishing as an {@code int}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder publisherThreadCount(int publisherThreadCount) {
-            assertStrictPositive(publisherThreadCount, "The publisher thread count must at least be 1");
-            this.publisherThreadCount = publisherThreadCount;
+        public Builder CompletableFutureThreadCount(int CompletableFutureThreadCount) {
+            assertStrictPositive(CompletableFutureThreadCount, "The CompletableFuture thread count must at least be 1");
+            this.CompletableFutureThreadCount = CompletableFutureThreadCount;
             return this;
         }
 
@@ -1031,15 +1031,15 @@ public class DisruptorCommandBus implements CommandBus {
 
             RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
             int invokerSegment = 0;
-            int publisherSegment = 0;
-            if (commandHandlerInvokers.length > 1 || publisherCount > 1) {
+            int CompletableFutureSegment = 0;
+            if (commandHandlerInvokers.length > 1 || CompletableFutureCount > 1) {
                 if (aggregateIdentifier != null) {
                     int idHash = aggregateIdentifier.hashCode() & Integer.MAX_VALUE;
                     if (commandHandlerInvokers.length > 1) {
                         invokerSegment = idHash % commandHandlerInvokers.length;
                     }
-                    if (publisherCount > 1) {
-                        publisherSegment = idHash % publisherCount;
+                    if (CompletableFutureCount > 1) {
+                        CompletableFutureSegment = idHash % CompletableFutureCount;
                     }
                 }
             }
@@ -1059,7 +1059,7 @@ public class DisruptorCommandBus implements CommandBus {
                             return null;
                         },
                         invokerSegment,
-                        publisherSegment,
+                        CompletableFutureSegment,
                         new BlacklistDetectingCallback<>(
                                 (commandMessage, commandResultMessage) -> {
                                     if (commandResultMessage.isExceptional()) {

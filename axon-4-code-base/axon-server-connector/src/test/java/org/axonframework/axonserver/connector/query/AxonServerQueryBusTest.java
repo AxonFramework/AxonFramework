@@ -60,8 +60,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;

@@ -15,9 +15,9 @@ The only common denominator is:
 
 ## Personas playing with our API
 
-1. Procedural-minded people (Procedural Peter) -> don't like Publishers!
+1. Procedural-minded people (Procedural Peter) -> don't like CompletableFutures!
 2. Whatever-minded people -> sure, make it async, I don't care.
-3. Full-reactive-minded people (Async Angela) -> Publishers all the way!
+3. Full-reactive-minded people (Async Angela) -> CompletableFutures all the way!
 
 The API we define should follow the implementation guidelines, helping all three.
 
@@ -40,7 +40,7 @@ Since, ideally, we *do not* have different interfaces for reactive and non-react
 
 We can go the route that Spring has taken as well, thus providing two interfaces:
 
-1. One using the `Publisher` API, and
+1. One using the `CompletableFuture` API, and
 2. another using a non-reactive approach.
 
 The ease our development, we could still have both use the same underlying concrete implementation, though.

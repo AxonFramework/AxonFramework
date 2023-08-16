@@ -19,7 +19,7 @@ package org.axonframework.messaging.responsetypes;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.TypeReflectionUtils;
 import org.axonframework.util.ClasspathResolver;
-import org.reactivestreams.Publisher;
+import java.util.concurrent.CompletableFuture;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
@@ -76,9 +76,9 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
         return ReflectionUtils.unwrapIfType(type, Future.class);
     }
 
-    protected boolean isPublisherOfExpectedType(Type responseType) {
-        Type publisherType = TypeReflectionUtils.getExactSuperType(responseType, Publisher.class);
-        return publisherType != null && isParameterizedTypeOfExpectedType(publisherType);
+    protected boolean isCompletableFutureOfExpectedType(Type responseType) {
+        Type CompletableFutureType = TypeReflectionUtils.getExactSuperType(responseType, CompletableFuture.class);
+        return CompletableFutureType != null && isParameterizedTypeOfExpectedType(CompletableFutureType);
     }
 
     protected boolean isIterableOfExpectedType(Type responseType) {

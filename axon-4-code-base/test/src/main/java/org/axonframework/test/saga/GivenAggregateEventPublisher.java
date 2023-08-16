@@ -23,7 +23,7 @@ package org.axonframework.test.saga;
  * @author Allard Buijze
  * @since 1.1
  */
-public interface GivenAggregateEventPublisher {
+public interface GivenAggregateEventCompletableFuture {
 
     /**
      * Register the given {@code events} as being published somewhere in the past. These events are used to prepare the

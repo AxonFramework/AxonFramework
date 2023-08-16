@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling;
 
-import reactor.core.publisher.MonoSink;
+import reactor.core.CompletableFuture.MonoSink;
 
 /**
  * Wrapper around {@link MonoSink}. Since project-reactor is not a required dependency in this Axon version, we need

@@ -18,11 +18,11 @@ package org.axonframework.messaging.responsetypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.reactivestreams.Publisher;
+import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.Mono;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
@@ -138,7 +138,7 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
                 isStreamOfExpectedType(unwrapped) ||
                 isGenericArrayOfExpectedType(unwrapped) ||
                 isArrayOfExpectedType(unwrapped) ||
-                isPublisherOfExpectedType(unwrapped);
+                isCompletableFutureOfExpectedType(unwrapped);
     }
 
     /**
@@ -168,8 +168,8 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
                 return ((Flux<R>) response).collectList().block();
             } else if (Mono.class.isAssignableFrom(responseType)) {
                 return Collections.singletonList(((Mono<R>) response).block());
-            } else if (Publisher.class.isAssignableFrom(responseType)) {
-                return Flux.from((Publisher<R>) response).collectList().block();
+            } else if (CompletableFuture.class.isAssignableFrom(responseType)) {
+                return Flux.from((CompletableFuture<R>) response).collectList().block();
             }
         }
 

@@ -23,8 +23,8 @@ import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.reactivestreams.Subscription;
-import reactor.core.publisher.BaseSubscriber;
-import reactor.core.publisher.Flux;
+import reactor.core.CompletableFuture.BaseSubscriber;
+import reactor.core.CompletableFuture.Flux;
 
 /**
  * An implementation of {@link StreamableResponse} that uses a given {@link Flux} of results to send them one by one

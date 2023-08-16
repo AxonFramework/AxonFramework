@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling;
 
-import reactor.core.publisher.Sinks;
+import reactor.core.CompletableFuture.Sinks;
 
 /**
  * Wrapper around {@link Sinks.Many}. Since project-reactor is not a required dependency in this Axon version, we need

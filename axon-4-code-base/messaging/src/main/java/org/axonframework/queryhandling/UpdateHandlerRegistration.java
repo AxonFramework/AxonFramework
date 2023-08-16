@@ -17,7 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.Registration;
-import reactor.core.publisher.Flux;
+import reactor.core.CompletableFuture.Flux;
 
 /**
  * Result of registering an Update Handler. Contains a {@link Flux} with updates and {@link Registration} to be

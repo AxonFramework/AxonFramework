@@ -18,9 +18,9 @@ package org.axonframework.messaging.responsetypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import java.util.concurrent.CompletableFuture;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.Mono;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
@@ -69,7 +69,7 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
                                      Optional.class,
                                      Flux.class,
                                      Mono.class,
-                                     Publisher.class);
+                                     CompletableFuture.class);
         } else {
             unwrapped = unwrapIfType(responseType, Future.class, Optional.class);
         }
@@ -81,8 +81,8 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
         if (response != null && projectReactorOnClassPath()) {
             if (Mono.class.isAssignableFrom(response.getClass())) {
                 return (R) ((Mono) response).block();
-            } else if (Publisher.class.isAssignableFrom(response.getClass())) {
-                return (R) Mono.from((Publisher) response).block();
+            } else if (CompletableFuture.class.isAssignableFrom(response.getClass())) {
+                return (R) Mono.from((CompletableFuture) response).block();
             }
         }
         return super.convert(response);

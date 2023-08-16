@@ -21,8 +21,8 @@ import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Mono;
+import java.util.concurrent.CompletableFuture;
+import reactor.core.CompletableFuture.Mono;
 
 import java.util.List;
 import java.util.Objects;
@@ -104,7 +104,7 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     @Override
-    public <R, Q> Publisher<R> streamingQuery(String queryName, Q query, Class<R> responseType) {
+    public <R, Q> CompletableFuture<R> streamingQuery(String queryName, Q query, Class<R> responseType) {
         return Mono.fromSupplier(() -> new GenericStreamingQueryMessage<>(asMessage(query), queryName, responseType))
                    .flatMapMany(queryMessage -> queryBus.streamingQuery(processInterceptors(queryMessage)))
                    .map(Message::getPayload);

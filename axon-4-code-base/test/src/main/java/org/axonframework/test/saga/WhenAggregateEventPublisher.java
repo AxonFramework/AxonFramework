@@ -25,7 +25,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 1.1
  */
-public interface WhenAggregateEventPublisher {
+public interface WhenAggregateEventCompletableFuture {
 
     /**
      * Register the given {@code event} to be published on behalf of an aggregate. Activity caused by this event

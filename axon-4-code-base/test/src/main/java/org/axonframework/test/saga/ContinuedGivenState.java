@@ -39,7 +39,7 @@ public interface ContinuedGivenState extends WhenState {
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
      */
-    GivenAggregateEventPublisher andThenAggregate(String aggregateIdentifier);
+    GivenAggregateEventCompletableFuture andThenAggregate(String aggregateIdentifier);
 
     /**
      * Simulate time shifts in the current given state. This can be useful when the time between given events is of

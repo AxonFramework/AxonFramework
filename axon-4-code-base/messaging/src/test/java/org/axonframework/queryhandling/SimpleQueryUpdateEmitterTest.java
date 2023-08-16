@@ -20,9 +20,9 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import java.util.concurrent.CompletableFuture;
+import reactor.core.CompletableFuture.Flux;
+import reactor.core.CompletableFuture.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -274,12 +274,12 @@ class SimpleQueryUpdateEmitterTest {
 
 	@Test
     @SuppressWarnings("unchecked")
-    void updateResponseTypeFilteringWorksForPublisherOf() {
-        SubscriptionQueryMessage<String, List<String>, Publisher<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+    void updateResponseTypeFilteringWorksForCompletableFutureOf() {
+        SubscriptionQueryMessage<String, List<String>, CompletableFuture<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
                 ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.publisherOf(String.class)
+                ResponseTypes.CompletableFutureOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
@@ -300,25 +300,25 @@ class SimpleQueryUpdateEmitterTest {
         result.complete();
 
         StepVerifier.create(result.getUpdates().map(Message::getPayload))
-        			.expectNextMatches( publisher -> {
+        			.expectNextMatches( CompletableFuture -> {
         				try {
-        					StepVerifier.create((Publisher<String>) publisher).expectNext("flux-item-1", "flux-item-2").verifyComplete();
+        					StepVerifier.create((CompletableFuture<String>) CompletableFuture).expectNext("flux-item-1", "flux-item-2").verifyComplete();
         				} catch (Exception e) {
         					return false;
         				}
         				return true;
         			})
-        			.expectNextMatches( publisher -> {
+        			.expectNextMatches( CompletableFuture -> {
         				try {
-        					StepVerifier.create((Publisher<String>) publisher).expectNext("mono-item").verifyComplete();
+        					StepVerifier.create((CompletableFuture<String>) CompletableFuture).expectNext("mono-item").verifyComplete();
         				} catch (Exception e) {
         					return false;
         				}
         				return true;
         			})
-        			.expectNextMatches( publisher -> {
+        			.expectNextMatches( CompletableFuture -> {
         				try {
-        					StepVerifier.create((Publisher<String>) publisher).verifyComplete();
+        					StepVerifier.create((CompletableFuture<String>) CompletableFuture).verifyComplete();
         				} catch (Exception e) {
         					return false;
         				}

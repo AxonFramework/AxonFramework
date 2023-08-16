@@ -29,7 +29,7 @@ public final class ClasspathResolver {
     static {
         boolean fluxOnClasspath = true;
         try {
-            Class.forName("reactor.core.publisher.Flux", false, ClasspathResolver.class.getClassLoader());
+            Class.forName("reactor.core.CompletableFuture.Flux", false, ClasspathResolver.class.getClassLoader());
         } catch (ClassNotFoundException e) {
             fluxOnClasspath = false;
         }
