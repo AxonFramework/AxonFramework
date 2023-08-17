@@ -238,7 +238,7 @@ public class AxonServerConfiguration {
     private EventProcessorConfiguration eventProcessorConfiguration = new EventProcessorConfiguration();
 
     /**
-     * Properties describing the settings for
+     * Properties describing the settings for the
      * {@link org.axonframework.axonserver.connector.event.axon.AxonServerEventStore EventStore}.
      */
     private EventStoreConfiguration eventStoreConfiguration = new EventStoreConfiguration();
