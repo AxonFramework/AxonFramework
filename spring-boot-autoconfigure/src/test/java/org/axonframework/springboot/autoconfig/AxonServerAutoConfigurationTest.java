@@ -134,6 +134,20 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
+    void axonServerDefaultConfiguration_AxonServerEventStoreDisabled() {
+        testContext.withPropertyValues("axon.axonserver.event-store.enabled=false")
+                   .run(context -> {
+                       QueryBus queryBus = context.getBean(QueryBus.class);
+                       assertThat(queryBus).isNotNull();
+                       assertThat(queryBus).isInstanceOf(AxonServerQueryBus.class);
+                       assertThat(context).getBean("axonServerCommandBus")
+                                          .isExactlyInstanceOf(AxonServerCommandBus.class);
+                       assertThat(context).doesNotHaveBean("eventScheduler");
+                       assertThat(context).doesNotHaveBean("eventStore");
+                   });
+    }
+
+    @Test
     void axonServerUserDefinedCommandBusConfiguration() {
         testContext.withUserConfiguration(ExplicitUserCommandBusConfiguration.class)
                    .run(context -> {

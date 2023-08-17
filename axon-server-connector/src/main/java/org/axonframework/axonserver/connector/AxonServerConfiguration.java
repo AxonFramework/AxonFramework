@@ -238,6 +238,12 @@ public class AxonServerConfiguration {
     private EventProcessorConfiguration eventProcessorConfiguration = new EventProcessorConfiguration();
 
     /**
+     * Properties describing the settings for the
+     * {@link org.axonframework.axonserver.connector.event.axon.AxonServerEventStore EventStore}.
+     */
+    private EventStoreConfiguration eventStoreConfiguration = new EventStoreConfiguration();
+
+    /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
      *
      * @return a {@link Builder} to be able to create an {@link AxonServerConfiguration}.
@@ -564,6 +570,25 @@ public class AxonServerConfiguration {
     }
 
     /**
+     * Return the configured {@link EventStoreConfiguration} of this application for Axon Server.
+     *
+     * @return The configured {@link EventStoreConfiguration} of this application for Axon Server.
+     */
+    @ConfigurationProperties(prefix = "axon.axonserver.event-store")
+    public EventStoreConfiguration getEventStoreConfiguration() {
+        return eventStoreConfiguration;
+    }
+
+    /**
+     * Set the {@link EventStoreConfiguration} of this application for Axon Server
+     *
+     * @param eventStoreConfiguration The {@link EventStoreConfiguration} to set for this application.
+     */
+    public void setEventStoreConfiguration(EventStoreConfiguration eventStoreConfiguration) {
+        this.eventStoreConfiguration = eventStoreConfiguration;
+    }
+
+    /**
      * Configuration class for Flow Control of specific message types.
      *
      * @author Gerlo Hesselink
@@ -769,6 +794,25 @@ public class AxonServerConfiguration {
             public void setAutomaticBalancing(boolean automaticBalancing) {
                 this.automaticBalancing = automaticBalancing;
             }
+        }
+    }
+
+    public static class EventStoreConfiguration {
+
+        /**
+         * Whether (automatic) configuration of the AxonServer Event Store is enabled. When {@code false}, the event
+         * store will not be implicitly be configured. Defaults to {@code true}.
+         * <p>
+         * Note that this setting will only affect automatic configuration by Application Containers (such as Spring).
+         */
+        private boolean enabled = true;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
     }
 
