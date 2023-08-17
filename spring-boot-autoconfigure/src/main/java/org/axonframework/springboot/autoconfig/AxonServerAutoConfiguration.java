@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,6 +153,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
     public EventScheduler eventScheduler(@Qualifier("eventSerializer") Serializer eventSerializer,
                                          AxonServerConnectionManager connectionManager) {
         return AxonServerEventScheduler.builder()
