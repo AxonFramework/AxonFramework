@@ -755,7 +755,8 @@ public class AxonServerConfiguration {
              *
              * @return Whether automatic load balancing is configured, yes or no.
              */
-            public boolean shouldAutomaticallyBalance() {
+            // The method name is 'awkward' as otherwise property files cannot resolve the field.
+            public boolean isAutomaticBalancing() {
                 return automaticBalancing;
             }
 

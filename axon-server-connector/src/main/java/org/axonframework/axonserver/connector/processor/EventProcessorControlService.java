@@ -201,7 +201,7 @@ public class EventProcessorControlService implements Lifecycle {
                             logger.warn("Requesting to load balance processor [{}] with strategy [{}] failed.",
                                         processorName, strategy, e);
                         });
-            if (processorConfig.get(processorName).shouldAutomaticallyBalance()) {
+            if (processorConfig.get(processorName).isAutomaticBalancing()) {
                 adminChannel.setAutoLoadBalanceStrategy(processorName, tokenStoreIdentifier, strategy)
                             .whenComplete((r, e) -> {
                                 if (e == null) {
