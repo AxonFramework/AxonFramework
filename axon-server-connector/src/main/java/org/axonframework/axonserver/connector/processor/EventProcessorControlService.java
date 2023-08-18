@@ -59,7 +59,7 @@ public class EventProcessorControlService implements Lifecycle {
     protected final AxonServerConnectionManager axonServerConnectionManager;
     protected final EventProcessingConfiguration eventProcessingConfiguration;
     protected final String context;
-    protected final Map<String, AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings> processorConfig;
+    protected final Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig;
 
     /**
      * Initialize a {@link EventProcessorControlService}.
@@ -84,7 +84,7 @@ public class EventProcessorControlService implements Lifecycle {
         this(axonServerConnectionManager,
              eventProcessingConfiguration,
              axonServerConfiguration.getContext(),
-             axonServerConfiguration.getEventProcessorConfiguration().getProcessors());
+             axonServerConfiguration.getEventhandling().getProcessors());
     }
 
     /**
@@ -132,7 +132,7 @@ public class EventProcessorControlService implements Lifecycle {
     public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
                                         EventProcessingConfiguration eventProcessingConfiguration,
                                         String context,
-                                        Map<String, AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings> processorConfig) {
+                                        Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig) {
         this.axonServerConnectionManager = axonServerConnectionManager;
         this.eventProcessingConfiguration = eventProcessingConfiguration;
         this.context = context;
