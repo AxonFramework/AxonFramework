@@ -235,7 +235,7 @@ public class AxonServerConfiguration {
     /**
      * Properties describing the settings for {@link org.axonframework.eventhandling.EventProcessor EventProcessors}.
      */
-    private EventProcessorConfiguration eventProcessorConfiguration = new EventProcessorConfiguration();
+    private Eventhandling eventHandling = new Eventhandling();
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -545,22 +545,21 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * Return the configured {@link EventProcessorConfiguration} of this application for Axon Server.
+     * Return the configured {@link Eventhandling} of this application for Axon Server.
      *
-     * @return The configured {@link EventProcessorConfiguration} of this application for Axon Server.
+     * @return The configured {@link Eventhandling} of this application for Axon Server.
      */
-    @ConfigurationProperties(prefix = "axon.axonserver.eventhandling")
-    public EventProcessorConfiguration getEventProcessorConfiguration() {
-        return eventProcessorConfiguration;
+    public Eventhandling getEventhandling() {
+        return eventHandling;
     }
 
     /**
-     * Set the {@link EventProcessorConfiguration} of this application for Axon Server
+     * Set the {@link Eventhandling} of this application for Axon Server
      *
-     * @param eventProcessorConfiguration The {@link EventProcessorConfiguration} to set for this application.
+     * @param eventHandling The {@link Eventhandling} to set for this application.
      */
-    public void setEventProcessorConfiguration(EventProcessorConfiguration eventProcessorConfiguration) {
-        this.eventProcessorConfiguration = eventProcessorConfiguration;
+    public void setEventHandling(Eventhandling eventHandling) {
+        this.eventHandling = eventHandling;
     }
 
     /**
@@ -689,7 +688,7 @@ public class AxonServerConfiguration {
         }
     }
 
-    public static class EventProcessorConfiguration {
+    public static class Eventhandling {
 
         /**
          * The configuration of each of the processors. The key is the name of the processor, the value represents the
@@ -756,7 +755,8 @@ public class AxonServerConfiguration {
              *
              * @return Whether automatic load balancing is configured, yes or no.
              */
-            public boolean shouldAutomaticallyBalance() {
+            // The method name is 'awkward' as otherwise property files cannot resolve the field.
+            public boolean isAutomaticBalancing() {
                 return automaticBalancing;
             }
 
