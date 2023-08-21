@@ -118,6 +118,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final int maxThreadCount;
 
     private final ConcurrentMap<Integer, List<Instruction>> instructions = new ConcurrentHashMap<>();
+    private final List<Instruction> launcherInstructions = new CopyOnWriteArrayList<>();
+    private final AtomicBoolean shouldRunLauncherImmediately = new AtomicBoolean(false);
     private final boolean storeTokenBeforeProcessing;
     private final int eventAvailabilityTimeout;
     private final EventTrackerStatusChangeListener trackerStatusChangeListener;
@@ -256,6 +258,18 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
         this.instructions.computeIfAbsent(segmentId, i -> new CopyOnWriteArrayList<>())
                          .add(new SplitSegmentInstruction(result, segmentId));
+        return result;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> claimSegment(int segmentId) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        if (this.activeSegments.containsKey(segmentId)) {
+            return CompletableFuture.completedFuture(true);
+        }
+
+        shouldRunLauncherImmediately.set(true);
+        this.launcherInstructions.add(new ClaimSegmentInstruction(result, segmentId));
         return result;
     }
 
@@ -612,6 +626,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         releaseSegment(segmentId, tokenClaimInterval * 2, MILLISECONDS);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method will put the segment on a non-claim map. During the next iteration of the {@link #processingLoop(Segment)}
+     * the segments will be unclaimed and the worker stopped if it is found to be in this map. This means it can take
+     * up to the batch processing time, or up to the {@link #eventAvailabilityTimeout} if there are no events in the stream
+     * for the segment to be unclaimed.
+     */
     @Override
     public void releaseSegment(int segmentId, long releaseDuration, TimeUnit unit) {
         segmentReleaseDeadlines.put(segmentId, System.currentTimeMillis() + unit.toMillis(releaseDuration));
@@ -828,10 +850,27 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * @param millisToSleep The number of milliseconds to sleep
      */
     protected void doSleepFor(long millisToSleep) {
+        doSleepFor(millisToSleep, new AtomicBoolean(false));
+    }
+
+    /**
+     * Instructs the current Thread to sleep until the given deadline. This method may be overridden to check for flags
+     * that have been set to return earlier than the given deadline.
+     * <p>
+     * The default implementation will sleep in blocks of 100ms, intermittently checking for the processor's state. Once
+     * the processor stops running, this method will return immediately (after detecting the state change).
+     * <p>
+     * This method will also return when the given interruptFlag is set to {@code true}. This can facilitate immediately
+     * needed actions for the sleeping thread.
+     *
+     * @param millisToSleep The number of milliseconds to sleep
+     * @param interruptFlag A flag that is set when the thread should stop sleeping
+     */
+    protected void doSleepFor(long millisToSleep, AtomicBoolean interruptFlag) {
         long deadline = System.currentTimeMillis() + millisToSleep;
         try {
             long timeLeft;
-            while (getState().isRunning() && (timeLeft = deadline - System.currentTimeMillis()) > 0) {
+            while (getState().isRunning() &&  (timeLeft = deadline - System.currentTimeMillis()) > 0) {
                 Thread.sleep(Math.min(timeLeft, 100));
             }
         } catch (InterruptedException e) {
@@ -1205,6 +1244,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 String processorName = TrackingEventProcessor.this.getName();
                 while (getState().isRunning()) {
                     List<Segment> segmentsToClaim;
+                    shouldRunLauncherImmediately.set(false);
+
+                    while (!launcherInstructions.isEmpty()) {
+                        Instruction instruction = launcherInstructions.get(0);
+                        launcherInstructions.remove(instruction);
+                        instruction.run();
+                    }
 
                     try {
                         int[] tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
@@ -1234,7 +1280,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                     processorName, e.getMessage(), waitTime
                             );
                         }
-                        doSleepFor(SECONDS.toMillis(waitTime));
+                        doSleepFor(SECONDS.toMillis(waitTime), shouldRunLauncherImmediately);
                         waitTime = Math.min(waitTime * 2, 60);
 
                         continue;
@@ -1311,7 +1357,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                             }
                         }
                     }
-                    doSleepFor(tokenClaimInterval);
+                    doSleepFor(tokenClaimInterval, shouldRunLauncherImmediately);
                 }
             } finally {
                 cleanUp();
@@ -1348,6 +1394,30 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 workLauncherRunning.set(false);
             }
         }
+
+    }
+
+
+    private class ClaimSegmentInstruction extends Instruction {
+
+        private final int segmentId;
+
+        public ClaimSegmentInstruction(CompletableFuture<Boolean> result, int segmentId) {
+            super(result);
+            this.segmentId = segmentId;
+        }
+
+        @Override
+        protected boolean runSafe() {
+            logger.info("Processing claim instruction for segment [{}] in processor [{}]", segmentId, getName());
+            if (availableThreads.get() == 0) {
+                logger.info("Cannot claim segment [{}] in processor [{}] due to not enough threads being available", segmentId, getName());
+                return false;
+            }
+            segmentReleaseDeadlines.remove(segmentId);
+            tokenStore.fetchToken(getName(), segmentId);
+            return true;
+        }
     }
 
     private class SplitSegmentInstruction extends Instruction {
@@ -1369,6 +1439,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             activeSegments.put(segmentId, newStatus[0]);
             // We don't invoke the trackerStatusChangeListener because the segment's size changes
             //  are not taken into account, which is the sole thing changing when doing a split.
+            shouldRunLauncherImmediately.set(true);
             return true;
         }
     }
@@ -1409,6 +1480,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                         : new MergedTrackingToken(status.getInternalTrackingToken(), otherToken);
 
             tokenStore.storeToken(mergedToken, getName(), newSegment.getSegmentId());
+            shouldRunLauncherImmediately.set(true);
             return true;
         }
     }

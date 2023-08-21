@@ -92,6 +92,22 @@ public interface StreamingEventProcessor extends EventProcessor {
     CompletableFuture<Boolean> splitSegment(int segmentId);
 
     /**
+     * Instructs the processor to claim the segment with given {@code segmentId} and start processing it as soon as
+     * possible.
+     * <p>
+     * The given {@code segmentId} must not be currently processed by a different processor instance, as that will
+     * have an active claim on the token. Claiming a segment that is already being processed will have no effect
+     * and return {@code true}.
+     * <p>
+     * The {@link StreamingEventProcessor} may postpone start of work until after completion of this task, as long as
+     * the token has been claimed so work can be started.
+     *
+     * @param segmentId the identifier of the segment to claim and start processing
+     * @return a {@link CompletableFuture} providing the result of the claim operation
+     */
+    CompletableFuture<Boolean> claimSegment(int segmentId);
+
+    /**
      * Instruct the processor to merge the segment with given {@code segmentId} back with the segment that it was
      * originally split from. The processor must be able to claim the other segment, in order to merge it. Therefore,
      * this other segment must not have any active claims in the {@link TokenStore}.

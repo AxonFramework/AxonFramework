@@ -262,6 +262,13 @@ class Coordinator {
         return result;
     }
 
+    public CompletableFuture<Boolean> claimSegment(int segmentId) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        coordinatorTasks.add(new ClaimTask(result, name, segmentId, workPackages, releasesDeadlines, tokenStore, transactionManager));
+        scheduleCoordinator();
+        return result;
+    }
+
     private boolean initializeTokenStore() {
         AtomicBoolean tokenStoreInitialized = new AtomicBoolean(false);
         transactionManager.executeInTransaction(() -> {
