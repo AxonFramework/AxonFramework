@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayDeque;
@@ -103,25 +104,25 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
     }
 
     /**
-     * Invokes the {@link CommandHandler @CommandHandler} annotated method that accepts the given {@link CommandMessage
-     * command}.
+     * Invokes the {@link CommandHandler @CommandHandler} annotated method that accepts the given
+     * {@link CommandMessage command}.
      *
-     * @param command the command to handle
-     * @return the result of the command handling. Is {@code null} when the annotated handler has a {@code void} return
+     * @param command The command to handle.
+     * @return The result of the command handling. Is {@code null} when the annotated handler has a {@code void} return
      * value.
-     * @throws NoHandlerForCommandException when no handler is found for given {@code command}.
-     * @throws Exception                    any exception occurring while handling the command
+     * @throws NoHandlerForCommandException When no handler is found for given {@code command}.
+     * @throws Exception                    Any exception occurring while handling the command.
      */
     @Override
     public Object handle(CommandMessage<?> command) throws Exception {
-        return model.getAllHandlers()
-                    .values()
-                    .stream()
-                    .flatMap(Collection::stream)
-                    .filter(ch -> ch.canHandle(command))
-                    .findFirst()
-                    .orElseThrow(() -> new NoHandlerForCommandException(command))
-                    .handle(command, target);
+        MessageHandlingMember<? super T> handler =
+                model.getHandlers(target.getClass())
+                     .filter(ch -> ch.canHandle(command))
+                     .findFirst()
+                     .orElseThrow(() -> new NoHandlerForCommandException(command));
+
+        return model.chainedInterceptor(target.getClass())
+                    .handle(command, target, handler);
     }
 
     @Override
