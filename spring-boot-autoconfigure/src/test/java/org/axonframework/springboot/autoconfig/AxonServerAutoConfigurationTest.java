@@ -21,6 +21,7 @@ import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
+import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -235,6 +236,19 @@ class AxonServerAutoConfigurationTest {
                        assertThat(context).getBean(ManagedChannelCustomizer.class)
                                           .isEqualTo(CUSTOM_MANAGED_CHANNEL_CUSTOMIZER);
                    });
+    }
+
+    @Test
+    void axonServerEventStoreFactoryBeanIsConfigured() {
+        testContext.withUserConfiguration(TestContext.class)
+                   .run(context -> assertThat(context).getBeanNames(AxonServerEventStoreFactory.class).hasSize(1));
+    }
+
+    @Test
+    void axonServerEventStoreFactoryBeanIsNotConfiguredWhenEventStoreIsDisabled() {
+        testContext.withUserConfiguration(TestContext.class)
+                .withPropertyValues("axon.axonserver.event-store.enabled=false")
+                   .run(context -> assertThat(context).getBean(AxonServerEventStoreFactory.class).isNull());
     }
 
     @ContextConfiguration
