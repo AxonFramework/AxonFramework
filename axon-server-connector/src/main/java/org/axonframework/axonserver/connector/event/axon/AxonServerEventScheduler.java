@@ -64,9 +64,7 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
     private final Serializer serializer;
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final GrpcMetaDataConverter converter;
-
     private final String context;
-
 
     private final AtomicBoolean started = new AtomicBoolean();
 
@@ -264,7 +262,6 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
         private long requestTimeout = 15000;
         private Supplier<Serializer> serializer;
         private AxonServerConnectionManager axonServerConnectionManager;
-
         private String defaultContext;
 
         /**
@@ -311,7 +308,7 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
          * @param defaultContext for this scheduler to connect to.
          * @return the current Builder instance, for fluent interfacing
          */
-        public AxonServerEventScheduler.Builder defaultContext(String defaultContext) {
+        public Builder defaultContext(String defaultContext) {
             assertNonEmpty(defaultContext, "The context may not be null or empty");
             this.defaultContext = defaultContext;
             return this;
