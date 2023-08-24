@@ -83,4 +83,12 @@ class AxonServerContainerTest {
                          testSubject.getEnvMap().get("AXONIQ_AXONSERVER_DEVMODE_ENABLED"));
         }
     }
+
+    @Test
+    void constructionThroughDefaultConstructorStartsAsExpected() {
+        try (AxonServerContainer testSubject = new AxonServerContainer()) {
+            testSubject.start();
+            assertTrue(testSubject.isRunning());
+        }
+    }
 }
