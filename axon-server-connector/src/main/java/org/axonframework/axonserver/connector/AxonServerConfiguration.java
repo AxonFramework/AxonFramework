@@ -149,8 +149,8 @@ public class AxonServerConfiguration {
      * An {@link EventCipher} which is used to encrypt and decrypt events and snapshots. Defaults to
      * {@link EventCipher#EventCipher()}.
      *
-     * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
-     * connector</a>
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project.
      */
     @Deprecated
     private EventCipher eventCipher = new EventCipher();
@@ -365,12 +365,22 @@ public class AxonServerConfiguration {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project.
+     */
+    @Deprecated
     public EventCipher getEventCipher() {
         return eventCipher;
     }
 
+    /**
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project.
+     */
+    @Deprecated
     private void setEventSecretKey(String key) {
-        if (key != null && key.length() > 0) {
+        if (key != null && !key.isEmpty()) {
             eventCipher = new EventCipher(key.getBytes(StandardCharsets.US_ASCII));
         }
     }
@@ -833,11 +843,21 @@ public class AxonServerConfiguration {
             return this;
         }
 
+        /**
+         * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+         * Connector</a> project.
+         */
+        @Deprecated
         public Builder setEventSecretKey(String key) {
             instance.setEventSecretKey(key);
             return this;
         }
 
+        /**
+         * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+         * Connector</a> project.
+         */
+        @Deprecated
         public Builder eventCipher(EventCipher eventCipher) {
             instance.eventCipher = eventCipher;
             return this;
