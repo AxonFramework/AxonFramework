@@ -1,6 +1,5 @@
 = Adding deadlines
 :navtitle: Adding deadlines
-:page-needs-improvement: content
 
 == Introduction
 

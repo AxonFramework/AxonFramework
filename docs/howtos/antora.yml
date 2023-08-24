@@ -10,4 +10,4 @@ asciidoc:
     group: product
 
 nav:
-  - modules/ROOT/nav.adoc
+  - modules/nav.adoc

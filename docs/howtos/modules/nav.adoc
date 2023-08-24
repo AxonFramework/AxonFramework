@@ -9,7 +9,7 @@ Overview
 * Intermediate How-To's
 +
 --
-** xref::deadlines/index.adoc[]
+** include::deadlines:partial$nav.adoc[]
 --
 
 * Expert How-To's
