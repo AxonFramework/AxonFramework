@@ -1,0 +1,53 @@
+= Advanced use cases
+
+As the deadline is used currently, we don't use the ability to cancel deadlines.
+In the case of a gift card, we might not publish an event that the gift card expired, when it was already depleted.
+Let's make a few changes to enable this.
+The first thing to need to do, is to add a `remainingValue` to the aggregate, so we know when there is no value remaining.
+Then we need to add the command handler:
+
+[source,java]
+----
+@CommandHandler
+public void handle(RedeemCardCommand command, DeadlineManager deadlineManager) {
+    //check validity
+    apply(new CardRedeemedEvent(giftCardId, command.amount()));
+    if (remainingValue == 0) {
+        deadlineManager.cancelAllWithinScope(EXPIRED_GIFT_CARD); // <1>
+    }
+}
+----
+
+<1> This will cancel all deadlines with the name for this aggregate instance.
+It's possible to use the return value from scheduling a deadline, to cancel a specific deadline.
+In this case we are not using multiple of the same named deadlines, so this is easier.
+
+And the event sourcing handler:
+
+[source,java]
+----
+@EventSourcingHandler
+public void on(CardRedeemedEvent event) {
+    remainingValue -= event.amount();
+}
+----
+
+We should also add a test:
+
+[source,java]
+----
+@Test
+void testCardNotExpiringIfNothingLeft() {
+    testFixture.givenNoPriorActivity()
+               .andGivenCommands(
+                       new IssueExpiringCardCommand(CARD_ID, DAYS, AMOUNT),
+                       new RedeemCardCommand(CARD_ID, AMOUNT)
+               )
+               .whenTimeElapses(Duration.ofDays(31L))
+               .expectSuccessfulHandlerExecution()
+               .expectNoEvents();
+}
+----
+
+This should help get you started with deadlines.
+Don't forget to switch the implementation to one of the deadline managers which offer persistence before moving to prod.

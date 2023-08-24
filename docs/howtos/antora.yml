@@ -1,0 +1,13 @@
+name: axon_framework_ht
+title: Axon Framework
+version: true
+prerelease: true
+
+asciidoc:
+  attributes:
+    component_description: The Axon Framework how-to guides
+    type: how-to
+    group: product
+
+nav:
+  - modules/ROOT/nav.adoc
