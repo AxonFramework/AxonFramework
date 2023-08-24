@@ -174,7 +174,11 @@ public class AxonServerConfiguration {
     /**
      * Indicates whether the download advice message should be suppressed, even when default connection properties
      * (which are generally only used in DEV mode) are used. Defaults to false.
+     *
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project, which enables the download message in absence of configured servers.
      */
+    @Deprecated
     private boolean suppressDownloadMessage = false;
 
     /**
@@ -243,12 +247,7 @@ public class AxonServerConfiguration {
      * @return a {@link Builder} to be able to create an {@link AxonServerConfiguration}.
      */
     public static Builder builder() {
-        Builder builder = new Builder();
-        if (Boolean.getBoolean("axon.axonserver.suppressDownloadMessage")) {
-            builder.suppressDownloadMessage();
-        }
-
-        return builder;
+        return new Builder();
     }
 
     /**
@@ -271,7 +270,6 @@ public class AxonServerConfiguration {
 
     public void setServers(String routingServers) {
         this.servers = routingServers;
-        suppressDownloadMessage = true;
     }
 
     public String getClientId() {
@@ -437,10 +435,20 @@ public class AxonServerConfiguration {
         this.keepAliveTime = keepAliveTime;
     }
 
+    /**
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project, which enables the download message in absence of configured servers.
+     */
+    @Deprecated
     public boolean getSuppressDownloadMessage() {
         return suppressDownloadMessage;
     }
 
+    /**
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project, which enables the download message in absence of configured servers.
+     */
+    @Deprecated
     public void setSuppressDownloadMessage(boolean suppressDownloadMessage) {
         this.suppressDownloadMessage = suppressDownloadMessage;
     }
@@ -892,6 +900,11 @@ public class AxonServerConfiguration {
             return this;
         }
 
+        /**
+         * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+         * Connector</a> project, which enables the download message in absence of configured servers.
+         */
+        @Deprecated
         public Builder suppressDownloadMessage() {
             instance.setSuppressDownloadMessage(true);
             return this;
