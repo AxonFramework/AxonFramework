@@ -33,9 +33,9 @@ class AxonServerConfigurationTest {
         assertEquals(10, axonServerConfiguration.getEventFlowControl().getPermits());
         assertEquals(20, axonServerConfiguration.getEventFlowControl().getNrOfNewPermits());
         assertEquals(30, axonServerConfiguration.getEventFlowControl().getNewPermitsThreshold());
-        assertEquals(1000, axonServerConfiguration.getPermits());
-        assertEquals(500, axonServerConfiguration.getNrOfNewPermits());
-        assertEquals(500, axonServerConfiguration.getNewPermitsThreshold());
+        assertEquals(5000, axonServerConfiguration.getPermits());
+        assertEquals(2500, axonServerConfiguration.getNrOfNewPermits());
+        assertEquals(2500, axonServerConfiguration.getNewPermitsThreshold());
     }
 
     @Test
@@ -45,9 +45,9 @@ class AxonServerConfigurationTest {
         assertEquals(10, axonServerConfiguration.getCommandFlowControl().getPermits());
         assertEquals(20, axonServerConfiguration.getCommandFlowControl().getNrOfNewPermits());
         assertEquals(30, axonServerConfiguration.getCommandFlowControl().getNewPermitsThreshold());
-        assertEquals(1000, axonServerConfiguration.getPermits());
-        assertEquals(500, axonServerConfiguration.getNrOfNewPermits());
-        assertEquals(500, axonServerConfiguration.getNewPermitsThreshold());
+        assertEquals(5000, axonServerConfiguration.getPermits());
+        assertEquals(2500, axonServerConfiguration.getNrOfNewPermits());
+        assertEquals(2500, axonServerConfiguration.getNewPermitsThreshold());
     }
 
     @Test
@@ -57,8 +57,8 @@ class AxonServerConfigurationTest {
         assertEquals(10, axonServerConfiguration.getQueryFlowControl().getPermits());
         assertEquals(20, axonServerConfiguration.getQueryFlowControl().getNrOfNewPermits());
         assertEquals(30, axonServerConfiguration.getQueryFlowControl().getNewPermitsThreshold());
-        assertEquals(1000, axonServerConfiguration.getPermits());
-        assertEquals(500, axonServerConfiguration.getNrOfNewPermits());
-        assertEquals(500, axonServerConfiguration.getNewPermitsThreshold());
+        assertEquals(5000, axonServerConfiguration.getPermits());
+        assertEquals(2500, axonServerConfiguration.getNrOfNewPermits());
+        assertEquals(2500, axonServerConfiguration.getNewPermitsThreshold());
     }
 }
