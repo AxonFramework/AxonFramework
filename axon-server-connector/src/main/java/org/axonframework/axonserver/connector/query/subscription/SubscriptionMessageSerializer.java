@@ -222,7 +222,7 @@ public class SubscriptionMessageSerializer {
 
         return SubscriptionQuery.newBuilder()
                                 .setSubscriptionIdentifier(subscriptionQueryMessage.getIdentifier())
-                                .setNumberOfPermits(configuration.getInitialNrOfPermits())
+                                .setNumberOfPermits(configuration.getQueryFlowControl().getPermits())
                                 .setUpdateResponseType(
                                         responseTypeSerializer.apply(subscriptionQueryMessage.getUpdateResponseType())
                                 )
