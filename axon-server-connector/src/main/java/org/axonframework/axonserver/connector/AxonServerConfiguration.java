@@ -202,9 +202,14 @@ public class AxonServerConfiguration {
 
     /**
      * The number of messages that may be in-transit on the network/grpc level when streaming data from the server.
+     * <p>
      * Setting this to 0 (or a negative value) will disable buffering, and requires each message sent by the server to
      * be acknowledged before the next message may be sent. Defaults to 500.
+     *
+     * @deprecated This property is no longer used through adjustments in the <a
+     * href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java Connector</a> project.
      */
+    @Deprecated
     private int maxGrpcBufferedMessages = 500;
 
     /**
@@ -485,10 +490,20 @@ public class AxonServerConfiguration {
         this.commitTimeout = commitTimeout;
     }
 
+    /**
+     * @deprecated This property is no longer used through adjustments in the <a
+     * href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java Connector</a> project.
+     */
+    @Deprecated
     public int getMaxGrpcBufferedMessages() {
         return maxGrpcBufferedMessages;
     }
 
+    /**
+     * @deprecated This property is no longer used through adjustments in the <a
+     * href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java Connector</a> project.
+     */
+    @Deprecated
     public void setMaxGrpcBufferedMessages(int maxGrpcBufferedMessages) {
         this.maxGrpcBufferedMessages = maxGrpcBufferedMessages;
     }
