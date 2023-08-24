@@ -197,8 +197,20 @@ public class AxonServerConfiguration {
      * message.
      * <p>
      * Default is to have blacklisting enabled.
+     *
+     * @deprecated In favor of the {@code eventBlockListingEnabled} property.
      */
+    @Deprecated
     private boolean disableEventBlacklisting = false;
+
+    /**
+     * Flag that allows block-listing of event types to be enabled.
+     * <p>
+     * Disabling this may have serious performance impact, as it requires all
+     * {@link org.axonframework.eventhandling.EventMessage events} from Axon Server to be sent to clients, even if a
+     * client is unable to process the event. Default is to have block-listing enabled.
+     */
+    private boolean eventBlockListingEnabled = true;
 
     /**
      * The number of messages that may be in-transit on the network/grpc level when streaming data from the server.
@@ -474,12 +486,28 @@ public class AxonServerConfiguration {
         this.snapshotPrefetch = snapshotPrefetch;
     }
 
+    /**
+     * @deprecated In favor of {@link #setEventBlockListingEnabled(boolean)}.
+     */
+    @Deprecated
     public boolean isDisableEventBlacklisting() {
         return disableEventBlacklisting;
     }
 
+    /**
+     * @deprecated In favor of {@link #setEventBlockListingEnabled(boolean)}.
+     */
+    @Deprecated
     public void setDisableEventBlacklisting(boolean disableEventBlacklisting) {
         this.disableEventBlacklisting = disableEventBlacklisting;
+    }
+
+    public boolean isEventBlockListingEnabled() {
+        return eventBlockListingEnabled;
+    }
+
+    public void setEventBlockListingEnabled(boolean eventBlockListingEnabled) {
+        this.eventBlockListingEnabled = eventBlockListingEnabled;
     }
 
     public int getCommitTimeout() {
