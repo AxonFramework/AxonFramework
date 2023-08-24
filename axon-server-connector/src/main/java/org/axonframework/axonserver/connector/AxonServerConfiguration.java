@@ -91,6 +91,7 @@ public class AxonServerConfiguration {
      *
      * @deprecated In favor of {@code permits}.
      */
+    @Deprecated
     private Integer initialNrOfPermits = 5000;
 
     /**
