@@ -316,7 +316,8 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
             }
 
             builder.connectTimeout(axonServerConfiguration.getConnectTimeout(), TimeUnit.MILLISECONDS)
-                   .reconnectInterval(axonServerConfiguration.getReconnectInterval(), TimeUnit.MILLISECONDS);
+                   .reconnectInterval(axonServerConfiguration.getReconnectInterval(), TimeUnit.MILLISECONDS)
+                   .forceReconnectViaRoutingServers(axonServerConfiguration.isForceReconnectThroughServers());
 
             if (axonServerConfiguration.getToken() != null) {
                 builder.token(axonServerConfiguration.getToken());

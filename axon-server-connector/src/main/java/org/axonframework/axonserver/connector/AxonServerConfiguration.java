@@ -235,6 +235,20 @@ public class AxonServerConfiguration {
     private boolean forceReadFromLeader = false;
 
     /**
+     * Indicates whether the {@link AxonServerConnectionManager} should always reconnect through the
+     * {@link #getServers() servers} or try to reconnect with the server it just lost the connection with.
+     * <p>
+     * When {@code true} (default), the  {@code AxonServerConnectionManager} will contact the servers for a new
+     * destination each time a connection is dropped. When {@code false}, the connector will first attempt to
+     * re-establish a connection to the node it was previously connected to. When that fails, only then will it contact
+     * the servers.
+     * <p>
+     * Default to {@code true}, forcing the failed connection to be abandoned and a new one to be requested via the
+     * routing servers.
+     */
+    private boolean forceReconnectThroughServers = true;
+
+    /**
      * Configuration specifics on sending heartbeat messages to ensure a fully operational end-to-end connection with
      * Axon Server.
      */
@@ -519,6 +533,14 @@ public class AxonServerConfiguration {
 
     public void setForceReadFromLeader(boolean forceReadFromLeader) {
         this.forceReadFromLeader = forceReadFromLeader;
+    }
+
+    public boolean isForceReconnectThroughServers() {
+        return forceReconnectThroughServers;
+    }
+
+    public void setForceReconnectThroughServers(boolean forceReconnectThroughServers) {
+        this.forceReconnectThroughServers = forceReconnectThroughServers;
     }
 
     public FlowControlConfiguration getEventFlowControl() {
