@@ -92,7 +92,7 @@ public class AxonServerConfiguration {
      * @deprecated In favor of {@code permits}.
      */
     @Deprecated
-    private Integer initialNrOfPermits = 5000;
+    private Integer initialNrOfPermits;
 
     /**
      * Initial number of permits send for message streams (events, commands, queries).
