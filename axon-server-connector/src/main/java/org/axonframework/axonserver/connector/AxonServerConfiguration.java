@@ -356,6 +356,7 @@ public class AxonServerConfiguration {
     /**
      * @deprecated In favor of {@link #setPermits(Integer)}
      */
+    @Deprecated
     public void setInitialNrOfPermits(Integer initialNrOfPermits) {
         this.permits = initialNrOfPermits;
     }
@@ -716,6 +717,7 @@ public class AxonServerConfiguration {
         /**
          * @deprecated In favor of {@link #setPermits(Integer)}.
          */
+        @Deprecated
         public void setInitialNrOfPermits(Integer initialNrOfPermits) {
             this.permits = initialNrOfPermits;
         }
