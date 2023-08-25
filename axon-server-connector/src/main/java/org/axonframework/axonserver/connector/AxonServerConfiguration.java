@@ -528,7 +528,7 @@ public class AxonServerConfiguration {
      */
     @Deprecated
     public void setDisableEventBlacklisting(boolean disableEventBlacklisting) {
-        this.disableEventBlacklisting = disableEventBlacklisting;
+        this.eventBlockListingEnabled = !disableEventBlacklisting;
     }
 
     public boolean isEventBlockListingEnabled() {
