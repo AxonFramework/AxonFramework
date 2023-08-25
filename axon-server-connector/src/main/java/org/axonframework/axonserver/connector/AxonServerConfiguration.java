@@ -249,6 +249,18 @@ public class AxonServerConfiguration {
     private boolean forceReconnectThroughServers = true;
 
     /**
+     * Defines the number of threads that should be used for connection management activities by the
+     * {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used by the
+     * {@link AxonServerConnectionManager}.
+     * <p>
+     * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
+     * validating heartbeats, etc.
+     * <p>
+     * Defaults to a pool size of {@code 2} threads.
+     */
+    private int connectionManagementThreadPoolSize = 2;
+
+    /**
      * Configuration specifics on sending heartbeat messages to ensure a fully operational end-to-end connection with
      * Axon Server.
      */
@@ -541,6 +553,14 @@ public class AxonServerConfiguration {
 
     public void setForceReconnectThroughServers(boolean forceReconnectThroughServers) {
         this.forceReconnectThroughServers = forceReconnectThroughServers;
+    }
+
+    public int getConnectionManagementThreadPoolSize() {
+        return connectionManagementThreadPoolSize;
+    }
+
+    public void setConnectionManagementThreadPoolSize(int connectionManagementThreadPoolSize) {
+        this.connectionManagementThreadPoolSize = connectionManagementThreadPoolSize;
     }
 
     public FlowControlConfiguration getEventFlowControl() {
