@@ -216,6 +216,14 @@ public class AxonServerConfiguration {
     private long connectTimeout = 5000;
 
     /**
+     * Sets the amount of time in milliseconds to wait in between attempts to connect to Axon Server. A single attempt
+     * involves connecting to each of the configured {@link #getServers() servers}.
+     * <p>
+     * Defaults to 2000 (2 seconds).
+     */
+    private long reconnectInterval = 2000;
+
+    /**
      * Indicates whether it is OK to query events from the local Axon Server node - the node the client is currently
      * connected to. This means that the client will probably get stale events since all events my not be replicated to
      * this node yet. Can be used when the criteria for eventual consistency is less strict. It will spread the load for
@@ -495,6 +503,14 @@ public class AxonServerConfiguration {
 
     public void setConnectTimeout(long connectTimeout) {
         this.connectTimeout = connectTimeout;
+    }
+
+    public long getReconnectInterval() {
+        return reconnectInterval;
+    }
+
+    public void setReconnectInterval(long reconnectInterval) {
+        this.reconnectInterval = reconnectInterval;
     }
 
     public boolean isForceReadFromLeader() {
