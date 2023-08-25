@@ -70,7 +70,7 @@ class MessagePriorityIntegrationTest {
 
     @Container
     private static final AxonServerContainer axonServer =
-            new AxonServerContainer(DockerImageName.parse("axoniq/axonserver:latest-dev"))
+            new AxonServerContainer()
                     .withAxonServerName("axonserver")
                     .withAxonServerHostname(HOSTNAME)
                     .withDevMode(true)
