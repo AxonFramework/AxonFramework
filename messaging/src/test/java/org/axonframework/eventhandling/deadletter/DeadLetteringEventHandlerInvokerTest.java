@@ -59,7 +59,7 @@ import static org.mockito.Mockito.*;
  */
 class DeadLetteringEventHandlerInvokerTest {
 
-    private static final DomainEventMessage<String> TEST_EVENT = EventTestUtils.createEvent();
+    private static final DomainEventMessage<String> TEST_EVENT = EventTestUtils.createEvent(2L);
     private static final Object TEST_SEQUENCE_ID = TEST_EVENT.getAggregateIdentifier();
     private static final DeadLetter<EventMessage<?>> TEST_DEAD_LETTER =
             new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
@@ -135,6 +135,18 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(queue).enqueueIfPresent(eq(TEST_SEQUENCE_ID), enqueueIfPresentCaptor.capture());
         assertLetter(expectedIfPresentLetter, enqueueIfPresentCaptor.getValue().get());
 
+        verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
+        verifyNoInteractions(transactionManager);
+    }
+
+    @Test
+    void handleMethodWillSkipIfPresentCheckForFirstDomainMessage() throws Exception {
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+        DomainEventMessage<String> firstEvent = EventTestUtils.createEvent();
+
+        testSubject.handle(firstEvent, Segment.ROOT_SEGMENT);
+        verify(handler).handle(firstEvent);
+        verify(queue, never()).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
         verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
         verifyNoInteractions(transactionManager);
     }
@@ -437,6 +449,15 @@ class DeadLetteringEventHandlerInvokerTest {
 
         //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.listenerInvocationErrorHandler(null));
+    }
+
+    @Test
+    void buildWithNullCacheThrowsAxonConfigurationException() {
+        DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
+                DeadLetteringEventHandlerInvoker.builder();
+
+        //noinspection ConstantConditions
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.cache(null));
     }
 
     // This stub TransactionManager is used for spying.

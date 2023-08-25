@@ -101,6 +101,7 @@ class Coordinator {
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
+    private final Consumer<Integer> clearCacheFunction;
 
     /**
      * Instantiate a Builder to be able to create a {@link Coordinator}. This builder <b>does not</b> validate the
@@ -130,6 +131,7 @@ class Coordinator {
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
         this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
+        this.clearCacheFunction = builder.clearCacheFunction;
     }
 
     /**
@@ -385,6 +387,8 @@ class Coordinator {
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
+        private Consumer<Integer> clearCacheFunction = cacheId -> {
+        };
 
         /**
          * The name of the processor this service coordinates for.
@@ -600,6 +604,18 @@ class Coordinator {
         }
 
         /**
+         * A {@link Consumer} used to clean the cache of an event processor.
+         *
+         * @param clearCacheFunction a {@link Consumer} of a {@code segmentId} to clear the cache of the event
+         *                           processor.
+         * @return the current Builder instance, for fluent interfacing.
+         */
+        Builder clearCacheFunction(Consumer<Integer> clearCacheFunction) {
+            this.clearCacheFunction = clearCacheFunction;
+            return this;
+        }
+
+        /**
          * Initializes a {@link Coordinator} as specified through this Builder.
          *
          * @return a {@link Coordinator} as specified through this Builder
@@ -640,7 +656,7 @@ class Coordinator {
      * <ol>
      *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
      *     <li>{@link WorkPackage#extendClaimIfThresholdIsMet() Extend the claims} of all {@code WorkPackages} to relieve them of this effort.
-     *     This is an optimization activated through {@link Builder#coordinatorClaimExtension()}.</li>
+     *     This is an optimization activated through {@link Builder#coordinatorClaimExtension(boolean)}.</li>
      *     <li>Validating if there are {@link CoordinatorTask CoordinatorTasks} to run, and run a single one if there are any.</li>
      *     <li>Periodically checking for unclaimed segments, claim these and start a {@code WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>

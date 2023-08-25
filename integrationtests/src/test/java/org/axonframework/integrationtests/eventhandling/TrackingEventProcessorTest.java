@@ -466,6 +466,19 @@ class TrackingEventProcessorTest {
     }
 
     @Test
+    void cacheIsCleanedWhenSegmentIsReleased() {
+        eventBus.publish(createEvent());
+        testSubject.start();
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(
+                () -> verify(tokenStore).storeToken(any(), eq(testSubject.getName()), eq(0))
+        );
+        testSubject.releaseSegment(0);
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(
+                () -> verify(eventHandlerInvoker, times(1)).clearCache(0)
+        );
+    }
+
+    @Test
     void tokenIsExtendedAtStartAndStoredAtEndOfEventBatch_WithStoringTokensAfterProcessingSetting()
             throws Exception {
         initProcessor(

@@ -153,6 +153,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
+                                      .clearCacheFunction(segmentId -> eventHandlerInvoker().clearCache(segmentId))
                                       .build();
 
         //noinspection resource
@@ -371,6 +372,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                   segment.getSegmentId(), new TrackerStatus(segment, initialToken)
                           ))
                           .clock(clock)
+                          .clearCacheFunction(() -> eventHandlerInvoker().clearCache(segment.getSegmentId()))
                           .build();
     }
 
