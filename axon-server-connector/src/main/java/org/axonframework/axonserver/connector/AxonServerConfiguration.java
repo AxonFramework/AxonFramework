@@ -88,8 +88,16 @@ public class AxonServerConfiguration {
 
     /**
      * Initial number of permits send for message streams (events, commands, queries).
+     *
+     * @deprecated In favor of {@code permits}.
      */
-    private Integer initialNrOfPermits = 5000;
+    @Deprecated
+    private Integer initialNrOfPermits;
+
+    /**
+     * Initial number of permits send for message streams (events, commands, queries).
+     */
+    private Integer permits = 5000;
 
     /**
      * Additional number of permits send for message streams (events, commands, queries) when application is ready for
@@ -110,18 +118,24 @@ public class AxonServerConfiguration {
     /**
      * Specific flow control settings for the event message stream.
      * <p>
-     * When not specified (null) the default flow control properties initialNrOfPermits, nrOfNewPermits en
-     * newPermitsThreshold will be used.
+     * When not specified (null) the top-level flow control properties {@code permits}, {@code nrOfNewPermits} and
+     * {@code newPermitsThreshold} are used.
      */
     private FlowControlConfiguration eventFlowControl;
 
     /**
      * Specific flow control settings for the queue message stream.
+     * <p>
+     * When not specified (null) the top-level flow control properties {@code permits}, {@code nrOfNewPermits} and
+     * {@code newPermitsThreshold} are used.
      */
     private FlowControlConfiguration queryFlowControl;
 
     /**
      * Specific flow control settings for the command message stream.
+     * <p>
+     * When not specified (null) the top-level flow control properties {@code permits}, {@code nrOfNewPermits} and
+     * {@code newPermitsThreshold} are used.
      */
     private FlowControlConfiguration commandFlowControl;
 
@@ -149,8 +163,8 @@ public class AxonServerConfiguration {
      * An {@link EventCipher} which is used to encrypt and decrypt events and snapshots. Defaults to
      * {@link EventCipher#EventCipher()}.
      *
-     * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
-     * connector</a>
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project.
      */
     @Deprecated
     private EventCipher eventCipher = new EventCipher();
@@ -174,7 +188,11 @@ public class AxonServerConfiguration {
     /**
      * Indicates whether the download advice message should be suppressed, even when default connection properties
      * (which are generally only used in DEV mode) are used. Defaults to false.
+     *
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project, which enables the download message in absence of configured servers.
      */
+    @Deprecated
     private boolean suppressDownloadMessage = false;
 
     /**
@@ -193,14 +211,31 @@ public class AxonServerConfiguration {
      * message.
      * <p>
      * Default is to have blacklisting enabled.
+     *
+     * @deprecated In favor of the {@code eventBlockListingEnabled} property.
      */
+    @Deprecated
     private boolean disableEventBlacklisting = false;
 
     /**
+     * Flag that allows block-listing of event types to be enabled.
+     * <p>
+     * Disabling this may have serious performance impact, as it requires all
+     * {@link org.axonframework.eventhandling.EventMessage events} from Axon Server to be sent to clients, even if a
+     * client is unable to process the event. Default is to have block-listing enabled.
+     */
+    private boolean eventBlockListingEnabled = true;
+
+    /**
      * The number of messages that may be in-transit on the network/grpc level when streaming data from the server.
+     * <p>
      * Setting this to 0 (or a negative value) will disable buffering, and requires each message sent by the server to
      * be acknowledged before the next message may be sent. Defaults to 500.
+     *
+     * @deprecated This property is no longer used through adjustments in the <a
+     * href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java Connector</a> project.
      */
+    @Deprecated
     private int maxGrpcBufferedMessages = 500;
 
     /**
@@ -243,12 +278,7 @@ public class AxonServerConfiguration {
      * @return a {@link Builder} to be able to create an {@link AxonServerConfiguration}.
      */
     public static Builder builder() {
-        Builder builder = new Builder();
-        if (Boolean.getBoolean("axon.axonserver.suppressDownloadMessage")) {
-            builder.suppressDownloadMessage();
-        }
-
-        return builder;
+        return new Builder();
     }
 
     /**
@@ -271,7 +301,6 @@ public class AxonServerConfiguration {
 
     public void setServers(String routingServers) {
         this.servers = routingServers;
-        suppressDownloadMessage = true;
     }
 
     public String getClientId() {
@@ -316,17 +345,33 @@ public class AxonServerConfiguration {
         this.sslEnabled = sslEnabled;
     }
 
+    /**
+     * @deprecated In favor of {@link #getPermits()}
+     */
+    @Deprecated
     public Integer getInitialNrOfPermits() {
         return initialNrOfPermits;
     }
 
+    /**
+     * @deprecated In favor of {@link #setPermits(Integer)}
+     */
+    @Deprecated
     public void setInitialNrOfPermits(Integer initialNrOfPermits) {
-        this.initialNrOfPermits = initialNrOfPermits;
+        this.permits = initialNrOfPermits;
+    }
+
+    public Integer getPermits() {
+        return permits;
+    }
+
+    public void setPermits(Integer permits) {
+        this.permits = permits;
     }
 
     public Integer getNrOfNewPermits() {
         if (nrOfNewPermits == null || nrOfNewPermits <= 0) {
-            return getInitialNrOfPermits() - getNewPermitsThreshold();
+            return getPermits() - getNewPermitsThreshold();
         }
         return nrOfNewPermits;
     }
@@ -337,7 +382,7 @@ public class AxonServerConfiguration {
 
     public Integer getNewPermitsThreshold() {
         if (newPermitsThreshold == null || newPermitsThreshold <= 0) {
-            return initialNrOfPermits / 2;
+            return getPermits() / 2;
         }
         return newPermitsThreshold;
     }
@@ -365,12 +410,22 @@ public class AxonServerConfiguration {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project.
+     */
+    @Deprecated
     public EventCipher getEventCipher() {
         return eventCipher;
     }
 
+    /**
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project.
+     */
+    @Deprecated
     private void setEventSecretKey(String key) {
-        if (key != null && key.length() > 0) {
+        if (key != null && !key.isEmpty()) {
             eventCipher = new EventCipher(key.getBytes(StandardCharsets.US_ASCII));
         }
     }
@@ -427,10 +482,20 @@ public class AxonServerConfiguration {
         this.keepAliveTime = keepAliveTime;
     }
 
+    /**
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project, which enables the download message in absence of configured servers.
+     */
+    @Deprecated
     public boolean getSuppressDownloadMessage() {
         return suppressDownloadMessage;
     }
 
+    /**
+     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+     * Connector</a> project, which enables the download message in absence of configured servers.
+     */
+    @Deprecated
     public void setSuppressDownloadMessage(boolean suppressDownloadMessage) {
         this.suppressDownloadMessage = suppressDownloadMessage;
     }
@@ -451,12 +516,28 @@ public class AxonServerConfiguration {
         this.snapshotPrefetch = snapshotPrefetch;
     }
 
+    /**
+     * @deprecated In favor of {@link #setEventBlockListingEnabled(boolean)}.
+     */
+    @Deprecated
     public boolean isDisableEventBlacklisting() {
         return disableEventBlacklisting;
     }
 
+    /**
+     * @deprecated In favor of {@link #setEventBlockListingEnabled(boolean)}.
+     */
+    @Deprecated
     public void setDisableEventBlacklisting(boolean disableEventBlacklisting) {
-        this.disableEventBlacklisting = disableEventBlacklisting;
+        this.eventBlockListingEnabled = !disableEventBlacklisting;
+    }
+
+    public boolean isEventBlockListingEnabled() {
+        return eventBlockListingEnabled;
+    }
+
+    public void setEventBlockListingEnabled(boolean eventBlockListingEnabled) {
+        this.eventBlockListingEnabled = eventBlockListingEnabled;
     }
 
     public int getCommitTimeout() {
@@ -467,10 +548,20 @@ public class AxonServerConfiguration {
         this.commitTimeout = commitTimeout;
     }
 
+    /**
+     * @deprecated This property is no longer used through adjustments in the <a
+     * href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java Connector</a> project.
+     */
+    @Deprecated
     public int getMaxGrpcBufferedMessages() {
         return maxGrpcBufferedMessages;
     }
 
+    /**
+     * @deprecated This property is no longer used through adjustments in the <a
+     * href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java Connector</a> project.
+     */
+    @Deprecated
     public void setMaxGrpcBufferedMessages(int maxGrpcBufferedMessages) {
         this.maxGrpcBufferedMessages = maxGrpcBufferedMessages;
     }
@@ -501,7 +592,7 @@ public class AxonServerConfiguration {
 
     public FlowControlConfiguration getEventFlowControl() {
         if (eventFlowControl == null) {
-            return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
+            return new FlowControlConfiguration(getPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
         }
         return eventFlowControl;
     }
@@ -512,7 +603,7 @@ public class AxonServerConfiguration {
 
     public FlowControlConfiguration getQueryFlowControl() {
         if (queryFlowControl == null) {
-            return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
+            return new FlowControlConfiguration(getPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
         }
         return queryFlowControl;
     }
@@ -523,7 +614,7 @@ public class AxonServerConfiguration {
 
     public FlowControlConfiguration getCommandFlowControl() {
         if (commandFlowControl == null) {
-            return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
+            return new FlowControlConfiguration(getPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
         }
         return commandFlowControl;
     }
@@ -533,7 +624,7 @@ public class AxonServerConfiguration {
     }
 
     public FlowControlConfiguration getDefaultFlowControlConfiguration() {
-        return new FlowControlConfiguration(initialNrOfPermits, nrOfNewPermits, newPermitsThreshold);
+        return new FlowControlConfiguration(permits, nrOfNewPermits, newPermitsThreshold);
     }
 
     public HeartbeatConfiguration getHeartbeat() {
@@ -572,8 +663,16 @@ public class AxonServerConfiguration {
 
         /**
          * Initial number of permits send for message streams (events, commands, queries).
+         *
+         * @deprecated In favor of {@code permits}.
          */
-        private Integer initialNrOfPermits = 5000;
+        @Deprecated
+        private Integer initialNrOfPermits;
+
+        /**
+         * Initial number of permits send for message streams (events, commands, queries).
+         */
+        private Integer permits;
 
         /**
          * Additional number of permits send for message streams (events, commands, queries) when application is ready
@@ -582,7 +681,7 @@ public class AxonServerConfiguration {
          * A value of {@code null}, 0, and negative values will have the client request the number of permits required
          * to get from the "new-permits-threshold" to "initial-nr-of-permits".
          */
-        private Integer nrOfNewPermits = null;
+        private Integer nrOfNewPermits;
 
         /**
          * Threshold at which application sends new permits to server.
@@ -590,36 +689,50 @@ public class AxonServerConfiguration {
          * A value of {@code null}, 0, and negative values will have the threshold set to 50% of
          * "initial-nr-of-permits".
          */
-        private Integer newPermitsThreshold = null;
-
-        public FlowControlConfiguration() {
-        }
+        private Integer newPermitsThreshold;
 
         /**
          * Construct a {@link FlowControlConfiguration}.
          *
-         * @param initialNrOfPermits  initial nr of new permits
-         * @param nrOfNewPermits      additional number of permits when application is ready for message
-         * @param newPermitsThreshold threshold at which application sends new permits to server
+         * @param permits             Initial nr of new permits.
+         * @param nrOfNewPermits      Additional number of permits when application is ready for message.
+         * @param newPermitsThreshold Threshold at which application sends new permits to server.
          */
-        public FlowControlConfiguration(Integer initialNrOfPermits, Integer nrOfNewPermits,
+        public FlowControlConfiguration(Integer permits,
+                                        Integer nrOfNewPermits,
                                         Integer newPermitsThreshold) {
-            this.initialNrOfPermits = initialNrOfPermits;
+            this.permits = permits;
             this.nrOfNewPermits = nrOfNewPermits;
             this.newPermitsThreshold = newPermitsThreshold;
         }
 
+        /**
+         * @deprecated In favor of {@link #getPermits()}.
+         */
+        @Deprecated
         public Integer getInitialNrOfPermits() {
-            return this.initialNrOfPermits;
+            return this.permits;
         }
 
+        /**
+         * @deprecated In favor of {@link #setPermits(Integer)}.
+         */
+        @Deprecated
         public void setInitialNrOfPermits(Integer initialNrOfPermits) {
-            this.initialNrOfPermits = initialNrOfPermits;
+            this.permits = initialNrOfPermits;
+        }
+
+        public Integer getPermits() {
+            return permits;
+        }
+
+        public void setPermits(Integer permits) {
+            this.permits = permits;
         }
 
         public Integer getNrOfNewPermits() {
             if (this.nrOfNewPermits == null || this.nrOfNewPermits <= 0) {
-                return getInitialNrOfPermits() - getNewPermitsThreshold();
+                return this.getPermits() - this.getNewPermitsThreshold();
             }
             return this.nrOfNewPermits;
         }
@@ -630,7 +743,7 @@ public class AxonServerConfiguration {
 
         public Integer getNewPermitsThreshold() {
             if (this.newPermitsThreshold == null || this.newPermitsThreshold <= 0) {
-                return this.initialNrOfPermits / 2;
+                return this.getPermits() / 2;
             }
             return this.newPermitsThreshold;
         }
@@ -779,9 +892,9 @@ public class AxonServerConfiguration {
 
         public Builder() {
             instance = new AxonServerConfiguration();
-            instance.initialNrOfPermits = 1000;
-            instance.nrOfNewPermits = 500;
-            instance.newPermitsThreshold = 500;
+            instance.permits = 5000;
+            instance.nrOfNewPermits = null;
+            instance.newPermitsThreshold = null;
         }
 
         public Builder ssl(String certFile) {
@@ -805,39 +918,43 @@ public class AxonServerConfiguration {
             return this;
         }
 
-        public Builder flowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
-            instance.initialNrOfPermits = initialNrOfPermits;
+        public Builder flowControl(int permits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.permits = permits;
             instance.nrOfNewPermits = nrOfNewPermits;
             instance.newPermitsThreshold = newPermitsThreshold;
             return this;
         }
 
-        public Builder commandFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
-            instance.setCommandFlowControl(new FlowControlConfiguration(initialNrOfPermits,
-                                                                        nrOfNewPermits,
-                                                                        newPermitsThreshold));
+        public Builder commandFlowControl(int permits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setCommandFlowControl(new FlowControlConfiguration(permits, nrOfNewPermits, newPermitsThreshold));
             return this;
         }
 
-        public Builder queryFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
-            instance.setQueryFlowControl(new FlowControlConfiguration(initialNrOfPermits,
-                                                                      nrOfNewPermits,
-                                                                      newPermitsThreshold));
+        public Builder queryFlowControl(int permits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setQueryFlowControl(new FlowControlConfiguration(permits, nrOfNewPermits, newPermitsThreshold));
             return this;
         }
 
-        public Builder eventFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
-            instance.setEventFlowControl(new FlowControlConfiguration(initialNrOfPermits,
-                                                                      nrOfNewPermits,
-                                                                      newPermitsThreshold));
+        public Builder eventFlowControl(int permits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setEventFlowControl(new FlowControlConfiguration(permits, nrOfNewPermits, newPermitsThreshold));
             return this;
         }
 
+        /**
+         * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+         * Connector</a> project.
+         */
+        @Deprecated
         public Builder setEventSecretKey(String key) {
             instance.setEventSecretKey(key);
             return this;
         }
 
+        /**
+         * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+         * Connector</a> project.
+         */
+        @Deprecated
         public Builder eventCipher(EventCipher eventCipher) {
             instance.eventCipher = eventCipher;
             return this;
@@ -872,6 +989,11 @@ public class AxonServerConfiguration {
             return this;
         }
 
+        /**
+         * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
+         * Connector</a> project, which enables the download message in absence of configured servers.
+         */
+        @Deprecated
         public Builder suppressDownloadMessage() {
             instance.setSuppressDownloadMessage(true);
             return this;
