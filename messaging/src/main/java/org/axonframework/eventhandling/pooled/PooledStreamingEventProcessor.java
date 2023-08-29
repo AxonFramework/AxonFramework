@@ -256,6 +256,11 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
     }
 
     @Override
+    public CompletableFuture<Boolean> claimSegment(int segmentId) {
+        return coordinator.claimSegment(segmentId);
+    }
+
+    @Override
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
         if (!tokenStore.requiresExplicitSegmentInitialization()) {
             CompletableFuture<Boolean> result = new CompletableFuture<>();
@@ -266,11 +271,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         return coordinator.splitSegment(segmentId);
-    }
-
-    @Override
-    public CompletableFuture<Boolean> claimSegment(int segmentId) {
-        return coordinator.claimSegment(segmentId);
     }
 
     @Override

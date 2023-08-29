@@ -262,18 +262,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     @Override
-    public CompletableFuture<Boolean> claimSegment(int segmentId) {
-        CompletableFuture<Boolean> result = new CompletableFuture<>();
-        if (this.activeSegments.containsKey(segmentId)) {
-            return CompletableFuture.completedFuture(true);
-        }
-
-        shouldRunLauncherImmediately.set(true);
-        this.launcherInstructions.add(new ClaimSegmentInstruction(result, segmentId));
-        return result;
-    }
-
-    @Override
     public String getTokenStoreIdentifier() {
         return tokenStoreIdentifier.updateAndGet(i -> i != null ? i : calculateIdentifier());
     }
@@ -639,6 +627,25 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         segmentReleaseDeadlines.put(segmentId, System.currentTimeMillis() + unit.toMillis(releaseDuration));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method will add an instruction for the {@link WorkerLauncher} and set a flag that interrupts its sleep
+     * to reduce the time it takes for the processor to claim the segment. Note that a thread has to be available for
+     * a segment to start processing. The result will be {@code false} if there is none available.
+     */
+    @Override
+    public CompletableFuture<Boolean> claimSegment(int segmentId) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        if (this.activeSegments.containsKey(segmentId)) {
+            return CompletableFuture.completedFuture(true);
+        }
+
+        this.launcherInstructions.add(new ClaimSegmentInstruction(result, segmentId));
+        shouldRunLauncherImmediately.set(true);
+        return result;
+    }
+
     private boolean canClaimSegment(int segmentId) {
         return segmentReleaseDeadlines.getOrDefault(segmentId, Long.MIN_VALUE) < System.currentTimeMillis();
     }
@@ -870,7 +877,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         long deadline = System.currentTimeMillis() + millisToSleep;
         try {
             long timeLeft;
-            while (getState().isRunning() &&  (timeLeft = deadline - System.currentTimeMillis()) > 0) {
+            while (!interruptFlag.get()
+                    && getState().isRunning()
+                    && (timeLeft = deadline - System.currentTimeMillis()) > 0) {
                 Thread.sleep(Math.min(timeLeft, 100));
             }
         } catch (InterruptedException e) {

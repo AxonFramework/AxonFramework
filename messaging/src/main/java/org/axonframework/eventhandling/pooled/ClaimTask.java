@@ -63,7 +63,7 @@ class ClaimTask extends CoordinatorTask {
      *                           #run()} has finalized
      * @param name               the name of the {@link Coordinator} this instruction will be ran in. Used to correctly
      *                           deal with the {@code tokenStore}
-     * @param segmentId          the identifier of the {@link Segment} this instruction should merge
+     * @param segmentId          the identifier of the {@link Segment} this instruction should claim
      * @param workPackages       the collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
      *                           queried for the presence of the given {@code segmentId} and the segment to merge it
      *                           with
@@ -72,6 +72,7 @@ class ClaimTask extends CoordinatorTask {
      *                           it is not present in the {@code workPackages}, to remove one of the segments and merge
      *                           the merged token
      * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations inside a
+     *                           transaction
      */
     ClaimTask(CompletableFuture<Boolean> result,
               String name,
