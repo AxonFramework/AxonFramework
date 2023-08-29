@@ -1,4 +1,4 @@
-= Adding deadlines
+= Adding Deadlines
 :navtitle: Adding deadlines
 
 == Introduction

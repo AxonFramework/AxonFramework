@@ -1,4 +1,4 @@
-= Implementing deadlines
+= Implementing Deadlines
 
 As the `SimpleDeadlineManager` is included in the messaging module of Axon framework, and uses Java's `ScheduledExecutorService` no additional dependencies are needed to use it.
 The `SimpleDeadlineManager` can be added both as an Axon Configuration component, or as a Spring Bean.

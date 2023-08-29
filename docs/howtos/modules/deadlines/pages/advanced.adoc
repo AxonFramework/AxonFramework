@@ -1,4 +1,4 @@
-= Advanced use cases
+= Advanced Use Cases
 
 As the deadline is used currently, we don't use the ability to cancel deadlines.
 In the case of a gift card, we might not publish an event that the gift card expired, when it was already depleted.
