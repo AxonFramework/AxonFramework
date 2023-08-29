@@ -253,6 +253,12 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         super.publish(msg);
         snapshotTrigger.eventHandled(msg);
         if (identifierAsString() == null) {
+            if (msg.getPayloadType().equals(getAggregateRoot().getClass())) {
+                throw new IncompatibleAggregateException("Aggregate identifier must be non-null after applying a snapshot. " +
+                        "Make sure the aggregate identifier is included in the snapshot that is used to restore the aggregate from. " +
+                        "This can be missing due to your serializer not being able to find the private fields of your aggregate. "
+                );
+            }
             throw new IncompatibleAggregateException("Aggregate identifier must be non-null after applying an event. " +
                                                              "Make sure the aggregate identifier is initialized at " +
                                                              "the latest when handling the creation event.");
