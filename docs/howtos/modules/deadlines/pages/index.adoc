@@ -1,5 +1,5 @@
-= Adding Deadlines
-:navtitle: Adding deadlines
+= Deadlines in Axon Framework
+:navtitle: Deadlines
 
 == Introduction
 

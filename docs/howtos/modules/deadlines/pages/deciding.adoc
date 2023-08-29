@@ -1,4 +1,5 @@
 = Deciding on the Implementation
+:navtitle: Select a manager
 
 In most cases there would not be an autoconfigured deadline manager available.
 It's best to choose a solution based on the Saga store for deadlines used in Saga's.

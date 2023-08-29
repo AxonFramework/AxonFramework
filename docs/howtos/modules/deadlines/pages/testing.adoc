@@ -1,4 +1,5 @@
 = Testing the Deadline
+:navtitle: Test the handler
 
 Testing behaviour related to deadlines is easy by using either the `SagaTestFixture` or the `AggregateTestFixture` these will include configuration to use a `StubDeadlineManager`.
 This makes it possible to simulate passing of time, and checking the behaviour.
