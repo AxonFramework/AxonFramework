@@ -1,12 +1,12 @@
 name: axon_framework_ht
-title: Axon Framework
+title: Axon Framework Fundamentals
 version: true
 prerelease: true
 
 asciidoc:
   attributes:
-    component_description: The Axon Framework how-to guides
-    type: howto
+    component_description: A tutorial covering Axon Framework's fundamental components and features.
+    type: tutorial
     group: beginner
 
 nav:
