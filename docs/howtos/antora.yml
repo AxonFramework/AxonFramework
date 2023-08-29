@@ -6,8 +6,8 @@ prerelease: true
 asciidoc:
   attributes:
     component_description: The Axon Framework how-to guides
-    type: how-to
-    group: product
+    type: howto
+    group: beginner
 
 nav:
   - modules/nav.adoc
