@@ -1,18 +1,2 @@
-Overview
-
-* Beginner How-to's
-+
---
-
---
-
-* Intermediate How-To's
-+
---
-** include::deadlines:partial$nav.adoc[]
---
-
-* Expert How-To's
-+
---
---
+include::ROOT:partial$nav.adoc[]
+include::deadlines:partial$nav.adoc[]
