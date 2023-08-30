@@ -153,7 +153,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
-                                      .clearCacheFunction(segmentId -> eventHandlerInvoker().clearCache(segmentId))
                                       .build();
 
         //noinspection resource

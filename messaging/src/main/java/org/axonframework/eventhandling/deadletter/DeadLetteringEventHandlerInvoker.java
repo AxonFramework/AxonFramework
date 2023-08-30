@@ -142,23 +142,27 @@ public class DeadLetteringEventHandlerInvoker
             if (!skipIfPresentCheck) {
                 markNotPresentInDLQ(sequenceIdentifier, segment);
             }
-            if (logger.isTraceEnabled()) {
-                logger.trace("Event [{}] with queue id [{}] is not present in the dead-letter queue."
-                                     + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
-                             message, sequenceIdentifier);
-            }
-            try {
-                super.invokeHandlers(message);
-            } catch (Exception e) {
-                DeadLetter<EventMessage<?>> letter = new GenericDeadLetter<>(sequenceIdentifier, message, e);
-                EnqueueDecision<EventMessage<?>> decision = enqueuePolicy.decide(letter, e);
-                if (decision.shouldEnqueue()) {
-                    Throwable cause = decision.enqueueCause().orElse(null);
-                    markPresentInDLQ(sequenceIdentifier, segment);
-                    queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause)));
-                } else if (logger.isInfoEnabled()) {
-                    logger.info("The enqueue policy decided not to dead letter event [{}].", message.getIdentifier());
-                }
+            invokeHandlers(message, segment, sequenceIdentifier);
+        }
+    }
+
+    private void invokeHandlers(@Nonnull EventMessage<?> message, @Nonnull Segment segment, Object sequenceIdentifier) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("Event [{}] with queue id [{}] is not present in the dead-letter queue."
+                                 + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
+                         message, sequenceIdentifier);
+        }
+        try {
+            super.invokeHandlers(message);
+        } catch (Exception e) {
+            DeadLetter<EventMessage<?>> letter = new GenericDeadLetter<>(sequenceIdentifier, message, e);
+            EnqueueDecision<EventMessage<?>> decision = enqueuePolicy.decide(letter, e);
+            if (decision.shouldEnqueue()) {
+                Throwable cause = decision.enqueueCause().orElse(null);
+                markPresentInDLQ(sequenceIdentifier, segment);
+                queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause)));
+            } else if (logger.isInfoEnabled()) {
+                logger.info("The enqueue policy decided not to dead letter event [{}].", message.getIdentifier());
             }
         }
     }

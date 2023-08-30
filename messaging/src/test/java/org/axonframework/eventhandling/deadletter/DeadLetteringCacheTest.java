@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class DeadLetteringCacheTest {
+class DeadLetteringCacheTest {
 
     private final int CACHE_SIZE = 10;
     private DeadLetteringCacheEntry testSubject;

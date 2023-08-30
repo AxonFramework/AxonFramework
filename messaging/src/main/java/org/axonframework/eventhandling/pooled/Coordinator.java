@@ -101,7 +101,6 @@ class Coordinator {
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
-    private final Consumer<Integer> clearCacheFunction;
 
     /**
      * Instantiate a Builder to be able to create a {@link Coordinator}. This builder <b>does not</b> validate the
@@ -131,7 +130,6 @@ class Coordinator {
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
         this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
-        this.clearCacheFunction = builder.clearCacheFunction;
     }
 
     /**
@@ -387,8 +385,6 @@ class Coordinator {
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
-        private Consumer<Integer> clearCacheFunction = cacheId -> {
-        };
 
         /**
          * The name of the processor this service coordinates for.
@@ -600,18 +596,6 @@ class Coordinator {
          */
         Builder coordinatorClaimExtension(boolean coordinatorExtendsClaims) {
             this.coordinatorExtendsClaims = coordinatorExtendsClaims;
-            return this;
-        }
-
-        /**
-         * A {@link Consumer} used to clean the cache of an event processor.
-         *
-         * @param clearCacheFunction a {@link Consumer} of a {@code segmentId} to clear the cache of the event
-         *                           processor.
-         * @return the current Builder instance, for fluent interfacing.
-         */
-        Builder clearCacheFunction(Consumer<Integer> clearCacheFunction) {
-            this.clearCacheFunction = clearCacheFunction;
             return this;
         }
 
