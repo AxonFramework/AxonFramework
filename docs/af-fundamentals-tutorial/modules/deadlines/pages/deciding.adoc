@@ -1,7 +1,7 @@
 = Deciding on the Implementation
 :navtitle: Select a manager
 
-In most cases, there would not be an autoconfigured deadline manager available.
+Axon Framework does not create a `DeadlineManager` automatically for you, and you will have to choose from a set of implementations.
 When setting up deadlines for sagas it's best to choose a solution based on the saga storage solution.
 For deadlines in aggregates, it is best to choose the same storage solution as the Event Store.
 In case you use Axon Server, it's best to store deadlines in the same solution as your projections.

@@ -23,7 +23,7 @@ class ExpiringGiftCardTest {
     void testCardExpiredAfterThirtyOneDays() {
         testFixture.givenNoPriorActivity()
                    .andGivenCommands(new IssueExpiringCardCommand(CARD_ID, DAYS, AMOUNT))
-                   .whenTimeElapses(Duration.ofDays(31L))
+                   .whenTimeElapses(Duration.ofDays(31L))  // <1>
                    .expectSuccessfulHandlerExecution()
                    .expectEvents(new ExpiringCardExpiredEvent(CARD_ID))
                    .expectTriggeredDeadlinesWithName("EXPIRED_GIFT_CARD");

@@ -70,8 +70,9 @@ public class ExpiringGiftCard {
 ----
 
 <1> Adding the deadline manager to the method makes it easily testable compared to other ways of accessing it from the aggregate.
+Any component registered to the Axon Configuration, or when using Spring, any bean in the Spring Context, can be injected in this way.
 <2> We schedule the deadline, so it will trigger at the end of the day.
-<3> It's important to use the same name. In this case, the deadline does not contain a payload.
-<4> We do a check, so even if there is some problem with the deadline manager, we still only send one `ExpiringCardExpiredEvent` event.
+<3> It's important to use the same in the annotation as when calling the schedule method.
+<4> We do an idempotency check, so even if there is some problem with the deadline manager, we still only send one `ExpiringCardExpiredEvent` event.
 <5> On the `ExpiringCardExpiredEvent`, we change the aggregate's state.
 
