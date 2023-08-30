@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -36,7 +37,6 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.utils.EventTestUtils;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -49,6 +49,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
+import static org.axonframework.utils.EventTestUtils.createEvent;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -59,7 +60,7 @@ import static org.mockito.Mockito.*;
  */
 class DeadLetteringEventHandlerInvokerTest {
 
-    private static final DomainEventMessage<String> TEST_EVENT = EventTestUtils.createEvent(2L);
+    private static final DomainEventMessage<String> TEST_EVENT = createEvent(2L);
     private static final Object TEST_SEQUENCE_ID = TEST_EVENT.getAggregateIdentifier();
     private static final DeadLetter<EventMessage<?>> TEST_DEAD_LETTER =
             new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
@@ -140,9 +141,113 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
+    void handleMethodHandlesEventJustFineWithCacheWhenDlqEmpty() throws Exception {
+        setTestSubject(createTestSubject(b -> b.cache(new WeakReferenceCache())));
+        doReturn(0L).when(queue).amountOfSequences();
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
+
+        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
+        verify(handler).handle(TEST_EVENT);
+
+        verify(queue, never()).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
+
+        verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
+        verifyNoInteractions(transactionManager);
+    }
+
+    @Test
+    void handleMethodHandlesEventJustFineWithCacheWhenDlqNotEmpty() throws Exception {
+        setTestSubject(createTestSubject(b -> b.cache(new WeakReferenceCache())));
+        doReturn(1L).when(queue).amountOfSequences();
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
+
+        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
+        verify(handler).handle(TEST_EVENT);
+
+        verify(queue, times(1)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
+
+        verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
+        verifyNoInteractions(transactionManager);
+    }
+
+    @Test
+    void handleMethodHandlesEventJustFineWithCacheWhenDlqNotEmptyKeepsTrackNotInDlq() throws Exception {
+        setTestSubject(createTestSubject(b -> b.cache(new WeakReferenceCache())));
+        doReturn(1L).when(queue).amountOfSequences();
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
+
+        EventMessage<?> eventMessageOne = createEvent("foo", 2);
+        EventMessage<?> eventMessageTwo = createEvent("bar", 2);
+        EventMessage<?> eventMessageThree = createEvent("foo", 3);
+
+        testSubject.handle(eventMessageOne, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageTwo, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageThree, Segment.ROOT_SEGMENT);
+
+        verify(queue, times(1)).enqueueIfPresent(eq("foo"), any());
+        verify(queue, times(1)).enqueueIfPresent(eq("bar"), any());
+
+        verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
+        verifyNoInteractions(transactionManager);
+    }
+
+    @Test
+    void handleMethodHandlesEventJustFineWithCacheWhenDlqNotEmptyAndRespectCacheSize() throws Exception {
+        setTestSubject(createTestSubject(b -> b
+                .cache(new WeakReferenceCache())
+                .cacheSize(1)));
+        doReturn(1L).when(queue).amountOfSequences();
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
+
+        DomainEventMessage<?> eventMessageOne = createEvent("foo", 2);
+        DomainEventMessage<?> eventMessageTwo = createEvent("bar", 2);
+        DomainEventMessage<?> eventMessageThree = nextMessage(eventMessageOne);
+
+        testSubject.handle(eventMessageOne, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageTwo, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageThree, Segment.ROOT_SEGMENT);
+
+        verify(queue, times(2)).enqueueIfPresent(eq("foo"), any());
+        verify(queue, times(1)).enqueueIfPresent(eq("bar"), any());
+
+        verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
+        verifyNoInteractions(transactionManager);
+    }
+
+    @Test
+    void handleMethodHandlesEventJustFineWithCacheTryAgainToQueueAfterCleaned() throws Exception {
+        setTestSubject(createTestSubject(b -> b.cache(new WeakReferenceCache())));
+        doReturn(1L).when(queue).amountOfSequences();
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
+
+        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        testSubject.clearCache(Segment.ROOT_SEGMENT.getSegmentId());
+        testSubject.handle(nextMessage(TEST_EVENT), Segment.ROOT_SEGMENT);
+
+        verify(queue, times(2)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
+
+        verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
+        verifyNoInteractions(transactionManager);
+    }
+
+    @Test
     void handleMethodWillSkipIfPresentCheckForFirstDomainMessage() throws Exception {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
-        DomainEventMessage<String> firstEvent = EventTestUtils.createEvent();
+        DomainEventMessage<String> firstEvent = createEvent();
 
         testSubject.handle(firstEvent, Segment.ROOT_SEGMENT);
         verify(handler).handle(firstEvent);
@@ -198,6 +303,27 @@ class DeadLetteringEventHandlerInvokerTest {
         assertLetter(expectedEnqueuedLetter, enqueueCaptor.getValue());
         verifyNoInteractions(transactionManager);
     }
+
+    @Test
+    void cacheKeepsTrackEnqueuedLetters() throws Exception {
+        setTestSubject(createTestSubject(b -> b.cache(new WeakReferenceCache())));
+        doReturn(0L).when(queue).amountOfSequences();
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+        RuntimeException testCause = new RuntimeException("some-cause");
+
+        doThrow(testCause).when(handler).handle(TEST_EVENT);
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
+
+        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        testSubject.handle(nextMessage(TEST_EVENT), Segment.ROOT_SEGMENT);
+
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
+        verify(handler).handle(TEST_EVENT);
+
+        verify(queue, times(1)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
+    }
+
 
     @Test
     void handleMethodDoesNotEnqueueForShouldNotEnqueueDecisionWhenDelegateThrowsAnException() throws Exception {
@@ -476,5 +602,9 @@ class DeadLetteringEventHandlerInvokerTest {
         assertEquals(expected.enqueuedAt(), result.enqueuedAt());
         assertEquals(expected.lastTouched(), result.lastTouched());
         assertEquals(expected.diagnostics(), result.diagnostics());
+    }
+
+    private static DomainEventMessage<?> nextMessage(DomainEventMessage<?> domainEventMessage) {
+        return createEvent(domainEventMessage.getAggregateIdentifier(), domainEventMessage.getSequenceNumber() + 1L);
     }
 }
