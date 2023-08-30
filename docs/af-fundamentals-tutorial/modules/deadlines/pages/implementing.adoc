@@ -1,9 +1,9 @@
 = Implementing Deadlines
 :navtitle: Add a handler
 
-As the `SimpleDeadlineManager` is included in the messaging module of Axon Framework and uses Java's `ScheduledExecutorService`, no additional dependencies are needed to use it.
-The `SimpleDeadlineManager` can be added both as an Axon Configuration component or as a Spring Bean.
-For this how-to, we will configure it as a Spring Bean.
+The `SimpleDeadlineManager` is part of the messaging module of Axon Framework and uses Java's `ScheduledExecutorService`, therefore, it requires no additional dependencies.
+The `SimpleDeadlineManager` can be configured either as an Axon Configuration component or as a Spring Bean.
+For this how-to, it's configured as a Spring Bean.
 
 [source,java]
 ----
@@ -19,8 +19,8 @@ public DeadlineManager deadlineManager(
 }
 ----
 
-Some additional things could be set for deadline managers.
-But all at least need the scope-aware provider.
+Depending on the deadline manager there might be multiple values set on the builder.
+All deadline managers at least need to set the scope-aware provider.
 
 [source,java]
 ----
@@ -71,8 +71,8 @@ public class ExpiringGiftCard {
 
 <1> Adding the deadline manager to the method makes it easily testable compared to other ways of accessing it from the aggregate.
 Any component registered to the Axon Configuration, or when using Spring, any bean in the Spring Context, can be injected in this way.
-<2> We schedule the deadline, so it will trigger at the end of the day.
+<2> Schedule the deadline, so it triggers at midnight.
 <3> It's important to use the same in the annotation as when calling the schedule method.
-<4> We do an idempotency check, so even if there is some problem with the deadline manager, we still only send one `ExpiringCardExpiredEvent` event.
-<5> On the `ExpiringCardExpiredEvent`, we change the aggregate's state.
+<4> An idempotency check, so even if there is some problem with the deadline manager, only one `ExpiringCardExpiredEvent` event is sent.
+<5> On the `ExpiringCardExpiredEvent`, change the aggregate's state.
 

@@ -35,4 +35,4 @@ class ExpiringGiftCardTest {
 }
 ----
 
-<1> By elapsing time by 31 days, the deadline should have been triggered and published a `ExpiringCardExpiredEvent`.
+<1> By elapsing time by 31 days, the deadline should trigger and publish an `ExpiringCardExpiredEvent`.
