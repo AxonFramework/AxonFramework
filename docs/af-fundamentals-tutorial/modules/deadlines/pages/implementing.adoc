@@ -1,9 +1,9 @@
 = Implementing Deadlines
 :navtitle: Add a handler
 
-As the `SimpleDeadlineManager` is included in the messaging module of Axon framework, and uses Java's `ScheduledExecutorService` no additional dependencies are needed to use it.
-The `SimpleDeadlineManager` can be added both as an Axon Configuration component, or as a Spring Bean.
-For this howto we will configure it as a Spring Bean.
+As the `SimpleDeadlineManager` is included in the messaging module of Axon Framework and uses Java's `ScheduledExecutorService`, no additional dependencies are needed to use it.
+The `SimpleDeadlineManager` can be added both as an Axon Configuration component or as a Spring Bean.
+For this how-to, we will configure it as a Spring Bean.
 
 [source,java]
 ----
@@ -19,8 +19,8 @@ public DeadlineManager deadlineManager(
 }
 ----
 
-There are some additional things that could be set.
-All deadline managers need at least the scope-aware provider.
+Some additional things could be set for deadline managers.
+But all at least need the scope-aware provider.
 
 [source,java]
 ----
@@ -70,8 +70,8 @@ public class ExpiringGiftCard {
 ----
 
 <1> Adding the deadline manager to the method makes it easily testable compared to other ways of accessing it from the aggregate.
-<2> We schedule the deadline, so it will trigger at the end of day.
-<3> It's important to use the same name, in this case the deadline does not contain a payload.
-<4> We do a check so even if there is some problem with the deadline manager, we still only send one `ExpiringCardExpiredEvent` event
-<5> On the `ExpiringCardExpiredEvent`, we change the state of the aggregate.
+<2> We schedule the deadline, so it will trigger at the end of the day.
+<3> It's important to use the same name. In this case, the deadline does not contain a payload.
+<4> We do a check, so even if there is some problem with the deadline manager, we still only send one `ExpiringCardExpiredEvent` event.
+<5> On the `ExpiringCardExpiredEvent`, we change the aggregate's state.
 

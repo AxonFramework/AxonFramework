@@ -3,12 +3,12 @@
 
 == Introduction
 
-Sometimes you don't want to trigger an aggregate or saga directly, but only after some time has past.
-When this is the case you can use a Deadline.
-If the event you want to publish is a non domain event, a scheduled event might be better fit.
-In order to use deadlines you need a `DeadlineManager`
+Sometimes, you don't want to trigger an aggregate or saga directly, but only after some time has passed.
+When this is the case, you can use a Deadline.
+Note that if the event you want to publish is a non-domain event, a scheduled event might be a better fit.
+To use deadlines, you need a `DeadlineManager`
 
-This howto will guide you through the basics of starting to work with deadlines.
-This includes configuring a deadline manager, and writing a test for a deadline.
+This how-to will guide you through the basics of starting to work with deadlines.
+This includes configuring a deadline manager and writing a test for a deadline.
 Finally, we will show some more advanced use cases by improving the solution.
-As example, we will model expiring a gift card after a certain amount of time.
+As an example, we will model an expiring gift card after a certain amount of time

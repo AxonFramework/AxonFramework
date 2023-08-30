@@ -1,11 +1,12 @@
 = Deciding on the Implementation
 :navtitle: Select a manager
 
-In most cases there would not be an autoconfigured deadline manager available.
-It's best to choose a solution based on the Saga store for deadlines used in Saga's.
-For deadlines in aggregates it best to choose the same as the Event Store.
-In the case you use Axon Server it's likely best to use what you use for the projections.
-If you are using a relational database, the `DbSchedulerDeadlineManager` is the best choice for MongoDB the `JobRunrDeadlineManager` is a good second.
-
-Both those solutions require a database as synchronisation and persistence layer.
-For now, we will stick to the `SimpleDeadlineManager` which is easier to use, but is used only by a single instance, and doesn't persist the set deadlines.
+In most cases, there would not be an autoconfigured deadline manager available.
+When setting up deadlines for sagas it's best to choose a solution based on the saga storage solution.
+For deadlines in aggregates, it is best to choose the same storage solution as the Event Store.
+In case you use Axon Server, it's best to store deadlines in the same solution as your projections.
+If you are using a relational database, the `DbSchedulerDeadlineManager` is the best choice.
+For MongoDB the `JobRunrDeadlineManager` would be a good second.
+Both solutions require a database as a synchronization and persistence layer.
+For now, we will stick to the `SimpleDeadlineManager` as it is easier to use.
+Note that the `SimpleDeadlineManager` should not be regarded as production-ready, as it does not persist deadlines or communicate between application instances.
