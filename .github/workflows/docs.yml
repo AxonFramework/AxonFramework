@@ -33,6 +33,7 @@ jobs:
 
       - name: Generate Site
         run: |
+          cd docs/_playbook/
           npm install
           export GIT_CREDENTIALS='https://axoniq-devops:${{ secrets.LIBRARY_DEVBOT_TOKEN }}@github.com'
           npx antora playbook.yaml
