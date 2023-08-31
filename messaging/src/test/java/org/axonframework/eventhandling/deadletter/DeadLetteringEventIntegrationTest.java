@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.deadletter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.AxonException;
-import org.axonframework.common.caching.Cache;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandler;
@@ -142,8 +141,8 @@ public abstract class DeadLetteringEventIntegrationTest {
         return new NoOpTransactionManager();
     }
 
-    protected Cache getCache() {
-        return null;
+    protected boolean cacheEnabled() {
+        return false;
     }
 
     @BeforeEach
@@ -169,20 +168,15 @@ public abstract class DeadLetteringEventIntegrationTest {
             }
         };
 
-        DeadLetteringEventHandlerInvoker.Builder invokerBuilder = DeadLetteringEventHandlerInvoker.builder()
-                                                                                                  .eventHandlers(
-                                                                                                          eventHandlingComponent)
-                                                                                                  .sequencingPolicy(
-                                                                                                          event -> ((DeadLetterableEvent) event.getPayload()).getAggregateIdentifier())
-                                                                                                  .enqueuePolicy(
-                                                                                                          enqueuePolicy)
-                                                                                                  .queue(deadLetterQueue)
-                                                                                                  .transactionManager(
-                                                                                                          transactionManager);
-        if (Objects.nonNull(getCache())) {
-            invokerBuilder.cache(getCache());
-        }
-        deadLetteringInvoker = invokerBuilder.build();
+        deadLetteringInvoker = DeadLetteringEventHandlerInvoker
+                .builder()
+                .eventHandlers(eventHandlingComponent)
+                .sequencingPolicy(event -> ((DeadLetterableEvent) event.getPayload()).getAggregateIdentifier())
+                .enqueuePolicy(enqueuePolicy)
+                .queue(deadLetterQueue)
+                .transactionManager(transactionManager)
+                .cacheEnabled(cacheEnabled())
+                .build();
 
         eventSource = new InMemoryStreamableEventSource();
         streamingProcessor =

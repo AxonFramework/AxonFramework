@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -60,7 +59,7 @@ import static org.mockito.Mockito.*;
  */
 class DeadLetteringEventHandlerInvokerTest {
 
-    private static final DomainEventMessage<String> TEST_EVENT = createEvent(2L);
+    private static final DomainEventMessage<String> TEST_EVENT = createEvent();
     private static final Object TEST_SEQUENCE_ID = TEST_EVENT.getAggregateIdentifier();
     private static final DeadLetter<EventMessage<?>> TEST_DEAD_LETTER =
             new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
@@ -142,7 +141,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void handleMethodHandlesEventJustFineWithCacheWhenDlqEmpty() throws Exception {
-        setTestSubject(createTestSubject(b -> b.cache(new WeakReferenceCache())));
+        setTestSubject(createTestSubject(b -> b.cacheEnabled(true)));
         doReturn(0L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -161,7 +160,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void handleMethodHandlesEventJustFineWithCacheWhenDlqNotEmpty() throws Exception {
-        setTestSubject(createTestSubject(b -> b.cache(new WeakReferenceCache())));
+        setTestSubject(createTestSubject(b -> b.cacheEnabled(true)));
         doReturn(1L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -180,7 +179,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void handleMethodHandlesEventJustFineWithCacheWhenDlqNotEmptyKeepsTrackNotInDlq() throws Exception {
-        setTestSubject(createTestSubject(b -> b.cache(new WeakReferenceCache())));
+        setTestSubject(createTestSubject(b -> b.cacheEnabled(true)));
         doReturn(1L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -204,7 +203,7 @@ class DeadLetteringEventHandlerInvokerTest {
     @Test
     void handleMethodHandlesEventJustFineWithCacheWhenDlqNotEmptyAndRespectCacheSize() throws Exception {
         setTestSubject(createTestSubject(b -> b
-                .cache(new WeakReferenceCache())
+                .cacheEnabled(true)
                 .cacheSize(1)));
         doReturn(1L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
@@ -228,7 +227,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void handleMethodHandlesEventJustFineWithCacheTryAgainToQueueAfterCleaned() throws Exception {
-        setTestSubject(createTestSubject(b -> b.cache(new WeakReferenceCache())));
+        setTestSubject(createTestSubject(b -> b.cacheEnabled(true)));
         doReturn(1L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -240,18 +239,6 @@ class DeadLetteringEventHandlerInvokerTest {
 
         verify(queue, times(2)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
 
-        verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
-        verifyNoInteractions(transactionManager);
-    }
-
-    @Test
-    void handleMethodWillSkipIfPresentCheckForFirstDomainMessage() throws Exception {
-        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
-        DomainEventMessage<String> firstEvent = createEvent();
-
-        testSubject.handle(firstEvent, Segment.ROOT_SEGMENT);
-        verify(handler).handle(firstEvent);
-        verify(queue, never()).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
         verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
         verifyNoInteractions(transactionManager);
     }
@@ -306,7 +293,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void cacheKeepsTrackEnqueuedLetters() throws Exception {
-        setTestSubject(createTestSubject(b -> b.cache(new WeakReferenceCache())));
+        setTestSubject(createTestSubject(b -> b.cacheEnabled(true)));
         doReturn(0L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -575,15 +562,6 @@ class DeadLetteringEventHandlerInvokerTest {
 
         //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.listenerInvocationErrorHandler(null));
-    }
-
-    @Test
-    void buildWithNullCacheThrowsAxonConfigurationException() {
-        DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
-                DeadLetteringEventHandlerInvoker.builder();
-
-        //noinspection ConstantConditions
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.cache(null));
     }
 
     // This stub TransactionManager is used for spying.

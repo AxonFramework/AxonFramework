@@ -18,10 +18,7 @@ package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.common.caching.Cache;
-import org.axonframework.common.caching.NoCache;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
@@ -46,8 +43,11 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -82,7 +82,7 @@ public class DeadLetteringEventHandlerInvoker
     private final boolean allowReset;
     private final boolean cacheEnabled;
     private final int cacheSize;
-    private final Cache cache;
+    private final Map<Integer, DeadLetteringCacheEntry> cache;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
 
     /**
@@ -97,9 +97,13 @@ public class DeadLetteringEventHandlerInvoker
         this.enqueuePolicy = builder.enqueuePolicy;
         this.transactionManager = builder.transactionManager;
         this.allowReset = builder.allowReset;
-        this.cache = builder.cache;
         this.cacheSize = builder.cacheSize;
         this.cacheEnabled = builder.cacheEnabled;
+        if (cacheEnabled) {
+            cache = new ConcurrentHashMap<>();
+        } else {
+            cache = null;
+        }
     }
 
     /**
@@ -109,9 +113,9 @@ public class DeadLetteringEventHandlerInvoker
      * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter, the
      * {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
      * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, {@code allowReset} defaults to {@code false},
-     * by default no cache is used set a {@link Cache} to enable caching and optionally set the {@code cacheSize}, which
-     * defaults to {@code 1024}. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, and a
-     * {@link TransactionManager} are <b>hard requirements</b> and as such should be provided.
+     * {@code cacheEnabled} defaults to {@code false} and  {@code cacheSize} defaults to {@code 1024}. Providing at
+     * least one Event Handler, a {@link SequencedDeadLetterQueue}, and a {@link TransactionManager} are <b>hard
+     * requirements</b> and as such should be provided.
      *
      * @return A builder that can construct a {@link DeadLetteringEventHandlerInvoker}.
      */
@@ -127,7 +131,7 @@ public class DeadLetteringEventHandlerInvoker
             return;
         }
         Object sequenceIdentifier = super.sequenceIdentifier(message);
-        boolean skipIfPresentCheck = skipIfPresentCheck(message, sequenceIdentifier, segment);
+        boolean skipIfPresentCheck = skipIfPresentCheck(sequenceIdentifier, segment);
         if (!skipIfPresentCheck && queue.enqueueIfPresent(
                 sequenceIdentifier,
                 () -> new GenericDeadLetter<>(sequenceIdentifier, message)
@@ -168,33 +172,29 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     private boolean skipIfPresentCheck(
-            @Nonnull EventMessage<?> message,
             @Nonnull Object sequenceIdentifier,
             @Nonnull Segment segment
     ) {
-        if (message instanceof DomainEventMessage) {
-            DomainEventMessage<?> domainEventMessage = (DomainEventMessage<?>) message;
-            if (domainEventMessage.getSequenceNumber() == 0L) {
-                markNotPresentInDLQ(sequenceIdentifier, segment);
-                return true;
-            }
-        }
         if (!cacheEnabled) {
             return false;
         }
-        return cache.computeIfAbsent(segment.getSegmentId(), () ->
+        return cache.computeIfAbsent(segment.getSegmentId(), k ->
                             new DeadLetteringCacheEntry(segment.getSegmentId(), cacheSize, queue))
                     .skipIfPresentCheck(sequenceIdentifier);
     }
 
     private void markPresentInDLQ(@Nonnull Object sequenceIdentifier, @Nonnull Segment segment) {
-        cache.computeIfPresent(segment.getSegmentId(),
-                               v -> ((DeadLetteringCacheEntry) v).markPresentInDLQ(sequenceIdentifier));
+        if (cacheEnabled) {
+            cache.computeIfPresent(segment.getSegmentId(),
+                                   (k, v) -> v.markPresentInDLQ(sequenceIdentifier));
+        }
     }
 
     private void markNotPresentInDLQ(@Nonnull Object sequenceIdentifier, @Nonnull Segment segment) {
-        cache.computeIfPresent(segment.getSegmentId(),
-                               v -> ((DeadLetteringCacheEntry) v).markNotPresentInDLQ(sequenceIdentifier));
+        if (cacheEnabled) {
+            cache.computeIfPresent(segment.getSegmentId(),
+                                   (k, v) -> v.markNotPresentInDLQ(sequenceIdentifier));
+        }
     }
 
     @Override
@@ -249,10 +249,10 @@ public class DeadLetteringEventHandlerInvoker
      * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the
      * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter, the
      * {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
-     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to
-     * {@code false}, be default caching is off, set a {@link Cache} to enable caching, the {@code cacheSize} used
-     * defaults to 1024. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, and a
-     * {@link TransactionManager} are <b>hard requirements</b> and as such should be provided.
+     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, {@code allowReset} defaults to {@code false},
+     * {@code cacheEnabled} defaults to {@code false} and {@code cacheSize} used defaults to 1024. Providing at least
+     * one Event Handler, a {@link SequencedDeadLetterQueue}, and a {@link TransactionManager} are <b>hard
+     * requirements</b> and as such should be provided.
      */
     public static class Builder extends SimpleEventHandlerInvoker.Builder<Builder> {
 
@@ -261,7 +261,6 @@ public class DeadLetteringEventHandlerInvoker
         private TransactionManager transactionManager;
         private boolean allowReset = false;
         private boolean cacheEnabled = false;
-        private Cache cache = NoCache.INSTANCE;
         private int cacheSize = 1024;
 
         private Builder() {
@@ -328,18 +327,17 @@ public class DeadLetteringEventHandlerInvoker
         }
 
         /**
-         * Sets a {@link Cache} to support caching. If set to {@code true}, each time a new {@link Segment} is
-         * processed, a {@link DeadLetteringCacheEntry} will be created. The used
-         * {@link org.axonframework.eventhandling.EventProcessor} should call {@link #clearCache(int)} when needed to
-         * work properly. Defaults to {@link NoCache} disabling any caching.
+         * Sets whether this {@link DeadLetteringEventHandlerInvoker} supports caching. If set to {@code true}, it will
+         * create a {@link DeadLetteringCacheEntry} per segment to prevent calling
+         * {@link SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} when we can be sure the sequence
+         * identifier is not present.
          *
-         * @param cache The {@link Cache} to use for the cache.
+         * @param cacheEnabled A toggle dictating whether this {@link DeadLetteringEventHandlerInvoker} supports
+         *                     caching.
          * @return The current Builder instance for fluent interfacing.
          */
-        public Builder cache(Cache cache) {
-            assertNonNull(cache, "The Cache may not be null");
-            this.cacheEnabled = true;
-            this.cache = cache;
+        public Builder cacheEnabled(boolean cacheEnabled) {
+            this.cacheEnabled = cacheEnabled;
             return this;
         }
 
@@ -348,7 +346,8 @@ public class DeadLetteringEventHandlerInvoker
          * for each sequence identifier if it's already included. This result is stored, so when it's not in the queue,
          * we can skip the check. To limit memory use, a limit is set, by default at {@code 1024}. If you have a lot of
          * long living aggregates, it might improve performance setting this higher at the cost of more memory use. This
-         * setting is applied per {@link Segment}
+         * setting is applied per {@link Segment}. Note that this setting will only be used when {@code cacheEnabled} is
+         * {@code true}, and the {@link SequencedDeadLetterQueue} is not empty.
          *
          * @param cacheSize The size to keep track of object identifiers which are not present.
          * @return The current Builder instance for fluent interfacing.

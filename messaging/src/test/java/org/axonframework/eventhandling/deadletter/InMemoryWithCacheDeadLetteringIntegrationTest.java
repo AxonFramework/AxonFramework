@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling.deadletter;
 
-import org.axonframework.common.caching.Cache;
-import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -37,7 +35,7 @@ class InMemoryWithCacheDeadLetteringIntegrationTest extends DeadLetteringEventIn
     }
 
     @Override
-    protected Cache getCache() {
-        return new WeakReferenceCache();
+    protected boolean cacheEnabled() {
+        return true;
     }
 }
