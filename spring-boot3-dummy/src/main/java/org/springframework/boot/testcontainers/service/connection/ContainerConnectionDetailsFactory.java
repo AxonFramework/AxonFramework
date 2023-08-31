@@ -5,6 +5,8 @@ import org.testcontainers.containers.Container;
 
 public abstract class ContainerConnectionDetailsFactory<C extends Container<?>, D extends ConnectionDetails> {
 
+    protected static final String ANY_CONNECTION_NAME = null;
+
     protected ContainerConnectionDetailsFactory(String connectionName, String... requiredClassNames) {
 
     }

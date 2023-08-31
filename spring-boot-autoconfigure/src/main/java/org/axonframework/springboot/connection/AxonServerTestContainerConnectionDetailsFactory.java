@@ -7,7 +7,9 @@ import org.springframework.boot.testcontainers.service.connection.ContainerConne
 public class AxonServerTestContainerConnectionDetailsFactory extends ContainerConnectionDetailsFactory<AxonServerContainer, AxonServerConnectionDetails> {
 
     public AxonServerTestContainerConnectionDetailsFactory() {
-        super("axoniq/axonserver", "org.axonframework.test.server.AxonServerContainer");
+        super(ContainerConnectionDetailsFactory.ANY_CONNECTION_NAME,
+              "org.axonframework.test.server.AxonServerContainer",
+              "org.axonframework.axonserver.connector.AxonServerConnectionManager");
     }
 
     @Override
