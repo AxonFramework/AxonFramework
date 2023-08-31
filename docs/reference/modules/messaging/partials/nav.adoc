@@ -10,6 +10,7 @@
 ** xref:messaging:advanced_messaging/index.adoc[]
 *** xref:messaging:advanced_messaging/correlation.adoc[]
 ** xref:messaging:deadlines/index.adoc[]
+*** xref:messaging:deadlines/manager_simple.adoc[]
 // *** Serialization
 // *** Interception
 // *** Deadlines
