@@ -9,6 +9,7 @@
 *** xref:messaging:routing/event_routing.adoc[]
 ** xref:messaging:advanced_messaging/index.adoc[]
 *** xref:messaging:advanced_messaging/correlation.adoc[]
+** xref:messaging:deadlines/index.adoc[]
 // *** Serialization
 // *** Interception
 // *** Deadlines
