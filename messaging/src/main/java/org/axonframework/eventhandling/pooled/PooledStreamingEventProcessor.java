@@ -371,7 +371,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                   segment.getSegmentId(), new TrackerStatus(segment, initialToken)
                           ))
                           .clock(clock)
-                          .clearCacheFunction(() -> eventHandlerInvoker().clearCache(segment.getSegmentId()))
+                          .shutdownAction(() -> eventHandlerInvoker().segmentReleased(segment))
                           .build();
     }
 

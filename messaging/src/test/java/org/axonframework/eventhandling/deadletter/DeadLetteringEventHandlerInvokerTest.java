@@ -234,7 +234,7 @@ class DeadLetteringEventHandlerInvokerTest {
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
-        testSubject.clearCache(Segment.ROOT_SEGMENT.getSegmentId());
+        testSubject.segmentReleased(Segment.ROOT_SEGMENT);
         testSubject.handle(nextMessage(TEST_EVENT), Segment.ROOT_SEGMENT);
 
         verify(queue, times(2)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());

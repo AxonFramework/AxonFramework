@@ -474,7 +474,7 @@ class TrackingEventProcessorTest {
         );
         testSubject.releaseSegment(0);
         await().atMost(Duration.ofSeconds(5)).untilAsserted(
-                () -> verify(eventHandlerInvoker, times(1)).clearCache(0)
+                () -> verify(eventHandlerInvoker, times(1)).segmentReleased(any(Segment.class))
         );
     }
 

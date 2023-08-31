@@ -94,11 +94,11 @@ public interface EventHandlerInvoker {
     }
 
     /**
-     * Should be implemented to clear a cache when processing of a segment is stopped. As another instance might start
-     * processing the segment, we can't trust the local cache state anymore for that segment.
+     * This is a way for an event processor to communicate that a segment which was being processed is released. This
+     * might be needed or required to free resources, are clean up state which is related to the {@link Segment}.
      *
-     * @param segmentId the id of the segment for which the cache needs to be cleared.
+     * @param segment the segment which was released.
      */
-    default void clearCache(int segmentId) {
+    default void segmentReleased(Segment segment) {
     }
 }

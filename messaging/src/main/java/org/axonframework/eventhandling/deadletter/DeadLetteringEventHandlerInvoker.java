@@ -82,7 +82,7 @@ public class DeadLetteringEventHandlerInvoker
     private final boolean allowReset;
     private final boolean cacheEnabled;
     private final int cacheSize;
-    private final Map<Integer, DeadLetteringCacheEntry> cache;
+    private final Map<Segment, DeadLetteringCacheEntry> cache;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
 
     /**
@@ -178,22 +178,20 @@ public class DeadLetteringEventHandlerInvoker
         if (!cacheEnabled) {
             return false;
         }
-        return cache.computeIfAbsent(segment.getSegmentId(), k ->
-                            new DeadLetteringCacheEntry(segment.getSegmentId(), cacheSize, queue))
+        return cache.computeIfAbsent(segment,
+                                     k -> new DeadLetteringCacheEntry(segment.getSegmentId(), cacheSize, queue))
                     .skipIfPresentCheck(sequenceIdentifier);
     }
 
     private void markPresentInDLQ(@Nonnull Object sequenceIdentifier, @Nonnull Segment segment) {
         if (cacheEnabled) {
-            cache.computeIfPresent(segment.getSegmentId(),
-                                   (k, v) -> v.markPresentInDLQ(sequenceIdentifier));
+            cache.computeIfPresent(segment, (k, v) -> v.markPresentInDLQ(sequenceIdentifier));
         }
     }
 
     private void markNotPresentInDLQ(@Nonnull Object sequenceIdentifier, @Nonnull Segment segment) {
         if (cacheEnabled) {
-            cache.computeIfPresent(segment.getSegmentId(),
-                                   (k, v) -> v.markNotPresentInDLQ(sequenceIdentifier));
+            cache.computeIfPresent(segment, (k, v) -> v.markNotPresentInDLQ(sequenceIdentifier));
         }
     }
 
@@ -233,14 +231,14 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     @Override
-    public void clearCache(int segmentId) {
+    public void segmentReleased(Segment segment) {
         if (cacheEnabled) {
             if (logger.isTraceEnabled()) {
-                logger.trace("Clearing the cache for segment [{}].", segmentId);
+                logger.trace("Clearing the cache for segment [{}].", segment.getSegmentId());
             }
-            cache.remove(segmentId);
+            cache.remove(segment);
         }
-        super.clearCache(segmentId);
+        super.segmentReleased(segment);
     }
 
     /**
