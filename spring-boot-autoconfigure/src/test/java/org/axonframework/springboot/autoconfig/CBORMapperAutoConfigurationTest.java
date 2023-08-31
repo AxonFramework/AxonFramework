@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2010-2023. Axon Framework
  *
@@ -16,11 +17,10 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -35,7 +35,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -43,11 +44,11 @@ import static org.junit.jupiter.api.Assertions.*;
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
         DataSourceAutoConfiguration.class,
-        JacksonAutoConfiguration.class
+        JacksonAutoConfiguration.class,
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:application.serializertest.properties")
-class ObjectMapperAutoConfigurationTest {
+class CBORMapperAutoConfigurationTest {
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -55,13 +56,11 @@ class ObjectMapperAutoConfigurationTest {
     @Test
     void eventSerializerIsOfTypeJacksonSerializerAndUsesDefaultAxonObjectMapperBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
-        final CBORMapper cborMapper = applicationContext.getBean("defaultAxonCborMapper", CBORMapper.class);
-
-        final Serializer eventSerializer = applicationContext.getBean("eventSerializer", Serializer.class);
-        final ObjectMapper objectMapper = applicationContext.getBean("defaultAxonObjectMapper", ObjectMapper.class);
+        final Serializer eventSerializer = applicationContext.getBean("serializer", Serializer.class);
+        final CBORMapper objectMapper = applicationContext.getBean("defaultAxonCborMapper", CBORMapper.class);
 
         assertTrue(serializer instanceof JacksonSerializer);
-        assertEquals(cborMapper, ((JacksonSerializer) serializer).getObjectMapper());
+        assertEquals(objectMapper, ((JacksonSerializer) serializer).getObjectMapper());
         assertTrue(eventSerializer instanceof JacksonSerializer);
         assertEquals(objectMapper, ((JacksonSerializer) eventSerializer).getObjectMapper());
     }

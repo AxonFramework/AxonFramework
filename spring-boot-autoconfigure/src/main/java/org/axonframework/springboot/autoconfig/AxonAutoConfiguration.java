@@ -17,6 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
@@ -49,7 +50,6 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -93,8 +93,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
-
-import static java.util.Objects.isNull;
 
 /**
  * @author Allard Buijze
@@ -197,6 +195,18 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                         .converter(converter)
                                         .objectMapper(objectMapper)
                                         .build();
+            case CBOR:
+                Map<String, CBORMapper> cborMapperBeans = beansOfTypeIncludingAncestors(applicationContext, CBORMapper.class);
+                ObjectMapper cborMapper = cborMapperBeans.containsKey("defaultAxonCborObjectMapper")
+                        ? cborMapperBeans.get("defaultAxonCborObjectMapper")
+                        : cborMapperBeans.values().stream().findFirst()
+                        .orElseThrow(() -> new NoSuchBeanDefinitionException(CBORMapper.class));
+                ChainingConverter cborConverter = new ChainingConverter(beanClassLoader);
+                return JacksonSerializer.builder()
+                        .revisionResolver(revisionResolver)
+                        .converter(cborConverter)
+                        .objectMapper(cborMapper)
+                        .build();
             case JAVA:
                 return JavaSerializer.builder().revisionResolver(revisionResolver).build();
             case XSTREAM:

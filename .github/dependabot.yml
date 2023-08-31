@@ -8,11 +8,11 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-  milestone: 94
+  milestone: 95
   reviewers:
+    - "CodeDrivenMitch"
     - "gklijs"
-    - "Morlack"
-    - "smcvb" # Main
+    - "smcvb"
 - package-ecosystem: maven
   directory: "/"
   schedule:
@@ -21,8 +21,8 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-  milestone: 94
+  milestone: 95
   reviewers:
+    - "CodeDrivenMitch"
     - "gklijs"
-    - "Morlack"
-    - "smcvb" # Main
+    - "smcvb"

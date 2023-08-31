@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,7 +105,7 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Override
     public <R, Q> Publisher<R> streamingQuery(String queryName, Q query, Class<R> responseType) {
-        return Mono.fromSupplier(() -> new GenericStreamingQueryMessage<>(query, queryName, responseType))
+        return Mono.fromSupplier(() -> new GenericStreamingQueryMessage<>(asMessage(query), queryName, responseType))
                    .flatMapMany(queryMessage -> queryBus.streamingQuery(processInterceptors(queryMessage)))
                    .map(Message::getPayload);
     }

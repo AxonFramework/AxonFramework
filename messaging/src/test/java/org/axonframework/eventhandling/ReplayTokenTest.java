@@ -24,7 +24,9 @@ import java.io.IOException;
 import java.util.Collections;
 
 import static java.util.Collections.emptySet;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class validating the {@link ReplayToken}.
@@ -78,14 +80,14 @@ class ReplayTokenTest {
     }
 
     @Test
-    void positionIsNotPresent() {
+    void positionIsZeroAtReset() {
         TrackingToken replayToken = ReplayToken.createReplayToken(innerToken);
-        assertFalse(replayToken.position().isPresent());
+        assertEquals(0, replayToken.position().orElse(-1));
     }
 
     @Test
     void getTokenAtReset() {
-        ReplayToken testSubject = new ReplayToken(innerToken);
+        ReplayToken testSubject = (ReplayToken) ReplayToken.createReplayToken(innerToken);
         TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(6, emptySet()));
         assertTrue(actual instanceof ReplayToken);
         assertEquals(testSubject.getTokenAtReset(), innerToken);

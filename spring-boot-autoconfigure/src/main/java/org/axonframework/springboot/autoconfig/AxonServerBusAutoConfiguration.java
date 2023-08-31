@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
+import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
@@ -127,6 +128,7 @@ public class AxonServerBusAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
     public EventStore eventStore(AxonServerConfiguration axonServerConfiguration,
                                  org.axonframework.config.Configuration configuration,
                                  AxonServerConnectionManager axonServerConnectionManager,
@@ -143,6 +145,28 @@ public class AxonServerBusAutoConfiguration {
                                    .upcasterChain(configuration.upcasterChain())
                                    .spanFactory(configuration.spanFactory())
                                    .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
+    public AxonServerEventStoreFactory axonServerEventStoreFactory(AxonServerConfiguration axonServerConfig,
+                                                                   AxonServerConnectionManager axonServerConnectionManager,
+                                                                   Serializer snapshotSerializer,
+                                                                   @Qualifier("eventSerializer") Serializer eventSerializer,
+                                                                   org.axonframework.config.Configuration config) {
+        return AxonServerEventStoreFactory.builder()
+                                          .configuration(axonServerConfig)
+                                          .connectionManager(axonServerConnectionManager)
+                                          .snapshotSerializer(snapshotSerializer)
+                                          .eventSerializer(eventSerializer)
+                                          .snapshotFilter(config.snapshotFilter())
+                                          .upcasterChain(config.upcasterChain())
+                                          .messageMonitor(
+                                                  config.messageMonitor(AxonServerEventStore.class, "eventStore")
+                                          )
+                                          .spanFactory(config.spanFactory())
+                                          .build();
     }
 }
 

@@ -71,7 +71,7 @@
             ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
         <!-- Axon Server -->
-        <axonserver-connector-java.version>4.6.3</axonserver-connector-java.version>
+        <axonserver-connector-java.version>2023.1.0</axonserver-connector-java.version>
         <!-- Caching -->
         <ehcache.version>2.10.9.2</ehcache.version>
         <ehcache3.version>3.10.8</ehcache3.version>
@@ -103,16 +103,16 @@
         <slf4j.version>2.0.7</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.13</dropwizard.metrics.version>
-        <micrometer.version>1.11.2</micrometer.version>
+        <micrometer.version>1.11.3</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.14.5</byte-buddy.version>
+        <byte-buddy.version>1.14.7</byte-buddy.version>
         <commons-io.version>2.13.0</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.29.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.5.8</projectreactor.version>
+        <projectreactor.version>3.5.9</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <dom4j.version>2.1.4</dom4j.version>
@@ -121,11 +121,11 @@
         <xstream.version>1.4.20</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>11.7</db-scheduler.version>
-        <jobrunr.version>6.2.3</jobrunr.version>
+        <jobrunr.version>6.3.0</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
         <spring.version>5.3.29</spring.version>
-        <spring.boot.version>2.7.14</spring.boot.version>
+        <spring.boot.version>2.7.15</spring.boot.version>
         <spring-security.version>5.7.3</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.2.0</awaitility.version>
@@ -133,7 +133,7 @@
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.9.1</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
-        <testcontainers.version>1.18.3</testcontainers.version>
+        <testcontainers.version>1.19.0</testcontainers.version>
         <!-- Validation -->
         <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
         <hibernate-validator.8.version>8.0.0.Final</hibernate-validator.8.version>
@@ -145,7 +145,7 @@
         <maven-clean.version>3.3.1</maven-clean.version>
         <maven-compiler.version>3.11.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
-        <maven-enforcer.version>3.3.0</maven-enforcer.version>
+        <maven-enforcer.version>3.4.0</maven-enforcer.version>
         <maven-failsafe.version>3.1.2</maven-failsafe.version>
         <maven-gpg.version>3.1.0</maven-gpg.version>
         <maven-install.version>3.1.1</maven-install.version>
@@ -656,11 +656,6 @@
                 <artifactId>maven-deploy-plugin</artifactId>
                 <version>${maven-deploy.version}</version>
             </plugin>
-            <!-- deploy -->
-            <plugin>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>${maven-deploy.version}</version>
-            </plugin>
             <plugin>
                 <!-- just to make sure deployed artifacts are always built (and tested) using JDK 8+ -->
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -826,7 +821,7 @@
                         <executions>
                             <execution>
                                 <id>attach-javadoc</id>
-                                <phase>deploy</phase>
+                                <phase>package</phase>
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>

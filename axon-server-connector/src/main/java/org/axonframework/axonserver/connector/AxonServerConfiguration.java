@@ -216,6 +216,14 @@ public class AxonServerConfiguration {
     private long connectTimeout = 5000;
 
     /**
+     * Sets the amount of time in milliseconds to wait in between attempts to connect to Axon Server. A single attempt
+     * involves connecting to each of the configured {@link #getServers() servers}.
+     * <p>
+     * Defaults to 2000 (2 seconds).
+     */
+    private long reconnectInterval = 2000;
+
+    /**
      * Indicates whether it is OK to query events from the local Axon Server node - the node the client is currently
      * connected to. This means that the client will probably get stale events since all events my not be replicated to
      * this node yet. Can be used when the criteria for eventual consistency is less strict. It will spread the load for
@@ -227,6 +235,32 @@ public class AxonServerConfiguration {
     private boolean forceReadFromLeader = false;
 
     /**
+     * Indicates whether the {@link AxonServerConnectionManager} should always reconnect through the
+     * {@link #getServers() servers} or try to reconnect with the server it just lost the connection with.
+     * <p>
+     * When {@code true} (default), the  {@code AxonServerConnectionManager} will contact the servers for a new
+     * destination each time a connection is dropped. When {@code false}, the connector will first attempt to
+     * re-establish a connection to the node it was previously connected to. When that fails, only then will it contact
+     * the servers.
+     * <p>
+     * Default to {@code true}, forcing the failed connection to be abandoned and a new one to be requested via the
+     * routing servers.
+     */
+    private boolean forceReconnectThroughServers = true;
+
+    /**
+     * Defines the number of threads that should be used for connection management activities by the
+     * {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used by the
+     * {@link AxonServerConnectionManager}.
+     * <p>
+     * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
+     * validating heartbeats, etc.
+     * <p>
+     * Defaults to a pool size of {@code 2} threads.
+     */
+    private int connectionManagementThreadPoolSize = 2;
+
+    /**
      * Configuration specifics on sending heartbeat messages to ensure a fully operational end-to-end connection with
      * Axon Server.
      */
@@ -236,6 +270,12 @@ public class AxonServerConfiguration {
      * Properties describing the settings for {@link org.axonframework.eventhandling.EventProcessor EventProcessors}.
      */
     private EventProcessorConfiguration eventProcessorConfiguration = new EventProcessorConfiguration();
+
+    /**
+     * Properties describing the settings for the
+     * {@link org.axonframework.axonserver.connector.event.axon.AxonServerEventStore EventStore}.
+     */
+    private EventStoreConfiguration eventStoreConfiguration = new EventStoreConfiguration();
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -491,12 +531,36 @@ public class AxonServerConfiguration {
         this.connectTimeout = connectTimeout;
     }
 
+    public long getReconnectInterval() {
+        return reconnectInterval;
+    }
+
+    public void setReconnectInterval(long reconnectInterval) {
+        this.reconnectInterval = reconnectInterval;
+    }
+
     public boolean isForceReadFromLeader() {
         return forceReadFromLeader;
     }
 
     public void setForceReadFromLeader(boolean forceReadFromLeader) {
         this.forceReadFromLeader = forceReadFromLeader;
+    }
+
+    public boolean isForceReconnectThroughServers() {
+        return forceReconnectThroughServers;
+    }
+
+    public void setForceReconnectThroughServers(boolean forceReconnectThroughServers) {
+        this.forceReconnectThroughServers = forceReconnectThroughServers;
+    }
+
+    public int getConnectionManagementThreadPoolSize() {
+        return connectionManagementThreadPoolSize;
+    }
+
+    public void setConnectionManagementThreadPoolSize(int connectionManagementThreadPoolSize) {
+        this.connectionManagementThreadPoolSize = connectionManagementThreadPoolSize;
     }
 
     public FlowControlConfiguration getEventFlowControl() {
@@ -561,6 +625,25 @@ public class AxonServerConfiguration {
      */
     public void setEventProcessorConfiguration(EventProcessorConfiguration eventProcessorConfiguration) {
         this.eventProcessorConfiguration = eventProcessorConfiguration;
+    }
+
+    /**
+     * Return the configured {@link EventStoreConfiguration} of this application for Axon Server.
+     *
+     * @return The configured {@link EventStoreConfiguration} of this application for Axon Server.
+     */
+    @ConfigurationProperties(prefix = "axon.axonserver.event-store")
+    public EventStoreConfiguration getEventStoreConfiguration() {
+        return eventStoreConfiguration;
+    }
+
+    /**
+     * Set the {@link EventStoreConfiguration} of this application for Axon Server
+     *
+     * @param eventStoreConfiguration The {@link EventStoreConfiguration} to set for this application.
+     */
+    public void setEventStoreConfiguration(EventStoreConfiguration eventStoreConfiguration) {
+        this.eventStoreConfiguration = eventStoreConfiguration;
     }
 
     /**
@@ -769,6 +852,25 @@ public class AxonServerConfiguration {
             public void setAutomaticBalancing(boolean automaticBalancing) {
                 this.automaticBalancing = automaticBalancing;
             }
+        }
+    }
+
+    public static class EventStoreConfiguration {
+
+        /**
+         * Whether (automatic) configuration of the AxonServer Event Store is enabled. When {@code false}, the event
+         * store will not be implicitly be configured. Defaults to {@code true}.
+         * <p>
+         * Note that this setting will only affect automatic configuration by Application Containers (such as Spring).
+         */
+        private boolean enabled = true;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
     }
 
