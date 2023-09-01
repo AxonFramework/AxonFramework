@@ -86,13 +86,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
-import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
-
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
+
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 /**
  * @author Allard Buijze
@@ -184,11 +184,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                        SerializerProperties.SerializerType serializerType) {
         switch (serializerType) {
             case JACKSON:
-                Map<String, ObjectMapper> objectMapperBeans = beansOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+                Map<String, ObjectMapper> objectMapperBeans = beansOfTypeIncludingAncestors(applicationContext,
+                                                                                            ObjectMapper.class);
                 ObjectMapper objectMapper = objectMapperBeans.containsKey("defaultAxonObjectMapper")
-                                            ? objectMapperBeans.get("defaultAxonObjectMapper")
-                                            : objectMapperBeans.values().stream().findFirst()
-                                                               .orElseThrow(() -> new NoSuchBeanDefinitionException(ObjectMapper.class));
+                        ? objectMapperBeans.get("defaultAxonObjectMapper")
+                        : objectMapperBeans.values().stream().findFirst()
+                                           .orElseThrow(() -> new NoSuchBeanDefinitionException(ObjectMapper.class));
                 ChainingConverter converter = new ChainingConverter(beanClassLoader);
                 return JacksonSerializer.builder()
                                         .revisionResolver(revisionResolver)
@@ -196,17 +197,18 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                         .objectMapper(objectMapper)
                                         .build();
             case CBOR:
-                Map<String, CBORMapper> cborMapperBeans = beansOfTypeIncludingAncestors(applicationContext, CBORMapper.class);
+                Map<String, CBORMapper> cborMapperBeans = beansOfTypeIncludingAncestors(applicationContext,
+                                                                                        CBORMapper.class);
                 ObjectMapper cborMapper = cborMapperBeans.containsKey("defaultAxonCborObjectMapper")
                         ? cborMapperBeans.get("defaultAxonCborObjectMapper")
                         : cborMapperBeans.values().stream().findFirst()
-                        .orElseThrow(() -> new NoSuchBeanDefinitionException(CBORMapper.class));
+                                         .orElseThrow(() -> new NoSuchBeanDefinitionException(CBORMapper.class));
                 ChainingConverter cborConverter = new ChainingConverter(beanClassLoader);
                 return JacksonSerializer.builder()
-                        .revisionResolver(revisionResolver)
-                        .converter(cborConverter)
-                        .objectMapper(cborMapper)
-                        .build();
+                                        .revisionResolver(revisionResolver)
+                                        .converter(cborConverter)
+                                        .objectMapper(cborMapper)
+                                        .build();
             case JAVA:
                 return JavaSerializer.builder().revisionResolver(revisionResolver).build();
             case XSTREAM:
@@ -332,6 +334,11 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                             c -> applicationContext.getBean(settings.getSource(), SubscribableMessageSource.class)
                     );
                 }
+            }
+            if (settings.getDlq().getCache().isEnabled()) {
+                eventProcessingConfigurer.registerDeadLetteringEventHandlerInvokerConfiguration(
+                        name,
+                        (c, builder) -> builder.cacheEnabled(true).cacheSize(settings.getDlq().getCache().getSize()));
             }
         });
     }
