@@ -369,8 +369,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private void releaseToken(Segment segment) {
         try {
-            eventHandlerInvoker().segmentReleased(segment);
-            transactionManager.executeInTransaction(() -> tokenStore.releaseClaim(getName(), segment.getSegmentId()));
+            transactionManager.executeInTransaction(() -> {
+                tokenStore.releaseClaim(getName(), segment.getSegmentId());
+                eventHandlerInvoker().segmentReleased(segment);
+            });
             logger.info("Released claim");
         } catch (Exception e) {
             // Ignore exception

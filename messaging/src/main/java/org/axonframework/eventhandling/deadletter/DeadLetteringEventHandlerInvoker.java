@@ -82,7 +82,7 @@ public class DeadLetteringEventHandlerInvoker
     private final boolean allowReset;
     private final boolean cacheEnabled;
     private final int cacheSize;
-    private final Map<Segment, DeadLetteringCacheEntry> cache;
+    private final Map<Segment, SequenceIdentifierCache> sequenceIdentifierCache;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
 
     /**
@@ -100,9 +100,9 @@ public class DeadLetteringEventHandlerInvoker
         this.cacheSize = builder.cacheSize;
         this.cacheEnabled = builder.cacheEnabled;
         if (cacheEnabled) {
-            cache = new ConcurrentHashMap<>();
+            sequenceIdentifierCache = new ConcurrentHashMap<>();
         } else {
-            cache = null;
+            sequenceIdentifierCache = null;
         }
     }
 
@@ -131,8 +131,8 @@ public class DeadLetteringEventHandlerInvoker
             return;
         }
         Object sequenceIdentifier = super.sequenceIdentifier(message);
-        boolean skipIfPresentCheck = skipIfPresentCheck(sequenceIdentifier, segment);
-        if (!skipIfPresentCheck && queue.enqueueIfPresent(
+        boolean isPresent = isPresent(sequenceIdentifier, segment);
+        if (isPresent && queue.enqueueIfPresent(
                 sequenceIdentifier,
                 () -> new GenericDeadLetter<>(sequenceIdentifier, message)
         )) {
@@ -141,10 +141,10 @@ public class DeadLetteringEventHandlerInvoker
                                     + "since its queue id [{}] is already present.",
                             message.getIdentifier(), sequenceIdentifier);
             }
-            markPresentInDLQ(sequenceIdentifier, segment);
+            markEnqueued(sequenceIdentifier, segment);
         } else {
-            if (!skipIfPresentCheck) {
-                markNotPresentInDLQ(sequenceIdentifier, segment);
+            if (isPresent) {
+                markNotEnqueued(sequenceIdentifier, segment);
             }
             invokeHandlers(message, segment, sequenceIdentifier);
         }
@@ -163,7 +163,7 @@ public class DeadLetteringEventHandlerInvoker
             EnqueueDecision<EventMessage<?>> decision = enqueuePolicy.decide(letter, e);
             if (decision.shouldEnqueue()) {
                 Throwable cause = decision.enqueueCause().orElse(null);
-                markPresentInDLQ(sequenceIdentifier, segment);
+                markEnqueued(sequenceIdentifier, segment);
                 queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause)));
             } else if (logger.isInfoEnabled()) {
                 logger.info("The enqueue policy decided not to dead letter event [{}].", message.getIdentifier());
@@ -171,27 +171,29 @@ public class DeadLetteringEventHandlerInvoker
         }
     }
 
-    private boolean skipIfPresentCheck(
+    private boolean isPresent(
             @Nonnull Object sequenceIdentifier,
             @Nonnull Segment segment
     ) {
         if (!cacheEnabled) {
-            return false;
+            return true;
         }
-        return cache.computeIfAbsent(segment,
-                                     k -> new DeadLetteringCacheEntry(segment.getSegmentId(), cacheSize, queue))
-                    .skipIfPresentCheck(sequenceIdentifier);
+        return sequenceIdentifierCache.computeIfAbsent(segment,
+                                                       k -> new SequenceIdentifierCache(segment.getSegmentId(),
+                                                                                        cacheSize,
+                                                                                        queue))
+                                      .isPresent(sequenceIdentifier);
     }
 
-    private void markPresentInDLQ(@Nonnull Object sequenceIdentifier, @Nonnull Segment segment) {
+    private void markEnqueued(@Nonnull Object sequenceIdentifier, @Nonnull Segment segment) {
         if (cacheEnabled) {
-            cache.computeIfPresent(segment, (k, v) -> v.markPresentInDLQ(sequenceIdentifier));
+            sequenceIdentifierCache.computeIfPresent(segment, (k, v) -> v.markEnqueued(sequenceIdentifier));
         }
     }
 
-    private void markNotPresentInDLQ(@Nonnull Object sequenceIdentifier, @Nonnull Segment segment) {
+    private void markNotEnqueued(@Nonnull Object sequenceIdentifier, @Nonnull Segment segment) {
         if (cacheEnabled) {
-            cache.computeIfPresent(segment, (k, v) -> v.markNotPresentInDLQ(sequenceIdentifier));
+            sequenceIdentifierCache.computeIfPresent(segment, (k, v) -> v.markNotENqueued(sequenceIdentifier));
         }
     }
 
@@ -236,7 +238,7 @@ public class DeadLetteringEventHandlerInvoker
             if (logger.isTraceEnabled()) {
                 logger.trace("Clearing the cache for segment [{}].", segment.getSegmentId());
             }
-            cache.remove(segment);
+            sequenceIdentifierCache.remove(segment);
         }
         super.segmentReleased(segment);
     }
@@ -326,7 +328,7 @@ public class DeadLetteringEventHandlerInvoker
 
         /**
          * Sets whether this {@link DeadLetteringEventHandlerInvoker} supports caching. If set to {@code true}, it will
-         * create a {@link DeadLetteringCacheEntry} per segment to prevent calling
+         * create a {@link SequenceIdentifierCache} per segment to prevent calling
          * {@link SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} when we can be sure the sequence
          * identifier is not present.
          *

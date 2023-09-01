@@ -34,52 +34,55 @@ import java.util.Set;
  * @author Gerard Klijs
  * @since 4.9.0
  */
-class DeadLetteringCacheEntry {
+class SequenceIdentifierCache {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private final int segmentId;
     private final boolean startedEmpty;
     private final int maxSize;
-    private final LinkedList<Object> identifiersNotInDLQ = new LinkedList<>();
-    private final Set<Object> identifiersInDLQ = new HashSet<>();
+    private final LinkedList<Object> nonEnqueuedIdentifiers = new LinkedList<>();
+    private final Set<Object> enqueuedIdentifiers = new HashSet<>();
 
-    DeadLetteringCacheEntry(int segmentId, int maxSize, SequencedDeadLetterQueue<EventMessage<?>> queue) {
+    SequenceIdentifierCache(int segmentId, int maxSize, SequencedDeadLetterQueue<EventMessage<?>> queue) {
         this.segmentId = segmentId;
         this.maxSize = maxSize;
         this.startedEmpty = queue.amountOfSequences() == 0L;
     }
 
-    boolean skipIfPresentCheck(Object sequenceIdentifier) {
-        if (identifiersInDLQ.contains(sequenceIdentifier)) {
+    boolean isPresent(Object sequenceIdentifier) {
+        if (enqueuedIdentifiers.contains(sequenceIdentifier)) {
+            return true;
+        }
+        if (startedEmpty) {
             return false;
         }
-        return startedEmpty || identifiersNotInDLQ.contains(sequenceIdentifier);
+        return !nonEnqueuedIdentifiers.contains(sequenceIdentifier);
     }
 
-    DeadLetteringCacheEntry markPresentInDLQ(Object sequenceIdentifier) {
+    SequenceIdentifierCache markEnqueued(Object sequenceIdentifier) {
         if (logger.isTraceEnabled()) {
             logger.trace("Marked sequenceIdentifier [{}] as present to the cache for segment [{}].",
                          sequenceIdentifier,
                          segmentId);
         }
-        identifiersInDLQ.add(sequenceIdentifier);
-        identifiersNotInDLQ.remove(sequenceIdentifier);
+        enqueuedIdentifiers.add(sequenceIdentifier);
+        nonEnqueuedIdentifiers.remove(sequenceIdentifier);
         return this;
     }
 
-    DeadLetteringCacheEntry markNotPresentInDLQ(Object sequenceIdentifier) {
+    SequenceIdentifierCache markNotENqueued(Object sequenceIdentifier) {
         if (logger.isTraceEnabled()) {
             logger.trace("Marked sequenceIdentifier [{}] as not present to the cache for segment [{}].",
                          sequenceIdentifier,
                          segmentId);
         }
         if (!startedEmpty) {
-            identifiersNotInDLQ.add(sequenceIdentifier);
-            if (identifiersNotInDLQ.size() > maxSize) {
-                identifiersNotInDLQ.removeFirst();
+            nonEnqueuedIdentifiers.add(sequenceIdentifier);
+            if (nonEnqueuedIdentifiers.size() > maxSize) {
+                nonEnqueuedIdentifiers.removeFirst();
             }
         }
-        identifiersInDLQ.remove(sequenceIdentifier);
+        enqueuedIdentifiers.remove(sequenceIdentifier);
         return this;
     }
 }

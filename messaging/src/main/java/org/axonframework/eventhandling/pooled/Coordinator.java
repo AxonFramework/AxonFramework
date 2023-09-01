@@ -94,6 +94,7 @@ class Coordinator {
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final boolean coordinatorExtendsClaims;
+    private final Consumer<Segment> segmentReleasedAction;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState;
@@ -130,6 +131,7 @@ class Coordinator {
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
         this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
+        this.segmentReleasedAction = builder.segmentReleasedAction;
     }
 
     /**
@@ -385,6 +387,8 @@ class Coordinator {
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
+        private Consumer<Segment> segmentReleasedAction = segment -> {
+        };
 
         /**
          * The name of the processor this service coordinates for.
@@ -596,6 +600,18 @@ class Coordinator {
          */
         Builder coordinatorClaimExtension(boolean coordinatorExtendsClaims) {
             this.coordinatorExtendsClaims = coordinatorExtendsClaims;
+            return this;
+        }
+
+        /**
+         * Registers an action to perform when a segment is released. Will override any previously registered actions.
+         * Defaults to a no-op.
+         *
+         * @param segmentReleasedAction the action to perform when a segment is released
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder segmentReleasedAction(Consumer<Segment> segmentReleasedAction) {
+            this.segmentReleasedAction = segmentReleasedAction;
             return this;
         }
 
@@ -1012,7 +1028,10 @@ class Coordinator {
                            }
                        })
                        .thenRun(() -> transactionManager.executeInTransaction(
-                               () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
+                               () -> {
+                                   tokenStore.releaseClaim(name, work.segment().getSegmentId());
+                                   segmentReleasedAction.accept(work.segment());
+                               }
                        ))
                        .exceptionally(throwable -> {
                            logger.info(
