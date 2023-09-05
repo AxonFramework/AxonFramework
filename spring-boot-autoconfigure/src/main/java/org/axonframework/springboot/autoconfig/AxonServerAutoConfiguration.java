@@ -35,7 +35,7 @@ import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.TagsConfigurationProperties;
-import org.axonframework.springboot.connection.AxonServerConnectionDetails;
+import org.axonframework.springboot.service.connection.AxonServerConnectionDetails;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

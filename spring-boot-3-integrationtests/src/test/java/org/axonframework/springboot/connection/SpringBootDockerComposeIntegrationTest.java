@@ -1,18 +1,18 @@
 package org.axonframework.springboot.connection;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
-import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.utils.AssertUtils;
+import org.axonframework.springboot.service.connection.AxonServerConnectionDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,7 +38,8 @@ class SpringBootDockerComposeIntegrationTest {
         assertTrue(application.isRunning());
         AxonServerConfiguration config = application.getBean(AxonServerConfiguration.class);
 
-        assertNotNull(application.getBean(AxonServerConnectionDetails.class), "Expected an AxonServerConnectionDetails bean pointing to Axon Server in Docker");
+        assertNotNull(application.getBean(AxonServerConnectionDetails.class),
+                      "Expected an AxonServerConnectionDetails bean pointing to Axon Server in Docker");
 
         assertNotNull(config);
         assertNotEquals("localhost:8124", config.getServers());
@@ -46,6 +47,8 @@ class SpringBootDockerComposeIntegrationTest {
 
         AxonServerConnectionManager connectionFactory = application.getBean(AxonServerConnectionManager.class);
         AxonServerConnection connection = connectionFactory.getConnection();
-        AssertUtils.assertWithin(5, TimeUnit.SECONDS, () -> assertTrue(connection.isConnected()));
+
+        await().atMost(Duration.ofMillis(5))
+               .untilAsserted(() -> assertTrue(connection.isConnected()));
     }
 }

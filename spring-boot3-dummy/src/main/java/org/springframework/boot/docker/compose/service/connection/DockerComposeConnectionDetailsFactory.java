@@ -1,3 +1,7 @@
+/*
+ * Copyright to it's respective authors. This class is a dummy-copy of their originals in Spring Framework.
+ */
+
 package org.springframework.boot.docker.compose.service.connection;
 
 import org.springframework.boot.autoconfigure.service.connection.ConnectionDetails;

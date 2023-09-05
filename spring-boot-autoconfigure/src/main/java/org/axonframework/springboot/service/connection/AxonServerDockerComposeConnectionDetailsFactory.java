@@ -1,7 +1,24 @@
-package org.axonframework.springboot.connection;
+/*
+ * Copyright (c) 2010-2023. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.springboot.service.connection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.docker.compose.core.RunningService;
 import org.springframework.boot.docker.compose.service.connection.DockerComposeConnectionDetailsFactory;
 import org.springframework.boot.docker.compose.service.connection.DockerComposeConnectionSource;
 
@@ -11,7 +28,7 @@ import org.springframework.boot.docker.compose.service.connection.DockerComposeC
  * container.
  *
  * @author Allard Buijze
- * @since 4.9
+ * @since 4.9.0
  */
 public class AxonServerDockerComposeConnectionDetailsFactory extends DockerComposeConnectionDetailsFactory<AxonServerConnectionDetails> {
 
@@ -26,14 +43,17 @@ public class AxonServerDockerComposeConnectionDetailsFactory extends DockerCompo
 
     @Override
     protected AxonServerConnectionDetails getDockerComposeConnectionDetails(DockerComposeConnectionSource source) {
-        int port = source.getRunningService().ports().get(8124);
-        int uiPort = source.getRunningService().ports().get(8024);
-        String host = source.getRunningService().host();
+        RunningService runningService = source.getRunningService();
+        if (runningService == null) {
+            return null;
+        }
+        int port = runningService.ports().get(8124);
+        int uiPort = runningService.ports().get(8024);
+        String host = runningService.host();
 
         //noinspection HttpUrlsUsage
         logger.info("Detected Axon Server container. To access the dashboard, visit http://{}:{}", host, uiPort);
 
         return () -> host + ":" + port;
     }
-
 }
