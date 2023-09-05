@@ -29,6 +29,7 @@ import static org.mockito.Mockito.*;
 class SequenceIdentifierCacheTest {
 
     private final int CACHE_SIZE = 10;
+    private final int SEGMENT_ID = 2;
     private SequenceIdentifierCache testSubject;
     private SequencedDeadLetterQueue<EventMessage<?>> mockSequencedDeadLetterQueue;
 
@@ -36,51 +37,51 @@ class SequenceIdentifierCacheTest {
     void setUp() {
         mockSequencedDeadLetterQueue = mock(SequencedDeadLetterQueue.class);
         doReturn(0L).when(mockSequencedDeadLetterQueue).amountOfSequences();
-        testSubject = new SequenceIdentifierCache(2, CACHE_SIZE, mockSequencedDeadLetterQueue);
+        testSubject = new SequenceIdentifierCache(SEGMENT_ID, CACHE_SIZE, mockSequencedDeadLetterQueue);
     }
 
     @Test
-    void skipCallIfDlqEmpty() {
+    void mightNotBePresentIfStartedWithEmptyQueue() {
         String sequenceIdentifier = UUID.randomUUID().toString();
-        assertFalse(testSubject.isPresent(sequenceIdentifier));
+        assertFalse(testSubject.mightBePresent(sequenceIdentifier));
     }
 
     @Test
-    void skipOnceIfDlqNotEmpty() {
+    void itsNotPresentIfWeAlreadyKnowItsNotInTheQueue() {
         doReturn(10L).when(mockSequencedDeadLetterQueue).amountOfSequences();
-        testSubject = new SequenceIdentifierCache(2, CACHE_SIZE, mockSequencedDeadLetterQueue);
+        testSubject = new SequenceIdentifierCache(SEGMENT_ID, CACHE_SIZE, mockSequencedDeadLetterQueue);
 
         String sequenceIdentifier = UUID.randomUUID().toString();
-        assertTrue(testSubject.isPresent(sequenceIdentifier));
+        assertTrue(testSubject.mightBePresent(sequenceIdentifier));
 
-        testSubject.markNotENqueued(sequenceIdentifier);
-        assertFalse(testSubject.isPresent(sequenceIdentifier));
+        testSubject.markNotEnqueued(sequenceIdentifier);
+        assertFalse(testSubject.mightBePresent(sequenceIdentifier));
     }
 
     @Test
-    void cacheSizeIsUsed() {
+    void cacheIsCleanedOnceSizeBecomesLargerThenSetSize() {
         doReturn(10L).when(mockSequencedDeadLetterQueue).amountOfSequences();
-        testSubject = new SequenceIdentifierCache(2, CACHE_SIZE, mockSequencedDeadLetterQueue);
+        testSubject = new SequenceIdentifierCache(SEGMENT_ID, CACHE_SIZE, mockSequencedDeadLetterQueue);
 
         String sequenceIdentifier = UUID.randomUUID().toString();
-        testSubject.markNotENqueued(sequenceIdentifier);
+        testSubject.markNotEnqueued(sequenceIdentifier);
 
-        IntStream.range(0, CACHE_SIZE).forEach(i -> testSubject.markNotENqueued(UUID.randomUUID().toString()));
-        assertTrue(testSubject.isPresent(sequenceIdentifier));
+        IntStream.range(0, CACHE_SIZE).forEach(i -> testSubject.markNotEnqueued(UUID.randomUUID().toString()));
+        assertTrue(testSubject.mightBePresent(sequenceIdentifier));
     }
 
     @Test
-    void notSkippedIfPutInDlq() {
+    void itMightBePresentOnceItsMarkedAsEnqueued() {
         String sequenceIdentifier = UUID.randomUUID().toString();
         testSubject.markEnqueued(sequenceIdentifier);
-        assertTrue(testSubject.isPresent(sequenceIdentifier));
+        assertTrue(testSubject.mightBePresent(sequenceIdentifier));
     }
 
     @Test
-    void skippedAgainAfterDlqEmptied() {
+    void onceMarkedAsNotEnqueuedWeKnowItsNotPresent() {
         String sequenceIdentifier = UUID.randomUUID().toString();
         testSubject.markEnqueued(sequenceIdentifier);
-        testSubject.markNotENqueued(sequenceIdentifier);
-        assertFalse(testSubject.isPresent(sequenceIdentifier));
+        testSubject.markNotEnqueued(sequenceIdentifier);
+        assertFalse(testSubject.mightBePresent(sequenceIdentifier));
     }
 }

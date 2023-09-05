@@ -210,12 +210,13 @@ class EventProcessorConfigurationTest {
                     DeadLetteringEventHandlerInvoker deadLetteringInvoker =
                             ((DeadLetteringEventHandlerInvoker) delegates.get(0));
                     boolean cacheEnabled = ReflectionUtils.getFieldValue(
-                            DeadLetteringEventHandlerInvoker.class.getDeclaredField("cacheEnabled"),
+                            DeadLetteringEventHandlerInvoker.class.getDeclaredField("sequenceIdentifierCacheEnabled"),
                             deadLetteringInvoker
                     );
                     assertTrue(cacheEnabled);
                     int cacheSize = ReflectionUtils.getFieldValue(
-                            DeadLetteringEventHandlerInvoker.class.getDeclaredField("cacheSize"), deadLetteringInvoker
+                            DeadLetteringEventHandlerInvoker.class.getDeclaredField("sequenceIdentifierCacheSize"),
+                            deadLetteringInvoker
                     );
                     assertEquals(10, cacheSize);
                 });

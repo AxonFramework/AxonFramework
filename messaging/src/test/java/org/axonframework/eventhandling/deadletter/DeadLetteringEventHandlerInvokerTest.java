@@ -141,7 +141,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void handleMethodHandlesEventJustFineWithCacheWhenDlqEmpty() throws Exception {
-        setTestSubject(createTestSubject(b -> b.cacheEnabled(true)));
+        setTestSubject(createTestSubject(DeadLetteringEventHandlerInvoker.Builder::enableSequenceIdentifierCache));
         doReturn(0L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -160,7 +160,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void handleMethodHandlesEventJustFineWithCacheWhenDlqNotEmpty() throws Exception {
-        setTestSubject(createTestSubject(b -> b.cacheEnabled(true)));
+        setTestSubject(createTestSubject(DeadLetteringEventHandlerInvoker.Builder::enableSequenceIdentifierCache));
         doReturn(1L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -179,7 +179,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void handleMethodHandlesEventJustFineWithCacheWhenDlqNotEmptyKeepsTrackNotInDlq() throws Exception {
-        setTestSubject(createTestSubject(b -> b.cacheEnabled(true)));
+        setTestSubject(createTestSubject(DeadLetteringEventHandlerInvoker.Builder::enableSequenceIdentifierCache));
         doReturn(1L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -203,8 +203,8 @@ class DeadLetteringEventHandlerInvokerTest {
     @Test
     void handleMethodHandlesEventJustFineWithCacheWhenDlqNotEmptyAndRespectCacheSize() throws Exception {
         setTestSubject(createTestSubject(b -> b
-                .cacheEnabled(true)
-                .cacheSize(1)));
+                .enableSequenceIdentifierCache()
+                .sequenceIdentifierCacheSize(1)));
         doReturn(1L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -215,6 +215,8 @@ class DeadLetteringEventHandlerInvokerTest {
         DomainEventMessage<?> eventMessageThree = nextMessage(eventMessageOne);
 
         testSubject.handle(eventMessageOne, Segment.ROOT_SEGMENT);
+        // as eventMessageTwo has a different sequence identifier, and the size of the sequenceIdentifierCache is set
+        // to just 1, we expect the object identifier of eventMessageOne to be removed.
         testSubject.handle(eventMessageTwo, Segment.ROOT_SEGMENT);
         testSubject.handle(eventMessageThree, Segment.ROOT_SEGMENT);
 
@@ -227,7 +229,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void handleMethodHandlesEventJustFineWithCacheTryAgainToQueueAfterCleaned() throws Exception {
-        setTestSubject(createTestSubject(b -> b.cacheEnabled(true)));
+        setTestSubject(createTestSubject(DeadLetteringEventHandlerInvoker.Builder::enableSequenceIdentifierCache));
         doReturn(1L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -293,7 +295,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void cacheKeepsTrackEnqueuedLetters() throws Exception {
-        setTestSubject(createTestSubject(b -> b.cacheEnabled(true)));
+        setTestSubject(createTestSubject(DeadLetteringEventHandlerInvoker.Builder::enableSequenceIdentifierCache));
         doReturn(0L).when(queue).amountOfSequences();
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 

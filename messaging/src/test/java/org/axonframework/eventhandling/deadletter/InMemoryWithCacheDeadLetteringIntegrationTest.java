@@ -25,7 +25,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
  * {@link InMemorySequencedDeadLetterQueue} with an {@link org.axonframework.eventhandling.EventProcessor} and
  * {@link DeadLetteringEventHandlerInvoker}.
  *
- * @author Steven van Beelen
+ * @author Gerard Klijs
  */
 class InMemoryWithCacheDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
@@ -35,7 +35,7 @@ class InMemoryWithCacheDeadLetteringIntegrationTest extends DeadLetteringEventIn
     }
 
     @Override
-    protected boolean cacheEnabled() {
+    protected boolean identifierCacheEnabled() {
         return true;
     }
 }

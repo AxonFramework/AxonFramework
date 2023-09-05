@@ -338,7 +338,9 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             if (settings.getDlq().getCache().isEnabled()) {
                 eventProcessingConfigurer.registerDeadLetteringEventHandlerInvokerConfiguration(
                         name,
-                        (c, builder) -> builder.cacheEnabled(true).cacheSize(settings.getDlq().getCache().getSize()));
+                        (c, builder) -> builder
+                                .enableSequenceIdentifierCache()
+                                .sequenceIdentifierCacheSize(settings.getDlq().getCache().getSize()));
             }
         });
     }

@@ -29,7 +29,8 @@ import java.util.Set;
 /**
  * This will contain a representation of the sequence identifiers belonging to a single segment. This way we know from
  * memory which identifier is, or is not already present. This in turn reduces the amount of calls directly to a
- * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} implementation.
+ * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} implementation. In case the {@code queue} is
+ * not empty, we need to keep track of the identifiers not present as well.
  *
  * @author Gerard Klijs
  * @since 4.9.0
@@ -43,13 +44,25 @@ class SequenceIdentifierCache {
     private final LinkedList<Object> nonEnqueuedIdentifiers = new LinkedList<>();
     private final Set<Object> enqueuedIdentifiers = new HashSet<>();
 
+    /**
+     * The constructor of the {@link SequenceIdentifierCache}, which typically will be called if either the
+     * {@link DeadLetteringEventHandlerInvoker} has not processed the {@link org.axonframework.eventhandling.Segment}
+     * before, or the segment was released in the meantime.
+     *
+     * @param segmentId the id of the segment, used only for logging purposes.
+     * @param maxSize   the maximum size of the {@link #nonEnqueuedIdentifiers}, this prevents memory leak in case the
+     *                  queue is not empty.
+     * @param queue     the {@link SequencedDeadLetterQueue} this cache is used for. If it's empty we can optimize by
+     *                  only keeping track of the sequence identifiers which are enqueued. If it's not empty we need to
+     *                  check every identifier at least one to know it's not present yet.
+     */
     SequenceIdentifierCache(int segmentId, int maxSize, SequencedDeadLetterQueue<EventMessage<?>> queue) {
         this.segmentId = segmentId;
         this.maxSize = maxSize;
         this.startedEmpty = queue.amountOfSequences() == 0L;
     }
 
-    boolean isPresent(Object sequenceIdentifier) {
+    boolean mightBePresent(Object sequenceIdentifier) {
         if (enqueuedIdentifiers.contains(sequenceIdentifier)) {
             return true;
         }
@@ -70,7 +83,7 @@ class SequenceIdentifierCache {
         return this;
     }
 
-    SequenceIdentifierCache markNotENqueued(Object sequenceIdentifier) {
+    SequenceIdentifierCache markNotEnqueued(Object sequenceIdentifier) {
         if (logger.isTraceEnabled()) {
             logger.trace("Marked sequenceIdentifier [{}] as not present to the cache for segment [{}].",
                          sequenceIdentifier,

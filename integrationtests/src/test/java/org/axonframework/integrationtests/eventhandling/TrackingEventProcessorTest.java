@@ -466,7 +466,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void cacheIsCleanedWhenSegmentIsReleased() {
+    void segmentReleasedIsInvokedOnInvokerWhenSegmentIsReleased() {
         eventBus.publish(createEvent());
         testSubject.start();
         await().atMost(Duration.ofSeconds(5)).untilAsserted(
