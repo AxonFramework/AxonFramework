@@ -64,7 +64,9 @@ class SequenceIdentifierCacheTest {
         testSubject = new SequenceIdentifierCache(SEGMENT_ID, CACHE_SIZE, mockSequencedDeadLetterQueue);
 
         String sequenceIdentifier = UUID.randomUUID().toString();
+        assertTrue(testSubject.mightBePresent(sequenceIdentifier));
         testSubject.markNotEnqueued(sequenceIdentifier);
+        assertFalse(testSubject.mightBePresent(sequenceIdentifier));
 
         IntStream.range(0, CACHE_SIZE).forEach(i -> testSubject.markNotEnqueued(UUID.randomUUID().toString()));
         assertTrue(testSubject.mightBePresent(sequenceIdentifier));
@@ -73,6 +75,7 @@ class SequenceIdentifierCacheTest {
     @Test
     void itMightBePresentOnceItsMarkedAsEnqueued() {
         String sequenceIdentifier = UUID.randomUUID().toString();
+        assertFalse(testSubject.mightBePresent(sequenceIdentifier));
         testSubject.markEnqueued(sequenceIdentifier);
         assertTrue(testSubject.mightBePresent(sequenceIdentifier));
     }

@@ -23,7 +23,8 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 /**
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the
  * {@link InMemorySequencedDeadLetterQueue} with an {@link org.axonframework.eventhandling.EventProcessor} and
- * {@link DeadLetteringEventHandlerInvoker}.
+ * {@link DeadLetteringEventHandlerInvoker}. It also overwrites {@link #identifierCacheEnabled()} to enable the sequence
+ * identifier cache.
  *
  * @author Gerard Klijs
  */
