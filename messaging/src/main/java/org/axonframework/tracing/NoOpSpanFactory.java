@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,6 +92,11 @@ public class NoOpSpanFactory implements SpanFactory {
 
         @Override
         public Span recordException(Throwable t) {
+            return this;
+        }
+
+        @Override
+        public Span addAttribute(String key, String value) {
             return this;
         }
     }

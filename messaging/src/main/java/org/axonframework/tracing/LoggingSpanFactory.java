@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,6 +152,12 @@ public class LoggingSpanFactory implements SpanFactory {
             logger.info("[{}][{}] Span recorded exception", identifier, name, t);
             return this;
         }
+
+        @Override
+        public Span addAttribute(String key, String value) {
+            return this;
+        }
+
         private class Slf4jSpanScope implements SpanScope {
             @Override
             public void close() {

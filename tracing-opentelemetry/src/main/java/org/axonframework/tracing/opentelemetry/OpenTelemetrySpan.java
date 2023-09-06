@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,6 +118,16 @@ public class OpenTelemetrySpan implements Span {
     public Span recordException(Throwable t) {
         span.recordException(t);
         span.setStatus(StatusCode.ERROR, t.getMessage());
+        return this;
+    }
+
+    @Override
+    public Span addAttribute(String key, String value) {
+        if(this.span == null) {
+            spanBuilder.setAttribute(key, value);
+        } else {
+            span.setAttribute(key, value);
+        }
         return this;
     }
 }

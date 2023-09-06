@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,10 @@ import java.time.Duration;
  */
 @ConfigurationProperties("axon.tracing")
 public class TracingProperties {
+    /**
+     * Properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     */
+    private SnapshotterProperties snapshotter = new SnapshotterProperties();
 
     /**
      * Whether to show event sourcing handlers in traces. This can be very noisy, especially when larger aggregates are
@@ -52,6 +56,24 @@ public class TracingProperties {
      * default by Axon Framework, are active.
      */
     private AttributeProviders attributeProviders;
+
+    /**
+     * Returns the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     *
+     * @return the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     */
+    public SnapshotterProperties getSnapshotter() {
+        return snapshotter;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     *
+     * @param snapshotter the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     */
+    public void setSnapshotter(SnapshotterProperties snapshotter) {
+        this.snapshotter = snapshotter;
+    }
 
     /**
      * Getting value for showing event sourcing handlers in traces.
@@ -266,6 +288,57 @@ public class TracingProperties {
          */
         public void setPayloadType(boolean payloadType) {
             this.payloadType = payloadType;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     */
+    public static class SnapshotterProperties {
+        /**
+         * Whether the creation of the snapshot should be represented by a separate trace.
+         */
+        private boolean separateTrace = false;
+
+        /**
+         * Wether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         */
+        private boolean aggregateTypeInSpanName = true;
+
+        /**
+         * Whether the creation of the snapshot should be represented by a separate trace.
+         *
+         * @return whether the creation of the snapshot should be represented by a separate trace.
+         */
+        public boolean isSeparateTrace() {
+            return separateTrace;
+        }
+
+        /**
+         * Sets whether the creation of the snapshot should be represented by a separate trace.
+         *
+         * @param separateTrace whether the creation of the snapshot should be represented by a separate trace.
+         */
+        public void setSeparateTrace(boolean separateTrace) {
+            this.separateTrace = separateTrace;
+        }
+
+        /**
+         * Whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         *
+         * @return whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         */
+        public boolean isAggregateTypeInSpanName() {
+            return aggregateTypeInSpanName;
+        }
+
+        /**
+         * Sets whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         *
+         * @param aggregateTypeInSpanName whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         */
+        public void setAggregateTypeInSpanName(boolean aggregateTypeInSpanName) {
+            this.aggregateTypeInSpanName = aggregateTypeInSpanName;
         }
     }
 }
