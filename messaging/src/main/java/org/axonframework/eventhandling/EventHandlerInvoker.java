@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,5 +91,14 @@ public interface EventHandlerInvoker {
                     "EventHandlerInvoker#performRest(R) is not implemented for a non-null reset context."
             );
         }
+    }
+
+    /**
+     * This is a way for an event processor to communicate that a segment which was being processed is released. This
+     * might be needed or required to free resources, are clean up state which is related to the {@link Segment}.
+     *
+     * @param segment the segment which was released.
+     */
+    default void segmentReleased(Segment segment) {
     }
 }

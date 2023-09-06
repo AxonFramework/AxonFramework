@@ -37,10 +37,8 @@ import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,29 +69,9 @@ import java.util.stream.Stream;
 
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.intThat;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link PooledStreamingEventProcessor}.
@@ -871,9 +849,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2,
-                     TimeUnit.SECONDS,
-                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        await().atMost(Duration.ofSeconds(2L)).untilAsserted(
+                () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length)
+        );
         testSubject.shutDown();
 
         testSubject.resetTokens(expectedContext);
@@ -884,6 +862,9 @@ class PooledStreamingEventProcessorTest {
         // The token stays the same, as the original and token after reset are identical.
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
+        await().atMost(Duration.ofSeconds(2L)).untilAsserted(
+                () -> verify(stubEventHandler, times(2)).segmentReleased(any(Segment.class))
+        );
     }
 
     @Test

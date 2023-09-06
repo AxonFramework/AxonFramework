@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -369,7 +369,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private void releaseToken(Segment segment) {
         try {
-            transactionManager.executeInTransaction(() -> tokenStore.releaseClaim(getName(), segment.getSegmentId()));
+            transactionManager.executeInTransaction(() -> {
+                tokenStore.releaseClaim(getName(), segment.getSegmentId());
+                eventHandlerInvoker().segmentReleased(segment);
+            });
             logger.info("Released claim");
         } catch (Exception e) {
             // Ignore exception

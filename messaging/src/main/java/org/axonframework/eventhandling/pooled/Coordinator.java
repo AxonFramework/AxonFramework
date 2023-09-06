@@ -94,6 +94,7 @@ class Coordinator {
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final boolean coordinatorExtendsClaims;
+    private final Consumer<Segment> segmentReleasedAction;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState;
@@ -130,6 +131,7 @@ class Coordinator {
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
         this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
+        this.segmentReleasedAction = builder.segmentReleasedAction;
     }
 
     /**
@@ -385,6 +387,8 @@ class Coordinator {
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
+        private Consumer<Segment> segmentReleasedAction = segment -> {
+        };
 
         /**
          * The name of the processor this service coordinates for.
@@ -600,6 +604,18 @@ class Coordinator {
         }
 
         /**
+         * Registers an action to perform when a segment is released. Will override any previously registered actions.
+         * Defaults to a no-op.
+         *
+         * @param segmentReleasedAction the action to perform when a segment is released
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder segmentReleasedAction(Consumer<Segment> segmentReleasedAction) {
+            this.segmentReleasedAction = segmentReleasedAction;
+            return this;
+        }
+
+        /**
          * Initializes a {@link Coordinator} as specified through this Builder.
          *
          * @return a {@link Coordinator} as specified through this Builder
@@ -640,7 +656,7 @@ class Coordinator {
      * <ol>
      *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
      *     <li>{@link WorkPackage#extendClaimIfThresholdIsMet() Extend the claims} of all {@code WorkPackages} to relieve them of this effort.
-     *     This is an optimization activated through {@link Builder#coordinatorClaimExtension()}.</li>
+     *     This is an optimization activated through {@link Builder#coordinatorClaimExtension(boolean)}.</li>
      *     <li>Validating if there are {@link CoordinatorTask CoordinatorTasks} to run, and run a single one if there are any.</li>
      *     <li>Periodically checking for unclaimed segments, claim these and start a {@code WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
@@ -1012,7 +1028,10 @@ class Coordinator {
                            }
                        })
                        .thenRun(() -> transactionManager.executeInTransaction(
-                               () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
+                               () -> {
+                                   tokenStore.releaseClaim(name, work.segment().getSegmentId());
+                                   segmentReleasedAction.accept(work.segment());
+                               }
                        ))
                        .exceptionally(throwable -> {
                            logger.info(
