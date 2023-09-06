@@ -359,14 +359,18 @@ public class DeadLetteringEventHandlerInvoker
         }
 
         /**
-         * Sets the size of the cache. When there are already sequences stored in a dead letter queue, we need to check
-         * for each sequence identifier if it's already included. This result is stored in order to we can skip the
-         * check the second time we encounter the same sequence identifier. To limit memory use, a limit is set, by
-         * default at {@code 1024}. If you have a lot of long living aggregates, it might improve performance setting
-         * this higher at the cost of more memory use. If you only have aggregates that are short-lived, setting it
-         * lower frees up memory, while it might not affect performance. This setting is applied per {@link Segment}.
+         * Sets the size of the cache. When there are already sequences stored in a dead-letter queue, we need to check
+         * for each sequence identifier if it's already included. This result is stored so we can skip a second "is enqueued" 
+         * check when we encounter the same sequence identifier. This method thus limits memory use of the cache. 
+         * The size defaults to {@code 1024}. 
+         * <p>
+         * If you have a lot of long-living aggregates, it might improve performance to increase the
+         * cache size at the cost of more memory use. If you only have aggregates that are short-lived, setting it
+         * to a lower value frees up memory, while it might not affect performance. 
+         * <p>
+         * This setting is applied per {@link Segment}.
          * Note that this setting will only be used in combination with {@link #enableSequenceIdentifierCache()}, and
-         * the {@link SequencedDeadLetterQueue} not being empty.
+         * when the {@link SequencedDeadLetterQueue} is not empty when constructing the cache.
          *
          * @param sequenceIdentifierCacheSize The size to keep track of sequence identifiers which are not present.
          * @return The current Builder instance for fluent interfacing.
