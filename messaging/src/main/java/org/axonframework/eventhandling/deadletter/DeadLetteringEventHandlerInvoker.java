@@ -341,13 +341,15 @@ public class DeadLetteringEventHandlerInvoker
         }
 
         /**
-         * Enabled this {@link DeadLetteringEventHandlerInvoker} to cache sequence identifiers. If enabled it will
-         * create a {@link SequenceIdentifierCache} per segment to prevent calling
+         * Enabled this {@link DeadLetteringEventHandlerInvoker} to cache sequence identifiers. If enabled, it will
+         * create a {@link SequenceIdentifierCache} per segment. The cache prevents calling
          * {@link SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} when we can be sure the sequence
-         * identifier is not present. This can happen in two cases, either we started with an empty
-         * {@link SequencedDeadLetterQueue} and we haven't enqueued this identifier yet. Or it was not empty at the
-         * start, in which case we can skip if we checked if we needed to enqueue the identifier before, and it wasn't
-         * the case. If the identifier might be present we always call the
+         * identifier is not present. 
+         * <p>
+         * This can happen in two cases. Either we start with an empty {@link SequencedDeadLetterQueue}, 
+         * and we haven't enqueued this identifier yet. Or the queue was not empty at the start. 
+         * In this case, we can skip the identifier once we checked that we did not enqueue it before.
+         * If the identifier might be present, we always call the 
          * SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} as the sequence might have been cleaned up in
          * the meantime.
          *
