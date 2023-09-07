@@ -241,16 +241,21 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     public Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
 
-        return new PagingJpaQueryIterable<>(queryPageSize,
-                                            transactionManager,
-                                            () -> entityManagerProvider
-                                                    .getEntityManager()
-                                                    .createQuery(
-                                                            "select dl from DeadLetterEntry dl where dl.processingGroup=:processingGroup and dl.sequenceIdentifier=:identifier",
-                                                            DeadLetterEntry.class)
-                                                    .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
-                                                    .setParameter("identifier", stringSequenceIdentifier),
-                                            this::toLetter
+        return new PagingJpaQueryIterable<>(
+                queryPageSize,
+                transactionManager,
+                () -> entityManagerProvider
+                        .getEntityManager()
+                        .createQuery(
+                                "select dl from DeadLetterEntry dl "
+                                        + "where dl.processingGroup=:processingGroup "
+                                        + "and dl.sequenceIdentifier=:identifier "
+                                        + "order by dl.sequenceIndex",
+                                DeadLetterEntry.class
+                        )
+                        .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
+                        .setParameter("identifier", stringSequenceIdentifier),
+                this::toLetter
         );
     }
 
