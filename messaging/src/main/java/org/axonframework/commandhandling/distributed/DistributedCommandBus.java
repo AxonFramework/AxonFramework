@@ -17,8 +17,10 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
 import org.axonframework.commandhandling.MonitorAwareCallback;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
@@ -83,7 +85,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final AtomicReference<CommandMessageFilter> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
     private final CommandCallback<Object, Object> defaultCommandCallback;
-    private final SpanFactory spanFactory;
+    private final CommandBusSpanFactory spanFactory;
 
     private volatile int loadFactor = INITIAL_LOAD_FACTOR;
 
@@ -91,9 +93,9 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * Instantiate a Builder to be able to create a {@link DistributedCommandBus}.
      * <p>
      * The {@link CommandCallback} is defaulted to a {@link LoggingCallback}. The {@link MessageMonitor} is defaulted to
-     * a {@link NoOpMessageMonitor}. The {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}. The
-     * {@link CommandRouter} and {@link CommandBusConnector} are <b>hard requirements</b> and as such should be
-     * provided.
+     * a {@link NoOpMessageMonitor}. The {@link CommandBusSpanFactory} is defaulted to a {@link DefaultCommandBusSpanFactory}
+     * backed by a {@link NoOpSpanFactory}. The {@link CommandRouter} and {@link CommandBusConnector} are <b>hard
+     * requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link DistributedCommandBus}
      */
@@ -160,7 +162,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
         CommandMessage<? extends C> interceptedCommand = intercept(command);
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
         Optional<Member> optionalDestination = commandRouter.findDestination(interceptedCommand);
-        Span span = spanFactory.createDispatchSpan(() -> "DistributedCommandBus.dispatch", command).start();
+        Span span = spanFactory.createDispatchCommandSpan(command, true).start();
         try (SpanScope ignored = span.makeCurrent()) {
             if (optionalDestination.isPresent()) {
                 Member destination = optionalDestination.get();
@@ -276,9 +278,9 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * Builder class to instantiate a {@link DistributedCommandBus}.
      * <p>
      * The {@link CommandCallback} is defaulted to a {@link LoggingCallback}. The {@link MessageMonitor} is defaulted to
-     * a {@link NoOpMessageMonitor}. The {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}. The
-     * {@link CommandRouter} and {@link CommandBusConnector} are <b>hard requirements</b> and as such should be
-     * provided.
+     * a {@link NoOpMessageMonitor}. The {@link CommandBusSpanFactory} is defaulted to a
+     * {@link DefaultCommandBusSpanFactory} backed by a {@link NoOpSpanFactory}. The {@link CommandRouter} and
+     * {@link CommandBusConnector} are <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -286,7 +288,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
         private CommandRouter commandRouter;
         private CommandBusConnector connector;
         private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private CommandBusSpanFactory spanFactory = DefaultCommandBusSpanFactory
+                .builder().spanFactory(NoOpSpanFactory.INSTANCE).build();
 
         /**
          * Sets the {@link CommandRouter} used to determine the target node for each dispatched command.
@@ -347,8 +350,23 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(CommandBusSpanFactory)} instead as it provides more configurability.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultCommandBusSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link CommandBusSpanFactory} implementation to use for providing tracing capabilities. Defaults to
+         * a {@link CommandBusSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link CommandBusSpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull CommandBusSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

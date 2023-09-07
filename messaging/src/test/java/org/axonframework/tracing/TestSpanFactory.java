@@ -356,6 +356,10 @@ public class TestSpanFactory implements SpanFactory {
             return attributes.get(key);
         }
 
+        public Message<?> getMessage() {
+            return message;
+        }
+
         @Override
         public String toString() {
             return "TestSpan{" +

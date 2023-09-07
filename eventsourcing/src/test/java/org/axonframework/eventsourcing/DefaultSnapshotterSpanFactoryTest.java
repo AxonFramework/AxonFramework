@@ -34,7 +34,7 @@ class DefaultSnapshotterSpanFactoryTest
     }
 
     @Test
-    void createScheduleSnapshotSpanIncludesAggregateName() {
+    void scheduleSnapshotSpanIncludesAggregateName() {
         test(builder -> builder.aggregateTypeInSpanName(true).separateTrace(false),
              spanFactory -> spanFactory.createScheduleSnapshotSpan("MyAggregateType", "3728973982"),
              expectedSpan("scheduleSnapshot(MyAggregateType)", TestSpanFactory.TestSpanType.INTERNAL)
@@ -43,7 +43,7 @@ class DefaultSnapshotterSpanFactoryTest
     }
 
     @Test
-    void createScheduleSnapshotSpanDoesntIncludeAggregateName() {
+    void scheduleSnapshotSpanDoesntIncludeAggregateName() {
         test(builder -> builder.aggregateTypeInSpanName(false).separateTrace(false),
              spanFactory -> spanFactory.createScheduleSnapshotSpan("MyAggregateType", "3728973982"),
              expectedSpan("scheduleSnapshot", TestSpanFactory.TestSpanType.INTERNAL)
@@ -52,7 +52,7 @@ class DefaultSnapshotterSpanFactoryTest
     }
 
     @Test
-    void createScheduleSnapshotSpanIsNotAffectedBySeparateTrace() {
+    void scheduleSnapshotSpanIsNotAffectedBySeparateTrace() {
         test(builder -> builder.aggregateTypeInSpanName(false).separateTrace(true),
              spanFactory -> spanFactory.createScheduleSnapshotSpan("MyAggregateType", "3728973982"),
              expectedSpan("scheduleSnapshot", TestSpanFactory.TestSpanType.INTERNAL)
@@ -61,7 +61,7 @@ class DefaultSnapshotterSpanFactoryTest
     }
 
     @Test
-    void createCreateSnapshotSpanWithDefaults() {
+    void createSnapshotSpanWithDefaults() {
         test(spanFactory -> spanFactory.createCreateSnapshotSpan("MyAggregateType", "3728973982"),
              expectedSpan("createSnapshot(MyAggregateType)", TestSpanFactory.TestSpanType.INTERNAL)
                      .expectAttribute("aggregateIdentifier", "3728973982")
@@ -69,7 +69,7 @@ class DefaultSnapshotterSpanFactoryTest
     }
 
     @Test
-    void createCreateSnapshotSpanWithSeparateTraceAndWithoutAggregateInSpanName() {
+    void createSnapshotSpanWithSeparateTraceAndWithoutAggregateInSpanName() {
         test(builder -> builder.aggregateTypeInSpanName(false).separateTrace(true),
              spanFactory -> spanFactory.createCreateSnapshotSpan("MyAggregateType", "3728973982"),
              expectedSpan("createSnapshot", TestSpanFactory.TestSpanType.ROOT)
@@ -78,7 +78,7 @@ class DefaultSnapshotterSpanFactoryTest
     }
 
     @Test
-    void createCreateSnapshotSpanWithInnerTraceAndWithoutAggregateInSpanName() {
+    void createSnapshotSpanWithInnerTraceAndWithoutAggregateInSpanName() {
         test(builder -> builder.aggregateTypeInSpanName(false).separateTrace(false),
              spanFactory -> spanFactory.createCreateSnapshotSpan("MyAggregateType", "3728973982"),
              expectedSpan("createSnapshot", TestSpanFactory.TestSpanType.INTERNAL)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
@@ -31,6 +32,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.invocation.*;
@@ -112,7 +114,10 @@ public abstract class EmbeddedEventStoreTest {
                                         .cleanupDelay(cleanupDelay)
                                         .threadFactory(threadFactory)
                                         .optimizeEventConsumption(optimizeEventConsumption)
-                                        .spanFactory(spanFactory)
+                                        .spanFactory(DefaultEventBusSpanFactory.builder()
+                                                                               .spanFactory(spanFactory)
+                                                                               .build()
+                                        )
                                         .build();
     }
 
@@ -383,15 +388,15 @@ public abstract class EmbeddedEventStoreTest {
         DefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events);
         events.forEach(e -> {
-            spanFactory.verifySpanCompleted("EmbeddedEventStore.publish", e);
-            spanFactory.verifySpanPropagated("EmbeddedEventStore.publish", e);
-            spanFactory.verifySpanHasType("EmbeddedEventStore.publish", TestSpanFactory.TestSpanType.INTERNAL);
+            spanFactory.verifySpanCompleted("publishEvent", e);
+            spanFactory.verifySpanPropagated("publishEvent", e);
+            spanFactory.verifySpanHasType("publishEvent", TestSpanFactory.TestSpanType.DISPATCH);
         });
-        spanFactory.verifyNotStarted("EmbeddedEventStore.commit");
+        spanFactory.verifyNotStarted("commitEvents");
 
         CurrentUnitOfWork.commit();
-        spanFactory.verifySpanCompleted("EmbeddedEventStore.commit");
-        spanFactory.verifySpanHasType("EmbeddedEventStore.commit", TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanCompleted("commitEvents");
+        spanFactory.verifySpanHasType("commitEvents", TestSpanFactory.TestSpanType.INTERNAL);
     }
 
     @Test

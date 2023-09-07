@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,12 @@ import static org.hamcrest.CoreMatchers.equalTo;
 class SimpleQueryUpdateEmitterTest {
 
     private final TestSpanFactory spanFactory = new TestSpanFactory();
+    private final QueryUpdateEmitterSpanFactory queryBusSpanFactory = DefaultQueryUpdateEmitterSpanFactory
+            .builder()
+            .spanFactory(spanFactory)
+            .build();
     private final SimpleQueryUpdateEmitter testSubject = SimpleQueryUpdateEmitter.builder()
-                                                                                 .spanFactory(spanFactory)
+                                                                                 .spanFactory(queryBusSpanFactory)
                                                                                  .build();
 
     @Test
@@ -181,10 +185,10 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
 
-        spanFactory.verifySpanCompleted("SimpleQueryUpdateEmitter.emit");
-        spanFactory.verifySpanHasType("SimpleQueryUpdateEmitter.emit", TestSpanFactory.TestSpanType.INTERNAL);
-        spanFactory.verifySpanCompleted("SimpleQueryUpdateEmitter.doEmit");
-        spanFactory.verifySpanHasType("SimpleQueryUpdateEmitter.doEmit", TestSpanFactory.TestSpanType.DISPATCH);
+        spanFactory.verifySpanCompleted("scheduleQueryUpdateMessage");
+        spanFactory.verifySpanHasType("scheduleQueryUpdateMessage", TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanCompleted("emitQueryUpdateMessage");
+        spanFactory.verifySpanHasType("emitQueryUpdateMessage", TestSpanFactory.TestSpanType.DISPATCH);
     }
 
     @Test

@@ -182,7 +182,11 @@ class TrackingEventProcessorTest {
         }).when(mockTransactionManager).executeInTransaction(any(Runnable.class));
         eventBus = EmbeddedEventStore.builder()
                                      .storageEngine(new InMemoryEventStorageEngine())
-                                     .spanFactory(NoOpSpanFactory.INSTANCE)
+                                     .spanFactory(
+                                             DefaultEventBusSpanFactory.builder()
+                                                                       .spanFactory(spanFactory)
+                                                                       .build()
+                                     )
                                      .build();
         sleepInstructions = new CopyOnWriteArrayList<>();
 

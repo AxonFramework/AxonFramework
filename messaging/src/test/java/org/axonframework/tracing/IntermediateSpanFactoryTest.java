@@ -17,6 +17,7 @@
 package org.axonframework.tracing;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -129,6 +130,7 @@ public abstract class IntermediateSpanFactoryTest<BI, SI> {
         private final String name;
         private final TestSpanFactory.TestSpanType type;
         private final Map<String, String> attributes = new HashMap<>();
+        private Message<?> message = null;
 
         private ExpectedSpan(String name, TestSpanFactory.TestSpanType type) {
             this.name = name;
@@ -140,10 +142,18 @@ public abstract class IntermediateSpanFactoryTest<BI, SI> {
             return this;
         }
 
+        public ExpectedSpan withMessage(Message<?> message) {
+            this.message = message;
+            return this;
+        }
+
         public void assertSpan(TestSpanFactory.TestSpan span) {
             Assertions.assertEquals(name, span.getName());
             Assertions.assertEquals(type, span.getType());
             attributes.forEach((key, value) -> Assertions.assertEquals(value, span.getAttribute(key)));
+            if(message != null) {
+                Assertions.assertSame(message, span.getMessage());
+            }
         }
 
     }

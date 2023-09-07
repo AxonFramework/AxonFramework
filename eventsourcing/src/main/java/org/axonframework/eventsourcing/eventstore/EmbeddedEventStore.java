@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.io.IOUtils;
+import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
@@ -525,6 +526,12 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
 
         @Override
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull EventBusSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }

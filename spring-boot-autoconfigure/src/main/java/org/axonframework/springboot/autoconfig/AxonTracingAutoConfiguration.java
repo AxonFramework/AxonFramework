@@ -16,10 +16,18 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import org.axonframework.commandhandling.CommandBusSpanFactory;
+import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.DefaultQueryUpdateEmitterSpanFactory;
+import org.axonframework.queryhandling.QueryBusSpanFactory;
+import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
 import org.axonframework.springboot.TracingProperties;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanAttributesProvider;
@@ -71,6 +79,42 @@ public class AxonTracingAutoConfiguration {
                                                                                .isAggregateTypeInSpanName())
                                             .separateTrace(properties.getSnapshotter().isSeparateTrace())
                                             .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(CommandBusSpanFactory.class)
+    public CommandBusSpanFactory commandBusSpanFactory(SpanFactory spanFactory, TracingProperties properties) {
+        TracingProperties.CommandBusProperties commandBus = properties.getCommandBus();
+        return DefaultCommandBusSpanFactory.builder()
+                                           .spanFactory(spanFactory)
+                                           .distributedInSameTrace(commandBus.isDistributedInSameTrace())
+                                           .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(QueryBusSpanFactory.class)
+    public QueryBusSpanFactory queryBusSpanFactory(SpanFactory spanFactory, TracingProperties properties) {
+        TracingProperties.QueryBusProperties commandBus = properties.getQueryBus();
+        return DefaultQueryBusSpanFactory.builder()
+                                         .spanFactory(spanFactory)
+                                         .distributedInSameTrace(commandBus.isDistributedInSameTrace())
+                                         .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(QueryUpdateEmitterSpanFactory.class)
+    public QueryUpdateEmitterSpanFactory queryUpdateEmitterSpanFactory(SpanFactory spanFactory) {
+        return DefaultQueryUpdateEmitterSpanFactory.builder()
+                                                   .spanFactory(spanFactory)
+                                                   .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(EventBusSpanFactory.class)
+    public EventBusSpanFactory eventBusSpanFactory(SpanFactory spanFactory) {
+        return DefaultEventBusSpanFactory.builder()
+                                         .spanFactory(spanFactory)
+                                         .build();
     }
 
     @Bean

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,15 @@ import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -75,7 +78,7 @@ public class AxonServerBusAutoConfiguration {
                                                      CommandPriorityCalculator priorityCalculator,
                                                      CommandLoadFactorProvider loadFactorProvider,
                                                      TargetContextResolver<? super CommandMessage<?>> targetContextResolver,
-                                                     SpanFactory spanFactory) {
+                                                     CommandBusSpanFactory spanFactory) {
         return AxonServerCommandBus.builder()
                                    .axonServerConnectionManager(axonServerConnectionManager)
                                    .configuration(axonServerConfiguration)
@@ -106,7 +109,7 @@ public class AxonServerBusAutoConfiguration {
                               .transactionManager(txManager)
                               .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                               .errorHandler(queryInvocationErrorHandler)
-                              .spanFactory(axonConfiguration.spanFactory())
+                              .spanFactory(axonConfiguration.getComponent(QueryBusSpanFactory.class))
                               .build();
         simpleQueryBus.registerHandlerInterceptor(
                 new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
@@ -121,7 +124,7 @@ public class AxonServerBusAutoConfiguration {
                                  .genericSerializer(genericSerializer)
                                  .priorityCalculator(priorityCalculator)
                                  .targetContextResolver(targetContextResolver)
-                                 .spanFactory(axonConfiguration.spanFactory())
+                                 .spanFactory(axonConfiguration.getComponent(QueryBusSpanFactory.class))
                                  .build();
     }
 
@@ -141,7 +144,7 @@ public class AxonServerBusAutoConfiguration {
                                    .eventSerializer(eventSerializer)
                                    .snapshotFilter(configuration.snapshotFilter())
                                    .upcasterChain(configuration.upcasterChain())
-                                   .spanFactory(configuration.spanFactory())
+                                   .spanFactory(configuration.getComponent(EventBusSpanFactory.class))
                                    .build();
     }
 }

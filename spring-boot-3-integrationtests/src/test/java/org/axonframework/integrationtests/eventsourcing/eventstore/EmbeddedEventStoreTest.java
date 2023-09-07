@@ -26,6 +26,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.AfterEach;
@@ -111,7 +112,7 @@ public abstract class EmbeddedEventStoreTest {
                 .cleanupDelay(cleanupDelay)
                 .threadFactory(threadFactory)
                 .optimizeEventConsumption(optimizeEventConsumption)
-                .spanFactory(spanFactory)
+                .spanFactory(DefaultEventBusSpanFactory.builder().spanFactory(spanFactory).build())
                 .build();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
+import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
@@ -59,7 +61,11 @@ public class AxonServerSubscriptionQueryResult<I, U>
     @Deprecated
     public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
                                              final SubscriptionMessageSerializer subscriptionSerializer) {
-        this(null, result, subscriptionSerializer, NoOpSpanFactory.INSTANCE, new NoOpSpanFactory.NoOpSpan());
+        this(null,
+             result,
+             subscriptionSerializer,
+             DefaultQueryBusSpanFactory.builder().spanFactory(NoOpSpanFactory.INSTANCE).build(),
+             new NoOpSpanFactory.NoOpSpan());
     }
 
     /**
@@ -69,7 +75,7 @@ public class AxonServerSubscriptionQueryResult<I, U>
     public AxonServerSubscriptionQueryResult(final SubscriptionQueryMessage<?, ?, ?> queryMessage,
                                              final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
                                              final SubscriptionMessageSerializer subscriptionSerializer,
-                                             final SpanFactory spanFactory,
+                                             final QueryBusSpanFactory spanFactory,
                                              final Span parentSpan) {
         updates = Flux.<SubscriptionQueryUpdateMessage<U>>create(fluxSink -> {
             fluxSink.onRequest(count -> {
@@ -115,10 +121,10 @@ public class AxonServerSubscriptionQueryResult<I, U>
     }
 
     private void publishQueryUpdate(final SubscriptionQueryMessage<?, ?, ?> queryMessage,
-                                    SubscriptionMessageSerializer subscriptionSerializer, SpanFactory spanFactory,
+                                    SubscriptionMessageSerializer subscriptionSerializer, QueryBusSpanFactory spanFactory,
                                     FluxSink<SubscriptionQueryUpdateMessage<U>> fluxSink, QueryUpdate next) {
         SubscriptionQueryUpdateMessage<U> message = subscriptionSerializer.deserialize(next);
-        spanFactory.createChildHandlerSpan(() -> "AxonServerSubscriptionQueryResult.queryUpdate", message, queryMessage)
+        spanFactory.createSubscriptionQueryProcessUpdateSpan(message, queryMessage)
                    .run(() -> fluxSink.next(message));
     }
 
