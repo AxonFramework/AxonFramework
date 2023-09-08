@@ -145,7 +145,7 @@ class AxonServerCommandBusTest {
         AtomicReference<Throwable> failure = new AtomicReference<>();
 
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
-            spanFactory.verifySpanActive("dispatchDistributedCommand", commandMessage);
+            spanFactory.verifySpanActive("CommandBus.dispatchDistributedCommand", commandMessage);
             if (result.isExceptional()) {
                 failure.set(result.exceptionResult());
             } else {
@@ -162,11 +162,11 @@ class AxonServerCommandBusTest {
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
         await().atMost(Duration.ofSeconds(3l))
                 .untilAsserted(
-                        () -> spanFactory.verifySpanCompleted("dispatchDistributedCommand")
+                        () -> spanFactory.verifySpanCompleted("CommandBus.dispatchDistributedCommand")
                 );
         await().atMost(Duration.ofSeconds(3l))
                 .untilAsserted(
-                        () -> spanFactory.verifySpanPropagated("dispatchDistributedCommand", commandMessage)
+                        () -> spanFactory.verifySpanPropagated("CommandBus.dispatchDistributedCommand", commandMessage)
                 );
     }
 
@@ -288,7 +288,7 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
-        spanFactory.verifySpanHasException("dispatchDistributedCommand", RuntimeException.class);
+        spanFactory.verifySpanHasException("CommandBus.dispatchDistributedCommand", RuntimeException.class);
     }
 
     @Test
