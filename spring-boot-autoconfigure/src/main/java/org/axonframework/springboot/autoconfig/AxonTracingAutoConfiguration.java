@@ -108,6 +108,7 @@ public class AxonTracingAutoConfiguration {
     public QueryUpdateEmitterSpanFactory queryUpdateEmitterSpanFactory(SpanFactory spanFactory) {
         return DefaultQueryUpdateEmitterSpanFactory.builder()
                                                    .spanFactory(spanFactory)
+
                                                    .build();
     }
 
@@ -121,9 +122,13 @@ public class AxonTracingAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(DeadlineManagerSpanFactory.class)
-    public DeadlineManagerSpanFactory deadlineManagerSpanFactory(SpanFactory spanFactory) {
+    public DeadlineManagerSpanFactory deadlineManagerSpanFactory(SpanFactory spanFactory,
+                                                                 TracingProperties properties) {
+        TracingProperties.DeadlineManagerProperties deadlineManager = properties.getDeadlineManager();
         return DefaultDeadlineManagerSpanFactory.builder()
                                                 .spanFactory(spanFactory)
+                                                .scopeAttribute(deadlineManager.getDeadlineScopeAttributeName())
+                                                .deadlineIdAttribute(deadlineManager.getDeadlineIdAttributeName())
                                                 .build();
     }
 
