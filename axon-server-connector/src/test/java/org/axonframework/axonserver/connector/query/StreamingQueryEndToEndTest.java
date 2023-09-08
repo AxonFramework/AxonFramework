@@ -76,7 +76,7 @@ class StreamingQueryEndToEndTest {
 
     @Container
     private static final AxonServerContainer axonServerContainer =
-            new AxonServerContainer("axoniq/axonserver:latest-dev")
+            new AxonServerContainer()
                     .withAxonServerName("axonserver")
                     .withAxonServerHostname(HOSTNAME)
                     .withDevMode(true)

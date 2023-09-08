@@ -37,7 +37,7 @@ import java.util.Optional;
  */
 public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
 
-    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("axoniq/axonserver");
+    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("axoniq/axonserver:latest-dev");
 
     private static final int AXON_SERVER_HTTP_PORT = 8024;
     private static final int AXON_SERVER_GRPC_PORT = 8124;
@@ -64,6 +64,14 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
     private String axonServerInternalHostname;
     private String axonServerHostname;
     private boolean devMode;
+
+    /**
+     * Initialize an Axon Server {@link GenericContainer test container} using the default image name
+     * {@code "axoniq/axonserver"}.
+     */
+    public AxonServerContainer() {
+        this(DEFAULT_IMAGE_NAME);
+    }
 
     /**
      * Initialize Axon Server with the given {@code dockerImageName}.

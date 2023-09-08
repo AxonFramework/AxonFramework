@@ -100,7 +100,7 @@ class AxonServerCommandBusTest {
         configuration.setServers(dummyMessagePlatformServer.getAddress());
         configuration.setClientId("JUnit");
         configuration.setComponentName("JUnit");
-        configuration.setInitialNrOfPermits(100);
+        configuration.setPermits(100);
         configuration.setNewPermitsThreshold(10);
         configuration.setNrOfNewPermits(1000);
         configuration.setContext(BOUNDED_CONTEXT);

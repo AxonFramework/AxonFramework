@@ -549,12 +549,12 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                   .eventChannel()
                                                   .openStream(
                                                           nextToken,
-                                                          configuration.getEventFlowControl().getInitialNrOfPermits(),
+                                                          configuration.getEventFlowControl().getPermits(),
                                                           configuration.getEventFlowControl().getNrOfNewPermits(),
                                                           configuration.isForceReadFromLeader()
                                                   );
 
-            return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isDisableEventBlacklisting());
+            return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isEventBlockListingEnabled());
         }
 
         public QueryResultStream query(String query, boolean liveUpdates) {
