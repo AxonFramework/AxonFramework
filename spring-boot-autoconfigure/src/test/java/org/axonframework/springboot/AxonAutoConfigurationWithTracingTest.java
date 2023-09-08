@@ -305,7 +305,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void queryBusSpanFactoryDefaultsToDefaultEventBusSpanFactory() {
+    void queryBusSpanFactoryDefaultsToDefaultQueryBusSpanFactory() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {
@@ -333,7 +333,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void queryUpdateEmitterSpanFactoryDefaultsToDefaultEventBusSpanFactory() {
+    void queryUpdateEmitterSpanFactoryDefaultsToDefaultQueryUpdateEmitterSpanFactory() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {
@@ -361,7 +361,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void commandBusSpanFactoryDefaultsToDefaultEventBusSpanFactory() {
+    void commandBusSpanFactoryDefaultsToDefaultCommandBusSpanFactory() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {

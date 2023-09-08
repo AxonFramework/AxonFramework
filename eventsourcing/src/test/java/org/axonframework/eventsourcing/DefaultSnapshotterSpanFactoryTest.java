@@ -46,7 +46,7 @@ class DefaultSnapshotterSpanFactoryTest
     void scheduleSnapshotSpanDoesntIncludeAggregateName() {
         test(builder -> builder.aggregateTypeInSpanName(false).separateTrace(false),
              spanFactory -> spanFactory.createScheduleSnapshotSpan("MyAggregateType", "3728973982"),
-             expectedSpan("scheduleSnapshot", TestSpanFactory.TestSpanType.INTERNAL)
+             expectedSpan("Snapshotter.scheduleSnapshot", TestSpanFactory.TestSpanType.INTERNAL)
                      .expectAttribute("aggregateIdentifier", "3728973982")
         );
     }
@@ -55,7 +55,7 @@ class DefaultSnapshotterSpanFactoryTest
     void scheduleSnapshotSpanIsNotAffectedBySeparateTrace() {
         test(builder -> builder.aggregateTypeInSpanName(false).separateTrace(true),
              spanFactory -> spanFactory.createScheduleSnapshotSpan("MyAggregateType", "3728973982"),
-             expectedSpan("scheduleSnapshot", TestSpanFactory.TestSpanType.INTERNAL)
+             expectedSpan("Snapshotter.scheduleSnapshot", TestSpanFactory.TestSpanType.INTERNAL)
                      .expectAttribute("aggregateIdentifier", "3728973982")
         );
     }
@@ -72,7 +72,7 @@ class DefaultSnapshotterSpanFactoryTest
     void createSnapshotSpanWithSeparateTraceAndWithoutAggregateInSpanName() {
         test(builder -> builder.aggregateTypeInSpanName(false).separateTrace(true),
              spanFactory -> spanFactory.createCreateSnapshotSpan("MyAggregateType", "3728973982"),
-             expectedSpan("createSnapshot", TestSpanFactory.TestSpanType.ROOT)
+             expectedSpan("Snapshotter.createSnapshot", TestSpanFactory.TestSpanType.ROOT)
                      .expectAttribute("aggregateIdentifier", "3728973982")
         );
     }
@@ -81,7 +81,7 @@ class DefaultSnapshotterSpanFactoryTest
     void createSnapshotSpanWithInnerTraceAndWithoutAggregateInSpanName() {
         test(builder -> builder.aggregateTypeInSpanName(false).separateTrace(false),
              spanFactory -> spanFactory.createCreateSnapshotSpan("MyAggregateType", "3728973982"),
-             expectedSpan("createSnapshot", TestSpanFactory.TestSpanType.INTERNAL)
+             expectedSpan("Snapshotter.createSnapshot", TestSpanFactory.TestSpanType.INTERNAL)
                      .expectAttribute("aggregateIdentifier", "3728973982")
         );
     }
