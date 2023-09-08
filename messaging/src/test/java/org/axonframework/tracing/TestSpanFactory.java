@@ -101,6 +101,17 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     /**
+     * Verifies that a Span has a certain attribute set on it.
+     * @param name Name of the span to verify.
+     * @param key The key of the attribute.
+     * @param value The value of the attribute.
+     */
+    public void verifySpanHasAttributeValue(String name, String key, String value) {
+        assertTrue(findSpan(name, span -> span.attributes.containsKey(key) && span.attributes.get(key).equals(value)).isPresent(),
+                   () -> createErrorMessageForSpan(name));
+    }
+
+    /**
      * Verifies that a span was created, started, and ended.
      *
      * @param name    Name of the span to verify.
@@ -369,6 +380,7 @@ public class TestSpanFactory implements SpanFactory {
                     ", started=" + started +
                     ", ended=" + ended +
                     ", exception=" + exception +
+                    ", attributes=" + attributes +
                     '}';
         }
     }

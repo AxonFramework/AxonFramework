@@ -18,6 +18,8 @@ package org.axonframework.springboot;
 
 import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
@@ -333,7 +335,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void queryUpdateEmitterSpanFactoryDefaultsToDefaultQueryUpdateEmitterSpanFactory() {
+    void queryUpdateEmitterSpanFactoryDefaultsToDefaulQueryUpdateEmitterSpanFactory() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {
@@ -344,7 +346,6 @@ class AxonAutoConfigurationWithTracingTest {
                     assertEquals(DefaultQueryUpdateEmitterSpanFactory.class, context.getBean(QueryUpdateEmitterSpanFactory.class).getClass());
                 });
     }
-
     @Test
     void queryUpdateEmitterSpanFactoryCanBeOverriddenByUser() {
         QueryUpdateEmitterSpanFactory mock = Mockito.mock(QueryUpdateEmitterSpanFactory.class);
@@ -373,6 +374,7 @@ class AxonAutoConfigurationWithTracingTest {
                 });
     }
 
+
     @Test
     void commandBusSpanFactoryCanBeOverriddenByUser() {
         CommandBusSpanFactory mock = Mockito.mock(CommandBusSpanFactory.class);
@@ -385,6 +387,35 @@ class AxonAutoConfigurationWithTracingTest {
                     assertTrue(context.containsBean("commandBusSpanFactory"));
                     assertNotNull(context.getBean(CommandBusSpanFactory.class));
                     assertSame(context.getBean(CommandBusSpanFactory.class), mock);
+                });
+    }
+
+    @Test
+    void deadlineManagerSpanFactoryDefaultsToDefaultDeadlineManagerSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("deadlineManagerSpanFactory"));
+                    assertNotNull(context.getBean(DeadlineManagerSpanFactory.class));
+                    assertEquals(DefaultDeadlineManagerSpanFactory.class,
+                                 context.getBean(DeadlineManagerSpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void deadlineManagerSpanFactoryCanBeOverriddenByUser() {
+        DeadlineManagerSpanFactory mock = Mockito.mock(DeadlineManagerSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(DeadlineManagerSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("deadlineManagerSpanFactory"));
+                    assertNotNull(context.getBean(DeadlineManagerSpanFactory.class));
+                    assertSame(context.getBean(DeadlineManagerSpanFactory.class), mock);
                 });
     }
 

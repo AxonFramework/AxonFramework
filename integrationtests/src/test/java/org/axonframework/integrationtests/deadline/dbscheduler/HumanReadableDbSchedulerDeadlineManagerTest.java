@@ -21,6 +21,8 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
 import org.axonframework.serialization.TestSerializer;
@@ -66,7 +68,7 @@ class HumanReadableDbSchedulerDeadlineManagerTest extends AbstractDeadlineManage
                 .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
                 .serializer(TestSerializer.JACKSON.getSerializer())
                 .transactionManager(NoTransactionManager.INSTANCE)
-                .spanFactory(configuration.spanFactory())
+                .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
                 .useBinaryPojo(false)
                 .build();
     }
