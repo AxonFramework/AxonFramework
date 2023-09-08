@@ -383,15 +383,15 @@ public abstract class EmbeddedEventStoreTest {
         DefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events);
         events.forEach(e -> {
-            spanFactory.verifySpanCompleted("EmbeddedEventStore.publish", e);
-            spanFactory.verifySpanPropagated("EmbeddedEventStore.publish", e);
-            spanFactory.verifySpanHasType("EmbeddedEventStore.publish", TestSpanFactory.TestSpanType.INTERNAL);
+            spanFactory.verifySpanCompleted("EventBus.publishEvent", e);
+            spanFactory.verifySpanPropagated("EventBus.publishEvent", e);
+            spanFactory.verifySpanHasType("EventBus.publishEvent", TestSpanFactory.TestSpanType.DISPATCH);
         });
-        spanFactory.verifyNotStarted("EmbeddedEventStore.commit");
+        spanFactory.verifyNotStarted("EventBus.commitEvents");
 
         CurrentUnitOfWork.commit();
-        spanFactory.verifySpanCompleted("EmbeddedEventStore.commit");
-        spanFactory.verifySpanHasType("EmbeddedEventStore.commit", TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanCompleted("EventBus.commitEvents");
+        spanFactory.verifySpanHasType("EventBus.commitEvents", TestSpanFactory.TestSpanType.INTERNAL);
     }
 
     @Test

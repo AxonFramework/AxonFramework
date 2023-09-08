@@ -129,11 +129,11 @@ class AxonServerEventStoreTest {
                 GenericEventMessage.asEventMessage("Test3")};
         testSubject.publish(eventMessages);
         Arrays.stream(eventMessages).forEach(e -> {
-            testSpanFactory.verifySpanCompleted("publishEvent", e);
+            testSpanFactory.verifySpanCompleted("EventBus.publishEvent", e);
         });
-        testSpanFactory.verifyNotStarted("commitEvents");
+        testSpanFactory.verifyNotStarted("EventBus.commitEvents");
         uow.commit();
-        testSpanFactory.verifySpanCompleted("commitEvents");
+        testSpanFactory.verifySpanCompleted("EventBus.commitEvents");
 
         TrackingEventStream stream = testSubject.openStream(null);
 

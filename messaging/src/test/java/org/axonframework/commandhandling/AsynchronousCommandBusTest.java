@@ -77,10 +77,10 @@ class AsynchronousCommandBusTest {
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, mockCallback);
 
-        spanFactory.verifySpanCompleted("dispatchCommand");
-        spanFactory.verifySpanPropagated("dispatchCommand", command);
+        spanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
+        spanFactory.verifySpanPropagated("CommandBus.dispatchCommand", command);
 
-        spanFactory.verifySpanCompleted("handleCommand");
+        spanFactory.verifySpanCompleted("CommandBus.handleCommand");
 
         InOrder inOrder = inOrder(mockCallback,
                                   executorService,
@@ -107,11 +107,11 @@ class AsynchronousCommandBusTest {
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, NoOpCallback.INSTANCE);
 
-        spanFactory.verifySpanCompleted("dispatchCommand");
-        spanFactory.verifySpanPropagated("dispatchCommand", command);
+        spanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
+        spanFactory.verifySpanPropagated("CommandBus.dispatchCommand", command);
 
 
-        spanFactory.verifySpanCompleted("handleCommand");
+        spanFactory.verifySpanCompleted("CommandBus.handleCommand");
 
         InOrder inOrder = inOrder(executorService, commandHandler, dispatchInterceptor, handlerInterceptor);
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
@@ -141,7 +141,7 @@ class AsynchronousCommandBusTest {
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
-        spanFactory.verifySpanHasException("dispatchCommand", NoHandlerForCommandException.class);
+        spanFactory.verifySpanHasException("CommandBus.dispatchCommand", NoHandlerForCommandException.class);
     }
 
     @Test

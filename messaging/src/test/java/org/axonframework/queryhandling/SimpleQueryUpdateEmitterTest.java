@@ -185,10 +185,10 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
 
-        spanFactory.verifySpanCompleted("scheduleQueryUpdateMessage");
-        spanFactory.verifySpanHasType("scheduleQueryUpdateMessage", TestSpanFactory.TestSpanType.INTERNAL);
-        spanFactory.verifySpanCompleted("emitQueryUpdateMessage");
-        spanFactory.verifySpanHasType("emitQueryUpdateMessage", TestSpanFactory.TestSpanType.DISPATCH);
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.scheduleQueryUpdateMessage");
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.scheduleQueryUpdateMessage", TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.emitQueryUpdateMessage");
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.emitQueryUpdateMessage", TestSpanFactory.TestSpanType.DISPATCH);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -328,7 +328,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
 
         /**
          * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         * {@link NoOpSpanFactory}, which provides no tracing capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.

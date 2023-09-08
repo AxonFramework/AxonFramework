@@ -96,7 +96,7 @@ class DistributedCommandBusTest {
         CountDownLatch waiter = new CountDownLatch(1);
 
         testSubject.dispatch(testCommandMessage, (cm, result) -> {
-            spanFactory.verifySpanActive("dispatchDistributedCommand", testCommandMessage);
+            spanFactory.verifySpanActive("CommandBus.dispatchDistributedCommand", testCommandMessage);
             waiter.countDown();
         });
         waiter.await();
@@ -107,11 +107,11 @@ class DistributedCommandBusTest {
         verify(mockMonitorCallback).reportSuccess();
         await().atMost(Duration.ofSeconds(3l))
                .untilAsserted(
-                       () -> spanFactory.verifySpanCompleted("dispatchDistributedCommand")
+                       () -> spanFactory.verifySpanCompleted("CommandBus.dispatchDistributedCommand")
                );
         await().atMost(Duration.ofSeconds(3l))
                .untilAsserted(
-                       () -> spanFactory.verifySpanPropagated("dispatchDistributedCommand", testCommandMessage)
+                       () -> spanFactory.verifySpanPropagated("CommandBus.dispatchDistributedCommand", testCommandMessage)
                );
     }
 
@@ -190,7 +190,7 @@ class DistributedCommandBusTest {
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
-        spanFactory.verifySpanHasException("dispatchDistributedCommand", NoHandlerForCommandException.class);
+        spanFactory.verifySpanHasException("CommandBus.dispatchDistributedCommand", NoHandlerForCommandException.class);
     }
 
     @Test
@@ -233,7 +233,7 @@ class DistributedCommandBusTest {
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
-        spanFactory.verifySpanHasException("dispatchDistributedCommand", RuntimeException.class);
+        spanFactory.verifySpanHasException("CommandBus.dispatchDistributedCommand", RuntimeException.class);
     }
 
     @Test

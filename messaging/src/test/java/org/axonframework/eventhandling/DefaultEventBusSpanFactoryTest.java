@@ -28,7 +28,7 @@ class DefaultEventBusSpanFactoryTest extends IntermediateSpanFactoryTest<Default
     void createCommitEventsSpan() {
         test(builder -> builder,
              DefaultEventBusSpanFactory::createCommitEventsSpan,
-             expectedSpan("commitEvents", TestSpanFactory.TestSpanType.INTERNAL)
+             expectedSpan("EventBus.commitEvents", TestSpanFactory.TestSpanType.INTERNAL)
         );
     }
 
@@ -37,7 +37,7 @@ class DefaultEventBusSpanFactoryTest extends IntermediateSpanFactoryTest<Default
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
         test(builder -> builder,
              factory -> factory.createPublishEventSpan(eventMessage),
-             expectedSpan("publishEvent", TestSpanFactory.TestSpanType.DISPATCH)
+             expectedSpan("EventBus.publishEvent", TestSpanFactory.TestSpanType.DISPATCH)
                      .withMessage(eventMessage)
         );
     }

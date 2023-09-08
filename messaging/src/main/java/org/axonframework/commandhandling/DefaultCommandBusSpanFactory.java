@@ -46,20 +46,20 @@ public class DefaultCommandBusSpanFactory implements CommandBusSpanFactory {
     @Override
     public Span createDispatchCommandSpan(CommandMessage<?> commandMessage, boolean distributed) {
         if (distributed) {
-            return spanFactory.createDispatchSpan(() -> "dispatchDistributedCommand", commandMessage);
+            return spanFactory.createDispatchSpan(() -> "CommandBus.dispatchDistributedCommand", commandMessage);
         }
-        return spanFactory.createInternalSpan(() -> "dispatchCommand", commandMessage);
+        return spanFactory.createInternalSpan(() -> "CommandBus.dispatchCommand", commandMessage);
     }
 
     @Override
     public Span createHandleCommandSpan(CommandMessage<?> commandMessage, boolean distributed) {
         if (distributed) {
             if (distributedInSameTrace) {
-                return spanFactory.createChildHandlerSpan(() -> "handleDistributedCommand", commandMessage);
+                return spanFactory.createChildHandlerSpan(() -> "CommandBus.handleDistributedCommand", commandMessage);
             }
-            return spanFactory.createLinkedHandlerSpan(() -> "handleDistributedCommand", commandMessage);
+            return spanFactory.createLinkedHandlerSpan(() -> "CommandBus.handleDistributedCommand", commandMessage);
         }
-        return spanFactory.createChildHandlerSpan(() -> "handleCommand", commandMessage);
+        return spanFactory.createChildHandlerSpan(() -> "CommandBus.handleCommand", commandMessage);
     }
 
     @Override

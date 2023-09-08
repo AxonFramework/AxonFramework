@@ -30,7 +30,7 @@ class DefaultQueryUpdateEmitterSpanFactoryTest extends
         SubscriptionQueryUpdateMessage<?> message = Mockito.mock(SubscriptionQueryUpdateMessage.class);
         test(builder -> builder,
              spanFactory -> spanFactory.createUpdateScheduleEmitSpan(message),
-             expectedSpan("scheduleQueryUpdateMessage", TestSpanFactory.TestSpanType.INTERNAL)
+             expectedSpan("QueryUpdateEmitter.scheduleQueryUpdateMessage", TestSpanFactory.TestSpanType.INTERNAL)
                      .withMessage(message)
         );
     }
@@ -40,7 +40,7 @@ class DefaultQueryUpdateEmitterSpanFactoryTest extends
         SubscriptionQueryUpdateMessage<?> message = Mockito.mock(SubscriptionQueryUpdateMessage.class);
         test(builder -> builder,
              spanFactory -> spanFactory.createUpdateEmitSpan(message),
-             expectedSpan("emitQueryUpdateMessage", TestSpanFactory.TestSpanType.DISPATCH)
+             expectedSpan("QueryUpdateEmitter.emitQueryUpdateMessage", TestSpanFactory.TestSpanType.DISPATCH)
                      .withMessage(message)
         );
     }

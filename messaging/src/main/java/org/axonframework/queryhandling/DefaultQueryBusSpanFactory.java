@@ -47,57 +47,57 @@ public class DefaultQueryBusSpanFactory implements QueryBusSpanFactory {
     @Override
     public Span createQuerySpan(QueryMessage<?, ?> queryMessage, boolean distributed) {
         if (distributed) {
-            return spanFactory.createDispatchSpan(() -> "queryDistributed", queryMessage);
+            return spanFactory.createDispatchSpan(() -> "QueryBus.queryDistributed", queryMessage);
         }
-        return spanFactory.createInternalSpan(() -> "query", queryMessage);
+        return spanFactory.createInternalSpan(() -> "QueryBus.query", queryMessage);
     }
 
     @Override
     public Span createSubscriptionQuerySpan(SubscriptionQueryMessage<?, ?, ?> queryMessage, boolean distributed) {
         if (distributed) {
-            return spanFactory.createDispatchSpan(() -> "subscriptionQueryDistributed", queryMessage);
+            return spanFactory.createDispatchSpan(() -> "QueryBus.subscriptionQueryDistributed", queryMessage);
         }
-        return spanFactory.createInternalSpan(() -> "subscriptionQuery", queryMessage);
+        return spanFactory.createInternalSpan(() -> "QueryBus.subscriptionQuery", queryMessage);
     }
 
     @Override
     public Span createSubscriptionQueryProcessUpdateSpan(SubscriptionQueryUpdateMessage<?> updateMessage,
                                                          SubscriptionQueryMessage<?, ?, ?> queryMessage) {
-        return spanFactory.createChildHandlerSpan(() -> "subscriptionQuery", updateMessage, queryMessage);
+        return spanFactory.createChildHandlerSpan(() -> "QueryBus.subscriptionQuery", updateMessage, queryMessage);
     }
 
     @Override
     public Span createScatterGatherSpan(QueryMessage<?, ?> queryMessage, boolean distributed) {
         if (distributed) {
-            return spanFactory.createDispatchSpan(() -> "scatterGatherQueryDistributed", queryMessage);
+            return spanFactory.createDispatchSpan(() -> "QueryBus.scatterGatherQueryDistributed", queryMessage);
         }
-        return spanFactory.createInternalSpan(() -> "scatterGatherQuery", queryMessage);
+        return spanFactory.createInternalSpan(() -> "QueryBus.scatterGatherQuery", queryMessage);
     }
 
     @Override
     public Span createScatterGatherHandlerSpan(QueryMessage<?, ?> queryMessage, int handlerIndex) {
-        return spanFactory.createInternalSpan(() -> "scatterGatherQuery-" + handlerIndex, queryMessage);
+        return spanFactory.createInternalSpan(() -> "QueryBus.scatterGatherQuery-" + handlerIndex, queryMessage);
     }
 
     @Override
     public Span createStreamingQuerySpan(QueryMessage<?, ?> queryMessage, boolean distributed) {
         if (distributed) {
-            return spanFactory.createDispatchSpan(() -> "streamingQueryDistributed", queryMessage);
+            return spanFactory.createDispatchSpan(() -> "QueryBus.streamingQueryDistributed", queryMessage);
         }
-        return spanFactory.createInternalSpan(() -> "streamingQuery", queryMessage);
+        return spanFactory.createInternalSpan(() -> "QueryBus.streamingQuery", queryMessage);
     }
 
     @Override
     public Span createQueryProcessingSpan(QueryMessage<?, ?> queryMessage) {
         if (distributedInSameTrace) {
-            return spanFactory.createChildHandlerSpan(() -> "processQueryMessage", queryMessage);
+            return spanFactory.createChildHandlerSpan(() -> "QueryBus.processQueryMessage", queryMessage);
         }
-        return spanFactory.createLinkedHandlerSpan(() -> "processQueryMessage", queryMessage);
+        return spanFactory.createLinkedHandlerSpan(() -> "QueryBus.processQueryMessage", queryMessage);
     }
 
     @Override
     public Span createResponseProcessingSpan(QueryMessage<?, ?> queryMessage) {
-        return spanFactory.createInternalSpan(() -> "processQueryResult", queryMessage);
+        return spanFactory.createInternalSpan(() -> "QueryBus.processQueryResult", queryMessage);
     }
 
     @Override

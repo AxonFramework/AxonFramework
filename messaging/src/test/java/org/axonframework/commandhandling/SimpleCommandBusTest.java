@@ -82,11 +82,11 @@ class SimpleCommandBusTest {
         testSubject.subscribe(String.class.getName(), new MyStringCommandHandler());
         testSubject.dispatch(asCommandMessage("Say hi!"),
                              (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
-                                 spanFactory.verifySpanActive("dispatchCommand");
-                                 spanFactory.verifySpanPropagated("dispatchCommand", command);
-                                 spanFactory.verifySpanCompleted("handleCommand");
+                                 spanFactory.verifySpanActive("CommandBus.dispatchCommand");
+                                 spanFactory.verifySpanPropagated("CommandBus.dispatchCommand", command);
+                                 spanFactory.verifySpanCompleted("CommandBus.handleCommand");
                              });
-        spanFactory.verifySpanCompleted("dispatchCommand");
+        spanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
     }
 
     @Test
@@ -97,11 +97,11 @@ class SimpleCommandBusTest {
         });
         testSubject.dispatch(asCommandMessage("Say hi!"),
                              (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
-                                 spanFactory.verifySpanPropagated("dispatchCommand", command);
-                                 spanFactory.verifySpanCompleted("handleCommand");
+                                 spanFactory.verifySpanPropagated("CommandBus.dispatchCommand", command);
+                                 spanFactory.verifySpanCompleted("CommandBus.handleCommand");
                              });
-        spanFactory.verifySpanCompleted("dispatchCommand");
-        spanFactory.verifySpanHasException("dispatchCommand", RuntimeException.class);
+        spanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
+        spanFactory.verifySpanHasException("CommandBus.dispatchCommand", RuntimeException.class);
     }
 
     @Test

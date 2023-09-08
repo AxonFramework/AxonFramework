@@ -30,7 +30,7 @@ class DefaultCommandBusSpanFactoryTest
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
         test(builder -> builder,
              spanFactory -> spanFactory.createDispatchCommandSpan(command, false),
-             expectedSpan("dispatchCommand", TestSpanFactory.TestSpanType.INTERNAL)
+             expectedSpan("CommandBus.dispatchCommand", TestSpanFactory.TestSpanType.INTERNAL)
                      .withMessage(command)
         );
     }
@@ -40,7 +40,7 @@ class DefaultCommandBusSpanFactoryTest
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
         test(builder -> builder,
              spanFactory -> spanFactory.createDispatchCommandSpan(command, true),
-             expectedSpan("dispatchDistributedCommand", TestSpanFactory.TestSpanType.DISPATCH)
+             expectedSpan("CommandBus.dispatchDistributedCommand", TestSpanFactory.TestSpanType.DISPATCH)
                      .withMessage(command)
         );
     }
@@ -51,7 +51,7 @@ class DefaultCommandBusSpanFactoryTest
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
         test(builder -> builder,
              spanFactory -> spanFactory.createHandleCommandSpan(command, false),
-             expectedSpan("handleCommand", TestSpanFactory.TestSpanType.HANDLER_CHILD)
+             expectedSpan("CommandBus.handleCommand", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                      .withMessage(command)
         );
     }
@@ -61,7 +61,7 @@ class DefaultCommandBusSpanFactoryTest
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
         test(builder -> builder,
              spanFactory -> spanFactory.createHandleCommandSpan(command, true),
-             expectedSpan("handleDistributedCommand", TestSpanFactory.TestSpanType.HANDLER_CHILD)
+             expectedSpan("CommandBus.handleDistributedCommand", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                      .withMessage(command)
         );
     }
@@ -71,7 +71,7 @@ class DefaultCommandBusSpanFactoryTest
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
         test(builder -> builder.distributedInSameTrace(false),
              spanFactory -> spanFactory.createHandleCommandSpan(command, true),
-             expectedSpan("handleDistributedCommand", TestSpanFactory.TestSpanType.HANDLER_LINK)
+             expectedSpan("CommandBus.handleDistributedCommand", TestSpanFactory.TestSpanType.HANDLER_LINK)
                      .withMessage(command)
         );
     }

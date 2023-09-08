@@ -44,12 +44,12 @@ public class DefaultEventBusSpanFactory implements EventBusSpanFactory {
 
     @Override
     public Span createPublishEventSpan(EventMessage<?> eventMessage) {
-        return spanFactory.createDispatchSpan(() -> "publishEvent", eventMessage);
+        return spanFactory.createDispatchSpan(() -> "EventBus.publishEvent", eventMessage);
     }
 
     @Override
     public Span createCommitEventsSpan() {
-        return spanFactory.createInternalSpan(() -> "commitEvents");
+        return spanFactory.createInternalSpan(() -> "EventBus.commitEvents");
     }
 
     @Override

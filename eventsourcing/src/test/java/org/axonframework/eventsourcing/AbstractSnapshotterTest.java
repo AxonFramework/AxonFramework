@@ -104,16 +104,16 @@ class AbstractSnapshotterTest {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
                 .thenAnswer(invocation -> {
-                    spanFactory.verifySpanActive("scheduleSnapshot(Object)");
-                    spanFactory.verifySpanActive("createSnapshot(Object)");
+                    spanFactory.verifySpanActive("Snapshotter.scheduleSnapshot(Object)");
+                    spanFactory.verifySpanActive("Snapshotter.createSnapshot(Object)");
                     return DomainEventStream.of(createEvents(2));
                 });
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
-        spanFactory.verifySpanCompleted("scheduleSnapshot(Object)");
-        spanFactory.verifySpanCompleted("createSnapshot(Object)");
-        spanFactory.verifySpanHasType("scheduleSnapshot(Object)", TestSpanFactory.TestSpanType.INTERNAL);
-        spanFactory.verifySpanHasType("createSnapshot(Object)",
+        spanFactory.verifySpanCompleted("Snapshotter.scheduleSnapshot(Object)");
+        spanFactory.verifySpanCompleted("Snapshotter.createSnapshot(Object)");
+        spanFactory.verifySpanHasType("Snapshotter.scheduleSnapshot(Object)", TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanHasType("Snapshotter.createSnapshot(Object)",
                                       TestSpanFactory.TestSpanType.INTERNAL);
     }
 

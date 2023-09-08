@@ -51,13 +51,13 @@ public class DefaultSnapshotterSpanFactory implements SnapshotterSpanFactory {
     @Override
     public Span createScheduleSnapshotSpan(String aggregateType, String aggregateIdentifier) {
         return spanFactory
-                .createInternalSpan(() -> createSpanName("scheduleSnapshot", aggregateType))
+                .createInternalSpan(() -> createSpanName("Snapshotter.scheduleSnapshot", aggregateType))
                 .addAttribute("aggregateIdentifier", aggregateIdentifier);
     }
 
     @Override
     public Span createCreateSnapshotSpan(String aggregateType, String aggregateIdentifier) {
-        Supplier<String> spanName = () -> createSpanName("createSnapshot", aggregateType);
+        Supplier<String> spanName = () -> createSpanName("Snapshotter.createSnapshot", aggregateType);
         if (separateTrace) {
             return spanFactory
                     .createRootTrace(spanName)
