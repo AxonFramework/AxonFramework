@@ -269,6 +269,12 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
             return this;
         }
 
+        @Override
+        public Builder<T> spanFactory(RepositorySpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
         /**
          * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} instance for this
          * repository.

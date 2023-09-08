@@ -27,6 +27,7 @@ import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.modelling.command.LockingRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.tracing.SpanFactory;
@@ -270,6 +271,12 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
 
         @Override
         public Builder<T> spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        public Builder<T> spanFactory(RepositorySpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }

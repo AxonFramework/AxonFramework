@@ -65,7 +65,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
-    protected final SpanFactory spanFactory;
+    protected final RepositorySpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractRepository} based on the fields contained in the {@link Builder}.
@@ -136,7 +136,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     @Override
     public A load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
         return spanFactory
-                .createInternalSpan(() -> this.getClass().getSimpleName() + ".load " + aggregateIdentifier)
+                .createLoadSpan(aggregateIdentifier)
                 .runSupplier(() -> {
                     UnitOfWork<?> uow = currentUnitOfWork();
                     Map<String, A> aggregates = managedAggregates(uow);
@@ -424,7 +424,9 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private RepositorySpanFactory spanFactory = DefaultRepositorySpanFactory.builder()
+                                                                                .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                .build();
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
@@ -517,8 +519,23 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(RepositorySpanFactory)} instead, as it provides more configuration options
          */
+        @Deprecated
         public Builder<T> spanFactory(SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultRepositorySpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link RepositorySpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link DefaultRepositorySpanFactory} backed by a {@link NoOpSpanFactory}, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> spanFactory(RepositorySpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

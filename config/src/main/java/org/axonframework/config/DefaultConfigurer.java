@@ -62,7 +62,11 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
+import org.axonframework.modelling.command.RepositorySpanFactory;
+import org.axonframework.modelling.saga.DefaultSagaManagerSpanFactory;
 import org.axonframework.modelling.saga.ResourceInjector;
+import org.axonframework.modelling.saga.SagaManagerSpanFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
@@ -213,6 +217,8 @@ public class DefaultConfigurer implements Configurer {
         components.put(QueryUpdateEmitterSpanFactory.class, new Component<>(config, "queryUpdateEmitterSpanFactory", this::defaultQueryUpdateEmitterSpanFactory));
         components.put(EventBusSpanFactory.class, new Component<>(config, "eventBusSpanFactory", this::defaultEventBusSpanFactory));
         components.put(DeadlineManagerSpanFactory.class, new Component<>(config, "deadlineManagerSpanFactory", this::defaultDeadlineManagerSpanFactory));
+        components.put(SagaManagerSpanFactory.class, new Component<>(config, "sagaManagerSpanFactory", this::defaultSagaManagerSpanFactory));
+        components.put(RepositorySpanFactory.class, new Component<>(config, "repositorySpanFactory", this::defaultRepositorySpanFactory));
     }
 
     /**
@@ -530,7 +536,8 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns the default {@link SnapshotterSpanFactory}, or a {@link SnapshotterSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     * Returns the default {@link SnapshotterSpanFactory}, or a {@link DefaultSnapshotterSpanFactory} backed by the
+     * configured {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
      * @return The default {@link SnapshotterSpanFactory}.
@@ -604,15 +611,45 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns the default {@link org.axonframework.deadline.DeadlineManagerSpanFactory}, or a
+     * Returns the default {@link DeadlineManagerSpanFactory}, or a
      * {@link DefaultDeadlineManagerSpanFactory} backed by the configured {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
-     * @return The default {@link org.axonframework.deadline.DeadlineManagerSpanFactory}.
+     * @return The default {@link DeadlineManagerSpanFactory}.
      */
     protected DeadlineManagerSpanFactory defaultDeadlineManagerSpanFactory(Configuration config) {
         return defaultComponent(DeadlineManagerSpanFactory.class, this.config)
                 .orElseGet(() -> DefaultDeadlineManagerSpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link RepositorySpanFactory}, or a
+     * {@link DefaultRepositorySpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link SagaManagerSpanFactory}.
+     */
+    protected RepositorySpanFactory defaultRepositorySpanFactory(Configuration config) {
+        return defaultComponent(RepositorySpanFactory.class, this.config)
+                .orElseGet(() -> DefaultRepositorySpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link SagaManagerSpanFactory}, or a
+     * {@link DefaultSagaManagerSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link SagaManagerSpanFactory}.
+     */
+    protected SagaManagerSpanFactory defaultSagaManagerSpanFactory(Configuration config) {
+        return defaultComponent(SagaManagerSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultSagaManagerSpanFactory
                         .builder()
                         .spanFactory(config.spanFactory())
                         .build());

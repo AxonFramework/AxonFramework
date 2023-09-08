@@ -70,7 +70,7 @@ class LegacyGenericJpaRepositoryTest {
                 .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
                 .eventBus(eventBus)
                 .identifierConverter(identifierConverter)
-                .spanFactory(spanFactory)
+                .spanFactory(DefaultRepositorySpanFactory.builder().spanFactory(spanFactory).build())
                 .build();
         DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
@@ -110,12 +110,13 @@ class LegacyGenericJpaRepositoryTest {
     void loadAggregateTracing() {
         when(mockEntityManager.find(eq(StubJpaAggregate.class), eq("123"), any(LockModeType.class)))
                 .thenAnswer(invocation -> {
-                    spanFactory.verifySpanCompleted("LockingRepository.obtainLock");
-                    spanFactory.verifySpanActive("GenericJpaRepository.load 123");
+                    spanFactory.verifySpanCompleted("Repository.obtainLock");
+                    spanFactory.verifySpanActive("Repository.load");
                     return aggregate;
                 });
         testSubject.load(aggregateId);
-        spanFactory.verifySpanCompleted("GenericJpaRepository.load 123");
+        spanFactory.verifySpanCompleted("Repository.load");
+        spanFactory.verifySpanHasAttributeValue("Repository.load", "axon.aggregateId", aggregateId);
     }
 
     @Test

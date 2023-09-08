@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.axonframework.modelling.command.LockAwareAggregate;
 import org.axonframework.modelling.command.LockingRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.tracing.SpanFactory;
 
@@ -132,7 +133,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         }
         AggregateModel<T> model = aggregateModel();
         EventSourcedAggregate<T> aggregate = spanFactory
-                .createInternalSpan(() -> model.type() + ".initializeState")
+                .createInitializeStateSpan(model.type(), aggregateIdentifier)
                 .runSupplier(() -> doLoadAggregate(aggregateIdentifier, trigger, eventStream, model));
 
         if (aggregate.isDeleted()) {
@@ -297,6 +298,13 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
             super.spanFactory(spanFactory);
             return this;
         }
+
+        @Override
+        public Builder<T> spanFactory(RepositorySpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
 
         /**
          * Sets the {@link EventStore} that holds the event stream this repository needs to event source an Aggregate.

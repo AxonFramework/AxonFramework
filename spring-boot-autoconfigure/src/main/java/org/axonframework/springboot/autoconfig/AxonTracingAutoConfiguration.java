@@ -26,6 +26,8 @@ import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
+import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.DefaultQueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
@@ -129,6 +131,17 @@ public class AxonTracingAutoConfiguration {
                                                 .scopeAttribute(deadlineManager.getDeadlineScopeAttributeName())
                                                 .deadlineIdAttribute(deadlineManager.getDeadlineIdAttributeName())
                                                 .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(RepositorySpanFactory.class)
+    public RepositorySpanFactory repositorySpanFactory(SpanFactory spanFactory,
+                                                       TracingProperties properties) {
+        TracingProperties.DeadlineManagerProperties deadlineManager = properties.getDeadlineManager();
+        return DefaultRepositorySpanFactory.builder()
+                                           .spanFactory(spanFactory)
+                                           .aggregateIdAttribute(deadlineManager.getDeadlineScopeAttributeName())
+                                           .build();
     }
 
     @Bean
