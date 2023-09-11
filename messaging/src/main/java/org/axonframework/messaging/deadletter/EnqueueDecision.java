@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.Optional;
 
 /**
  * A contract towards describing a decision among a {@link DeadLetter dead letter} containing a message of type
- * {@code M}.
+ * {@code M} concerning whether to add it to a {@link SequencedDeadLetterQueue}.
  * <p>
  * Describes that the letter should be {@link #shouldEnqueue() enqueued} or not. If the letter should be enqueued the
  * {@link #enqueueCause()} may contain a {@link Throwable}. Furthermore, {@link #withDiagnostics(DeadLetter)} may add
