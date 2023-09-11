@@ -28,6 +28,8 @@ import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.modelling.command.RepositorySpanFactory;
+import org.axonframework.modelling.saga.DefaultSagaManagerSpanFactory;
+import org.axonframework.modelling.saga.SagaManagerSpanFactory;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.DefaultQueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
@@ -133,6 +135,17 @@ public class AxonTracingAutoConfiguration {
                                                 .build();
     }
 
+
+    @Bean
+    @ConditionalOnMissingBean(SagaManagerSpanFactory.class)
+    public SagaManagerSpanFactory sagaManagerSpanFactory(SpanFactory spanFactory,
+                                                         TracingProperties properties) {
+        TracingProperties.SagaManagerProperties sagaManager = properties.getSagaManager();
+        return DefaultSagaManagerSpanFactory.builder()
+                                            .spanFactory(spanFactory)
+                                            .sagaIdentifierAttribute(sagaManager.getSagaIdentifierAttributeName())
+                                            .build();
+    }
     @Bean
     @ConditionalOnMissingBean(RepositorySpanFactory.class)
     public RepositorySpanFactory repositorySpanFactory(SpanFactory spanFactory,
