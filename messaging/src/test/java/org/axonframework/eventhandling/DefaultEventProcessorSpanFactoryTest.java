@@ -34,7 +34,6 @@ class DefaultEventProcessorSpanFactoryTest extends
     @Test
     void testCreateBatchSpanWithDefaultsForNonStreaming() {
         test(
-                builder -> builder,
                 factory -> factory.createBatchSpan(false, Collections.emptyList()),
                 noOpSpan()
         );
@@ -43,7 +42,6 @@ class DefaultEventProcessorSpanFactoryTest extends
     @Test
     void testCreateBatchSpanWithDefaultsForStreaming() {
         test(
-                builder -> builder,
                 factory -> factory.createBatchSpan(true, Collections.emptyList()),
                 expectedSpan("StreamingEventProcessor.batch", TestSpanFactory.TestSpanType.ROOT)
         );
@@ -71,7 +69,6 @@ class DefaultEventProcessorSpanFactoryTest extends
     void testCreateHandleEventSpanWithDefaultsForNonStreaming() {
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
         test(
-                builder -> builder,
                 factory -> factory.createHandleEventSpan(false, eventMessage),
                 expectedSpan("SubscribingEventProcessor.handle", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                         .withMessage(eventMessage)
@@ -82,7 +79,6 @@ class DefaultEventProcessorSpanFactoryTest extends
     void testCreateHandleEventSpanWithDefaultsForStreaming() {
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
         test(
-                builder -> builder,
                 factory -> factory.createHandleEventSpan(true, eventMessage),
                 expectedSpan("StreamingEventProcessor.handle", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                         .withMessage(eventMessage)

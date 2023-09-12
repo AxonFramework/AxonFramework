@@ -233,9 +233,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * Abstract Builder class to instantiate a {@link AbstractEventProcessor}.
      * <p>
      * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults
-     * to a {@link NoOpMessageMonitor} and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The Event
-     * Processor {@code name}, {@link EventHandlerInvoker} and {@link RollbackConfiguration} are <b>hard
-     * requirements</b> and as such should be provided.
+     * to a {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
+     * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name},
+     * {@link EventHandlerInvoker} and {@link RollbackConfiguration} are <b>hard requirements</b> and as such should be
+     * provided.
      */
     public abstract static class Builder {
 
@@ -330,10 +331,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             return this;
         }
 
-
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         * Sets the {@link EventProcessorSpanFactory} implementation to use for providing tracing capabilities. Defaults
+         * to a {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides
+         * no tracing capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
@@ -343,6 +344,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             this.spanFactory = spanFactory;
             return this;
         }
+
         /**
          * Validates whether the fields contained in this Builder are set accordingly.
          *

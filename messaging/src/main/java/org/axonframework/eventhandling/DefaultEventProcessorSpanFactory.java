@@ -63,8 +63,13 @@
 
 
         /**
-         * Creates a new {@link Builder} to build a {@link DefaultEventProcessorSpanFactory} with. The {@code spanFactory}
-         * is a required field and should be provided.
+         * Creates a new {@link Builder} to build a {@link DefaultEventProcessorSpanFactory} with. The default values are:
+         * <ul>
+         *     <li>{@code disableBatchTrace} defaults to {@code false}</li>
+         *     <li>{@code distributedInSameTrace} defaults to {@code false}</li>
+         *     <li>{@code distributedInSameTraceTimeLimit} defaults to 2 minutes</li>
+         * </ul>
+         * The {@code spanFactory} is a required field and should be provided.
          *
          * @return The {@link Builder} to build a {@link DefaultEventProcessorSpanFactory} with.
          */
@@ -102,8 +107,13 @@
 
 
         /**
-         * Builder class to instantiate a {@link DefaultEventProcessorSpanFactory}. The {@code spanFactory} is a required
-         * field and should be provided.
+         * Builder class to instantiate a {@link DefaultEventProcessorSpanFactory}. The default values are:
+         * <ul>
+         *     <li>{@code disableBatchTrace} defaults to {@code false}</li>
+         *     <li>{@code distributedInSameTrace} defaults to {@code false}</li>
+         *     <li>{@code distributedInSameTraceTimeLimit} defaults to 2 minutes</li>
+         * </ul>
+         * The {@code spanFactory} is a required field and should be provided.
          */
         public static class Builder {
 
