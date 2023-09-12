@@ -49,6 +49,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.Nullable;
 
 import javax.annotation.Nonnull;
@@ -64,28 +65,55 @@ import javax.annotation.Nonnull;
 @ConditionalOnClass(AxonServerConfiguration.class)
 @EnableConfigurationProperties(TagsConfigurationProperties.class)
 @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
-public class AxonServerAutoConfiguration implements ApplicationContextAware {
+public class AxonServerAutoConfiguration {
 
-    private ApplicationContext applicationContext;
+    @Configuration
+    @ConditionalOnMissingClass("org.springframework.boot.autoconfigure.service.connection.ConnectionDetails")
+    public static class ConnectionConfiguration implements ApplicationContextAware {
 
-    @ConditionalOnMissingBean(AxonServerConnectionDetails.class)
-    @Bean
-    public AxonServerConfiguration axonServerConfiguration() {
-        AxonServerConfiguration configuration = new AxonServerConfiguration();
-        configuration.setComponentName(clientName(applicationContext.getId()));
-        return configuration;
+        private ApplicationContext applicationContext;
+        @Bean
+        public AxonServerConfiguration axonServerConfiguration() {
+            AxonServerConfiguration configuration = new AxonServerConfiguration();
+            configuration.setComponentName(clientName(applicationContext.getId()));
+            return configuration;
+        }
+        @Override
+        public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+            this.applicationContext = applicationContext;
+        }
     }
 
-    @ConditionalOnBean(AxonServerConnectionDetails.class)
-    @Bean
-    public AxonServerConfiguration axonServerConfigurationWithConnectionDetails(AxonServerConnectionDetails connectionDetails) {
-        AxonServerConfiguration configuration = new AxonServerConfiguration();
-        configuration.setComponentName(clientName(applicationContext.getId()));
-        configuration.setServers(connectionDetails.routingServers());
-        return configuration;
+    @Configuration
+    @ConditionalOnClass(name = "org.springframework.boot.autoconfigure.service.connection.ConnectionDetails")
+    public static class ConnectionDetailsConfiguration implements ApplicationContextAware{
+        private ApplicationContext applicationContext;
+
+        @ConditionalOnMissingBean(AxonServerConnectionDetails.class)
+        @Bean
+        public AxonServerConfiguration axonServerConfiguration() {
+            AxonServerConfiguration configuration = new AxonServerConfiguration();
+            configuration.setComponentName(clientName(applicationContext.getId()));
+            return configuration;
+        }
+
+        @ConditionalOnBean(type = "org.axonframework.springboot.service.connection.AxonServerConnectionDetails")
+        @Bean
+        public AxonServerConfiguration axonServerConfigurationWithConnectionDetails(AxonServerConnectionDetails connectionDetails) {
+            AxonServerConfiguration configuration = new AxonServerConfiguration();
+            configuration.setComponentName(clientName(applicationContext.getId()));
+            configuration.setServers(connectionDetails.routingServers());
+            return configuration;
+        }
+
+        @Override
+        public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+            this.applicationContext = applicationContext;
+        }
     }
 
-    private String clientName(@Nullable String id) {
+
+    private static String clientName(@Nullable String id) {
         if (id == null) {
             return "Unnamed";
         } else if (id.contains(":")) {
@@ -145,11 +173,6 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     public TargetContextResolver<Message<?>> targetContextResolver() {
         return TargetContextResolver.noOp();
-    }
-
-    @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 
     @Bean
