@@ -131,7 +131,7 @@ class QueryProcessingTaskIntegrationTest {
                                                            queryBusSpanFactory);
 
         task.run();
-        spanFactory.verifySpanCompleted("QueryProcessingTask");
+        spanFactory.verifySpanCompleted("QueryBus.processQueryMessage");
     }
 
     @Test

@@ -61,10 +61,25 @@ public class AxonServerSubscriptionQueryResult<I, U>
     @Deprecated
     public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
                                              final SubscriptionMessageSerializer subscriptionSerializer) {
+        this(result, NoOpSpanFactory.INSTANCE, subscriptionSerializer);
+    }
+
+
+    /**
+     * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
+     * the subscription query.
+     *
+     * @deprecated Deprecated in favor of constructor with a {@link QueryBusSpanFactory}. This constructor defaults to a
+     * {@link DefaultQueryBusSpanFactory} with the provided {@link SpanFactory}.
+     */
+    @Deprecated
+    public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
+                                             final SpanFactory spanFactory,
+                                             final SubscriptionMessageSerializer subscriptionSerializer) {
         this(null,
              result,
              subscriptionSerializer,
-             DefaultQueryBusSpanFactory.builder().spanFactory(NoOpSpanFactory.INSTANCE).build(),
+             DefaultQueryBusSpanFactory.builder().spanFactory(spanFactory).build(),
              new NoOpSpanFactory.NoOpSpan());
     }
 

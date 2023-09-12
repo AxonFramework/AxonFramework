@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -35,7 +37,7 @@ import java.util.function.Function;
  * @author Mitchell Herrijgers
  */
 public abstract class IntermediateSpanFactoryTest<BI, SI> {
-    private final SpanFactory spanFactory = new TestSpanFactory();
+    private final TestSpanFactory spanFactory = new TestSpanFactory();
 
     /**
      * Creates a new factory builder that also sets the provided span factory.
@@ -82,6 +84,14 @@ public abstract class IntermediateSpanFactoryTest<BI, SI> {
         SI spanFactory = createFactoryBasedOnBuilder(builder);
         Span span = testDefinition.getInvocation().apply(spanFactory);
         testDefinition.getExpectedSpan().assertSpan((TestSpanFactory.TestSpan) span);
+    }
+
+    protected <M extends Message<?>> void testContextPropagation(M message, BiConsumer<SI, M> invocation) {
+        SI siSpanFactory = createFactoryBasedOnBuilder(createBuilder(this.spanFactory));
+        this.spanFactory.createRootTrace(() -> "dummy trace").run(() -> {
+            invocation.accept(siSpanFactory, message);
+            this.spanFactory.verifySpanPropagated("dummy trace", message);
+        });
     }
 
     /**

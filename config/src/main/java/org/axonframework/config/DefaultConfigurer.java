@@ -540,8 +540,8 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns the default {@link CommandBusSpanFactory}, or a {@link CommandBusSpanFactory} backed by the configured
-     * {@link SpanFactory} if none it set.
+     * Returns the default {@link CommandBusSpanFactory}, or a {@link DefaultCommandBusSpanFactory} backed by the
+     * configured {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
      * @return The default {@link CommandBusSpanFactory}.
@@ -555,7 +555,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns the default {@link QueryBusSpanFactory}, or a {@link QueryBusSpanFactory} backed by the configured
+     * Returns the default {@link QueryBusSpanFactory}, or a {@link DefaultQueryBusSpanFactory} backed by the configured
      * {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
@@ -570,8 +570,8 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns the default {@link QueryUpdateEmitterSpanFactory}, or a {@link QueryUpdateEmitterSpanFactory} backed by the configured
-     * {@link SpanFactory} if none it set.
+     * Returns the default {@link QueryUpdateEmitterSpanFactory}, or a {@link DefaultQueryUpdateEmitterSpanFactory}
+     * backed by the configured {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
      * @return The default {@link QueryUpdateEmitterSpanFactory}.
@@ -585,7 +585,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns the default {@link EventBusSpanFactory}, or a {@link EventBusSpanFactory} backed by the configured
+     * Returns the default {@link EventBusSpanFactory}, or a {@link DefaultEventBusSpanFactory} backed by the configured
      * {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.

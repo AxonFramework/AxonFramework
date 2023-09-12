@@ -24,12 +24,10 @@ import org.junit.jupiter.api.*;
 class DefaultCommandBusSpanFactoryTest
         extends IntermediateSpanFactoryTest<DefaultCommandBusSpanFactory.Builder, DefaultCommandBusSpanFactory> {
 
-
     @Test
     void createLocalDispatchCommand() {
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
-        test(builder -> builder,
-             spanFactory -> spanFactory.createDispatchCommandSpan(command, false),
+        test(spanFactory -> spanFactory.createDispatchCommandSpan(command, false),
              expectedSpan("CommandBus.dispatchCommand", TestSpanFactory.TestSpanType.INTERNAL)
                      .withMessage(command)
         );
@@ -38,8 +36,7 @@ class DefaultCommandBusSpanFactoryTest
     @Test
     void createDistributedDispatchCommand() {
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
-        test(builder -> builder,
-             spanFactory -> spanFactory.createDispatchCommandSpan(command, true),
+        test(spanFactory -> spanFactory.createDispatchCommandSpan(command, true),
              expectedSpan("CommandBus.dispatchDistributedCommand", TestSpanFactory.TestSpanType.DISPATCH)
                      .withMessage(command)
         );
@@ -49,8 +46,7 @@ class DefaultCommandBusSpanFactoryTest
     @Test
     void createLocalHandleCommand() {
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
-        test(builder -> builder,
-             spanFactory -> spanFactory.createHandleCommandSpan(command, false),
+        test(spanFactory -> spanFactory.createHandleCommandSpan(command, false),
              expectedSpan("CommandBus.handleCommand", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                      .withMessage(command)
         );
@@ -59,8 +55,7 @@ class DefaultCommandBusSpanFactoryTest
     @Test
     void createDistributedHandleCommandDefault() {
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
-        test(builder -> builder,
-             spanFactory -> spanFactory.createHandleCommandSpan(command, true),
+        test(spanFactory -> spanFactory.createHandleCommandSpan(command, true),
              expectedSpan("CommandBus.handleDistributedCommand", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                      .withMessage(command)
         );
@@ -76,6 +71,11 @@ class DefaultCommandBusSpanFactoryTest
         );
     }
 
+    @Test
+    void testPropagateContext() {
+        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
+        testContextPropagation(command, DefaultCommandBusSpanFactory::propagateContext);
+    }
 
     @Override
     protected DefaultCommandBusSpanFactory.Builder createBuilder(SpanFactory spanFactory) {

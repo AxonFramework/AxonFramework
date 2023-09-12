@@ -35,7 +35,8 @@ public class SimpleEventBus extends AbstractEventBus {
      * Instantiate a Builder to be able to create a {@link SimpleEventBus}.
      * <p>
      * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}, the {@code queueCapacity} to
-     * {@link Integer#MAX_VALUE} and the {@link SpanFactory} to a {@link org.axonframework.tracing.NoOpSpanFactory}.
+     * {@link Integer#MAX_VALUE} and the {@link EventBusSpanFactory} to a {@link DefaultEventBusSpanFactory} backed by a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}.
      *
      * @return a Builder to be able to create a {@link SimpleEventBus}
      */
@@ -56,7 +57,7 @@ public class SimpleEventBus extends AbstractEventBus {
      * Builder class to instantiate a {@link SimpleEventBus}.
      * <p>
      * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link SpanFactory} is defaulted
-     * to a {@link org.axonframework.tracing.NoOpSpanFactory}.
+     * to {@link DefaultEventBusSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.
      */
     public static class Builder extends AbstractEventBus.Builder {
 

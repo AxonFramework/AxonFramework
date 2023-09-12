@@ -63,7 +63,7 @@ public class DefaultQueryBusSpanFactory implements QueryBusSpanFactory {
     @Override
     public Span createSubscriptionQueryProcessUpdateSpan(SubscriptionQueryUpdateMessage<?> updateMessage,
                                                          SubscriptionQueryMessage<?, ?, ?> queryMessage) {
-        return spanFactory.createChildHandlerSpan(() -> "QueryBus.subscriptionQuery", updateMessage, queryMessage);
+        return spanFactory.createChildHandlerSpan(() -> "QueryBus.queryUpdate", updateMessage, queryMessage);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class DefaultQueryBusSpanFactory implements QueryBusSpanFactory {
 
     @Override
     public Span createScatterGatherHandlerSpan(QueryMessage<?, ?> queryMessage, int handlerIndex) {
-        return spanFactory.createInternalSpan(() -> "QueryBus.scatterGatherQuery-" + handlerIndex, queryMessage);
+        return spanFactory.createInternalSpan(() -> "QueryBus.scatterGatherHandler-" + handlerIndex, queryMessage);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class DefaultQueryBusSpanFactory implements QueryBusSpanFactory {
         if (distributed) {
             return spanFactory.createDispatchSpan(() -> "QueryBus.streamingQueryDistributed", queryMessage);
         }
-        return spanFactory.createInternalSpan(() -> "QueryBus.streamingQuery", queryMessage);
+        return spanFactory.createChildHandlerSpan(() -> "QueryBus.streamingQuery", queryMessage);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class DefaultQueryBusSpanFactory implements QueryBusSpanFactory {
 
     @Override
     public Span createResponseProcessingSpan(QueryMessage<?, ?> queryMessage) {
-        return spanFactory.createInternalSpan(() -> "QueryBus.processQueryResult", queryMessage);
+        return spanFactory.createInternalSpan(() -> "QueryBus.processQueryResponse", queryMessage);
     }
 
     @Override

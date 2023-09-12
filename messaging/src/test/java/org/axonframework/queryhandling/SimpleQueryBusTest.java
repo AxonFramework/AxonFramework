@@ -314,8 +314,8 @@ class SimpleQueryBusTest {
         testSubject.scatterGather(testQueryMessage, 500, TimeUnit.MILLISECONDS).collect(Collectors.toList());
 
         spanFactory.verifySpanCompleted("QueryBus.scatterGatherQuery", testQueryMessage);
-        spanFactory.verifySpanCompleted("QueryBus.scatterGatherQuery-0");
-        spanFactory.verifySpanCompleted("QueryBus.scatterGatherQuery-1");
+        spanFactory.verifySpanCompleted("QueryBus.scatterGatherHandler-0");
+        spanFactory.verifySpanCompleted("QueryBus.scatterGatherHandler-1");
     }
 
 

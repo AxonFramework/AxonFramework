@@ -116,7 +116,7 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
      * The following configurable fields have defaults:
      * <ul>
      * <li>The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.</li>
-     * <li>The {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
+     * <li>The {@link EventBusSpanFactory} is defaulted to a {@link org.axonframework.eventhandling.DefaultEventBusSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      * <li>The {@code cachedEvents} is defaulted to {@code 10000}.</li>
      * <li>The {@code fetchDelay} is defaulted to {@code 1000}.</li>
      * <li>The {@code cleanupDelay} is defaulted to {@code 10000}.</li>
@@ -484,7 +484,7 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
      * The following configurable fields have defaults:
      * <ul>
      * <li>The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.</li>
-     * <li>The {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
+     * <li>The {@link EventBusSpanFactory} is defaulted to a {@link org.axonframework.eventhandling.DefaultEventBusSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      * <li>The {@code cachedEvents} is defaulted to {@code 10000}.</li>
      * <li>The {@code fetchDelay} is defaulted to {@code 1000}.</li>
      * <li>The {@code cleanupDelay} is defaulted to {@code 10000}.</li>

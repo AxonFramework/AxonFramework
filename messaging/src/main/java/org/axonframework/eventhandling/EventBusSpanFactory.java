@@ -32,7 +32,7 @@ public interface EventBusSpanFactory {
     /**
      * Creates a span for the publishing of an event. This span is created when the event is published on the {@link
      * EventBus}. This span does not include the actual commit of the event, this is represented by the {@link
-     * #createCommitEventsSpan()} and may be later.
+     * #createCommitEventsSpan()} and may occur later.
      *
      * @param eventMessage The event message to create a span for.
      * @return The created span.
@@ -50,7 +50,7 @@ public interface EventBusSpanFactory {
      * Propagates the context of the current span to the given event message.
      *
      * @param eventMessage The event message to propagate the context to.
-     * @param <T>            The type of the payload of the event message.
+     * @param <T>          The type of the payload of the event message.
      * @return The event message with the propagated context.
      */
     <T> EventMessage<T> propagateContext(EventMessage<T> eventMessage);

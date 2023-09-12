@@ -86,7 +86,6 @@ public class DefaultQueryUpdateEmitterSpanFactory implements QueryUpdateEmitterS
             return this;
         }
 
-
         /**
          * Validates whether the fields contained in this builder are set accordingly.
          */

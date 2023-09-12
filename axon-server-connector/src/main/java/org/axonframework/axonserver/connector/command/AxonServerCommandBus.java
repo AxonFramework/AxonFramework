@@ -335,9 +335,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      * {@link CommandPriorityCalculator#defaultCommandPriorityCalculator(), and the {@link TargetContextResolver}
      * defaults to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
      * {@link ExecutorServiceBuilder} defaults to {@link ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
-     * The {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The {@link AxonServerConnectionManager}, the
-     * {@link AxonServerConfiguration}, the local {@link CommandBus}, {@link Serializer} and the {@link RoutingStrategy}
-     * are <b>hard requirements</b> and as such should be provided.
+     * The {@link CommandBusSpanFactory} defaults to a {@link DefaultCommandBusSpanFactory} backed by a
+     * {@link NoOpSpanFactory}. The {@link AxonServerConnectionManager}, the {@link AxonServerConfiguration}, the local
+     * {@link CommandBus}, {@link Serializer} and the {@link RoutingStrategy} are <b>hard requirements</b> and as such
+     * should be provided.
      */
     public static class Builder {
 

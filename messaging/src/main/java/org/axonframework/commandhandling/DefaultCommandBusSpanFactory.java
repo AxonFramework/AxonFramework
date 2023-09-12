@@ -107,7 +107,7 @@ public class DefaultCommandBusSpanFactory implements CommandBusSpanFactory {
         /**
          * Sets whether the {@link CommandMessage}s should be handled in the same trace as the dispatching span.
          *
-         * @param distributedInSameTrace whether the {@link CommandMessage}s should be handled in the same trace as the
+         * @param distributedInSameTrace whether the {@link CommandMessage CommandsMessages} should be handled in the same trace as the
          *                               dispatching span.
          * @return The current Builder instance, for fluent interfacing.
          */

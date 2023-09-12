@@ -16,6 +16,9 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.tracing.IntermediateSpanFactoryTest;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
@@ -26,8 +29,7 @@ class DefaultEventBusSpanFactoryTest extends IntermediateSpanFactoryTest<Default
 
     @Test
     void createCommitEventsSpan() {
-        test(builder -> builder,
-             DefaultEventBusSpanFactory::createCommitEventsSpan,
+        test(DefaultEventBusSpanFactory::createCommitEventsSpan,
              expectedSpan("EventBus.commitEvents", TestSpanFactory.TestSpanType.INTERNAL)
         );
     }
@@ -35,13 +37,17 @@ class DefaultEventBusSpanFactoryTest extends IntermediateSpanFactoryTest<Default
     @Test
     void createsQuerySpanNonDistributed() {
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
-        test(builder -> builder,
-             factory -> factory.createPublishEventSpan(eventMessage),
+        test(factory -> factory.createPublishEventSpan(eventMessage),
              expectedSpan("EventBus.publishEvent", TestSpanFactory.TestSpanType.DISPATCH)
                      .withMessage(eventMessage)
         );
     }
 
+    @Test
+    void testPropagateContext() {
+        EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
+        testContextPropagation(eventMessage, DefaultEventBusSpanFactory::propagateContext);
+    }
 
     @Override
     protected DefaultEventBusSpanFactory.Builder createBuilder(SpanFactory spanFactory) {

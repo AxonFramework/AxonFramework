@@ -19,7 +19,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.tracing.Span;
 
 /**
- * Span factory that creates spans for the {@link QueryBus}. You can customize the spans of the bus by creating your own
+ * Span factory that creates spans for the {@link QueryUpdateEmitter}. You can customize the spans of the bus by creating your own
  * implementation.
  *
  * @author Mitchell Herrijgers

@@ -387,7 +387,6 @@ public class TracingProperties {
         }
     }
 
-
     /**
      * Configuration properties for the behavior of creating tracing spans for the
      * {@link org.axonframework.commandhandling.CommandBus}.
@@ -400,7 +399,6 @@ public class TracingProperties {
          * Whether distributed commands should be part of the same trace.
          */
         private boolean distributedInSameTrace = true;
-
 
         /**
          * Whether distributed commands should be part of the same trace. Defaults to {@code true}.
@@ -433,8 +431,7 @@ public class TracingProperties {
          * Whether distributed queries should be part of the same trace.
          */
         private boolean distributedInSameTrace = true;
-
-
+        
         /**
          * Whether distributed queries should be part of the same trace. Defaults to {@code true}.
          *

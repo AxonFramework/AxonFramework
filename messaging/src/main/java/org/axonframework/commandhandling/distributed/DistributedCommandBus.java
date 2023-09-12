@@ -361,7 +361,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
 
         /**
          * Sets the {@link CommandBusSpanFactory} implementation to use for providing tracing capabilities. Defaults to
-         * a {@link CommandBusSpanFactory} by default, which provides no tracing capabilities.
+         * a {@link DefaultCommandBusSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no
+         * tracing capabilities.
          *
          * @param spanFactory The {@link CommandBusSpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
