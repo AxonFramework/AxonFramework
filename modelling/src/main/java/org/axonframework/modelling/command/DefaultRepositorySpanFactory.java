@@ -43,10 +43,12 @@ public class DefaultRepositorySpanFactory implements RepositorySpanFactory {
         this.aggregateIdAttribute = builder.builderAggregateIdAttribute;
     }
 
-
     /**
-     * Creates a new {@link Builder} to build a {@link DefaultRepositorySpanFactory} with. The {@code spanFactory} is a
-     * required field and should be provided.
+     * Creates a new {@link Builder} to build a {@link DefaultRepositorySpanFactory} with. The default values are:
+     * <ul>
+     *     <li>{@code aggregateIdAttribute} defaults to {@code axon.aggregateId}</li>
+     * </ul>
+     * The {@code spanFactory} is a required field and should be provided.
      *
      * @return The {@link Builder} to build a {@link DefaultRepositorySpanFactory} with.
      */
@@ -72,10 +74,12 @@ public class DefaultRepositorySpanFactory implements RepositorySpanFactory {
                           .addAttribute(aggregateIdAttribute, aggregateId);
     }
 
-
     /**
-     * Builder class to instantiate a {@link DefaultRepositorySpanFactory}. The {@code spanFactory} is a required field
-     * and should be provided.
+     * Builder class to instantiate a {@link DefaultRepositorySpanFactory}. The default values are:
+     * <ul>
+     *     <li>{@code aggregateIdAttribute} defaults to {@code axon.aggregateId}</li>
+     * </ul>
+     * The {@code spanFactory} is a required field and should be provided.
      */
     public static class Builder {
 

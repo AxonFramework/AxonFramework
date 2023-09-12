@@ -68,7 +68,7 @@ class LockingRepositoryTest {
                                                .lockFactory(lockFactory)
                                                .eventBus(eventBus)
                                                .spanFactory(DefaultRepositorySpanFactory.builder()
-                                                                    .spanFactory(spanFactory)
+                                                                                        .spanFactory(spanFactory)
                                                                                         .build())
                                                .build();
         testSubject = spy(testSubject);

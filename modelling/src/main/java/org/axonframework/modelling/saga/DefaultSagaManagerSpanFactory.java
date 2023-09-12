@@ -17,14 +17,13 @@
 package org.axonframework.modelling.saga;
 
 import org.axonframework.common.BuilderUtils;
-import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 
 /**
- * Default implementation of the {@link DeadlineManagerSpanFactory}. The attributes used for the id of the deadline and
- * the scope of the deadline are configurable.
+ * Default implementation of the {@link SagaManagerSpanFactory}. The attribute used for the saga identifier can be
+ * configured.
  *
  * @author Mitchell Herrijgers
  * @since 4.9.0
@@ -47,8 +46,11 @@ public class DefaultSagaManagerSpanFactory implements SagaManagerSpanFactory {
 
 
     /**
-     * Creates a new {@link Builder} to build a {@link DefaultSagaManagerSpanFactory} with. The {@code spanFactory} is a
-     * required field and should be provided.
+     * Creates a new {@link Builder} to build a {@link DefaultSagaManagerSpanFactory} with. The default values are:
+     * <ul>
+     *     <li>{@code sagaIdentifierAttribute} defaults to {@code axon.sagaIdentifier}</li>
+     * </ul>
+     * The {@code spanFactory} is a required field and should be provided.
      *
      * @return The {@link Builder} to build a {@link DefaultSagaManagerSpanFactory} with.
      */
@@ -70,8 +72,11 @@ public class DefaultSagaManagerSpanFactory implements SagaManagerSpanFactory {
 
 
     /**
-     * Builder class to instantiate a {@link DefaultSagaManagerSpanFactory}. The {@code spanFactory} is a required field
-     * and should be provided.
+     * Builder class to instantiate a {@link DefaultSagaManagerSpanFactory}. The default values are:
+     * <ul>
+     *     <li>{@code sagaIdentifierAttribute} defaults to {@code axon.sagaIdentifier}</li>
+     * </ul>
+     * The {@code spanFactory} is a required field and should be provided.
      */
     public static class Builder {
 

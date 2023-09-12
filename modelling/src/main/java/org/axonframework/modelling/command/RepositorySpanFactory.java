@@ -16,9 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.tracing.Span;
 
 /**
@@ -30,9 +27,29 @@ import org.axonframework.tracing.Span;
  */
 public interface RepositorySpanFactory {
 
+    /**
+     * Creates a span that represents the loading of an aggregate with the provided identifier.
+     *
+     * @param aggregateId The identifier of the aggregate that is being loaded.
+     * @return A span that represents the loading of the aggregate.
+     */
     Span createLoadSpan(String aggregateId);
 
+    /**
+     * Creates a span that represents the time waiting to acquire a lock on an aggregate with the provided identifier.
+     *
+     * @param aggregateId The identifier of the aggregate that is trying to acquire a lock.
+     * @return A span that represents the acquisition of the lock for the aggregate.
+     */
     Span createObtainLockSpan(String aggregateId);
 
+    /**
+     * Creates a span that represents the time it took to hydrate the aggregate with data from, for example, the event
+     * store.
+     *
+     * @param aggregateType The type of the aggregate that is being hydrated.
+     * @param aggregateId   The identifier of the aggregate that is being hydrated.
+     * @return A span that represents the hydration of the aggregate.
+     */
     Span createInitializeStateSpan(String aggregateType, String aggregateId);
 }

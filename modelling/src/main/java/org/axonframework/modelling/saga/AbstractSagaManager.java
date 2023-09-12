@@ -64,9 +64,9 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     /**
      * Instantiate a {@link AbstractSagaManager} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@code sagaType}, {@code sagaFactory}, {@link SagaRepository} and
-     * {@link ListenerInvocationErrorHandler} are not {@code null}, and will throw an {@link AxonConfigurationException}
-     * if any of them is {@code null}.
+     * Will assert that the {@code sagaType}, {@code sagaFactory}, {@link SagaRepository},
+     * {@link SagaManagerSpanFactory} and {@link ListenerInvocationErrorHandler} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractSagaManager} instance
      */
@@ -361,6 +361,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
+            assertNonNull(spanFactory, "The SpanFactory is a hard requirement and should be provided");
             assertNonNull(sagaRepository, "The SagaRepository is a hard requirement and should be provided");
             assertNonNull(sagaType, "The sagaType is a hard requirement and should be provided");
         }

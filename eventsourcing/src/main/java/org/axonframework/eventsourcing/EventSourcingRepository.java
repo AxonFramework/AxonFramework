@@ -76,7 +76,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * <p>
      * Additionally, the builder will assert that the {@link LockFactory}, {@link EventStore} and
      * {@link SnapshotTriggerDefinition} are not {@code null}, resulting in an AxonConfigurationException if for any of
-     * these this is the case. The {@link SpanFactory} is defaulted to a
+     * these this is the case. The {@link RepositorySpanFactory} is defaulted to a
+     * {@link org.axonframework.modelling.command.DefaultRepositorySpanFactory} backed by a
      * {@link org.axonframework.tracing.NoOpSpanFactory}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link EventSourcingRepository} instance
@@ -218,13 +219,15 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * holds, the {@link Builder#build()} function returns a CachingEventSourcingRepository instead of an
      * EventSourcingRepository.
      * <p>
-     * The {@link LockFactory} is defaulted to an {@link org.axonframework.common.lock.PessimisticLockFactory}, the
-     * {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory} and the
-     * {@link SnapshotTriggerDefinition} to a {@link NoSnapshotTriggerDefinition} implementation. A goal of this Builder
-     * goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate type to be stored. All
-     * aggregates in this repository must be {@code instanceOf} this aggregate type. To instantiate this AggregateModel,
-     * either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of type {@link Class} can
-     * be used. The latter will internally resolve to an AggregateModel. Thus, either the AggregateModel <b>or</b> the
+     * The {@link LockFactory} is defaulted to an {@link org.axonframework.common.lock.PessimisticLockFactory},
+     * {@link RepositorySpanFactory} is defaulted to a
+     * {@link org.axonframework.modelling.command.DefaultRepositorySpanFactory} backed by a
+     * {@link org.axonframework.tracing.NoOpSpanFactory} and the {@link SnapshotTriggerDefinition} to a
+     * {@link NoSnapshotTriggerDefinition} implementation. A goal of this Builder goal is to create an
+     * {@link AggregateModel} specifying generic {@code T} as the aggregate type to be stored. All aggregates in this
+     * repository must be {@code instanceOf} this aggregate type. To instantiate this AggregateModel, either an
+     * {@link AggregateModel} can be provided directly or an {@code aggregateType} of type {@link Class} can be used.
+     * The latter will internally resolve to an AggregateModel. Thus, either the AggregateModel <b>or</b> the
      * {@code aggregateType} should be provided. The same criteria holds for the {@link AggregateFactory}. Either the
      * AggregateFactory can be set directly or it will be instantiated internally based on the {@code aggregateType}.
      * Hence, one of both is a hard requirement.
