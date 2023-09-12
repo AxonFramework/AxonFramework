@@ -27,8 +27,7 @@ class DefaultSnapshotterSpanFactoryTest
 
     @Test
     void createScheduleSnapshotSpanWithDefaults() {
-        test(builder -> builder,
-             spanFactory -> spanFactory.createScheduleSnapshotSpan("MyAggregateType", "3728973982"),
+        test(spanFactory -> spanFactory.createScheduleSnapshotSpan("MyAggregateType", "3728973982"),
              expectedSpan("scheduleSnapshot(MyAggregateType)", TestSpanFactory.TestSpanType.INTERNAL)
                      .expectAttribute("aggregateIdentifier", "3728973982")
         );
@@ -63,8 +62,7 @@ class DefaultSnapshotterSpanFactoryTest
 
     @Test
     void createCreateSnapshotSpanWithDefaults() {
-        test(builder -> builder,
-             spanFactory -> spanFactory.createCreateSnapshotSpan("MyAggregateType", "3728973982"),
+        test(spanFactory -> spanFactory.createCreateSnapshotSpan("MyAggregateType", "3728973982"),
              expectedSpan("createSnapshot(MyAggregateType)", TestSpanFactory.TestSpanType.INTERNAL)
                      .expectAttribute("aggregateIdentifier", "3728973982")
         );
@@ -87,7 +85,6 @@ class DefaultSnapshotterSpanFactoryTest
                      .expectAttribute("aggregateIdentifier", "3728973982")
         );
     }
-
 
     @Override
     protected DefaultSnapshotterSpanFactory.Builder createBuilder(SpanFactory spanFactory) {

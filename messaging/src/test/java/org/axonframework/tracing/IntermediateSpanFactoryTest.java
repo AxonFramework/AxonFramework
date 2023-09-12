@@ -62,6 +62,16 @@ public abstract class IntermediateSpanFactoryTest<BI, SI> {
     }
 
     /**
+     * Executes the test based on the given parameters with all settings at default.
+     *
+     * @param invocation The invocation of the intermediate factory
+     * @param definition The definition of the expected span
+     */
+    protected void test(Function<SI, Span> invocation, ExpectedSpan definition) {
+        test(new SpanFactoryTestDefinition(builder -> builder, invocation, definition));
+    }
+
+    /**
      * Executes the test based on the given definition.
      * @param testDefinition The definition of the test
      */
