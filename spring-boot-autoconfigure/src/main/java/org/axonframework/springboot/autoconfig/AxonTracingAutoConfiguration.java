@@ -108,7 +108,6 @@ public class AxonTracingAutoConfiguration {
     public QueryUpdateEmitterSpanFactory queryUpdateEmitterSpanFactory(SpanFactory spanFactory) {
         return DefaultQueryUpdateEmitterSpanFactory.builder()
                                                    .spanFactory(spanFactory)
-
                                                    .build();
     }
 

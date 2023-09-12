@@ -514,9 +514,9 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no
-         * tracing capabilities.
+         * Sets the {@link DeadlineManagerSpanFactory} implementation to use for providing tracing capabilities.
+         * Defaults to a {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory} by default, which
+         * provides no tracing capabilities.
          *
          * @param spanFactory The {@link DeadlineManagerSpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.

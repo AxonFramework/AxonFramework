@@ -36,7 +36,12 @@ public class DefaultDeadlineManagerSpanFactory implements DeadlineManagerSpanFac
     private final String scopeAttribute;
 
     /**
-     * Creates a new {@link DefaultDeadlineManagerSpanFactory} using the provided {@code builder}.
+     * Creates a new {@link DefaultDeadlineManagerSpanFactory} using the provided {@code builder}. The default values are:
+     * <ul>
+     *     <li>{@code deadlineIdAttribute} defaults to {@code axon.deadlineId}</li>
+     *     <li>{@code scopeAttribute} defaults to {@code axon.deadlineScope}</li>
+     * </ul>
+     * The {@code spanFactory} is a required field and should be provided.
      *
      * @param builder The builder to build the {@link DefaultDeadlineManagerSpanFactory} from.
      */
@@ -47,10 +52,13 @@ public class DefaultDeadlineManagerSpanFactory implements DeadlineManagerSpanFac
         this.scopeAttribute = builder.builderScopeAttribute;
     }
 
-
     /**
-     * Creates a new {@link Builder} to build a {@link DefaultDeadlineManagerSpanFactory} with. The {@code spanFactory}
-     * is a required field and should be provided.
+     * Creates a new {@link Builder} to build a {@link DefaultDeadlineManagerSpanFactory} with. The default values are:
+     * <ul>
+     *     <li>{@code deadlineIdAttribute} defaults to {@code axon.deadlineId}</li>
+     *     <li>{@code scopeAttribute} defaults to {@code axon.deadlineScope}</li>
+     * </ul>
+     * The {@code spanFactory} is a required field and should be provided.
      *
      * @return The {@link Builder} to build a {@link DefaultDeadlineManagerSpanFactory} with.
      */
@@ -150,6 +158,8 @@ public class DefaultDeadlineManagerSpanFactory implements DeadlineManagerSpanFac
          * Validates whether the fields contained in this Builder are set accordingly.
          */
         protected void validate() {
+            BuilderUtils.assertNonEmpty(builderDeadlineIdAttribute, "deadlineIdAttribute may not be null");
+            BuilderUtils.assertNonEmpty(builderScopeAttribute, "scopeAttribute may not be null");
             BuilderUtils.assertNonNull(builderSpanFactory, "spanFactory may not be null");
         }
 

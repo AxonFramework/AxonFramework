@@ -212,8 +212,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(QueryBusSpanFactory.class, new Component<>(config, "queryBusSpanFactory", this::defaultQueryBusSpanFactory));
         components.put(QueryUpdateEmitterSpanFactory.class, new Component<>(config, "queryUpdateEmitterSpanFactory", this::defaultQueryUpdateEmitterSpanFactory));
         components.put(EventBusSpanFactory.class, new Component<>(config, "eventBusSpanFactory", this::defaultEventBusSpanFactory));
-        components.put(DeadlineManagerSpanFactory.class,
-                       new Component<>(config, "deadlineManagerSpanFactory", this::defaultDeadlineManagerSpanFactory));
+        components.put(DeadlineManagerSpanFactory.class, new Component<>(config, "deadlineManagerSpanFactory", this::defaultDeadlineManagerSpanFactory));
     }
 
     /**

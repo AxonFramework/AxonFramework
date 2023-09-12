@@ -335,7 +335,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void queryUpdateEmitterSpanFactoryDefaultsToDefaulQueryUpdateEmitterSpanFactory() {
+    void queryUpdateEmitterSpanFactoryDefaultsToDefaultQueryUpdateEmitterSpanFactory() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {
@@ -373,7 +373,6 @@ class AxonAutoConfigurationWithTracingTest {
                     assertEquals(DefaultCommandBusSpanFactory.class, context.getBean(CommandBusSpanFactory.class).getClass());
                 });
     }
-
 
     @Test
     void commandBusSpanFactoryCanBeOverriddenByUser() {

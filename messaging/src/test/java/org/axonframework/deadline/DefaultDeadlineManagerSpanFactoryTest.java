@@ -16,6 +16,9 @@
 
 package org.axonframework.deadline;
 
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.tracing.IntermediateSpanFactoryTest;
 import org.axonframework.tracing.SpanFactory;
@@ -30,7 +33,6 @@ class DefaultDeadlineManagerSpanFactoryTest
     void createScheduleSpanWithDefaultSettings() {
         DeadlineMessage<?> message = Mockito.mock(DeadlineMessage.class);
         test(
-                builder -> builder,
                 spanFactory -> spanFactory.createScheduleSpan("myDeadline", "myDeadlineId", message),
                 expectedSpan("DeadlineManager.scheduleDeadline(myDeadline)", TestSpanFactory.TestSpanType.DISPATCH)
                         .withMessage(message)
@@ -53,7 +55,6 @@ class DefaultDeadlineManagerSpanFactoryTest
     @Test
     void createCancelScheduleSpanWithDefaultSettings() {
         test(
-                builder -> builder,
                 spanFactory -> spanFactory.createCancelScheduleSpan("myDeadline", "myDeadlineId"),
                 expectedSpan("DeadlineManager.cancelDeadline(myDeadline)", TestSpanFactory.TestSpanType.INTERNAL)
                         .expectAttribute("axon.deadlineId", "myDeadlineId")
@@ -73,7 +74,6 @@ class DefaultDeadlineManagerSpanFactoryTest
     @Test
     void createCancelAllSpanWithDefaultSettings() {
         test(
-                builder -> builder,
                 spanFactory -> spanFactory.createCancelAllSpan("myDeadline"),
                 expectedSpan("DeadlineManager.cancelAllDeadlines(myDeadline)", TestSpanFactory.TestSpanType.INTERNAL)
         );
@@ -85,7 +85,6 @@ class DefaultDeadlineManagerSpanFactoryTest
         ScopeDescriptor scope = Mockito.mock(ScopeDescriptor.class);
         Mockito.when(scope.scopeDescription()).thenReturn("myScopeDescription");
         test(
-                builder -> builder,
                 spanFactory -> spanFactory.createCancelAllWithinScopeSpan("myDeadline", scope),
                 expectedSpan("DeadlineManager.cancelAllWithinScope(myDeadline)", TestSpanFactory.TestSpanType.INTERNAL)
                         .expectAttribute("axon.deadlineScope", "myScopeDescription")
@@ -106,9 +105,7 @@ class DefaultDeadlineManagerSpanFactoryTest
     @Test
     void createExecuteSpanWithDefaultSettings() {
         DeadlineMessage<?> message = Mockito.mock(DeadlineMessage.class);
-        test(
-                builder -> builder,
-                spanFactory -> spanFactory.createExecuteSpan("myDeadline", "myDeadlineId", message),
+        test(spanFactory -> spanFactory.createExecuteSpan("myDeadline", "myDeadlineId", message),
                 expectedSpan("DeadlineManager.executeDeadline(myDeadline)", TestSpanFactory.TestSpanType.HANDLER_LINK)
                         .withMessage(message)
                         .expectAttribute("axon.deadlineId", "myDeadlineId")
@@ -125,6 +122,12 @@ class DefaultDeadlineManagerSpanFactoryTest
                         .withMessage(message)
                         .expectAttribute("this-is-a-stupidly-long-attribute-name", "myDeadlineId")
         );
+    }
+
+    @Test
+    void testPropagateContext() {
+        DeadlineMessage<?> message = Mockito.mock(DeadlineMessage.class);
+        testContextPropagation(message, DeadlineManagerSpanFactory::propagateContext);
     }
 
     @Override
