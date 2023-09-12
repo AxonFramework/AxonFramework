@@ -21,7 +21,9 @@ import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventBusSpanFactory;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
@@ -477,6 +479,35 @@ class AxonAutoConfigurationWithTracingTest {
                     assertTrue(context.containsBean("repositorySpanFactory"));
                     assertNotNull(context.getBean(RepositorySpanFactory.class));
                     assertSame(context.getBean(RepositorySpanFactory.class), mock);
+                });
+    }
+
+    @Test
+    void eventProcessorSpanFactoryDefaultsToDefaultEventProcessorSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("eventProcessorSpanFactory"));
+                    assertNotNull(context.getBean(EventProcessorSpanFactory.class));
+                    assertEquals(DefaultEventProcessorSpanFactory.class,
+                                 context.getBean(EventProcessorSpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void eventProcessorSpanFactoryCanBeOverriddenByUser() {
+        EventProcessorSpanFactory mock = Mockito.mock(EventProcessorSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(EventProcessorSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("eventProcessorSpanFactory"));
+                    assertNotNull(context.getBean(EventProcessorSpanFactory.class));
+                    assertSame(context.getBean(EventProcessorSpanFactory.class), mock);
                 });
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.lifecycle.Lifecycle;
@@ -178,11 +179,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             return interceptorChain.proceed();
         });
-
-        registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
-                .createLinkedHandlerSpan(() -> "TrackingEventProcessor[" + builder.name + "] ",
-                                         unitOfWork.getMessage())
-                .runCallable(interceptorChain::proceed));
     }
 
     /**
@@ -934,6 +930,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

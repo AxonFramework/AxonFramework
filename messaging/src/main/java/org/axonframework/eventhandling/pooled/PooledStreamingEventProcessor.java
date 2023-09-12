@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
@@ -154,15 +155,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
                                       .build();
-
-        //noinspection resource
-        registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
-                .createLinkedHandlerSpan(
-                        () -> "PooledStreamingEventProcessor[" + builder.name() + "] ",
-                        unitOfWork.getMessage()
-                )
-                .runCallable(interceptorChain::proceed)
-        );
     }
 
     /**
@@ -479,6 +471,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

@@ -83,7 +83,7 @@ public abstract class IntermediateSpanFactoryTest<BI, SI> {
         builder = testDefinition.getBuilderAdditions().apply(builder);
         SI spanFactory = createFactoryBasedOnBuilder(builder);
         Span span = testDefinition.getInvocation().apply(spanFactory);
-        testDefinition.getExpectedSpan().assertSpan((TestSpanFactory.TestSpan) span);
+        testDefinition.getExpectedSpan().assertSpan(span);
     }
 
     protected <M extends Message<?>> void testContextPropagation(M message, BiConsumer<SI, M> invocation) {
@@ -102,6 +102,16 @@ public abstract class IntermediateSpanFactoryTest<BI, SI> {
      */
     protected ExpectedSpan expectedSpan(String expectedName, TestSpanFactory.TestSpanType expectedType) {
         return new ExpectedSpan(expectedName, expectedType);
+    }
+
+    /**
+     * Creates a new {@link ExpectedSpan} which represents that a
+     * {@link org.axonframework.tracing.NoOpSpanFactory.NoOpSpan} is expected.
+     *
+     * @return The {@link ExpectedSpan} instance
+     */
+    protected ExpectedSpan noOpSpan() {
+        return new NoOpExpectedSpan();
     }
 
     /**
@@ -157,14 +167,33 @@ public abstract class IntermediateSpanFactoryTest<BI, SI> {
             return this;
         }
 
-        public void assertSpan(TestSpanFactory.TestSpan span) {
-            Assertions.assertEquals(name, span.getName());
-            Assertions.assertEquals(type, span.getType());
-            attributes.forEach((key, value) -> Assertions.assertEquals(value, span.getAttribute(key)));
-            if(message != null) {
-                Assertions.assertSame(message, span.getMessage());
+        public void assertSpan(Span span) {
+            if (span instanceof TestSpanFactory.TestSpan) {
+                assertSpan((TestSpanFactory.TestSpan) span);
+            } else {
+                Assertions.fail("Expected a TestSpan, but got " + span.getClass().getSimpleName());
             }
         }
 
+        private void assertSpan(TestSpanFactory.TestSpan span) {
+            Assertions.assertEquals(name, span.getName());
+            Assertions.assertEquals(type, span.getType());
+            attributes.forEach((key, value) -> Assertions.assertEquals(value, span.getAttribute(key)));
+            if (message != null) {
+                Assertions.assertSame(message, span.getMessage());
+            }
+        }
+    }
+
+    protected class NoOpExpectedSpan extends ExpectedSpan {
+
+        private NoOpExpectedSpan() {
+            super("NoOpSpan", TestSpanFactory.TestSpanType.ROOT);
+        }
+
+        @Override
+        public void assertSpan(Span span) {
+            Assertions.assertSame(NoOpSpanFactory.NoOpSpan.INSTANCE, span);
+        }
     }
 }

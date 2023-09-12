@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -132,7 +133,8 @@ class PooledStreamingEventProcessorTest {
                                              .workerExecutor(workerExecutor)
                                              .initialSegmentCount(8)
                                              .claimExtensionThreshold(500)
-                                             .spanFactory(spanFactory);
+                                             .spanFactory(DefaultEventProcessorSpanFactory.builder()
+                                                                  .spanFactory(spanFactory).build());
         return customization.apply(processorBuilder).build();
     }
 
@@ -230,7 +232,8 @@ class PooledStreamingEventProcessorTest {
                 answer -> {
                     EventMessage<?> message = answer.getArgument(0, EventMessage.class);
                     invokedMessages.add(message);
-                    spanFactory.verifySpanActive("PooledStreamingEventProcessor[test].process", message);
+                    spanFactory.verifySpanActive("StreamingEventProcessor.batch");
+                    spanFactory.verifySpanActive("StreamingEventProcessor.handle", message);
                     countDownLatch.countDown();
                     return null;
                 }
@@ -245,9 +248,10 @@ class PooledStreamingEventProcessorTest {
         invokedMessages.forEach(
                 e -> assertWithin(
                         1, TimeUnit.SECONDS,
-                        () -> spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e)
+                        () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.handle", e)
                 )
         );
+        spanFactory.verifySpanCompleted("StreamingEventProcessor.batch");
     }
 
     @Test
@@ -959,14 +963,6 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
-    void buildWithNullSpanFactoryThrowsAxonConfigurationException() {
-        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
-
-        //noinspection ConstantConditions
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory(null));
-    }
-
-    @Test
     void buildWithNullMessageSourceThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
@@ -1258,7 +1254,7 @@ class PooledStreamingEventProcessorTest {
                .atMost(Duration.ofSeconds(5))
                .until(() -> testSubject.processingStatus().get(0).isCaughtUp());
         // Validate the token is stored
-        verify(tokenStore, timeout(5000)).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+        verify(tokenStore, timeout(5000).atLeast(1)).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
     }
 
     @Test

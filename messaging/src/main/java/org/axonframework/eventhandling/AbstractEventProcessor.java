@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +66,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
-    protected final SpanFactory spanFactory;
+    protected final EventProcessorSpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractEventProcessor} based on the fields contained in the {@link Builder}.
@@ -162,39 +163,47 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                        UnitOfWork<? extends EventMessage<?>> unitOfWork,
                                        Collection<Segment> processingSegments) throws Exception {
-        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
-            MessageMonitor.MonitorCallback monitorCallback =
-                    messageMonitor.onMessageIngested(unitOfWork.getMessage());
-            return new DefaultInterceptorChain<>(
-                    unitOfWork,
-                    interceptors,
-                    m -> spanFactory.createInternalSpan(this::getSpanName, m).runCallable(() -> {
-                        try {
-                            for (Segment processingSegment : processingSegments) {
-                                eventHandlerInvoker.handle(m, processingSegment);
-                            }
-                            monitorCallback.reportSuccess();
-                            return null;
-                        } catch (Exception exception) {
-                            monitorCallback.reportFailure(exception);
-                            throw exception;
-                        }
-                    })).proceed();
-        }, rollbackConfiguration);
+        spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
+            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
+                MessageMonitor.MonitorCallback monitorCallback = messageMonitor
+                        .onMessageIngested(unitOfWork.getMessage());
+                return new DefaultInterceptorChain<>(
+                        unitOfWork,
+                        interceptors,
+                        m -> processMessageInUnitOfWork(processingSegments, m, monitorCallback))
+                        .proceed();
+            }, rollbackConfiguration);
 
-        if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.exceptionResult();
-            if (unitOfWork.isRolledBack()) {
-                errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
-            } else {
-                logger.info("Exception occurred while processing a message, but unit of work was committed. {}",
+            if (resultMessage.isExceptional()) {
+                Throwable e = resultMessage.exceptionResult();
+                if (unitOfWork.isRolledBack()) {
+                    errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
+                } else {
+                    logger.info(
+                            "Exception occurred while processing a message, but unit of work was committed. {}",
                             e.getClass().getName());
+                }
             }
-        }
+            return null;
+        });
+
     }
 
-    private String getSpanName() {
-        return getClass().getSimpleName() + "[" + getName() + "].process";
+    private Object processMessageInUnitOfWork(Collection<Segment> processingSegments, EventMessage<?> message,
+                                              MessageMonitor.MonitorCallback monitorCallback) throws Exception {
+        return spanFactory.createHandleEventSpan(this instanceof StreamingEventProcessor, message).runCallable(() -> {
+            try {
+                for (Segment processingSegment : processingSegments) {
+                    eventHandlerInvoker.handle(message, processingSegment);
+                }
+                monitorCallback.reportSuccess();
+                return null;
+            } catch (Exception exception) {
+                monitorCallback.reportFailure(
+                        exception);
+                throw exception;
+            }
+        });
     }
 
     /**
@@ -235,7 +244,9 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         private RollbackConfiguration rollbackConfiguration;
         private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
+                                                                                        .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                        .build();
 
         /**
          * Sets the {@code name} of this {@link EventProcessor} implementation.
@@ -310,13 +321,28 @@ public abstract class AbstractEventProcessor implements EventProcessor {
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(EventProcessorSpanFactory) for more configuration options instead
          */
+       @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultEventProcessorSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;
         }
-
         /**
          * Validates whether the fields contained in this Builder are set accordingly.
          *
