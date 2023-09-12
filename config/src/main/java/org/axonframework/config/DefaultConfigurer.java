@@ -630,7 +630,7 @@ public class DefaultConfigurer implements Configurer {
      * {@link DefaultRepositorySpanFactory} backed by the configured {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
-     * @return The default {@link SagaManagerSpanFactory}.
+     * @return The default {@link RepositorySpanFactory}.
      */
     protected RepositorySpanFactory defaultRepositorySpanFactory(Configuration config) {
         return defaultComponent(RepositorySpanFactory.class, this.config)
