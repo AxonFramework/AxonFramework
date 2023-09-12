@@ -580,6 +580,7 @@
                     <encoding>UTF-8</encoding>
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
             <!-- test -->
