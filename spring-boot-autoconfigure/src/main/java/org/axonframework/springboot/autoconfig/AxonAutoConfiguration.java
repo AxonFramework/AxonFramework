@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -32,6 +33,7 @@ import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -55,9 +57,11 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
@@ -73,7 +77,6 @@ import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.SerializerProperties;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
-import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -242,7 +245,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return EmbeddedEventStore.builder()
                                  .storageEngine(storageEngine)
                                  .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
-                                 .spanFactory(configuration.spanFactory())
+                                 .spanFactory(configuration.getComponent(EventBusSpanFactory.class))
                                  .build();
     }
 
@@ -263,7 +266,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     public SimpleEventBus eventBus(Configuration configuration) {
         return SimpleEventBus.builder()
                              .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
-                             .spanFactory(configuration.spanFactory())
+                             .spanFactory(configuration.getComponent(EventBusSpanFactory.class))
                              .build();
     }
 
@@ -400,7 +403,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 SimpleCommandBus.builder()
                                 .transactionManager(txManager)
                                 .duplicateCommandHandlerResolver(duplicateCommandHandlerResolver)
-                                .spanFactory(axonConfiguration.spanFactory())
+                                .spanFactory(axonConfiguration.getComponent(CommandBusSpanFactory.class))
                                 .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
                                 .build();
         commandBus.registerHandlerInterceptor(
@@ -421,7 +424,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                      () -> LoggingQueryInvocationErrorHandler.builder().build()
                              ))
                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
-                             .spanFactory(axonConfiguration.spanFactory())
+                             .spanFactory(axonConfiguration.getComponent(QueryBusSpanFactory.class))
                              .build();
     }
 
@@ -431,7 +434,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                        .updateMessageMonitor(configuration.messageMonitor(
                                                QueryUpdateEmitter.class, "queryUpdateEmitter"
                                        ))
-                                       .spanFactory(configuration.spanFactory())
+                                       .spanFactory(configuration.getComponent(QueryUpdateEmitterSpanFactory.class))
                                        .build();
     }
 

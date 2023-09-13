@@ -25,6 +25,7 @@ import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfi
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -36,10 +37,12 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.TagsConfiguration;
+import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.slf4j.Logger;
@@ -95,7 +98,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                    .eventSerializer(c.eventSerializer())
                                    .snapshotFilter(c.snapshotFilter())
                                    .upcasterChain(c.upcasterChain())
-                                   .spanFactory(c.spanFactory())
+                                   .spanFactory(c.getComponent(EventBusSpanFactory.class))
                                    .build();
     }
 
@@ -110,7 +113,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                 .transactionManager(c.getComponent(
                                         TransactionManager.class, NoTransactionManager::instance
                                 ))
-                                .spanFactory(c.spanFactory())
+                                .spanFactory(c.getComponent(CommandBusSpanFactory.class))
                                 .build();
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
         return AxonServerCommandBus.builder()
@@ -130,7 +133,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                            () -> command -> CommandLoadFactorProvider.DEFAULT_VALUE
                                    ))
                                    .targetContextResolver(c.getComponent(TargetContextResolver.class))
-                                   .spanFactory(c.spanFactory())
+                                   .spanFactory(c.getComponent(CommandBusSpanFactory.class))
                                    .build();
     }
 
@@ -145,7 +148,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                       () -> LoggingQueryInvocationErrorHandler.builder().build()
                               ))
                               .queryUpdateEmitter(c.queryUpdateEmitter())
-                              .spanFactory(c.spanFactory())
+                              .spanFactory(c.getComponent(QueryBusSpanFactory.class))
                               .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
                               .build();
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
@@ -161,7 +164,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                          QueryPriorityCalculator::defaultQueryPriorityCalculator
                                  ))
                                  .targetContextResolver(c.getComponent(TargetContextResolver.class))
-                                 .spanFactory(c.spanFactory())
+                                 .spanFactory(c.getComponent(QueryBusSpanFactory.class))
                                  .build();
     }
 

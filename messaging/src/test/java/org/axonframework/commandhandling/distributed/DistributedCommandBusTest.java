@@ -17,9 +17,11 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
@@ -70,15 +72,19 @@ class DistributedCommandBusTest {
     private Member mockMember;
 
     private TestSpanFactory spanFactory;
+    private CommandBusSpanFactory commandBusSpanFactory;
 
     @BeforeEach
     void setUp() {
         spanFactory = new TestSpanFactory();
+        commandBusSpanFactory = DefaultCommandBusSpanFactory.builder()
+                                                            .spanFactory(spanFactory)
+                                                            .build();
         testSubject = DistributedCommandBus.builder()
                                            .commandRouter(mockCommandRouter)
                                            .connector(mockConnector)
                                            .messageMonitor(mockMessageMonitor)
-                                           .spanFactory(spanFactory)
+                                           .spanFactory(commandBusSpanFactory)
                                            .build();
     }
 
@@ -90,7 +96,7 @@ class DistributedCommandBusTest {
         CountDownLatch waiter = new CountDownLatch(1);
 
         testSubject.dispatch(testCommandMessage, (cm, result) -> {
-            spanFactory.verifySpanActive("DistributedCommandBus.dispatch", testCommandMessage);
+            spanFactory.verifySpanActive("CommandBus.dispatchDistributedCommand", testCommandMessage);
             waiter.countDown();
         });
         waiter.await();
@@ -101,11 +107,11 @@ class DistributedCommandBusTest {
         verify(mockMonitorCallback).reportSuccess();
         await().atMost(Duration.ofSeconds(3l))
                .untilAsserted(
-                       () -> spanFactory.verifySpanCompleted("DistributedCommandBus.dispatch")
+                       () -> spanFactory.verifySpanCompleted("CommandBus.dispatchDistributedCommand")
                );
         await().atMost(Duration.ofSeconds(3l))
                .untilAsserted(
-                       () -> spanFactory.verifySpanPropagated("DistributedCommandBus.dispatch", testCommandMessage)
+                       () -> spanFactory.verifySpanPropagated("CommandBus.dispatchDistributedCommand", testCommandMessage)
                );
     }
 
@@ -167,7 +173,7 @@ class DistributedCommandBusTest {
         testSubject = DistributedCommandBus.builder()
                                            .commandRouter(mockCommandRouter)
                                            .connector(mockConnector)
-                                           .spanFactory(spanFactory)
+                                           .spanFactory(commandBusSpanFactory)
                                            .build();
 
         testSubject.dispatch(testCommandMessage, callback);
@@ -184,7 +190,7 @@ class DistributedCommandBusTest {
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
-        spanFactory.verifySpanHasException("DistributedCommandBus.dispatch", NoHandlerForCommandException.class);
+        spanFactory.verifySpanHasException("CommandBus.dispatchDistributedCommand", NoHandlerForCommandException.class);
     }
 
     @Test
@@ -227,7 +233,7 @@ class DistributedCommandBusTest {
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
-        spanFactory.verifySpanHasException("DistributedCommandBus.dispatch", RuntimeException.class);
+        spanFactory.verifySpanHasException("CommandBus.dispatchDistributedCommand", RuntimeException.class);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.axonserver.connector.utils.PlatformService;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -42,6 +43,7 @@ import org.axonframework.serialization.upcasting.event.ContextAwareSingleEventUp
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
@@ -107,7 +109,9 @@ class AxonServerEventStoreTest {
                                           .eventSerializer(JacksonSerializer.defaultSerializer())
                                           .snapshotSerializer(TestSerializer.xStreamSerializer())
                                           .snapshotFilter(SnapshotFilter.allowAll())
-                                          .spanFactory(testSpanFactory)
+                                          .spanFactory(DefaultEventBusSpanFactory.builder()
+                                                                                 .spanFactory(testSpanFactory)
+                                                                                 .build())
                                           .build();
     }
 
@@ -125,15 +129,11 @@ class AxonServerEventStoreTest {
                 GenericEventMessage.asEventMessage("Test3")};
         testSubject.publish(eventMessages);
         Arrays.stream(eventMessages).forEach(e -> {
-            testSpanFactory.verifySpanCompleted("AxonServerEventStore.publish", e);
+            testSpanFactory.verifySpanCompleted("EventBus.publishEvent", e);
         });
-        testSpanFactory.verifyNotStarted("AxonServerEventStore.prepareCommit");
-        testSpanFactory.verifyNotStarted("AxonServerEventStore.commit");
-        testSpanFactory.verifyNotStarted("AxonServerEventStore.afterCommit");
+        testSpanFactory.verifyNotStarted("EventBus.commitEvents");
         uow.commit();
-        testSpanFactory.verifySpanCompleted("AxonServerEventStore.prepareCommit");
-        testSpanFactory.verifySpanCompleted("AxonServerEventStore.commit");
-        testSpanFactory.verifySpanCompleted("AxonServerEventStore.afterCommit");
+        testSpanFactory.verifySpanCompleted("EventBus.commitEvents");
 
         TrackingEventStream stream = testSubject.openStream(null);
 

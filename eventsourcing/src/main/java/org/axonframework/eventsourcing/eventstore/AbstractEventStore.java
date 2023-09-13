@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,8 +184,10 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     /**
      * Abstract Builder class to instantiate an {@link AbstractEventStore}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to an {@link NoOpMessageMonitor} and the {@link SpanFactory} defaults to
-     * a {@link NoOpSpanFactory}. The {@link EventStorageEngine} is a
+     * The {@link MessageMonitor} is defaulted to an {@link NoOpMessageMonitor} and the
+     * {@link org.axonframework.eventhandling.EventBusSpanFactory} defaults to a
+     * {@link org.axonframework.eventhandling.DefaultEventBusSpanFactory} backed by a {@link NoOpSpanFactory}. The
+     * {@link EventStorageEngine} is a
      * <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder extends AbstractEventBus.Builder {

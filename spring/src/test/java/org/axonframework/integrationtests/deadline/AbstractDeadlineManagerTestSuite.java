@@ -24,6 +24,7 @@ import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Timestamp;
@@ -47,6 +48,7 @@ import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
@@ -105,7 +107,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
         spanFactory = new TestSpanFactory();
         EventStore eventStore = spy(EmbeddedEventStore.builder()
                                                       .storageEngine(new InMemoryEventStorageEngine())
-                                                      .spanFactory(spanFactory)
+                                                      .spanFactory(DefaultEventBusSpanFactory
+                                                                           .builder()
+                                                                           .spanFactory(spanFactory).build())
                                                       .build());
         List<CorrelationDataProvider> correlationDataProviders = new ArrayList<>();
         correlationDataProviders.add(new MessageOriginProvider());

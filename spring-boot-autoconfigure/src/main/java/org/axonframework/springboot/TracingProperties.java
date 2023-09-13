@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
@@ -32,6 +33,16 @@ public class TracingProperties {
      * Properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
      */
     private SnapshotterProperties snapshotter = new SnapshotterProperties();
+
+    /**
+     * Properties describing the tracing settings for the {@link CommandBus}.
+     */
+    private CommandBusProperties commandBus = new CommandBusProperties();
+
+    /**
+     * Properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     */
+    private QueryBusProperties queryBus = new QueryBusProperties();
 
     /**
      * Whether to show event sourcing handlers in traces. This can be very noisy, especially when larger aggregates are
@@ -76,6 +87,40 @@ public class TracingProperties {
     }
 
     /**
+     * Returns the properties describing the tracing settings for the {@link CommandBus}.
+     *
+     * @return The properties describing the tracing settings for the {@link CommandBus}.
+     */
+    public CommandBusProperties getCommandBus() {
+        return commandBus;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the {@link CommandBus}.
+     *
+     * @param commandBus The properties describing the tracing settings for the {@link CommandBus}.
+     */
+    public void setCommandBus(CommandBusProperties commandBus) {
+        this.commandBus = commandBus;
+    }
+
+    /**
+     * Returns the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     * @return the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     */
+    public QueryBusProperties getQueryBus() {
+        return queryBus;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     * @param queryBus the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     */
+    public void setQueryBus(QueryBusProperties queryBus) {
+        this.queryBus = queryBus;
+    }
+
+    /**
      * Getting value for showing event sourcing handlers in traces.
      *
      * @return Whether event sourcing handlers should show up on traces.
@@ -112,8 +157,8 @@ public class TracingProperties {
     }
 
     /**
-     * The time limit set on nested handlers inside dispatching trace.
-     * Only affects events and deadlines, other messages are always nested.
+     * The time limit set on nested handlers inside dispatching trace. Only affects events and deadlines, other messages
+     * are always nested.
      *
      * @return For how long event messages should be nested in their dispatching trace.
      */
@@ -339,6 +384,70 @@ public class TracingProperties {
          */
         public void setAggregateTypeInSpanName(boolean aggregateTypeInSpanName) {
             this.aggregateTypeInSpanName = aggregateTypeInSpanName;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.commandhandling.CommandBus}.
+     *
+     * @since 4.9.0
+     */
+    public static class CommandBusProperties {
+
+        /**
+         * Whether distributed commands should be part of the same trace.
+         */
+        private boolean distributedInSameTrace = true;
+
+        /**
+         * Whether distributed commands should be part of the same trace. Defaults to {@code true}.
+         *
+         * @return whether distributed commands should be part of the same trace.
+         */
+        public boolean isDistributedInSameTrace() {
+            return distributedInSameTrace;
+        }
+
+        /**
+         * Sets whether distributed commands should be part of the same trace.
+         *
+         * @param distributedInSameTrace whether distributed commands should be part of the same trace.
+         */
+        public void setDistributedInSameTrace(boolean distributedInSameTrace) {
+            this.distributedInSameTrace = distributedInSameTrace;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.queryhandling.QueryBus}.
+     *
+     * @since 4.9.0
+     */
+    public static class QueryBusProperties {
+
+        /**
+         * Whether distributed queries should be part of the same trace.
+         */
+        private boolean distributedInSameTrace = true;
+        
+        /**
+         * Whether distributed queries should be part of the same trace. Defaults to {@code true}.
+         *
+         * @return whether distributed queries should be part of the same trace.
+         */
+        public boolean isDistributedInSameTrace() {
+            return distributedInSameTrace;
+        }
+
+        /**
+         * Sets whether distributed queries should be part of the same trace.
+         *
+         * @param distributedInSameTrace whether distributed queries should be part of the same trace.
+         */
+        public void setDistributedInSameTrace(boolean distributedInSameTrace) {
+            this.distributedInSameTrace = distributedInSameTrace;
         }
     }
 }
