@@ -19,17 +19,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-        
+        uses: actions/checkout@v2
+
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v2
         with:
           node-version: '20'
 
       - name: Install vale
         run: |
-          wget https://github.com/errata-ai/vale/releases/download/v2.23.0/vale_2.23.0_Linux_64-bit.tar.gz
-          sudo tar -xvzf vale_2.23.0_Linux_64-bit.tar.gz -C /usr/local/bin vale
+            wget https://github.com/errata-ai/vale/releases/download/v2.23.0/vale_2.23.0_Linux_64-bit.tar.gz
+            sudo tar -xvzf vale_2.23.0_Linux_64-bit.tar.gz -C /usr/local/bin vale
 
       - name: Generate Site
         run: |
