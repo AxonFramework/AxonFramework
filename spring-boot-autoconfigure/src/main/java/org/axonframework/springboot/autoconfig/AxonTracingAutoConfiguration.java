@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
+import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.springboot.TracingProperties;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -58,6 +60,17 @@ public class AxonTracingAutoConfiguration {
     @ConditionalOnMissingBean(SpanFactory.class)
     public SpanFactory spanFactory() {
         return NoOpSpanFactory.INSTANCE;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(SnapshotterSpanFactory.class)
+    public SnapshotterSpanFactory snapshotterSpanFactory(SpanFactory spanFactory, TracingProperties properties) {
+        return DefaultSnapshotterSpanFactory.builder()
+                                            .spanFactory(spanFactory)
+                                            .aggregateTypeInSpanName(properties.getSnapshotter()
+                                                                               .isAggregateTypeInSpanName())
+                                            .separateTrace(properties.getSnapshotter().isSeparateTrace())
+                                            .build();
     }
 
     @Bean

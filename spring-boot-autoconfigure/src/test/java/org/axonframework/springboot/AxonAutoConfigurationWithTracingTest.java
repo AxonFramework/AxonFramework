@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
+import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
@@ -234,6 +236,35 @@ class AxonAutoConfigurationWithTracingTest {
 
                     int numberOfProviders = context.getBeansOfType(SpanAttributesProvider.class).size();
                     Mockito.verify(spanFactory, Mockito.times(numberOfProviders)).registerSpanAttributeProvider(any());
+                });
+    }
+
+
+    @Test
+    void snapshotterSpanFactoryDefaultsToDefaultSnapshotterSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("snapshotterSpanFactory"));
+                    assertNotNull(context.getBean(SnapshotterSpanFactory.class));
+                    assertEquals(DefaultSnapshotterSpanFactory.class, context.getBean(SnapshotterSpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void snapshotterSpanFactoryCanBeOverriddenByUser() {
+        SnapshotterSpanFactory mock = Mockito.mock(SnapshotterSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(SnapshotterSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("snapshotterSpanFactory"));
+                    assertNotNull(context.getBean(SnapshotterSpanFactory.class));
+                    assertSame(context.getBean(SnapshotterSpanFactory.class), mock);
                 });
     }
 

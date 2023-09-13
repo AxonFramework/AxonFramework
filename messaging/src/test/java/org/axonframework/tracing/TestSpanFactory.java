@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -276,6 +276,7 @@ public class TestSpanFactory implements SpanFactory {
         private boolean ended;
         private Throwable exception;
         private AtomicInteger scopeCount = new AtomicInteger(-1);
+        private Map<String, String> attributes = new HashMap<>();
 
         public TestSpan(TestSpanType type, String name, Message<?> message) {
             this.type = type;
@@ -331,6 +332,28 @@ public class TestSpanFactory implements SpanFactory {
             logger.debug("Recorded exception for span with name {}", name, t);
             this.exception = t;
             return this;
+        }
+
+        @Override
+        public Span addAttribute(String key, String value) {
+            attributes.put(key, value);
+            return this;
+        }
+
+        public TestSpanType getType() {
+            return type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Map<String, String> getAttributes() {
+            return attributes;
+        }
+
+        public String getAttribute(String key) {
+            return attributes.get(key);
         }
 
         @Override

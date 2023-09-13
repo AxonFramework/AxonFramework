@@ -37,9 +37,7 @@ import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.AggregateSnapshotter;
-import org.axonframework.eventsourcing.Snapshotter;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -199,6 +197,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
         components.put(Snapshotter.class, new Component<>(config, "snapshotter", this::defaultSnapshotter));
         components.put(SpanFactory.class, new Component<>(config, "spanFactory", this::defaultSpanFactory));
+        components.put(SnapshotterSpanFactory.class, new Component<>(config, "snapshotterSpanFactory", this::defaultSnapshotterSpanFactory));
     }
 
     /**
@@ -515,6 +514,21 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
+     * Returns the default {@link SnapshotterSpanFactory}, or a {@link SnapshotterSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link SnapshotterSpanFactory}.
+     */
+    protected SnapshotterSpanFactory defaultSnapshotterSpanFactory(Configuration config) {
+        return defaultComponent(SnapshotterSpanFactory.class, this.config)
+                .orElseGet(() -> {
+                    return DefaultSnapshotterSpanFactory.builder()
+                            .spanFactory(config.spanFactory())
+                            .build();
+                });
+    }
+
+    /**
      * Provides the default Serializer implementation. Subclasses may override this method to provide their own
      * default.
      *
@@ -566,7 +580,7 @@ public class DefaultConfigurer implements Configurer {
                                                .aggregateFactories(aggregateFactories)
                                                .repositoryProvider(config::repository)
                                                .parameterResolverFactory(config.parameterResolverFactory())
-                                               .spanFactory(config.spanFactory())
+                                               .spanFactory(config.getComponent(SnapshotterSpanFactory.class))
                                                .handlerDefinition(retrieveHandlerDefinition(config,
                                                                                             aggregateConfigurations))
                                                .build();

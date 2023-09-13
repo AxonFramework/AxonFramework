@@ -41,6 +41,7 @@ import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.Snapshotter;
+import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -280,7 +281,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                                            ParameterResolverFactory parameterResolverFactory,
                                                            EventStore eventStore,
                                                            TransactionManager transactionManager,
-                                                           SpanFactory spanFactory) {
+                                                           SnapshotterSpanFactory spanFactory) {
         return SpringAggregateSnapshotter.builder()
                                          .repositoryProvider(configuration::repository)
                                          .transactionManager(transactionManager)
