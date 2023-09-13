@@ -125,7 +125,7 @@ class DefaultDeadlineManagerSpanFactoryTest
     }
 
     @Test
-    void testPropagateContext() {
+    void propagateContext() {
         DeadlineMessage<?> message = Mockito.mock(DeadlineMessage.class);
         testContextPropagation(message, DeadlineManagerSpanFactory::propagateContext);
     }

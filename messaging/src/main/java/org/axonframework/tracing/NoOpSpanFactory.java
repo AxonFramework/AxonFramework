@@ -73,7 +73,14 @@ public class NoOpSpanFactory implements SpanFactory {
         return message;
     }
 
+    /**
+     * The {@link Span} implementation that does nothing.
+     */
     public static class NoOpSpan implements Span {
+
+        /**
+         * Instance of a {@link NoOpSpan} that can be used to avoid creating new instances.
+         */
         public static final NoOpSpan INSTANCE = new NoOpSpan();
 
         @Override

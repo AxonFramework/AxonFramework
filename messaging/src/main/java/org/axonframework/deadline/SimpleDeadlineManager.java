@@ -307,6 +307,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
          * @deprecated Use {@link #spanFactory(DeadlineManagerSpanFactory)} instead as it provides more configuration
          * options.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = DefaultDeadlineManagerSpanFactory.builder().spanFactory(spanFactory).build();
