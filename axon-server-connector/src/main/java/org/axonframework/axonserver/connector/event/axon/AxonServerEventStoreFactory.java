@@ -19,6 +19,8 @@ package org.axonframework.axonserver.connector.event.axon;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
@@ -79,7 +81,7 @@ public class AxonServerEventStoreFactory {
      *     <li>The {@link Builder#eventSerializer(Serializer) event serializer} defaults to a {@link XStreamSerializer}</li>
      *     <li>The {@link Builder#upcasterChain(EventUpcaster) upcaster chain} defaults to a {@link NoOpEventUpcaster}</li>
      *     <li>The {@link Builder#messageMonitor(MessageMonitor) message monitor} defaults to a {@link NoOpMessageMonitor}</li>
-     *     <li>The {@link Builder#spanFactory(SpanFactory) span factory} defaults to a {@link NoOpSpanFactory}</li>
+     *     <li>The {@link Builder#spanFactory(EventBusSpanFactory) span factory} defaults to a {@link DefaultEventBusSpanFactory} using a {@link NoOpSpanFactory}.</li>
      * </ul>
      * The {@link AxonServerConfiguration}, {@link AxonServerConnectionManager}, and {@link SnapshotFilter} are <b>hard
      * requirements</b> and as such should be provided.
@@ -129,7 +131,7 @@ public class AxonServerEventStoreFactory {
      *     <li>The {@link Builder#eventSerializer(Serializer) event serializer} defaults to a {@link XStreamSerializer}.</li>
      *     <li>The {@link Builder#upcasterChain(EventUpcaster) upcaster chain} defaults to a {@link NoOpEventUpcaster}.</li>
      *     <li>The {@link Builder#messageMonitor(MessageMonitor) message monitor} defaults to a {@link NoOpMessageMonitor}.</li>
-     *     <li>The {@link Builder#spanFactory(SpanFactory) span factory} defaults to a {@link NoOpSpanFactory}.</li>
+     *     <li>The {@link Builder#spanFactory(EventBusSpanFactory) span factory} defaults to a {@link DefaultEventBusSpanFactory} using a {@link NoOpSpanFactory}.</li>
      * </ul>
      * The {@link AxonServerConfiguration}, {@link AxonServerConnectionManager}, and {@link SnapshotFilter} are <b>hard
      * requirements</b> and as such should be provided.
@@ -143,7 +145,9 @@ public class AxonServerEventStoreFactory {
         private EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private SnapshotFilter snapshotFilter;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private EventBusSpanFactory spanFactory = DefaultEventBusSpanFactory.builder()
+                                                                            .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                            .build();
 
         /**
          * Sets the {@link AxonServerConfiguration} describing the servers to connect with and how to manage flow
@@ -263,15 +267,16 @@ public class AxonServerEventStoreFactory {
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation used for providing tracing capabilities.
+         * Sets the {@link EventBusSpanFactory} implementation used for providing tracing capabilities.
          * <p>
-         * Defaults to a {@link NoOpSpanFactory}, which provides no tracing capabilities.
+         * Defaults to a {@link DefaultEventBusSpanFactory} using a {@link NoOpSpanFactory}, providing no tracing
+         * capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation used for providing tracing capabilities.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
+        public Builder spanFactory(@Nonnull EventBusSpanFactory spanFactory) {
+            assertNonNull(spanFactory, "EventBusSpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;
         }

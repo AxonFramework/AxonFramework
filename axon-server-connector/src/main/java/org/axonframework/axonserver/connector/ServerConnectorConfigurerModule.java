@@ -181,7 +181,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                           .messageMonitor(
                                                   config.messageMonitor(AxonServerEventStore.class, "eventStore")
                                           )
-                                          .spanFactory(config.spanFactory())
+                                          .spanFactory(config.getComponent(EventBusSpanFactory.class))
                                           .build();
     }
 

@@ -20,6 +20,8 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.AbstractEventBus;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStore;
@@ -31,7 +33,6 @@ import org.axonframework.serialization.TestSerializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.SpanFactory;
 import org.junit.jupiter.api.*;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
@@ -54,7 +55,7 @@ class AxonServerEventStoreFactoryTest {
     private SnapshotFilter snapshotFilter;
     private EventUpcaster upcasterChain;
     private MessageMonitor<? super EventMessage<?>> messageMonitor;
-    private SpanFactory spanFactory;
+    private EventBusSpanFactory spanFactory;
 
     private AxonServerEventStoreFactory testSubject;
 
@@ -69,7 +70,9 @@ class AxonServerEventStoreFactoryTest {
         snapshotFilter = SnapshotFilter.allowAll();
         upcasterChain = new EventUpcasterChain();
         messageMonitor = NoOpMessageMonitor.INSTANCE;
-        spanFactory = NoOpSpanFactory.INSTANCE;
+        spanFactory = DefaultEventBusSpanFactory.builder()
+                                                .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                .build();
 
         testSubject = AxonServerEventStoreFactory.builder()
                                                  .configuration(configuration)
@@ -119,7 +122,8 @@ class AxonServerEventStoreFactoryTest {
         MessageMonitor<? super EventMessage<?>> resultMessageMonitor =
                 getFieldValue(AbstractEventBus.class.getDeclaredField("messageMonitor"), result);
         assertEquals(messageMonitor, resultMessageMonitor);
-        SpanFactory resultSpanFactory = getFieldValue(AbstractEventBus.class.getDeclaredField("spanFactory"), result);
+        EventBusSpanFactory resultSpanFactory = getFieldValue(AbstractEventBus.class.getDeclaredField("spanFactory"),
+                                                              result);
         assertEquals(spanFactory, resultSpanFactory);
     }
 
@@ -247,10 +251,11 @@ class AxonServerEventStoreFactoryTest {
     }
 
     @Test
-    void buildWithNullSpanFactoryThrowsAxonConfigurationException() {
+    void buildWithNullEventBusSpanFactoryThrowsAxonConfigurationException() {
         AxonServerEventStoreFactory.Builder builderTestSubject = AxonServerEventStoreFactory.builder();
 
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory(null));
+        assertThrows(AxonConfigurationException.class,
+                     () -> builderTestSubject.spanFactory((EventBusSpanFactory) null));
     }
 }
