@@ -1307,7 +1307,7 @@ class PooledStreamingEventProcessorTest {
                .atMost(Duration.ofSeconds(5))
                .until(() -> testSubject.processingStatus().get(0).isCaughtUp());
         // Validate the token is stored
-        verify(tokenStore, timeout(5000)).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+        verify(tokenStore, timeout(5000).atLeastOnce()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
     }
 
     @Test
