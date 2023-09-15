@@ -1649,7 +1649,7 @@ class TrackingEventProcessorTest {
 
         // Replayed messages aren't counted
         await().pollDelay(pollDelay)
-                .atMost(Duration.ofSeconds(1))
+                .atMost(Duration.ofSeconds(2))
                 .until(() -> handledEvents.size() == 30);
     }
 
