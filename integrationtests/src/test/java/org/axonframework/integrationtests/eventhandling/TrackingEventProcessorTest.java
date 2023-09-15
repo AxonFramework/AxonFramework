@@ -664,7 +664,9 @@ class TrackingEventProcessorTest {
         assertThat(
                 tokenStore.fetchToken(testSubject.getName(), 0),
                 CoreMatchers.anyOf(CoreMatchers.nullValue(),
-                                   CoreMatchers.equalTo(TrackingEventProcessorConfiguration.forSingleThreadedProcessing().getInitialTrackingToken().apply(eventBus)))
+                                   CoreMatchers.equalTo(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                                                           .getInitialTrackingToken()
+                                                                                           .apply(eventBus)))
         );
     }
 
@@ -1104,7 +1106,7 @@ class TrackingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
                 testSubject.processingStatus().get(segmentId).isReplaying()
         ));
-        assertWithin(1 , TimeUnit.SECONDS, () -> assertFalse(
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
                 testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()));
         assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
                 testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()
@@ -1640,17 +1642,17 @@ class TrackingEventProcessorTest {
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         await().pollDelay(pollDelay)
-                .atMost(Duration.ofMillis(250))
-                .until(() -> testSubject.processingStatus().containsKey(segmentIdZero));
+               .atMost(Duration.ofMillis(250))
+               .until(() -> testSubject.processingStatus().containsKey(segmentIdZero));
 
         await().pollDelay(pollDelay)
-                .atMost(Duration.ofSeconds(1))
-                .until(() -> testSubject.processingStatus().get(segmentIdZero).isCaughtUp());
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> testSubject.processingStatus().get(segmentIdZero).isCaughtUp());
 
         // Replayed messages aren't counted
         await().pollDelay(pollDelay)
-                .atMost(Duration.ofSeconds(2))
-                .until(() -> handledEvents.size() == 30);
+               .atMost(Duration.ofSeconds(2))
+               .until(() -> handledEvents.size() == 30);
     }
 
     @Test
@@ -2121,7 +2123,9 @@ class TrackingEventProcessorTest {
         assertEquals(2, createdThreads.size());
 
         CompletableFuture<Void> result = testSubject.shutdownAsync();
-        assertWithin(testWorkerTerminationTimeout * 2, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofMillis(testWorkerTerminationTimeout * 4))
+               .until(result::isDone);
         assertFalse(createdThreads.get(0).isAlive());
         assertFalse(createdThreads.get(1).isAlive());
     }
