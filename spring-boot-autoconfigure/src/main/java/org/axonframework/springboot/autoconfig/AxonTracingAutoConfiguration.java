@@ -162,7 +162,7 @@ public class AxonTracingAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(EventProcessorSpanFactory.class)
     public EventProcessorSpanFactory eventProcessorSpanFactory(SpanFactory spanFactory,
-                                                       TracingProperties properties) {
+                                                               TracingProperties properties) {
         TracingProperties.EventProcessorProperties repositoryProps = properties.getEventProcessor();
         return DefaultEventProcessorSpanFactory.builder()
                                                .spanFactory(spanFactory)

@@ -412,9 +412,9 @@ class EventProcessingModuleTest {
             GenericEventMessage<Object> message = new GenericEventMessage<>("test");
             config.eventBus().publish(message);
 
-            spanFactory.verifySpanCompleted("SubscribingEventProcessor.handle");
+            spanFactory.verifySpanCompleted("EventProcessor.handle", message);
             assertWithin(2, TimeUnit.SECONDS,
-                         () -> spanFactory.verifySpanCompleted("SubscribingEventProcessor.handle"));
+                         () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.handle", message));
         } finally {
             config.shutdown();
         }

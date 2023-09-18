@@ -682,6 +682,7 @@ public class TracingProperties {
 
         /**
          * Disables the creation of a batch trace. This means each event is handled in its own trace.
+         * Defaults to {@code false}.
          */
         private boolean disableBatchTrace = false;
 

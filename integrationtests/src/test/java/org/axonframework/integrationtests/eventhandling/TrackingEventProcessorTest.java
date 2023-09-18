@@ -20,6 +20,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
@@ -329,6 +330,7 @@ class TrackingEventProcessorTest {
             Message<?> message = invocation.getArgument(0, Message.class);
             spanFactory.verifySpanActive("StreamingEventProcessor.batch");
             spanFactory.verifySpanActive("StreamingEventProcessor.handle", message);
+            spanFactory.verifySpanActive("EventProcessor.process", message);
             countDownLatch.countDown();
             return null;
         }).when(mockHandler).handle(any());
@@ -337,6 +339,7 @@ class TrackingEventProcessorTest {
         Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
+        spanFactory.verifySpanCompleted("EventProcessor.process");
         spanFactory.verifySpanCompleted("StreamingEventProcessor.batch");
     }
 

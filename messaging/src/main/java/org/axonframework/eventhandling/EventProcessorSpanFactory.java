@@ -25,7 +25,7 @@ import java.util.List;
 
 /**
  * Span factory that creates spans for the {@link EventProcessor} implementations. You can customize the spans of the
- * bus by creating your own implementation.
+ * event processors by creating your own implementation.
  *
  * @author Mitchell Herrijgers
  * @since 4.9.0
@@ -42,11 +42,19 @@ public interface EventProcessorSpanFactory {
     Span createBatchSpan(boolean streaming, List<? extends EventMessage<?>> eventMessages);
 
     /**
-     * Creates a span for the handling of an event.
+     * Creates a span for the handling of an event. This entails the entire interceptor chain and the handler.
+     * For just measuring the handler invocation, see {@link #createProcesEventSpan(EventMessage)}.
      *
      * @param streaming    Whether the event is handled by a {@link StreamingEventProcessor}.
      * @param eventMessage The event message that is handled.
      * @return The created span.
      */
     Span createHandleEventSpan(boolean streaming, EventMessage<?> eventMessage);
+
+    /**
+     * Creates a span for the processing of an event. This entails just the invocation handler.
+     * @param eventMessage The event message that is handled.
+     * @return The created span.
+     */
+    Span createProcesEventSpan(EventMessage<?> eventMessage);
 }

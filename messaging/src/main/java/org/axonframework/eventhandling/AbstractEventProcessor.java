@@ -165,13 +165,14 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                                        Collection<Segment> processingSegments) throws Exception {
         spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
             ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
-                MessageMonitor.MonitorCallback monitorCallback = messageMonitor
-                        .onMessageIngested(unitOfWork.getMessage());
-                return new DefaultInterceptorChain<>(
-                        unitOfWork,
-                        interceptors,
-                        m -> processMessageInUnitOfWork(processingSegments, m, monitorCallback))
-                        .proceed();
+                EventMessage<?> message = unitOfWork.getMessage();
+                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(message);
+                return spanFactory.createHandleEventSpan(this instanceof StreamingEventProcessor, message)
+                                  .runCallable(() -> new DefaultInterceptorChain<>(
+                                          unitOfWork,
+                                          interceptors,
+                                          m -> processMessageInUnitOfWork(processingSegments, m, monitorCallback))
+                                          .proceed());
             }, rollbackConfiguration);
 
             if (resultMessage.isExceptional()) {
@@ -191,7 +192,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
 
     private Object processMessageInUnitOfWork(Collection<Segment> processingSegments, EventMessage<?> message,
                                               MessageMonitor.MonitorCallback monitorCallback) throws Exception {
-        return spanFactory.createHandleEventSpan(this instanceof StreamingEventProcessor, message).runCallable(() -> {
+        return spanFactory.createProcesEventSpan(message).runCallable(() -> {
             try {
                 for (Segment processingSegment : processingSegments) {
                     eventHandlerInvoker.handle(message, processingSegment);
@@ -324,7 +325,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
          * @return The current Builder instance, for fluent interfacing.
          * @deprecated Use {@link #spanFactory(EventProcessorSpanFactory) for more configuration options instead
          */
-       @Deprecated
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = DefaultEventProcessorSpanFactory.builder().spanFactory(spanFactory).build();

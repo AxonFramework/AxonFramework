@@ -482,6 +482,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         @Override
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;

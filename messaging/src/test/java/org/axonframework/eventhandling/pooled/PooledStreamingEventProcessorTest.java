@@ -34,6 +34,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.axonframework.utils.InMemoryStreamableEventSource;
@@ -963,6 +964,14 @@ class PooledStreamingEventProcessorTest {
                                 .getPayload()
                                 .equals(answer.getArgument(1, Segment.class).getSegmentId())
         );
+    }
+
+    @Test
+    void buildWithNullSpanFactoryThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
+
+        //noinspection ConstantConditions
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory((SpanFactory) null));
     }
 
     @Test

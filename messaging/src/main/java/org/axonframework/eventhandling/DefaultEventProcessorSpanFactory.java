@@ -88,7 +88,7 @@
         @Override
         public Span createHandleEventSpan(boolean streaming, EventMessage<?> eventMessage) {
             if (!streaming) {
-                return spanFactory.createChildHandlerSpan(() -> "SubscribingEventProcessor.handle", eventMessage);
+                return spanFactory.createChildHandlerSpan(() -> "EventProcessor.handle", eventMessage);
             }
             Supplier<String> name = () -> "StreamingEventProcessor.handle";
             if (distributedInSameTrace) {
@@ -105,6 +105,10 @@
             return spanFactory.createChildHandlerSpan(name, eventMessage);
         }
 
+        @Override
+        public Span createProcesEventSpan(EventMessage<?> eventMessage) {
+            return spanFactory.createInternalSpan(() -> "EventProcessor.process", eventMessage);
+        }
 
         /**
          * Builder class to instantiate a {@link DefaultEventProcessorSpanFactory}. The default values are:
@@ -137,7 +141,7 @@
             /**
              * Sets whether batch tracing should be disabled. Defaults to {@code false}. The result will be a root span for
              * each event message in a batch. You might lose information about actions done in the commit phase during
-             * processing of the event.
+             * processing of the event when set to true.
              *
              * @param disableBatchTrace Whether batch tracing should be disabled
              * @return The current Builder instance, for fluent interfacing.

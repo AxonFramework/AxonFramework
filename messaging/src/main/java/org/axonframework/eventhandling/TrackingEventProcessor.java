@@ -945,6 +945,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
 
         @Override
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
