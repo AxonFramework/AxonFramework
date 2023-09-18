@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,12 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.axoniq.axonserver.grpc.query.QueryProviderOutbound.newBuilder;
 
@@ -54,6 +58,8 @@ import static io.axoniq.axonserver.grpc.query.QueryProviderOutbound.newBuilder;
  * @since 4.0
  */
 public class SubscriptionMessageSerializer {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final AxonServerConfiguration configuration;
     private final Serializer messageSerializer;
@@ -136,10 +142,14 @@ public class SubscriptionMessageSerializer {
             updateMessageBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
-            subscriptionQueryUpdateMessage.exceptionDetails()
-                                          .ifPresent(details -> updateMessageBuilder.setPayload(
-                                                  exceptionDetailsSerializer.apply(details)
-                                          ));
+            Optional<Object> optionalDetails = subscriptionQueryUpdateMessage.exceptionDetails();
+            if (optionalDetails.isPresent()) {
+                updateMessageBuilder.setPayload(exceptionDetailsSerializer.apply(optionalDetails.get()));
+            } else {
+                logger.warn("Serializing exception [{}] without details.", exceptionResult.getClass(), exceptionResult);
+                logger.info("To share exceptional information with the recipient it is recommended to wrap the "
+                                    + "exception in a QueryExecutionException with provided details.");
+            }
         } else {
             updateMessageBuilder.setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage));
         }
@@ -212,7 +222,7 @@ public class SubscriptionMessageSerializer {
 
         return SubscriptionQuery.newBuilder()
                                 .setSubscriptionIdentifier(subscriptionQueryMessage.getIdentifier())
-                                .setNumberOfPermits(configuration.getInitialNrOfPermits())
+                                .setNumberOfPermits(configuration.getQueryFlowControl().getPermits())
                                 .setUpdateResponseType(
                                         responseTypeSerializer.apply(subscriptionQueryMessage.getUpdateResponseType())
                                 )
@@ -236,8 +246,14 @@ public class SubscriptionMessageSerializer {
             responseBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
-            initialResult.exceptionDetails()
-                         .ifPresent(details -> responseBuilder.setPayload(exceptionDetailsSerializer.apply(details)));
+            Optional<Object> optionalDetails = initialResult.exceptionDetails();
+            if (optionalDetails.isPresent()) {
+                responseBuilder.setPayload(exceptionDetailsSerializer.apply(optionalDetails.get()));
+            } else {
+                logger.warn("Serializing exception [{}] without details.", exceptionResult.getClass(), exceptionResult);
+                logger.info("To share exceptional information with the recipient it is recommended to wrap the "
+                                    + "exception in a QueryExecutionException with provided details.");
+            }
         } else {
             responseBuilder.setPayload(payloadSerializer.apply(initialResult));
         }

@@ -20,6 +20,7 @@ import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
+import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
@@ -75,6 +76,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
             return new InMemoryTokenStore();
         });
         configurer.registerComponent(TargetContextResolver.class, configuration -> TargetContextResolver.noOp());
+        configurer.registerComponent(AxonServerEventStoreFactory.class, this::buildEventStoreFactory);
     }
 
     private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
@@ -164,6 +166,23 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                  .targetContextResolver(c.getComponent(TargetContextResolver.class))
                                  .spanFactory(c.getComponent(QueryBusSpanFactory.class))
                                  .build();
+    }
+
+    private AxonServerEventStoreFactory buildEventStoreFactory(Configuration config) {
+        return AxonServerEventStoreFactory.builder()
+                                          .configuration(config.getComponent(AxonServerConfiguration.class))
+                                          .connectionManager(
+                                                  config.getComponent(AxonServerConnectionManager.class)
+                                          )
+                                          .snapshotSerializer(config.serializer())
+                                          .eventSerializer(config.eventSerializer())
+                                          .snapshotFilter(config.snapshotFilter())
+                                          .upcasterChain(config.upcasterChain())
+                                          .messageMonitor(
+                                                  config.messageMonitor(AxonServerEventStore.class, "eventStore")
+                                          )
+                                          .spanFactory(config.getComponent(EventBusSpanFactory.class))
+                                          .build();
     }
 
     @Override

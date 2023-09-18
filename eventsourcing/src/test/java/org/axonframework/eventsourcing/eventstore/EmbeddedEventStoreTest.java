@@ -32,12 +32,12 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -54,6 +54,7 @@ import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEv
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Test suite validating the {@link EmbeddedEventStore}. Expects end users to make a concrete implementation choosing an
@@ -265,9 +266,10 @@ public abstract class EmbeddedEventStoreTest {
         TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable()); //now we should be tailing
         testSubject.publish(createEvents(CACHED_EVENTS)); //triggers event producer to open a stream
-        Thread.sleep(100);
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofMillis(500))
+               .until(stream::hasNextAvailable);
         reset(storageEngine);
-        assertTrue(stream.hasNextAvailable());
         TrackedEventMessage<?> firstEvent = stream.nextAvailable();
         verifyNoInteractions(storageEngine);
         testSubject.publish(createEvent(CACHED_EVENTS), createEvent(CACHED_EVENTS + 1));

@@ -21,13 +21,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.messaging.Message;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Token keeping track of the position before a reset was triggered. This allows for downstream components to detect
@@ -364,6 +364,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (currentToken != null) {
             return currentToken.position();
         }
-        return OptionalLong.empty();
+        // if we don't have a currentToken, we assume we're at the start
+        return OptionalLong.of(0);
     }
 }

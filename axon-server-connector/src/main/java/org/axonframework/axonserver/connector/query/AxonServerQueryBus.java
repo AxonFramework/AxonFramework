@@ -478,7 +478,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                .subscriptionQuery(
                                                        subscriptionSerializer.serializeQuery(interceptedQuery),
                                                        subscriptionSerializer.serializeUpdateType(interceptedQuery),
-                                                       configuration.getQueryFlowControl().getInitialNrOfPermits(),
+                                                       configuration.getQueryFlowControl().getPermits(),
                                                        configuration.getQueryFlowControl().getNrOfNewPermits()
                                                );
             return new AxonServerSubscriptionQueryResult<>(

@@ -17,10 +17,15 @@
 package org.axonframework.serialization;
 
 import com.fasterxml.jackson.annotation.JsonCreator.Mode;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
+import com.fasterxml.jackson.dataformat.cbor.CBORGenerator;
+import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.CompactDriver;
@@ -30,6 +35,8 @@ import java.beans.ConstructorProperties;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.EnumSet;
+
+import static com.fasterxml.jackson.dataformat.cbor.CBORGenerator.Feature.WRITE_TYPE_HEADER;
 
 /**
  * Enumeration of serializers for testing purposes.
@@ -49,13 +56,13 @@ public enum TestSerializer {
         }
 
         @Override
-        protected String serialize(Object object) {
-            return Base64.getEncoder().encodeToString(getSerializer().serialize(object, byte[].class).getData());
+        protected byte[] serialize(Object object) {
+            return getSerializer().serialize(object, byte[].class).getData();
         }
 
         @Override
-        protected <T> T deserialize(String serialized, Class<T> type) {
-            return getSerializer().deserialize(asSerializedData(Base64.getDecoder().decode(serialized), type));
+        protected <T> T deserialize(byte[] serialized, Class<T> type) {
+            return getSerializer().deserialize(asSerializedData(serialized, type));
         }
     },
     XSTREAM {
@@ -80,6 +87,18 @@ public enum TestSerializer {
             return serializer;
         }
     },
+    CBOR {
+        private final Serializer serializer = JacksonSerializer.builder()
+                .objectMapper(CBORMapper
+                        .builder()
+                        .findAndAddModules()
+                        .build()).build();
+
+        @Override
+        public Serializer getSerializer() {
+            return serializer;
+        }
+    },
     JACKSON_ONLY_ACCEPT_CONSTRUCTOR_PARAMETERS {
         private final Serializer serializer =
                 JacksonSerializer.builder()
@@ -92,12 +111,12 @@ public enum TestSerializer {
         }
     };
 
-    protected String serialize(Object object) {
-        return new String(getSerializer().serialize(object, byte[].class).getData());
+    protected byte[] serialize(Object object) {
+        return getSerializer().serialize(object, byte[].class).getData();
     }
 
-    protected <T> T deserialize(String serialized, Class<T> type) {
-        return getSerializer().deserialize(asSerializedData(serialized.getBytes(), type));
+    protected <T> T deserialize(byte[] serialized, Class<T> type) {
+        return getSerializer().deserialize(asSerializedData(serialized, type));
     }
 
     public abstract Serializer getSerializer();

@@ -401,7 +401,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
     }
 
-    private static class AxonIQEventStorageEngine extends AbstractEventStorageEngine {
+    static class AxonIQEventStorageEngine extends AbstractEventStorageEngine {
 
         private static final int ALLOW_SNAPSHOTS_MAGIC_VALUE = -42;
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
@@ -562,12 +562,12 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                   .eventChannel()
                                                   .openStream(
                                                           nextToken,
-                                                          configuration.getEventFlowControl().getInitialNrOfPermits(),
+                                                          configuration.getEventFlowControl().getPermits(),
                                                           configuration.getEventFlowControl().getNrOfNewPermits(),
                                                           configuration.isForceReadFromLeader()
                                                   );
 
-            return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isDisableEventBlacklisting());
+            return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isEventBlockListingEnabled());
         }
 
         public QueryResultStream query(String query, boolean liveUpdates) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import java.util.Optional;
  * <p>
  * This means the decision can be ignored entirely. As such the component enqueueing a letter will decide what to do
  * with it. In most scenarios this result in enqueueing the given {@code letter}, or keeping it in the queue.
+ * <p>
+ * Do not that an {@code EnqueueDecision} only impacts how, and if, to enqueue a dead letter, and nothing more.
  *
  * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead letter} that's been made a
  *            decision on.

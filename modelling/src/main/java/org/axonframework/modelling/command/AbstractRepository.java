@@ -34,7 +34,6 @@ import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -106,7 +105,14 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
             }
         });
 
-        A aggregate = doCreateNew(factoryMethod);
+        A aggregate;
+        try {
+            aggregate = doCreateNew(factoryMethod);
+        } catch (Exception e) {
+            logger.warn("Exception occurred while trying to create an aggregate.", e);
+            throw e;
+        }
+
         initMethod.accept(aggregate);
         aggregateReference.set(aggregate);
         Assert.isTrue(aggregateModel.entityClass().isAssignableFrom(aggregate.rootType()),
@@ -135,20 +141,27 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      */
     @Override
     public A load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
-        return spanFactory
-                .createLoadSpan(aggregateIdentifier)
-                .runSupplier(() -> {
-                    UnitOfWork<?> uow = currentUnitOfWork();
-                    Map<String, A> aggregates = managedAggregates(uow);
-                    A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
-                                                             s -> doLoad(aggregateIdentifier,
-                                                                         expectedVersion));
-                    uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
-                    validateOnLoad(aggregate, expectedVersion);
-                    prepareForCommit(aggregate);
+        return spanFactory.createLoadSpan(aggregateIdentifier)
+                          .runSupplier(() -> {
+                              UnitOfWork<?> uow = currentUnitOfWork();
+                              Map<String, A> aggregates = managedAggregates(uow);
+                              A aggregate = aggregates.computeIfAbsent(
+                                      aggregateIdentifier, s -> {
+                                          try {
+                                              return doLoad(aggregateIdentifier, expectedVersion);
+                                          } catch (Exception e) {
+                                              logger.warn("Exception occurred while trying to load a aggregate "
+                                                                  + "with identifier [{}].", aggregateIdentifier, e);
+                                              throw e;
+                                          }
+                                      }
+                              );
+                              uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
+                              validateOnLoad(aggregate, expectedVersion);
+                              prepareForCommit(aggregate);
 
-                    return aggregate;
-                });
+                              return aggregate;
+                          });
     }
 
 
@@ -156,17 +169,23 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod) {
         UnitOfWork<?> uow = currentUnitOfWork();
         Map<String, A> aggregates = managedAggregates(uow);
-        A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
-                                                 s -> {
-                                                     try {
-                                                         return doLoadOrCreate(aggregateIdentifier,
-                                                                               factoryMethod);
-                                                     } catch (RuntimeException e) {
-                                                         throw e;
-                                                     } catch (Exception e) {
-                                                         throw new RuntimeException(e);
-                                                     }
-                                                 });
+        A aggregate = aggregates.computeIfAbsent(
+                aggregateIdentifier,
+                s -> {
+                    try {
+                        return doLoadOrCreate(aggregateIdentifier,
+                                              factoryMethod);
+                    } catch (RuntimeException e) {
+                        logger.warn("Exception occurred while trying to load/create aggregate with identifier [{}].",
+                                    aggregateIdentifier, e);
+                        throw e;
+                    } catch (Exception e) {
+                        logger.warn("Exception occurred while trying to load/create aggregate with identifier [{}].",
+                                    aggregateIdentifier, e);
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
         uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
         prepareForCommit(aggregate);
 

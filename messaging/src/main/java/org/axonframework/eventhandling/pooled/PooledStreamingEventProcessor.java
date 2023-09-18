@@ -154,6 +154,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
+                                      .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment))
                                       .build();
     }
 
@@ -432,7 +433,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private Function<String, ScheduledExecutorService> workerExecutorBuilder;
         private int initialSegmentCount = 16;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
-                StreamableMessageSource::createTailToken;
+                ms -> ReplayToken.createReplayToken(ms.createHeadToken());
         private long tokenClaimInterval = 5000;
         private int maxClaimedSegments = Short.MAX_VALUE;
         private long claimExtensionThreshold = 5000;
@@ -624,11 +625,15 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         /**
          * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. The function will be
          * given the configured {@link StreamableMessageSource}' so that its methods can be invoked for token creation.
-         * Defaults to {@link StreamableMessageSource#createTailToken()}.
+         * <p>
+         * Defaults to an automatic replay since the start of the stream.
+         * <p>
+         * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
+         * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
+         * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
          *
-         * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given {@link
-         *                     StreamableMessageSource}
-         *
+         * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
+         *                     {@link StreamableMessageSource}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder initialToken(

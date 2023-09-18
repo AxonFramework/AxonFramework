@@ -351,7 +351,7 @@ class PooledStreamingEventProcessorTest {
     }
 
     private long tokenPosition(TrackingToken token) {
-        return token == null ? 0 : token.position().orElseThrow(IllegalArgumentException::new);
+        return token == null ? 0 : token.position().orElse(0);
     }
 
     @Test
@@ -853,9 +853,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2,
-                     TimeUnit.SECONDS,
-                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        await().atMost(Duration.ofSeconds(2L)).untilAsserted(
+                () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length)
+        );
         testSubject.shutDown();
 
         testSubject.resetTokens(expectedContext);
@@ -866,6 +866,9 @@ class PooledStreamingEventProcessorTest {
         // The token stays the same, as the original and token after reset are identical.
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
+        await().atMost(Duration.ofSeconds(2L)).untilAsserted(
+                () -> verify(stubEventHandler, times(2)).segmentReleased(any(Segment.class))
+        );
     }
 
     @Test
@@ -1149,9 +1152,9 @@ class PooledStreamingEventProcessorTest {
         List<EventMessage<Integer>> events = IntStream.range(0, 100)
                                                       .mapToObj(GenericEventMessage::new)
                                                       .collect(Collectors.toList());
-        events.forEach(stubMessageSource::publishMessage);
-
         testSubject.start();
+
+        events.forEach(stubMessageSource::publishMessage);
 
         assertWithin(
                 1, TimeUnit.SECONDS,
@@ -1207,6 +1210,52 @@ class PooledStreamingEventProcessorTest {
         assertTrue(Duration.between(startedProcessing.get(), now).getSeconds() >= 2);
     }
 
+    @Test
+    void existingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
+        setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
+
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+        //noinspection resource
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        IntStream.range(0, 3)
+                 .mapToObj(GenericEventMessage::new)
+                 .forEach(stubMessageSource::publishMessage);
+
+        testSubject.start();
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
+        TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
+        assertTrue(ReplayToken.isReplay(trackingToken),
+                   "Not a replay token: " + trackingToken);
+    }
+
+    @Test
+    void eventsPublishedAfterProcessorStartAreNotConsideredReplayed() throws Exception {
+        setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
+
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+        //noinspection resource
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(0));
+        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(1));
+
+        testSubject.start();
+
+        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(2));
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
+        TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
+        assertFalse(ReplayToken.isReplay(trackingToken),
+                    "Not a replay token: " + trackingToken);
+    }
+
+
     private void mockSlowEventHandler() throws Exception {
         doAnswer(invocation -> {
             Thread.sleep(1000);
@@ -1254,7 +1303,7 @@ class PooledStreamingEventProcessorTest {
                .atMost(Duration.ofSeconds(5))
                .until(() -> testSubject.processingStatus().get(0).isCaughtUp());
         // Validate the token is stored
-        verify(tokenStore, timeout(5000).atLeast(1)).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+        verify(tokenStore, timeout(5000).atLeastOnce()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
     }
 
     @Test

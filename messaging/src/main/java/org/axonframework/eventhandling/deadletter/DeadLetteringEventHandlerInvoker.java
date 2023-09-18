@@ -43,8 +43,11 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -77,6 +80,9 @@ public class DeadLetteringEventHandlerInvoker
     private final EnqueuePolicy<EventMessage<?>> enqueuePolicy;
     private final TransactionManager transactionManager;
     private final boolean allowReset;
+    private final boolean sequenceIdentifierCacheEnabled;
+    private final int sequenceIdentifierCacheSize;
+    private final Map<Segment, SequenceIdentifierCache> sequenceIdentifierCache;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
 
     /**
@@ -91,6 +97,13 @@ public class DeadLetteringEventHandlerInvoker
         this.enqueuePolicy = builder.enqueuePolicy;
         this.transactionManager = builder.transactionManager;
         this.allowReset = builder.allowReset;
+        this.sequenceIdentifierCacheEnabled = builder.sequenceIdentifierCacheEnabled;
+        this.sequenceIdentifierCacheSize = builder.sequenceIdentifierCacheSize;
+        if (sequenceIdentifierCacheEnabled) {
+            sequenceIdentifierCache = new ConcurrentHashMap<>();
+        } else {
+            sequenceIdentifierCache = null;
+        }
     }
 
     /**
@@ -99,8 +112,9 @@ public class DeadLetteringEventHandlerInvoker
      * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the
      * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter, the
      * {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
-     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to
-     * {@code false}. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, and a
+     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, {@code allowReset} defaults to {@code false},
+     * {@code sequenceIdentifierCacheEnabled} defaults to {@code false} and  {@code sequenceIdentifierCacheSize}
+     * defaults to {@code 1024}. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, and a
      * {@link TransactionManager} are <b>hard requirements</b> and as such should be provided.
      *
      * @return A builder that can construct a {@link DeadLetteringEventHandlerInvoker}.
@@ -116,32 +130,84 @@ public class DeadLetteringEventHandlerInvoker
                          message.getIdentifier(), segment);
             return;
         }
-
         Object sequenceIdentifier = super.sequenceIdentifier(message);
-        if (queue.enqueueIfPresent(sequenceIdentifier, () -> new GenericDeadLetter<>(sequenceIdentifier, message))) {
+        boolean mightBePresent = mightBePresent(sequenceIdentifier, segment);
+        if (isPresent(mightBePresent, sequenceIdentifier, message)) {
             if (logger.isInfoEnabled()) {
                 logger.info("Event with id [{}] is added to the dead-letter queue "
                                     + "since its queue id [{}] is already present.",
                             message.getIdentifier(), sequenceIdentifier);
             }
+            markEnqueued(sequenceIdentifier, segment);
         } else {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Event [{}] with queue id [{}] is not present in the dead-letter queue."
-                                     + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
-                             message, sequenceIdentifier);
+            if (mightBePresent) {
+                markNotEnqueued(sequenceIdentifier, segment);
             }
-            try {
-                super.invokeHandlers(message);
-            } catch (Exception e) {
-                DeadLetter<EventMessage<?>> letter = new GenericDeadLetter<>(sequenceIdentifier, message, e);
-                EnqueueDecision<EventMessage<?>> decision = enqueuePolicy.decide(letter, e);
-                if (decision.shouldEnqueue()) {
-                    Throwable cause = decision.enqueueCause().orElse(null);
-                    queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause)));
-                } else if (logger.isInfoEnabled()) {
-                    logger.info("The enqueue policy decided not to dead letter event [{}].", message.getIdentifier());
-                }
+            invokeHandlers(message, segment, sequenceIdentifier);
+        }
+    }
+
+    /**
+     * If {@code mightBePresent} is {@code true} will check the {@link SequencedDeadLetterQueue} if the sequence is
+     * already present. It will enqueue the message if the sequence is already present.
+     *
+     * @param mightBePresent     this can be used as optimization, when {@code false} it will not check with the queue.
+     * @param sequenceIdentifier the sequence identifier of the {@code message}.
+     * @param message            the message, which will be enqueued if the sequence identifier is already present.
+     * @return {@code true} if the identifier was already present, and the message was enqueued as consequence, or
+     * {@code false} otherwise.
+     */
+    private boolean isPresent(boolean mightBePresent, Object sequenceIdentifier, EventMessage<?> message) {
+        return mightBePresent && queue.enqueueIfPresent(
+                sequenceIdentifier,
+                () -> new GenericDeadLetter<>(sequenceIdentifier, message)
+        );
+    }
+
+    private void invokeHandlers(@Nonnull EventMessage<?> message, @Nonnull Segment segment, Object sequenceIdentifier) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("Event [{}] with queue id [{}] is not present in the dead-letter queue."
+                                 + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
+                         message, sequenceIdentifier);
+        }
+        try {
+            super.invokeHandlers(message);
+        } catch (Exception e) {
+            DeadLetter<EventMessage<?>> letter = new GenericDeadLetter<>(sequenceIdentifier, message, e);
+            EnqueueDecision<EventMessage<?>> decision = enqueuePolicy.decide(letter, e);
+            if (decision.shouldEnqueue()) {
+                Throwable cause = decision.enqueueCause().orElse(null);
+                markEnqueued(sequenceIdentifier, segment);
+                queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause)));
+            } else if (logger.isInfoEnabled()) {
+                logger.info("The enqueue policy decided not to dead letter event [{}].", message.getIdentifier());
             }
+        }
+    }
+
+    private boolean mightBePresent(
+            @Nonnull Object sequenceIdentifier,
+            @Nonnull Segment segment
+    ) {
+        if (!sequenceIdentifierCacheEnabled) {
+            return true;
+        }
+        return sequenceIdentifierCache.computeIfAbsent(segment,
+                                                       k -> new SequenceIdentifierCache(segment.getSegmentId(),
+                                                                                        sequenceIdentifierCacheSize,
+                                                                                        queue))
+                                      .mightBePresent(sequenceIdentifier);
+    }
+
+    private void markEnqueued(@Nonnull Object sequenceIdentifier, @Nonnull Segment segment) {
+        if (sequenceIdentifierCacheEnabled) {
+            sequenceIdentifierCache.computeIfPresent(segment, (k, v) -> v.markEnqueued(sequenceIdentifier));
+        }
+    }
+
+    private void markNotEnqueued(@Nonnull Object sequenceIdentifier, @Nonnull Segment segment) {
+        if (sequenceIdentifierCacheEnabled) {
+            sequenceIdentifierCache.computeIfPresent(segment, (k, v) -> v.markNotEnqueued(sequenceIdentifier));
         }
     }
 
@@ -180,14 +246,26 @@ public class DeadLetteringEventHandlerInvoker
         return () -> interceptors.remove(interceptor);
     }
 
+    @Override
+    public void segmentReleased(Segment segment) {
+        if (sequenceIdentifierCacheEnabled) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Clearing the cache for segment [{}].", segment.getSegmentId());
+            }
+            sequenceIdentifierCache.remove(segment);
+        }
+        super.segmentReleased(segment);
+    }
+
     /**
      * Builder class to instantiate a {@link DeadLetteringEventHandlerInvoker}.
      * <p>
      * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the
      * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter, the
      * {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
-     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to
-     * {@code false}. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, and a
+     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, {@code allowReset} defaults to {@code false},
+     * {@code sequenceIdentifierCacheEnabled} defaults to {@code false} and {@code sequenceIdentifierCacheSize} used
+     * defaults to 1024. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, and a
      * {@link TransactionManager} are <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder extends SimpleEventHandlerInvoker.Builder<Builder> {
@@ -196,6 +274,8 @@ public class DeadLetteringEventHandlerInvoker
         private EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> Decisions.enqueue(truncated(cause));
         private TransactionManager transactionManager;
         private boolean allowReset = false;
+        private boolean sequenceIdentifierCacheEnabled = false;
+        private int sequenceIdentifierCacheSize = 1024;
 
         private Builder() {
             // The parent's error handler defaults to propagating the error.
@@ -257,6 +337,48 @@ public class DeadLetteringEventHandlerInvoker
          */
         public Builder allowReset(boolean allowReset) {
             this.allowReset = allowReset;
+            return this;
+        }
+
+        /**
+         * Enabled this {@link DeadLetteringEventHandlerInvoker} to cache sequence identifiers. If enabled, it will
+         * create a {@link SequenceIdentifierCache} per segment. The cache prevents calling
+         * {@link SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} when we can be sure the sequence
+         * identifier is not present. 
+         * <p>
+         * This can happen in two cases. Either we start with an empty {@link SequencedDeadLetterQueue}, 
+         * and we haven't enqueued this identifier yet. Or the queue was not empty at the start. 
+         * In this case, we can skip the identifier once we checked that we did not enqueue it before.
+         * If the identifier might be present, we always call the 
+         * SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} as the sequence might have been cleaned up in
+         * the meantime.
+         *
+         * @return The current Builder instance for fluent interfacing.
+         */
+        public Builder enableSequenceIdentifierCache() {
+            this.sequenceIdentifierCacheEnabled = true;
+            return this;
+        }
+
+        /**
+         * Sets the size of the cache. When there are already sequences stored in a dead-letter queue, we need to check
+         * for each sequence identifier if it's already included. This result is stored so we can skip a second "is enqueued" 
+         * check when we encounter the same sequence identifier. This method thus limits memory use of the cache. 
+         * The size defaults to {@code 1024}. 
+         * <p>
+         * If you have a lot of long-living aggregates, it might improve performance to increase the
+         * cache size at the cost of more memory use. If you only have aggregates that are short-lived, setting it
+         * to a lower value frees up memory, while it might not affect performance. 
+         * <p>
+         * This setting is applied per {@link Segment}.
+         * Note that this setting will only be used in combination with {@link #enableSequenceIdentifierCache()}, and
+         * when the {@link SequencedDeadLetterQueue} is not empty when constructing the cache.
+         *
+         * @param sequenceIdentifierCacheSize The size to keep track of sequence identifiers which are not present.
+         * @return The current Builder instance for fluent interfacing.
+         */
+        public Builder sequenceIdentifierCacheSize(int sequenceIdentifierCacheSize) {
+            this.sequenceIdentifierCacheSize = sequenceIdentifierCacheSize;
             return this;
         }
 

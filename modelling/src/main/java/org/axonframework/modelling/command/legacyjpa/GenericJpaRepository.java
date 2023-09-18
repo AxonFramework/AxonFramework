@@ -272,6 +272,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         }
 
         @Override
+        @Deprecated
         public Builder<T> spanFactory(SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;

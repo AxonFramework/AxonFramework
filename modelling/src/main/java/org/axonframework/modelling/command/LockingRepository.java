@@ -289,6 +289,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         }
 
         @Override
+        @Deprecated
         public Builder<T> spanFactory(SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;

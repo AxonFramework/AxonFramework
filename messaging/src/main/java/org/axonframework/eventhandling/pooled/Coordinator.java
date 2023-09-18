@@ -94,6 +94,7 @@ class Coordinator {
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final boolean coordinatorExtendsClaims;
+    private final Consumer<Segment> segmentReleasedAction;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState;
@@ -130,6 +131,7 @@ class Coordinator {
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
         this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
+        this.segmentReleasedAction = builder.segmentReleasedAction;
     }
 
     /**
@@ -381,11 +383,12 @@ class Coordinator {
         private Clock clock = GenericEventMessage.clock;
         private int maxClaimedSegments;
         private int initialSegmentCount = 16;
-        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
-                StreamableMessageSource::createTailToken;
+        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
+        private Consumer<Segment> segmentReleasedAction = segment -> {
+        };
 
         /**
          * The name of the processor this service coordinates for.
@@ -546,6 +549,7 @@ class Coordinator {
          *
          * @param initialSegmentCount an {@code int} specifying the initial segment count used to create segments on
          *                            start up
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder initialSegmentCount(int initialSegmentCount) {
@@ -554,8 +558,12 @@ class Coordinator {
         }
 
         /**
-         * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. Defaults to
-         * {@link StreamableMessageSource::createTailToken}
+         * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. Defaults to an automatic
+         * replay since the start of the stream.
+         * <p>
+         * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
+         * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
+         * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
          *                     {@link StreamableMessageSource}
@@ -573,6 +581,7 @@ class Coordinator {
          * actions. Defaults to a no-op.
          *
          * @param shutdownAction the action to perform when the coordinator is shut down
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder onShutdown(Runnable shutdownAction) {
@@ -586,10 +595,23 @@ class Coordinator {
          *
          * @param coordinatorExtendsClaims A flag dictating whether this coordinator will
          *                                 {@link WorkPackage#extendClaimIfThresholdIsMet() extend claims}.
+         *
          * @return The current Builder instance, for fluent interfacing.
          */
         Builder coordinatorClaimExtension(boolean coordinatorExtendsClaims) {
             this.coordinatorExtendsClaims = coordinatorExtendsClaims;
+            return this;
+        }
+
+        /**
+         * Registers an action to perform when a segment is released. Will override any previously registered actions.
+         * Defaults to a no-op.
+         *
+         * @param segmentReleasedAction the action to perform when a segment is released
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder segmentReleasedAction(Consumer<Segment> segmentReleasedAction) {
+            this.segmentReleasedAction = segmentReleasedAction;
             return this;
         }
 
@@ -628,12 +650,13 @@ class Coordinator {
 
     /**
      * A {@link Runnable} defining the entire coordination process dealt with by a {@link Coordinator}. This task will
-     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
+     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in
+     * this
      * sense means:
      * <ol>
      *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
      *     <li>{@link WorkPackage#extendClaimIfThresholdIsMet() Extend the claims} of all {@code WorkPackages} to relieve them of this effort.
-     *     This is an optimization activated through {@link Builder#coordinatorClaimExtension()}.</li>
+     *     This is an optimization activated through {@link Builder#coordinatorClaimExtension(boolean)}.</li>
      *     <li>Validating if there are {@link CoordinatorTask CoordinatorTasks} to run, and run a single one if there are any.</li>
      *     <li>Periodically checking for unclaimed segments, claim these and start a {@code WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
@@ -719,7 +742,7 @@ class Coordinator {
                         TrackingToken otherUnwrapped = WrappedToken.unwrapLowerBound(token);
 
                         streamStartPosition = streamStartPosition == null || otherUnwrapped == null
-                                ? null : streamStartPosition.lowerBound(otherUnwrapped);
+                                              ? null : streamStartPosition.lowerBound(otherUnwrapped);
                         logger.debug("Processor [{}] claimed {} for processing.", name, segment);
                         workPackages.computeIfAbsent(segment.getSegmentId(),
                                                      wp -> workPackageFactory.apply(segment, token));
@@ -1005,7 +1028,10 @@ class Coordinator {
                            }
                        })
                        .thenRun(() -> transactionManager.executeInTransaction(
-                               () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
+                               () -> {
+                                   tokenStore.releaseClaim(name, work.segment().getSegmentId());
+                                   segmentReleasedAction.accept(work.segment());
+                               }
                        ))
                        .exceptionally(throwable -> {
                            logger.info(

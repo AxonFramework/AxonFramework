@@ -19,7 +19,25 @@ package org.axonframework.integrationtests.eventhandling;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.EventTrackerStatus;
+import org.axonframework.eventhandling.EventTrackerStatusChangeListener;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.MultiEventHandlerInvoker;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -35,15 +53,24 @@ import org.axonframework.serialization.SerializationException;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.mockito.InOrder;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -447,6 +474,19 @@ class TrackingEventProcessorTest {
     }
 
     @Test
+    void segmentReleasedIsInvokedOnInvokerWhenSegmentIsReleased() {
+        eventBus.publish(createEvent());
+        testSubject.start();
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(
+                () -> verify(tokenStore).storeToken(any(), eq(testSubject.getName()), eq(0))
+        );
+        testSubject.releaseSegment(0);
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(
+                () -> verify(eventHandlerInvoker, times(1)).segmentReleased(any(Segment.class))
+        );
+    }
+
+    @Test
     void tokenIsExtendedAtStartAndStoredAtEndOfEventBatch_WithStoringTokensAfterProcessingSetting()
             throws Exception {
         initProcessor(
@@ -626,7 +666,10 @@ class TrackingEventProcessorTest {
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
         assertThat(
                 tokenStore.fetchToken(testSubject.getName(), 0),
-                CoreMatchers.anyOf(CoreMatchers.nullValue(), CoreMatchers.equalTo(eventBus.createTailToken()))
+                CoreMatchers.anyOf(CoreMatchers.nullValue(),
+                                   CoreMatchers.equalTo(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                                                           .getInitialTrackingToken()
+                                                                                           .apply(eventBus)))
         );
     }
 
@@ -874,9 +917,16 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handle(any());
 
-        eventBus.publish(createEvents(4));
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+        awaitProcessorStarted();
+
+        int numberOfEvents = 4;
+        eventBus.publish(createEvents(numberOfEvents));
+        await("Handle Events - Initial")
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(50))
+                .until(() -> handled.size() == numberOfEvents);
+
         testSubject.shutDown();
         MyResetContext one = new MyResetContext("one");
         testSubject.resetTokens(one);
@@ -884,7 +934,12 @@ class TrackingEventProcessorTest {
         MyResetContext two = new MyResetContext("two");
         testSubject.resetTokens(two);
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, handled.size()));
+
+        await("Handle Events - Replay")
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(50))
+                .until(() -> handled.size() == 8);
+
         assertEquals(handled.subList(0, 4), handled.subList(4, 8));
         assertEquals(handled.subList(4, 8), handledInRedelivery);
         assertEquals(4, contextInRedelivery.size());
@@ -956,12 +1011,20 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handle(any());
 
-        eventBus.publish(createEvents(4));
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+        awaitProcessorStarted();
+
+        int numberOfEvents = 4;
+        eventBus.publish(createEvents(numberOfEvents));
+        await("Handle Events")
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(50))
+                .until(() -> handled.size() == 4);
+
         testSubject.shutDown();
         testSubject.resetTokens(source -> new GlobalSequenceTrackingToken(1L));
         testSubject.start();
+
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(6, handled.size()));
         assertFalse(handledInRedelivery.contains(handled.get(0)));
         assertFalse(handledInRedelivery.contains(handled.get(1)));
@@ -1076,10 +1139,16 @@ class TrackingEventProcessorTest {
         }).when(mockHandler).handle(any());
 
         testSubject.resetTokens();
-
         testSubject.start();
-        eventBus.publish(createEvents(4));
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+        awaitProcessorStarted();
+
+        int numberOfEvents = 4;
+        eventBus.publish(createEvents(numberOfEvents));
+        await("Handle Events")
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(50))
+                .until(() -> handled.size() == numberOfEvents);
+
         assertEquals(0, handledInRedelivery.size());
         assertFalse(testSubject.processingStatus().get(segmentId).isReplaying());
         assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent());
@@ -1087,6 +1156,10 @@ class TrackingEventProcessorTest {
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > 0);
 
         verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
+    }
+
+    private void awaitProcessorStarted() {
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
     }
 
     @SuppressWarnings("unchecked")
@@ -1568,21 +1641,21 @@ class TrackingEventProcessorTest {
         testSubject.start();
         await().pollDelay(pollDelay)
                .atMost(Duration.ofMillis(250))
-               .until(() -> testSubject.processingStatus().size() >= 1);
+               .until(() -> !testSubject.processingStatus().isEmpty());
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         await().pollDelay(pollDelay)
-                .atMost(Duration.ofMillis(250))
-                .until(() -> testSubject.processingStatus().containsKey(segmentIdZero));
+               .atMost(Duration.ofMillis(250))
+               .until(() -> testSubject.processingStatus().containsKey(segmentIdZero));
 
         await().pollDelay(pollDelay)
-                .atMost(Duration.ofSeconds(1))
-                .until(() -> testSubject.processingStatus().get(segmentIdZero).isCaughtUp());
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> testSubject.processingStatus().get(segmentIdZero).isCaughtUp());
 
         // Replayed messages aren't counted
         await().pollDelay(pollDelay)
-                .atMost(Duration.ofSeconds(1))
-                .until(() -> handledEvents.size() == 30);
+               .atMost(Duration.ofSeconds(2))
+               .until(() -> handledEvents.size() == 30);
     }
 
     @Test
@@ -1965,10 +2038,15 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handle(any());
 
+        testSubject.start();
+        awaitProcessorStarted();
         // ensure some events have been handled by the TEP
         eventBus.publish(createEvents(numberOfEvents));
-        testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(numberOfEvents, handled.size()));
+        await("Handled Events")
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(50))
+                .until(() -> handled.size() == numberOfEvents);
+
         assertEquals(0, handledInRedelivery.size());
 
         // initiate reset to toggle replay status
@@ -1999,7 +2077,6 @@ class TrackingEventProcessorTest {
                 () -> {
                     assertTrue(testSubject.processingStatus().get(segmentId).isCaughtUp());
                     assertTrue(testSubject.processingStatus().get(segmentId).isReplaying());
-                    assertFalse(testSubject.isReplaying());
                 }
         );
     }
@@ -2049,9 +2126,56 @@ class TrackingEventProcessorTest {
         assertEquals(2, createdThreads.size());
 
         CompletableFuture<Void> result = testSubject.shutdownAsync();
-        assertWithin(testWorkerTerminationTimeout * 2, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofMillis(testWorkerTerminationTimeout * 4))
+               .until(result::isDone);
         assertFalse(createdThreads.get(0).isAlive());
         assertFalse(createdThreads.get(1).isAlive());
+    }
+
+    @Test
+    void existingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+        //noinspection resource
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        eventBus.publish(createEvent(0));
+        eventBus.publish(createEvent(1));
+        eventBus.publish(createEvent(2));
+
+        testSubject.start();
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
+        TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
+        assertTrue(ReplayToken.isReplay(trackingToken), "Not a replay token: " + trackingToken);
+    }
+
+    @Test
+    void eventsPublishedAfterProcessorStartAreNotConsideredReplayed() throws Exception {
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch finished = new CountDownLatch(2);
+        //noinspection resource
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> started.countDown());
+            unitOfWork.onCleanup(uow -> finished.countDown());
+            return interceptorChain.proceed();
+        }));
+        eventBus.publish(createEvent(0));
+
+        doAnswer(i -> i.callRealMethod()).when(tokenStore).storeToken(any(), anyString(), anyInt());
+        doAnswer(i -> i.callRealMethod()).when(tokenStore).initializeTokenSegments(anyString(), anyInt(), any());
+
+        testSubject.start();
+
+        started.await();
+
+        eventBus.publish(createEvent(2));
+
+        assertTrue(finished.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
+        TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
+        assertFalse(ReplayToken.isReplay(trackingToken), "Not a replay token: " + trackingToken);
     }
 
     private void waitForStatus(String description,

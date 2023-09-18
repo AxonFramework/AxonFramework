@@ -84,7 +84,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
      * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
      * which contains an {@link AxonThreadFactory}, the {@link TransactionManager} defaults to a
      * {@link NoTransactionManager}, and the {@link DeadlineManagerSpanFactory} is defaulted to a
-     * {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}.. The {@link ScopeAwareProvider} is
+     * {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}. The {@link ScopeAwareProvider} is
      * a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link SimpleDeadlineManager}
@@ -307,6 +307,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
          * @deprecated Use {@link #spanFactory(DeadlineManagerSpanFactory)} instead as it provides more configuration
          * options.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = DefaultDeadlineManagerSpanFactory.builder().spanFactory(spanFactory).build();
