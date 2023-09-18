@@ -421,7 +421,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * Builder class to instantiate a {@link DbSchedulerDeadlineManager}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link DefaultDeadlineManagerSpanFactory} defaults
-     * to a {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}.. The {@code useBinaryPojo} and {@code startScheduler} are defaulted to
+     * to a {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}. The {@code useBinaryPojo} and {@code startScheduler} are defaulted to
      * {@code true}.
      * <p>
      * The {@link JobScheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as
