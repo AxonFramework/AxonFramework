@@ -50,6 +50,16 @@ public class TracingProperties {
     private DeadlineManagerProperties deadlineManager = new DeadlineManagerProperties();
 
     /**
+     * Properties describing the tracing settings for the {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     */
+    private SagaManagerProperties sagaManager = new SagaManagerProperties();
+
+    /**
+     * Properties describing the tracing settings for the {@link org.axonframework.modelling.command.Repository}.
+     */
+    private RepositoryProperties repository = new RepositoryProperties();
+
+    /**
      * Whether to show event sourcing handlers in traces. This can be very noisy, especially when larger aggregates are
      * loaded without a snapshot in place. Use with care.
      */
@@ -144,6 +154,50 @@ public class TracingProperties {
      */
     public void setDeadlineManager(DeadlineManagerProperties deadlineManager) {
         this.deadlineManager = deadlineManager;
+    }
+
+    /**
+     * Returns the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     *
+     * @return the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     */
+    public SagaManagerProperties getSagaManager() {
+        return sagaManager;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     *
+     * @param sagaManager the properties describing the tracing settings for the
+     *                    {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     */
+    public void setSagaManager(SagaManagerProperties sagaManager) {
+        this.sagaManager = sagaManager;
+    }
+
+    /**
+     * Returns the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.command.Repository}.
+     *
+     * @return the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.command.Repository}.
+     */
+    public RepositoryProperties getRepository() {
+        return repository;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.command.Repository}.
+     *
+     * @param repository the properties describing the tracing settings for the
+     *                   {@link org.axonframework.modelling.command.Repository}.
+     */
+    public void setRepository(RepositoryProperties repository) {
+        this.repository = repository;
     }
 
     /**
@@ -528,6 +582,70 @@ public class TracingProperties {
          */
         public void setDeadlineScopeAttributeName(String deadlineScopeAttributeName) {
             this.deadlineScopeAttributeName = deadlineScopeAttributeName;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.modelling.command.Repository}.
+     *
+     * @since 4.9.0
+     */
+    public static class RepositoryProperties {
+
+        /**
+         * The name of the attribute used to store the aggregate id in the span. Defaults to {@code axon.aggregateId}.
+         */
+        private String aggregateIdAttributeName = "axon.deadlineId";
+
+        /**
+         * The name of the attribute used to store the aggregate id in the span. Defaults to {@code axon.aggregateId}.
+         *
+         * @return The name of the attribute used to store the aggregate id in the span.
+         */
+        public String getAggregateIdAttributeName() {
+            return aggregateIdAttributeName;
+        }
+
+        /**
+         * The name of the attribute used to store the aggregate id in the span. Defaults to {@code axon.aggregateId}.
+         *
+         * @param aggregateIdAttributeName The name of the attribute used to store the aggregate id in the span.
+         */
+        public void setAggregateIdAttributeName(String aggregateIdAttributeName) {
+            this.aggregateIdAttributeName = aggregateIdAttributeName;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     *
+     * @since 4.9.0
+     */
+    public static class SagaManagerProperties {
+
+        /**
+         * The name of the attribute used to store the saga id in the span. Defaults to {@code axon.sagaIdentifier}.
+         */
+        private String sagaIdentifierAttributeName = "axon.sagaIdentifier";
+
+        /**
+         * The name of the attribute used to store the saga id in the span. Defaults to {@code axon.sagaIdentifier}.
+         *
+         * @return The name of the attribute used to store the saga id in the span.
+         */
+        public String getSagaIdentifierAttributeName() {
+            return sagaIdentifierAttributeName;
+        }
+
+        /**
+         * The name of the attribute used to store the saga id in the span. Defaults to {@code axon.sagaIdentifier}.
+         *
+         * @param sagaIdentifierAttributeName The name of the attribute used to store the saga id in the span.
+         */
+        public void setSagaIdentifierAttributeName(String sagaIdentifierAttributeName) {
+            this.sagaIdentifierAttributeName = sagaIdentifierAttributeName;
         }
     }
 }

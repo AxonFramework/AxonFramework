@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -175,7 +176,7 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
                                                                              .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
                                                                              .eventBus(c.eventBus())
                                                                              .repositoryProvider(c::repository)
-                                                                             .spanFactory(c.spanFactory())
+                                                                             .spanFactory(c.getComponent(RepositorySpanFactory.class))
                                                                              .build());
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.modelling.saga.AbstractSagaManager;
 import org.axonframework.modelling.saga.AnnotatedSagaManager;
+import org.axonframework.modelling.saga.SagaManagerSpanFactory;
 import org.axonframework.modelling.saga.SagaRepository;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -230,7 +231,7 @@ public class SagaConfigurer<T> {
                                                .handlerDefinition(c.handlerDefinition(configurer.type))
                                                .listenerInvocationErrorHandler(eventProcessingConfiguration.listenerInvocationErrorHandler(
                                                        processingGroup()))
-                                               .spanFactory(configuration.spanFactory())
+                                               .spanFactory(configuration.getComponent(SagaManagerSpanFactory.class))
                                                .build();
                 };
             }

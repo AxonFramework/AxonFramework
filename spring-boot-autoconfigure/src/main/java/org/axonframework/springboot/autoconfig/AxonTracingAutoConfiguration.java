@@ -26,6 +26,10 @@ import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
+import org.axonframework.modelling.command.RepositorySpanFactory;
+import org.axonframework.modelling.saga.DefaultSagaManagerSpanFactory;
+import org.axonframework.modelling.saga.SagaManagerSpanFactory;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.DefaultQueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
@@ -75,31 +79,31 @@ public class AxonTracingAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(SnapshotterSpanFactory.class)
     public SnapshotterSpanFactory snapshotterSpanFactory(SpanFactory spanFactory, TracingProperties properties) {
+        TracingProperties.SnapshotterProperties snapshotterProps = properties.getSnapshotter();
         return DefaultSnapshotterSpanFactory.builder()
                                             .spanFactory(spanFactory)
-                                            .aggregateTypeInSpanName(properties.getSnapshotter()
-                                                                               .isAggregateTypeInSpanName())
-                                            .separateTrace(properties.getSnapshotter().isSeparateTrace())
+                                            .aggregateTypeInSpanName(snapshotterProps.isAggregateTypeInSpanName())
+                                            .separateTrace(snapshotterProps.isSeparateTrace())
                                             .build();
     }
 
     @Bean
     @ConditionalOnMissingBean(CommandBusSpanFactory.class)
     public CommandBusSpanFactory commandBusSpanFactory(SpanFactory spanFactory, TracingProperties properties) {
-        TracingProperties.CommandBusProperties commandBus = properties.getCommandBus();
+        TracingProperties.CommandBusProperties commandBusProps = properties.getCommandBus();
         return DefaultCommandBusSpanFactory.builder()
                                            .spanFactory(spanFactory)
-                                           .distributedInSameTrace(commandBus.isDistributedInSameTrace())
+                                           .distributedInSameTrace(commandBusProps.isDistributedInSameTrace())
                                            .build();
     }
 
     @Bean
     @ConditionalOnMissingBean(QueryBusSpanFactory.class)
     public QueryBusSpanFactory queryBusSpanFactory(SpanFactory spanFactory, TracingProperties properties) {
-        TracingProperties.QueryBusProperties commandBus = properties.getQueryBus();
+        TracingProperties.QueryBusProperties queryBusProps = properties.getQueryBus();
         return DefaultQueryBusSpanFactory.builder()
                                          .spanFactory(spanFactory)
-                                         .distributedInSameTrace(commandBus.isDistributedInSameTrace())
+                                         .distributedInSameTrace(queryBusProps.isDistributedInSameTrace())
                                          .build();
     }
 
@@ -123,12 +127,34 @@ public class AxonTracingAutoConfiguration {
     @ConditionalOnMissingBean(DeadlineManagerSpanFactory.class)
     public DeadlineManagerSpanFactory deadlineManagerSpanFactory(SpanFactory spanFactory,
                                                                  TracingProperties properties) {
-        TracingProperties.DeadlineManagerProperties deadlineManager = properties.getDeadlineManager();
+        TracingProperties.DeadlineManagerProperties deadlineManagerProps = properties.getDeadlineManager();
         return DefaultDeadlineManagerSpanFactory.builder()
                                                 .spanFactory(spanFactory)
-                                                .scopeAttribute(deadlineManager.getDeadlineScopeAttributeName())
-                                                .deadlineIdAttribute(deadlineManager.getDeadlineIdAttributeName())
+                                                .scopeAttribute(deadlineManagerProps.getDeadlineScopeAttributeName())
+                                                .deadlineIdAttribute(deadlineManagerProps.getDeadlineIdAttributeName())
                                                 .build();
+    }
+
+
+    @Bean
+    @ConditionalOnMissingBean(SagaManagerSpanFactory.class)
+    public SagaManagerSpanFactory sagaManagerSpanFactory(SpanFactory spanFactory,
+                                                         TracingProperties properties) {
+        TracingProperties.SagaManagerProperties sagaManagerProps = properties.getSagaManager();
+        return DefaultSagaManagerSpanFactory.builder()
+                                            .spanFactory(spanFactory)
+                                            .sagaIdentifierAttribute(sagaManagerProps.getSagaIdentifierAttributeName())
+                                            .build();
+    }
+    @Bean
+    @ConditionalOnMissingBean(RepositorySpanFactory.class)
+    public RepositorySpanFactory repositorySpanFactory(SpanFactory spanFactory,
+                                                       TracingProperties properties) {
+        TracingProperties.DeadlineManagerProperties repositoryProps = properties.getDeadlineManager();
+        return DefaultRepositorySpanFactory.builder()
+                                           .spanFactory(spanFactory)
+                                           .aggregateIdAttribute(repositoryProps.getDeadlineScopeAttributeName())
+                                           .build();
     }
 
     @Bean

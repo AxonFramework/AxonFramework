@@ -77,7 +77,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Instantiate a Builder to be able to create a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, the
-     * {@code identifierConverter} to {@link Function#identity()}, the {@link SpanFactory} defaults to a
+     * {@code identifierConverter} to {@link Function#identity()}, the {@link RepositorySpanFactory} is defaulted to a
+     * {@link org.axonframework.modelling.command.DefaultRepositorySpanFactory} backed by a
      * {@link org.axonframework.tracing.NoOpSpanFactory}, and sequence number generation is <b>enabled</b>.
      * <p>
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
@@ -194,8 +195,9 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Builder class to instantiate a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, the
-     * {@code identifierConverter} to {@link Function#identity()}, the {@link SpanFactory} defaults to a
-     * {@link org.axonframework.tracing.NoOpSpanFactory}, and sequence number generation is <b>enabled</b>.
+     * {@code identifierConverter} to {@link Function#identity()}, the {@link RepositorySpanFactory} defaults to a
+     * {@link DefaultRepositorySpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}, and sequence
+     * number generation is <b>enabled</b>.
      * <p>
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
      * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
@@ -264,7 +266,14 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         }
 
         @Override
+        @Deprecated
         public Builder<T> spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        public Builder<T> spanFactory(RepositorySpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }
