@@ -44,7 +44,7 @@ class DefaultEventBusSpanFactoryTest extends IntermediateSpanFactoryTest<Default
     }
 
     @Test
-    void testPropagateContext() {
+    void propagateContext() {
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
         testContextPropagation(eventMessage, DefaultEventBusSpanFactory::propagateContext);
     }

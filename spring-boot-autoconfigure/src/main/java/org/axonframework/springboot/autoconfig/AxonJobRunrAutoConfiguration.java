@@ -20,6 +20,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
@@ -69,7 +70,7 @@ public class AxonJobRunrAutoConfiguration {
             Configuration configuration,
             @Qualifier("eventSerializer") Serializer serializer,
             TransactionManager transactionManager,
-            SpanFactory spanFactory) {
+            DeadlineManagerSpanFactory spanFactory) {
         ScopeAwareProvider scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
         return JobRunrDeadlineManager.builder()
                                      .jobScheduler(jobScheduler)

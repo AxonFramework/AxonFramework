@@ -141,7 +141,7 @@ class DefaultQueryBusSpanFactoryTest extends
     }
 
     @Test
-    void testPropagateContext() {
+    void propagateContext() {
         QueryMessage<?, ?> queryMessage = Mockito.mock(QueryMessage.class);
         testContextPropagation(queryMessage, DefaultQueryBusSpanFactory::propagateContext);
     }

@@ -72,7 +72,7 @@ class DefaultCommandBusSpanFactoryTest
     }
 
     @Test
-    void testPropagateContext() {
+    void propagateContext() {
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
         testContextPropagation(command, DefaultCommandBusSpanFactory::propagateContext);
     }

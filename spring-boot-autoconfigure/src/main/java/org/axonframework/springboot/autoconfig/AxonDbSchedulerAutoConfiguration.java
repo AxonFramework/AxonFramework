@@ -22,6 +22,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.dbscheduler.DbSchedulerBinaryDeadlineDetails;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
@@ -89,7 +90,7 @@ public class AxonDbSchedulerAutoConfiguration {
             Configuration configuration,
             @Qualifier("eventSerializer") Serializer serializer,
             TransactionManager transactionManager,
-            SpanFactory spanFactory) {
+            DeadlineManagerSpanFactory spanFactory) {
         ScopeAwareProvider scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
         return DbSchedulerDeadlineManager.builder()
                                          .scheduler(scheduler)

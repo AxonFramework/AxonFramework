@@ -32,6 +32,8 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.EventBus;
@@ -210,6 +212,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(QueryBusSpanFactory.class, new Component<>(config, "queryBusSpanFactory", this::defaultQueryBusSpanFactory));
         components.put(QueryUpdateEmitterSpanFactory.class, new Component<>(config, "queryUpdateEmitterSpanFactory", this::defaultQueryUpdateEmitterSpanFactory));
         components.put(EventBusSpanFactory.class, new Component<>(config, "eventBusSpanFactory", this::defaultEventBusSpanFactory));
+        components.put(DeadlineManagerSpanFactory.class, new Component<>(config, "deadlineManagerSpanFactory", this::defaultDeadlineManagerSpanFactory));
     }
 
     /**
@@ -486,7 +489,8 @@ public class DefaultConfigurer implements Configurer {
         return defaultComponent(DeadlineManager.class, config)
                 .orElseGet(() -> SimpleDeadlineManager.builder()
                                                       .scopeAwareProvider(config.scopeAwareProvider())
-                                                      .spanFactory(config.spanFactory()).build());
+                                                      .spanFactory(config.getComponent(DeadlineManagerSpanFactory.class))
+                                                      .build());
     }
 
     /**
@@ -594,6 +598,21 @@ public class DefaultConfigurer implements Configurer {
     protected EventBusSpanFactory defaultEventBusSpanFactory(Configuration config) {
         return defaultComponent(EventBusSpanFactory.class, this.config)
                 .orElseGet(() -> DefaultEventBusSpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link org.axonframework.deadline.DeadlineManagerSpanFactory}, or a
+     * {@link DefaultDeadlineManagerSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link org.axonframework.deadline.DeadlineManagerSpanFactory}.
+     */
+    protected DeadlineManagerSpanFactory defaultDeadlineManagerSpanFactory(Configuration config) {
+        return defaultComponent(DeadlineManagerSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultDeadlineManagerSpanFactory
                         .builder()
                         .spanFactory(config.spanFactory())
                         .build());

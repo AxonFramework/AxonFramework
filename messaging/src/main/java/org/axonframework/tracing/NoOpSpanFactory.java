@@ -37,30 +37,30 @@ public class NoOpSpanFactory implements SpanFactory {
 
     @Override
     public Span createRootTrace(Supplier<String> operationNameSupplier) {
-        return new NoOpSpan();
+        return NoOpSpan.INSTANCE;
     }
 
     @Override
     public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
                                   boolean isChildTrace,
                                   Message<?>... linkedParents) {
-        return new NoOpSpan();
+        return NoOpSpan.INSTANCE;
     }
 
     @Override
     public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
                                    Message<?>... linkedSiblings) {
-        return new NoOpSpan();
+        return NoOpSpan.INSTANCE;
     }
 
     @Override
     public Span createInternalSpan(Supplier<String> operationNameSupplier) {
-        return new NoOpSpan();
+        return NoOpSpan.INSTANCE;
     }
 
     @Override
     public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
-        return new NoOpSpan();
+        return NoOpSpan.INSTANCE;
     }
 
     @Override
@@ -73,7 +73,15 @@ public class NoOpSpanFactory implements SpanFactory {
         return message;
     }
 
+    /**
+     * The {@link Span} implementation that does nothing.
+     */
     public static class NoOpSpan implements Span {
+
+        /**
+         * Instance of a {@link NoOpSpan} that can be used to avoid creating new instances.
+         */
+        public static final NoOpSpan INSTANCE = new NoOpSpan();
 
         @Override
         public Span start() {

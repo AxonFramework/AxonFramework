@@ -19,6 +19,8 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
@@ -115,6 +117,18 @@ public class AxonTracingAutoConfiguration {
         return DefaultEventBusSpanFactory.builder()
                                          .spanFactory(spanFactory)
                                          .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(DeadlineManagerSpanFactory.class)
+    public DeadlineManagerSpanFactory deadlineManagerSpanFactory(SpanFactory spanFactory,
+                                                                 TracingProperties properties) {
+        TracingProperties.DeadlineManagerProperties deadlineManager = properties.getDeadlineManager();
+        return DefaultDeadlineManagerSpanFactory.builder()
+                                                .spanFactory(spanFactory)
+                                                .scopeAttribute(deadlineManager.getDeadlineScopeAttributeName())
+                                                .deadlineIdAttribute(deadlineManager.getDeadlineIdAttributeName())
+                                                .build();
     }
 
     @Bean

@@ -44,7 +44,7 @@ class DefaultQueryUpdateEmitterSpanFactoryTest extends
     }
 
     @Test
-    void testPropagateContext() {
+    void propagateContext() {
         SubscriptionQueryUpdateMessage<?> message = Mockito.mock(SubscriptionQueryUpdateMessage.class);
         testContextPropagation(message, DefaultQueryUpdateEmitterSpanFactory::propagateContext);
     }

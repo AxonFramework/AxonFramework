@@ -45,6 +45,11 @@ public class TracingProperties {
     private QueryBusProperties queryBus = new QueryBusProperties();
 
     /**
+     * Properties describing the tracing settings for the {@link org.axonframework.deadline.DeadlineManager}.
+     */
+    private DeadlineManagerProperties deadlineManager = new DeadlineManagerProperties();
+
+    /**
      * Whether to show event sourcing handlers in traces. This can be very noisy, especially when larger aggregates are
      * loaded without a snapshot in place. Use with care.
      */
@@ -118,6 +123,27 @@ public class TracingProperties {
      */
     public void setQueryBus(QueryBusProperties queryBus) {
         this.queryBus = queryBus;
+    }
+
+    /**
+     * Returns the properties describing the tracing settings for the
+     * {@link org.axonframework.deadline.DeadlineManager}.
+     *
+     * @return the properties describing the tracing settings for the
+     * {@link org.axonframework.deadline.DeadlineManager}.
+     */
+    public DeadlineManagerProperties getDeadlineManager() {
+        return deadlineManager;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the {@link org.axonframework.deadline.DeadlineManager}.
+     *
+     * @param deadlineManager the properties describing the tracing settings for the
+     *                        {@link org.axonframework.deadline.DeadlineManager}.
+     */
+    public void setDeadlineManager(DeadlineManagerProperties deadlineManager) {
+        this.deadlineManager = deadlineManager;
     }
 
     /**
@@ -448,6 +474,60 @@ public class TracingProperties {
          */
         public void setDistributedInSameTrace(boolean distributedInSameTrace) {
             this.distributedInSameTrace = distributedInSameTrace;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.deadline.DeadlineManager}.
+     *
+     * @since 4.9.0
+     */
+    public static class DeadlineManagerProperties {
+
+        /**
+         * The name of the attribute used to store the deadline id in the span. Defaults to {@code axon.deadlineId}.
+         */
+        private String deadlineIdAttributeName = "axon.deadlineId";
+        /**
+         * The name of the attribute used to store the deadline scope in the span.
+         */
+        private String deadlineScopeAttributeName = "axon.scope";
+
+        /**
+         * The name of the attribute used to store the deadline id in the span. Defaults to {@code axon.deadlineId}.
+         *
+         * @return The name of the attribute used to store the deadline id in the span.
+         */
+        public String getDeadlineIdAttributeName() {
+            return deadlineIdAttributeName;
+        }
+
+        /**
+         * The name of the attribute used to store the deadline id in the span. Defaults to {@code axon.deadlineId}.
+         *
+         * @param deadlineIdAttributeName The name of the attribute used to store the deadline id in the span.
+         */
+        public void setDeadlineIdAttributeName(String deadlineIdAttributeName) {
+            this.deadlineIdAttributeName = deadlineIdAttributeName;
+        }
+
+        /**
+         * The name of the attribute used to store the deadline scope in the span. Defaults to {@code axon.scope}.
+         *
+         * @return The name of the attribute used to store the deadline scope in the span.
+         */
+        public String getDeadlineScopeAttributeName() {
+            return deadlineScopeAttributeName;
+        }
+
+        /**
+         * The name of the attribute used to store the deadline scope in the span. Defaults to {@code axon.scope}.
+         *
+         * @param deadlineScopeAttributeName The name of the attribute used to store the deadline scope in the span.
+         */
+        public void setDeadlineScopeAttributeName(String deadlineScopeAttributeName) {
+            this.deadlineScopeAttributeName = deadlineScopeAttributeName;
         }
     }
 }

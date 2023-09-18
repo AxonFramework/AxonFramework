@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ScopeAwareProvider;
@@ -77,14 +79,14 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
     private final TransactionManager transactionManager;
     private final Serializer serializer;
     private final Predicate<Throwable> refireImmediatelyPolicy;
-    private final SpanFactory spanFactory;
+    private final DeadlineManagerSpanFactory spanFactory;
 
     /**
      * Instantiate a Builder to be able to create a {@link QuartzDeadlineManager}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
      * <p>
-     * The {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}.
+     * The {@link SpanFactory} is defaulted to a {@link DeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}.
      * <p>
      * The {@link Scheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as such
      * should be provided.
@@ -139,7 +141,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineId = JOB_NAME_PREFIX + deadlineMessage.getIdentifier();
 
-        Span span = spanFactory.createDispatchSpan(() -> "QuartzDeadlineManager.schedule(" + deadlineName + ")", deadlineMessage);
+        Span span = spanFactory.createScheduleSpan(deadlineName, deadlineId, deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             try {
@@ -165,14 +167,13 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
-        Span span = spanFactory.createInternalSpan(
-                () -> "QuartzDeadlineManager.cancelSchedule(" + deadlineName + "," + scheduleId + ")");
+        Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> cancelSchedule(jobKey(scheduleId, deadlineName))));
     }
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        Span span = spanFactory.createInternalSpan(() -> "QuartzDeadlineManager.cancelAll(" + deadlineName + ")");
+        Span span = spanFactory.createCancelAllSpan(deadlineName);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             try {
                 scheduler.getJobKeys(GroupMatcher.groupEquals(deadlineName))
@@ -186,7 +187,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
         spanFactory
-                .createInternalSpan(() -> "QuartzDeadlineManager.cancelAllWithinScope(" + deadlineName + ")")
+                .createCancelAllWithinScopeSpan(deadlineName, scope)
                 .run(() -> {
                     try {
                         Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.jobGroupEquals(deadlineName));
@@ -249,8 +250,9 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
     /**
      * Builder class to instantiate a {@link QuartzDeadlineManager}.
      * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager} and the {@link SpanFactory}
-     * defaults to a {@link NoOpSpanFactory}.
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager} and the
+     * {@link DeadlineManagerSpanFactory} defaults to a {@link DefaultDeadlineManagerSpanFactory} backed by a
+     * {@link NoOpSpanFactory}.
      * <p>
      * The {@link Scheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as such
      * should be provided.
@@ -263,7 +265,9 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         private Supplier<Serializer> serializer;
         private Predicate<Throwable> refireImmediatelyPolicy =
                 throwable -> !findException(throwable, AxonNonTransientException.class::isInstance).isPresent();
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private DeadlineManagerSpanFactory spanFactory = DefaultDeadlineManagerSpanFactory.builder()
+                                                                                          .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                          .build();
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
@@ -325,8 +329,25 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(DeadlineManagerSpanFactory)} which provides more configuration options.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultDeadlineManagerSpanFactory.builder()
+                                                                .spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no
+         * tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;
