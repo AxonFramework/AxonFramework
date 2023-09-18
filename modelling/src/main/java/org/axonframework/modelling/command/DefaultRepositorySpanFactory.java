@@ -21,8 +21,8 @@ import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 
 /**
- * Default implementation of the {@link RepositorySpanFactory}. The attribute used for the id of the aggrate can be
- * configured.
+ * Default implementation of the {@link RepositorySpanFactory}. The attribute used for the identifier of the aggregate
+ * can be configured.
  *
  * @author Mitchell Herrijgers
  * @since 4.9.0

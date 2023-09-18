@@ -585,7 +585,6 @@ public class TracingProperties {
         }
     }
 
-
     /**
      * Configuration properties for the behavior of creating tracing spans for the
      * {@link org.axonframework.modelling.command.Repository}.
@@ -617,7 +616,6 @@ public class TracingProperties {
             this.aggregateIdAttributeName = aggregateIdAttributeName;
         }
     }
-
 
     /**
      * Configuration properties for the behavior of creating tracing spans for the

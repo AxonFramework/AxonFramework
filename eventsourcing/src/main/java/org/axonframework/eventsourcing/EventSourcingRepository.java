@@ -297,6 +297,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         }
 
         @Override
+        @Deprecated
         public Builder<T> spanFactory(SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
@@ -307,7 +308,6 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
             super.spanFactory(spanFactory);
             return this;
         }
-
 
         /**
          * Sets the {@link EventStore} that holds the event stream this repository needs to event source an Aggregate.
