@@ -1,0 +1,61 @@
+= Advanced Use Cases
+:navtitle: Advanced use cases
+
+It's possible to change the default enqueue behavior.
+This can be done by implementing the `EnqueuePolicy` interface.
+For example like this:
+
+[source,java]
+----
+public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
+    @Override
+    public EnqueueDecision<EventMessage<?>> decide(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
+        if (cause instanceof NullPointerException) {
+            return Decisions.doNotEnqueue(); // <1>
+        }
+        if (letter.message().getPayload() instanceof NotificationEvent &&
+                letter.enqueuedAt().isAfter(Instant.now().plus(Duration.ofMinutes(5L)))) {
+            return Decisions.evict(); // <2>
+        }
+        return Decisions.enqueue(cause); // <3>
+    }
+}
+----
+
+<1> We don't need to put this in a dead letter queue.
+As this will always create the same `NullPointerException`, so we don't enqueue it.
+<2> If it's a notification event, which is already in the queue for 5 minutes, evict the event so it's not retried again.
+<3> Default to enqueue the event message again.
+
+Another example which uses the diagnostics, will evict after trying 5 times:
+
+[source,java]
+----
+public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
+    @Override
+    public EnqueueDecision<EventMessage<?>> decide(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
+        final int retries = (int) letter.diagnostics().getOrDefault("retries", -1); // <1>
+        if (retries < 5) {
+            return Decisions.requeue(cause, l -> l.diagnostics().and("retries", retries + 1)); // <2>
+        }
+        return Decisions.evict(); // <3>
+    }
+}
+----
+
+<1> Get the retries, default to -1. So on entering the queue the value will be 0.
+<2> Requeue, increasing the retries.
+<3> Once it's retried 5 times, the event message will be evicted.
+
+Setting the policy for a specific group can be done with something like:
+
+[source,java]
+----
+public class AxonConfig {
+    // omitting other configuration methods...
+    public void configureEnqueuePolicy(EventProcessingConfigurer configurer) {
+        // Replace "my-processing-group" for the processing group you want to configure the policy on.
+        configurer.registerDeadLetterPolicy("my-processing-group", config -> new CustomEnqueuePolicy());
+    }
+}
+----

@@ -1,0 +1,19 @@
+= Dead Letter Queues in Axon Framework
+:navtitle: Dead letter queues
+
+== Introduction
+
+Once you are running a big application with lots of events in production, things might go wrong.
+This could just be temporarily, because an external API is down, or requiring changing the code, when there is a bug with a combination of events which was not tested.
+
+The default configuration for event processors is just to log errors, likely in production you already changed it, to throw the error instead.
+However, this can cause an event processor to stop processing events, as it will keep trying to process the same event, until it will not cause an exception.
+
+In order to prevent this it's possible to configure the use of a sequenced dead letter queue.
+With this instead of retrying, any event throwing an error will be put in a queue.
+In order to keep the order of the events correct, any event having the same sequence identifier will be put directly in the queue.
+By default, the sequence identifier is the aggregate id.
+This will thus make sure all the events for the same aggregate, will thus be queued after on of the events triggered an exception.
+
+This tutorial will guide you through enabling the sequenced dead letter queue for event processing.
+It will also provide guidance in providing a good why to reprocess the events which are queued.
