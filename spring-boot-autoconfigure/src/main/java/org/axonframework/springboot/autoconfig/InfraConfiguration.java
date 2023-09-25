@@ -44,7 +44,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -96,7 +99,11 @@ public class InfraConfiguration {
                                                  List<ModuleConfiguration> moduleConfigurations) {
         SpringConfigurer configurer = new SpringConfigurer(beanFactory);
         moduleConfigurations.forEach(configurer::registerModule);
-        configurerModules.forEach(c -> c.configureModule(configurer));
+
+        List<ConfigurerModule> sortedList = new ArrayList<>(configurerModules);
+        sortedList.sort(Comparator.comparing(ConfigurerModule::order)
+                                  .thenComparing(AnnotationAwareOrderComparator.INSTANCE));
+        sortedList.forEach(c -> c.configureModule(configurer));
         return configurer;
     }
 
