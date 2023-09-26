@@ -100,6 +100,8 @@ public class AxonDbSchedulerAutoConfiguration {
                                          .spanFactory(spanFactory)
                                          //Set to false, as a DbSchedulerStarter is expected to start the scheduler.
                                          .startScheduler(false)
+                                         //Set to false as the auto config of DbScheduler manages this.
+                                         .stopScheduler(false)
                                          .build();
     }
 }
