@@ -44,7 +44,8 @@ import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static java.util.Objects.isNull;
@@ -63,7 +64,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
 
     private static final Logger logger = getLogger(DbSchedulerEventScheduler.class);
-    private static final AtomicReference<DbSchedulerEventScheduler> eventSchedulerReference = new AtomicReference<>();
     private static final TaskWithDataDescriptor<DbSchedulerHumanReadableEventData> humanReadableTaskDescriptor =
             new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerHumanReadableEventData.class);
     private static final TaskWithDataDescriptor<DbSchedulerBinaryEventData> binaryTaskDescriptor =
@@ -74,6 +74,8 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
     private final EventBus eventBus;
     private final boolean useBinaryPojo;
     private final boolean startScheduler;
+    private final boolean stopScheduler;
+    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     /**
      * Instantiate a {@link DbSchedulerEventScheduler} based on the fields contained in the
@@ -92,7 +94,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         eventBus = builder.eventBus;
         useBinaryPojo = builder.useBinaryPojo;
         startScheduler = builder.startScheduler;
-        eventSchedulerReference.set(this);
+        stopScheduler = builder.stopScheduler;
     }
 
     /**
@@ -132,14 +134,19 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
      * Gives the {@link Task} using {@link DbSchedulerBinaryEventData} to publish an event via a {@link Scheduler}. To
      * be able to execute the task, this should be added to the task list, used to create the scheduler.
      *
+     * @param eventSchedulerSupplier a {@link Supplier} of a {@link DbSchedulerEventScheduler}. Preferably a method
+     *                               involving dependency inception is used. When those are not available the
+     *                               {@link SimpleDbSchedulerEventSchedulerSupplier} can be used instead.
      * @return a {@link Task} to publish an event
      */
-    public static Task<DbSchedulerHumanReadableEventData> humanReadableTask() {
+    public static Task<DbSchedulerHumanReadableEventData> humanReadableTask(
+            Supplier<DbSchedulerEventScheduler> eventSchedulerSupplier
+    ) {
         return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerHumanReadableEventData.class)
                 .execute((ti, context) -> {
-                    DbSchedulerEventScheduler eventScheduler = eventSchedulerReference.get();
+                    DbSchedulerEventScheduler eventScheduler = eventSchedulerSupplier.get();
                     if (isNull(eventScheduler)) {
-                        throw new EventSchedulerNotSetException();
+                        throw new EventSchedulerNotSuppliedException();
                     }
                     EventMessage<?> eventMessage = eventScheduler.fromDbSchedulerEventData(ti.getData());
                     eventScheduler.publishEventMessage(eventMessage);
@@ -151,14 +158,18 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
      * {@link Scheduler}. To be able to execute the task, this should be added to the task list, used to create the
      * scheduler.
      *
+     * @param eventSchedulerSupplier a {@link Supplier} of a {@link DbSchedulerEventScheduler}. Preferably a method
+     *                               involving dependency inception is used. When those are not available the
+     *                               {@link SimpleDbSchedulerEventSchedulerSupplier} can be used instead.
      * @return a {@link Task} to publish an event
      */
-    public static Task<DbSchedulerBinaryEventData> binaryTask() {
+    public static Task<DbSchedulerBinaryEventData> binaryTask(
+            Supplier<DbSchedulerEventScheduler> eventSchedulerSupplier) {
         return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerBinaryEventData.class)
                 .execute((ti, context) -> {
-                    DbSchedulerEventScheduler eventScheduler = eventSchedulerReference.get();
+                    DbSchedulerEventScheduler eventScheduler = eventSchedulerSupplier.get();
                     if (isNull(eventScheduler)) {
-                        throw new EventSchedulerNotSetException();
+                        throw new EventSchedulerNotSuppliedException();
                     }
                     EventMessage<?> eventMessage = eventScheduler.fromDbSchedulerEventData(ti.getData());
                     eventScheduler.publishEventMessage(eventMessage);
@@ -285,8 +296,9 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
 
     @Override
     public void shutdown() {
-        scheduler.stop();
-        eventSchedulerReference.set(null);
+        if (isShutdown.compareAndSet(false, true) && stopScheduler) {
+            scheduler.stop();
+        }
     }
 
     @Override
@@ -319,13 +331,15 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         private EventBus eventBus;
         private boolean useBinaryPojo = true;
         private boolean startScheduler = true;
+        private boolean stopScheduler = true;
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the events. It should have either
-         * the {@link #binaryTask()} or the {@link #humanReadableTask()} from this class as one of its tasks to work.
-         * Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use {@link #binaryTask()} else
-         * {@link #humanReadableTask()}. Depending on you application, you can manage when to start the scheduler, or
-         * leave {@code startScheduler} to true, to start it via the {@link Lifecycle}.
+         * the {@link #binaryTask(Supplier)} or the {@link #humanReadableTask(Supplier)} from this class as one of its
+         * tasks to work. Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use
+         * {@link #binaryTask(Supplier)} else {@link #humanReadableTask(Supplier)}. Depending on you application, you
+         * can manage when to start the scheduler, or leave {@code startScheduler} to true, to start it via the
+         * {@link Lifecycle}.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the events
          * @return the current Builder instance, for fluent interfacing
@@ -395,6 +409,18 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
          */
         public Builder startScheduler(boolean startScheduler) {
             this.startScheduler = startScheduler;
+            return this;
+        }
+
+        /**
+         * Sets whether to stop the {@link Scheduler} using the {@link Lifecycle}, or to never stop the scheduler from
+         * this component instead. Defaults to {@code true}.
+         *
+         * @param stopScheduler a {@code boolean} to determine whether to stop the scheduler.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder stopScheduler(boolean stopScheduler) {
+            this.stopScheduler = stopScheduler;
             return this;
         }
 

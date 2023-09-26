@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.deadline.dbscheduler;
+package org.axonframework.eventhandling.scheduling.dbscheduler;
 
 import org.axonframework.common.AxonException;
 
 /**
- * Exception indicating a problem in the Deadline manager mechanism, more precisely the
- * {@link DbSchedulerDeadlineManager} wasn't initialized.
+ * Exception indicating a problem in the Event Scheduling mechanism, more precisely the
+ * {@link DbSchedulerEventScheduler} was not supplied properly.
  *
  * @author Gerard Klijs
  * @since 4.8.0
  */
-public class DeadlineManagerNotSetException extends AxonException {
+public class EventSchedulerNotSuppliedException extends AxonException {
 
     /**
-     * Initialize a DeadlineManagerNotSetException.
+     * Initialize a EventSchedulerNotSuppliedException.
      */
-    public DeadlineManagerNotSetException() {
-        super("The DbSchedulerDeadlineManager is not yet initialized");
+    public EventSchedulerNotSuppliedException() {
+        super("The DbSchedulerEventScheduler is not properly supplied to execute the task.");
     }
 }
