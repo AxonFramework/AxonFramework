@@ -56,6 +56,7 @@ import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -92,6 +93,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
     private final SpanFactory spanFactory;
     private final boolean useBinaryPojo;
     private final boolean startScheduler;
+    private final boolean stopScheduler;
+    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     /**
      * Instantiate a Builder to be able to create a {@link DbSchedulerDeadlineManager}.
@@ -130,6 +133,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         this.spanFactory = builder.spanFactory;
         this.useBinaryPojo = builder.useBinaryPojo;
         this.startScheduler = builder.startScheduler;
+        this.stopScheduler = builder.stopScheduler;
         deadlineManagerReference.set(this);
     }
 
@@ -407,8 +411,12 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
 
     @Override
     public void shutdown() {
-        scheduler.stop();
-        deadlineManagerReference.set(null);
+        if (isShutdown.compareAndSet(false, true)) {
+            if (stopScheduler) {
+                scheduler.stop();
+            }
+            deadlineManagerReference.set(null);
+        }
     }
 
     @Override
@@ -436,6 +444,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
         private boolean useBinaryPojo = true;
         private boolean startScheduler = true;
+        private boolean stopScheduler = true;
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of deadlines. It should have either
@@ -530,6 +539,18 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
          */
         public Builder startScheduler(boolean startScheduler) {
             this.startScheduler = startScheduler;
+            return this;
+        }
+
+        /**
+         * Sets whether to stop the {@link Scheduler} using the {@link Lifecycle}, or to never stop the scheduler from
+         * this component instead. defaults to {@code true}.
+         *
+         * @param stopScheduler a {@code boolean} to determine whether to start the scheduler.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder stopScheduler(boolean stopScheduler) {
+            this.stopScheduler = stopScheduler;
             return this;
         }
 
