@@ -58,8 +58,9 @@ import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -81,7 +82,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
 
     private static final Logger logger = getLogger(DbSchedulerDeadlineManager.class);
-    private static final AtomicReference<DbSchedulerDeadlineManager> deadlineManagerReference = new AtomicReference<>();
     private static final TaskWithDataDescriptor<DbSchedulerBinaryDeadlineDetails> binaryTaskDescriptor =
             new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerBinaryDeadlineDetails.class);
     private static final TaskWithDataDescriptor<DbSchedulerHumanReadableDeadlineDetails> humanReadableTaskDescriptor =
@@ -94,6 +94,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
     private final DeadlineManagerSpanFactory spanFactory;
     private final boolean useBinaryPojo;
     private final boolean startScheduler;
+    private final boolean stopScheduler;
+    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     /**
      * Instantiate a Builder to be able to create a {@link DbSchedulerDeadlineManager}.
@@ -132,7 +134,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         this.spanFactory = builder.spanFactory;
         this.useBinaryPojo = builder.useBinaryPojo;
         this.startScheduler = builder.startScheduler;
-        deadlineManagerReference.set(this);
+        this.stopScheduler = builder.stopScheduler;
     }
 
     @Override
@@ -190,14 +192,18 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * {@link Scheduler}. To be able to execute the task, this should be added to the task list, used to create the
      * scheduler.
      *
+     * @param deadlineManagerSupplier a {@link Supplier} of a {@link DbSchedulerDeadlineManager}. Preferably a method
+     *                                involving dependency injection is used. When those are not available the
+     *                                {@link DbSchedulerDeadlineManagerSupplier} can be used instead.
      * @return a {@link Task} to execute a deadline
      */
-    public static Task<DbSchedulerBinaryDeadlineDetails> binaryTask() {
+    public static Task<DbSchedulerBinaryDeadlineDetails> binaryTask(
+            Supplier<DbSchedulerDeadlineManager> deadlineManagerSupplier) {
         return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerBinaryDeadlineDetails.class)
                 .execute((taskInstance, context) -> {
-                    DbSchedulerDeadlineManager deadlineManager = deadlineManagerReference.get();
+                    DbSchedulerDeadlineManager deadlineManager = deadlineManagerSupplier.get();
                     if (isNull(deadlineManager)) {
-                        throw new DeadlineManagerNotSetException();
+                        throw new DeadlineManagerNotSuppliedException();
                     }
                     deadlineManager.execute(taskInstance.getId(), taskInstance.getData());
                 });
@@ -208,14 +214,18 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * {@link Scheduler}. To be able to execute the task, this should be added to the task list, used to create the
      * scheduler.
      *
+     * @param deadlineManagerSupplier a {@link Supplier} of a {@link DbSchedulerDeadlineManager}. Preferably a method
+     *                                involving dependency injection is used. When those are not available the
+     *                                {@link DbSchedulerDeadlineManagerSupplier} can be used instead.
      * @return a {@link Task} to execute a deadline
      */
-    public static Task<DbSchedulerHumanReadableDeadlineDetails> humanReadableTask() {
+    public static Task<DbSchedulerHumanReadableDeadlineDetails> humanReadableTask(
+            Supplier<DbSchedulerDeadlineManager> deadlineManagerSupplier) {
         return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerHumanReadableDeadlineDetails.class)
                 .execute((taskInstance, context) -> {
-                    DbSchedulerDeadlineManager deadlineManager = deadlineManagerReference.get();
+                    DbSchedulerDeadlineManager deadlineManager = deadlineManagerSupplier.get();
                     if (isNull(deadlineManager)) {
-                        throw new DeadlineManagerNotSetException();
+                        throw new DeadlineManagerNotSuppliedException();
                     }
                     deadlineManager.execute(taskInstance.getId(), taskInstance.getData());
                 });
@@ -318,7 +328,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
     }
 
     /**
-     * This function is used by the {@link #binaryTask()} to execute the deadline.
+     * This function is used by the {@link #binaryTask(Supplier)} to execute the deadline.
      *
      * @param deadlineDetails {@link DbSchedulerBinaryDeadlineDetails} containing the needed details to execute.
      */
@@ -330,7 +340,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
     }
 
     /**
-     * This function is used by the {@link #binaryTask()} to execute the deadline.
+     * This function is used by the {@link #binaryTask(Supplier)} to execute the deadline.
      *
      * @param deadlineDetails {@link DbSchedulerHumanReadableDeadlineDetails} containing the needed details to execute.
      */
@@ -407,8 +417,9 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
 
     @Override
     public void shutdown() {
-        scheduler.stop();
-        deadlineManagerReference.set(null);
+        if (isShutdown.compareAndSet(false, true) && stopScheduler) {
+            scheduler.stop();
+        }
     }
 
     @Override
@@ -438,12 +449,15 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
                                                                                           .build();
         private boolean useBinaryPojo = true;
         private boolean startScheduler = true;
+        private boolean stopScheduler = true;
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of deadlines. It should have either
-         * the {@link #binaryTask()} or the {@link #humanReadableTask()} from this class as one of its tasks to work.
-         * Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use {@link #binaryTask()} else
-         * {@link #humanReadableTask()}. Depending on you application, you can manage when to start the scheduler, or leave {@code startScheduler} to true, to start it via the {@link Lifecycle}.
+         * the {@link #binaryTask(Supplier)} or the {@link #humanReadableTask(Supplier)} from this class as one of its
+         * tasks to work. Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use
+         * {@link #binaryTask(Supplier)} else {@link #humanReadableTask(Supplier)}. Depending on you application, you
+         * can manage when to start the scheduler, or leave {@code startScheduler} to true, to start it via the
+         * {@link Lifecycle}.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
          * @return the current Builder instance, for fluent interfacing
@@ -548,6 +562,18 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
          */
         public Builder startScheduler(boolean startScheduler) {
             this.startScheduler = startScheduler;
+            return this;
+        }
+
+        /**
+         * Sets whether to stop the {@link Scheduler} using the {@link Lifecycle}, or to never stop the scheduler from
+         * this component instead. defaults to {@code true}.
+         *
+         * @param stopScheduler a {@code boolean} to determine whether to start the scheduler.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder stopScheduler(boolean stopScheduler) {
+            this.stopScheduler = stopScheduler;
             return this;
         }
 

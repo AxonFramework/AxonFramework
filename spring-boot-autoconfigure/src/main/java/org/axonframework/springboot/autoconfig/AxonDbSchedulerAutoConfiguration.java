@@ -38,6 +38,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -55,15 +56,19 @@ public class AxonDbSchedulerAutoConfiguration {
     @Bean
     @Qualifier("eventDataTask")
     @ConditionalOnMissingQualifiedBean(beanClass = Task.class, qualifier = "eventDataTask")
-    public Task<DbSchedulerBinaryEventData> dbSchedulerEventDataTask() {
-        return DbSchedulerEventScheduler.binaryTask();
+    public Task<DbSchedulerBinaryEventData> dbSchedulerEventDataTask(
+            ApplicationContext context
+    ) {
+        return DbSchedulerEventScheduler.binaryTask(() -> context.getBean(DbSchedulerEventScheduler.class));
     }
 
     @Bean
     @Qualifier("deadlineDetailsTask")
     @ConditionalOnMissingQualifiedBean(beanClass = Task.class, qualifier = "deadlineDetailsTask")
-    public Task<DbSchedulerBinaryDeadlineDetails> dbSchedulerDeadlineDetailsTask() {
-        return DbSchedulerDeadlineManager.binaryTask();
+    public Task<DbSchedulerBinaryDeadlineDetails> dbSchedulerDeadlineDetailsTask(
+            ApplicationContext context
+    ) {
+        return DbSchedulerDeadlineManager.binaryTask(() -> context.getBean(DbSchedulerDeadlineManager.class));
     }
 
     @Bean
@@ -80,6 +85,8 @@ public class AxonDbSchedulerAutoConfiguration {
                                         .eventBus(eventBus)
                                         //Set to false, as a DbSchedulerStarter is expected to start the scheduler.
                                         .startScheduler(false)
+                                        //Set to false, as autoconfiguration from the db scheduler will take care.
+                                        .stopScheduler(false)
                                         .build();
     }
 
@@ -100,6 +107,8 @@ public class AxonDbSchedulerAutoConfiguration {
                                          .spanFactory(spanFactory)
                                          //Set to false, as a DbSchedulerStarter is expected to start the scheduler.
                                          .startScheduler(false)
+                                         //Set to false as the auto config of DbScheduler manages this.
+                                         .stopScheduler(false)
                                          .build();
     }
 }
