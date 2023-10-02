@@ -107,7 +107,7 @@
         <!-- Other -->
         <byte-buddy.version>1.14.8</byte-buddy.version>
         <commons-io.version>2.13.0</commons-io.version>
-        <disruptor.version>3.4.4</disruptor.version>
+        <disruptor.version>4.0.0</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.29.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
