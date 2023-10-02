@@ -23,7 +23,7 @@ import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
-import org.axonframework.deadline.dbscheduler.SimpleDbSchedulerDeadlineManagerSupplier;
+import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManagerSupplier;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
 import org.axonframework.serialization.TestSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
@@ -61,7 +61,7 @@ class HumanReadableDbSchedulerDeadlineManagerTest extends AbstractDeadlineManage
     @Override
     public DeadlineManager buildDeadlineManager(Configuration configuration) {
         reCreateTable(dataSource);
-        SimpleDbSchedulerDeadlineManagerSupplier supplier = new SimpleDbSchedulerDeadlineManagerSupplier();
+        DbSchedulerDeadlineManagerSupplier supplier = new DbSchedulerDeadlineManagerSupplier();
         scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask(supplier));
         DbSchedulerDeadlineManager deadlineManager = DbSchedulerDeadlineManager
                 .builder()

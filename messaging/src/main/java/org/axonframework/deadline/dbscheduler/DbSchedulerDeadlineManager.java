@@ -194,7 +194,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      *
      * @param deadlineManagerSupplier a {@link Supplier} of a {@link DbSchedulerDeadlineManager}. Preferably a method
      *                                involving dependency injection is used. When those are not available the
-     *                                {@link SimpleDbSchedulerDeadlineManagerSupplier} can be used instead.
+     *                                {@link DbSchedulerDeadlineManagerSupplier} can be used instead.
      * @return a {@link Task} to execute a deadline
      */
     public static Task<DbSchedulerBinaryDeadlineDetails> binaryTask(
@@ -216,7 +216,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      *
      * @param deadlineManagerSupplier a {@link Supplier} of a {@link DbSchedulerDeadlineManager}. Preferably a method
      *                                involving dependency injection is used. When those are not available the
-     *                                {@link SimpleDbSchedulerDeadlineManagerSupplier} can be used instead.
+     *                                {@link DbSchedulerDeadlineManagerSupplier} can be used instead.
      * @return a {@link Task} to execute a deadline
      */
     public static Task<DbSchedulerHumanReadableDeadlineDetails> humanReadableTask(

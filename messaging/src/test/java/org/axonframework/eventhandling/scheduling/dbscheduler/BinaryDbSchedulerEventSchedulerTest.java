@@ -46,7 +46,7 @@ class BinaryDbSchedulerEventSchedulerTest extends AbstractDbSchedulerEventSchedu
     @Test
     void whenNotInitializedThrow() {
         eventScheduler.shutdown();
-        SimpleDbSchedulerEventSchedulerSupplier supplier = new SimpleDbSchedulerEventSchedulerSupplier();
+        DbSchedulerEventSchedulerSupplier supplier = new DbSchedulerEventSchedulerSupplier();
         scheduler = getScheduler(dataSource, getTask(supplier));
         scheduler.start();
         try {

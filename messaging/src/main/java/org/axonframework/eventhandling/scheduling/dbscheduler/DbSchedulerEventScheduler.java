@@ -136,7 +136,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
      *
      * @param eventSchedulerSupplier a {@link Supplier} of a {@link DbSchedulerEventScheduler}. Preferably a method
      *                               involving dependency injection is used. When those are not available the
-     *                               {@link SimpleDbSchedulerEventSchedulerSupplier} can be used instead.
+     *                               {@link DbSchedulerEventSchedulerSupplier} can be used instead.
      * @return a {@link Task} to publish an event
      */
     public static Task<DbSchedulerHumanReadableEventData> humanReadableTask(
@@ -160,7 +160,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
      *
      * @param eventSchedulerSupplier a {@link Supplier} of a {@link DbSchedulerEventScheduler}. Preferably a method
      *                               involving dependency injection is used. When those are not available the
-     *                               {@link SimpleDbSchedulerEventSchedulerSupplier} can be used instead.
+     *                               {@link DbSchedulerEventSchedulerSupplier} can be used instead.
      * @return a {@link Task} to publish an event
      */
     public static Task<DbSchedulerBinaryEventData> binaryTask(

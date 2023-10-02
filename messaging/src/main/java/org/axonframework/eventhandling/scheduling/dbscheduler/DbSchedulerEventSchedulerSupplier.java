@@ -26,12 +26,12 @@ import javax.annotation.Nonnull;
  * Default supplier for an {@link DbSchedulerEventScheduler}. This makes it easier to use in context without more
  * advanced ways of dependency injection. It can be passed to the tasks in the {@link DbSchedulerDeadlineManager} to
  * create the {@link com.github.kagkarlsson.scheduler.Scheduler} before the {@link DbSchedulerEventScheduler} is
- * created. After creating it should be set on this {@link SimpleDbSchedulerEventSchedulerSupplier}.
+ * created. After creating it should be set on this {@link DbSchedulerEventSchedulerSupplier}.
  *
  * @author Gerard Klijs
  * @since 4.9.0
  */
-public class SimpleDbSchedulerEventSchedulerSupplier implements Supplier<DbSchedulerEventScheduler> {
+public class DbSchedulerEventSchedulerSupplier implements Supplier<DbSchedulerEventScheduler> {
 
     private final AtomicReference<DbSchedulerEventScheduler> eventScheduler = new AtomicReference<>();
 

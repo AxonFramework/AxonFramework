@@ -82,7 +82,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         reCreateTable(dataSource);
         publishedMessages = new ArrayList<>();
         EventBus eventBus = new InMemoryEventBus(publishedMessages);
-        SimpleDbSchedulerEventSchedulerSupplier supplier = new SimpleDbSchedulerEventSchedulerSupplier();
+        DbSchedulerEventSchedulerSupplier supplier = new DbSchedulerEventSchedulerSupplier();
         scheduler = spy(getScheduler(dataSource, getTask(supplier)));
         eventScheduler = DbSchedulerEventScheduler
                 .builder()

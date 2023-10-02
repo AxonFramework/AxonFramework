@@ -52,7 +52,7 @@ class DbSchedulerDeadlineManagerTest {
 
     @Test
     void binaryShouldFailWhenNotinitialized() {
-        SimpleDbSchedulerDeadlineManagerSupplier supplier = new SimpleDbSchedulerDeadlineManagerSupplier();
+        DbSchedulerDeadlineManagerSupplier supplier = new DbSchedulerDeadlineManagerSupplier();
         Scheduler scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.binaryTask(supplier));
         scheduler.start();
         try {
@@ -74,7 +74,7 @@ class DbSchedulerDeadlineManagerTest {
 
     @Test
     void humanReadableShouldFailWhenNotinitialized() {
-        SimpleDbSchedulerDeadlineManagerSupplier supplier = new SimpleDbSchedulerDeadlineManagerSupplier();
+        DbSchedulerDeadlineManagerSupplier supplier = new DbSchedulerDeadlineManagerSupplier();
         Scheduler scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask(supplier));
         scheduler.start();
         try {
