@@ -215,7 +215,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * scheduler.
      *
      * @param deadlineManagerSupplier a {@link Supplier} of a {@link DbSchedulerDeadlineManager}. Preferably a method
-     *                                involving dependency inception is used. When those are not available the
+     *                                involving dependency injection is used. When those are not available the
      *                                {@link SimpleDbSchedulerDeadlineManagerSupplier} can be used instead.
      * @return a {@link Task} to execute a deadline
      */
