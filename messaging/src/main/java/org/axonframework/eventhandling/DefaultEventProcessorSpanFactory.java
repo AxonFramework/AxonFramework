@@ -86,11 +86,11 @@
         }
 
         @Override
-        public Span createHandleEventSpan(boolean streaming, EventMessage<?> eventMessage) {
+        public Span createProcessEventSpan(boolean streaming, EventMessage<?> eventMessage) {
             if (!streaming) {
-                return spanFactory.createChildHandlerSpan(() -> "EventProcessor.handle", eventMessage);
+                return spanFactory.createChildHandlerSpan(() -> "EventProcessor.process", eventMessage);
             }
-            Supplier<String> name = () -> "StreamingEventProcessor.handle";
+            Supplier<String> name = () -> "StreamingEventProcessor.process";
             if (distributedInSameTrace) {
                 // Only create it in the same trace if it falls within the specified time limit.
                 if (eventMessage.getTimestamp().isAfter(Instant.now().minus(distributedInSameTraceTimeLimit))) {
@@ -103,11 +103,6 @@
             }
             // We have a batch trace, so create a child handler span of that span.
             return spanFactory.createChildHandlerSpan(name, eventMessage);
-        }
-
-        @Override
-        public Span createProcesEventSpan(EventMessage<?> eventMessage) {
-            return spanFactory.createInternalSpan(() -> "EventProcessor.process", eventMessage);
         }
 
         /**

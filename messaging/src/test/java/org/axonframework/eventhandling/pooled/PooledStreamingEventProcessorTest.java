@@ -234,7 +234,7 @@ class PooledStreamingEventProcessorTest {
                     EventMessage<?> message = answer.getArgument(0, EventMessage.class);
                     invokedMessages.add(message);
                     spanFactory.verifySpanActive("StreamingEventProcessor.batch");
-                    spanFactory.verifySpanActive("StreamingEventProcessor.handle", message);
+                    spanFactory.verifySpanActive("StreamingEventProcessor.process", message);
                     countDownLatch.countDown();
                     return null;
                 }
@@ -249,7 +249,7 @@ class PooledStreamingEventProcessorTest {
         invokedMessages.forEach(
                 e -> assertWithin(
                         1, TimeUnit.SECONDS,
-                        () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.handle", e)
+                        () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.process", e)
                 )
         );
         spanFactory.verifySpanCompleted("StreamingEventProcessor.batch");

@@ -16,9 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.tracing.Span;
 
 import java.util.List;
@@ -43,18 +40,10 @@ public interface EventProcessorSpanFactory {
 
     /**
      * Creates a span for the handling of an event. This entails the entire interceptor chain and the handler.
-     * For just measuring the handler invocation, see {@link #createProcesEventSpan(EventMessage)}.
      *
      * @param streaming    Whether the event is handled by a {@link StreamingEventProcessor}.
      * @param eventMessage The event message that is handled.
      * @return The created span.
      */
-    Span createHandleEventSpan(boolean streaming, EventMessage<?> eventMessage);
-
-    /**
-     * Creates a span for the processing of an event. This entails just the invocation handler.
-     * @param eventMessage The event message that is handled.
-     * @return The created span.
-     */
-    Span createProcesEventSpan(EventMessage<?> eventMessage);
+    Span createProcessEventSpan(boolean streaming, EventMessage<?> eventMessage);
 }

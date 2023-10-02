@@ -167,7 +167,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
                 EventMessage<?> message = unitOfWork.getMessage();
                 MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(message);
-                return spanFactory.createHandleEventSpan(this instanceof StreamingEventProcessor, message)
+                return spanFactory.createProcessEventSpan(this instanceof StreamingEventProcessor, message)
                                   .runCallable(() -> new DefaultInterceptorChain<>(
                                           unitOfWork,
                                           interceptors,
@@ -192,19 +192,17 @@ public abstract class AbstractEventProcessor implements EventProcessor {
 
     private Object processMessageInUnitOfWork(Collection<Segment> processingSegments, EventMessage<?> message,
                                               MessageMonitor.MonitorCallback monitorCallback) throws Exception {
-        return spanFactory.createProcesEventSpan(message).runCallable(() -> {
-            try {
-                for (Segment processingSegment : processingSegments) {
-                    eventHandlerInvoker.handle(message, processingSegment);
-                }
-                monitorCallback.reportSuccess();
-                return null;
-            } catch (Exception exception) {
-                monitorCallback.reportFailure(
-                        exception);
-                throw exception;
+        try {
+            for (Segment processingSegment : processingSegments) {
+                eventHandlerInvoker.handle(message, processingSegment);
             }
-        });
+            monitorCallback.reportSuccess();
+            return null;
+        } catch (Exception exception) {
+            monitorCallback.reportFailure(
+                    exception);
+            throw exception;
+        }
     }
 
     /**

@@ -69,8 +69,8 @@ class DefaultEventProcessorSpanFactoryTest extends
     void createHandleEventSpanWithDefaultsForNonStreaming() {
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
         test(
-                factory -> factory.createHandleEventSpan(false, eventMessage),
-                expectedSpan("EventProcessor.handle", TestSpanFactory.TestSpanType.HANDLER_CHILD)
+                factory -> factory.createProcessEventSpan(false, eventMessage),
+                expectedSpan("EventProcessor.process", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                         .withMessage(eventMessage)
         );
     }
@@ -79,8 +79,8 @@ class DefaultEventProcessorSpanFactoryTest extends
     void createHandleEventSpanWithDefaultsForStreaming() {
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
         test(
-                factory -> factory.createHandleEventSpan(true, eventMessage),
-                expectedSpan("StreamingEventProcessor.handle", TestSpanFactory.TestSpanType.HANDLER_CHILD)
+                factory -> factory.createProcessEventSpan(true, eventMessage),
+                expectedSpan("StreamingEventProcessor.process", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                         .withMessage(eventMessage)
         );
     }
@@ -90,8 +90,8 @@ class DefaultEventProcessorSpanFactoryTest extends
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
         test(
                 builder -> builder.disableBatchTrace(true),
-                factory -> factory.createHandleEventSpan(false, eventMessage),
-                expectedSpan("EventProcessor.handle", TestSpanFactory.TestSpanType.HANDLER_CHILD)
+                factory -> factory.createProcessEventSpan(false, eventMessage),
+                expectedSpan("EventProcessor.process", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                         .withMessage(eventMessage)
         );
     }
@@ -101,8 +101,8 @@ class DefaultEventProcessorSpanFactoryTest extends
         EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
         test(
                 builder -> builder.disableBatchTrace(true),
-                factory -> factory.createHandleEventSpan(true, eventMessage),
-                expectedSpan("StreamingEventProcessor.handle", TestSpanFactory.TestSpanType.HANDLER_LINK)
+                factory -> factory.createProcessEventSpan(true, eventMessage),
+                expectedSpan("StreamingEventProcessor.process", TestSpanFactory.TestSpanType.HANDLER_LINK)
                         .withMessage(eventMessage)
         );
     }
@@ -113,8 +113,8 @@ class DefaultEventProcessorSpanFactoryTest extends
         when(eventMessage.getTimestamp()).thenReturn(Instant.now());
         test(
                 builder -> builder.distributedInSameTrace(true),
-                factory -> factory.createHandleEventSpan(true, eventMessage),
-                expectedSpan("StreamingEventProcessor.handle", TestSpanFactory.TestSpanType.HANDLER_CHILD)
+                factory -> factory.createProcessEventSpan(true, eventMessage),
+                expectedSpan("StreamingEventProcessor.process", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                         .withMessage(eventMessage)
         );
     }
@@ -124,22 +124,11 @@ class DefaultEventProcessorSpanFactoryTest extends
         when(eventMessage.getTimestamp()).thenReturn(Instant.now().minus(Duration.ofSeconds(600)));
         test(
                 builder -> builder.distributedInSameTrace(true).distributedInSameTraceTimeLimit(Duration.ofSeconds(500)),
-                factory -> factory.createHandleEventSpan(true, eventMessage),
-                expectedSpan("StreamingEventProcessor.handle", TestSpanFactory.TestSpanType.HANDLER_CHILD)
+                factory -> factory.createProcessEventSpan(true, eventMessage),
+                expectedSpan("StreamingEventProcessor.process", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                         .withMessage(eventMessage)
         );
     }
-
-    @Test
-    void createProcessSpanWithDefaultsForNonStreaming() {
-        EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
-        test(
-                factory -> factory.createProcesEventSpan(eventMessage),
-                expectedSpan("EventProcessor.process", TestSpanFactory.TestSpanType.INTERNAL)
-                        .withMessage(eventMessage)
-        );
-    }
-
 
     @Override
     protected DefaultEventProcessorSpanFactory.Builder createBuilder(SpanFactory spanFactory) {
