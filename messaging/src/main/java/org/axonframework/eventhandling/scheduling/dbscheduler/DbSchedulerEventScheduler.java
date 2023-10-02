@@ -159,7 +159,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
      * scheduler.
      *
      * @param eventSchedulerSupplier a {@link Supplier} of a {@link DbSchedulerEventScheduler}. Preferably a method
-     *                               involving dependency inception is used. When those are not available the
+     *                               involving dependency injection is used. When those are not available the
      *                               {@link SimpleDbSchedulerEventSchedulerSupplier} can be used instead.
      * @return a {@link Task} to publish an event
      */
