@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.MergedTrackingToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -30,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 
 /**
  * A {@link CoordinatorTask} implementation dedicated to claiming a token so that the {@link Coordinator} can
