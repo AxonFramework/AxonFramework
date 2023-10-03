@@ -36,7 +36,7 @@
 
     <properties>
         <jobrunr.version>6.3.2</jobrunr.version>
-        <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.33</mysql-connector-java.version>
         <spring-boot-3.version>3.1.4</spring-boot-3.version>
         <!-- Build / Plugin -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
