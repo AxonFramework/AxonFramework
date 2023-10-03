@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,24 +46,6 @@ class AxonAutoConfigurationWithOpenTelemetryTest {
                     assertTrue(context.containsBean("spanFactory"));
                     assertNotNull(context.getBean(SpanFactory.class));
                     assertEquals(OpenTelemetrySpanFactory.class, context.getBean(SpanFactory.class).getClass());
-                });
-    }
-
-    @Test
-    void spanFactoryIsNestingSpanFactoryWhenPropertyIsSet() {
-        new ApplicationContextRunner()
-                .withUserConfiguration(Context.class)
-                .withPropertyValues("axon.tracing.nested-handlers=true", "axon.axonserver.enabled=false")
-                .run(context -> {
-                    assertNotNull(context);
-
-                    assertTrue(context.containsBean("spanFactory"));
-                    assertNotNull(context.getBean(SpanFactory.class));
-                    SpanFactory bean = context.getBean(SpanFactory.class);
-                    assertEquals(NestingSpanFactory.class, bean.getClass());
-                    Object delegateSpanFactory =
-                            getFieldValue(NestingSpanFactory.class.getDeclaredField("delegateSpanFactory"), bean);
-                    assertEquals(OpenTelemetrySpanFactory.class, delegateSpanFactory.getClass());
                 });
     }
 

@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
@@ -411,9 +412,9 @@ class EventProcessingModuleTest {
             GenericEventMessage<Object> message = new GenericEventMessage<>("test");
             config.eventBus().publish(message);
 
-            spanFactory.verifySpanCompleted("SubscribingEventProcessor[subscribing].process");
+            spanFactory.verifySpanCompleted("EventProcessor.process", message);
             assertWithin(2, TimeUnit.SECONDS,
-                         () -> spanFactory.verifySpanCompleted("TrackingEventProcessor[tracking].process"));
+                         () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.process", message));
         } finally {
             config.shutdown();
         }
@@ -997,7 +998,7 @@ class EventProcessingModuleTest {
         assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
-        assertEquals(testSpanFactory, getField(AbstractEventProcessor.class, "spanFactory", result));
+        assertEquals(config.getComponent(EventProcessorSpanFactory.class), getField(AbstractEventProcessor.class, "spanFactory", result));
     }
 
     @Test

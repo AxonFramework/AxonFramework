@@ -60,22 +60,15 @@ public class TracingProperties {
     private RepositoryProperties repository = new RepositoryProperties();
 
     /**
+     * Properties describing the tracing settings for the {@link org.axonframework.eventhandling.EventProcessor}.
+     */
+    private EventProcessorProperties eventProcessor = new EventProcessorProperties();
+
+    /**
      * Whether to show event sourcing handlers in traces. This can be very noisy, especially when larger aggregates are
      * loaded without a snapshot in place. Use with care.
      */
     private boolean showEventSourcingHandlers = false;
-
-    /**
-     * Whether to nest spans of subsequent in the same trace. This setting is disabled by default.
-     */
-    private boolean nestedHandlers = false;
-
-    /**
-     * How old a message is allowed to be when nesting a span inside the dispatching trace.
-     * Only affects events and deadlines.
-     * After the time limit, the handling spans become their own root trace, per default behavior.
-     */
-    private Duration nestedTimeLimit = Duration.ofMinutes(2);
 
     /**
      * Defines which {@link org.axonframework.tracing.SpanAttributesProvider SpanAttributesProviders}, provided by
@@ -201,6 +194,28 @@ public class TracingProperties {
     }
 
     /**
+     * Returns the properties describing the tracing settings for the
+     * {@link org.axonframework.eventhandling.EventProcessor}.
+     *
+     * @return The properties describing the tracing settings for the
+     * {@link org.axonframework.eventhandling.EventProcessor}.
+     */
+    public EventProcessorProperties getEventProcessor() {
+        return eventProcessor;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the
+     * {@link org.axonframework.eventhandling.EventProcessor}.
+     *
+     * @param eventProcessor The properties describing the tracing settings for the
+     *                       {@link org.axonframework.eventhandling.EventProcessor}.
+     */
+    public void setEventProcessor(EventProcessorProperties eventProcessor) {
+        this.eventProcessor = eventProcessor;
+    }
+
+    /**
      * Getting value for showing event sourcing handlers in traces.
      *
      * @return Whether event sourcing handlers should show up on traces.
@@ -222,18 +237,22 @@ public class TracingProperties {
      * Getting value for nesting handlers in dispatching traces.
      *
      * @return Whether handlers should be nested in dispatching traces
+     * @deprecated Use {@link EventProcessorProperties#isDistributedInSameTrace()} instead.
      */
+    @Deprecated
     public boolean isNestedHandlers() {
-        return nestedHandlers;
+        return eventProcessor.isDistributedInSameTrace();
     }
 
     /**
      * Setting value for nesting handlers in dispatching traces.
      *
      * @param nestedHandlers The new value for nesting handlers in dispatching trace.
+     * @deprecated Use {@link EventProcessorProperties#setDisableBatchTrace(boolean)} instead.
      */
+    @Deprecated
     public void setNestedHandlers(boolean nestedHandlers) {
-        this.nestedHandlers = nestedHandlers;
+        eventProcessor.setDistributedInSameTrace(nestedHandlers);
     }
 
     /**
@@ -241,17 +260,21 @@ public class TracingProperties {
      * are always nested.
      *
      * @return For how long event messages should be nested in their dispatching trace.
+     * @deprecated Use {@link EventProcessorProperties#getDistributedInSameTraceTimeLimit()} instead.
      */
+    @Deprecated
     public Duration getNestedTimeLimit() {
-        return nestedTimeLimit;
+        return eventProcessor.getDistributedInSameTraceTimeLimit();
     }
 
     /**
      * Sets the value for the time limit set on nested handlers inside dispatching trace. Only affects events. Commands
      * and queries are always nested.
+     * @deprecated Use {@link EventProcessorProperties#setDistributedInSameTraceTimeLimit(Duration)} instead.
      */
+    @Deprecated
     public void setNestedTimeLimit(Duration nestedTimeLimit) {
-        this.nestedTimeLimit = nestedTimeLimit;
+        eventProcessor.setDistributedInSameTraceTimeLimit(nestedTimeLimit);
     }
 
     /**
@@ -646,6 +669,105 @@ public class TracingProperties {
          */
         public void setSagaIdentifierAttributeName(String sagaIdentifierAttributeName) {
             this.sagaIdentifierAttributeName = sagaIdentifierAttributeName;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.eventhandling.EventProcessor} implementations.
+     *
+     * @since 4.9.0
+     */
+    public static class EventProcessorProperties {
+
+        /**
+         * Disables the creation of a batch trace. This means each event is handled in its own trace.
+         * Defaults to {@code false}.
+         */
+        private boolean disableBatchTrace = false;
+
+        /**
+         * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
+         * {@code true}, the {@link org.axonframework.eventhandling.EventProcessor} will create a new trace each batch
+         * event, as long as the batch is handled within the time limit set by
+         * {@link #distributedInSameTraceTimeLimit}.
+         */
+        private boolean distributedInSameTrace = false;
+
+        /**
+         * The time limit for events handled by a {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
+         * {@link #distributedInSameTrace} is {@code true}.
+         */
+        private Duration distributedInSameTraceTimeLimit = Duration.ofMinutes(2);
+
+        /**
+         * Disables the creation of a batch trace. This means each event is handled in its own trace.
+         *
+         * @return whether batch tracing is disabled.
+         */
+        public boolean isDisableBatchTrace() {
+            return disableBatchTrace;
+        }
+
+        /**
+         * Disables the creation of a batch trace. This means each event is handled in its own trace.
+         *
+         * @param disableBatchTrace Whether batch tracing is disabled.
+         */
+        public void setDisableBatchTrace(boolean disableBatchTrace) {
+            this.disableBatchTrace = disableBatchTrace;
+        }
+
+
+        /**
+         * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
+         * {@code true}, the {@link org.axonframework.eventhandling.EventProcessor} will create a new trace each batch
+         * event, as long as the batch is handled within the time limit set by
+         * {@link #distributedInSameTraceTimeLimit}.
+         *
+         * @return Whether distributed events should be part of the same trace.
+         */
+        public boolean isDistributedInSameTrace() {
+            return distributedInSameTrace;
+        }
+
+        /**
+         * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
+         * {@code true}, the {@link org.axonframework.eventhandling.EventProcessor} will create a new trace each batch
+         * event, as long as the batch is handled within the time limit set by
+         * {@link #distributedInSameTraceTimeLimit}.
+         *
+         * @param distributedInSameTrace Whether distributed events should be part of the same trace.
+         */
+        public void setDistributedInSameTrace(boolean distributedInSameTrace) {
+            this.distributedInSameTrace = distributedInSameTrace;
+        }
+
+        /**
+         * The time limit for events handled by a {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
+         * {@link #distributedInSameTrace} is {@code true}.
+         *
+         * @return The time limit for events handled by a
+         * {@link org.axonframework.eventhandling.StreamingEventProcessor} to be traced in the same trace as the trace
+         * that published it.
+         */
+        public Duration getDistributedInSameTraceTimeLimit() {
+            return distributedInSameTraceTimeLimit;
+        }
+
+        /**
+         * The time limit for events handled by a {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
+         * {@link #distributedInSameTrace} is {@code true}.
+         *
+         * @param distributedInSameTraceTimeLimit The time limit for events handled by a
+         *                                        {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         *                                        traced in the same trace as the trace that published it.
+         */
+        public void setDistributedInSameTraceTimeLimit(Duration distributedInSameTraceTimeLimit) {
+            this.distributedInSameTraceTimeLimit = distributedInSameTraceTimeLimit;
         }
     }
 }

@@ -22,7 +22,9 @@ import org.axonframework.config.ConfigurerModule;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventBusSpanFactory;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
@@ -135,7 +137,6 @@ public class AxonTracingAutoConfiguration {
                                                 .build();
     }
 
-
     @Bean
     @ConditionalOnMissingBean(SagaManagerSpanFactory.class)
     public SagaManagerSpanFactory sagaManagerSpanFactory(SpanFactory spanFactory,
@@ -146,6 +147,7 @@ public class AxonTracingAutoConfiguration {
                                             .sagaIdentifierAttribute(sagaManagerProps.getSagaIdentifierAttributeName())
                                             .build();
     }
+
     @Bean
     @ConditionalOnMissingBean(RepositorySpanFactory.class)
     public RepositorySpanFactory repositorySpanFactory(SpanFactory spanFactory,
@@ -155,6 +157,19 @@ public class AxonTracingAutoConfiguration {
                                            .spanFactory(spanFactory)
                                            .aggregateIdAttribute(repositoryProps.getDeadlineScopeAttributeName())
                                            .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(EventProcessorSpanFactory.class)
+    public EventProcessorSpanFactory eventProcessorSpanFactory(SpanFactory spanFactory,
+                                                               TracingProperties properties) {
+        TracingProperties.EventProcessorProperties repositoryProps = properties.getEventProcessor();
+        return DefaultEventProcessorSpanFactory.builder()
+                                               .spanFactory(spanFactory)
+                                               .disableBatchTrace(repositoryProps.isDisableBatchTrace())
+                                               .distributedInSameTrace(repositoryProps.isDistributedInSameTrace())
+                                               .distributedInSameTraceTimeLimit(repositoryProps.getDistributedInSameTraceTimeLimit())
+                                               .build();
     }
 
     @Bean

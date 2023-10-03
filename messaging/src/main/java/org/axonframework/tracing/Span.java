@@ -218,5 +218,7 @@ public interface Span {
      * @param value The value of the attribute.
      * @return The span for fluent interfacing.
      */
-    Span addAttribute(String key, String value);
+    default Span addAttribute(String key, String value) {
+        return this;
+    }
 }

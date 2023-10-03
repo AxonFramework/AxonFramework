@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -33,6 +34,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.axonframework.utils.InMemoryStreamableEventSource;
@@ -132,7 +134,8 @@ class PooledStreamingEventProcessorTest {
                                              .workerExecutor(workerExecutor)
                                              .initialSegmentCount(8)
                                              .claimExtensionThreshold(500)
-                                             .spanFactory(spanFactory);
+                                             .spanFactory(DefaultEventProcessorSpanFactory.builder()
+                                                                  .spanFactory(spanFactory).build());
         return customization.apply(processorBuilder).build();
     }
 
@@ -230,7 +233,8 @@ class PooledStreamingEventProcessorTest {
                 answer -> {
                     EventMessage<?> message = answer.getArgument(0, EventMessage.class);
                     invokedMessages.add(message);
-                    spanFactory.verifySpanActive("PooledStreamingEventProcessor[test].process", message);
+                    spanFactory.verifySpanActive("StreamingEventProcessor.batch");
+                    spanFactory.verifySpanActive("StreamingEventProcessor.process", message);
                     countDownLatch.countDown();
                     return null;
                 }
@@ -245,9 +249,10 @@ class PooledStreamingEventProcessorTest {
         invokedMessages.forEach(
                 e -> assertWithin(
                         1, TimeUnit.SECONDS,
-                        () -> spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e)
+                        () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.process", e)
                 )
         );
+        spanFactory.verifySpanCompleted("StreamingEventProcessor.batch");
     }
 
     @Test
@@ -992,7 +997,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         //noinspection ConstantConditions
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory(null));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory((SpanFactory) null));
     }
 
     @Test

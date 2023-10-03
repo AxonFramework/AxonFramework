@@ -24,6 +24,7 @@ import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.lifecycle.Lifecycle;
@@ -180,11 +181,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             return interceptorChain.proceed();
         });
-
-        registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
-                .createLinkedHandlerSpan(() -> "TrackingEventProcessor[" + builder.name + "] ",
-                                         unitOfWork.getMessage())
-                .runCallable(interceptorChain::proceed));
     }
 
     /**
@@ -193,7 +189,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link NoOpMessageMonitor}, the {@link TrackingEventProcessorConfiguration} to a
-     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call, and the {@link SpanFactory} to a
+     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call, and the
+     * {@link EventProcessorSpanFactory} to a {@link DefaultEventProcessorSpanFactory} backed by a
      * {@link org.axonframework.tracing.NoOpSpanFactory}. The Event Processor {@code name}, {@link EventHandlerInvoker},
      * {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager} are
      * <b>hard requirements</b> and as such should be provided.
@@ -935,8 +932,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
      * <p>
      * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
-     * {@link NoOpMessageMonitor}, the {@link SpanFactory} defaults to a
-     * {@link org.axonframework.tracing.NoOpSpanFactory} and the {@link TrackingEventProcessorConfiguration} to a
+     * {@link NoOpMessageMonitor}, the {@link EventProcessorSpanFactory} defaults to a
+     * {@link DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory} and the
+     * {@link TrackingEventProcessorConfiguration} to a
      * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name},
      * {@link EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager}
      * are
@@ -989,6 +987,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
 
         @Override
+        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;

@@ -20,11 +20,13 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.DirectEventProcessingStrategy;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
@@ -960,7 +962,7 @@ public class EventProcessingModule
                                         .messageSource(messageSource)
                                         .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
                                         .transactionManager(transactionManager(name))
-                                        .spanFactory(configuration.spanFactory())
+                                        .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
                                         .build();
     }
 
@@ -987,7 +989,7 @@ public class EventProcessingModule
                                      .tokenStore(tokenStore(name))
                                      .transactionManager(transactionManager(name))
                                      .trackingEventProcessorConfiguration(config)
-                                     .spanFactory(configuration.spanFactory())
+                                     .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
                                      .build();
     }
 
@@ -1030,7 +1032,7 @@ public class EventProcessingModule
                                                  config.onShutdown(workerExecutor::shutdown);
                                                  return workerExecutor;
                                              })
-                                             .spanFactory(config.spanFactory());
+                                             .spanFactory(config.getComponent(EventProcessorSpanFactory.class));
 
         return psepConfigs.getOrDefault(CONFIGURED_DEFAULT_PSEP_CONFIG, noOp())
                           .andThen(psepConfigs.getOrDefault(name, noOp()))

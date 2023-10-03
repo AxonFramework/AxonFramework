@@ -36,8 +36,10 @@ import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventBusSpanFactory;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -219,6 +221,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(DeadlineManagerSpanFactory.class, new Component<>(config, "deadlineManagerSpanFactory", this::defaultDeadlineManagerSpanFactory));
         components.put(SagaManagerSpanFactory.class, new Component<>(config, "sagaManagerSpanFactory", this::defaultSagaManagerSpanFactory));
         components.put(RepositorySpanFactory.class, new Component<>(config, "repositorySpanFactory", this::defaultRepositorySpanFactory));
+        components.put(EventProcessorSpanFactory.class, new Component<>(config, "eventProcessorSpanFactory", this::defaultEventProcessorSpanFactory));
     }
 
     /**
@@ -635,6 +638,21 @@ public class DefaultConfigurer implements Configurer {
     protected RepositorySpanFactory defaultRepositorySpanFactory(Configuration config) {
         return defaultComponent(RepositorySpanFactory.class, this.config)
                 .orElseGet(() -> DefaultRepositorySpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link EventProcessorSpanFactory}, or a
+     * {@link DefaultEventProcessorSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link EventProcessorSpanFactory}.
+     */
+    protected EventProcessorSpanFactory defaultEventProcessorSpanFactory(Configuration config) {
+        return defaultComponent(EventProcessorSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultEventProcessorSpanFactory
                         .builder()
                         .spanFactory(config.spanFactory())
                         .build());

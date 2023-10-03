@@ -195,7 +195,7 @@ public class TestSpanFactory implements SpanFactory {
     private Optional<TestSpan> findSpan(String name, Message<?> message, Predicate<TestSpan> filter) {
         return findSpan(name, filter.and(
                 s -> s.message != null
-                        && s.message.equals(message)));
+                        && s.message.getIdentifier().equals(message.getIdentifier())));
     }
 
     @Override
