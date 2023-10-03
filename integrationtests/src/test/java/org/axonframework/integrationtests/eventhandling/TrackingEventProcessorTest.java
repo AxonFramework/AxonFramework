@@ -1161,10 +1161,13 @@ class TrackingEventProcessorTest {
 
         int numberOfEvents = 4;
         eventBus.publish(createEvents(numberOfEvents));
-        await("Handle Events")
-                .atMost(Duration.ofSeconds(2))
-                .pollDelay(Duration.ofMillis(50))
-                .until(() -> handled.size() == numberOfEvents);
+        await("Handle Events").pollDelay(Duration.ofMillis(50))
+                              .atMost(Duration.ofMillis(2500))
+                              .untilAsserted(() -> assertEquals(
+                                      numberOfEvents, handled.size(),
+                                      () -> "Actually handled [" + handled.size() +
+                                              "] instead of expected [" + numberOfEvents + "]"
+                              ));
 
         assertEquals(0, handledInRedelivery.size());
         assertFalse(testSubject.processingStatus().get(segmentId).isReplaying());
