@@ -136,7 +136,7 @@
         <testcontainers.version>1.19.1</testcontainers.version>
         <!-- Validation -->
         <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
-        <hibernate-validator.8.version>8.0.0.Final</hibernate-validator.8.version>
+        <hibernate-validator.8.version>8.0.1.Final</hibernate-validator.8.version>
         <!-- Build / Plugin -->
         <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>5.1.9</felix.maven-bundle-plugin.version>
