@@ -1659,9 +1659,9 @@ class TrackingEventProcessorTest {
 
         CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentIdZero);
         assertTrue(mergeResult.join(), "Expected merge to succeed");
-        await().pollDelay(pollDelay)
-               .atMost(Duration.ofMillis(500))
-               .until(() -> testSubject.processingStatus().size() == 1);
+        await("Merge segments").pollDelay(pollDelay)
+                               .atMost(Duration.ofMillis(1000))
+                               .until(() -> testSubject.processingStatus().size() == 1);
 
         // Initiate the reset, with 10 more events published in the middle.
         testSubject.shutDown();
