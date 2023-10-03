@@ -264,6 +264,26 @@ class Coordinator {
         return result;
     }
 
+    /**
+     * Instructs this coordinator to claim the segment for the given {@code segmentId}.
+     * <p>
+     * If this coordinator is already processing the segment, it will have a successful result. If the segment's token
+     * is currently taken by another processor instance, the result will be unsuccessful.
+     * <p>
+     * The token will immediately be claimed, but processing of the token will start after the invocation of this
+     * instruction has been completed successfully by scheduling the coordinator. This will see the claimed token
+     * and start a {@link WorkPackage} for it.
+     *
+     * @param segmentId the identifier of the segment to claim
+     * @return a {@link CompletableFuture} indicating whether the claim was executed successfully
+     */
+    public CompletableFuture<Boolean> claimSegment(int segmentId) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        coordinatorTasks.add(new ClaimTask(result, name, segmentId, workPackages, releasesDeadlines, tokenStore, transactionManager));
+        scheduleCoordinator();
+        return result;
+    }
+
     private boolean initializeTokenStore() {
         AtomicBoolean tokenStoreInitialized = new AtomicBoolean(false);
         transactionManager.executeInTransaction(() -> {

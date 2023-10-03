@@ -794,6 +794,32 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void releaseAndClaimSegment() {
+        int testSegmentId = 0;
+        int testTokenClaimInterval = 5000;
+
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(2)
+                .tokenClaimInterval(testTokenClaimInterval)));
+        testSubject.start();
+        // Assert the single WorkPackage is in progress prior to invoking the merge.
+        assertWithin(
+                testTokenClaimInterval, TimeUnit.MILLISECONDS,
+                () -> assertNotNull(testSubject.processingStatus().get(testSegmentId))
+        );
+
+        // When...
+        testSubject.releaseSegment(testSegmentId, 180, TimeUnit.SECONDS);
+
+        // Assert the MergeTask is done and completed successfully.
+        assertWithin(testTokenClaimInterval, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+
+        testSubject.claimSegment(testSegmentId);
+
+        // Assert the Coordinator has only one WorkPackage at work now.
+        assertWithin(testTokenClaimInterval, TimeUnit.MILLISECONDS, () -> assertEquals(2, testSubject.processingStatus().size()));
+    }
+
+    @Test
     void supportReset() {
         when(stubEventHandler.supportsReset()).thenReturn(true);
 

@@ -254,6 +254,14 @@ class TrackingEventProcessorTest {
                     Thread.yield();
                 }
             }
+
+            @Override
+            protected void doSleepFor(long millisToSleep, AtomicBoolean interruptFlag) {
+                if (isRunning()) {
+                    sleepInstructions.add(millisToSleep);
+                    Thread.yield();
+                }
+            }
         };
     }
 
@@ -1071,6 +1079,13 @@ class TrackingEventProcessorTest {
                     sleepInstructions.add(millisToSleep);
                 }
             }
+
+            @Override
+            protected void doSleepFor(long millisToSleep, AtomicBoolean interruptFlag) {
+                if (isRunning()) {
+                    sleepInstructions.add(millisToSleep);
+                }
+            }
         };
         when(mockHandler.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();
@@ -1311,6 +1326,16 @@ class TrackingEventProcessorTest {
         assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
         testSubject.releaseSegment(0, 2, TimeUnit.SECONDS);
         assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
+        assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
+    }
+
+    @Test
+    void releaseAndClaimSegmentWillOverrideReleaseDuration() {
+        testSubject.start();
+        assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
+        testSubject.releaseSegment(0, 180, TimeUnit.SECONDS);
+        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
+        testSubject.claimSegment(0).join();
         assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
     }
 

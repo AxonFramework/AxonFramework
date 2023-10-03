@@ -79,6 +79,26 @@ public interface StreamingEventProcessor extends EventProcessor {
     void releaseSegment(int segmentId, long releaseDuration, TimeUnit unit);
 
     /**
+     * Instructs the processor to claim the segment with given {@code segmentId} and start processing it as soon as
+     * possible.
+     * <p>
+     * The given {@code segmentId} must not be currently processed by a different processor instance, as that will
+     * have an active claim on the token. Claiming a segment that is already being processed will have no effect
+     * and return {@code true}.
+     * <p>
+     * A {@code true} return value indicates that the segment has been claimed and will be processed by this processor.
+     * The {@link StreamingEventProcessor} may postpone start of work until after completion of this task, as long as
+     * the token has been claimed so work can be started. A return value of {@code false} indicates that the segment
+     * has not been claimed due to the token for that segment not being available.
+     *
+     * @param segmentId the identifier of the segment to claim and start processing
+     * @return a {@link CompletableFuture} providing the result of the claim operation
+     */
+    default CompletableFuture<Boolean> claimSegment(int segmentId) {
+        return CompletableFuture.completedFuture(false);
+    }
+
+    /**
      * Instruct the processor to split the segment with given {@code segmentId} into two segments, allowing an
      * additional process to start processing events from it.
      * <p>
