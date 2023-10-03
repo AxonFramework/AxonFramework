@@ -120,7 +120,7 @@
         <jackson.version>2.14.3</jackson.version>
         <xstream.version>1.4.20</xstream.version>
         <!-- Scheduling -->
-        <db-scheduler.version>11.7</db-scheduler.version>
+        <db-scheduler.version>12.5.0</db-scheduler.version>
         <jobrunr.version>6.3.2</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
