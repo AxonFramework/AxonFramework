@@ -25,10 +25,10 @@ import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.singletonMap;
 
@@ -47,13 +47,13 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
     public @Nonnull
     <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         boolean isReplayAllowed = (boolean) original
-                .annotationAttributes(AllowReplay.class)
+                .attribute(HandlerAttributes.ALLOW_REPLAY)
                 .orElseGet(() -> original.unwrap(Member.class)
                                          .map(Member::getDeclaringClass)
                                          .map(c -> AnnotationUtils.findAnnotationAttributes(c, AllowReplay.class)
                                                                   .orElse(DEFAULT_SETTING))
-                                         .orElse(DEFAULT_SETTING)
-                ).get("allowReplay");
+                                         .orElse(DEFAULT_SETTING).get("allowReplay")
+                );
         if (!isReplayAllowed) {
             return new ReplayBlockingMessageHandlingMember<>(original);
         }
