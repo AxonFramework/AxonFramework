@@ -26,14 +26,18 @@ import org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry;
 import org.axonframework.eventhandling.deadletter.jpa.NoJpaConverterFoundException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.deadletter.*;
+import org.axonframework.messaging.deadletter.Cause;
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
+import org.axonframework.messaging.deadletter.EnqueueDecision;
+import org.axonframework.messaging.deadletter.GenericDeadLetter;
+import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.Instant;
@@ -44,6 +48,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import javax.annotation.Nonnull;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 
 import static org.axonframework.common.BuilderUtils.*;
 
@@ -246,16 +253,21 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     public Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
 
-        return new PagingJpaQueryIterable<>(queryPageSize,
-                                            transactionManager,
-                                            () -> entityManagerProvider
-                                                    .getEntityManager()
-                                                    .createQuery(
-                                                            "select dl from DeadLetterEntry dl where dl.processingGroup=:processingGroup and dl.sequenceIdentifier=:identifier",
-                                                            DeadLetterEntry.class)
-                                                    .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
-                                                    .setParameter("identifier", stringSequenceIdentifier),
-                                            this::toLetter
+        return new PagingJpaQueryIterable<>(
+                queryPageSize,
+                transactionManager,
+                () -> entityManagerProvider
+                        .getEntityManager()
+                        .createQuery(
+                                "select dl from DeadLetterEntry dl "
+                                        + "where dl.processingGroup=:processingGroup "
+                                        + "and dl.sequenceIdentifier=:identifier "
+                                        + "order by dl.sequenceIndex",
+                                DeadLetterEntry.class
+                        )
+                        .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
+                        .setParameter("identifier", stringSequenceIdentifier),
+                this::toLetter
         );
     }
 
@@ -534,7 +546,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     }
 
     /**
-     * Fetches the next maximum index for a sequence that should be used when inserting a new item into the databse for
+     * Fetches the next maximum index for a sequence that should be used when inserting a new item into the database for
      * this {@code sequence}.
      *
      * @param sequenceIdentifier The identifier of the sequence to fetch the next index for.
@@ -619,7 +631,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
         }
 
         /**
-         * Sets the processing group, which is used for storing and quering which event processor the deadlettered item
+         * Sets the processing group, which is used for storing and querying which event processor the deadlettered item
          * belonged to.
          *
          * @param processingGroup The processing group of this {@link SequencedDeadLetterQueue}.

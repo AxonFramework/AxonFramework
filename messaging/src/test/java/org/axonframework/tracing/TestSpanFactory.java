@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,6 +101,17 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     /**
+     * Verifies that a Span has a certain attribute set on it.
+     * @param name Name of the span to verify.
+     * @param key The key of the attribute.
+     * @param value The value of the attribute.
+     */
+    public void verifySpanHasAttributeValue(String name, String key, String value) {
+        assertTrue(findSpan(name, span -> span.attributes.containsKey(key) && span.attributes.get(key).equals(value)).isPresent(),
+                   () -> createErrorMessageForSpan(name));
+    }
+
+    /**
      * Verifies that a span was created, started, and ended.
      *
      * @param name    Name of the span to verify.
@@ -184,7 +195,7 @@ public class TestSpanFactory implements SpanFactory {
     private Optional<TestSpan> findSpan(String name, Message<?> message, Predicate<TestSpan> filter) {
         return findSpan(name, filter.and(
                 s -> s.message != null
-                        && s.message.equals(message)));
+                        && s.message.getIdentifier().equals(message.getIdentifier())));
     }
 
     @Override
@@ -276,6 +287,7 @@ public class TestSpanFactory implements SpanFactory {
         private boolean ended;
         private Throwable exception;
         private AtomicInteger scopeCount = new AtomicInteger(-1);
+        private Map<String, String> attributes = new HashMap<>();
 
         public TestSpan(TestSpanType type, String name, Message<?> message) {
             this.type = type;
@@ -334,6 +346,32 @@ public class TestSpanFactory implements SpanFactory {
         }
 
         @Override
+        public Span addAttribute(String key, String value) {
+            attributes.put(key, value);
+            return this;
+        }
+
+        public TestSpanType getType() {
+            return type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Map<String, String> getAttributes() {
+            return attributes;
+        }
+
+        public String getAttribute(String key) {
+            return attributes.get(key);
+        }
+
+        public Message<?> getMessage() {
+            return message;
+        }
+
+        @Override
         public String toString() {
             return "TestSpan{" +
                     "type=" + type +
@@ -342,6 +380,7 @@ public class TestSpanFactory implements SpanFactory {
                     ", started=" + started +
                     ", ended=" + ended +
                     ", exception=" + exception +
+                    ", attributes=" + attributes +
                     '}';
         }
     }

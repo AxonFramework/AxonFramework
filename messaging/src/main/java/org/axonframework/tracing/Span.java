@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,5 +208,17 @@ public interface Span {
      */
     default <T> Consumer<T> wrapConsumer(Consumer<T> supplier) {
         return (consumedObject) -> runConsumer(supplier, consumedObject);
+    }
+
+    /**
+     * Adds an attribute to the span. This can be used to add extra information to the span, which can be used by the
+     * APM tooling to provide more information about the span.
+     *
+     * @param key   The key of the attribute.
+     * @param value The value of the attribute.
+     * @return The span for fluent interfacing.
+     */
+    default Span addAttribute(String key, String value) {
+        return this;
     }
 }

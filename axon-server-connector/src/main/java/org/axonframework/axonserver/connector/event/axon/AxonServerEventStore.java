@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,10 @@ import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.stream.BlockingStream;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -51,11 +53,13 @@ import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,11 +106,12 @@ public class AxonServerEventStore extends AbstractEventStore {
      * implementation. An EventStorageEngine may be provided directly however, although we encourage the usage of the
      * {@link Builder#configuration} and {@link Builder#axonServerConnectionManager} functions to let it be created.
      * <p>
-     * The {@link EventUpcaster} is defaulted to a {@link NoOpEventUpcaster} and the {@link SpanFactory} is defaulted
-     * to a {@link org.axonframework.tracing.NoOpSpanFactory}.
+     * The {@link EventUpcaster} is defaulted to a {@link NoOpEventUpcaster} and the {@link EventBusSpanFactory} is
+     * defaulted to a {@link org.axonframework.eventhandling.DefaultEventBusSpanFactory} backed by a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}.
      * <p>
-     * The event and snapshot {@link Serializer}, {@link AxonServerConfiguration} and {@link
-     * AxonServerConnectionManager} are <b>hard requirements</b> if no EventStorageEngine is provided directly.
+     * The event and snapshot {@link Serializer}, {@link AxonServerConfiguration} and
+     * {@link AxonServerConnectionManager} are <b>hard requirements</b> if no EventStorageEngine is provided directly.
      *
      * @return a Builder to be able to create a {@link AxonServerEventStore}
      */
@@ -177,10 +182,12 @@ public class AxonServerEventStore extends AbstractEventStore {
      * implementation. An EventStorageEngine may be provided directly however, although we encourage the usage of the
      * {@link Builder#configuration} and {@link Builder#axonServerConnectionManager} functions to let it be created.
      * <p>
-     * The {@link EventUpcaster} is defaulted to a {@link NoOpEventUpcaster}.
+     * The {@link EventUpcaster} is defaulted to a {@link NoOpEventUpcaster}. The {@link MessageMonitor} is defaulted to
+     * an {@link NoOpMessageMonitor} and the {@link EventBusSpanFactory} defaults to a
+     * {@link DefaultEventBusSpanFactory} backed by a {@link NoOpSpanFactory}.
      * <p>
-     * The event and snapshot {@link Serializer}, {@link AxonServerConfiguration} and {@link
-     * AxonServerConnectionManager} are <b>hard requirements</b> if no EventStorageEngine is provided directly.
+     * The event and snapshot {@link Serializer}, {@link AxonServerConfiguration} and
+     * {@link AxonServerConnectionManager} are <b>hard requirements</b> if no EventStorageEngine is provided directly.
      */
     public static class Builder extends AbstractEventStore.Builder {
 
@@ -206,6 +213,12 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         @Override
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull EventBusSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }
@@ -388,7 +401,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
     }
 
-    private static class AxonIQEventStorageEngine extends AbstractEventStorageEngine {
+    static class AxonIQEventStorageEngine extends AbstractEventStorageEngine {
 
         private static final int ALLOW_SNAPSHOTS_MAGIC_VALUE = -42;
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
@@ -549,12 +562,12 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                   .eventChannel()
                                                   .openStream(
                                                           nextToken,
-                                                          configuration.getEventFlowControl().getInitialNrOfPermits(),
+                                                          configuration.getEventFlowControl().getPermits(),
                                                           configuration.getEventFlowControl().getNrOfNewPermits(),
                                                           configuration.isForceReadFromLeader()
                                                   );
 
-            return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isDisableEventBlacklisting());
+            return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isEventBlockListingEnabled());
         }
 
         public QueryResultStream query(String query, boolean liveUpdates) {

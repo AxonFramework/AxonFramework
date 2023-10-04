@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,11 @@ import org.axonframework.axonserver.connector.PriorityRunnable;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -90,15 +92,16 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private final CommandCallback<Object, Object> defaultCommandCallback;
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ExecutorService executorService;
-    private final SpanFactory spanFactory;
+    private final CommandBusSpanFactory spanFactory;
 
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerCommandBus}.
      * <p>
      * The {@link CommandPriorityCalculator} is defaulted to
      * {@link CommandPriorityCalculator#defaultCommandPriorityCalculator()}, the {@link TargetContextResolver} defaults
-     * to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context and the {@link SpanFactory}
-     * defaults to a {@link NoOpSpanFactory}. The {@link ExecutorServiceBuilder} defaults to
+     * to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context and the
+     * {@link CommandBusSpanFactory} defaults to a {@link DefaultCommandBusSpanFactory} backed by a
+     * {@link NoOpSpanFactory}. The {@link ExecutorServiceBuilder} defaults to
      * {@link ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}. The {@link AxonServerConnectionManager},
      * the {@link AxonServerConfiguration}, the local {@link CommandBus}, {@link Serializer} and the
      * {@link RoutingStrategy} are a <b>hard requirements</b> and as such should be provided.
@@ -167,7 +170,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         //noinspection resource
         ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
-        Span span = spanFactory.createDispatchSpan(() -> "AxonServerCommandBus.dispatch", commandMessage).start();
+        Span span = spanFactory.createDispatchCommandSpan(commandMessage, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             Command command = serializer.serialize(spanFactory.propagateContext(commandMessage),
                                                    routingStrategy.getRoutingKey(commandMessage),
@@ -285,13 +288,13 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private final CommandBus localSegment;
         private final Command command;
         private final CommandSerializer serializer;
-        private final SpanFactory spanFactory;
+        private final CommandBusSpanFactory spanFactory;
 
         public CommandProcessingTask(Command command,
                                      CommandSerializer serializer,
                                      CompletableFuture<CommandResponse> result,
                                      CommandBus localSegment,
-                                     SpanFactory spanFactory) {
+                                     CommandBusSpanFactory spanFactory) {
             this.command = command;
             this.serializer = serializer;
             this.result = result;
@@ -302,7 +305,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         @Override
         public void run() {
             CommandMessage<?> deserializedCommand = serializer.deserialize(command);
-            Span span = spanFactory.createChildHandlerSpan(() -> "AxonServerCommandBus.handle", deserializedCommand);
+            Span span = spanFactory.createHandleCommandSpan(deserializedCommand, true);
             span.run(() -> {
                 try {
                     localSegment.dispatch(
@@ -332,9 +335,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      * {@link CommandPriorityCalculator#defaultCommandPriorityCalculator(), and the {@link TargetContextResolver}
      * defaults to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
      * {@link ExecutorServiceBuilder} defaults to {@link ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
-     * The {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The {@link AxonServerConnectionManager}, the
-     * {@link AxonServerConfiguration}, the local {@link CommandBus}, {@link Serializer} and the {@link RoutingStrategy}
-     * are <b>hard requirements</b> and as such should be provided.
+     * The {@link CommandBusSpanFactory} defaults to a {@link DefaultCommandBusSpanFactory} backed by a
+     * {@link NoOpSpanFactory}. The {@link AxonServerConnectionManager}, the {@link AxonServerConfiguration}, the local
+     * {@link CommandBus}, {@link Serializer} and the {@link RoutingStrategy} are <b>hard requirements</b> and as such
+     * should be provided.
      */
     public static class Builder {
 
@@ -352,7 +356,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private String defaultContext;
         private TargetContextResolver<? super CommandMessage<?>> targetContextResolver =
                 c -> StringUtils.nonEmptyOrNull(defaultContext) ? defaultContext : configuration.getContext();
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private CommandBusSpanFactory spanFactory = DefaultCommandBusSpanFactory
+                .builder().spanFactory(NoOpSpanFactory.INSTANCE).build();
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -518,13 +523,28 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(CommandBusSpanFactory)} instead as it provides more configurability.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultCommandBusSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link CommandBusSpanFactory} implementation to use for providing tracing capabilities. Defaults to
+         * a {@link DefaultCommandBusSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no
+         * tracing capabilities.
+         *
+         * @param spanFactory The {@link CommandBusSpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull CommandBusSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;
         }
-
 
         /**
          * Initializes a {@link AxonServerCommandBus} as specified through this Builder.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,15 +58,15 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private final Supplier<T> sagaFactory;
-    private final SpanFactory spanFactory;
+    private final SagaManagerSpanFactory spanFactory;
     private volatile ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
     /**
      * Instantiate a {@link AbstractSagaManager} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@code sagaType}, {@code sagaFactory}, {@link SagaRepository} and
-     * {@link ListenerInvocationErrorHandler} are not {@code null}, and will throw an {@link AxonConfigurationException}
-     * if any of them is {@code null}.
+     * Will assert that the {@code sagaType}, {@code sagaFactory}, {@link SagaRepository},
+     * {@link SagaManagerSpanFactory} and {@link ListenerInvocationErrorHandler} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractSagaManager} instance
      */
@@ -102,11 +102,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         }
         SagaInitializationPolicy initializationPolicy = getSagaCreationPolicy(event);
         if (shouldCreateSaga(segment, sagaOfTypeInvoked || sagaMatchesOtherSegment, initializationPolicy)) {
-            spanFactory.createInternalSpan(() -> "SagaManager[" + sagaType.getSimpleName() + "].startNewSaga")
-                       .runCallable(() -> {
-                           startNewSaga(event, initializationPolicy.getInitialAssociationValue(), segment);
-                           return null;
-                       });
+            startNewSaga(event, initializationPolicy.getInitialAssociationValue(), segment);
         }
     }
 
@@ -118,9 +114,13 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     private void startNewSaga(EventMessage<?> event, AssociationValue associationValue, Segment segment) throws Exception {
-        Saga<T> newSaga = sagaRepository.createInstance(createSagaIdentifier(segment), sagaFactory);
-        newSaga.getAssociationValues().add(associationValue);
-        doInvokeSaga(event, newSaga);
+        String sagaIdentifier = createSagaIdentifier(segment);
+        spanFactory.createCreateSagaInstanceSpan(event, sagaType, sagaIdentifier).runCallable(() -> {
+            Saga<T> newSaga = sagaRepository.createInstance(sagaIdentifier, sagaFactory);
+            newSaga.getAssociationValues().add(associationValue);
+            doInvokeSaga(event, newSaga);
+            return null;
+        });
     }
 
     /**
@@ -177,7 +177,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
 
     private boolean doInvokeSaga(EventMessage<?> event, Saga<T> saga) throws Exception {
         if (saga.canHandle(event)) {
-            Span span = spanFactory.createInternalSpan(() -> createInvokeSpanName(saga)).start();
+            Span span = spanFactory.createInvokeSagaSpan(event, sagaType, saga).start();
             try(SpanScope unused = span.makeCurrent()) {
                 saga.handle(event);
             } catch (Exception e) {
@@ -189,10 +189,6 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
             return true;
         }
         return false;
-    }
-
-    private String createInvokeSpanName(Saga<T> saga) {
-        return "SagaManager[" + sagaType.getSimpleName() + "].invokeSaga " + saga.getSagaIdentifier();
     }
 
     /**
@@ -252,9 +248,10 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
      * Abstract Builder class to instantiate {@link AbstractSagaManager} implementations.
      * <p>
      * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
-     * {@link SagaInstantiationException} if it fails, the {@link ListenerInvocationErrorHandler} is defaulted to
-     * a {@link LoggingErrorHandler} and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}.
-     * The {@link SagaRepository} and {@code sagaType} are <b>hard requirements</b> and as such should be provided.
+     * {@link SagaInstantiationException} if it fails, the {@link ListenerInvocationErrorHandler} is defaulted to a
+     * {@link LoggingErrorHandler} and the {@link SagaManagerSpanFactory} defaults to a
+     * {@link DefaultSagaManagerSpanFactory} backed by a {@link NoOpSpanFactory}. The {@link SagaRepository} and
+     * {@code sagaType} are <b>hard requirements</b> and as such should be provided.
      *
      * @param <T> a generic specifying the Saga type managed by this implementation
      */
@@ -264,7 +261,9 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         protected Class<T> sagaType;
         private Supplier<T> sagaFactory = () -> newInstance(sagaType);
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private SagaManagerSpanFactory spanFactory = DefaultSagaManagerSpanFactory.builder()
+                                                                                  .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                  .build();
 
         private static <T> T newInstance(Class<T> type) {
             try {
@@ -328,12 +327,28 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
 
         /**
          * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         * {@link NoOpSpanFactory}, which provides no tracing capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(SagaManagerSpanFactory) instead as it provides more configuration options.
          */
+        @Deprecated
         public Builder<T> spanFactory(SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultSagaManagerSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link SagaManagerSpanFactory} implementation to use for providing tracing capabilities. Defaults to
+         * a {@link DefaultSagaManagerSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no
+         * tracing capabilities.
+         *
+         * @param spanFactory The {@link SagaManagerSpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> spanFactory(SagaManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;
@@ -346,6 +361,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
+            assertNonNull(spanFactory, "The SpanFactory is a hard requirement and should be provided");
             assertNonNull(sagaRepository, "The SagaRepository is a hard requirement and should be provided");
             assertNonNull(sagaType, "The sagaType is a hard requirement and should be provided");
         }

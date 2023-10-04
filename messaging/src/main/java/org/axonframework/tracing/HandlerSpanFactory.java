@@ -14,23 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.scheduling.dbscheduler;
-
-import org.axonframework.common.AxonException;
+package org.axonframework.tracing;
 
 /**
- * Exception indicating a problem in the Event Scheduling mechanism, more precisely the
- * {@link DbSchedulerEventScheduler} wasn't initialized.
+ * Factory that creates spans for the spans representing handlers.
  *
- * @author Gerard Klijs
- * @since 4.8.0
+ * @author Mitchell Herrijgers
+ * @since 4.9.0
  */
-public class EventSchedulerNotSetException extends AxonException {
+public interface HandlerSpanFactory {
 
-    /**
-     * Initialize a EventSchedulerNotSetException.
-     */
-    public EventSchedulerNotSetException() {
-        super("The DbSchedulerEventScheduler is not yet initialized");
-    }
 }

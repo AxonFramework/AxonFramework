@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,11 @@ import javax.annotation.Nonnull;
  *
  * @author Mitchell Herrijgers
  * @since 4.7.0
+ * @deprecated Various components have dedicated tracing SpanFactory interfaces since 4.9.0. This includes the {@link org.axonframework.commandhandling.CommandBus},
+ * {@link org.axonframework.eventhandling.EventProcessor} and {@link org.axonframework.queryhandling.QueryBus}. Use the {@code distributedInSameTrace}
+ * of these instead.
  */
+@Deprecated
 public class NestingSpanFactory implements SpanFactory {
 
     private final SpanFactory delegateSpanFactory;

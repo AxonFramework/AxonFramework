@@ -20,12 +20,14 @@ import com.thoughtworks.xstream.XStream;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
@@ -49,7 +51,6 @@ import reactor.test.StepVerifier;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
@@ -76,7 +77,7 @@ class StreamingQueryEndToEndTest {
 
     @Container
     private static final AxonServerContainer axonServerContainer =
-            new AxonServerContainer("axoniq/axonserver:latest-dev")
+            new AxonServerContainer()
                     .withAxonServerName("axonserver")
                     .withAxonServerHostname(HOSTNAME)
                     .withDevMode(true)
@@ -215,9 +216,9 @@ class StreamingQueryEndToEndTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void listQuery(boolean supportsStreaming) throws ExecutionException, InterruptedException {
-        QueryMessage<ListQuery, List<String>> query = new GenericQueryMessage<>(new ListQuery(),
-                                                                                multipleInstancesOf(String.class));
+    void listQuery(boolean supportsStreaming) throws Throwable {
+        QueryMessage<ListQuery, List<String>> query =
+                new GenericQueryMessage<>(new ListQuery(), multipleInstancesOf(String.class));
 
         assertEquals(asList("a", "b", "c", "d"), directQueryPayload(query, supportsStreaming));
     }
@@ -231,16 +232,21 @@ class StreamingQueryEndToEndTest {
                    .map(Message::getPayload);
     }
 
-    private <R> R directQueryPayload(QueryMessage<?, R> query, boolean supportsStreaming)
-            throws ExecutionException, InterruptedException {
-        if (supportsStreaming) {
-            return senderQueryBus.query(query)
-                                 .get()
-                                 .getPayload();
+    private <R> R directQueryPayload(QueryMessage<?, R> query,
+                                     boolean supportsStreaming) throws Throwable {
+        QueryResponseMessage<R> response = null;
+        try {
+            response = supportsStreaming
+                    ? senderQueryBus.query(query).get()
+                    : nonStreamingSenderQueryBus.query(query).get();
+            return response.getPayload();
+        } catch (IllegalPayloadAccessException e) {
+            if (response != null && response.optionalExceptionResult().isPresent()) {
+                throw response.optionalExceptionResult().get();
+            } else {
+                throw e;
+            }
         }
-        return nonStreamingSenderQueryBus.query(query)
-                                         .get()
-                                         .getPayload();
     }
 
     private static class MyQueryHandler {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
@@ -28,6 +29,40 @@ import java.time.Duration;
  */
 @ConfigurationProperties("axon.tracing")
 public class TracingProperties {
+    /**
+     * Properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     */
+    private SnapshotterProperties snapshotter = new SnapshotterProperties();
+
+    /**
+     * Properties describing the tracing settings for the {@link CommandBus}.
+     */
+    private CommandBusProperties commandBus = new CommandBusProperties();
+
+    /**
+     * Properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     */
+    private QueryBusProperties queryBus = new QueryBusProperties();
+
+    /**
+     * Properties describing the tracing settings for the {@link org.axonframework.deadline.DeadlineManager}.
+     */
+    private DeadlineManagerProperties deadlineManager = new DeadlineManagerProperties();
+
+    /**
+     * Properties describing the tracing settings for the {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     */
+    private SagaManagerProperties sagaManager = new SagaManagerProperties();
+
+    /**
+     * Properties describing the tracing settings for the {@link org.axonframework.modelling.command.Repository}.
+     */
+    private RepositoryProperties repository = new RepositoryProperties();
+
+    /**
+     * Properties describing the tracing settings for the {@link org.axonframework.eventhandling.EventProcessor}.
+     */
+    private EventProcessorProperties eventProcessor = new EventProcessorProperties();
 
     /**
      * Whether to show event sourcing handlers in traces. This can be very noisy, especially when larger aggregates are
@@ -36,22 +71,149 @@ public class TracingProperties {
     private boolean showEventSourcingHandlers = false;
 
     /**
-     * Whether to nest spans of subsequent in the same trace. This setting is disabled by default.
-     */
-    private boolean nestedHandlers = false;
-
-    /**
-     * How old a message is allowed to be when nesting a span inside the dispatching trace.
-     * Only affects events and deadlines.
-     * After the time limit, the handling spans become their own root trace, per default behavior.
-     */
-    private Duration nestedTimeLimit = Duration.ofMinutes(2);
-
-    /**
      * Defines which {@link org.axonframework.tracing.SpanAttributesProvider SpanAttributesProviders}, provided by
      * default by Axon Framework, are active.
      */
     private AttributeProviders attributeProviders;
+
+    /**
+     * Returns the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     *
+     * @return the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     */
+    public SnapshotterProperties getSnapshotter() {
+        return snapshotter;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     *
+     * @param snapshotter the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     */
+    public void setSnapshotter(SnapshotterProperties snapshotter) {
+        this.snapshotter = snapshotter;
+    }
+
+    /**
+     * Returns the properties describing the tracing settings for the {@link CommandBus}.
+     *
+     * @return The properties describing the tracing settings for the {@link CommandBus}.
+     */
+    public CommandBusProperties getCommandBus() {
+        return commandBus;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the {@link CommandBus}.
+     *
+     * @param commandBus The properties describing the tracing settings for the {@link CommandBus}.
+     */
+    public void setCommandBus(CommandBusProperties commandBus) {
+        this.commandBus = commandBus;
+    }
+
+    /**
+     * Returns the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     * @return the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     */
+    public QueryBusProperties getQueryBus() {
+        return queryBus;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     * @param queryBus the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     */
+    public void setQueryBus(QueryBusProperties queryBus) {
+        this.queryBus = queryBus;
+    }
+
+    /**
+     * Returns the properties describing the tracing settings for the
+     * {@link org.axonframework.deadline.DeadlineManager}.
+     *
+     * @return the properties describing the tracing settings for the
+     * {@link org.axonframework.deadline.DeadlineManager}.
+     */
+    public DeadlineManagerProperties getDeadlineManager() {
+        return deadlineManager;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the {@link org.axonframework.deadline.DeadlineManager}.
+     *
+     * @param deadlineManager the properties describing the tracing settings for the
+     *                        {@link org.axonframework.deadline.DeadlineManager}.
+     */
+    public void setDeadlineManager(DeadlineManagerProperties deadlineManager) {
+        this.deadlineManager = deadlineManager;
+    }
+
+    /**
+     * Returns the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     *
+     * @return the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     */
+    public SagaManagerProperties getSagaManager() {
+        return sagaManager;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     *
+     * @param sagaManager the properties describing the tracing settings for the
+     *                    {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     */
+    public void setSagaManager(SagaManagerProperties sagaManager) {
+        this.sagaManager = sagaManager;
+    }
+
+    /**
+     * Returns the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.command.Repository}.
+     *
+     * @return the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.command.Repository}.
+     */
+    public RepositoryProperties getRepository() {
+        return repository;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the
+     * {@link org.axonframework.modelling.command.Repository}.
+     *
+     * @param repository the properties describing the tracing settings for the
+     *                   {@link org.axonframework.modelling.command.Repository}.
+     */
+    public void setRepository(RepositoryProperties repository) {
+        this.repository = repository;
+    }
+
+    /**
+     * Returns the properties describing the tracing settings for the
+     * {@link org.axonframework.eventhandling.EventProcessor}.
+     *
+     * @return The properties describing the tracing settings for the
+     * {@link org.axonframework.eventhandling.EventProcessor}.
+     */
+    public EventProcessorProperties getEventProcessor() {
+        return eventProcessor;
+    }
+
+    /**
+     * Sets the properties describing the tracing settings for the
+     * {@link org.axonframework.eventhandling.EventProcessor}.
+     *
+     * @param eventProcessor The properties describing the tracing settings for the
+     *                       {@link org.axonframework.eventhandling.EventProcessor}.
+     */
+    public void setEventProcessor(EventProcessorProperties eventProcessor) {
+        this.eventProcessor = eventProcessor;
+    }
 
     /**
      * Getting value for showing event sourcing handlers in traces.
@@ -75,36 +237,44 @@ public class TracingProperties {
      * Getting value for nesting handlers in dispatching traces.
      *
      * @return Whether handlers should be nested in dispatching traces
+     * @deprecated Use {@link EventProcessorProperties#isDistributedInSameTrace()} instead.
      */
+    @Deprecated
     public boolean isNestedHandlers() {
-        return nestedHandlers;
+        return eventProcessor.isDistributedInSameTrace();
     }
 
     /**
      * Setting value for nesting handlers in dispatching traces.
      *
      * @param nestedHandlers The new value for nesting handlers in dispatching trace.
+     * @deprecated Use {@link EventProcessorProperties#setDisableBatchTrace(boolean)} instead.
      */
+    @Deprecated
     public void setNestedHandlers(boolean nestedHandlers) {
-        this.nestedHandlers = nestedHandlers;
+        eventProcessor.setDistributedInSameTrace(nestedHandlers);
     }
 
     /**
-     * The time limit set on nested handlers inside dispatching trace.
-     * Only affects events and deadlines, other messages are always nested.
+     * The time limit set on nested handlers inside dispatching trace. Only affects events and deadlines, other messages
+     * are always nested.
      *
      * @return For how long event messages should be nested in their dispatching trace.
+     * @deprecated Use {@link EventProcessorProperties#getDistributedInSameTraceTimeLimit()} instead.
      */
+    @Deprecated
     public Duration getNestedTimeLimit() {
-        return nestedTimeLimit;
+        return eventProcessor.getDistributedInSameTraceTimeLimit();
     }
 
     /**
      * Sets the value for the time limit set on nested handlers inside dispatching trace. Only affects events. Commands
      * and queries are always nested.
+     * @deprecated Use {@link EventProcessorProperties#setDistributedInSameTraceTimeLimit(Duration)} instead.
      */
+    @Deprecated
     public void setNestedTimeLimit(Duration nestedTimeLimit) {
-        this.nestedTimeLimit = nestedTimeLimit;
+        eventProcessor.setDistributedInSameTraceTimeLimit(nestedTimeLimit);
     }
 
     /**
@@ -266,6 +436,338 @@ public class TracingProperties {
          */
         public void setPayloadType(boolean payloadType) {
             this.payloadType = payloadType;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     */
+    public static class SnapshotterProperties {
+        /**
+         * Whether the creation of the snapshot should be represented by a separate trace.
+         */
+        private boolean separateTrace = false;
+
+        /**
+         * Wether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         */
+        private boolean aggregateTypeInSpanName = true;
+
+        /**
+         * Whether the creation of the snapshot should be represented by a separate trace.
+         *
+         * @return whether the creation of the snapshot should be represented by a separate trace.
+         */
+        public boolean isSeparateTrace() {
+            return separateTrace;
+        }
+
+        /**
+         * Sets whether the creation of the snapshot should be represented by a separate trace.
+         *
+         * @param separateTrace whether the creation of the snapshot should be represented by a separate trace.
+         */
+        public void setSeparateTrace(boolean separateTrace) {
+            this.separateTrace = separateTrace;
+        }
+
+        /**
+         * Whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         *
+         * @return whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         */
+        public boolean isAggregateTypeInSpanName() {
+            return aggregateTypeInSpanName;
+        }
+
+        /**
+         * Sets whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         *
+         * @param aggregateTypeInSpanName whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         */
+        public void setAggregateTypeInSpanName(boolean aggregateTypeInSpanName) {
+            this.aggregateTypeInSpanName = aggregateTypeInSpanName;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.commandhandling.CommandBus}.
+     *
+     * @since 4.9.0
+     */
+    public static class CommandBusProperties {
+
+        /**
+         * Whether distributed commands should be part of the same trace.
+         */
+        private boolean distributedInSameTrace = true;
+
+        /**
+         * Whether distributed commands should be part of the same trace. Defaults to {@code true}.
+         *
+         * @return whether distributed commands should be part of the same trace.
+         */
+        public boolean isDistributedInSameTrace() {
+            return distributedInSameTrace;
+        }
+
+        /**
+         * Sets whether distributed commands should be part of the same trace.
+         *
+         * @param distributedInSameTrace whether distributed commands should be part of the same trace.
+         */
+        public void setDistributedInSameTrace(boolean distributedInSameTrace) {
+            this.distributedInSameTrace = distributedInSameTrace;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.queryhandling.QueryBus}.
+     *
+     * @since 4.9.0
+     */
+    public static class QueryBusProperties {
+
+        /**
+         * Whether distributed queries should be part of the same trace.
+         */
+        private boolean distributedInSameTrace = true;
+        
+        /**
+         * Whether distributed queries should be part of the same trace. Defaults to {@code true}.
+         *
+         * @return whether distributed queries should be part of the same trace.
+         */
+        public boolean isDistributedInSameTrace() {
+            return distributedInSameTrace;
+        }
+
+        /**
+         * Sets whether distributed queries should be part of the same trace.
+         *
+         * @param distributedInSameTrace whether distributed queries should be part of the same trace.
+         */
+        public void setDistributedInSameTrace(boolean distributedInSameTrace) {
+            this.distributedInSameTrace = distributedInSameTrace;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.deadline.DeadlineManager}.
+     *
+     * @since 4.9.0
+     */
+    public static class DeadlineManagerProperties {
+
+        /**
+         * The name of the attribute used to store the deadline id in the span. Defaults to {@code axon.deadlineId}.
+         */
+        private String deadlineIdAttributeName = "axon.deadlineId";
+        /**
+         * The name of the attribute used to store the deadline scope in the span.
+         */
+        private String deadlineScopeAttributeName = "axon.scope";
+
+        /**
+         * The name of the attribute used to store the deadline id in the span. Defaults to {@code axon.deadlineId}.
+         *
+         * @return The name of the attribute used to store the deadline id in the span.
+         */
+        public String getDeadlineIdAttributeName() {
+            return deadlineIdAttributeName;
+        }
+
+        /**
+         * The name of the attribute used to store the deadline id in the span. Defaults to {@code axon.deadlineId}.
+         *
+         * @param deadlineIdAttributeName The name of the attribute used to store the deadline id in the span.
+         */
+        public void setDeadlineIdAttributeName(String deadlineIdAttributeName) {
+            this.deadlineIdAttributeName = deadlineIdAttributeName;
+        }
+
+        /**
+         * The name of the attribute used to store the deadline scope in the span. Defaults to {@code axon.scope}.
+         *
+         * @return The name of the attribute used to store the deadline scope in the span.
+         */
+        public String getDeadlineScopeAttributeName() {
+            return deadlineScopeAttributeName;
+        }
+
+        /**
+         * The name of the attribute used to store the deadline scope in the span. Defaults to {@code axon.scope}.
+         *
+         * @param deadlineScopeAttributeName The name of the attribute used to store the deadline scope in the span.
+         */
+        public void setDeadlineScopeAttributeName(String deadlineScopeAttributeName) {
+            this.deadlineScopeAttributeName = deadlineScopeAttributeName;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.modelling.command.Repository}.
+     *
+     * @since 4.9.0
+     */
+    public static class RepositoryProperties {
+
+        /**
+         * The name of the attribute used to store the aggregate id in the span. Defaults to {@code axon.aggregateId}.
+         */
+        private String aggregateIdAttributeName = "axon.deadlineId";
+
+        /**
+         * The name of the attribute used to store the aggregate id in the span. Defaults to {@code axon.aggregateId}.
+         *
+         * @return The name of the attribute used to store the aggregate id in the span.
+         */
+        public String getAggregateIdAttributeName() {
+            return aggregateIdAttributeName;
+        }
+
+        /**
+         * The name of the attribute used to store the aggregate id in the span. Defaults to {@code axon.aggregateId}.
+         *
+         * @param aggregateIdAttributeName The name of the attribute used to store the aggregate id in the span.
+         */
+        public void setAggregateIdAttributeName(String aggregateIdAttributeName) {
+            this.aggregateIdAttributeName = aggregateIdAttributeName;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.modelling.saga.AbstractSagaManager}.
+     *
+     * @since 4.9.0
+     */
+    public static class SagaManagerProperties {
+
+        /**
+         * The name of the attribute used to store the saga id in the span. Defaults to {@code axon.sagaIdentifier}.
+         */
+        private String sagaIdentifierAttributeName = "axon.sagaIdentifier";
+
+        /**
+         * The name of the attribute used to store the saga id in the span. Defaults to {@code axon.sagaIdentifier}.
+         *
+         * @return The name of the attribute used to store the saga id in the span.
+         */
+        public String getSagaIdentifierAttributeName() {
+            return sagaIdentifierAttributeName;
+        }
+
+        /**
+         * The name of the attribute used to store the saga id in the span. Defaults to {@code axon.sagaIdentifier}.
+         *
+         * @param sagaIdentifierAttributeName The name of the attribute used to store the saga id in the span.
+         */
+        public void setSagaIdentifierAttributeName(String sagaIdentifierAttributeName) {
+            this.sagaIdentifierAttributeName = sagaIdentifierAttributeName;
+        }
+    }
+
+    /**
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.eventhandling.EventProcessor} implementations.
+     *
+     * @since 4.9.0
+     */
+    public static class EventProcessorProperties {
+
+        /**
+         * Disables the creation of a batch trace. This means each event is handled in its own trace.
+         * Defaults to {@code false}.
+         */
+        private boolean disableBatchTrace = false;
+
+        /**
+         * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
+         * {@code true}, the {@link org.axonframework.eventhandling.EventProcessor} will create a new trace each batch
+         * event, as long as the batch is handled within the time limit set by
+         * {@link #distributedInSameTraceTimeLimit}.
+         */
+        private boolean distributedInSameTrace = false;
+
+        /**
+         * The time limit for events handled by a {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
+         * {@link #distributedInSameTrace} is {@code true}.
+         */
+        private Duration distributedInSameTraceTimeLimit = Duration.ofMinutes(2);
+
+        /**
+         * Disables the creation of a batch trace. This means each event is handled in its own trace.
+         *
+         * @return whether batch tracing is disabled.
+         */
+        public boolean isDisableBatchTrace() {
+            return disableBatchTrace;
+        }
+
+        /**
+         * Disables the creation of a batch trace. This means each event is handled in its own trace.
+         *
+         * @param disableBatchTrace Whether batch tracing is disabled.
+         */
+        public void setDisableBatchTrace(boolean disableBatchTrace) {
+            this.disableBatchTrace = disableBatchTrace;
+        }
+
+
+        /**
+         * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
+         * {@code true}, the {@link org.axonframework.eventhandling.EventProcessor} will create a new trace each batch
+         * event, as long as the batch is handled within the time limit set by
+         * {@link #distributedInSameTraceTimeLimit}.
+         *
+         * @return Whether distributed events should be part of the same trace.
+         */
+        public boolean isDistributedInSameTrace() {
+            return distributedInSameTrace;
+        }
+
+        /**
+         * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
+         * {@code true}, the {@link org.axonframework.eventhandling.EventProcessor} will create a new trace each batch
+         * event, as long as the batch is handled within the time limit set by
+         * {@link #distributedInSameTraceTimeLimit}.
+         *
+         * @param distributedInSameTrace Whether distributed events should be part of the same trace.
+         */
+        public void setDistributedInSameTrace(boolean distributedInSameTrace) {
+            this.distributedInSameTrace = distributedInSameTrace;
+        }
+
+        /**
+         * The time limit for events handled by a {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
+         * {@link #distributedInSameTrace} is {@code true}.
+         *
+         * @return The time limit for events handled by a
+         * {@link org.axonframework.eventhandling.StreamingEventProcessor} to be traced in the same trace as the trace
+         * that published it.
+         */
+        public Duration getDistributedInSameTraceTimeLimit() {
+            return distributedInSameTraceTimeLimit;
+        }
+
+        /**
+         * The time limit for events handled by a {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
+         * {@link #distributedInSameTrace} is {@code true}.
+         *
+         * @param distributedInSameTraceTimeLimit The time limit for events handled by a
+         *                                        {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         *                                        traced in the same trace as the trace that published it.
+         */
+        public void setDistributedInSameTraceTimeLimit(Duration distributedInSameTraceTimeLimit) {
+            this.distributedInSameTraceTimeLimit = distributedInSameTraceTimeLimit;
         }
     }
 }

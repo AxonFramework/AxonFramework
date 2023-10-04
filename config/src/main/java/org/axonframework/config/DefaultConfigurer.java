@@ -18,6 +18,8 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusSpanFactory;
+import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -30,16 +32,20 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.SimpleDeadlineManager;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventBusSpanFactory;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.AggregateSnapshotter;
-import org.axonframework.eventsourcing.Snapshotter;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -58,16 +64,24 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
+import org.axonframework.modelling.command.RepositorySpanFactory;
+import org.axonframework.modelling.saga.DefaultSagaManagerSpanFactory;
 import org.axonframework.modelling.saga.ResourceInjector;
+import org.axonframework.modelling.saga.SagaManagerSpanFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.DefaultQueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -199,6 +213,15 @@ public class DefaultConfigurer implements Configurer {
         components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
         components.put(Snapshotter.class, new Component<>(config, "snapshotter", this::defaultSnapshotter));
         components.put(SpanFactory.class, new Component<>(config, "spanFactory", this::defaultSpanFactory));
+        components.put(SnapshotterSpanFactory.class, new Component<>(config, "snapshotterSpanFactory", this::defaultSnapshotterSpanFactory));
+        components.put(CommandBusSpanFactory.class, new Component<>(config, "commandBusSpanFactory", this::defaultCommandBusSpanFactory));
+        components.put(QueryBusSpanFactory.class, new Component<>(config, "queryBusSpanFactory", this::defaultQueryBusSpanFactory));
+        components.put(QueryUpdateEmitterSpanFactory.class, new Component<>(config, "queryUpdateEmitterSpanFactory", this::defaultQueryUpdateEmitterSpanFactory));
+        components.put(EventBusSpanFactory.class, new Component<>(config, "eventBusSpanFactory", this::defaultEventBusSpanFactory));
+        components.put(DeadlineManagerSpanFactory.class, new Component<>(config, "deadlineManagerSpanFactory", this::defaultDeadlineManagerSpanFactory));
+        components.put(SagaManagerSpanFactory.class, new Component<>(config, "sagaManagerSpanFactory", this::defaultSagaManagerSpanFactory));
+        components.put(RepositorySpanFactory.class, new Component<>(config, "repositorySpanFactory", this::defaultRepositorySpanFactory));
+        components.put(EventProcessorSpanFactory.class, new Component<>(config, "eventProcessorSpanFactory", this::defaultEventProcessorSpanFactory));
     }
 
     /**
@@ -348,7 +371,7 @@ public class DefaultConfigurer implements Configurer {
                                                               () -> LoggingQueryInvocationErrorHandler.builder().build()
                                                       ))
                                                       .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                                                      .spanFactory(config.spanFactory())
+                                                      .spanFactory(config.getComponent(QueryBusSpanFactory.class))
                                                       .build();
                     queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
                     return queryBus;
@@ -369,7 +392,7 @@ public class DefaultConfigurer implements Configurer {
                             config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
                     return SimpleQueryUpdateEmitter.builder()
                                                    .updateMessageMonitor(updateMessageMonitor)
-                                                   .spanFactory(config.spanFactory())
+                                                   .spanFactory(config.getComponent(QueryUpdateEmitterSpanFactory.class))
                                                    .build();
                 });
     }
@@ -430,7 +453,7 @@ public class DefaultConfigurer implements Configurer {
                                                     DuplicateCommandHandlerResolver.class,
                                                     LoggingDuplicateCommandHandlerResolver::instance
                                             ))
-                                            .spanFactory(config.spanFactory())
+                                            .spanFactory(config.getComponent(CommandBusSpanFactory.class))
                                             .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
                                             .build();
                     commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
@@ -475,7 +498,8 @@ public class DefaultConfigurer implements Configurer {
         return defaultComponent(DeadlineManager.class, config)
                 .orElseGet(() -> SimpleDeadlineManager.builder()
                                                       .scopeAwareProvider(config.scopeAwareProvider())
-                                                      .spanFactory(config.spanFactory()).build());
+                                                      .spanFactory(config.getComponent(DeadlineManagerSpanFactory.class))
+                                                      .build());
     }
 
     /**
@@ -488,7 +512,7 @@ public class DefaultConfigurer implements Configurer {
         return defaultComponent(EventBus.class, config)
                 .orElseGet(() -> SimpleEventBus.builder()
                                                .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
-                                               .spanFactory(config.spanFactory())
+                                               .spanFactory(config.getComponent(EventBusSpanFactory.class))
                                                .build());
     }
 
@@ -512,6 +536,141 @@ public class DefaultConfigurer implements Configurer {
     protected SpanFactory defaultSpanFactory(Configuration config) {
         return defaultComponent(SpanFactory.class, config)
                 .orElseGet(NoOpSpanFactory::new);
+    }
+
+    /**
+     * Returns the default {@link SnapshotterSpanFactory}, or a {@link DefaultSnapshotterSpanFactory} backed by the
+     * configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link SnapshotterSpanFactory}.
+     */
+    protected SnapshotterSpanFactory defaultSnapshotterSpanFactory(Configuration config) {
+        return defaultComponent(SnapshotterSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultSnapshotterSpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link CommandBusSpanFactory}, or a {@link DefaultCommandBusSpanFactory} backed by the
+     * configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link CommandBusSpanFactory}.
+     */
+    protected CommandBusSpanFactory defaultCommandBusSpanFactory(Configuration config) {
+        return defaultComponent(CommandBusSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultCommandBusSpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link QueryBusSpanFactory}, or a {@link DefaultQueryBusSpanFactory} backed by the configured
+     * {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link QueryBusSpanFactory}.
+     */
+    protected QueryBusSpanFactory defaultQueryBusSpanFactory(Configuration config) {
+        return defaultComponent(QueryBusSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultQueryBusSpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link QueryUpdateEmitterSpanFactory}, or a {@link DefaultQueryUpdateEmitterSpanFactory}
+     * backed by the configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link QueryUpdateEmitterSpanFactory}.
+     */
+    protected QueryUpdateEmitterSpanFactory defaultQueryUpdateEmitterSpanFactory(Configuration config) {
+        return defaultComponent(QueryUpdateEmitterSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultQueryUpdateEmitterSpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link EventBusSpanFactory}, or a {@link DefaultEventBusSpanFactory} backed by the configured
+     * {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link EventBusSpanFactory}.
+     */
+    protected EventBusSpanFactory defaultEventBusSpanFactory(Configuration config) {
+        return defaultComponent(EventBusSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultEventBusSpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link DeadlineManagerSpanFactory}, or a
+     * {@link DefaultDeadlineManagerSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link DeadlineManagerSpanFactory}.
+     */
+    protected DeadlineManagerSpanFactory defaultDeadlineManagerSpanFactory(Configuration config) {
+        return defaultComponent(DeadlineManagerSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultDeadlineManagerSpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link RepositorySpanFactory}, or a
+     * {@link DefaultRepositorySpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link RepositorySpanFactory}.
+     */
+    protected RepositorySpanFactory defaultRepositorySpanFactory(Configuration config) {
+        return defaultComponent(RepositorySpanFactory.class, this.config)
+                .orElseGet(() -> DefaultRepositorySpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link EventProcessorSpanFactory}, or a
+     * {@link DefaultEventProcessorSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link EventProcessorSpanFactory}.
+     */
+    protected EventProcessorSpanFactory defaultEventProcessorSpanFactory(Configuration config) {
+        return defaultComponent(EventProcessorSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultEventProcessorSpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
+    }
+
+    /**
+     * Returns the default {@link SagaManagerSpanFactory}, or a
+     * {@link DefaultSagaManagerSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link SagaManagerSpanFactory}.
+     */
+    protected SagaManagerSpanFactory defaultSagaManagerSpanFactory(Configuration config) {
+        return defaultComponent(SagaManagerSpanFactory.class, this.config)
+                .orElseGet(() -> DefaultSagaManagerSpanFactory
+                        .builder()
+                        .spanFactory(config.spanFactory())
+                        .build());
     }
 
     /**
@@ -566,7 +725,7 @@ public class DefaultConfigurer implements Configurer {
                                                .aggregateFactories(aggregateFactories)
                                                .repositoryProvider(config::repository)
                                                .parameterResolverFactory(config.parameterResolverFactory())
-                                               .spanFactory(config.spanFactory())
+                                               .spanFactory(config.getComponent(SnapshotterSpanFactory.class))
                                                .handlerDefinition(retrieveHandlerDefinition(config,
                                                                                             aggregateConfigurations))
                                                .build();

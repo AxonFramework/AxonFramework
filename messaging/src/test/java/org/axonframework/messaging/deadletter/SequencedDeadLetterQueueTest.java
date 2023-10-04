@@ -26,10 +26,14 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -300,7 +305,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void deadLettersInvocationPerSequenceIdentifierReturnsEnqueuedLettersMatchingGivenSequenceIdentifier() {
+    void deadLetterSequenceReturnsEnqueuedLettersMatchingGivenSequenceIdentifier() {
         Object testId = generateId();
         DeadLetter<M> expected = generateInitialLetter();
 
@@ -316,7 +321,34 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void deadLettersInvocationReturnsAllEnqueuedDeadLetters() {
+    void deadLetterSequenceReturnsMatchingEnqueuedLettersInInsertOrder() {
+        Object testId = generateId();
+
+        Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId).iterator();
+        assertFalse(resultIterator.hasNext());
+
+        LinkedHashMap<Integer, DeadLetter<M>> enqueuedLetters = new LinkedHashMap<>();
+        DeadLetter<M> initial = generateInitialLetter();
+        testSubject.enqueue(testId, initial);
+        enqueuedLetters.put(0, initial);
+
+        IntStream.range(1, Long.valueOf(maxSequenceSize()).intValue())
+                 .forEach(i -> {
+                     DeadLetter<M> followUp = generateFollowUpLetter();
+                     testSubject.enqueue(testId, followUp);
+                     enqueuedLetters.put(i, followUp);
+                 });
+
+        resultIterator = testSubject.deadLetterSequence(testId).iterator();
+
+        for (Map.Entry<Integer, DeadLetter<M>> entry : enqueuedLetters.entrySet()) {
+            assertTrue(resultIterator.hasNext());
+            assertLetter(entry.getValue(), resultIterator.next());
+        }
+    }
+
+    @Test
+    void deadLettersReturnsAllEnqueuedDeadLetters() {
         Object thisTestId = generateId();
         Object thatTestId = generateId();
 

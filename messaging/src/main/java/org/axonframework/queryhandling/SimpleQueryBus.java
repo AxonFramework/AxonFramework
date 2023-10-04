@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
@@ -99,7 +100,7 @@ public class SimpleQueryBus implements QueryBus {
     private final QueryInvocationErrorHandler errorHandler;
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
-    private final SpanFactory spanFactory;
+    private final QueryBusSpanFactory spanFactory;
 
     private final QueryUpdateEmitter queryUpdateEmitter;
 
@@ -125,8 +126,8 @@ public class SimpleQueryBus implements QueryBus {
      * <p>
      * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to
      * {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler},
-     * the {@link SpanFactory} to a {@link NoOpSpanFactory} and {@link QueryUpdateEmitter} to
-     * {@link SimpleQueryUpdateEmitter}.
+     * the {@link QueryBusSpanFactory} defaults to a {@link DefaultQueryBusSpanFactory} backed by a
+     * {@link NoOpSpanFactory} and {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
      *
      * @return a Builder to be able to create a {@link SimpleQueryBus}
      */
@@ -171,7 +172,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> query) {
-        Span span = spanFactory.createInternalSpan(() -> "SimpleQueryBus.query", query);
+        Span span = spanFactory.createQuerySpan(query, false);
         return span.runSupplier(() -> doQuery(query).whenComplete((r, t) -> {
             if (t != null) {
                 span.recordException(t);
@@ -231,7 +232,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
-        Span span = spanFactory.createChildHandlerSpan(() -> "SimpleQueryBus.streamingQuery", query).start();
+        Span span = spanFactory.createStreamingQuerySpan(query, false).start();
         try (SpanScope unused = span.makeCurrent()) {
             AtomicReference<Throwable> lastError = new AtomicReference<>();
             return Mono.just(intercept(query))
@@ -406,13 +407,12 @@ public class SimpleQueryBus implements QueryBus {
             return Stream.empty();
         }
 
-        return spanFactory.createInternalSpan(() -> "SimpleQueryBus.scatterGather", query).runSupplier(() -> {
+        return spanFactory.createScatterGatherSpan(query, false).runSupplier(() -> {
             long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-            List<Span> spans = handlers.stream().map(handler -> spanFactory
-                    .createInternalSpan(() -> {
-                        int handlerIndex = handlers.indexOf(handler);
-                        return "SimpleQueryBus.scatterGatherHandler-" + handlerIndex;
-                    })).collect(Collectors.toList());
+            List<Span> spans = handlers.stream().map(handler -> {
+                int handlerIndex = handlers.indexOf(handler);
+                return spanFactory.createScatterGatherHandlerSpan(query, handlerIndex);
+            }).collect(Collectors.toList());
             return handlers
                     .stream()
                     .map(handler -> {
@@ -651,8 +651,8 @@ public class SimpleQueryBus implements QueryBus {
      * <p>
      * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to
      * {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler},
-     * the {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter} and the {@link SpanFactory} defaults to a
-     * {@link NoOpSpanFactory}.
+     * the {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter} and the {@link QueryBusSpanFactory} defaults to a
+     * {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
      */
     public static class Builder {
 
@@ -663,9 +663,11 @@ public class SimpleQueryBus implements QueryBus {
                                                                                              .build();
         private DuplicateQueryHandlerResolver duplicateQueryHandlerResolver = DuplicateQueryHandlerResolution.logAndAccept();
         private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder()
-                                                                                .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                .spanFactory(DefaultQueryUpdateEmitterSpanFactory.builder().spanFactory(NoOpSpanFactory.INSTANCE).build())
                                                                                 .build();
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
+                                                                            .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                            .build();
 
         /**
          * Sets the {@link MessageMonitor} used to monitor query messages. Defaults to a {@link NoOpMessageMonitor}.
@@ -744,8 +746,24 @@ public class SimpleQueryBus implements QueryBus {
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(QueryBusSpanFactory)} instead as it provides more configurability.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultQueryBusSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link QueryBusSpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no tracing
+         * capabilities.
+         *
+         * @param spanFactory The {@link QueryBusSpanFactory} implementation.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull QueryBusSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

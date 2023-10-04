@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -276,19 +276,19 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         /**
-         * For every discovered type of the aggregate hierarchy, check whether there are {@link ChildEntity}s present.
-         * If they are not present on the type's level, move to that class' superclass (if possible) and check whether
-         * it has any {@code ChildEntity} instances registered. If this is the case, add them to the {@link Class} type
-         * being validated. Doing so ensures that each level in the hierarchy knows of all it's entities' command
-         * handlers and its parent their entity command handlers.
+         * For every discovered type of the aggregate hierarchy, check whether there are
+         * {@link ChildEntity ChildEntitys} present. If they are not present on the type's level, move to that class'
+         * superclass (if possible) and check whether it has any {@code ChildEntity} instances registered. If this is
+         * the case, add them to the {@link Class} type being validated. Doing so ensures that each level in the
+         * hierarchy knows of all it's entities' command handlers and its parent their entity command handlers.
          */
         private void prepareChildEntityCommandHandlers() {
             for (Class<?> aggregateType : types.values()) {
                 Class<?> type = aggregateType;
-                List<ChildEntity<T>> childrenPerType = children.getOrDefault(type, Collections.emptyList());
-                while (childrenPerType.isEmpty() && !type.equals(Object.class) && type.getSuperclass() != null) {
+                List<ChildEntity<T>> childrenPerType = new ArrayList<>(children.getOrDefault(type, Collections.emptyList()));
+                while (!type.equals(Object.class) && type.getSuperclass() != null) {
                     type = type.getSuperclass();
-                    childrenPerType = children.getOrDefault(type, Collections.emptyList());
+                    childrenPerType.addAll(new ArrayList<>(children.getOrDefault(type, Collections.emptyList())));
                 }
 
                 for (ChildEntity<T> child : childrenPerType) {

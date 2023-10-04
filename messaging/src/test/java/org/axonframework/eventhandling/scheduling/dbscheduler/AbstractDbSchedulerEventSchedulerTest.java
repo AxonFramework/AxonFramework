@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
@@ -64,7 +65,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
     protected DbSchedulerEventScheduler eventScheduler;
     protected Scheduler scheduler;
 
-    abstract Task<?> getTask();
+    abstract Task<?> getTask(Supplier<DbSchedulerEventScheduler> eventSchedulerSupplier);
 
     abstract boolean useBinaryPojo();
 
@@ -81,7 +82,8 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         reCreateTable(dataSource);
         publishedMessages = new ArrayList<>();
         EventBus eventBus = new InMemoryEventBus(publishedMessages);
-        scheduler = spy(getScheduler(dataSource, getTask()));
+        DbSchedulerEventSchedulerSupplier supplier = new DbSchedulerEventSchedulerSupplier();
+        scheduler = spy(getScheduler(dataSource, getTask(supplier)));
         eventScheduler = DbSchedulerEventScheduler
                 .builder()
                 .scheduler(scheduler)
@@ -89,6 +91,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
                 .eventBus(eventBus)
                 .useBinaryPojo(useBinaryPojo())
                 .build();
+        supplier.set(eventScheduler);
         scheduler.start();
     }
 

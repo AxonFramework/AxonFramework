@@ -266,6 +266,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                 + "WHERE " + schema.processingGroupColumn() + "=? "
                 + "AND " + schema.sequenceIdentifierColumn() + "=? "
                 + "AND " + schema.sequenceIndexColumn() + ">=? "
+                + "ORDER BY " + schema.sequenceIndexColumn() + " "
                 + "LIMIT ?";
 
         PreparedStatement statement =

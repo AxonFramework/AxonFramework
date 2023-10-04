@@ -2,15 +2,44 @@ name: Trigger documentation build
 
 on:
   push:
+    branches:
+      - 'master'
+      - 'axon-*'
     paths:
       - 'docs/**'
-      - '.github/workflows/docs.yml'
+  pull_request:
+    branches:
+      - 'master'
+      - 'axon-*'
+    paths:
+      - 'docs/**'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Notify AxonIQ Library
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install vale
+        run: |
+            wget https://github.com/errata-ai/vale/releases/download/v2.23.0/vale_2.23.0_Linux_64-bit.tar.gz
+            sudo tar -xvzf vale_2.23.0_Linux_64-bit.tar.gz -C /usr/local/bin vale
+
+      - name: Generate Site
+        run: |
+          cd docs/_playbook/
+          npm install
+          export GIT_CREDENTIALS='https://axoniq-devops:${{ secrets.LIBRARY_DEVBOT_TOKEN }}@github.com'
+          npx antora playbook.yaml
+
+      - name: Notify AxonIQ Library (if a push to a tracked branch)
+        if: ${{ github.event_name == 'push'}}
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.LIBRARY_DEVBOT_TOKEN }}

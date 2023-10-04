@@ -34,7 +34,6 @@ import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -65,7 +64,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
-    protected final SpanFactory spanFactory;
+    protected final RepositorySpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractRepository} based on the fields contained in the {@link Builder}.
@@ -106,7 +105,14 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
             }
         });
 
-        A aggregate = doCreateNew(factoryMethod);
+        A aggregate;
+        try {
+            aggregate = doCreateNew(factoryMethod);
+        } catch (Exception e) {
+            logger.warn("Exception occurred while trying to create an aggregate.", e);
+            throw e;
+        }
+
         initMethod.accept(aggregate);
         aggregateReference.set(aggregate);
         Assert.isTrue(aggregateModel.entityClass().isAssignableFrom(aggregate.rootType()),
@@ -135,20 +141,27 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      */
     @Override
     public A load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
-        return spanFactory
-                .createInternalSpan(() -> this.getClass().getSimpleName() + ".load " + aggregateIdentifier)
-                .runSupplier(() -> {
-                    UnitOfWork<?> uow = currentUnitOfWork();
-                    Map<String, A> aggregates = managedAggregates(uow);
-                    A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
-                                                             s -> doLoad(aggregateIdentifier,
-                                                                         expectedVersion));
-                    uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
-                    validateOnLoad(aggregate, expectedVersion);
-                    prepareForCommit(aggregate);
+        return spanFactory.createLoadSpan(aggregateIdentifier)
+                          .runSupplier(() -> {
+                              UnitOfWork<?> uow = currentUnitOfWork();
+                              Map<String, A> aggregates = managedAggregates(uow);
+                              A aggregate = aggregates.computeIfAbsent(
+                                      aggregateIdentifier, s -> {
+                                          try {
+                                              return doLoad(aggregateIdentifier, expectedVersion);
+                                          } catch (Exception e) {
+                                              logger.warn("Exception occurred while trying to load a aggregate "
+                                                                  + "with identifier [{}].", aggregateIdentifier, e);
+                                              throw e;
+                                          }
+                                      }
+                              );
+                              uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
+                              validateOnLoad(aggregate, expectedVersion);
+                              prepareForCommit(aggregate);
 
-                    return aggregate;
-                });
+                              return aggregate;
+                          });
     }
 
 
@@ -156,17 +169,23 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod) {
         UnitOfWork<?> uow = currentUnitOfWork();
         Map<String, A> aggregates = managedAggregates(uow);
-        A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
-                                                 s -> {
-                                                     try {
-                                                         return doLoadOrCreate(aggregateIdentifier,
-                                                                               factoryMethod);
-                                                     } catch (RuntimeException e) {
-                                                         throw e;
-                                                     } catch (Exception e) {
-                                                         throw new RuntimeException(e);
-                                                     }
-                                                 });
+        A aggregate = aggregates.computeIfAbsent(
+                aggregateIdentifier,
+                s -> {
+                    try {
+                        return doLoadOrCreate(aggregateIdentifier,
+                                              factoryMethod);
+                    } catch (RuntimeException e) {
+                        logger.warn("Exception occurred while trying to load/create aggregate with identifier [{}].",
+                                    aggregateIdentifier, e);
+                        throw e;
+                    } catch (Exception e) {
+                        logger.warn("Exception occurred while trying to load/create aggregate with identifier [{}].",
+                                    aggregateIdentifier, e);
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
         uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
         prepareForCommit(aggregate);
 
@@ -424,7 +443,9 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private RepositorySpanFactory spanFactory = DefaultRepositorySpanFactory.builder()
+                                                                                .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                .build();
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
@@ -517,8 +538,23 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(RepositorySpanFactory)} instead, as it provides more configuration options
          */
+        @Deprecated
         public Builder<T> spanFactory(SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultRepositorySpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link RepositorySpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link DefaultRepositorySpanFactory} backed by a {@link NoOpSpanFactory}, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> spanFactory(RepositorySpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

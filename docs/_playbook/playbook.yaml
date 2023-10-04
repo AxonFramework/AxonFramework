@@ -5,33 +5,38 @@ site:
 content:
   sources:
   - url: ../..
-    start_paths: ['docs/*', '!docs/playbook']
+    start_paths: ['docs/*', '!docs/_playbook']
 
 asciidoc:
   attributes:
     experimental: true
     page-pagination: true
     kroki-fetch-diagram: true
+    primary-site-manifest-url: https://library.axoniq.io/site-manifest.json
   extensions:
   - asciidoctor-kroki
+  - '@asciidoctor/tabs'
 
 antora:
   extensions:
-  # - id: prose-linting
-  #   require: ./extensions/vale.js
-  #   enabled: true
-  #   vale_config: .vale.ini
+  - id: prose-linting
+    require: '@axoniq/antora-vale-extension'
+    enabled: true
+    vale_config: .vale.ini
+    update_styles: true
   - id: lunr
     require: '@antora/lunr-extension'
     enabled: true
     index_latest_only: true
+  - id: atlas
+    require: '@antora/atlas-extension'
 
 runtime:
-  fetch: false
+  fetch: true # fetch remote repos
   log:
     level: info
     failure_level: error
 
 ui:
   bundle:
-    url: https://github.com/AxonIQ/docs-ui/releases/download/v0.0.3/ui-bundle.zip
+    url: https://github.com/AxonIQ/axoniq-library-ui/releases/download/v.0.0.9/ui-bundle.zip

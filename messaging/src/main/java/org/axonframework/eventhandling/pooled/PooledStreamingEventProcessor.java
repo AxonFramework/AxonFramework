@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
@@ -66,19 +67,19 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
- * A {@link StreamingEventProcessor} implementation which pools it's resources to enhance processing speed. It utilizes
- * a {@link Coordinator} as the means to stream events from a {@link StreamableMessageSource} and creates so called work
- * packages. Every work package is in charge of a {@link Segment} of the entire event stream. It is the {@code
- * Coordinator}'s job to retrieve the events from the source and provide the events to all the work packages it is in
- * charge of.
+ * A {@link StreamingEventProcessor} implementation which pools its resources to enhance processing speed. It utilizes a
+ * {@link Coordinator} as the means to stream events from a {@link StreamableMessageSource} and creates so-called work
+ * packages. Every work package is in charge of a {@link Segment} of the entire event stream. It is the
+ * {@code Coordinator}'s job to retrieve the events from the source and provide the events to all the work packages it
+ * is in charge of.
  * <p>
  * This approach utilizes two threads pools. One to retrieve the events to provide them to the work packages and another
  * to actual handle the events. Respectively, the coordinator thread pool and the work package thread pool. It is this
- * approach which allows for greater parallelization and processing speed than the {@link
- * org.axonframework.eventhandling.TrackingEventProcessor}.
+ * approach which allows for greater parallelization and processing speed than the
+ * {@link org.axonframework.eventhandling.TrackingEventProcessor}.
  * <p>
  * If no {@link TrackingToken}s are present for this processor, the {@code PooledStreamingEventProcessor} will
- * initialize them in a given segment count. By default it will create {@code 16} segments, which can be configured
+ * initialize them in a given segment count. By default, it will create {@code 16} segments, which can be configured
  * through the {@link Builder#initialSegmentCount(int)}.
  *
  * @author Allard Buijze
@@ -152,13 +153,9 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .maxClaimedSegments(maxClaimedSegments)
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
+                                      .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
+                                      .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment))
                                       .build();
-
-        registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
-                .createLinkedHandlerSpan(
-                        () -> "PooledStreamingEventProcessor[" + builder.name() + "] ",
-                        unitOfWork.getMessage())
-                .runCallable(interceptorChain::proceed));
     }
 
     /**
@@ -176,7 +173,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
-     *     <li>The {@link SpanFactory} defaults to {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
+     *     <li>The {@link EventProcessorSpanFactory} defaults to a {@link org.axonframework.eventhandling.DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
+     *     <li>The {@code coordinatorExtendsClaims} defaults to a {@code false}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -248,6 +246,11 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         coordinator.releaseUntil(
                 segmentId, GenericEventMessage.clock.instant().plusMillis(unit.toMillis(releaseDuration))
         );
+    }
+
+    @Override
+    public CompletableFuture<Boolean> claimSegment(int segmentId) {
+        return coordinator.claimSegment(segmentId);
     }
 
     @Override
@@ -413,7 +416,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
-     *     <li>The {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
+     *     <li>The {@link EventProcessorSpanFactory} defaults to a {@link org.axonframework.eventhandling.DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
+     *     <li>The {@code coordinatorExtendsClaims} defaults to a {@code false}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -434,12 +438,13 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private Function<String, ScheduledExecutorService> workerExecutorBuilder;
         private int initialSegmentCount = 16;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
-                StreamableMessageSource::createTailToken;
+                ms -> ReplayToken.createReplayToken(ms.createHeadToken());
         private long tokenClaimInterval = 5000;
         private int maxClaimedSegments = Short.MAX_VALUE;
         private long claimExtensionThreshold = 5000;
         private int batchSize = 1;
         private Clock clock = GenericEventMessage.clock;
+        private boolean coordinatorExtendsClaims = false;
 
         protected Builder() {
             rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
@@ -476,6 +481,13 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         @Override
+        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
@@ -619,11 +631,15 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         /**
          * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. The function will be
          * given the configured {@link StreamableMessageSource}' so that its methods can be invoked for token creation.
-         * Defaults to {@link StreamableMessageSource#createTailToken()}.
+         * <p>
+         * Defaults to an automatic replay since the start of the stream.
+         * <p>
+         * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
+         * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
+         * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
          *
-         * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given {@link
-         *                     StreamableMessageSource}
-         *
+         * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
+         *                     {@link StreamableMessageSource}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder initialToken(
@@ -712,6 +728,33 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         public Builder clock(@Nonnull Clock clock) {
             assertNonNull(clock, "Clock may not be null");
             this.clock = clock;
+            return this;
+        }
+
+        /**
+         * Enables the {@link Coordinator} to {@link WorkPackage#extendClaimIfThresholdIsMet() extend the claims} of its
+         * {@link WorkPackage WorkPackages}.
+         * <p>
+         * Enabling "coordinator claim extension" is an optimization as it relieves this effort from the
+         * {@code WorkPackage}. Toggling this feature may be particularly useful whenever the event handling task of the
+         * {@code WorkPackage} is <b>lengthy</b>. Either because of a hefty event handling component or because of a
+         * large {@link PooledStreamingEventProcessor.Builder#batchSize(int)}.
+         * <p>
+         * An example of a lengthy processing tasks is whenever handling a batch of events exceeds half the
+         * {@code claimTimeout} of the {@link TokenStore}. The {@code claimTimeout} defaults to 10 seconds for all
+         * durable {@code TokenStore} implementations.
+         * <p>
+         * In both scenarios, there's a window of opportunity that the {@code WorkPackage} is not fast enough in
+         * extending the claim itself. Not being able to do so potentially causes token stealing by other instances of
+         * this {@link PooledStreamingEventProcessor}, thus overburdening the overall event processing task.
+         * <p>
+         * Note that enabling this feature will result in more frequent invocation of the {@link TokenStore} to update
+         * the tokens.
+         *
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder enableCoordinatorClaimExtension() {
+            this.coordinatorExtendsClaims = true;
             return this;
         }
 

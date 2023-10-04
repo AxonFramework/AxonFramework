@@ -30,7 +30,9 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.jobrunr.DeadlineDetails;
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryEventData;
@@ -56,8 +58,9 @@ import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -79,7 +82,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
 
     private static final Logger logger = getLogger(DbSchedulerDeadlineManager.class);
-    private static final AtomicReference<DbSchedulerDeadlineManager> deadlineManagerReference = new AtomicReference<>();
     private static final TaskWithDataDescriptor<DbSchedulerBinaryDeadlineDetails> binaryTaskDescriptor =
             new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerBinaryDeadlineDetails.class);
     private static final TaskWithDataDescriptor<DbSchedulerHumanReadableDeadlineDetails> humanReadableTaskDescriptor =
@@ -89,16 +91,18 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
     private final Scheduler scheduler;
     private final Serializer serializer;
     private final TransactionManager transactionManager;
-    private final SpanFactory spanFactory;
+    private final DeadlineManagerSpanFactory spanFactory;
     private final boolean useBinaryPojo;
     private final boolean startScheduler;
+    private final boolean stopScheduler;
+    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     /**
      * Instantiate a Builder to be able to create a {@link DbSchedulerDeadlineManager}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
      * <p>
-     * The {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}.
+     * The {@link DeadlineManagerSpanFactory} is defaulted to a {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}.
      * <p>
      * The {@code useBinaryPojo} and {@code startScheduler} are defaulted to {@code true}.
      * <p>
@@ -130,7 +134,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         this.spanFactory = builder.spanFactory;
         this.useBinaryPojo = builder.useBinaryPojo;
         this.startScheduler = builder.startScheduler;
-        deadlineManagerReference.set(this);
+        this.stopScheduler = builder.stopScheduler;
     }
 
     @Override
@@ -140,8 +144,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String identifier = IdentifierFactory.getInstance().generateIdentifier();
         DbSchedulerDeadlineToken taskInstanceId = new DbSchedulerDeadlineToken(identifier);
-        Span span = spanFactory.createDispatchSpan(() -> "DbSchedulerDeadlineManager.schedule(" + deadlineName + ")",
-                                                   deadlineMessage);
+        Span span = spanFactory.createScheduleSpan(deadlineName, identifier, deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage<Object> message = processDispatchInterceptors(deadlineMessage);
             TaskInstance<?> taskInstance;
@@ -189,16 +192,20 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * {@link Scheduler}. To be able to execute the task, this should be added to the task list, used to create the
      * scheduler.
      *
+     * @param deadlineManagerSupplier a {@link Supplier} of a {@link DbSchedulerDeadlineManager}. Preferably a method
+     *                                involving dependency injection is used. When those are not available the
+     *                                {@link DbSchedulerDeadlineManagerSupplier} can be used instead.
      * @return a {@link Task} to execute a deadline
      */
-    public static Task<DbSchedulerBinaryDeadlineDetails> binaryTask() {
+    public static Task<DbSchedulerBinaryDeadlineDetails> binaryTask(
+            Supplier<DbSchedulerDeadlineManager> deadlineManagerSupplier) {
         return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerBinaryDeadlineDetails.class)
                 .execute((taskInstance, context) -> {
-                    DbSchedulerDeadlineManager deadlineManager = deadlineManagerReference.get();
+                    DbSchedulerDeadlineManager deadlineManager = deadlineManagerSupplier.get();
                     if (isNull(deadlineManager)) {
-                        throw new DeadlineManagerNotSetException();
+                        throw new DeadlineManagerNotSuppliedException();
                     }
-                    deadlineManager.execute(taskInstance.getData());
+                    deadlineManager.execute(taskInstance.getId(), taskInstance.getData());
                 });
     }
 
@@ -207,23 +214,26 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
      * {@link Scheduler}. To be able to execute the task, this should be added to the task list, used to create the
      * scheduler.
      *
+     * @param deadlineManagerSupplier a {@link Supplier} of a {@link DbSchedulerDeadlineManager}. Preferably a method
+     *                                involving dependency injection is used. When those are not available the
+     *                                {@link DbSchedulerDeadlineManagerSupplier} can be used instead.
      * @return a {@link Task} to execute a deadline
      */
-    public static Task<DbSchedulerHumanReadableDeadlineDetails> humanReadableTask() {
+    public static Task<DbSchedulerHumanReadableDeadlineDetails> humanReadableTask(
+            Supplier<DbSchedulerDeadlineManager> deadlineManagerSupplier) {
         return new Tasks.OneTimeTaskBuilder<>(TASK_NAME, DbSchedulerHumanReadableDeadlineDetails.class)
                 .execute((taskInstance, context) -> {
-                    DbSchedulerDeadlineManager deadlineManager = deadlineManagerReference.get();
+                    DbSchedulerDeadlineManager deadlineManager = deadlineManagerSupplier.get();
                     if (isNull(deadlineManager)) {
-                        throw new DeadlineManagerNotSetException();
+                        throw new DeadlineManagerNotSuppliedException();
                     }
-                    deadlineManager.execute(taskInstance.getData());
+                    deadlineManager.execute(taskInstance.getId(), taskInstance.getData());
                 });
     }
 
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
-        Span span = spanFactory.createInternalSpan(
-                () -> "DbSchedulerDeadlineManager.cancelSchedule(" + deadlineName + "," + scheduleId + ")");
+        Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduler.cancel(new DbSchedulerDeadlineToken(scheduleId)))
         );
@@ -231,7 +241,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        Span span = spanFactory.createInternalSpan(() -> "DbSchedulerDeadlineManager.cancelAll(" + deadlineName + ")");
+        Span span = spanFactory.createCancelAllSpan(deadlineName);
         if (useBinaryPojo) {
             runOnPrepareCommitOrNow(span.wrapRunnable(
                     () -> scheduler.fetchScheduledExecutionsForTask(
@@ -271,9 +281,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        Span span = spanFactory.createInternalSpan(
-                () -> "DbSchedulerDeadlineManager.cancelAllWithinScope(" + deadlineName + ")"
-        );
+        Span span = spanFactory.createCancelAllWithinScopeSpan(deadlineName, scope);
         if (useBinaryPojo) {
             runOnPrepareCommitOrNow(span.wrapRunnable(
                     () -> {
@@ -320,32 +328,34 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
     }
 
     /**
-     * This function is used by the {@link #binaryTask()} to execute the deadline.
+     * This function is used by the {@link #binaryTask(Supplier)} to execute the deadline.
      *
      * @param deadlineDetails {@link DbSchedulerBinaryDeadlineDetails} containing the needed details to execute.
      */
     @SuppressWarnings("rawtypes")
-    private void execute(DbSchedulerBinaryDeadlineDetails deadlineDetails) {
+    private void execute(String deadlineId, DbSchedulerBinaryDeadlineDetails deadlineDetails) {
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
         ScopeDescriptor scopeDescriptor = deadlineDetails.getDeserializedScopeDescriptor(serializer);
-        execute(deadlineDetails.getD(), deadlineMessage, scopeDescriptor);
+        execute(deadlineId, deadlineDetails.getD(), deadlineMessage, scopeDescriptor);
     }
 
     /**
-     * This function is used by the {@link #binaryTask()} to execute the deadline.
+     * This function is used by the {@link #binaryTask(Supplier)} to execute the deadline.
      *
      * @param deadlineDetails {@link DbSchedulerHumanReadableDeadlineDetails} containing the needed details to execute.
      */
     @SuppressWarnings("rawtypes")
-    private void execute(DbSchedulerHumanReadableDeadlineDetails deadlineDetails) {
+    private void execute(String deadlineId, DbSchedulerHumanReadableDeadlineDetails deadlineDetails) {
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
         ScopeDescriptor scopeDescriptor = deadlineDetails.getDeserializedScopeDescriptor(serializer);
-        execute(deadlineDetails.getDeadlineName(), deadlineMessage, scopeDescriptor);
+        execute(deadlineId, deadlineDetails.getDeadlineName(), deadlineMessage, scopeDescriptor);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private void execute(String deadlineName, GenericDeadlineMessage deadlineMessage, ScopeDescriptor scopeDescriptor) {
-        Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
+    private void execute(String deadlineId, String deadlineName, GenericDeadlineMessage deadlineMessage,
+                         ScopeDescriptor scopeDescriptor) {
+        Span span = spanFactory.createExecuteSpan(deadlineName, deadlineId, deadlineMessage)
+                               .start();
         try (SpanScope ignored = span.makeCurrent()) {
             UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
@@ -407,8 +417,9 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
 
     @Override
     public void shutdown() {
-        scheduler.stop();
-        deadlineManagerReference.set(null);
+        if (isShutdown.compareAndSet(false, true) && stopScheduler) {
+            scheduler.stop();
+        }
     }
 
     @Override
@@ -420,8 +431,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
     /**
      * Builder class to instantiate a {@link DbSchedulerDeadlineManager}.
      * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link SpanFactory} defaults
-     * to a {@link NoOpSpanFactory}. The {@code useBinaryPojo} and {@code startScheduler} are defaulted to
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link DefaultDeadlineManagerSpanFactory} defaults
+     * to a {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}. The {@code useBinaryPojo} and {@code startScheduler} are defaulted to
      * {@code true}.
      * <p>
      * The {@link JobScheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as
@@ -433,15 +444,20 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         private ScopeAwareProvider scopeAwareProvider;
         private Serializer serializer;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private DeadlineManagerSpanFactory spanFactory = DefaultDeadlineManagerSpanFactory.builder()
+                                                                                          .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                          .build();
         private boolean useBinaryPojo = true;
         private boolean startScheduler = true;
+        private boolean stopScheduler = true;
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of deadlines. It should have either
-         * the {@link #binaryTask()} or the {@link #humanReadableTask()} from this class as one of its tasks to work.
-         * Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use {@link #binaryTask()} else
-         * {@link #humanReadableTask()}. Depending on you application, you can manage when to start the scheduler, or leave {@code startScheduler} to true, to start it via the {@link Lifecycle}.
+         * the {@link #binaryTask(Supplier)} or the {@link #humanReadableTask(Supplier)} from this class as one of its
+         * tasks to work. Which one depends on the setting of {@code useBinaryPojo}. When {@code true}, use
+         * {@link #binaryTask(Supplier)} else {@link #humanReadableTask(Supplier)}. Depending on you application, you
+         * can manage when to start the scheduler, or leave {@code startScheduler} to true, to start it via the
+         * {@link Lifecycle}.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
          * @return the current Builder instance, for fluent interfacing
@@ -502,8 +518,24 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(DeadlineManagerSpanFactory)} instead as it provides more configuration options.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultDeadlineManagerSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link DeadlineManagerSpanFactory} implementation to use for providing tracing capabilities.
+         * Defaults to a {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory} by default, which
+         * provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link DeadlineManagerSpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;
@@ -530,6 +562,18 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
          */
         public Builder startScheduler(boolean startScheduler) {
             this.startScheduler = startScheduler;
+            return this;
+        }
+
+        /**
+         * Sets whether to stop the {@link Scheduler} using the {@link Lifecycle}, or to never stop the scheduler from
+         * this component instead. defaults to {@code true}.
+         *
+         * @param stopScheduler a {@code boolean} to determine whether to start the scheduler.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder stopScheduler(boolean stopScheduler) {
+            this.stopScheduler = stopScheduler;
             return this;
         }
 

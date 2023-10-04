@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -33,6 +34,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.axonframework.utils.InMemoryStreamableEventSource;
@@ -59,6 +61,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -66,6 +69,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -129,8 +133,9 @@ class PooledStreamingEventProcessorTest {
                                              .coordinatorExecutor(coordinatorExecutor)
                                              .workerExecutor(workerExecutor)
                                              .initialSegmentCount(8)
-                                             .claimExtensionThreshold(1000)
-                                             .spanFactory(spanFactory);
+                                             .claimExtensionThreshold(500)
+                                             .spanFactory(DefaultEventProcessorSpanFactory.builder()
+                                                                  .spanFactory(spanFactory).build());
         return customization.apply(processorBuilder).build();
     }
 
@@ -228,7 +233,8 @@ class PooledStreamingEventProcessorTest {
                 answer -> {
                     EventMessage<?> message = answer.getArgument(0, EventMessage.class);
                     invokedMessages.add(message);
-                    spanFactory.verifySpanActive("PooledStreamingEventProcessor[test].process", message);
+                    spanFactory.verifySpanActive("StreamingEventProcessor.batch");
+                    spanFactory.verifySpanActive("StreamingEventProcessor.process", message);
                     countDownLatch.countDown();
                     return null;
                 }
@@ -243,9 +249,10 @@ class PooledStreamingEventProcessorTest {
         invokedMessages.forEach(
                 e -> assertWithin(
                         1, TimeUnit.SECONDS,
-                        () -> spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e)
+                        () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.process", e)
                 )
         );
+        spanFactory.verifySpanCompleted("StreamingEventProcessor.batch");
     }
 
     @Test
@@ -345,7 +352,7 @@ class PooledStreamingEventProcessorTest {
     }
 
     private long tokenPosition(TrackingToken token) {
-        return token == null ? 0 : token.position().orElseThrow(IllegalArgumentException::new);
+        return token == null ? 0 : token.position().orElse(0);
     }
 
     @Test
@@ -792,6 +799,32 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void releaseAndClaimSegment() {
+        int testSegmentId = 0;
+        int testTokenClaimInterval = 5000;
+
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(2)
+                .tokenClaimInterval(testTokenClaimInterval)));
+        testSubject.start();
+        // Assert the single WorkPackage is in progress prior to invoking the merge.
+        assertWithin(
+                testTokenClaimInterval, TimeUnit.MILLISECONDS,
+                () -> assertNotNull(testSubject.processingStatus().get(testSegmentId))
+        );
+
+        // When...
+        testSubject.releaseSegment(testSegmentId, 180, TimeUnit.SECONDS);
+
+        // Assert the MergeTask is done and completed successfully.
+        assertWithin(testTokenClaimInterval, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+
+        testSubject.claimSegment(testSegmentId);
+
+        // Assert the Coordinator has only one WorkPackage at work now.
+        assertWithin(testTokenClaimInterval, TimeUnit.MILLISECONDS, () -> assertEquals(2, testSubject.processingStatus().size()));
+    }
+
+    @Test
     void supportReset() {
         when(stubEventHandler.supportsReset()).thenReturn(true);
 
@@ -847,9 +880,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2,
-                     TimeUnit.SECONDS,
-                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        await().atMost(Duration.ofSeconds(2L)).untilAsserted(
+                () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length)
+        );
         testSubject.shutDown();
 
         testSubject.resetTokens(expectedContext);
@@ -860,6 +893,9 @@ class PooledStreamingEventProcessorTest {
         // The token stays the same, as the original and token after reset are identical.
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
+        await().atMost(Duration.ofSeconds(2L)).untilAsserted(
+                () -> verify(stubEventHandler, times(2)).segmentReleased(any(Segment.class))
+        );
     }
 
     @Test
@@ -961,7 +997,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         //noinspection ConstantConditions
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory(null));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory((SpanFactory) null));
     }
 
     @Test
@@ -1151,9 +1187,9 @@ class PooledStreamingEventProcessorTest {
         List<EventMessage<Integer>> events = IntStream.range(0, 100)
                                                       .mapToObj(GenericEventMessage::new)
                                                       .collect(Collectors.toList());
-        events.forEach(stubMessageSource::publishMessage);
-
         testSubject.start();
+
+        events.forEach(stubMessageSource::publishMessage);
 
         assertWithin(
                 1, TimeUnit.SECONDS,
@@ -1209,10 +1245,147 @@ class PooledStreamingEventProcessorTest {
         assertTrue(Duration.between(startedProcessing.get(), now).getSeconds() >= 2);
     }
 
+    @Test
+    void existingEventsBeforeProcessorStartAreConsideredReplayed() throws Exception {
+        setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
+
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+        //noinspection resource
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        IntStream.range(0, 3)
+                 .mapToObj(GenericEventMessage::new)
+                 .forEach(stubMessageSource::publishMessage);
+
+        testSubject.start();
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
+        TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
+        assertTrue(ReplayToken.isReplay(trackingToken),
+                   "Not a replay token: " + trackingToken);
+    }
+
+    @Test
+    void eventsPublishedAfterProcessorStartAreNotConsideredReplayed() throws Exception {
+        setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
+
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+        //noinspection resource
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(0));
+        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(1));
+
+        testSubject.start();
+
+        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(2));
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
+        TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
+        assertFalse(ReplayToken.isReplay(trackingToken),
+                    "Not a replay token: " + trackingToken);
+    }
+
+
     private void mockSlowEventHandler() throws Exception {
         doAnswer(invocation -> {
             Thread.sleep(1000);
             return null;
         }).when(stubEventHandler).handle(any(), any());
+    }
+
+    @Test
+    void coordinatorExtendsClaimsEarlierForBusyWorkPackages() throws Exception {
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
+                                                           .enableCoordinatorClaimExtension()));
+
+        AtomicBoolean isWaiting = new AtomicBoolean(false);
+        CountDownLatch handleLatch = new CountDownLatch(1);
+        mockEventHandlerInvoker();
+        doAnswer(invocation -> {
+            // Waiting for the latch to simulate a slow/busy WorkPackage.
+            isWaiting.set(true);
+            return handleLatch.await(5, TimeUnit.SECONDS);
+        }).when(stubEventHandler)
+          .handle(any(), any());
+
+        List<EventMessage<Integer>> events = IntStream.range(0, 42)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+
+        testSubject.start();
+
+        // Wait until we've reached the blocking WorkPackage before validating if the token is extended.
+        // Otherwise, the WorkPackage may extend the token itself.
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofSeconds(5))
+               .until(isWaiting::get);
+
+        // As the WorkPackage is blocked, we can verify if the claim is extended, but not stored.
+        verify(tokenStore, timeout(5000)).extendClaim(PROCESSOR_NAME, 0);
+        verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+
+        // Unblock the WorkPackage after successful validation
+        handleLatch.countDown();
+
+        // Processing finished...
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofSeconds(5))
+               .until(() -> testSubject.processingStatus().get(0).isCaughtUp());
+        // Validate the token is stored
+        verify(tokenStore, timeout(5000).atLeastOnce()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+    }
+
+    @Test
+    void coordinatorExtendingClaimFailsAndAbortsWorkPackage() throws Exception {
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
+                                                           .enableCoordinatorClaimExtension()));
+        String expectedExceptionMessage = "bummer";
+        doThrow(new RuntimeException(expectedExceptionMessage))
+                .when(tokenStore)
+                .extendClaim(PROCESSOR_NAME, 0);
+
+        AtomicBoolean isWaiting = new AtomicBoolean(false);
+        CountDownLatch handleLatch = new CountDownLatch(1);
+        mockEventHandlerInvoker();
+        doAnswer(invocation -> {
+            // Waiting for the latch to simulate a slow/busy WorkPackage.
+            isWaiting.set(true);
+            return handleLatch.await(5, TimeUnit.SECONDS);
+        }).when(stubEventHandler)
+          .handle(any(), any());
+
+        List<EventMessage<Integer>> events = IntStream.range(0, 42)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+
+        testSubject.start();
+
+        // Wait until we've reached the blocking WorkPackage before validating if the token is extended.
+        // Otherwise, the WorkPackage may extend the token itself.
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofSeconds(5))
+               .until(isWaiting::get);
+
+        // As the WorkPackage is blocked, we can verify if the claim is extended, but not stored.
+        verify(tokenStore, timeout(5000)).extendClaim(PROCESSOR_NAME, 0);
+        verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+
+        // Although the WorkPackage is waiting, the Coordinator should in the meantime fail with extending the claim.
+        // This updates the processing status of the WorkPackage.
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofSeconds(5))
+               .until(() -> testSubject.processingStatus().get(0)
+                                       .getError()
+                                       .getMessage().equals(expectedExceptionMessage));
+
+        // Unblock the WorkPackage after successful validation
+        handleLatch.countDown();
     }
 }

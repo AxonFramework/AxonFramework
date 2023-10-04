@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public class SimpleCommandBus implements CommandBus {
             new CopyOnWriteArrayList<>();
     private final CommandCallback<Object, Object> defaultCommandCallback;
     private RollbackConfiguration rollbackConfiguration;
-    private final SpanFactory spanFactory;
+    private final CommandBusSpanFactory spanFactory;
 
     /**
      * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
@@ -84,10 +84,10 @@ public class SimpleCommandBus implements CommandBus {
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
      * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
      * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, the {@link DuplicateCommandHandlerResolver} defaults to
-     * {@link DuplicateCommandHandlerResolution#logAndOverride()} and the {@link SpanFactory} defaults to a
-     * {@link NoOpSpanFactory}. The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration}
-     * are <b>hard requirements</b>. Thus setting them to {@code null} will result in an
-     * {@link AxonConfigurationException}.
+     * {@link DuplicateCommandHandlerResolution#logAndOverride()} and the {@link CommandBusSpanFactory} defaults to a
+     * {@link DefaultCommandBusSpanFactory} with a {@link NoOpSpanFactory}. The {@link TransactionManager},
+     * {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard requirements</b>. Thus setting them to
+     * {@code null} will result in an {@link AxonConfigurationException}.
      *
      * @return a Builder to be able to create a {@link SimpleCommandBus}
      */
@@ -121,7 +121,7 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
                                 @Nonnull final CommandCallback<? super C, ? super R> callback) {
-        Span span = spanFactory.createInternalSpan(() -> getClass().getSimpleName() + ".dispatch", command);
+        Span span = spanFactory.createDispatchCommandSpan(command, false);
         span.run(() -> {
             CommandCallback<? super C, ? super R> spanAwareCallback = callback.wrap((commandMessage, commandResultMessage) -> {
                 if (commandResultMessage.isExceptional()) {
@@ -188,8 +188,7 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> void handle(CommandMessage<C> command,
                                  MessageHandler<? super CommandMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
-        Supplier<String> spanName = () -> getClass().getSimpleName() + ".handle";
-        CommandResultMessage<R> resultMessage = spanFactory.createInternalSpan(spanName, command).runSupplier(() -> {
+        CommandResultMessage<R> resultMessage = spanFactory.createHandleCommandSpan(command, false).runSupplier(() -> {
             if (logger.isDebugEnabled()) {
                 logger.debug("Handling command [{}]", command.getCommandName());
             }
@@ -272,8 +271,8 @@ public class SimpleCommandBus implements CommandBus {
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
      * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
      * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, the {@link DuplicateCommandHandlerResolver} defaults to
-     * {@link DuplicateCommandHandlerResolution#logAndOverride()} and the {@link SpanFactory} defaults to a
-     * {@link NoOpSpanFactory}.
+     * {@link DuplicateCommandHandlerResolution#logAndOverride()} and the {@link CommandBusSpanFactory} defaults to a
+     * {@link DefaultCommandBusSpanFactory} with a {@link NoOpSpanFactory}.
      * <p>
      * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
      * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
@@ -286,7 +285,8 @@ public class SimpleCommandBus implements CommandBus {
         private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver =
                 DuplicateCommandHandlerResolution.logAndOverride();
         private CommandCallback<Object, Object> defaultCommandCallback = LoggingCallback.INSTANCE;
-        private SpanFactory builderSpanFactory = NoOpSpanFactory.INSTANCE;
+        private CommandBusSpanFactory builderSpanFactory = DefaultCommandBusSpanFactory
+                .builder().spanFactory(NoOpSpanFactory.INSTANCE).build();
 
         /**
          * Sets the {@link TransactionManager} used to manage transactions. Defaults to a {@link NoTransactionManager}.
@@ -362,8 +362,25 @@ public class SimpleCommandBus implements CommandBus {
          *
          * @param spanFactory The {@link SpanFactory} implementation.
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(CommandBusSpanFactory)} instead as it provides more configurability.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.builderSpanFactory = DefaultCommandBusSpanFactory
+                    .builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link CommandBusSpanFactory} implementation to use for providing tracing capabilities. Defaults to
+         * a {@link DefaultCommandBusSpanFactory} backed by {@link NoOpSpanFactory} by default, which provides no
+         * tracing capabilities.
+         *
+         * @param spanFactory The {@link CommandBusSpanFactory} implementation.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull CommandBusSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.builderSpanFactory = spanFactory;
             return this;

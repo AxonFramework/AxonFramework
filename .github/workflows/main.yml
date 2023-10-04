@@ -8,7 +8,6 @@ on:
       - axon-*.*.x
     paths-ignore:
       - 'docs/**'
-      - '.github/workflows/docs.yml'
 
 jobs:
   build:
@@ -30,10 +29,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.13.0
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}

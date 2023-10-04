@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,9 @@ class LockingRepositoryTest {
         testSubject = InMemoryLockingRepository.builder()
                                                .lockFactory(lockFactory)
                                                .eventBus(eventBus)
-                                               .spanFactory(spanFactory)
+                                               .spanFactory(DefaultRepositorySpanFactory.builder()
+                                                                                        .spanFactory(spanFactory)
+                                                                                        .build())
                                                .build();
         testSubject = spy(testSubject);
 
@@ -101,11 +103,11 @@ class LockingRepositoryTest {
         StubAggregate aggregate = new StubAggregate();
         when(lockFactory.obtainLock(anyString()))
                 .thenAnswer(invocation -> {
-                    spanFactory.verifySpanActive("LockingRepository.obtainLock");
+                    spanFactory.verifySpanActive("Repository.obtainLock");
                     return lock = spy((Lock) invocation.callRealMethod());
                 });
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
-        spanFactory.verifySpanCompleted("LockingRepository.obtainLock");
+        spanFactory.verifySpanCompleted("Repository.obtainLock");
         CurrentUnitOfWork.commit();
     }
 
@@ -121,13 +123,14 @@ class LockingRepositoryTest {
         // Now, for the real work
         when(lockFactory.obtainLock(anyString()))
                 .thenAnswer(invocation -> {
-                    spanFactory.verifySpanActive("LockingRepository.obtainLock");
+                    spanFactory.verifySpanActive("Repository.obtainLock");
                     return lock = spy((Lock) invocation.callRealMethod());
                 });
         startAndGetUnitOfWork();
         Aggregate<StubAggregate> loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
-        spanFactory.verifySpanCompleted("LockingRepository.obtainLock");
-        spanFactory.verifySpanCompleted(testSubject.getClass().getSimpleName() + ".load " + aggregate.getIdentifier());
+        spanFactory.verifySpanCompleted("Repository.obtainLock");
+        spanFactory.verifySpanCompleted("Repository.load");
+        spanFactory.verifySpanHasAttributeValue("Repository.load", "axon.aggregateId", aggregate.getIdentifier());
         //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
 
@@ -334,6 +337,12 @@ class LockingRepositoryTest {
 
             @Override
             public Builder spanFactory(SpanFactory spanFactory) {
+                super.spanFactory(spanFactory);
+                return this;
+            }
+
+            @Override
+            public Builder spanFactory(RepositorySpanFactory spanFactory) {
                 super.spanFactory(spanFactory);
                 return this;
             }

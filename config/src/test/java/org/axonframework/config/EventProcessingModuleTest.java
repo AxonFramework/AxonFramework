@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
@@ -62,11 +63,13 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.tracing.TestSpanFactory;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
-import org.mockito.junit.jupiter.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -80,12 +83,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
  * Test class validating the {@link EventProcessingModule}.
@@ -110,6 +119,9 @@ class EventProcessingModuleTest {
         eventStoreTwo = spy(EmbeddedEventStore.builder()
                                               .storageEngine(new InMemoryEventStorageEngine())
                                               .build());
+
+        eventStoreOne.publish(GenericEventMessage.asEventMessage("test1"));
+        eventStoreTwo.publish(GenericEventMessage.asEventMessage("test2"));
     }
 
     @Test
@@ -400,9 +412,9 @@ class EventProcessingModuleTest {
             GenericEventMessage<Object> message = new GenericEventMessage<>("test");
             config.eventBus().publish(message);
 
-            spanFactory.verifySpanCompleted("SubscribingEventProcessor[subscribing].process");
+            spanFactory.verifySpanCompleted("EventProcessor.process", message);
             assertWithin(2, TimeUnit.SECONDS,
-                         () -> spanFactory.verifySpanCompleted("TrackingEventProcessor[tracking].process"));
+                         () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.process", message));
         } finally {
             config.shutdown();
         }
@@ -688,10 +700,11 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(eventStoreTwo);
+        TrackingToken actualInitialToken = tepInitialTokenBuilder.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(eventStoreTwo).createTailToken();
-        verify(eventStoreTwo, times(0)).createHeadToken();
+        assertEquals(0, actualInitialToken.position().orElse(-1));
+        // to create the default replay token, we need to retrieve the head token
+        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -713,10 +726,11 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(eventStoreTwo);
+        TrackingToken initialToken = tepInitialTokenBuilder.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(eventStoreTwo).createTailToken();
-        verify(eventStoreTwo, times(0)).createHeadToken();
+        assertEquals(0, initialToken.position().orElse(-1));
+        // to create the default replay token, we need to retrieve the head token
+        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -740,10 +754,11 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(eventStoreTwo);
+        TrackingToken actualInitialToken = tepInitialTokenBuilder.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(eventStoreTwo).createTailToken();
-        verify(eventStoreTwo, times(0)).createHeadToken();
+        assertEquals(0, actualInitialToken.position().orElse(-1));
+        // to create the default replay token, we need to retrieve the head token
+        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -767,10 +782,11 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(eventStoreTwo);
+        TrackingToken actualInitialToken = tepInitialTokenBuilder.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(eventStoreTwo).createTailToken();
-        verify(eventStoreTwo, times(0)).createHeadToken();
+        assertEquals(0, actualInitialToken.position().orElse(-1));
+        // to create the default replay token, we need to retrieve the head token
+        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -821,10 +837,11 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
-        initialToken.apply(eventStoreTwo);
+        TrackingToken actualInitialToken = initialToken.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(eventStoreTwo).createTailToken();
-        verify(eventStoreTwo, times(0)).createHeadToken();
+        assertEquals(0, actualInitialToken.position().orElse(-1));
+        // to create the default replay token, we need to retrieve the head token
+        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -849,10 +866,11 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
-        initialToken.apply(eventStoreTwo);
+        TrackingToken actualInitialToken = initialToken.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(eventStoreTwo).createTailToken();
-        verify(eventStoreTwo, times(0)).createHeadToken();
+        assertEquals(0, actualInitialToken.position().orElse(-1));
+        // to create the default replay token, we need to retrieve the head token
+        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -879,10 +897,12 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
-        initialToken.apply(eventStoreTwo);
+
+        TrackingToken actualInitialToken = initialToken.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(eventStoreTwo).createTailToken();
-        verify(eventStoreTwo, times(0)).createHeadToken();
+        assertEquals(0, actualInitialToken.position().orElse(-1));
+        // to create the default replay token, we need to retrieve the head token
+        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -909,10 +929,11 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
-        initialToken.apply(eventStoreTwo);
+        TrackingToken actualInitialToken = initialToken.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(eventStoreTwo).createTailToken();
-        verify(eventStoreTwo, times(0)).createHeadToken();
+        assertEquals(0, actualInitialToken.position().orElse(-1));
+        // to create the default replay token, we need to retrieve the head token
+        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -977,7 +998,7 @@ class EventProcessingModuleTest {
         assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
-        assertEquals(testSpanFactory, getField(AbstractEventProcessor.class, "spanFactory", result));
+        assertEquals(config.getComponent(EventProcessorSpanFactory.class), getField(AbstractEventProcessor.class, "spanFactory", result));
     }
 
     @Test

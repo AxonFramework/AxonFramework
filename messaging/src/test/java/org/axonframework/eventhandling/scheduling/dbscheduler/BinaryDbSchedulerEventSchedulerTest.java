@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.DbSchedulerTestUtil.getScheduler;
@@ -33,8 +34,8 @@ class BinaryDbSchedulerEventSchedulerTest extends AbstractDbSchedulerEventSchedu
 
 
     @Override
-    Task<?> getTask() {
-        return DbSchedulerEventScheduler.binaryTask();
+    Task<?> getTask(Supplier<DbSchedulerEventScheduler> eventSchedulerSupplier) {
+        return DbSchedulerEventScheduler.binaryTask(eventSchedulerSupplier);
     }
 
     @Override
@@ -45,11 +46,12 @@ class BinaryDbSchedulerEventSchedulerTest extends AbstractDbSchedulerEventSchedu
     @Test
     void whenNotInitializedThrow() {
         eventScheduler.shutdown();
-        scheduler = getScheduler(dataSource, getTask());
+        DbSchedulerEventSchedulerSupplier supplier = new DbSchedulerEventSchedulerSupplier();
+        scheduler = getScheduler(dataSource, getTask(supplier));
         scheduler.start();
         try {
             TaskInstance<DbSchedulerBinaryEventData> instance =
-                    DbSchedulerEventScheduler.binaryTask()
+                    DbSchedulerEventScheduler.binaryTask(supplier)
                                              .instance("id", new DbSchedulerBinaryEventData());
             scheduler.schedule(instance, Instant.now());
             await().atMost(Duration.ofSeconds(1L)).untilAsserted(

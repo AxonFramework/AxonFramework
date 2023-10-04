@@ -1,0 +1,13 @@
+name: axon_framework_fundamentals
+title: Axon Framework Fundamentals
+version: true
+prerelease: true
+
+asciidoc:
+  attributes:
+    component_description: A tutorial covering Axon Framework's fundamental components and features.
+    type: tutorial
+    group: beginner
+
+nav:
+  - modules/nav.adoc

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,25 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.commandhandling.CommandBusSpanFactory;
+import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
+import org.axonframework.eventhandling.EventBusSpanFactory;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
+import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
+import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
+import org.axonframework.modelling.command.RepositorySpanFactory;
+import org.axonframework.modelling.saga.DefaultSagaManagerSpanFactory;
+import org.axonframework.modelling.saga.SagaManagerSpanFactory;
+import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.DefaultQueryUpdateEmitterSpanFactory;
+import org.axonframework.queryhandling.QueryBusSpanFactory;
+import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
@@ -234,6 +252,262 @@ class AxonAutoConfigurationWithTracingTest {
 
                     int numberOfProviders = context.getBeansOfType(SpanAttributesProvider.class).size();
                     Mockito.verify(spanFactory, Mockito.times(numberOfProviders)).registerSpanAttributeProvider(any());
+                });
+    }
+
+
+    @Test
+    void snapshotterSpanFactoryDefaultsToDefaultSnapshotterSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("snapshotterSpanFactory"));
+                    assertNotNull(context.getBean(SnapshotterSpanFactory.class));
+                    assertEquals(DefaultSnapshotterSpanFactory.class, context.getBean(SnapshotterSpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void snapshotterSpanFactoryCanBeOverriddenByUser() {
+        SnapshotterSpanFactory mock = Mockito.mock(SnapshotterSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(SnapshotterSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("snapshotterSpanFactory"));
+                    assertNotNull(context.getBean(SnapshotterSpanFactory.class));
+                    assertSame(context.getBean(SnapshotterSpanFactory.class), mock);
+                });
+    }
+
+    @Test
+    void eventBusSpanFactoryDefaultsToDefaultEventBusSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("eventBusSpanFactory"));
+                    assertNotNull(context.getBean(EventBusSpanFactory.class));
+                    assertEquals(DefaultEventBusSpanFactory.class, context.getBean(EventBusSpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void eventBusSpanFactoryCanBeOverriddenByUser() {
+        EventBusSpanFactory mock = Mockito.mock(EventBusSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(EventBusSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("eventBusSpanFactory"));
+                    assertNotNull(context.getBean(EventBusSpanFactory.class));
+                    assertSame(context.getBean(EventBusSpanFactory.class), mock);
+                });
+    }
+
+    @Test
+    void queryBusSpanFactoryDefaultsToDefaultQueryBusSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("queryBusSpanFactory"));
+                    assertNotNull(context.getBean(QueryBusSpanFactory.class));
+                    assertEquals(DefaultQueryBusSpanFactory.class, context.getBean(QueryBusSpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void queryBusSpanFactoryCanBeOverriddenByUser() {
+        QueryBusSpanFactory mock = Mockito.mock(QueryBusSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(QueryBusSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("queryBusSpanFactory"));
+                    assertNotNull(context.getBean(QueryBusSpanFactory.class));
+                    assertSame(context.getBean(QueryBusSpanFactory.class), mock);
+                });
+    }
+
+    @Test
+    void queryUpdateEmitterSpanFactoryDefaultsToDefaultQueryUpdateEmitterSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("queryUpdateEmitterSpanFactory"));
+                    assertNotNull(context.getBean(QueryUpdateEmitterSpanFactory.class));
+                    assertEquals(DefaultQueryUpdateEmitterSpanFactory.class, context.getBean(QueryUpdateEmitterSpanFactory.class).getClass());
+                });
+    }
+    @Test
+    void queryUpdateEmitterSpanFactoryCanBeOverriddenByUser() {
+        QueryUpdateEmitterSpanFactory mock = Mockito.mock(QueryUpdateEmitterSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(QueryUpdateEmitterSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("queryUpdateEmitterSpanFactory"));
+                    assertNotNull(context.getBean(QueryUpdateEmitterSpanFactory.class));
+                    assertSame(context.getBean(QueryUpdateEmitterSpanFactory.class), mock);
+                });
+    }
+
+    @Test
+    void commandBusSpanFactoryDefaultsToDefaultCommandBusSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("commandBusSpanFactory"));
+                    assertNotNull(context.getBean(CommandBusSpanFactory.class));
+                    assertEquals(DefaultCommandBusSpanFactory.class, context.getBean(CommandBusSpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void commandBusSpanFactoryCanBeOverriddenByUser() {
+        CommandBusSpanFactory mock = Mockito.mock(CommandBusSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(CommandBusSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("commandBusSpanFactory"));
+                    assertNotNull(context.getBean(CommandBusSpanFactory.class));
+                    assertSame(context.getBean(CommandBusSpanFactory.class), mock);
+                });
+    }
+
+    @Test
+    void deadlineManagerSpanFactoryDefaultsToDefaultDeadlineManagerSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("deadlineManagerSpanFactory"));
+                    assertNotNull(context.getBean(DeadlineManagerSpanFactory.class));
+                    assertEquals(DefaultDeadlineManagerSpanFactory.class,
+                                 context.getBean(DeadlineManagerSpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void deadlineManagerSpanFactoryCanBeOverriddenByUser() {
+        DeadlineManagerSpanFactory mock = Mockito.mock(DeadlineManagerSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(DeadlineManagerSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("deadlineManagerSpanFactory"));
+                    assertNotNull(context.getBean(DeadlineManagerSpanFactory.class));
+                    assertSame(context.getBean(DeadlineManagerSpanFactory.class), mock);
+                });
+    }
+
+    @Test
+    void sagaManagerSpanFactoryDefaultsToDefaultSagaManagerSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("sagaManagerSpanFactory"));
+                    assertNotNull(context.getBean(SagaManagerSpanFactory.class));
+                    assertEquals(DefaultSagaManagerSpanFactory.class,
+                                 context.getBean(SagaManagerSpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void sagaManagerSpanFactoryCanBeOverriddenByUser() {
+        SagaManagerSpanFactory mock = Mockito.mock(SagaManagerSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(SagaManagerSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("sagaManagerSpanFactory"));
+                    assertNotNull(context.getBean(SagaManagerSpanFactory.class));
+                    assertSame(context.getBean(SagaManagerSpanFactory.class), mock);
+                });
+    }
+
+    @Test
+    void repositorySpanFactoryDefaultsToDefaultRepositorySpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("repositorySpanFactory"));
+                    assertNotNull(context.getBean(RepositorySpanFactory.class));
+                    assertEquals(DefaultRepositorySpanFactory.class,
+                                 context.getBean(RepositorySpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void repositorySpanFactoryCanBeOverriddenByUser() {
+        RepositorySpanFactory mock = Mockito.mock(RepositorySpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(RepositorySpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("repositorySpanFactory"));
+                    assertNotNull(context.getBean(RepositorySpanFactory.class));
+                    assertSame(context.getBean(RepositorySpanFactory.class), mock);
+                });
+    }
+
+    @Test
+    void eventProcessorSpanFactoryDefaultsToDefaultEventProcessorSpanFactory() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("eventProcessorSpanFactory"));
+                    assertNotNull(context.getBean(EventProcessorSpanFactory.class));
+                    assertEquals(DefaultEventProcessorSpanFactory.class,
+                                 context.getBean(EventProcessorSpanFactory.class).getClass());
+                });
+    }
+
+    @Test
+    void eventProcessorSpanFactoryCanBeOverriddenByUser() {
+        EventProcessorSpanFactory mock = Mockito.mock(EventProcessorSpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(EventProcessorSpanFactory.class, () -> mock)
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("eventProcessorSpanFactory"));
+                    assertNotNull(context.getBean(EventProcessorSpanFactory.class));
+                    assertSame(context.getBean(EventProcessorSpanFactory.class), mock);
                 });
     }
 
