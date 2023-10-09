@@ -24,15 +24,13 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test in order to verify that the {@link DisallowReplay} annotation has the expected behaviour.
@@ -43,14 +41,18 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
     private SomeMethodHandler methodHandler;
     private AnnotationEventHandlerAdapter testSubject;
     private AnnotationEventHandlerAdapter testMethodSubject;
+    private ReplayPreventingHandler disallowingHandler;
     private ReplayToken replayToken;
+    private AnnotationEventHandlerAdapter testDisallowingSubject;
 
     @BeforeEach
     void setUp() {
         handler = new SomeHandler();
+        disallowingHandler = new ReplayPreventingHandler();
         methodHandler = new SomeMethodHandler();
         testSubject = new AnnotationEventHandlerAdapter(handler);
         testMethodSubject = new AnnotationEventHandlerAdapter(methodHandler);
+        testDisallowingSubject = new AnnotationEventHandlerAdapter(disallowingHandler);
         replayToken = new ReplayToken(new GlobalSequenceTrackingToken(1L));
     }
 
@@ -71,6 +73,11 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
         assertTrue(methodHandler.receivedLongs.isEmpty());
         assertFalse(handler.receivedStrings.isEmpty());
         assertFalse(methodHandler.receivedStrings.isEmpty());
+
+        assertTrue(testSubject.supportsReset());
+        assertTrue(testMethodSubject.supportsReset());
+        assertFalse(testDisallowingSubject.supportsReset());
+
     }
 
     @DisallowReplay
@@ -107,6 +114,25 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
 
         @EventHandler
         @DisallowReplay
+        public void handle(Long event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
+            receivedLongs.add(event);
+        }
+    }
+
+    @DisallowReplay
+    private static class ReplayPreventingHandler {
+
+        private List<String> receivedStrings = new ArrayList<>();
+        private List<Long> receivedLongs = new ArrayList<>();
+
+        @EventHandler
+        public void handle(String event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
+            receivedStrings.add(event);
+        }
+
+        @EventHandler
         public void handle(Long event, TrackingToken token) {
             assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
