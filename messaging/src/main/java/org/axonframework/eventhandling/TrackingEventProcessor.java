@@ -24,7 +24,6 @@ import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.lifecycle.Lifecycle;

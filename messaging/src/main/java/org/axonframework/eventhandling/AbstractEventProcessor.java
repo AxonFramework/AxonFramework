@@ -26,7 +26,6 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +45,8 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * creates a Unit of Work to process the batch.
  * <p>
  * Actual handling of events is deferred to an {@link EventHandlerInvoker}. Before each message is handled by the
- * invoker this event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
- * interceptors}.
+ * invoker this event processor creates an interceptor chain containing all registered
+ * {@link MessageHandlerInterceptor interceptors}.
  * <p>
  * Implementations are in charge of providing the events that need to be processed. Once these events are obtained they
  * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Collection)} for processing.
@@ -128,7 +127,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
     }
 
-    protected boolean canHandleType(Class<?> payloadType)  {
+    protected boolean canHandleType(Class<?> payloadType) {
         try {
             return eventHandlerInvoker.canHandleType(payloadType);
         } catch (Exception e) {
@@ -138,22 +137,22 @@ public abstract class AbstractEventProcessor implements EventProcessor {
 
     /**
      * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
-     * the event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
-     * interceptors}.
+     * the event processor creates an interceptor chain containing all registered
+     * {@link MessageHandlerInterceptor interceptors}.
      *
-     * @param eventMessages      The batch of messages that is to be processed
-     * @param unitOfWork         The Unit of Work that has been prepared to process the messages
+     * @param eventMessages The batch of messages that is to be processed
+     * @param unitOfWork    The Unit of Work that has been prepared to process the messages
      * @throws Exception when an exception occurred during processing of the batch
      */
     protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                       UnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
+                                             UnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
         processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
     }
 
     /**
      * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
-     * the event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
-     * interceptors}.
+     * the event processor creates an interceptor chain containing all registered
+     * {@link MessageHandlerInterceptor interceptors}.
      *
      * @param eventMessages      The batch of messages that is to be processed
      * @param unitOfWork         The Unit of Work that has been prepared to process the messages
@@ -187,7 +186,6 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             }
             return null;
         });
-
     }
 
     private Object processMessageInUnitOfWork(Collection<Segment> processingSegments, EventMessage<?> message,
@@ -263,8 +261,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         /**
          * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
          *
-         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual {@link
-         *                            EventMessage}s
+         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
+         *                            {@link EventMessage}s
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
@@ -277,8 +275,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
          * Sets the {@link RollbackConfiguration} specifying the rollback behavior of the {@link UnitOfWork} while
          * processing a batch of events.
          *
-         * @param rollbackConfiguration the {@link RollbackConfiguration} specifying the rollback behavior of the {@link
-         *                              UnitOfWork} while processing a batch of events.
+         * @param rollbackConfiguration the {@link RollbackConfiguration} specifying the rollback behavior of the
+         *                              {@link UnitOfWork} while processing a batch of events.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
