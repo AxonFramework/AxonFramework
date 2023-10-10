@@ -153,13 +153,11 @@
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>${hsqldb.with11.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
-            <version>${jakarta.persistence.with11.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
