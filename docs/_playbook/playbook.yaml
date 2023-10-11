@@ -5,7 +5,7 @@ site:
 content:
   sources:
   - url: ../..
-    start_paths: ['docs/*', '!docs/_playbook']
+    start_paths: ['docs/*', '!docs/_*']
 
 asciidoc:
   attributes:
