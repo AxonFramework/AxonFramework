@@ -12,14 +12,14 @@ As its both created more complexity, and introduces some overhead, it might be w
 
 [source,java]
 ----
-include::config$config/src/main/java/org/axonframework/config/EventProcessingConfigurer.java[tag=RegisterDeadLetterQueueProvider]
+include::example$source_code/config/src/main/java/org/axonframework/config/EventProcessingConfigurer.java[tag=RegisterDeadLetterQueueProvider]
 ----
 
 An example on how this can be used, in this case via the `DeadLetterQueueProviderConfigurerModule`.
 
 [source,java]
 ----
-include::autoconfigure$autoconfigure/src/main/java/org/axonframework/springboot/autoconfig/JpaAutoConfiguration.java[tag=JpaDeadLetterQueueProviderConfigurerModule]
+include::example$source_code/spring-boot-autoconfigure/src/main/java/org/axonframework/springboot/autoconfig/JpaAutoConfiguration.java[tag=JpaDeadLetterQueueProviderConfigurerModule]
 ----
 
 You might notice the `EventProcessorProperties` is being passed here.
