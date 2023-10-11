@@ -1566,10 +1566,14 @@ class TrackingEventProcessorTest {
             Thread.sleep(10);
         }
 
-        assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(30, handledEvents.size()));
-
-        Thread.sleep(100);
-        assertEquals(30, handledEvents.size());
+        int numberOfEvents = 30;
+        await("Handled Events - After Merge").pollDelay(Duration.ofMillis(50))
+                                             .atMost(Duration.ofSeconds(5))
+                                             .untilAsserted(() -> assertEquals(
+                                                     numberOfEvents, handledEvents.size(),
+                                                     () -> "Actually handled [" + handledEvents.size() +
+                                                             "] instead of expected [" + numberOfEvents + "]"
+                                             ));
     }
 
     @Test
