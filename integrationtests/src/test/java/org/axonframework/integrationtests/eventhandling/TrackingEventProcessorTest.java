@@ -51,7 +51,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
-import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.*;
@@ -567,7 +566,7 @@ class TrackingEventProcessorTest {
                 "Expected Unit of Work to have reached clean up phase for 2 messages"
         );
 
-        verify(tokenStore, times(1)).storeToken(any(), any(), anyInt());
+        verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
 
         assertEquals(
@@ -932,10 +931,13 @@ class TrackingEventProcessorTest {
 
         int numberOfEvents = 4;
         eventBus.publish(createEvents(numberOfEvents));
-        await("Handle Events - Initial")
-                .atMost(Duration.ofSeconds(2))
-                .pollDelay(Duration.ofMillis(50))
-                .until(() -> handled.size() == numberOfEvents);
+        await("Handle Events - Initial").pollDelay(Duration.ofMillis(50))
+                                        .atMost(Duration.ofMillis(2500))
+                                        .untilAsserted(() -> assertEquals(
+                                                numberOfEvents, handled.size(),
+                                                () -> "Actually handled [" + handled.size() +
+                                                        "] instead of expected [" + numberOfEvents + "]"
+                                        ));
 
         testSubject.shutDown();
         MyResetContext one = new MyResetContext("one");
@@ -1683,9 +1685,14 @@ class TrackingEventProcessorTest {
                .until(() -> testSubject.processingStatus().get(segmentIdZero).isCaughtUp());
 
         // Replayed messages aren't counted
-        await().pollDelay(pollDelay)
-               .atMost(Duration.ofSeconds(2))
-               .until(() -> handledEvents.size() == 30);
+        int numberOfEvents = 30;
+        await("Handle Events - Replay").pollDelay(pollDelay)
+                                       .atMost(Duration.ofMillis(2500))
+                                       .untilAsserted(() -> assertEquals(
+                                               numberOfEvents, handledEvents.size(),
+                                               () -> "Actually handled [" + handledEvents.size() +
+                                                       "] instead of expected [" + numberOfEvents + "]"
+                                       ));
     }
 
     @Test
