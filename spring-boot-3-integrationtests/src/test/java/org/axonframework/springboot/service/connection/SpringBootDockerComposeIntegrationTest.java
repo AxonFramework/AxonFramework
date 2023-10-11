@@ -59,7 +59,7 @@ class SpringBootDockerComposeIntegrationTest {
         AxonServerConnectionManager connectionFactory = application.getBean(AxonServerConnectionManager.class);
         AxonServerConnection connection = connectionFactory.getConnection();
 
-        await().atMost(Duration.ofMillis(5))
+        await().atMost(Duration.ofSeconds(5))
                .untilAsserted(() -> assertTrue(connection.isConnected()));
     }
 }
