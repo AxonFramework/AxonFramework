@@ -1,8 +1,7 @@
 = Advanced Use Cases
 :navtitle: Advanced use cases
 
-It's possible to change the default enqueue behavior.
-This can be done by implementing the `EnqueuePolicy` interface.
+It's possible to change the default enqueue behavior. You can do so by implementing the `EnqueuePolicy` interface.
 For example like this:
 
 [source,java]
@@ -22,12 +21,12 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
 }
 ----
 
-<1> We don't need to put this in a dead letter queue.
-As this will always create the same `NullPointerException`, so we don't enqueue it.
+<1> No need to put this in a dead letter queue.
+As this always creates the same `NullPointerException`, don't enqueue it.
 <2> If it's a notification event, which is already in the queue for 5 minutes, evict the event so it's not retried again.
 <3> Default to enqueue the event message again.
 
-Another example which uses the diagnostics, will evict after trying 5 times:
+Below is another example that uses the diagnostics and evicts after trying 5 times:
 
 [source,java]
 ----
@@ -43,11 +42,11 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
 }
 ----
 
-<1> Get the retries, default to -1. So on entering the queue the value will be 0.
+<1> Get the retries, default to -1. So on entering the queue, the value is 0.
 <2> Requeue, increasing the retries.
-<3> Once it's retried 5 times, the event message will be evicted.
+<3> Once it's retried 5 times, the framework evicts the event message.
 
-Setting the policy for a specific group can be done with something like:
+You can set the policy for a specific group with something like:
 
 [source,java]
 ----

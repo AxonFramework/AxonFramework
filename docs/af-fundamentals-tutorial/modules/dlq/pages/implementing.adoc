@@ -1,33 +1,33 @@
-= Implementing Dead Letter Queues
+= Implementing Dead Letter Queues (DLQ)
 :navtitle: Implementing dead letter queue
 
-The component we want need to configure in order to enable a dead letter queue is the `SequencedDeadLetterQueue`.
-Like most components related to event processing there are implementations available for JPA, JDBC and Mongo.
-To best leverage transactions, it's best to choose the same implementation is the `TokenStore` and likely also for your projection.
+To enable a DLQ you need to configure the `SequencedDeadLetterQueue` component.
+Like most components related to event processing, there are implementations available for JPA, JDBC, and Mongo.
+To best leverage transactions, it's best to choose the same implementation as the `TokenStore` and likely also for your projection.
 
 There are two ways of configuring the `SequencedDeadLetterQueue`.
-The first one is to register a dead letter queue provider on the event processor configuration.
-This allows you to specific for which processing groups, if you want to have a sead letter queue configured for them.
-As its both created more complexity, and introduces some overhead, it might be wise no to use a dead letter queue for each processing group.
+
+== Register a dead letter queue with the event processor
+
+The first approach is to register a DLQ provider in the event processor configuration. This approach allows you to specify processing groups if you want to configure DLQ  only for some of them. As DLQs add complexity and introduce some overhead, you should prefer this method when you don't need a separate DLQ for each processing group.
 
 [source,java]
 ----
 include::example$source_code/config/src/main/java/org/axonframework/config/EventProcessingConfigurer.java[tag=RegisterDeadLetterQueueProvider]
 ----
 
-An example on how this can be used, in this case via the `DeadLetterQueueProviderConfigurerModule`.
+The `DeadLetterQueueProviderConfigurerModule` has an example of how you can use this.
 
 [source,java]
 ----
 include::example$source_code/spring-boot-autoconfigure/src/main/java/org/axonframework/springboot/autoconfig/JpaAutoConfiguration.java[tag=JpaDeadLetterQueueProviderConfigurerModule]
 ----
 
-You might notice the `EventProcessorProperties` is being passed here.
-That's because with spring autoconfiguration it's easy to enable dead letter event processing for a specific processing group.
-This can be done by setting a property similar to `axon.eventhandling.processors.first.dlq.enabled=true`.
-In this case the processing group is `firsts`.
-In a similar way caching and a cache size can be set.
-Caching will prevent unnecessary calls to the database, at the cost of keeping some of the sequence identifiers in memory.
+You might notice the `EventProcessorProperties` parameter. That's because with Spring autoconfiguration it's easy to enable dead letter event processing for a specific processing group. You can do so by setting a property similar to `axon.eventhandling.processors.first.dlq.enabled=true`.
+In this case, the processing group is `firsts`. Similarly, you can set caching and cache size.
+Caching prevents unnecessary calls to the database, at the cost of keeping some of the sequence identifiers in memory.
+
+== Add a dead letter queue to a specific processing group
 
 The other way is to add a `SequencedDeadLetterQueue` to a specific processing group in the `EventProcessingConfigurer` using the `registerDeadLetterQueue` method.
 For example for setting the `JpaSequencedDeadLetterQueue` on the `my-processing-group` in a non-Spring context.
@@ -53,5 +53,5 @@ public class AxonConfig {
 }
 ----
 
-Although this will enable the processing to continue in case of errors, it does not retry the failed events automatically.
-Some of the options to enable this will be explained in the next section.
+Although this enables the processing to continue in case of errors, it doesn't retry the failed events automatically.
+The next section explains some of the options to enable retries.
