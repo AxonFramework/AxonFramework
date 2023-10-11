@@ -21,7 +21,7 @@ import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventBus;
@@ -31,14 +31,17 @@ import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.ResetHandler;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.utils.TestSerializer;
+import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +61,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -159,7 +163,6 @@ public class TrackingEventProcessorIntegrationTest {
     }
 
     @DirtiesContext
-    @Disabled("Somehow fails so we need to fix asap")
     @Test
     void resetHandlerIsCalledOnResetTokens() {
         String resetContext = "reset-context";
@@ -188,7 +191,6 @@ public class TrackingEventProcessorIntegrationTest {
     }
 
     @DirtiesContext
-    @Disabled("Somehow fails so we need to fix asap")
     @Test
     void unhandledEventsAreFilteredOutOfTheBlockingStream() {
         publishEvent(UsedEvent.INSTANCE, UnusedEvent.INSTANCE, UsedEvent.INSTANCE, UsedEvent.INSTANCE);
@@ -198,8 +200,8 @@ public class TrackingEventProcessorIntegrationTest {
                                                           .map(TrackedEventMessage::getPayloadType)
                                                           .collect(Collectors.toSet());
 
-            assertFalse(ignoredClasses.contains(UsedEvent.class));
-            assertTrue(ignoredClasses.contains(UnusedEvent.class));
+            assertFalse(ignoredClasses.contains(UsedEvent.class), "UsedEvent should not be ignored but is");
+            assertTrue(ignoredClasses.contains(UnusedEvent.class), "UnusedEvent should be ignored but isn't");
         });
     }
 
@@ -224,11 +226,50 @@ public class TrackingEventProcessorIntegrationTest {
             return TestSerializer.xStreamSerializer();
         }
 
-        @Autowired
-        public void configureCustomStreamableMessageSource(EventProcessingConfigurer configurer) {
-            configurer.configureDefaultStreamableMessageSource(config -> trackingToken -> new FilteringBlockingStream(
-                    config.eventStore().openStream(trackingToken), ignoredMessages
-            ));
+        @Bean
+        public ConfigurerModule customStreamableMessageSourceModule() {
+            return configurer -> configurer.eventProcessing().configureDefaultStreamableMessageSource(
+                    config -> new FilteringStreamableMessageSource(config.eventStore())
+            );
+        }
+    }
+
+    /**
+     * A {@link StreamableMessageSource} implementation that constructs a {@link FilteringBlockingStream} upon
+     * {@link StreamableMessageSource#openStream(TrackingToken)} invocations. All other operations are delegated to a
+     * given {@code StreamableMessageSource}.
+     */
+    private static class FilteringStreamableMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
+
+        private final StreamableMessageSource<TrackedEventMessage<?>> delegate;
+
+        private FilteringStreamableMessageSource(StreamableMessageSource<TrackedEventMessage<?>> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public BlockingStream<TrackedEventMessage<?>> openStream(@Nullable TrackingToken trackingToken) {
+            return new FilteringBlockingStream(delegate.openStream(trackingToken), ignoredMessages);
+        }
+
+        @Override
+        public TrackingToken createTailToken() {
+            return delegate.createTailToken();
+        }
+
+        @Override
+        public TrackingToken createHeadToken() {
+            return delegate.createHeadToken();
+        }
+
+        @Override
+        public TrackingToken createTokenAt(Instant dateTime) {
+            return delegate.createTokenAt(dateTime);
+        }
+
+        @Override
+        public TrackingToken createTokenSince(Duration duration) {
+            return delegate.createTokenSince(duration);
         }
     }
 
