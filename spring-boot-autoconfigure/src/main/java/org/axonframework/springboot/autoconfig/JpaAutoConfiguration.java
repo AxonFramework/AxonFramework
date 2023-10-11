@@ -120,5 +120,5 @@ public class JpaAutoConfiguration {
         );
     }
 
-    // tag::JpaDeadLetterQueueProviderConfigurerModule[]
+    // end::JpaDeadLetterQueueProviderConfigurerModule[]
 }
