@@ -101,7 +101,7 @@
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <!-- Logging -->
-        <log4j.version>2.20.0</log4j.version>
+        <log4j.version>2.21.0</log4j.version>
         <slf4j.version>2.0.9</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.13</dropwizard.metrics.version>
