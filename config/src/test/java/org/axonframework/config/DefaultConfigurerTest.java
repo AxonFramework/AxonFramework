@@ -127,9 +127,9 @@ class DefaultConfigurerTest {
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(EventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
-        assertEquals(1, config.getModules().size());
+        assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
-                              AggregateConfiguration.class);
+                              AggregateConfiguration.class, AxonIQConsoleModule.class);
     }
 
     @Test
@@ -308,8 +308,8 @@ class DefaultConfigurerTest {
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(1, config.getModules().size());
-        assertExpectedModules(config, AggregateConfiguration.class);
+        assertEquals(2, config.getModules().size());
+        assertExpectedModules(config, AggregateConfiguration.class, AxonIQConsoleModule.class);
 
         verify(transactionManager, times(2)).startTransaction();
     }
@@ -390,8 +390,8 @@ class DefaultConfigurerTest {
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(1, config.getModules().size());
-        assertExpectedModules(config, AggregateConfiguration.class);
+        assertEquals(2, config.getModules().size());
+        assertExpectedModules(config, AggregateConfiguration.class, AxonIQConsoleModule.class);
 
         verify(transactionManager, times(2)).startTransaction();
     }
@@ -426,10 +426,11 @@ class DefaultConfigurerTest {
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                                                 .start();
 
-        assertEquals(2, config.getModules().size());
+        assertEquals(3, config.getModules().size());
         assertExpectedModules(config,
                               AggregateConfiguration.class,
-                              AggregateConfiguration.class);
+                              AggregateConfiguration.class,
+                              AxonIQConsoleModule.class);
     }
 
     @Test
@@ -618,9 +619,9 @@ class DefaultConfigurerTest {
         SpanFactory custom = mock(SpanFactory.class);
 
         SpanFactory result = DefaultConfigurer.defaultConfiguration()
-                        .configureSpanFactory((config) -> custom)
-                                 .buildConfiguration()
-                                 .spanFactory();
+                                              .configureSpanFactory((config) -> custom)
+                                              .buildConfiguration()
+                                              .spanFactory();
 
         assertSame(custom, result);
     }
@@ -635,8 +636,8 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void whenStubAggregateRegisteredWithRegisterMessageHandler_thenRightThingsCalled(){
-        Configurer configurer =  spy(DefaultConfigurer.defaultConfiguration());
+    void whenStubAggregateRegisteredWithRegisterMessageHandler_thenRightThingsCalled() {
+        Configurer configurer = spy(DefaultConfigurer.defaultConfiguration());
         configurer.registerMessageHandler(c -> new StubAggregate());
 
         verify(configurer, times(1)).registerCommandHandler(any());
@@ -645,8 +646,8 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void whenQueryHandlerRegisteredWithRegisterMessageHandler_thenRightThingsCalled(){
-        Configurer configurer =  spy(DefaultConfigurer.defaultConfiguration());
+    void whenQueryHandlerRegisteredWithRegisterMessageHandler_thenRightThingsCalled() {
+        Configurer configurer = spy(DefaultConfigurer.defaultConfiguration());
         configurer.registerMessageHandler(c -> new StubQueryHandler());
 
         verify(configurer, never()).registerCommandHandler(any());

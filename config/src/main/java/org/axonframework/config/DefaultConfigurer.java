@@ -45,7 +45,11 @@ import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.AggregateSnapshotter;
+import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
+import org.axonframework.eventsourcing.Snapshotter;
+import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -213,15 +217,27 @@ public class DefaultConfigurer implements Configurer {
         components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
         components.put(Snapshotter.class, new Component<>(config, "snapshotter", this::defaultSnapshotter));
         components.put(SpanFactory.class, new Component<>(config, "spanFactory", this::defaultSpanFactory));
-        components.put(SnapshotterSpanFactory.class, new Component<>(config, "snapshotterSpanFactory", this::defaultSnapshotterSpanFactory));
-        components.put(CommandBusSpanFactory.class, new Component<>(config, "commandBusSpanFactory", this::defaultCommandBusSpanFactory));
-        components.put(QueryBusSpanFactory.class, new Component<>(config, "queryBusSpanFactory", this::defaultQueryBusSpanFactory));
-        components.put(QueryUpdateEmitterSpanFactory.class, new Component<>(config, "queryUpdateEmitterSpanFactory", this::defaultQueryUpdateEmitterSpanFactory));
-        components.put(EventBusSpanFactory.class, new Component<>(config, "eventBusSpanFactory", this::defaultEventBusSpanFactory));
-        components.put(DeadlineManagerSpanFactory.class, new Component<>(config, "deadlineManagerSpanFactory", this::defaultDeadlineManagerSpanFactory));
-        components.put(SagaManagerSpanFactory.class, new Component<>(config, "sagaManagerSpanFactory", this::defaultSagaManagerSpanFactory));
-        components.put(RepositorySpanFactory.class, new Component<>(config, "repositorySpanFactory", this::defaultRepositorySpanFactory));
-        components.put(EventProcessorSpanFactory.class, new Component<>(config, "eventProcessorSpanFactory", this::defaultEventProcessorSpanFactory));
+        components.put(SnapshotterSpanFactory.class,
+                       new Component<>(config, "snapshotterSpanFactory", this::defaultSnapshotterSpanFactory));
+        components.put(CommandBusSpanFactory.class,
+                       new Component<>(config, "commandBusSpanFactory", this::defaultCommandBusSpanFactory));
+        components.put(QueryBusSpanFactory.class,
+                       new Component<>(config, "queryBusSpanFactory", this::defaultQueryBusSpanFactory));
+        components.put(QueryUpdateEmitterSpanFactory.class,
+                       new Component<>(config,
+                                       "queryUpdateEmitterSpanFactory",
+                                       this::defaultQueryUpdateEmitterSpanFactory));
+        components.put(EventBusSpanFactory.class,
+                       new Component<>(config, "eventBusSpanFactory", this::defaultEventBusSpanFactory));
+        components.put(DeadlineManagerSpanFactory.class,
+                       new Component<>(config, "deadlineManagerSpanFactory", this::defaultDeadlineManagerSpanFactory));
+        components.put(SagaManagerSpanFactory.class,
+                       new Component<>(config, "sagaManagerSpanFactory", this::defaultSagaManagerSpanFactory));
+        components.put(RepositorySpanFactory.class,
+                       new Component<>(config, "repositorySpanFactory", this::defaultRepositorySpanFactory));
+        components.put(EventProcessorSpanFactory.class,
+                       new Component<>(config, "eventProcessorSpanFactory", this::defaultEventProcessorSpanFactory));
+        registerModule(new AxonIQConsoleModule());
     }
 
     /**
@@ -859,13 +875,13 @@ public class DefaultConfigurer implements Configurer {
     public Configurer registerMessageHandler(@Nonnull Function<Configuration, Object> messageHandlerBuilder) {
         Component<Object> messageHandler = new Component<>(() -> config, "", messageHandlerBuilder);
         Class<?> handlerClass = messageHandler.get().getClass();
-        if (isCommandHandler(handlerClass)){
+        if (isCommandHandler(handlerClass)) {
             registerCommandHandler(c -> messageHandler.get());
         }
-        if (isEventHandler(handlerClass)){
+        if (isEventHandler(handlerClass)) {
             eventProcessing().registerEventHandler(c -> messageHandler.get());
         }
-        if (isQueryHandler(handlerClass)){
+        if (isQueryHandler(handlerClass)) {
             registerQueryHandler(c -> messageHandler.get());
         }
         return this;
@@ -1051,7 +1067,8 @@ public class DefaultConfigurer implements Configurer {
                         lifecycleState.description, currentLifecyclePhase
                 ));
             } catch (TimeoutException e) {
-            	final long lifecyclePhaseTimeoutInSeconds = TimeUnit.SECONDS.convert(lifecyclePhaseTimeout, lifecyclePhaseTimeunit);
+                final long lifecyclePhaseTimeoutInSeconds = TimeUnit.SECONDS.convert(lifecyclePhaseTimeout,
+                                                                                     lifecyclePhaseTimeunit);
                 logger.warn(String.format(
                         "Timed out during %s phase [%d] after %d second(s). Proceeding to following phase",
                         lifecycleState.description, currentLifecyclePhase, lifecyclePhaseTimeoutInSeconds
