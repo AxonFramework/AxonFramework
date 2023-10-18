@@ -1,6 +1,30 @@
 # Design Principles
 This document serves the purpose to track the design principles we land on while drafting Axon Framework 5.
 
+However, given there are tons of things we want to adjust (as shown below), and just so much time and people,
+ it is valuable to order our ideas into a priority list.
+We can take this list to better to deduce what we will tackle for Axon Framework 5, and what will move to Axon Framework
+6+.
+
+* Update JDK to 21
+* Module restructuring, as described [here](modularity.md#desired-structure)
+* Separate JPA/JDBC/Spring/... into extensions, as described [here](modularity.md#extensions)
+* Reactive programming support
+* Decouple message name from payload type through use of (e.g.) `QualifiedName`
+* Adjust Event Store API to support DCB
+* "Lean API" - layering what's there into smaller chunks for flexibility
+* Configuration API breakdown from one module to one-per-module
+* From Serializer to Converter & moving upcasting logic to the Converter
+* From Saga to Process Manager & dropping AF-specific Saga/Process storage 
+* Declarative aggregate configuration i.o. annotation-based
+* Revamp Deadline Messaging solution to use consistent hashing
+* Rethink Command Bus messaging pattern
+* Rethink Query Bus API, by merging direct/scatter-gather into streaming
+* Carry result back to Dispatch Interceptors
+* Change Event Scheduling into an Event Store concern
+* Rework Snapshotting process to provide choice in snapshot format next to the Aggregate object
+* Add message schema support
+
 ## Base
 - Use JDK21 as the base.
 - Make the framework support reactive programming, but not enforce it.
