@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -64,15 +63,19 @@ public class UnitOfWork implements ProcessingLifecycle {
         return context.whenComplete(action);
     }
 
-    @Override
-    public <R> CompletableFuture<R> execute(Function<ProcessingContext, CompletableFuture<R>> action) {
+//    @Override
+    private <R> CompletableFuture<R> execute(Function<ProcessingContext, CompletableFuture<R>> action) {
         AtomicReference<R> result = new AtomicReference<>();
-        on(Phase.PROCESSING, c -> action.apply(c).whenComplete((r, e) -> result.set(r)));
+        on(Phase.INVOCATION, c -> action.apply(c).whenComplete((r, e) -> result.set(r)));
         return start().thenApply(n -> result.get());
     }
 
     public CompletableFuture<Void> start() {
         return context.commit();
+    }
+
+    public ProcessingContext processingContext() {
+        return context;
     }
 
     private static class UnitOfWorkProcessingContext implements ProcessingContext {
@@ -160,7 +163,7 @@ public class UnitOfWork implements ProcessingLifecycle {
 
         @Override
         public boolean isStarted() {
-            return phases.contains(Phase.PROCESSING);
+            return phases.contains(Phase.INVOCATION);
         }
 
         @Override
@@ -187,18 +190,6 @@ public class UnitOfWork implements ProcessingLifecycle {
             phaseHandlers.computeIfAbsent(phase, k -> new ConcurrentLinkedQueue<>())
                          .add(safe(phase, withContext(action)));
             return this;
-        }
-
-        @Override
-        public <R> CompletableFuture<R> execute(Function<ProcessingContext, CompletableFuture<R>> action) {
-            // TODO oops...
-            return null;
-        }
-
-        @Override
-        public <R> CompletableFuture<R> streamingResult(Function<ProcessingContext, ? extends CompletableFuture<R>> action) {
-            // TODO oops...
-            return null;
         }
 
         @Override
@@ -280,9 +271,9 @@ public class UnitOfWork implements ProcessingLifecycle {
 
         private CompletableFuture<Void> innerCommit() {
 
-            return runPhase(Phase.PREPARE_PROCESSING)
-                    .thenCompose(r -> runPhase(Phase.PROCESSING))
-                    .thenCompose(r -> runPhase(Phase.AFTER_PROCESSING))
+            return runPhase(Phase.PRE_INVOCATION)
+                    .thenCompose(r -> runPhase(Phase.INVOCATION))
+                    .thenCompose(r -> runPhase(Phase.POST_INVOCATION))
                     .thenCompose(r -> runPhase(Phase.PREPARE_COMMIT))
                     .thenCompose(r -> runPhase(Phase.COMMIT))
                     .exceptionallyCompose(e -> runPhase(Phase.ROLLBACK)

@@ -2,7 +2,7 @@ package org.axonframework.messaging;
 
 import java.util.UUID;
 
-public class SimpleMessage<T> implements Message<T> {
+public class SimpleMessage<T> implements Message {
 
     private final T payload;
     private final QualifiedName name;
@@ -21,7 +21,7 @@ public class SimpleMessage<T> implements Message<T> {
     }
 
     @Override
-    public QualifiedName getName() {
+    public QualifiedName name() {
         return name;
     }
 

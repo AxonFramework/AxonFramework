@@ -1,10 +1,7 @@
 package org.axonframework.messaging;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
+@FunctionalInterface
+public interface MessageHandlerInterceptor<M extends Message, R> {
 
-public interface MessageHandlerInterceptor<M extends Message<?>, R> {
-
-    Function<MessageHandlingContext<M>, CompletableFuture<R>> intercept(Function<MessageHandlingContext<M>, CompletableFuture<R>> handler);
-
+    MessageHandler<M, R> intercept(MessageHandler<M, R> handler);
 }

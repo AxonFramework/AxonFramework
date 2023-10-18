@@ -1,12 +1,12 @@
 package org.axonframework.messaging;
 
-public interface Message<P> {
-
-    P payload();
-
-    QualifiedName getName();
-
-    MetaData metaData();
+public interface Message {
 
     String identifier();
+
+    QualifiedName name();
+
+    Object payload();
+
+    MetaData metaData();
 }

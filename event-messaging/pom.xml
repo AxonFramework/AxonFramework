@@ -36,5 +36,10 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>messaging-core</artifactId>
+            <version>5.0.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

@@ -1,6 +1,6 @@
 package org.axonframework.messaging;
 
-public interface MessageHandlingContext<M extends Message<?>> {
+public interface MessageHandlingContext<M extends Message> {
 
     M message();
 

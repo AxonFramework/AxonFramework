@@ -1,5 +1,7 @@
 package org.axonframework.messaging;
 
+import java.util.Objects;
+
 public record SimpleQualifiedName(String namespace, String localName) implements QualifiedName {
 
     public SimpleQualifiedName(String namespace, String localName) {
@@ -26,5 +28,10 @@ public record SimpleQualifiedName(String namespace, String localName) implements
     @Override
     public int hashCode() {
         return Objects.hash(namespace, localName);
+    }
+
+    @Override
+    public String revision() {
+        return null;
     }
 }

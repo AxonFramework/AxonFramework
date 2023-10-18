@@ -9,7 +9,7 @@ public interface QualifiedName {
     static QualifiedName fromDottedName(String dottedName) {
         int lastDot = dottedName.lastIndexOf('.');
         return new SimpleQualifiedName(dottedName.substring(0, Math.max(lastDot, 0)),
-                                 dottedName.substring(lastDot + 1));
+                                       dottedName.substring(lastDot + 1));
     }
 
     default String toSimpleString() {
@@ -20,4 +20,5 @@ public interface QualifiedName {
 
     String localName();
 
+    String revision();
 }

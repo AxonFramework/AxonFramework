@@ -1,5 +1,8 @@
 package org.axonframework.messaging;
 
+/**
+ * @author Awesome People
+ */
 // TODO why does ProcessingContext extends ProcessingLifecycle ?
 public interface ProcessingContext extends ProcessingLifecycle {
 
