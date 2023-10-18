@@ -2,7 +2,7 @@
 This document serves the purpose to track the design principles we land on while drafting Axon Framework 5.
 
 ## Base
-- Use JDK17 as the base.
+- Use JDK21 as the base.
 - Make the framework support reactive programming, but not enforce it.
   In doing so, users can stick to what they're used (with Axon Framework 4) to or select Project Reactor.
   To that end, the "edges" of the Framework allow a reactive solution.
@@ -62,7 +62,7 @@ This document serves the purpose to track the design principles we land on while
   In doing so, we synchronize the three types of buses, whereas for Axon Framework 4, Event Processors are the oddball for this.
 - A Message Handling Component may in turn consist out of other Message Handling Components, if the layering so requires it.
 - We will provide distinct Gateway interfaces for the different types of outward interaction with the Framework.
-  For example, whenever a user sticks to the imperative proramming paradigm, the (regular) `CommandGateway` is used.
+  For example, whenever a user sticks to the imperative programming paradigm, the (regular) `CommandGateway` is used.
   If a users prefers Project Reactor they should use the `ReactorCommandGateway`, clearly defining `Mono`/`Flux` operations.
   And if a user would like to use Kotlin's coroutines, they should wire a distinct `CoroutineCommandGateway`.
   Without doing so, we can not guarantee that we can map the respective context implementations (e.g., `ThreadLocal` or `Context` (Project Reactor)) over to Axon Framework's `ProcessingContext`.
@@ -81,7 +81,7 @@ This document serves the purpose to track the design principles we land on while
 - Dispatch Interceptors should allow reaction to the responses of handling the message(s).
   Or, distinct Result Interceptors should be present throughout the Framework's bus implementations.
 - Distinct interceptor support interfaces should not be necessary.
-  Instead, the constructors/builders of the respective bus implementations should allow provisioning of a a single instance.
+  Instead, the constructors/builders of the respective bus implementations should allow provisioning of a single instance.
   This single instance internally represents the chain of interceptors to utilize before dispatching, handling, or result returning.
 
 ## Commands / Command Modelling / Aggregates
@@ -165,6 +165,7 @@ This document serves the purpose to track the design principles we land on while
   Or in other terms, it maps.
   This name switch allows the `Converter` to (1) provide the roll of the (AF4) Serializer and (2) support Upcasting.
 - The `axon-legacy` (or `axon-vintage`?!) module should allow a transition from the (AF4) `Upcaster` solution to the new `Converter` approach.
+* Discuss whether we want schema registration/maintenance support one way or another
 
 ## Snapshotting
 - Snapshot triggering, creation, and usage should be more easily definable by the end user
