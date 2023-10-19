@@ -3,7 +3,7 @@
 
 The dead letter queue is a stop-gap. It's important to strive to have the queue empty as soon as possible. Ideally by retrying the events, and removing them from the queue.
 You can retrieve a `SequencedDeadLetterProcessor` from the `EventProcessingConfiguration` based on a processing group name.
-Additionally, it's also possible to use Axon Console and process a queue manually.
+Additionally, it's also possible to use AxonIQ Console and process a queue manually.
 
 To schedule processing dead letter sequences you can do something like:
 
