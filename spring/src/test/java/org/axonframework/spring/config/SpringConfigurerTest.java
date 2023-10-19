@@ -20,21 +20,13 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configuration;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class SpringConfigurerTest {
 
@@ -61,10 +53,10 @@ class SpringConfigurerTest {
     @Test
     void springPrimaryBeanUsedWhenMultipleCandidates() {
         when(context.getBeanNamesForType(CommandBus.class)).thenReturn(new String[]{"commandBus", "alternative"});
-        when(context.getBeanDefinition(any())).thenReturn(new GenericBeanDefinition());
+        when(context.getMergedBeanDefinition(any())).thenReturn(new GenericBeanDefinition());
         GenericBeanDefinition primary = new GenericBeanDefinition();
         primary.setPrimary(true);
-        when(context.getBeanDefinition("commandBus")).thenReturn(primary);
+        when(context.getMergedBeanDefinition("commandBus")).thenReturn(primary);
         SimpleCommandBus commandBus = SimpleCommandBus.builder().build();
         when(context.getBean("commandBus", CommandBus.class)).thenReturn(commandBus);
 
@@ -81,7 +73,7 @@ class SpringConfigurerTest {
         when(context.getBeanNamesForType(CommandBus.class)).thenReturn(new String[]{"commandBus", "alternative"});
         GenericBeanDefinition primary = new GenericBeanDefinition();
         primary.setPrimary(true);
-        when(context.getBeanDefinition(any())).thenReturn(primary);
+        when(context.getMergedBeanDefinition(any())).thenReturn(primary);
         SimpleCommandBus commandBus = SimpleCommandBus.builder().build();
         when(context.getBean("commandBus", CommandBus.class)).thenReturn(commandBus);
 
@@ -98,7 +90,7 @@ class SpringConfigurerTest {
     void failsWhenMultipleNonPrimaryCandidates() {
         when(context.getBeanNamesForType(CommandBus.class)).thenReturn(new String[]{"commandBus", "alternative"});
         GenericBeanDefinition nonPrimary = new GenericBeanDefinition();
-        when(context.getBeanDefinition(any())).thenReturn(nonPrimary);
+        when(context.getMergedBeanDefinition(any())).thenReturn(nonPrimary);
         SimpleCommandBus commandBus = SimpleCommandBus.builder().build();
         when(context.getBean("commandBus", CommandBus.class)).thenReturn(commandBus);
 
@@ -120,5 +112,4 @@ class SpringConfigurerTest {
         //noinspection unchecked
         verify(context, never()).getBean(anyString(), any(Class.class));
     }
-
 }
