@@ -28,11 +28,8 @@ import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.stereotype.Saga;
 import org.axonframework.springboot.autoconfig.AxonAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.axonframework.springboot.utils.TestSerializer;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.SpringBootConfiguration;
@@ -41,7 +38,11 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.jmx.support.RegistrationPolicy;
 
@@ -53,8 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests customization of the event handlers on a Saga, updating the configuration through an autowired method. Ensures
@@ -62,13 +62,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author Marc Gathier
  */
-@SpringBootTest(properties = "spring.main.banner-mode=off")
+@SpringBootTest(properties = {
+        "spring.main.banner-mode=off",
+        "axon.axonserver.enabled=false"
+})
 @SpringBootConfiguration
 @EnableAutoConfiguration(exclude = {
-        AxonServerAutoConfiguration.class,
-        AxonServerBusAutoConfiguration.class,
-        AxonServerActuatorAutoConfiguration.class,
-        AxonServerActuatorAutoConfiguration.class,
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class
 })

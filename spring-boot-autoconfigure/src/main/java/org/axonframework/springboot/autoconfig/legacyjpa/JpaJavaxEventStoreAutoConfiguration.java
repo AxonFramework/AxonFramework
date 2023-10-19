@@ -32,13 +32,14 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
 import javax.persistence.EntityManagerFactory;
 
 /**
- * Auto configuration class for Axon's JPA specific event store components.
+ * Autoconfiguration class for Axon's JPA specific event store components.
  *
  * @author Sara Pelligrini
  * @since 4.0
@@ -47,12 +48,13 @@ import javax.persistence.EntityManagerFactory;
 @Deprecated
 @AutoConfiguration
 @ConditionalOnBean(EntityManagerFactory.class)
-@AutoConfigureBefore({JpaEventStoreAutoConfiguration.class, JdbcAutoConfiguration.class})
 @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
+@ConditionalOnExpression("${axon.axonserver.enabled:true} == false")
+@AutoConfigureBefore({JpaEventStoreAutoConfiguration.class, JdbcAutoConfiguration.class})
+@AutoConfigureAfter({AxonServerAutoConfiguration.class, JpaJavaxAutoConfiguration.class})
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventsourcing.eventstore.jpa"
 })
-@AutoConfigureAfter({AxonServerAutoConfiguration.class, JpaJavaxAutoConfiguration.class})
 public class JpaJavaxEventStoreAutoConfiguration {
 
     @Bean
