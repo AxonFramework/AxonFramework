@@ -828,7 +828,7 @@ class Coordinator {
                                 () -> tokenStore.fetchToken(name, segment)
                         );
                         newClaims.put(segment, token);
-                        logger.debug("Processor [{}] claimed the token for segment {}.", name, segmentId);
+                        logger.info("Processor [{}] claimed the token for segment {}.", name, segmentId);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
                         logger.debug("Processor [{}] is unable to claim the token for segment {}. "
