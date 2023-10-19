@@ -9,7 +9,7 @@ There are two ways of configuring the `SequencedDeadLetterQueue`.
 
 == Register a dead letter queue with the event processor
 
-The first approach is to register a DLQ provider in the event processor configuration. This approach allows you to specify processing groups if you want to configure DLQ  only for some of them. As DLQs add complexity and introduce some overhead, you should prefer this method when you don't need a separate DLQ for each processing group.
+The first approach is to register a DLQ provider in the event processor configuration. This approach allows you to specify processing groups if you want to configure the DLQ only for some of them. As DLQs add complexity and introduce some overhead, you should prefer this method when you don't need a separate DLQ for each processing group.
 
 [source,java]
 ----
