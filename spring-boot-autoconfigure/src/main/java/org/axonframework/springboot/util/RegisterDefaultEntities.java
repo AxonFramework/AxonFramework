@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,22 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation intended for types and methods to trigger the registration of entities found in the given
+ * {@link #packages()} with the {@link DefaultEntityRegistrar}.
+ *
+ * @author Allard Buijze
+ * @since 3.0
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Import(DefaultEntityRegistrar.class)
 public @interface RegisterDefaultEntities {
 
+    /**
+     * An array of package names used by the {@link DefaultEntityRegistrar} to collect entities from.
+     *
+     * @return An array of package names used by the {@link DefaultEntityRegistrar} to collect entities from.
+     */
     String[] packages();
 }
