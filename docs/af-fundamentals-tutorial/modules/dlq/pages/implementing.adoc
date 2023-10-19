@@ -3,7 +3,7 @@
 
 To enable a DLQ you need to configure the `SequencedDeadLetterQueue` component.
 Like most components related to event processing, there are implementations available for JPA, JDBC, and Mongo.
-To best leverage transactions, it's best to choose the same implementation as the `TokenStore` and likely also for your projection.
+To best leverage transactions, it's best to choose the same implementation as the `TokenStore` and likely also for your projection. Please note that for best results, this also means having them located in the same database, or the same collection.
 
 There are two ways of configuring the `SequencedDeadLetterQueue`.
 
