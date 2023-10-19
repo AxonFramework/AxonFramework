@@ -119,6 +119,5 @@ public class JpaAutoConfiguration {
                                                                         .build()
         );
     }
-
     // end::JpaDeadLetterQueueProviderConfigurerModule[]
 }
