@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.spring.config;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
 import java.util.Arrays;
@@ -59,8 +60,7 @@ public class SpringConfigurer extends DefaultConfigurer {
         }
 
         public <T> Optional<T> findBean(Class<T> componentType) {
-            String[] candidates = beanFactory.getBeanNamesForType(componentType);
-
+            String[] candidates = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory, componentType);
             if (candidates.length == 0) {
                 return Optional.empty();
             } else if (candidates.length == 1) {
@@ -77,7 +77,7 @@ public class SpringConfigurer extends DefaultConfigurer {
         private <T> Optional<T> findPrimary(Class<T> componentType, String[] candidates) {
             String primary = null;
             for (String candidate : candidates) {
-                if (beanFactory.getBeanDefinition(candidate).isPrimary()) {
+                if (beanFactory.getMergedBeanDefinition(candidate).isPrimary()) {
                     if (primary != null) {
                         return Optional.empty();
                     } else {

@@ -211,7 +211,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
     @Override
     public CompletableFuture<Void> shutdownAsync() {
-        logger.info("Stopping processor [{}]", name);
+        logger.info("Stopping PooledStreamingEventProcessor [{}]", name);
         return coordinator.stop();
     }
 
@@ -322,6 +322,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         transactionManager.executeInTransaction(() -> {
             // Find all segments and fetch all tokens
             int[] segments = tokenStore.fetchSegments(getName());
+            logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
             TrackingToken[] tokens = Arrays.stream(segments)
                                            .mapToObj(segment -> tokenStore.fetchToken(getName(), segment))
                                            .toArray(TrackingToken[]::new);
@@ -334,6 +335,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                              getName(),
                              segments[i]
                      ));
+            logger.info("Processor [{}] successfully reset tokens for segments [{}].", name, segments);
         });
     }
 

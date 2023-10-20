@@ -715,10 +715,17 @@ class Coordinator {
             workPackages.entrySet().stream()
                         .filter(entry -> isSegmentBlockedFromClaim(entry.getKey()))
                         .map(Map.Entry::getValue)
-                        .forEach(workPackage -> abortWorkPackage(workPackage, null));
+                        .forEach(workPackage -> {
+                            logger.info(
+                                    "Processor [{}] was requested and will comply with releasing claim for segment {}.",
+                                    name, workPackage.segment().getSegmentId()
+                            );
+                            abortWorkPackage(workPackage, null);
+                        });
 
             if (coordinatorExtendsClaims) {
-                logger.debug("Processor [{}] extending all claims of active Work Packages.", name);
+                logger.debug("Processor [{}] will extend the claim of work packages"
+                                     + " that are busy processing events and have met the claim threshold.", name);
                 // Extend the claims of each work package busy processing events.
                 // Doing so relieves this effort from the work package as an optimization.
                 workPackages.values()
@@ -754,8 +761,10 @@ class Coordinator {
                 // Claim new segments, construct work packages per new segment, and open stream based on lowest segment
                 unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
                 try {
+                    logger.debug("Processor [{}] will try to claim new segments.", name);
                     Map<Segment, TrackingToken> newSegments = claimNewSegments();
                     TrackingToken streamStartPosition = lastScheduledToken;
+
                     for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
                         Segment segment = entry.getKey();
                         TrackingToken token = entry.getValue();
@@ -763,10 +772,10 @@ class Coordinator {
 
                         streamStartPosition = streamStartPosition == null || otherUnwrapped == null
                                               ? null : streamStartPosition.lowerBound(otherUnwrapped);
-                        logger.debug("Processor [{}] claimed {} for processing.", name, segment);
                         workPackages.computeIfAbsent(segment.getSegmentId(),
                                                      wp -> workPackageFactory.apply(segment, token));
                     }
+
                     if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
                         logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
                     }
@@ -862,11 +871,12 @@ class Coordinator {
                                 () -> tokenStore.fetchToken(name, segment)
                         );
                         newClaims.put(segment, token);
+                        logger.info("Processor [{}] claimed the token for segment {}.", name, segmentId);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
-                        logger.debug(
-                                "Unable to claim the token for segment {}. It is owned by another process or has been split/merged concurrently.",
-                                segmentId);
+                        logger.debug("Processor [{}] is unable to claim the token for segment {}. "
+                                             + "It is owned by another process or has been split/merged concurrently.",
+                                     name, segmentId);
                     }
                 }
             }
@@ -1018,15 +1028,15 @@ class Coordinator {
         }
 
         private void abortAndScheduleRetry(Exception cause) {
-            logger.info("Releasing claims and scheduling a new coordination task in {}ms", errorWaitBackOff);
+            logger.info("Processor [{}] is releasing claims and scheduling a new coordination task in {}ms",
+                        name, errorWaitBackOff);
 
             errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
             abortWorkPackages(cause).whenComplete(
                     (unused, throwable) -> {
                         if (throwable != null) {
-                            logger.warn("An exception occurred during work packages abort on [{}] processor.",
-                                        name,
-                                        throwable);
+                            logger.warn("An exception occurred during work packages abort on processor [{}].",
+                                        name, throwable);
                         } else {
                             logger.debug("Work packages have aborted successfully.");
                         }
@@ -1054,11 +1064,8 @@ class Coordinator {
                                }
                        ))
                        .exceptionally(throwable -> {
-                           logger.info(
-                                   "An exception occurred during the abort of work package for segment [{}] on [{}] processor.",
-                                   work.segment().getSegmentId(),
-                                   name,
-                                   throwable);
+                           logger.info("An exception occurred during the abort of work package [{}] on [{}] processor.",
+                                       work.segment().getSegmentId(), name, throwable);
                            return null;
                        });
         }

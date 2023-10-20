@@ -44,7 +44,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
@@ -70,12 +72,14 @@ public class JdbcAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean({EventStorageEngine.class, EventSchema.class})
+    @ConditionalOnExpression("${axon.axonserver.enabled:true} == false")
     public EventSchema eventSchema() {
         return new EventSchema();
     }
 
     @Bean
     @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
+    @ConditionalOnExpression("${axon.axonserver.enabled:true} == false")
     public EventStorageEngine eventStorageEngine(Serializer defaultSerializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
                                                  @Qualifier("eventSerializer") Serializer eventSerializer,
