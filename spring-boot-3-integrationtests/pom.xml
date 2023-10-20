@@ -32,7 +32,7 @@
     <description>
         Module containing integration tests using Spring Boot 3. Does not contain any production code.
     </description>
-    <version>4.8.3-SNAPSHOT</version>
+    <version>4.8.4-SNAPSHOT</version>
 
     <properties>
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
