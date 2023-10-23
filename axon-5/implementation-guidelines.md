@@ -3,6 +3,8 @@
 When constructing Axon Framework 5, and you are in doubt, take the following guidelines into account:
 
 1. Discover the essence of your API!
+  This means, deriving an API that provides us the flexibility to "move into the future."
+  Thus, not necessarily *implementing* all our ideas in 5.0.0, but provide space for changes in 5.[1..N].0. 
 2. Ease of use when using the Framework.
   a. Bare-bones for maximum freedom.
   b. Declarative configuration style. 
