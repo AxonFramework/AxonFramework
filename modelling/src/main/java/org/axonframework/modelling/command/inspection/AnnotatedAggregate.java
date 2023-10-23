@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ import static java.lang.String.format;
  */
 public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggregate<T>, ApplyMore {
 
-    private final AggregateModel<T> inspector;
+    protected final AggregateModel<T> inspector;
     private final RepositoryProvider repositoryProvider;
     private final Queue<Runnable> delayedTasks = new LinkedList<>();
     private final EventBus eventBus;
