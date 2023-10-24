@@ -13,7 +13,7 @@ updates:
     - "gklijs"
     - "sandjelkovic"
     - "smcvb"
-  milestone: 6
+  milestone: 7
 - package-ecosystem: maven
   directory: "/"
   schedule:
@@ -27,4 +27,4 @@ updates:
     - "gklijs"
     - "sandjelkovic"
     - "smcvb"
-  milestone: 6
+  milestone: 7
