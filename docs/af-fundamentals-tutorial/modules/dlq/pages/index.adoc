@@ -1,15 +1,14 @@
 = Dead Letter Queues in Axon Framework
-:navtitle: Dead letter queues
+:navtitle: Dead Letter Queues
 
 == Introduction
 
-Once you are running a big application with lots of events in production, things might go wrong.
-This could just be temporary because an external API is down, or it may require changing the code when there is a bug with a combination of not-tested events.
+Once you are running a large application with thousands of events in a production environment, there's a possibility for errors to occur.
+For example, an error in your system could occur due to the fact that an external API (such as a payment processing service) is temporarily unavailable. As a result, this may require changing your event messaging code when an error manifests due to a combination of not-tested events.
 
-The default configuration for event processors is just to log errors, likely in production you already changed it, to throw the error instead.
-However, this can cause an event processor to stop processing events, as it keeps trying to process the same event until it stops causing an exception.
+Now, the default configuration for event processors is simply to log any errors that occur. In a production environment, developers have the option to modify the default behavior to throw the error instead. Please note, however, that this can cause an event processor to stop processing events altogether, due to the fact that it will keep trying to process the same event until it stops causing an exception.
 
-To prevent this it's possible to configure the use of a sequenced dead letter queue (DLQ). With a DLQ, instead of retrying, the framework places any event throwing an error in a queue. To keep the order of the events correct, the framework also places all further events having the same sequence identifier _(by default, the sequence identifier is the aggregate id)_ directly into the queue. Such an approach assures all events for the same aggregate, have to wait on the event causing an exception, while the event processor doesn't consume resources continuously trying to process unprocessable events.
+To prevent this behavior, it's possible to configure the use of a sequenced Dead Letter Queue (DLQ). With a DLQ, instead of retrying to process the event over and over unsuccessfully, the framework simply places the failed event in a queue. In order to maintain the correct order of such events, the framework also places all further events having the same sequence identifier _(by default, the sequence identifier is the aggregate id)_ directly into the queue. Such an approach ensures that all events for the same aggregate must wait on the event that is causing an exception. As a result, the event processor doesn't consume resources continuously trying to process unprocessable events.
 
-This tutorial guides you through the process of enabling the sequenced dead letter queue for event processing.
+This tutorial guides you through the process of enabling the sequenced Dead Letter Queue for event processing.
 It also guides you through the process of re-processing the queued events after you fix the processing error.
