@@ -69,7 +69,7 @@
         <dokka.version>1.7.20</dokka.version>
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
         <maven-assembly.version>3.6.0</maven-assembly.version>
-        <maven-clean.version>3.3.1</maven-clean.version>
+        <maven-clean.version>3.3.2</maven-clean.version>
         <maven-compiler.version>3.11.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
