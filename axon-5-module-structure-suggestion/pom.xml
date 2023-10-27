@@ -17,31 +17,27 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
+    <modelVersion>4.0.0</modelVersion>
+
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
     <version>5.0.0-SNAPSHOT</version>
-    <modules>
-        <module>axon-server-connector</module>
-        <module>disruptor</module>
-        <module>config</module>
-        <module>eventsourcing</module>
-        <module>integrationtests</module>
-        <module>legacy</module>
-        <module>messaging</module>
-        <module>metrics</module>
-        <module>metrics-micrometer</module>
-        <module>migration</module>
-        <module>modelling</module>
-        <module>reactorless-test</module>
-        <module>spring</module>
-        <module>spring-boot-autoconfigure</module>
-        <module>spring-boot-starter</module>
-        <module>test</module>
-        <module>tracing-opentelemetry</module>
-    </modules>
+
     <packaging>pom</packaging>
 
-    <modelVersion>4.0.0</modelVersion>
+    <modules>
+        <module>messaging-core</module>
+        <module>command-messaging</module>
+        <module>event-messaging</module>
+        <module>query-messaging</module>
+        <module>messaging</module>
+        <module>event-sourcing</module>
+        <module>annotations</module>
+        <module>test</module>
+        <module>integration-tests</module>
+        <!-- TODO Add legacy module for migration purposes -->
+        <!-- TODO Add migration module for OpenRewrite script. Or, combine with legacy module -->
+    </modules>
 
     <name>Axon Framework</name>
     <description>
@@ -574,8 +570,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler.version}</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>17</source>
+                    <target>17</target>
                     <encoding>UTF-8</encoding>
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>
@@ -851,26 +847,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <id>java11-modules</id>
-            <activation>
-                <jdk>[11,)</jdk>
-            </activation>
-            <modules>
-                <module>hibernate-6-integrationtests</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>java17-modules</id>
-            <activation>
-                <jdk>[17,)</jdk>
-            </activation>
-            <modules>
-                <module>spring-boot-3-integrationtests</module>
-            </modules>
         </profile>
 
         <profile>
