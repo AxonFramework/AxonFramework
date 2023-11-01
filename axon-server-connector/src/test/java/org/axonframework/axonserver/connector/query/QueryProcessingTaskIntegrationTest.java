@@ -38,8 +38,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
-import java.util.concurrent.CompletableFuture;
-import reactor.core.CompletableFuture.Flux;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import java.util.Collections;
 import java.util.List;
@@ -91,8 +91,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void directQueryWhenRequesterDoesntSupportStreaming() {
-        QueryMessage<FluxQuery, CompletableFuture<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
-                                                                                            ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
+                                                                                            ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
@@ -112,8 +112,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void queryProcessingTaskIsTraced() {
-        QueryMessage<FluxQuery, CompletableFuture<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
-                                                                                            ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
+                                                                                            ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
@@ -130,8 +130,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void directQueryWhenRequesterDoesntSupportStreamingAndFlowControlMessagesComesBeforeQueryExecution() {
-        QueryMessage<FluxQuery, CompletableFuture<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
-                                                                                            ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
+                                                                                            ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
@@ -151,8 +151,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void directQueryWhenRequesterDoesntSupportStreamingAndCancelMessagesComesBeforeQueryExecution() {
-        QueryMessage<FluxQuery, CompletableFuture<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
-                                                                                            ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
+                                                                                            ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
@@ -171,8 +171,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void streamingQuery() {
-        QueryMessage<FluxQuery, CompletableFuture<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
-                                                                                            ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
+                                                                                            ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -320,9 +320,9 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void streamingQueryWithConcurrentRequests() throws InterruptedException {
-        QueryMessage<FluxQuery, CompletableFuture<String>> queryMessage =
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage =
                 new GenericQueryMessage<>(new FluxQuery(1000),
-                                          ResponseTypes.CompletableFutureOf(String.class));
+                                          ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -397,8 +397,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void multipleInstanceQueryShouldInvokeFlux() {
-        QueryMessage<MultipleInstanceQuery, CompletableFuture<String>> queryMessage =
-                new GenericQueryMessage<>(new MultipleInstanceQuery(1000), ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<MultipleInstanceQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new MultipleInstanceQuery(1000), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -426,8 +426,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void cancellationOfStreamingFluxQuery() {
-        QueryMessage<FluxQuery, CompletableFuture<String>> queryMessage =
-                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -455,8 +455,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void streamingFluxQueryWhenCancelMessageComesFirst() {
-        QueryMessage<FluxQuery, CompletableFuture<String>> queryMessage =
-                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -529,8 +529,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void fluxEmittingErrorAfterAWhile() {
-        QueryMessage<ErroringAfterAWhileFluxQuery, CompletableFuture<String>> queryMessage =
-                new GenericQueryMessage<>(new ErroringAfterAWhileFluxQuery(), ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<ErroringAfterAWhileFluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new ErroringAfterAWhileFluxQuery(), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -556,8 +556,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void fluxEmittingErrorRightAway() {
-        QueryMessage<ErroringFluxQuery, CompletableFuture<String>> queryMessage =
-                new GenericQueryMessage<>(new ErroringFluxQuery(), ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<ErroringFluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new ErroringFluxQuery(), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
@@ -582,8 +582,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void fluxHandlerThrowingAnException() {
-        QueryMessage<ThrowingExceptionFluxQuery, CompletableFuture<String>> queryMessage =
-                new GenericQueryMessage<>(new ThrowingExceptionFluxQuery(), ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<ThrowingExceptionFluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new ThrowingExceptionFluxQuery(), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
@@ -635,8 +635,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void fluxStreamingQueryWhenRequestingTooMany() {
-        QueryMessage<FluxQuery, CompletableFuture<String>> queryMessage =
-                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.CompletableFutureOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)

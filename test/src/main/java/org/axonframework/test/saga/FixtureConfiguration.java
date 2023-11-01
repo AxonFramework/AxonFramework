@@ -281,7 +281,7 @@ public interface FixtureConfiguration {
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
      */
-    GivenAggregateEventCompletableFuture givenAggregate(String aggregateIdentifier);
+    GivenAggregateEventPublisher givenAggregate(String aggregateIdentifier);
 
     /**
      * Use this method to indicate a specific moment as the initial current time "known" by the fixture at the start of

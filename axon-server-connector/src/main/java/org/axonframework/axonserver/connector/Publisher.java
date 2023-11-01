@@ -25,7 +25,7 @@ package org.axonframework.axonserver.connector;
  * connector</a>
  */
 @Deprecated
-public interface CompletableFuture<M> {
+public interface Publisher<M> {
 
     /**
      * Publishes the given {@code message}

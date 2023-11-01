@@ -17,7 +17,7 @@
 package org.axonframework.queryhandling;
 
 /**
- * Abstraction interface to bridge old {@code FluxSink} and {@link reactor.core.CompletableFuture.Sinks.Many} API with a common
+ * Abstraction interface to bridge old {@code FluxSink} and {@link reactor.core.publisher.Sinks.Many} API with a common
  * API.
  *
  * @author Stefan Dragisic

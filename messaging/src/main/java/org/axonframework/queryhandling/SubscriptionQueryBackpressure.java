@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling;
 
-import reactor.core.CompletableFuture.FluxSink;
+import reactor.core.publisher.FluxSink;
 
 /**
  * Backpressure mechanism used for subscription queries. Uses underlying FluxSink.OverflowStrategy from Project Reactor

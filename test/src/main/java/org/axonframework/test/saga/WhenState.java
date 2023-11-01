@@ -44,7 +44,7 @@ public interface WhenState {
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
      */
-    WhenAggregateEventCompletableFuture whenAggregate(String aggregateIdentifier);
+    WhenAggregateEventPublisher whenAggregate(String aggregateIdentifier);
 
     /**
      * Use this method to indicate an application is published, <em>while recording the outcome</em>.

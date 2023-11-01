@@ -17,14 +17,14 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.Registration;
-import reactor.core.CompletableFuture.Flux;
-import reactor.core.CompletableFuture.Mono;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.function.Consumer;
 
 /**
- * Result of the subscription query. It contains CompletableFutures for initial result and incremental updates. Until there is a
- * subscription to the CompletableFuture, nothing happens.
+ * Result of the subscription query. It contains publishers for initial result and incremental updates. Until there is a
+ * subscription to the publisher, nothing happens.
  *
  * @author Milan Savic
  * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)

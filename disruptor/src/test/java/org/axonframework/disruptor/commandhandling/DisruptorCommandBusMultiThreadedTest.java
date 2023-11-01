@@ -83,7 +83,7 @@ class DisruptorCommandBusMultiThreadedTest {
                                          .waitStrategy(new SleepingWaitStrategy())
                                          .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                          .invokerThreadCount(2)
-                                         .CompletableFutureThreadCount(3)
+                                         .publisherThreadCount(3)
                                          .build();
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);

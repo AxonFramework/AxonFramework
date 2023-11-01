@@ -151,7 +151,7 @@ class DisruptorCommandBusTest {
                                          .waitStrategy(new SleepingWaitStrategy())
                                          .executor(customExecutor)
                                          .invokerThreadCount(2)
-                                         .CompletableFutureThreadCount(3)
+                                         .publisherThreadCount(3)
                                          .build();
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         GenericAggregateFactory<StubAggregate> aggregateFactory = new GenericAggregateFactory<>(StubAggregate.class);
@@ -198,7 +198,7 @@ class DisruptorCommandBusTest {
                                          .waitStrategy(new SleepingWaitStrategy())
                                          .executor(customExecutor)
                                          .invokerThreadCount(2)
-                                         .CompletableFutureThreadCount(3)
+                                         .publisherThreadCount(3)
                                          .defaultCommandCallback(callback)
                                          .build();
         testSubject.dispatch(asCommandMessage("Test"));
@@ -222,7 +222,7 @@ class DisruptorCommandBusTest {
                                          .waitStrategy(new SleepingWaitStrategy())
                                          .executor(customExecutor)
                                          .invokerThreadCount(2)
-                                         .CompletableFutureThreadCount(3)
+                                         .publisherThreadCount(3)
                                          .build();
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
 
@@ -347,7 +347,7 @@ class DisruptorCommandBusTest {
                                          .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                          .transactionManager(mockTransactionManager)
                                          .invokerThreadCount(2)
-                                         .CompletableFutureThreadCount(3)
+                                         .publisherThreadCount(3)
                                          .build();
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
@@ -385,7 +385,7 @@ class DisruptorCommandBusTest {
                                          .producerType(ProducerType.SINGLE)
                                          .waitStrategy(new SleepingWaitStrategy())
                                          .invokerThreadCount(2)
-                                         .CompletableFutureThreadCount(3)
+                                         .publisherThreadCount(3)
                                          .build();
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
@@ -413,7 +413,7 @@ class DisruptorCommandBusTest {
                                          .producerType(ProducerType.SINGLE)
                                          .waitStrategy(new SleepingWaitStrategy())
                                          .invokerThreadCount(2)
-                                         .CompletableFutureThreadCount(3)
+                                         .publisherThreadCount(3)
                                          .build();
 
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
@@ -443,7 +443,7 @@ class DisruptorCommandBusTest {
                                          .producerType(ProducerType.SINGLE)
                                          .waitStrategy(new SleepingWaitStrategy())
                                          .invokerThreadCount(2)
-                                         .CompletableFutureThreadCount(3)
+                                         .publisherThreadCount(3)
                                          .build();
 
         testSubject.subscribe(CreateOrUpdateCommand.class.getName(), stubHandler);
@@ -470,7 +470,7 @@ class DisruptorCommandBusTest {
                                          .producerType(ProducerType.SINGLE)
                                          .waitStrategy(new SleepingWaitStrategy())
                                          .invokerThreadCount(2)
-                                         .CompletableFutureThreadCount(3)
+                                         .publisherThreadCount(3)
                                          .build();
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         stubHandler.setRepository(
@@ -757,7 +757,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void CompletableFutureInterceptors() throws Exception {
+    void publisherInterceptors() throws Exception {
         int expectedNumberOfInvocations = 1;
         AtomicInteger invocationCounter = new AtomicInteger(0);
 
@@ -768,7 +768,7 @@ class DisruptorCommandBusTest {
         when(testHandler.handle(testCommand)).thenReturn("handled");
 
         testSubject = DisruptorCommandBus.builder()
-                                         .CompletableFutureInterceptors(Collections.singletonList(
+                                         .publisherInterceptors(Collections.singletonList(
                                                  (unitOfWork, interceptorChain) -> {
                                                      invocationCounter.incrementAndGet();
                                                      return interceptorChain.proceed();

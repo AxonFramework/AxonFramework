@@ -17,7 +17,7 @@
 package org.axonframework.queryhandling;
 
 import reactor.core.Disposable;
-import reactor.core.CompletableFuture.FluxSink;
+import reactor.core.publisher.FluxSink;
 
 /**
  * Wrapper around {@link FluxSink}. Since project-reactor is not a required dependency in this Axon version, we need

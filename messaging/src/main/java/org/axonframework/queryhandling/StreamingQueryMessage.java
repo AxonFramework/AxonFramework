@@ -16,26 +16,26 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.responsetypes.CompletableFutureResponseType;
+import org.axonframework.messaging.responsetypes.PublisherResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import java.util.concurrent.CompletableFuture;
+import org.reactivestreams.Publisher;
 
 import java.util.Map;
 
 /**
  * A special type of {@link QueryMessage} used for initiating streaming queries. It's special since it hard codes the
- * response type to {@link CompletableFutureResponseType}.
+ * response type to {@link PublisherResponseType}.
  *
  * @param <Q> the type of streaming query payload
- * @param <R> the type of the result streamed via {@link CompletableFuture}
+ * @param <R> the type of the result streamed via {@link Publisher}
  * @author Milan Savic
  * @author Stefan Dragisic
  * @since 4.6.0
  */
-public interface StreamingQueryMessage<Q, R> extends QueryMessage<Q, CompletableFuture<R>> {
+public interface StreamingQueryMessage<Q, R> extends QueryMessage<Q, Publisher<R>> {
 
     @Override
-    ResponseType<CompletableFuture<R>> getResponseType();
+    ResponseType<Publisher<R>> getResponseType();
 
     @Override
     StreamingQueryMessage<Q, R> withMetaData(Map<String, ?> metaData);

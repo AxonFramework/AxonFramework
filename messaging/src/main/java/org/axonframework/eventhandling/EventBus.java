@@ -24,7 +24,7 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 /**
- * Specification of the mechanism on which the Event Listeners can subscribe for events and event CompletableFutures can publish
+ * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish
  * their events. The event bus dispatches events to all subscribed listeners.
  * <p/>
  * Implementations may or may not dispatch the events to event listeners in the dispatching thread.

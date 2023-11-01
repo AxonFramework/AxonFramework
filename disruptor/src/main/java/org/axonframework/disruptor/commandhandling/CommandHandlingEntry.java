@@ -37,9 +37,9 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
 
     private final MessageHandler<CommandMessage<?>> repeatingCommandHandler;
     private InterceptorChain invocationInterceptorChain;
-    private InterceptorChain CompletableFutureInterceptorChain;
+    private InterceptorChain publisherInterceptorChain;
     private CommandResultMessage<?> result;
-    private int CompletableFutureSegmentId;
+    private int publisherSegmentId;
     private BlacklistDetectingCallback<?, ?> callback;
     // for recovery of corrupt aggregates
     private boolean isRecoverEntry;
@@ -69,8 +69,8 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      *
      * @return the InterceptorChain for the publication process registered with this entry
      */
-    public InterceptorChain getCompletableFutureInterceptorChain() {
-        return CompletableFutureInterceptorChain;
+    public InterceptorChain getPublisherInterceptorChain() {
+        return publisherInterceptorChain;
     }
 
     /**
@@ -131,12 +131,12 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Returns the Identifier of the CompletableFuture that is chosen to handle this entry.
+     * Returns the Identifier of the publisher that is chosen to handle this entry.
      *
-     * @return the Identifier of the CompletableFuture that is chosen to handle this entry
+     * @return the Identifier of the publisher that is chosen to handle this entry
      */
-    public int getCompletableFutureId() {
-        return CompletableFutureSegmentId;
+    public int getPublisherId() {
+        return publisherSegmentId;
     }
 
     /**
@@ -145,20 +145,20 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      * @param newCommand            The new command the entry is used for
      * @param newCommandHandler     The Command Handler responsible for handling {@code newCommand}
      * @param newInvokerSegmentId   The SegmentID of the invoker that should process this entry
-     * @param newCompletableFutureSegmentId The SegmentID of the CompletableFuture that should process this entry
+     * @param newPublisherSegmentId The SegmentID of the publisher that should process this entry
      * @param newCallback           The callback to report the result of command execution to
      * @param invokerInterceptors   The interceptors to invoke during the command handler invocation phase
-     * @param CompletableFutureInterceptors The interceptors to invoke during the publication phase
+     * @param publisherInterceptors The interceptors to invoke during the publication phase
      */
     public void reset(CommandMessage<?> newCommand,
                       MessageHandler<? super CommandMessage<?>> newCommandHandler,// NOSONAR - Not important
                       int newInvokerSegmentId,
-                      int newCompletableFutureSegmentId,
+                      int newPublisherSegmentId,
                       BlacklistDetectingCallback<?, ?> newCallback,
                       List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors,
-                      List<MessageHandlerInterceptor<? super CommandMessage<?>>> CompletableFutureInterceptors) {
+                      List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors) {
         this.invokerSegmentId = newInvokerSegmentId;
-        this.CompletableFutureSegmentId = newCompletableFutureSegmentId;
+        this.publisherSegmentId = newPublisherSegmentId;
         this.callback = newCallback;
         this.isRecoverEntry = false;
         this.result = null;
@@ -167,9 +167,9 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
                 this,
                 invokerInterceptors, newCommandHandler
         );
-        this.CompletableFutureInterceptorChain = new DefaultInterceptorChain<>(
+        this.publisherInterceptorChain = new DefaultInterceptorChain<>(
                 this,
-                CompletableFutureInterceptors, repeatingCommandHandler
+                publisherInterceptors, repeatingCommandHandler
         );
         reset(newCommand);
     }
@@ -185,7 +185,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         result = null;
         invocationInterceptorChain = null;
         invokerSegmentId = -1;
-        CompletableFutureSegmentId = -1;
+        publisherSegmentId = -1;
         this.aggregateIdentifier = newAggregateIdentifier;
         reset(null);
     }
@@ -197,21 +197,21 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      * @param callable              a {@link Callable} which performs a task in the {@code invocationInterceptorChain},
      *                              for example publishing a scheduled {@link org.axonframework.deadline.DeadlineMessage}
      * @param newInvokerSegmentId   The SegmentId of the invoker that should process this entry
-     * @param newCompletableFutureSegmentId The SegmentId of the CompletableFuture that should process this entry
+     * @param newPublisherSegmentId The SegmentId of the publisher that should process this entry
      * @param newCallback           The callback to report the result of command execution to
      */
     public void resetAsCallable(Callable<Object> callable,
                                 int newInvokerSegmentId,
-                                int newCompletableFutureSegmentId,
+                                int newPublisherSegmentId,
                                 BlacklistDetectingCallback<Object, Object> newCallback) {
         this.isRecoverEntry = false;
         this.invokerSegmentId = newInvokerSegmentId;
-        this.CompletableFutureSegmentId = newCompletableFutureSegmentId;
+        this.publisherSegmentId = newPublisherSegmentId;
         this.callback = newCallback;
         result = null;
         aggregateIdentifier = null;
         invocationInterceptorChain = callable::call;
-        CompletableFutureInterceptorChain = () -> repeatingCommandHandler.handle(null);
+        publisherInterceptorChain = () -> repeatingCommandHandler.handle(null);
         reset(null);
     }
 

@@ -18,8 +18,8 @@ package org.axonframework.axonserver.connector.query.subscription;
 
 import org.axonframework.common.Registration;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
-import reactor.core.CompletableFuture.Flux;
-import reactor.core.CompletableFuture.Mono;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * A decorator of the {@link SubscriptionQueryResult} which adds the {@link #cancel()} operation.

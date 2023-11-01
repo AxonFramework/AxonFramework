@@ -104,7 +104,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private ResourceInjector resourceInjector;
 
     private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
-    private final Map<Object, AggregateEventCompletableFutureImpl> aggregateCompletableFutures = new HashMap<>();
+    private final Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<>();
     private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
 
     private boolean transienceCheckEnabled = true;
@@ -270,8 +270,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public GivenAggregateEventCompletableFuture givenAggregate(String aggregateIdentifier) {
-        return getCompletableFutureFor(aggregateIdentifier);
+    public GivenAggregateEventPublisher givenAggregate(String aggregateIdentifier) {
+        return getPublisherFor(aggregateIdentifier);
     }
 
     @Override
@@ -293,7 +293,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public GivenAggregateEventCompletableFuture andThenAggregate(String aggregateIdentifier) {
+    public GivenAggregateEventPublisher andThenAggregate(String aggregateIdentifier) {
         return givenAggregate(aggregateIdentifier);
     }
 
@@ -326,9 +326,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public WhenAggregateEventCompletableFuture whenAggregate(String aggregateIdentifier) {
+    public WhenAggregateEventPublisher whenAggregate(String aggregateIdentifier) {
         fixtureExecutionResult.startRecording();
-        return getCompletableFutureFor(aggregateIdentifier);
+        return getPublisherFor(aggregateIdentifier);
     }
 
     @Override
@@ -445,11 +445,11 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         return this;
     }
 
-    private AggregateEventCompletableFutureImpl getCompletableFutureFor(String aggregateIdentifier) {
-        if (!aggregateCompletableFutures.containsKey(aggregateIdentifier)) {
-            aggregateCompletableFutures.put(aggregateIdentifier, new AggregateEventCompletableFutureImpl(aggregateIdentifier));
+    private AggregateEventPublisherImpl getPublisherFor(String aggregateIdentifier) {
+        if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
+            aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
         }
-        return aggregateCompletableFutures.get(aggregateIdentifier);
+        return aggregatePublishers.get(aggregateIdentifier);
     }
 
     public EventBus getEventBus() {
@@ -548,13 +548,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         }
     }
 
-    private class AggregateEventCompletableFutureImpl implements GivenAggregateEventCompletableFuture, WhenAggregateEventCompletableFuture {
+    private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
 
         private final String aggregateIdentifier;
         private final String type;
         private int sequenceNumber = 0;
 
-        public AggregateEventCompletableFutureImpl(String aggregateIdentifier) {
+        public AggregateEventPublisherImpl(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
             this.type = "Stub_" + aggregateIdentifier;
         }

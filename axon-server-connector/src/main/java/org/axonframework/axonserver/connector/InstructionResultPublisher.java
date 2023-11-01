@@ -25,7 +25,7 @@ package org.axonframework.axonserver.connector;
  * @see <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java connector</a>
  */
 @Deprecated
-public interface InstructionResultCompletableFuture {
+public interface InstructionResultPublisher {
 
     /**
      * Notifies to Axon Server a successful execution of the specified instruction.

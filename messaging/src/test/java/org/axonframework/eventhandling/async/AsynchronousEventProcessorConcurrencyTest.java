@@ -49,32 +49,32 @@ class AsynchronousEventProcessorConcurrencyTest {
     }
 
     @Test
-    @Timeout(value = EventsCompletableFuture.EVENTS_COUNT, unit = TimeUnit.MILLISECONDS)
+    @Timeout(value = EventsPublisher.EVENTS_COUNT, unit = TimeUnit.MILLISECONDS)
     void handleEvents() throws InterruptedException {
         final AtomicInteger counter = new AtomicInteger();
         Consumer<List<? extends EventMessage<?>>> processor = eventMessages -> counter.addAndGet(eventMessages.size());
 
         int threadCount = 50;
         for (int i = 0; i < threadCount; i++) {
-            executor.submit(new EventsCompletableFuture(processor));
+            executor.submit(new EventsPublisher(processor));
         }
-        while (counter.get() < threadCount * EventsCompletableFuture.EVENTS_COUNT) {
+        while (counter.get() < threadCount * EventsPublisher.EVENTS_COUNT) {
             Thread.sleep(10);
         }
 
         executor.shutdown();
         assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS), "Executor not closed within a reasonable timeframe");
 
-        assertEquals(threadCount * EventsCompletableFuture.EVENTS_COUNT, counter.get());
+        assertEquals(threadCount * EventsPublisher.EVENTS_COUNT, counter.get());
     }
 
-    private class EventsCompletableFuture implements Runnable {
+    private class EventsPublisher implements Runnable {
 
         private static final int ITERATIONS = 10000;
         private static final int EVENTS_COUNT = ITERATIONS * 3;
         private final Consumer<List<? extends EventMessage<?>>> processor;
 
-        public EventsCompletableFuture(Consumer<List<? extends EventMessage<?>>> processor) {
+        public EventsPublisher(Consumer<List<? extends EventMessage<?>>> processor) {
             this.processor = processor;
         }
 

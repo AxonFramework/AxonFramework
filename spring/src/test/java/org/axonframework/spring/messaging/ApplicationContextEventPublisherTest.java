@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class ApplicationContextEventCompletableFutureTest {
+public class ApplicationContextEventPublisherTest {
 
     @Autowired
     private ListenerBean listenerBean;
@@ -68,8 +68,8 @@ public class ApplicationContextEventCompletableFutureTest {
         }
 
         @Bean
-        public ApplicationContextEventCompletableFuture CompletableFuture(EventBus eventBus) {
-            return new ApplicationContextEventCompletableFuture(eventBus);
+        public ApplicationContextEventPublisher publisher(EventBus eventBus) {
+            return new ApplicationContextEventPublisher(eventBus);
         }
     }
 

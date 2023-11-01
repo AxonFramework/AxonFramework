@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import java.util.concurrent.CompletableFuture;
+import org.reactivestreams.Publisher;
 
 import java.util.List;
 import java.util.Optional;
@@ -69,15 +69,15 @@ public abstract class ResponseTypes {
     }
 
     /**
-     * Specify the desire to retrieve a CompletableFuture (reactive stream) of instances of type {@code R} when performing a
+     * Specify the desire to retrieve a Publisher (reactive stream) of instances of type {@code R} when performing a
      * query.
      *
      * @param type the {@code R} which is expected to be the response type
      * @param <R>  the generic type of the instantiated {@link ResponseType}
-     * @return a {@link ResponseType} specifying the desire to retrieve a CompletableFuture of instances of type {@code R}
+     * @return a {@link ResponseType} specifying the desire to retrieve a publisher of instances of type {@code R}
      */
-    public static <R> ResponseType<CompletableFuture<R>> CompletableFutureOf(Class<R> type) {
-        return new CompletableFutureResponseType<>(type);
+    public static <R> ResponseType<Publisher<R>> publisherOf(Class<R> type) {
+        return new PublisherResponseType<>(type);
     }
 
     private ResponseTypes() {

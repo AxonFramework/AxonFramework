@@ -17,8 +17,8 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.Registration;
-import reactor.core.CompletableFuture.Flux;
-import reactor.core.CompletableFuture.Mono;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Default implementation of {@link SubscriptionQueryResult}.

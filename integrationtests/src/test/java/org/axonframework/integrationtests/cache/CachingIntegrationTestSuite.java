@@ -66,7 +66,7 @@ public abstract class CachingIntegrationTestSuite {
     // This ensures we do not wire Axon Server components
     private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
     private static final int NUMBER_OF_UPDATES = 4096;
-    private static final int NUMBER_OF_CONCURRENT_CompletableFutureS = 8;
+    private static final int NUMBER_OF_CONCURRENT_PUBLISHERS = 8;
     private static final String[] SAGA_NAMES = new String[]{"foo", "bar", "baz", "and", "some", "more"};
     private static final int NUMBER_OF_ASSOCIATIONS = 42;
 
@@ -189,7 +189,7 @@ public abstract class CachingIntegrationTestSuite {
         String sagaName = SAGA_NAMES[0];
         String associationValue = "some-id";
         String associationCacheKey = sagaAssociationCacheKey(associationValue);
-        ExecutorService executor = Executors.newFixedThreadPool(NUMBER_OF_CONCURRENT_CompletableFutureS);
+        ExecutorService executor = Executors.newFixedThreadPool(NUMBER_OF_CONCURRENT_PUBLISHERS);
 
         // Construct the saga...
         publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName, NUMBER_OF_ASSOCIATIONS));
@@ -211,7 +211,7 @@ public abstract class CachingIntegrationTestSuite {
         assertTrue(cachedSaga.getState().isEmpty());
 
         // Concurrent bulk update the saga...
-        IntStream.range(0, NUMBER_OF_CONCURRENT_CompletableFutureS)
+        IntStream.range(0, NUMBER_OF_CONCURRENT_PUBLISHERS)
                  .mapToObj(i -> CompletableFuture.runAsync(
                          () -> publishBulkUpdatesTo(associationValue, NUMBER_OF_UPDATES), executor
                  ))
@@ -220,21 +220,21 @@ public abstract class CachingIntegrationTestSuite {
                  .get(15, TimeUnit.SECONDS);
         await().pollDelay(DEFAULT_DELAY)
                .atMost(SIXTEEN_SECONDS)
-               .until(() -> handledEventsUpTo(createEvents + (NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_CompletableFutureS)));
+               .until(() -> handledEventsUpTo(createEvents + (NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS)));
 
         // Validate caches again
         optionalCachedSaga = sagaCacheListener.get(sagaIdentifier);
         assertTrue(optionalCachedSaga.isPresent());
         cachedSaga = optionalCachedSaga.get().saga();
         assertEquals(sagaName, cachedSaga.getName());
-        assertEquals(NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_CompletableFutureS, cachedSaga.getState().size());
+        assertEquals(NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS, cachedSaga.getState().size());
 
         // Destruct the saga...
         publish(new CachedSaga.SagaEndsEvent(associationValue, true));
         await().pollDelay(DEFAULT_DELAY)
                .atMost(TWO_SECONDS)
                .until(() -> handledEventsUpTo(
-                       createEvents + (NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_CompletableFutureS) + deleteEvents
+                       createEvents + (NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS) + deleteEvents
                ));
 
         // Validate caches are empty
@@ -326,7 +326,7 @@ public abstract class CachingIntegrationTestSuite {
             throws ExecutionException, InterruptedException, TimeoutException {
         int createEvents = SAGA_NAMES.length;
         int deleteEvents = SAGA_NAMES.length;
-        ExecutorService executor = Executors.newFixedThreadPool(SAGA_NAMES.length * NUMBER_OF_CONCURRENT_CompletableFutureS);
+        ExecutorService executor = Executors.newFixedThreadPool(SAGA_NAMES.length * NUMBER_OF_CONCURRENT_PUBLISHERS);
 
         // Construct the sagas...
         for (String sagaName : SAGA_NAMES) {
@@ -356,7 +356,7 @@ public abstract class CachingIntegrationTestSuite {
         }
 
         // Bulk update the sagas...
-        IntStream.range(0, SAGA_NAMES.length * NUMBER_OF_CONCURRENT_CompletableFutureS)
+        IntStream.range(0, SAGA_NAMES.length * NUMBER_OF_CONCURRENT_PUBLISHERS)
                  .mapToObj(i -> CompletableFuture.runAsync(
                          () -> publishBulkUpdatesTo(SAGA_NAMES[i % SAGA_NAMES.length] + "-id", NUMBER_OF_UPDATES),
                          executor
@@ -367,7 +367,7 @@ public abstract class CachingIntegrationTestSuite {
         await().pollDelay(DEFAULT_DELAY)
                .atMost(THIRTY_TWO_SECONDS)
                .until(() -> handledEventsUpTo(
-                       createEvents + (NUMBER_OF_UPDATES * (SAGA_NAMES.length * NUMBER_OF_CONCURRENT_CompletableFutureS))
+                       createEvents + (NUMBER_OF_UPDATES * (SAGA_NAMES.length * NUMBER_OF_CONCURRENT_PUBLISHERS))
                ));
 
         // Validate caches again
@@ -385,7 +385,7 @@ public abstract class CachingIntegrationTestSuite {
             assertTrue(optionalCachedSaga.isPresent());
             CachedSaga cachedSaga = optionalCachedSaga.get().saga();
             assertEquals(sagaName, cachedSaga.getName());
-            assertEquals(NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_CompletableFutureS, cachedSaga.getState().size());
+            assertEquals(NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS, cachedSaga.getState().size());
         }
 
         // Destruct the sagas...

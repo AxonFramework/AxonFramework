@@ -21,8 +21,8 @@ import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import reactor.core.CompletableFuture.Flux;
-import reactor.core.CompletableFuture.Mono;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * A decorator of the {@link SubscriptionQueryUpdateMessage} to deserialize a {@link QueryResponseMessage} and {@link

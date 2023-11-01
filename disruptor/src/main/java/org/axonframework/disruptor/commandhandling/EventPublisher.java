@@ -39,7 +39,7 @@ import static org.axonframework.commandhandling.GenericCommandResultMessage.asCo
  * @author Allard Buijze
  * @since 2.0
  */
-public class EventCompletableFuture implements EventHandler<CommandHandlingEntry> {
+public class EventPublisher implements EventHandler<CommandHandlingEntry> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -50,16 +50,16 @@ public class EventCompletableFuture implements EventHandler<CommandHandlingEntry
     private final TransactionManager transactionManager;
 
     /**
-     * Initializes the EventCompletableFuture to publish Events to the given {@code eventStore} and {@code eventBus} for
+     * Initializes the EventPublisher to publish Events to the given {@code eventStore} and {@code eventBus} for
      * aggregate of given {@code aggregateType}.
      *
      * @param executor              The executor which schedules response reporting
      * @param transactionManager    The transaction manager that manages the transaction around event storage and
      *                              publication
      * @param rollbackConfiguration The configuration that indicates which exceptions should result in a UnitOfWork
-     * @param segmentId             The ID of the segment this CompletableFuture should handle
+     * @param segmentId             The ID of the segment this publisher should handle
      */
-    public EventCompletableFuture(Executor executor,
+    public EventPublisher(Executor executor,
                           TransactionManager transactionManager,
                           RollbackConfiguration rollbackConfiguration,
                           int segmentId) {
@@ -73,7 +73,7 @@ public class EventCompletableFuture implements EventHandler<CommandHandlingEntry
     public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) {
         if (entry.isRecoverEntry()) {
             recoverAggregate(entry);
-        } else if (entry.getCompletableFutureId() == segmentId) {
+        } else if (entry.getPublisherId() == segmentId) {
             entry.resume();
             String aggregateIdentifier = entry.getAggregateIdentifier();
             if (aggregateIdentifier != null && blackListedAggregates.contains(aggregateIdentifier)) {
@@ -135,7 +135,7 @@ public class EventCompletableFuture implements EventHandler<CommandHandlingEntry
     private void invokeInterceptorChain(CommandHandlingEntry entry) {
         CommandResultMessage<?> commandResultMessage;
         try {
-            commandResultMessage = asCommandResultMessage(entry.getCompletableFutureInterceptorChain().proceed());
+            commandResultMessage = asCommandResultMessage(entry.getPublisherInterceptorChain().proceed());
         } catch (Exception throwable) {
             commandResultMessage = asCommandResultMessage(throwable);
         }
