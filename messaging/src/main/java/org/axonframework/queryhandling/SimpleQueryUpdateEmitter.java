@@ -65,7 +65,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
 
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
-    private final SpanFactory spanFactory;
+    private final QueryUpdateEmitterSpanFactory spanFactory;
 
     private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, SinkWrapper<?>> updateHandlers =
             new ConcurrentHashMap<>();
@@ -86,8 +86,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     /**
      * Instantiate a Builder to be able to create a {@link SimpleQueryUpdateEmitter}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link SpanFactory} is defauled
-     * to a {@link NoOpSpanFactory}.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link QueryBusSpanFactory}
+     * defaults to a {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
      *
      * @return a Builder to be able to create a {@link SimpleQueryUpdateEmitter}
      */
@@ -151,9 +151,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     public <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          @Nonnull SubscriptionQueryUpdateMessage<U> update) {
         SubscriptionQueryUpdateMessage<U> updateMessage = spanFactory.propagateContext(update);
-        Span span = spanFactory.createInternalSpan(() -> "SimpleQueryUpdateEmitter.emit", updateMessage);
+        Span span = spanFactory.createUpdateScheduleEmitSpan(updateMessage);
         span.run(() -> {
-            Span doEmitSpan = spanFactory.createDispatchSpan(() -> "SimpleQueryUpdateEmitter.doEmit", updateMessage);
+            Span doEmitSpan = spanFactory.createUpdateEmitSpan(updateMessage);
             runOnAfterCommitOrNow(doEmitSpan.wrapRunnable(
                     () -> doEmit(filter, intercept(spanFactory.propagateContext(updateMessage)))));
         });
@@ -311,14 +311,17 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     /**
      * Builder class to instantiate a {@link SimpleQueryUpdateEmitter}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link SpanFactory} defaults to a
-     * {@link NoOpSpanFactory}.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link QueryBusSpanFactory}
+     * defaults to a {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
      */
     public static class Builder {
 
         private MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
                 NoOpMessageMonitor.INSTANCE;
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private QueryUpdateEmitterSpanFactory spanFactory = DefaultQueryUpdateEmitterSpanFactory
+                .builder()
+                .spanFactory(NoOpSpanFactory.INSTANCE)
+                .build();
 
         /**
          * Sets the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s being processed.
@@ -340,10 +343,24 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
          * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
          * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
-         * @param spanFactory The {@link SpanFactory} implementation
+         * @param spanFactory The {@link SpanFactory} implementation.
+         * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(QueryUpdateEmitterSpanFactory)}  instead as it provides more configurability.
+         */
+        @Deprecated
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultQueryUpdateEmitterSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+        /**
+         * Sets the {@link QueryUpdateEmitterSpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link DefaultQueryUpdateEmitterSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link QueryUpdateEmitterSpanFactory} implementation.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+        public Builder spanFactory(@Nonnull QueryUpdateEmitterSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

@@ -26,14 +26,18 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test class validating the {@link AnnotationEventHandlerAdapter}.
@@ -124,6 +128,31 @@ class AnnotationEventHandlerAdapterTest {
         assertFalse(testSubject.canHandleType(String.class));
         assertFalse(testSubject.canHandleType(Integer.class));
     }
+
+    @Test
+    void replayNotSupportedOnSingleHandler() {
+        SingleReplayBlockingHandler handler = new SingleReplayBlockingHandler();
+        testSubject = new AnnotationEventHandlerAdapter(handler, parameterResolverFactory);
+
+        assertTrue(testSubject.supportsReset());
+    }
+
+    @Test
+    void replayNotSupportedOnClassLevel() {
+        ReplayBlockedOnClassLevelHandler handler = new ReplayBlockedOnClassLevelHandler();
+        testSubject = new AnnotationEventHandlerAdapter(handler, parameterResolverFactory);
+
+        assertFalse(testSubject.supportsReset());
+    }
+
+    @Test
+    void replayNotSupportedOnClassLevelWithHandlerLevelOverride() {
+        ReplayBlockedOnClassLevelWithReplayCapableHandler handler = new ReplayBlockedOnClassLevelWithReplayCapableHandler();
+        testSubject = new AnnotationEventHandlerAdapter(handler, parameterResolverFactory);
+
+        assertTrue(testSubject.supportsReset());
+    }
+
 
     @SuppressWarnings("unused")
     private static class SomeHandler {
@@ -222,6 +251,53 @@ class AnnotationEventHandlerAdapterTest {
             // No-op
         }
     }
+
+    public static class SingleReplayBlockingHandler {
+
+        @EventHandler
+        public void handle(Long event) {
+            // No-op
+        }
+
+        @DisallowReplay
+        @EventHandler
+        public void handle(String event) {
+            // No-op
+        }
+
+    }
+
+    @DisallowReplay
+    public static class ReplayBlockedOnClassLevelHandler {
+
+        @EventHandler
+        public void handle(Long event) {
+            // No-op
+        }
+
+        @EventHandler
+        public void handle(String event) {
+            // No-op
+        }
+
+    }
+
+    @DisallowReplay
+    public static class ReplayBlockedOnClassLevelWithReplayCapableHandler {
+
+        @EventHandler
+        public void handle(Long event) {
+            // No-op
+        }
+
+        @AllowReplay
+        @EventHandler
+        public void handle(String event) {
+            // No-op
+        }
+
+    }
+
 
     private static class SomeResource {
         // Test resource to be resolved as message handling parameter

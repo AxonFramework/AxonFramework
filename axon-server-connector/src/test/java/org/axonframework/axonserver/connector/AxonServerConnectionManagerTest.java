@@ -17,6 +17,8 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
+import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
+import io.axoniq.axonserver.connector.impl.ReconnectConfiguration;
 import io.axoniq.axonserver.grpc.control.ClientIdentification;
 import io.axoniq.axonserver.grpc.control.PlatformInfo;
 import io.grpc.CallOptions;
@@ -29,6 +31,7 @@ import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.axonserver.connector.utils.PlatformService;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.TagsConfiguration;
 import org.junit.jupiter.api.*;
 
@@ -36,6 +39,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -331,6 +335,29 @@ class AxonServerConnectionManagerTest {
         Boolean someOtherContextConnection = results.get("some-other-context");
         assertNotNull(someOtherContextConnection);
         assertTrue(someOtherContextConnection);
+    }
+
+    @Test
+    void axonServerConfigurationIsSetOnAxonServerConnectionFactoryAsExpected() throws NoSuchFieldException {
+        long expectedReconnectInterval = 1337L;
+
+        AxonServerConfiguration testConfig = new AxonServerConfiguration();
+        testConfig.setReconnectInterval(expectedReconnectInterval);
+        testConfig.setForceReconnectThroughServers(false);
+
+        AxonServerConnectionManager testSubject = AxonServerConnectionManager.builder()
+                                                                             .axonServerConfiguration(testConfig)
+                                                                             .build();
+
+        AxonServerConnectionFactory connectionFactory = ReflectionUtils.getFieldValue(
+                AxonServerConnectionManager.class.getDeclaredField("connectionFactory"), testSubject
+        );
+
+        ReconnectConfiguration resultReconnectConfig = ReflectionUtils.getFieldValue(
+                AxonServerConnectionFactory.class.getDeclaredField("reconnectConfiguration"), connectionFactory
+        );
+        assertEquals(expectedReconnectInterval, resultReconnectConfig.getReconnectInterval());
+        assertFalse(resultReconnectConfig.isForcePlatformReconnect());
     }
 
     @Test

@@ -80,10 +80,14 @@ class SimpleQueryBusTest {
     private QueryInvocationErrorHandler errorHandler;
     private MessageMonitor.MonitorCallback monitorCallback;
     private TestSpanFactory spanFactory;
+    private QueryBusSpanFactory queryBusSpanFactory;
+    private QueryUpdateEmitterSpanFactory queryUpdateEmitterSpanFactory;
 
     @BeforeEach
     void setUp() {
         spanFactory = new TestSpanFactory();
+        queryBusSpanFactory = DefaultQueryBusSpanFactory.builder().spanFactory(spanFactory).build();
+        queryUpdateEmitterSpanFactory = DefaultQueryUpdateEmitterSpanFactory.builder().spanFactory(spanFactory).build();
         //noinspection unchecked
         messageMonitor = mock(MessageMonitor.class);
         errorHandler = mock(QueryInvocationErrorHandler.class);
@@ -93,9 +97,9 @@ class SimpleQueryBusTest {
         testSubject = SimpleQueryBus.builder()
                                     .messageMonitor(messageMonitor)
                                     .errorHandler(errorHandler)
-                                    .spanFactory(spanFactory)
+                                    .spanFactory(queryBusSpanFactory)
                                     .queryUpdateEmitter(SimpleQueryUpdateEmitter.builder()
-                                                                                .spanFactory(spanFactory)
+                                                                                .spanFactory(queryUpdateEmitterSpanFactory)
                                                                                 .build())
                                     .duplicateQueryHandlerResolver(silentlyAdd())
                                     .build();
@@ -279,13 +283,13 @@ class SimpleQueryBusTest {
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
         //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
-            spanFactory.verifySpanActive("SimpleQueryBus.query", testQueryMessage);
+            spanFactory.verifySpanActive("QueryBus.query", testQueryMessage);
             return q.getPayload() + "1234";
         });
 
         testSubject.query(testQueryMessage).get();
 
-        spanFactory.verifySpanCompleted("SimpleQueryBus.query", testQueryMessage);
+        spanFactory.verifySpanCompleted("QueryBus.query", testQueryMessage);
     }
 
     @Test
@@ -295,23 +299,23 @@ class SimpleQueryBusTest {
 
         //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
-            spanFactory.verifySpanActive("SimpleQueryBus.scatterGather", testQueryMessage);
-            spanFactory.verifySpanActive("SimpleQueryBus.scatterGatherHandler-0");
+            spanFactory.verifySpanActive("QueryBus.scatterGatherQuery", testQueryMessage);
+            spanFactory.verifySpanActive("QueryBus.scatterGatherQuery-0");
             return q.getPayload() + "1234";
         });
         //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
-            spanFactory.verifySpanActive("SimpleQueryBus.scatterGather", testQueryMessage);
-            spanFactory.verifySpanActive("SimpleQueryBus.scatterGatherHandler-1");
+            spanFactory.verifySpanActive("QueryBus.scatterGatherQuery", testQueryMessage);
+            spanFactory.verifySpanActive("QueryBus.scatterGatherQuery-1");
             return q.getPayload() + "12345678";
         });
 
         //noinspection ResultOfMethodCallIgnored
         testSubject.scatterGather(testQueryMessage, 500, TimeUnit.MILLISECONDS).collect(Collectors.toList());
 
-        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGather", testQueryMessage);
-        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGatherHandler-0");
-        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGatherHandler-1");
+        spanFactory.verifySpanCompleted("QueryBus.scatterGatherQuery", testQueryMessage);
+        spanFactory.verifySpanCompleted("QueryBus.scatterGatherHandler-0");
+        spanFactory.verifySpanCompleted("QueryBus.scatterGatherHandler-1");
     }
 
 
@@ -507,7 +511,7 @@ class SimpleQueryBusTest {
         } catch (ExecutionException e) {
             assertEquals(NoHandlerForQueryException.class, e.getCause().getClass());
         }
-        spanFactory.verifySpanHasException("SimpleQueryBus.query", NoHandlerForQueryException.class);
+        spanFactory.verifySpanHasException("QueryBus.query", NoHandlerForQueryException.class);
     }
 
     @Test
@@ -836,10 +840,10 @@ class SimpleQueryBusTest {
                                                                              ResponseTypes.instanceOf(Long.class)));
             Mono<QueryResponseMessage<Long>> initialResult = result.initialResult();
             Objects.requireNonNull(initialResult.block()).getPayload();
-            spanFactory.verifySpanCompleted("SimpleQueryBus.query");
+            spanFactory.verifySpanCompleted("QueryBus.query");
             updatedLatch.await();
             Objects.requireNonNull(result.updates().next().block()).getPayload();
-            spanFactory.verifySpanCompleted("SimpleQueryUpdateEmitter.emit");
+            spanFactory.verifySpanCompleted("QueryUpdateEmitter.emitQueryUpdateMessage");
         } finally {
             disposable.dispose();
         }

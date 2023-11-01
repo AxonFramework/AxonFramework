@@ -22,7 +22,9 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.lifecycle.Lifecycle;
@@ -79,7 +81,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
     private final JobScheduler jobScheduler;
     private final Serializer serializer;
     private final TransactionManager transactionManager;
-    private final SpanFactory spanFactory;
+    private final DeadlineManagerSpanFactory spanFactory;
 
     /**
      * Instantiate a Builder to be able to create a {@link JobRunrDeadlineManager}.
@@ -132,8 +134,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
                            @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         UUID deadlineId = UUID.randomUUID();
-        Span span = spanFactory.createDispatchSpan(() -> getSpanClassName() + ".schedule(" + deadlineName + ")",
-                                                   deadlineMessage);
+        Span span = spanFactory.createScheduleSpan(deadlineName, deadlineId.toString(), deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage<Object> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             String serializedDeadlineDetails = DeadlineDetails.serialized(
@@ -146,7 +147,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
                                        .withId(deadlineId)
                                        .withName(deadlineName)
                                        .withLabels(getLabel(deadlineName), combinedLabel)
-                                       .withDetails(() -> this.execute(serializedDeadlineDetails))
+                                       .withDetails(() -> this.execute(serializedDeadlineDetails, deadlineId.toString()))
                                        .scheduleAt(triggerDateTime);
             JobId id = jobScheduler.create(job);
             logger.debug("Job with id: [{}] was successfully created.", id);
@@ -156,8 +157,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
 
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
-        Span span = spanFactory.createInternalSpan(
-                () -> getSpanClassName() + ".cancelSchedule(" + deadlineName + "," + scheduleId + ")");
+        Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> jobScheduler.delete(toUuid(scheduleId), DELETE_REASON)));
     }
 
@@ -187,15 +187,32 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
      *
      * @param serializedDeadlineDetails {@code byte[]} containing the serialized {@link DeadlineDetails} object with all
      *                                  the needed details to execute.
+     * @deprecated Kept for backwards compatibility, use {@link #execute(String, String)} instead.
+     */
+    @Deprecated
+    public void execute(@Nonnull String serializedDeadlineDetails) {
+        execute(serializedDeadlineDetails, null);
+    }
+
+    /**
+     * This function should only be called via JobRunr when a deadline was triggered. It will try to execute the
+     * scheduled deadline on the set scope. It will throw a {@link DeadlineException} in case of errors such that they
+     * will be optionally retried by JobRunr.
+     *
+     * @param serializedDeadlineDetails {@code byte[]} containing the serialized {@link DeadlineDetails} object with all
+     *                                  the needed details to execute.
+     * @param deadlineId                The {@link UUID} of the deadline.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public void execute(@Nonnull String serializedDeadlineDetails) {
+    public void execute(@Nonnull String serializedDeadlineDetails, String deadlineId) {
         SimpleSerializedObject<String> serializedDeadlineMetaData = new SimpleSerializedObject<>(
                 serializedDeadlineDetails, String.class, DeadlineDetails.class.getName(), null
         );
         DeadlineDetails deadlineDetails = serializer.deserialize(serializedDeadlineMetaData);
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
-        Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
+        Span span = spanFactory.createExecuteSpan(deadlineDetails.getDeadlineName(),
+                                                  deadlineId,
+                                                  deadlineMessage).start();
         try (SpanScope ignored = span.makeCurrent()) {
             UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
@@ -251,8 +268,8 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
     /**
      * Builder class to instantiate a {@link JobRunrDeadlineManager}.
      * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager} and the {@link SpanFactory}
-     * defaults to a {@link NoOpSpanFactory}.
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager} and the {@link DeadlineManagerSpanFactory}
+     * defaults to {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}.
      * <p>
      * The {@link JobScheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as
      * such should be provided.
@@ -263,7 +280,9 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
         private ScopeAwareProvider scopeAwareProvider;
         private Serializer serializer;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private DeadlineManagerSpanFactory spanFactory = DefaultDeadlineManagerSpanFactory.builder()
+                                                                                          .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                          .build();
 
         /**
          * Sets the {@link JobScheduler} used for scheduling and triggering purposes of the deadlines.
@@ -327,8 +346,24 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(DeadlineManagerSpanFactory)} instead as it provides more configuration options.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultDeadlineManagerSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link DeadlineManagerSpanFactory} implementation to use for providing tracing capabilities.
+         * Defaults to a {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory} by default, which
+         * provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link DeadlineManagerSpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

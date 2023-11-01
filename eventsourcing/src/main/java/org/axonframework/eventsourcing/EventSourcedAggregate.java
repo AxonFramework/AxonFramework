@@ -16,15 +16,15 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.modelling.command.ApplyMore;
-import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.ApplyMore;
+import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 
 import java.util.Collections;
 import java.util.concurrent.Callable;
@@ -252,11 +252,23 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     protected void publish(EventMessage<?> msg) {
         super.publish(msg);
         snapshotTrigger.eventHandled(msg);
-        if (identifierAsString() == null) {
+        if (identifierAsString() == null && isSnapshotEvent(msg)) {
+            throw new IncompatibleAggregateException(
+                    "Aggregate identifier must be non-null after applying a snapshot. "
+                            + "Make sure the aggregate identifier is included in the snapshot that is used to restore"
+                            + " the aggregate from. "
+                            + "Note the identifier may be missing due to your serializer being unable to find the"
+                            + " private field(s) of your aggregate."
+            );
+        } else if (identifierAsString() == null) {
             throw new IncompatibleAggregateException("Aggregate identifier must be non-null after applying an event. " +
                                                              "Make sure the aggregate identifier is initialized at " +
                                                              "the latest when handling the creation event.");
         }
+    }
+
+    private boolean isSnapshotEvent(EventMessage<?> event) {
+        return inspector.types().anyMatch(event.getPayloadType()::equals);
     }
 
     @Override

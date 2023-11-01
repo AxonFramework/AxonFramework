@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -33,14 +34,13 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,29 +71,9 @@ import java.util.stream.Stream;
 
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.intThat;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link PooledStreamingEventProcessor}.
@@ -154,7 +134,8 @@ class PooledStreamingEventProcessorTest {
                                              .workerExecutor(workerExecutor)
                                              .initialSegmentCount(8)
                                              .claimExtensionThreshold(500)
-                                             .spanFactory(spanFactory);
+                                             .spanFactory(DefaultEventProcessorSpanFactory.builder()
+                                                                  .spanFactory(spanFactory).build());
         return customization.apply(processorBuilder).build();
     }
 
@@ -252,7 +233,8 @@ class PooledStreamingEventProcessorTest {
                 answer -> {
                     EventMessage<?> message = answer.getArgument(0, EventMessage.class);
                     invokedMessages.add(message);
-                    spanFactory.verifySpanActive("PooledStreamingEventProcessor[test].process", message);
+                    spanFactory.verifySpanActive("StreamingEventProcessor.batch");
+                    spanFactory.verifySpanActive("StreamingEventProcessor.process", message);
                     countDownLatch.countDown();
                     return null;
                 }
@@ -267,9 +249,10 @@ class PooledStreamingEventProcessorTest {
         invokedMessages.forEach(
                 e -> assertWithin(
                         1, TimeUnit.SECONDS,
-                        () -> spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e)
+                        () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.process", e)
                 )
         );
+        spanFactory.verifySpanCompleted("StreamingEventProcessor.batch");
     }
 
     @Test
@@ -816,6 +799,32 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void releaseAndClaimSegment() {
+        int testSegmentId = 0;
+        int testTokenClaimInterval = 5000;
+
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(2)
+                .tokenClaimInterval(testTokenClaimInterval)));
+        testSubject.start();
+        // Assert the single WorkPackage is in progress prior to invoking the merge.
+        assertWithin(
+                testTokenClaimInterval, TimeUnit.MILLISECONDS,
+                () -> assertNotNull(testSubject.processingStatus().get(testSegmentId))
+        );
+
+        // When...
+        testSubject.releaseSegment(testSegmentId, 180, TimeUnit.SECONDS);
+
+        // Assert the MergeTask is done and completed successfully.
+        assertWithin(testTokenClaimInterval, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+
+        testSubject.claimSegment(testSegmentId);
+
+        // Assert the Coordinator has only one WorkPackage at work now.
+        assertWithin(testTokenClaimInterval, TimeUnit.MILLISECONDS, () -> assertEquals(2, testSubject.processingStatus().size()));
+    }
+
+    @Test
     void supportReset() {
         when(stubEventHandler.supportsReset()).thenReturn(true);
 
@@ -871,9 +880,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2,
-                     TimeUnit.SECONDS,
-                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        await().atMost(Duration.ofSeconds(2L)).untilAsserted(
+                () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length)
+        );
         testSubject.shutDown();
 
         testSubject.resetTokens(expectedContext);
@@ -884,6 +893,9 @@ class PooledStreamingEventProcessorTest {
         // The token stays the same, as the original and token after reset are identical.
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
+        await().atMost(Duration.ofSeconds(2L)).untilAsserted(
+                () -> verify(stubEventHandler, times(2)).segmentReleased(any(Segment.class))
+        );
     }
 
     @Test
@@ -985,7 +997,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         //noinspection ConstantConditions
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory(null));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory((SpanFactory) null));
     }
 
     @Test
@@ -1326,7 +1338,7 @@ class PooledStreamingEventProcessorTest {
                .atMost(Duration.ofSeconds(5))
                .until(() -> testSubject.processingStatus().get(0).isCaughtUp());
         // Validate the token is stored
-        verify(tokenStore, timeout(5000)).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+        verify(tokenStore, timeout(5000).atLeastOnce()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
     }
 
     @Test

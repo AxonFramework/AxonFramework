@@ -34,6 +34,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
@@ -108,31 +109,38 @@ class DbSchedulerAutoConfigurationTest {
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     private static class HumanReadableContext {
-
         private final DataSource existingDataSource;
         private final List<Task<?>> configuredTasks;
 
         @Bean
         @Qualifier("eventDataTask")
         @ConditionalOnMissingQualifiedBean(beanClass = Task.class, qualifier = "eventDataTask")
-        public Task<DbSchedulerHumanReadableEventData> dbSchedulerEventDataTask() {
-            return DbSchedulerEventScheduler.humanReadableTask();
+        public Task<DbSchedulerHumanReadableEventData> dbSchedulerEventDataTask(
+                ApplicationContext context
+        ) {
+            return DbSchedulerEventScheduler.humanReadableTask(() -> context.getBean(DbSchedulerEventScheduler.class));
         }
 
         @Bean
         @Qualifier("deadlineDetailsTask")
         @ConditionalOnMissingQualifiedBean(beanClass = Task.class, qualifier = "deadlineDetailsTask")
-        public Task<DbSchedulerHumanReadableDeadlineDetails> dbSchedulerDeadlineDetailsTask() {
-            return DbSchedulerDeadlineManager.humanReadableTask();
+        public Task<DbSchedulerHumanReadableDeadlineDetails> dbSchedulerDeadlineDetailsTask(
+                ApplicationContext context
+        ) {
+            return DbSchedulerDeadlineManager.humanReadableTask(() -> context.getBean(DbSchedulerDeadlineManager.class));
         }
 
-        public HumanReadableContext(DataSource dataSource) {
+        public HumanReadableContext(
+                DataSource dataSource,
+                ApplicationContext context
+        ) {
             this.existingDataSource = dataSource;
             List<Task<?>> tasks = new ArrayList<>();
-            tasks.add(dbSchedulerEventDataTask());
-            tasks.add(dbSchedulerDeadlineDetailsTask());
+            tasks.add(dbSchedulerEventDataTask(context));
+            tasks.add(dbSchedulerDeadlineDetailsTask(context));
             this.configuredTasks = tasks;
         }
+
 
         @Bean
         public Scheduler scheduler() {

@@ -27,6 +27,7 @@ import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.StringUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
@@ -47,6 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -62,6 +64,7 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
     private final Serializer serializer;
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final GrpcMetaDataConverter converter;
+    private final String context;
 
     private final AtomicBoolean started = new AtomicBoolean();
 
@@ -92,6 +95,7 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
         this.requestTimeout = builder.requestTimeout;
         this.serializer = builder.serializer.get();
         this.axonServerConnectionManager = builder.axonServerConnectionManager;
+        this.context = builder.defaultContext;
         this.converter = new GrpcMetaDataConverter(serializer);
     }
 
@@ -211,7 +215,8 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
     }
 
     private EventChannel eventChannel() {
-        return axonServerConnectionManager.getConnection().eventChannel();
+        return StringUtils.nonEmptyOrNull(context) ? axonServerConnectionManager.getConnection(context).eventChannel()
+                : axonServerConnectionManager.getConnection().eventChannel();
     }
 
     private Event toEvent(Object event) {
@@ -257,6 +262,7 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
         private long requestTimeout = 15000;
         private Supplier<Serializer> serializer;
         private AxonServerConnectionManager axonServerConnectionManager;
+        private String defaultContext;
 
         /**
          * Sets the timeout in which a confirmation of the scheduling interaction is expected. Defaults to 15 seconds.
@@ -293,6 +299,18 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
         public Builder connectionManager(AxonServerConnectionManager axonServerConnectionManager) {
             assertNonNull(axonServerConnectionManager, "AxonServerConnectionManager may not be null");
             this.axonServerConnectionManager = axonServerConnectionManager;
+            return this;
+        }
+
+        /**
+         * Sets the default context for this event scheduler to connect to.
+         *
+         * @param defaultContext for this scheduler to connect to.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder defaultContext(String defaultContext) {
+            assertNonEmpty(defaultContext, "The context may not be null or empty");
+            this.defaultContext = defaultContext;
             return this;
         }
 

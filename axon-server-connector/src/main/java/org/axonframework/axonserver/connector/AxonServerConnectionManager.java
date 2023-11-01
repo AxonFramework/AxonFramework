@@ -315,7 +315,13 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
                 }
             }
 
-            builder.connectTimeout(axonServerConfiguration.getConnectTimeout(), TimeUnit.MILLISECONDS);
+            builder.connectTimeout(axonServerConfiguration.getConnectTimeout(), TimeUnit.MILLISECONDS)
+                   .reconnectInterval(axonServerConfiguration.getReconnectInterval(), TimeUnit.MILLISECONDS)
+                   .forceReconnectViaRoutingServers(axonServerConfiguration.isForceReconnectThroughServers())
+                   .threadPoolSize(axonServerConfiguration.getConnectionManagementThreadPoolSize())
+                   .commandPermits(axonServerConfiguration.getCommandFlowControl().getPermits())
+                   .queryPermits(axonServerConfiguration.getQueryFlowControl().getPermits());
+
             if (axonServerConfiguration.getToken() != null) {
                 builder.token(axonServerConfiguration.getToken());
             }

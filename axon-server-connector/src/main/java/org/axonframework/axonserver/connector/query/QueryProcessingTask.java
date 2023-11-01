@@ -28,6 +28,7 @@ import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.StreamingQueryMessage;
@@ -78,7 +79,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
     private final boolean supportsStreaming;
 
     private final Supplier<Boolean> reactorOnClassPath;
-    private final SpanFactory spanFactory;
+    private final QueryBusSpanFactory spanFactory;
 
     /**
      * Instantiates a query processing task.
@@ -89,14 +90,14 @@ class QueryProcessingTask implements Runnable, FlowControl {
      * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server.
      * @param serializer      The serializer used to serialize items.
      * @param clientId        The identifier of the client.
-     * @param spanFactory     The {@link SpanFactory} implementation to use to provide tracing capabilities.
+     * @param spanFactory     The {@link QueryBusSpanFactory} implementation to use to provide tracing capabilities.
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
                         ReplyChannel<QueryResponse> responseHandler,
                         QuerySerializer serializer,
                         String clientId,
-                        SpanFactory spanFactory) {
+                        QueryBusSpanFactory spanFactory) {
         this(localSegment,
              queryRequest,
              responseHandler,
@@ -116,7 +117,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
      * @param serializer         The serializer used to serialize items.
      * @param clientId           The identifier of the client.
      * @param reactorOnClassPath Indicates whether Project Reactor is on the classpath.
-     * @param spanFactory        The {@link SpanFactory} implementation to use to provide tracing capabilities.
+     * @param spanFactory        The {@link QueryBusSpanFactory} implementation to use to provide tracing capabilities.
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
@@ -124,7 +125,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
                         QuerySerializer serializer,
                         String clientId,
                         Supplier<Boolean> reactorOnClassPath,
-                        SpanFactory spanFactory) {
+                        QueryBusSpanFactory spanFactory) {
         this.localSegment = localSegment;
         this.queryRequest = queryRequest;
         this.responseHandler = responseHandler;
@@ -140,7 +141,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
         try {
             logger.debug("Will process query [{}]", queryRequest.getQuery());
             QueryMessage<Object, Object> queryMessage = serializer.deserializeRequest(queryRequest);
-            spanFactory.createChildHandlerSpan(() -> "QueryProcessingTask", queryMessage).run(() -> {
+            spanFactory.createQueryProcessingSpan(queryMessage).run(() -> {
                 if (numberOfResults(queryRequest.getProcessingInstructionsList()) == DIRECT_QUERY_NUMBER_OF_RESULTS) {
                     if (supportsStreaming && reactorOnClassPath.get()) {
                         streamingQuery(queryMessage);

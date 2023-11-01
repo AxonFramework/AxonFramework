@@ -49,24 +49,6 @@ class AxonAutoConfigurationWithOpenTelemetryTest {
                 });
     }
 
-    @Test
-    void spanFactoryIsNestingSpanFactoryWhenPropertyIsSet() {
-        new ApplicationContextRunner()
-                .withUserConfiguration(Context.class)
-                .withPropertyValues("axon.tracing.nested-handlers=true", "axon.axonserver.enabled=false")
-                .run(context -> {
-                    assertNotNull(context);
-
-                    assertTrue(context.containsBean("spanFactory"));
-                    assertNotNull(context.getBean(SpanFactory.class));
-                    SpanFactory bean = context.getBean(SpanFactory.class);
-                    assertEquals(NestingSpanFactory.class, bean.getClass());
-                    Object delegateSpanFactory =
-                            getFieldValue(NestingSpanFactory.class.getDeclaredField("delegateSpanFactory"), bean);
-                    assertEquals(OpenTelemetrySpanFactory.class, delegateSpanFactory.getClass());
-                });
-    }
-
     @EnableAutoConfiguration(exclude = {
             JmxAutoConfiguration.class,
             WebClientAutoConfiguration.class,

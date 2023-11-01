@@ -60,7 +60,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private final Executor executor;
     private final TransactionManager transactionManager;
     private final Set<AggregateTypeId> snapshotsInProgress = ConcurrentHashMap.newKeySet();
-    private final SpanFactory spanFactory;
+    private final SnapshotterSpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractSnapshotter} based on the fields contained in the {@link Builder}.
@@ -99,10 +99,9 @@ public abstract class AbstractSnapshotter implements Snapshotter {
             }
         }
         if (snapshotsInProgress.add(typeAndId)) {
-            Span span = spanFactory.createRootTrace(() -> traceName(aggregateType)).start();
+            Span span = spanFactory.createScheduleSnapshotSpan(aggregateType.getSimpleName(), aggregateIdentifier).start();
             try(SpanScope unused = span.makeCurrent()) {
-                Span internalSpan = spanFactory.createInternalSpan(() -> getInnerTraceName(aggregateType,
-                                                                                           aggregateIdentifier));
+                Span internalSpan = spanFactory.createCreateSnapshotSpan(aggregateType.getSimpleName(), aggregateIdentifier);
                 executor.execute(silently(internalSpan.wrapRunnable(
                         () -> transactionManager.executeInTransaction(
                                 createSnapshotterTask(aggregateType, aggregateIdentifier)))
@@ -115,28 +114,6 @@ public abstract class AbstractSnapshotter implements Snapshotter {
                 span.end();
             }
         }
-    }
-
-    /**
-     * Create name of the outer trace. This is separated from the inner for two reasons:
-     * <ul>
-     *     <li>Measuring the delay between scheduling and making</li>
-     *     <li>To have a more generic name for trace grouping and a more specific name for the span with aggId</li>
-     * </ul>
-     */
-    private String getInnerTraceName(Class<?> aggregateType, String aggregateIdentifier) {
-        return format("%s.createSnapshot(%s,%s)",
-                      getClass().getSimpleName(),
-                      aggregateType.getSimpleName(),
-                      aggregateIdentifier);
-    }
-
-    /**
-     * Create name of the inner trace. See {@link #getInnerTraceName(Class, String)} for more information on why the
-     * inner and outer are separate.
-     */
-    private String traceName(Class<?> aggregateType) {
-        return format("%s.createSnapshot(%s)", getClass().getSimpleName(), aggregateType.getSimpleName());
     }
 
     private SilentTask silently(Runnable r) {
@@ -217,7 +194,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * Abstract Builder class to instantiate {@link AbstractSnapshotter} implementations.
      * <p>
      * The {@link Executor} is defaulted to an {@link DirectExecutor#INSTANCE}, the {@link TransactionManager} defaults
-     * to a {@link NoTransactionManager}, and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The
+     * to a {@link NoTransactionManager}, and the {@link SnapshotterSpanFactory} defaults to a
+     * {@link DefaultSnapshotterSpanFactory} with a {@link NoOpSpanFactory} delegate. The
      * {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder {
@@ -225,7 +203,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         private EventStore eventStore;
         private Executor executor = DirectExecutor.INSTANCE;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private SpanFactory builderSpanFactory = NoOpSpanFactory.INSTANCE;
+        private SnapshotterSpanFactory builderSpanFactory = DefaultSnapshotterSpanFactory.builder().spanFactory(NoOpSpanFactory.INSTANCE).build();
 
         /**
          * Sets the {@link EventStore} instance which this {@link AbstractSnapshotter} implementation will store
@@ -258,10 +236,25 @@ public abstract class AbstractSnapshotter implements Snapshotter {
          * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
          * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
+         * @deprecated Use {@link #spanFactory(SnapshotterSpanFactory)} instead as it provides more configurability.
          * @param spanFactory The {@link SpanFactory} implementation.
          * @return The current Builder instance, for fluent interfacing.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.builderSpanFactory = DefaultSnapshotterSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link SnapshotterSpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link DefaultSnapshotterSpanFactory} with a {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull SnapshotterSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.builderSpanFactory = spanFactory;
             return this;

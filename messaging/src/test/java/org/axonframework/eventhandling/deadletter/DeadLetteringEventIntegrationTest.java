@@ -141,6 +141,10 @@ public abstract class DeadLetteringEventIntegrationTest {
         return new NoOpTransactionManager();
     }
 
+    protected boolean identifierCacheEnabled() {
+        return false;
+    }
+
     @BeforeEach
     void setUp() {
         transactionManager = getTransactionManager();
@@ -164,14 +168,18 @@ public abstract class DeadLetteringEventIntegrationTest {
             }
         };
 
-        deadLetteringInvoker =
-                DeadLetteringEventHandlerInvoker.builder()
-                                                .eventHandlers(eventHandlingComponent)
-                                                .sequencingPolicy(event -> ((DeadLetterableEvent) event.getPayload()).getAggregateIdentifier())
-                                                .enqueuePolicy(enqueuePolicy)
-                                                .queue(deadLetterQueue)
-                                                .transactionManager(transactionManager)
-                                                .build();
+        DeadLetteringEventHandlerInvoker.Builder invokerBuilder = DeadLetteringEventHandlerInvoker
+                .builder()
+                .eventHandlers(eventHandlingComponent)
+                .sequencingPolicy(event -> ((DeadLetterableEvent) event.getPayload()).getAggregateIdentifier())
+                .enqueuePolicy(enqueuePolicy)
+                .queue(deadLetterQueue)
+                .transactionManager(transactionManager);
+
+        if (identifierCacheEnabled()) {
+            invokerBuilder.enableSequenceIdentifierCache();
+        }
+        deadLetteringInvoker = invokerBuilder.build();
 
         eventSource = new InMemoryStreamableEventSource();
         streamingProcessor =

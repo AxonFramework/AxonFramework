@@ -21,6 +21,7 @@ import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
@@ -28,6 +29,7 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -37,7 +39,9 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
@@ -175,6 +179,46 @@ class EventProcessorConfigurationTest {
 
                     assertTrue(eventProcessingConfig.deadLetterQueue("first").isPresent());
                     assertFalse(eventProcessingConfig.deadLetterQueue("second").isPresent());
+                });
+    }
+
+    @Test
+    void sequencedDeadLetterQueueCacheCanBeSetViaSpringConfiguration() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withPropertyValues(
+                        "axon.axonserver.enabled=false",
+                        "axon.eventhandling.processors.first.dlq.enabled=true",
+                        "axon.eventhandling.processors.first.dlq.cache.enabled=true",
+                        "axon.eventhandling.processors.first.dlq.cache.size=10"
+                )
+                .run(context -> {
+                    assertThat(context).hasSingleBean(EventProcessingModule.class);
+                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+
+                    Optional<EventProcessor> eventProcessor = eventProcessingConfig.eventProcessorByProcessingGroup(
+                            "first");
+                    assertTrue(eventProcessor.isPresent());
+                    EventHandlerInvoker eventHandlerInvoker = ReflectionUtils.getFieldValue(
+                            AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), eventProcessor.get()
+                    );
+                    assertNotNull(eventHandlerInvoker);
+                    List<EventHandlerInvoker> delegates = ReflectionUtils.getFieldValue(
+                            MultiEventHandlerInvoker.class.getDeclaredField("delegates"), eventHandlerInvoker
+                    );
+                    assertFalse(delegates.isEmpty());
+                    DeadLetteringEventHandlerInvoker deadLetteringInvoker =
+                            ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+                    boolean cacheEnabled = ReflectionUtils.getFieldValue(
+                            DeadLetteringEventHandlerInvoker.class.getDeclaredField("sequenceIdentifierCacheEnabled"),
+                            deadLetteringInvoker
+                    );
+                    assertTrue(cacheEnabled);
+                    int cacheSize = ReflectionUtils.getFieldValue(
+                            DeadLetteringEventHandlerInvoker.class.getDeclaredField("sequenceIdentifierCacheSize"),
+                            deadLetteringInvoker
+                    );
+                    assertEquals(10, cacheSize);
                 });
     }
 

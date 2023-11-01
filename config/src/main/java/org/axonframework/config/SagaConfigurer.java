@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.modelling.saga.AbstractSagaManager;
 import org.axonframework.modelling.saga.AnnotatedSagaManager;
+import org.axonframework.modelling.saga.SagaManagerSpanFactory;
 import org.axonframework.modelling.saga.SagaRepository;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -230,7 +231,7 @@ public class SagaConfigurer<T> {
                                                .handlerDefinition(c.handlerDefinition(configurer.type))
                                                .listenerInvocationErrorHandler(eventProcessingConfiguration.listenerInvocationErrorHandler(
                                                        processingGroup()))
-                                               .spanFactory(configuration.spanFactory())
+                                               .spanFactory(configuration.getComponent(SagaManagerSpanFactory.class))
                                                .build();
                 };
             }

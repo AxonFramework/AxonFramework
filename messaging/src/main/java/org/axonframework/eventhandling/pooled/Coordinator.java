@@ -94,6 +94,7 @@ class Coordinator {
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final boolean coordinatorExtendsClaims;
+    private final Consumer<Segment> segmentReleasedAction;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState;
@@ -130,6 +131,7 @@ class Coordinator {
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
         this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
+        this.segmentReleasedAction = builder.segmentReleasedAction;
     }
 
     /**
@@ -262,6 +264,26 @@ class Coordinator {
         return result;
     }
 
+    /**
+     * Instructs this coordinator to claim the segment for the given {@code segmentId}.
+     * <p>
+     * If this coordinator is already processing the segment, it will have a successful result. If the segment's token
+     * is currently taken by another processor instance, the result will be unsuccessful.
+     * <p>
+     * The token will immediately be claimed, but processing of the token will start after the invocation of this
+     * instruction has been completed successfully by scheduling the coordinator. This will see the claimed token
+     * and start a {@link WorkPackage} for it.
+     *
+     * @param segmentId the identifier of the segment to claim
+     * @return a {@link CompletableFuture} indicating whether the claim was executed successfully
+     */
+    public CompletableFuture<Boolean> claimSegment(int segmentId) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        coordinatorTasks.add(new ClaimTask(result, name, segmentId, workPackages, releasesDeadlines, tokenStore, transactionManager));
+        scheduleCoordinator();
+        return result;
+    }
+
     private boolean initializeTokenStore() {
         AtomicBoolean tokenStoreInitialized = new AtomicBoolean(false);
         transactionManager.executeInTransaction(() -> {
@@ -385,6 +407,8 @@ class Coordinator {
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
+        private Consumer<Segment> segmentReleasedAction = segment -> {
+        };
 
         /**
          * The name of the processor this service coordinates for.
@@ -600,6 +624,18 @@ class Coordinator {
         }
 
         /**
+         * Registers an action to perform when a segment is released. Will override any previously registered actions.
+         * Defaults to a no-op.
+         *
+         * @param segmentReleasedAction the action to perform when a segment is released
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder segmentReleasedAction(Consumer<Segment> segmentReleasedAction) {
+            this.segmentReleasedAction = segmentReleasedAction;
+            return this;
+        }
+
+        /**
          * Initializes a {@link Coordinator} as specified through this Builder.
          *
          * @return a {@link Coordinator} as specified through this Builder
@@ -640,7 +676,7 @@ class Coordinator {
      * <ol>
      *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
      *     <li>{@link WorkPackage#extendClaimIfThresholdIsMet() Extend the claims} of all {@code WorkPackages} to relieve them of this effort.
-     *     This is an optimization activated through {@link Builder#coordinatorClaimExtension()}.</li>
+     *     This is an optimization activated through {@link Builder#coordinatorClaimExtension(boolean)}.</li>
      *     <li>Validating if there are {@link CoordinatorTask CoordinatorTasks} to run, and run a single one if there are any.</li>
      *     <li>Periodically checking for unclaimed segments, claim these and start a {@code WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
@@ -679,10 +715,17 @@ class Coordinator {
             workPackages.entrySet().stream()
                         .filter(entry -> isSegmentBlockedFromClaim(entry.getKey()))
                         .map(Map.Entry::getValue)
-                        .forEach(workPackage -> abortWorkPackage(workPackage, null));
+                        .forEach(workPackage -> {
+                            logger.info(
+                                    "Processor [{}] was requested and will comply with releasing claim for segment {}.",
+                                    name, workPackage.segment().getSegmentId()
+                            );
+                            abortWorkPackage(workPackage, null);
+                        });
 
             if (coordinatorExtendsClaims) {
-                logger.debug("Processor [{}] extending all claims of active Work Packages.", name);
+                logger.debug("Processor [{}] will extend the claim of work packages"
+                                     + " that are busy processing events and have met the claim threshold.", name);
                 // Extend the claims of each work package busy processing events.
                 // Doing so relieves this effort from the work package as an optimization.
                 workPackages.values()
@@ -718,8 +761,10 @@ class Coordinator {
                 // Claim new segments, construct work packages per new segment, and open stream based on lowest segment
                 unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
                 try {
+                    logger.debug("Processor [{}] will try to claim new segments.", name);
                     Map<Segment, TrackingToken> newSegments = claimNewSegments();
                     TrackingToken streamStartPosition = lastScheduledToken;
+
                     for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
                         Segment segment = entry.getKey();
                         TrackingToken token = entry.getValue();
@@ -727,10 +772,10 @@ class Coordinator {
 
                         streamStartPosition = streamStartPosition == null || otherUnwrapped == null
                                               ? null : streamStartPosition.lowerBound(otherUnwrapped);
-                        logger.debug("Processor [{}] claimed {} for processing.", name, segment);
                         workPackages.computeIfAbsent(segment.getSegmentId(),
                                                      wp -> workPackageFactory.apply(segment, token));
                     }
+
                     if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
                         logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
                     }
@@ -826,11 +871,12 @@ class Coordinator {
                                 () -> tokenStore.fetchToken(name, segment)
                         );
                         newClaims.put(segment, token);
+                        logger.info("Processor [{}] claimed the token for segment {}.", name, segmentId);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
-                        logger.debug(
-                                "Unable to claim the token for segment {}. It is owned by another process or has been split/merged concurrently.",
-                                segmentId);
+                        logger.debug("Processor [{}] is unable to claim the token for segment {}. "
+                                             + "It is owned by another process or has been split/merged concurrently.",
+                                     name, segmentId);
                     }
                 }
             }
@@ -982,15 +1028,15 @@ class Coordinator {
         }
 
         private void abortAndScheduleRetry(Exception cause) {
-            logger.info("Releasing claims and scheduling a new coordination task in {}ms", errorWaitBackOff);
+            logger.info("Processor [{}] is releasing claims and scheduling a new coordination task in {}ms",
+                        name, errorWaitBackOff);
 
             errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
             abortWorkPackages(cause).whenComplete(
                     (unused, throwable) -> {
                         if (throwable != null) {
-                            logger.warn("An exception occurred during work packages abort on [{}] processor.",
-                                        name,
-                                        throwable);
+                            logger.warn("An exception occurred during work packages abort on processor [{}].",
+                                        name, throwable);
                         } else {
                             logger.debug("Work packages have aborted successfully.");
                         }
@@ -1012,14 +1058,14 @@ class Coordinator {
                            }
                        })
                        .thenRun(() -> transactionManager.executeInTransaction(
-                               () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
+                               () -> {
+                                   tokenStore.releaseClaim(name, work.segment().getSegmentId());
+                                   segmentReleasedAction.accept(work.segment());
+                               }
                        ))
                        .exceptionally(throwable -> {
-                           logger.info(
-                                   "An exception occurred during the abort of work package for segment [{}] on [{}] processor.",
-                                   work.segment().getSegmentId(),
-                                   name,
-                                   throwable);
+                           logger.info("An exception occurred during the abort of work package [{}] on [{}] processor.",
+                                       work.segment().getSegmentId(), name, throwable);
                            return null;
                        });
         }

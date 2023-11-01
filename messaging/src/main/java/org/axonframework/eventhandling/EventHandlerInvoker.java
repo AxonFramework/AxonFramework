@@ -92,4 +92,13 @@ public interface EventHandlerInvoker {
             );
         }
     }
+
+    /**
+     * This is a way for an event processor to communicate that a segment which was being processed is released. This
+     * might be needed or required to free resources, are clean up state which is related to the {@link Segment}.
+     *
+     * @param segment the segment which was released.
+     */
+    default void segmentReleased(Segment segment) {
+    }
 }

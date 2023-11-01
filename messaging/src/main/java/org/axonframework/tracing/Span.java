@@ -209,4 +209,16 @@ public interface Span {
     default <T> Consumer<T> wrapConsumer(Consumer<T> supplier) {
         return (consumedObject) -> runConsumer(supplier, consumedObject);
     }
+
+    /**
+     * Adds an attribute to the span. This can be used to add extra information to the span, which can be used by the
+     * APM tooling to provide more information about the span.
+     *
+     * @param key   The key of the attribute.
+     * @param value The value of the attribute.
+     * @return The span for fluent interfacing.
+     */
+    default Span addAttribute(String key, String value) {
+        return this;
+    }
 }

@@ -16,8 +16,6 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.springboot.TracingProperties;
-import org.axonframework.tracing.NestingSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -40,16 +38,7 @@ public class OpenTelemetryAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(SpanFactory.class)
-    public SpanFactory spanFactory(TracingProperties properties) {
-
-        OpenTelemetrySpanFactory spanFactory = OpenTelemetrySpanFactory.builder()
-                                                                       .build();
-        if (properties.isNestedHandlers()) {
-            return NestingSpanFactory.builder()
-                                     .delegate(spanFactory)
-                                     .timeLimit(properties.getNestedTimeLimit())
-                                     .build();
-        }
-        return spanFactory;
+    public SpanFactory spanFactory() {
+        return OpenTelemetrySpanFactory.builder().build();
     }
 }

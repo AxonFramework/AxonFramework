@@ -34,15 +34,13 @@ import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.Upcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -59,17 +57,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@SpringBootTest(properties = "axon.axonserver.enabled=false")
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
-        WebClientAutoConfiguration.class,
-        AxonServerBusAutoConfiguration.class,
-        AxonServerAutoConfiguration.class,
-        AxonServerActuatorAutoConfiguration.class
+        WebClientAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class AxonAutoConfigurationWithHibernateTest {
+class AxonAutoConfigurationWithHibernateTest {
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -106,7 +102,7 @@ public class AxonAutoConfigurationWithHibernateTest {
 
     @Transactional
     @Test
-    public void eventStorageEngingeUsesSerializerBean() {
+    public void eventStorageEngineUsesSerializerBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);
 

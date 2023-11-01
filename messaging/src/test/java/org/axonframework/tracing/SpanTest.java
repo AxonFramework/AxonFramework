@@ -217,5 +217,10 @@ class SpanTest {
             this.exception = t;
             return this;
         }
+
+        @Override
+        public Span addAttribute(String key, String value) {
+            return this;
+        }
     }
 }

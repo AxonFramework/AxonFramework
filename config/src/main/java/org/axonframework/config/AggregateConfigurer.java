@@ -45,6 +45,7 @@ import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.NoArgumentConstructorCreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -139,7 +140,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                .entityManagerProvider(entityManagerProvider)
                                                .eventBus(c.eventBus())
                                                .repositoryProvider(c::repository)
-                                               .spanFactory(c.spanFactory())
+                                               .spanFactory(c.getComponent(RepositorySpanFactory.class))
                                                .build();
                 });
     }
@@ -165,7 +166,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                          .entityManagerProvider(entityManagerProvider)
                                          .eventBus(c.eventBus())
                                          .repositoryProvider(c::repository)
-                                         .spanFactory(c.spanFactory())
+                                         .spanFactory(c.getComponent(RepositorySpanFactory.class))
                                          .build()
         );
     }
@@ -242,7 +243,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                    .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
                                                    .aggregateFactory(aggregateFactory.get())
                                                    .repositoryProvider(c::repository)
-                                                   .spanFactory(c.spanFactory())
+                                                   .spanFactory(c.getComponent(RepositorySpanFactory.class))
                                                    .cache(cache.get());
                     if (eventStreamFilter.get() != null) {
                         builder = builder.eventStreamFilter(eventStreamFilter.get());

@@ -74,7 +74,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
     private final ScopeAwareProvider scopeAwareProvider;
     private final ScheduledExecutorService scheduledExecutorService;
     private final TransactionManager transactionManager;
-    private final SpanFactory spanFactory;
+    private final DeadlineManagerSpanFactory spanFactory;
 
     private final Map<DeadlineId, Future<?>> scheduledTasks = new ConcurrentHashMap<>();
 
@@ -83,8 +83,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
      * <p>
      * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
      * which contains an {@link AxonThreadFactory}, the {@link TransactionManager} defaults to a
-     * {@link NoTransactionManager}, and the {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}. The
-     * {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be provided.
+     * {@link NoTransactionManager}, and the {@link DeadlineManagerSpanFactory} is defaulted to a
+     * {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}. The {@link ScopeAwareProvider} is
+     * a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link SimpleDeadlineManager}
      */
@@ -117,8 +118,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
         String deadlineMessageId = deadlineMessage.getIdentifier();
         DeadlineId deadlineId = new DeadlineId(deadlineName, deadlineScope, deadlineMessageId);
-        Span span = spanFactory.createDispatchSpan(() -> "SimpleDeadlineManager.schedule(" + deadlineName + ")",
-                                                   deadlineMessage);
+        Span span = spanFactory.createScheduleSpan(deadlineName, deadlineMessageId, deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage<?> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             DeadlineTask deadlineTask = new DeadlineTask(deadlineId, interceptedDeadlineMessage);
@@ -136,8 +136,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
-        Span span = spanFactory.createInternalSpan(
-                () -> "SimpleDeadlineManager.cancelSchedule(" + deadlineName + "," + scheduleId + ")");
+        Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
@@ -148,7 +147,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        Span span = spanFactory.createInternalSpan(() -> "SimpleDeadlineManager.cancelAll(" + deadlineName + ")");
+        Span span = spanFactory.createCancelAllSpan(deadlineName);
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName))
@@ -158,8 +157,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        Span span = spanFactory.createInternalSpan(
-                () -> "SimpleDeadlineManager.cancelAllWithinScope(" + deadlineName + ")");
+        Span span = spanFactory.createCancelAllWithinScopeSpan(deadlineName, scope);
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
@@ -244,8 +242,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
      * <p>
      * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
      * which contains an {@link AxonThreadFactory}, the {@link TransactionManager} defaults to a
-     * {@link NoTransactionManager}, and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The
-     * {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be provided.
+     * {@link NoTransactionManager}, and the {@link SpanFactory} defaults to a {@link DefaultDeadlineManagerSpanFactory}
+     * backed by a {@link NoOpSpanFactory}. The {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such
+     * should be provided.
      */
     public static class Builder {
 
@@ -253,7 +252,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         private ScheduledExecutorService scheduledExecutorService =
                 Executors.newSingleThreadScheduledExecutor(new AxonThreadFactory(THREAD_FACTORY_GROUP_NAME));
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private DeadlineManagerSpanFactory spanFactory = DefaultDeadlineManagerSpanFactory.builder()
+                                                                                          .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                          .build();
 
         /**
          * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of
@@ -303,8 +304,25 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(DeadlineManagerSpanFactory)} instead as it provides more configuration
+         * options.
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultDeadlineManagerSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link DeadlineManagerSpanFactory} implementation to use for providing tracing capabilities.
+         * Defaults to a {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory} by default, which
+         * provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;
@@ -347,8 +365,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
                 logger.debug("Triggered deadline");
             }
 
-            Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
-            try(SpanScope unused = span.makeCurrent()) {
+            Span span = spanFactory.createExecuteSpan(deadlineId.deadlineName, deadlineId.deadlineId, deadlineMessage)
+                                   .start();
+            try (SpanScope unused = span.makeCurrent()) {
                 Instant triggerInstant = GenericEventMessage.clock.instant();
                 UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(new GenericDeadlineMessage<>(
                         deadlineId.getDeadlineName(),

@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +54,7 @@ import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEv
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Test suite validating the {@link EmbeddedEventStore}. Expects end users to make a concrete implementation choosing an
@@ -112,7 +115,10 @@ public abstract class EmbeddedEventStoreTest {
                                         .cleanupDelay(cleanupDelay)
                                         .threadFactory(threadFactory)
                                         .optimizeEventConsumption(optimizeEventConsumption)
-                                        .spanFactory(spanFactory)
+                                        .spanFactory(DefaultEventBusSpanFactory.builder()
+                                                                               .spanFactory(spanFactory)
+                                                                               .build()
+                                        )
                                         .build();
     }
 
@@ -260,9 +266,10 @@ public abstract class EmbeddedEventStoreTest {
         TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable()); //now we should be tailing
         testSubject.publish(createEvents(CACHED_EVENTS)); //triggers event producer to open a stream
-        Thread.sleep(100);
+        await().pollDelay(Duration.ofMillis(50))
+               .atMost(Duration.ofMillis(500))
+               .until(stream::hasNextAvailable);
         reset(storageEngine);
-        assertTrue(stream.hasNextAvailable());
         TrackedEventMessage<?> firstEvent = stream.nextAvailable();
         verifyNoInteractions(storageEngine);
         testSubject.publish(createEvent(CACHED_EVENTS), createEvent(CACHED_EVENTS + 1));
@@ -383,15 +390,15 @@ public abstract class EmbeddedEventStoreTest {
         DefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events);
         events.forEach(e -> {
-            spanFactory.verifySpanCompleted("EmbeddedEventStore.publish", e);
-            spanFactory.verifySpanPropagated("EmbeddedEventStore.publish", e);
-            spanFactory.verifySpanHasType("EmbeddedEventStore.publish", TestSpanFactory.TestSpanType.INTERNAL);
+            spanFactory.verifySpanCompleted("EventBus.publishEvent", e);
+            spanFactory.verifySpanPropagated("EventBus.publishEvent", e);
+            spanFactory.verifySpanHasType("EventBus.publishEvent", TestSpanFactory.TestSpanType.DISPATCH);
         });
-        spanFactory.verifyNotStarted("EmbeddedEventStore.commit");
+        spanFactory.verifyNotStarted("EventBus.commitEvents");
 
         CurrentUnitOfWork.commit();
-        spanFactory.verifySpanCompleted("EmbeddedEventStore.commit");
-        spanFactory.verifySpanHasType("EmbeddedEventStore.commit", TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanCompleted("EventBus.commitEvents");
+        spanFactory.verifySpanHasType("EventBus.commitEvents", TestSpanFactory.TestSpanType.INTERNAL);
     }
 
     @Test

@@ -18,6 +18,8 @@ package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
+import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
@@ -59,7 +61,26 @@ public class AxonServerSubscriptionQueryResult<I, U>
     @Deprecated
     public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
                                              final SubscriptionMessageSerializer subscriptionSerializer) {
-        this(null, result, subscriptionSerializer, NoOpSpanFactory.INSTANCE, new NoOpSpanFactory.NoOpSpan());
+        this(result, NoOpSpanFactory.INSTANCE, subscriptionSerializer);
+    }
+
+
+    /**
+     * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
+     * the subscription query.
+     *
+     * @deprecated Deprecated in favor of constructor with a {@link QueryBusSpanFactory}. This constructor defaults to a
+     * {@link DefaultQueryBusSpanFactory} with the provided {@link SpanFactory}.
+     */
+    @Deprecated
+    public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
+                                             final SpanFactory spanFactory,
+                                             final SubscriptionMessageSerializer subscriptionSerializer) {
+        this(null,
+             result,
+             subscriptionSerializer,
+             DefaultQueryBusSpanFactory.builder().spanFactory(spanFactory).build(),
+             new NoOpSpanFactory.NoOpSpan());
     }
 
     /**
@@ -69,7 +90,7 @@ public class AxonServerSubscriptionQueryResult<I, U>
     public AxonServerSubscriptionQueryResult(final SubscriptionQueryMessage<?, ?, ?> queryMessage,
                                              final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
                                              final SubscriptionMessageSerializer subscriptionSerializer,
-                                             final SpanFactory spanFactory,
+                                             final QueryBusSpanFactory spanFactory,
                                              final Span parentSpan) {
         updates = Flux.<SubscriptionQueryUpdateMessage<U>>create(fluxSink -> {
             fluxSink.onRequest(count -> {
@@ -115,10 +136,10 @@ public class AxonServerSubscriptionQueryResult<I, U>
     }
 
     private void publishQueryUpdate(final SubscriptionQueryMessage<?, ?, ?> queryMessage,
-                                    SubscriptionMessageSerializer subscriptionSerializer, SpanFactory spanFactory,
+                                    SubscriptionMessageSerializer subscriptionSerializer, QueryBusSpanFactory spanFactory,
                                     FluxSink<SubscriptionQueryUpdateMessage<U>> fluxSink, QueryUpdate next) {
         SubscriptionQueryUpdateMessage<U> message = subscriptionSerializer.deserialize(next);
-        spanFactory.createChildHandlerSpan(() -> "AxonServerSubscriptionQueryResult.queryUpdate", message, queryMessage)
+        spanFactory.createSubscriptionQueryProcessUpdateSpan(message, queryMessage)
                    .run(() -> fluxSink.next(message));
     }
 

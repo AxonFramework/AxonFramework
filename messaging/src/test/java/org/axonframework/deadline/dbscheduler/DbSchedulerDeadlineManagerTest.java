@@ -52,11 +52,12 @@ class DbSchedulerDeadlineManagerTest {
 
     @Test
     void binaryShouldFailWhenNotinitialized() {
-        Scheduler scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.binaryTask());
+        DbSchedulerDeadlineManagerSupplier supplier = new DbSchedulerDeadlineManagerSupplier();
+        Scheduler scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.binaryTask(supplier));
         scheduler.start();
         try {
             TaskInstance<DbSchedulerBinaryDeadlineDetails> instance =
-                    DbSchedulerDeadlineManager.binaryTask()
+                    DbSchedulerDeadlineManager.binaryTask(supplier)
                                               .instance("id", new DbSchedulerBinaryDeadlineDetails());
             scheduler.schedule(instance, Instant.now());
             await().atMost(Duration.ofSeconds(1L)).untilAsserted(
@@ -73,11 +74,12 @@ class DbSchedulerDeadlineManagerTest {
 
     @Test
     void humanReadableShouldFailWhenNotinitialized() {
-        Scheduler scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask());
+        DbSchedulerDeadlineManagerSupplier supplier = new DbSchedulerDeadlineManagerSupplier();
+        Scheduler scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask(supplier));
         scheduler.start();
         try {
             TaskInstance<DbSchedulerHumanReadableDeadlineDetails> instance =
-                    DbSchedulerDeadlineManager.humanReadableTask()
+                    DbSchedulerDeadlineManager.humanReadableTask(supplier)
                                               .instance("id", new DbSchedulerHumanReadableDeadlineDetails());
             scheduler.schedule(instance, Instant.now());
             await().atMost(Duration.ofSeconds(1L)).untilAsserted(

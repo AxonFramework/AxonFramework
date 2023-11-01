@@ -32,6 +32,7 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.ConflictingAggregateVersionException;
+import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -72,7 +73,9 @@ class EventSourcingRepositoryTest {
                                              .eventStore(mockEventStore)
                                              .snapshotTriggerDefinition(triggerDefinition)
                                              .filterByAggregateType()
-                                             .spanFactory(testSpanFactory)
+                                             .spanFactory(DefaultRepositorySpanFactory.builder()
+                                                                                      .spanFactory(testSpanFactory)
+                                                                                      .build())
                                              .build();
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
     }
@@ -121,16 +124,17 @@ class EventSourcingRepositoryTest {
         DomainEventMessage event2 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance());
         when(mockEventStore.readEvents(identifier)).thenAnswer(invocation -> {
-            testSpanFactory.verifySpanActive("EventSourcingRepository.load " + identifier);
-            testSpanFactory.verifySpanCompleted("LockingRepository.obtainLock");
-            testSpanFactory.verifyNoSpan("type.initializeState");
+            testSpanFactory.verifySpanActive("Repository.load");
+            testSpanFactory.verifySpanCompleted("Repository.obtainLock");
+            testSpanFactory.verifyNoSpan("Repository.initializeState(type)");
             return DomainEventStream.of(event1, event2);
         });
 
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
-        testSpanFactory.verifySpanCompleted("EventSourcingRepository.load " + identifier);
-        testSpanFactory.verifySpanCompleted("LockingRepository.obtainLock");
-        testSpanFactory.verifySpanCompleted("type.initializeState");
+        testSpanFactory.verifySpanCompleted("Repository.load");
+        testSpanFactory.verifySpanHasAttributeValue("Repository.load", "axon.aggregateId", identifier);
+        testSpanFactory.verifySpanCompleted("Repository.obtainLock");
+        testSpanFactory.verifySpanCompleted("Repository.initializeState(type)");
 
         // now the aggregate is loaded (and hopefully correctly locked)
         StubDomainEvent event3 = new StubDomainEvent();
@@ -139,9 +143,9 @@ class EventSourcingRepositoryTest {
 
         CurrentUnitOfWork.commit();
 
-        testSpanFactory.verifySpanHasType("EventSourcingRepository.load " + identifier, TestSpanFactory.TestSpanType.INTERNAL);
-        testSpanFactory.verifySpanHasType("LockingRepository.obtainLock", TestSpanFactory.TestSpanType.INTERNAL);
-        testSpanFactory.verifySpanHasType("type.initializeState", TestSpanFactory.TestSpanType.INTERNAL);
+        testSpanFactory.verifySpanHasType("Repository.load", TestSpanFactory.TestSpanType.INTERNAL);
+        testSpanFactory.verifySpanHasType("Repository.obtainLock", TestSpanFactory.TestSpanType.INTERNAL);
+        testSpanFactory.verifySpanHasType("Repository.initializeState(type)", TestSpanFactory.TestSpanType.INTERNAL);
     }
 
     @Test

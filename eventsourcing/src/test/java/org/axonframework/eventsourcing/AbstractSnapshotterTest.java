@@ -75,9 +75,12 @@ class AbstractSnapshotterTest {
     void setUp() throws Exception {
         mockEventStore = mock(EventStore.class);
         spanFactory = new TestSpanFactory();
+        SnapshotterSpanFactory snapshotterSpanFactory = DefaultSnapshotterSpanFactory.builder()
+                                                                                     .spanFactory(spanFactory)
+                                                                                     .build();
         testSubject = TestSnapshotter.builder()
                                      .eventStore(mockEventStore)
-                                     .spanFactory(spanFactory)
+                                     .spanFactory(snapshotterSpanFactory)
                                      .build();
     }
 
@@ -101,16 +104,16 @@ class AbstractSnapshotterTest {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
                 .thenAnswer(invocation -> {
-                    spanFactory.verifySpanActive("TestSnapshotter.createSnapshot(Object)");
-                    spanFactory.verifySpanActive("TestSnapshotter.createSnapshot(Object,aggregateIdentifier)");
+                    spanFactory.verifySpanActive("Snapshotter.scheduleSnapshot(Object)");
+                    spanFactory.verifySpanActive("Snapshotter.createSnapshot(Object)");
                     return DomainEventStream.of(createEvents(2));
                 });
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
-        spanFactory.verifySpanCompleted("TestSnapshotter.createSnapshot(Object)");
-        spanFactory.verifySpanCompleted("TestSnapshotter.createSnapshot(Object,aggregateIdentifier)");
-        spanFactory.verifySpanHasType("TestSnapshotter.createSnapshot(Object)", TestSpanFactory.TestSpanType.ROOT);
-        spanFactory.verifySpanHasType("TestSnapshotter.createSnapshot(Object,aggregateIdentifier)",
+        spanFactory.verifySpanCompleted("Snapshotter.scheduleSnapshot(Object)");
+        spanFactory.verifySpanCompleted("Snapshotter.createSnapshot(Object)");
+        spanFactory.verifySpanHasType("Snapshotter.scheduleSnapshot(Object)", TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanHasType("Snapshotter.createSnapshot(Object)",
                                       TestSpanFactory.TestSpanType.INTERNAL);
     }
 
@@ -289,7 +292,7 @@ class AbstractSnapshotterTest {
             }
 
             @Override
-            public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            public Builder spanFactory(@Nonnull SnapshotterSpanFactory spanFactory) {
                 super.spanFactory(spanFactory);
                 return this;
             }

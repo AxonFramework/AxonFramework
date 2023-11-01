@@ -18,6 +18,7 @@ package org.axonframework.springboot;
 
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
+import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.MessageMonitorFactory;
 import org.axonframework.eventhandling.EventBus;
@@ -56,7 +57,7 @@ import static org.mockito.Mockito.*;
 })
 @TestPropertySource("classpath:test.metrics.application.properties")
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
+class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -92,12 +93,14 @@ public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
     }
 
     @Test
-    void axonServerEventStoreRequestedMonitor() {
+    void axonServerEventStoreAndFactoryRequestMonitor() {
         assertNotNull(applicationContext.getBean(AxonServerEventStore.class));
+        assertNotNull(applicationContext.getBean(AxonServerEventStoreFactory.class));
 
-        MessageMonitorFactory monitor = applicationContext.getBean("mockMessageMonitorFactory", MessageMonitorFactory.class);
+        MessageMonitorFactory monitor =
+                applicationContext.getBean("mockMessageMonitorFactory", MessageMonitorFactory.class);
 
-        verify(monitor, description("expected MessageMonitorFactory to be retrieved for AxonServerEventStore"))
+        verify(monitor, times(2).description("expected MessageMonitorFactory to be retrieved for AxonServerEventStore"))
                 .create(any(), eq(AxonServerEventStore.class), anyString());
     }
 

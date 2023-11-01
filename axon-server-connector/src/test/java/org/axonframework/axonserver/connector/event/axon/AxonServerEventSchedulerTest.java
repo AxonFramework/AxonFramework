@@ -51,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AxonServerEventScheduler}.
@@ -179,6 +180,33 @@ public class AxonServerEventSchedulerTest {
         assertTrue(token instanceof SimpleScheduleToken);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
         assertNotNull(scheduled.get(simpleScheduleToken.getTokenId()));
+    }
+
+    @Test
+    void scheduleCustomContext() {
+        sendResponse.set(true);
+        AxonServerConfiguration axonserverConfiguration = AxonServerConfiguration.builder()
+                                                                                 .servers("localhost:18024")
+                                                                                 .build();
+        connectionManager = AxonServerConnectionManager.builder()
+                                                       .axonServerConfiguration(axonserverConfiguration)
+                                                       .build();
+
+        AxonServerConnectionManager spyConnectionManager = spy(connectionManager);
+
+        testSubject = AxonServerEventScheduler.builder()
+                                              .eventSerializer(TestSerializer.xStreamSerializer())
+                                              .connectionManager(spyConnectionManager)
+                                              .defaultContext("textContext")
+                                              .build();
+        testSubject.start();
+
+        org.axonframework.eventhandling.scheduling.ScheduleToken token =
+                testSubject.schedule(Instant.now().plus(Duration.ofMinutes(5)), "TestEvent");
+        assertTrue(token instanceof SimpleScheduleToken);
+        SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
+        assertNotNull(scheduled.get(simpleScheduleToken.getTokenId()));
+        verify(spyConnectionManager).getConnection("textContext");
     }
 
     @Test

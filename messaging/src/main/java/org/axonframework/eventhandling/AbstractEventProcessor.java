@@ -45,8 +45,8 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * creates a Unit of Work to process the batch.
  * <p>
  * Actual handling of events is deferred to an {@link EventHandlerInvoker}. Before each message is handled by the
- * invoker this event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
- * interceptors}.
+ * invoker this event processor creates an interceptor chain containing all registered
+ * {@link MessageHandlerInterceptor interceptors}.
  * <p>
  * Implementations are in charge of providing the events that need to be processed. Once these events are obtained they
  * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Collection)} for processing.
@@ -65,7 +65,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
-    protected final SpanFactory spanFactory;
+    protected final EventProcessorSpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractEventProcessor} based on the fields contained in the {@link Builder}.
@@ -127,7 +127,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
     }
 
-    protected boolean canHandleType(Class<?> payloadType)  {
+    protected boolean canHandleType(Class<?> payloadType) {
         try {
             return eventHandlerInvoker.canHandleType(payloadType);
         } catch (Exception e) {
@@ -137,22 +137,22 @@ public abstract class AbstractEventProcessor implements EventProcessor {
 
     /**
      * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
-     * the event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
-     * interceptors}.
+     * the event processor creates an interceptor chain containing all registered
+     * {@link MessageHandlerInterceptor interceptors}.
      *
-     * @param eventMessages      The batch of messages that is to be processed
-     * @param unitOfWork         The Unit of Work that has been prepared to process the messages
+     * @param eventMessages The batch of messages that is to be processed
+     * @param unitOfWork    The Unit of Work that has been prepared to process the messages
      * @throws Exception when an exception occurred during processing of the batch
      */
     protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                       UnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
+                                             UnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
         processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
     }
 
     /**
      * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
-     * the event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
-     * interceptors}.
+     * the event processor creates an interceptor chain containing all registered
+     * {@link MessageHandlerInterceptor interceptors}.
      *
      * @param eventMessages      The batch of messages that is to be processed
      * @param unitOfWork         The Unit of Work that has been prepared to process the messages
@@ -162,39 +162,45 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                        UnitOfWork<? extends EventMessage<?>> unitOfWork,
                                        Collection<Segment> processingSegments) throws Exception {
-        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
-            MessageMonitor.MonitorCallback monitorCallback =
-                    messageMonitor.onMessageIngested(unitOfWork.getMessage());
-            return new DefaultInterceptorChain<>(
-                    unitOfWork,
-                    interceptors,
-                    m -> spanFactory.createInternalSpan(this::getSpanName, m).runCallable(() -> {
-                        try {
-                            for (Segment processingSegment : processingSegments) {
-                                eventHandlerInvoker.handle(m, processingSegment);
-                            }
-                            monitorCallback.reportSuccess();
-                            return null;
-                        } catch (Exception exception) {
-                            monitorCallback.reportFailure(exception);
-                            throw exception;
-                        }
-                    })).proceed();
-        }, rollbackConfiguration);
+        spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
+            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
+                EventMessage<?> message = unitOfWork.getMessage();
+                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(message);
+                return spanFactory.createProcessEventSpan(this instanceof StreamingEventProcessor, message)
+                                  .runCallable(() -> new DefaultInterceptorChain<>(
+                                          unitOfWork,
+                                          interceptors,
+                                          m -> processMessageInUnitOfWork(processingSegments, m, monitorCallback))
+                                          .proceed());
+            }, rollbackConfiguration);
 
-        if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.exceptionResult();
-            if (unitOfWork.isRolledBack()) {
-                errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
-            } else {
-                logger.info("Exception occurred while processing a message, but unit of work was committed. {}",
+            if (resultMessage.isExceptional()) {
+                Throwable e = resultMessage.exceptionResult();
+                if (unitOfWork.isRolledBack()) {
+                    errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
+                } else {
+                    logger.info(
+                            "Exception occurred while processing a message, but unit of work was committed. {}",
                             e.getClass().getName());
+                }
             }
-        }
+            return null;
+        });
     }
 
-    private String getSpanName() {
-        return getClass().getSimpleName() + "[" + getName() + "].process";
+    private Object processMessageInUnitOfWork(Collection<Segment> processingSegments, EventMessage<?> message,
+                                              MessageMonitor.MonitorCallback monitorCallback) throws Exception {
+        try {
+            for (Segment processingSegment : processingSegments) {
+                eventHandlerInvoker.handle(message, processingSegment);
+            }
+            monitorCallback.reportSuccess();
+            return null;
+        } catch (Exception exception) {
+            monitorCallback.reportFailure(
+                    exception);
+            throw exception;
+        }
     }
 
     /**
@@ -224,9 +230,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * Abstract Builder class to instantiate a {@link AbstractEventProcessor}.
      * <p>
      * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults
-     * to a {@link NoOpMessageMonitor} and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The Event
-     * Processor {@code name}, {@link EventHandlerInvoker} and {@link RollbackConfiguration} are <b>hard
-     * requirements</b> and as such should be provided.
+     * to a {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
+     * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}. The Event Processor {@code name},
+     * {@link EventHandlerInvoker} and {@link RollbackConfiguration} are <b>hard requirements</b> and as such should be
+     * provided.
      */
     public abstract static class Builder {
 
@@ -235,7 +242,9 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         private RollbackConfiguration rollbackConfiguration;
         private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
+        private EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
+                                                                                        .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                        .build();
 
         /**
          * Sets the {@code name} of this {@link EventProcessor} implementation.
@@ -252,8 +261,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         /**
          * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
          *
-         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual {@link
-         *                            EventMessage}s
+         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
+         *                            {@link EventMessage}s
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
@@ -266,8 +275,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
          * Sets the {@link RollbackConfiguration} specifying the rollback behavior of the {@link UnitOfWork} while
          * processing a batch of events.
          *
-         * @param rollbackConfiguration the {@link RollbackConfiguration} specifying the rollback behavior of the {@link
-         *                              UnitOfWork} while processing a batch of events.
+         * @param rollbackConfiguration the {@link RollbackConfiguration} specifying the rollback behavior of the
+         *                              {@link UnitOfWork} while processing a batch of events.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
@@ -310,8 +319,24 @@ public abstract class AbstractEventProcessor implements EventProcessor {
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
+         * @deprecated Use {@link #spanFactory(EventProcessorSpanFactory) for more configuration options instead
          */
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = DefaultEventProcessorSpanFactory.builder().spanFactory(spanFactory).build();
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventProcessorSpanFactory} implementation to use for providing tracing capabilities. Defaults
+         * to a {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides
+         * no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

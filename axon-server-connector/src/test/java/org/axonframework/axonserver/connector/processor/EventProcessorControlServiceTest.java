@@ -49,7 +49,7 @@ class EventProcessorControlServiceTest {
 
     private AxonServerConnectionManager connectionManager;
     private EventProcessingConfiguration processingConfiguration;
-    private Map<String, AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings> processorSettings;
+    private Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorSettings;
 
     private EventProcessorControlService testSubject;
     private AxonServerConnection connection;
@@ -114,8 +114,8 @@ class EventProcessorControlServiceTest {
         when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.of(TOKEN_STORE_IDENTIFIER));
         when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
 
-        AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings testSetting =
-                new AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings();
+        AxonServerConfiguration.Eventhandling.ProcessorSettings testSetting =
+                new AxonServerConfiguration.Eventhandling.ProcessorSettings();
         testSetting.setLoadBalancingStrategy(LOAD_BALANCING_STRATEGY);
         processorSettings.put(THIS_PROCESSOR, testSetting);
         processorSettings.put(NON_EXISTING, testSetting);
@@ -147,8 +147,8 @@ class EventProcessorControlServiceTest {
         when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.of(TOKEN_STORE_IDENTIFIER));
         when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
 
-        AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings testSetting =
-                new AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings();
+        AxonServerConfiguration.Eventhandling.ProcessorSettings testSetting =
+                new AxonServerConfiguration.Eventhandling.ProcessorSettings();
         testSetting.setLoadBalancingStrategy(LOAD_BALANCING_STRATEGY);
         testSetting.setAutomaticBalancing(true);
         processorSettings.put(THIS_PROCESSOR, testSetting);
@@ -187,8 +187,8 @@ class EventProcessorControlServiceTest {
         when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.empty());
         when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
 
-        AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings testSetting =
-                new AxonServerConfiguration.EventProcessorConfiguration.ProcessorSettings();
+        AxonServerConfiguration.Eventhandling.ProcessorSettings testSetting =
+                new AxonServerConfiguration.Eventhandling.ProcessorSettings();
         testSetting.setLoadBalancingStrategy(LOAD_BALANCING_STRATEGY);
         processorSettings.put(THIS_PROCESSOR, testSetting);
         processorSettings.put(THAT_PROCESSOR, testSetting);

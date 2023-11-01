@@ -140,5 +140,11 @@ public class MultiSpanFactory implements SpanFactory {
             spans.forEach(s -> s.recordException(t));
             return this;
         }
+
+        @Override
+        public Span addAttribute(String key, String value) {
+            spans.forEach(s -> s.addAttribute(key, value));
+            return this;
+        }
     }
 }

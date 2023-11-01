@@ -19,12 +19,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.axonframework</groupId>
-        <artifactId>axon</artifactId>
-        <version>4.9.0-SNAPSHOT</version>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.1.5</version>
+        <relativePath/>
     </parent>
 
+    <groupId>org.axonframework</groupId>
     <artifactId>axon-spring-boot-3-integrationtests</artifactId>
+    <version>4.10.0-SNAPSHOT</version>
 
     <name>Axon Framework - Spring Boot 3 Integration Tests</name>
     <description>
@@ -33,41 +36,41 @@
     <version>5.0.0-SNAPSHOT</version>
 
     <properties>
-        <jobrunr.version>6.2.3</jobrunr.version>
-        <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
-        <spring-boot-3.version>3.1.2</spring-boot-3.version>
+        <jobrunr.version>6.3.2</jobrunr.version>
+        <mysql-connector-java.version>8.0.33</mysql-connector-java.version>
+        <spring-boot-3.version>3.1.5</spring-boot-3.version>
         <!-- Build / Plugin -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
         <maven-compiler.version>3.11.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
-        <maven-surefire.version>3.1.2</maven-surefire.version>
+        <maven-surefire.version>3.2.1</maven-surefire.version>
+        <axon.version>4.10.0-SNAPSHOT</axon.version>
     </properties>
 
     <dependencies>
-        <!-- Axon -->
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-spring-boot-autoconfigure</artifactId>
-            <version>${project.version}</version>
+            <version>${axon.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
-            <version>${project.version}</version>
+            <version>${axon.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
-            <version>${project.version}</version>
+            <version>${axon.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-spring</artifactId>
-            <version>${project.version}</version>
+            <version>${axon.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -114,6 +117,10 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-docker-compose</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <exclusions>
                 <exclusion>
@@ -139,14 +146,19 @@
         </dependency>
         <!-- Database -->
         <dependency>
+            <groupId>com.mchange</groupId>
+            <artifactId>c3p0</artifactId>
+            <version>0.9.5.5</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.mchange</groupId>
-            <artifactId>c3p0</artifactId>
-            <version>0.9.5.5</version>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -187,6 +199,18 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <version>${spring-boot-3.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-test</artifactId>
+            <version>${axon.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

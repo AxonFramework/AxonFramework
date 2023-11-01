@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
@@ -153,16 +154,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
+                                      .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment))
                                       .build();
-
-        //noinspection resource
-        registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
-                .createLinkedHandlerSpan(
-                        () -> "PooledStreamingEventProcessor[" + builder.name() + "] ",
-                        unitOfWork.getMessage()
-                )
-                .runCallable(interceptorChain::proceed)
-        );
     }
 
     /**
@@ -180,7 +173,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
-     *     <li>The {@link SpanFactory} defaults to {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
+     *     <li>The {@link EventProcessorSpanFactory} defaults to a {@link org.axonframework.eventhandling.DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      *     <li>The {@code coordinatorExtendsClaims} defaults to a {@code false}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
@@ -218,7 +211,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
     @Override
     public CompletableFuture<Void> shutdownAsync() {
-        logger.info("Stopping processor [{}]", name);
+        logger.info("Stopping PooledStreamingEventProcessor [{}]", name);
         return coordinator.stop();
     }
 
@@ -253,6 +246,11 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         coordinator.releaseUntil(
                 segmentId, GenericEventMessage.clock.instant().plusMillis(unit.toMillis(releaseDuration))
         );
+    }
+
+    @Override
+    public CompletableFuture<Boolean> claimSegment(int segmentId) {
+        return coordinator.claimSegment(segmentId);
     }
 
     @Override
@@ -324,6 +322,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         transactionManager.executeInTransaction(() -> {
             // Find all segments and fetch all tokens
             int[] segments = tokenStore.fetchSegments(getName());
+            logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
             TrackingToken[] tokens = Arrays.stream(segments)
                                            .mapToObj(segment -> tokenStore.fetchToken(getName(), segment))
                                            .toArray(TrackingToken[]::new);
@@ -336,6 +335,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                              getName(),
                              segments[i]
                      ));
+            logger.info("Processor [{}] successfully reset tokens for segments [{}].", name, segments);
         });
     }
 
@@ -418,7 +418,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
-     *     <li>The {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
+     *     <li>The {@link EventProcessorSpanFactory} defaults to a {@link org.axonframework.eventhandling.DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      *     <li>The {@code coordinatorExtendsClaims} defaults to a {@code false}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
@@ -483,6 +483,13 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         @Override
+        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        @Deprecated
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;

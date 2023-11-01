@@ -24,6 +24,7 @@ import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
+import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Timestamp;
@@ -38,8 +39,10 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.saga.AssociationValue;
@@ -105,7 +108,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
         spanFactory = new TestSpanFactory();
         EventStore eventStore = spy(EmbeddedEventStore.builder()
                                                       .storageEngine(new InMemoryEventStorageEngine())
-                                                      .spanFactory(spanFactory)
+                                                      .spanFactory(DefaultEventBusSpanFactory
+                                                                           .builder()
+                                                                           .spanFactory(spanFactory).build())
                                                       .build());
         List<CorrelationDataProvider> correlationDataProviders = new ArrayList<>();
         correlationDataProviders.add(new MessageOriginProvider());
@@ -172,13 +177,16 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void deadlineScheduleAndExecutionIsTraced() {
-        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
+        String scheduledDeadlineId = configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
+                                                                                           DEADLINE_TIMEOUT));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
-        spanFactory.verifySpanCompleted(managerName + ".schedule(deadlineName)");
+        spanFactory.verifySpanCompleted("DeadlineManager.scheduleDeadline(deadlineName)");
+        spanFactory.verifySpanHasAttributeValue("DeadlineManager.scheduleDeadline(deadlineName)", "axon.deadlineId", scheduledDeadlineId);
         await().pollDelay(Duration.ofMillis(50)).atMost(Duration.ofMillis(100))
-               .untilAsserted(() -> spanFactory.verifySpanCompleted("DeadlineJob.execute"));
+               .untilAsserted(() -> spanFactory.verifySpanCompleted("DeadlineManager.executeDeadline(deadlineName)"));
+        spanFactory.verifySpanHasAttributeValue("DeadlineManager.executeDeadline(deadlineName)", "axon.deadlineId", scheduledDeadlineId);
     }
 
 
@@ -190,9 +198,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
         configuration.commandGateway().sendAndWait(new CancelDeadlineWithinScope(IDENTIFIER));
 
-        spanFactory.verifySpanCompleted(managerName + ".cancelAllWithinScope(deadlineName)");
-        spanFactory.verifySpanCompleted(managerName + ".cancelAllWithinScope(specificDeadlineName)");
-        spanFactory.verifySpanCompleted(managerName + ".cancelAllWithinScope(payloadlessDeadline)");
+        spanFactory.verifySpanCompleted("DeadlineManager.cancelAllWithinScope(deadlineName)");
+        spanFactory.verifySpanCompleted("DeadlineManager.cancelAllWithinScope(specificDeadlineName)");
+        spanFactory.verifySpanCompleted("DeadlineManager.cancelAllWithinScope(payloadlessDeadline)");
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
     }
@@ -239,9 +247,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(deadlineManager).cancelSchedule(any(), captor.capture());
-        spanFactory.verifySpanCompleted(String.format("%s.cancelSchedule(deadlineName,%s)",
-                                                      managerName,
-                                                      captor.getValue()));
+        spanFactory.verifySpanCompleted("DeadlineManager.cancelDeadline(deadlineName)");
     }
 
     @Test
@@ -253,7 +259,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
 
-        spanFactory.verifySpanCompleted(String.format("%s.cancelAll(deadlineName)", managerName));
+        spanFactory.verifySpanCompleted("DeadlineManager.cancelAllDeadlines(deadlineName)");
     }
 
 
@@ -367,9 +373,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         assertPublishedEvents(sagaStartingEvent, firstSchedule, secondSchedule, thirdSchedule, scheduleCancellation);
         assertSagaIs(LIVE);
-        spanFactory.verifySpanCompleted(managerName + ".cancelAllWithinScope(deadlineName)");
-        spanFactory.verifySpanCompleted(managerName + ".cancelAllWithinScope(specificDeadlineName)");
-        spanFactory.verifySpanCompleted(managerName + ".cancelAllWithinScope(payloadlessDeadline)");
+        spanFactory.verifySpanCompleted("DeadlineManager.cancelAllWithinScope(deadlineName)");
+        spanFactory.verifySpanCompleted("DeadlineManager.cancelAllWithinScope(specificDeadlineName)");
+        spanFactory.verifySpanCompleted("DeadlineManager.cancelAllWithinScope(payloadlessDeadline)");
     }
 
     @Test
@@ -388,9 +394,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(deadlineManager).cancelSchedule(any(), captor.capture());
-        spanFactory.verifySpanCompleted(String.format("%s.cancelSchedule(deadlineName,%s)",
-                                                      managerName,
-                                                      captor.getValue()));
+        spanFactory.verifySpanCompleted("DeadlineManager.cancelDeadline(deadlineName)");
     }
 
     @Test
@@ -401,7 +405,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
                               new CancelAllDeadlinesWithName(IDENTIFIER));
 
-        spanFactory.verifySpanCompleted(String.format("%s.cancelAll(deadlineName)", managerName));
+        spanFactory.verifySpanCompleted(("DeadlineManager.cancelAllDeadlines(deadlineName)"));
     }
 
     @Test
@@ -962,7 +966,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
         }
 
         @CommandHandler
-        public MyAggregate(CreateMyAggregateCommand command, DeadlineManager deadlineManager) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public String on(CreateMyAggregateCommand command, DeadlineManager deadlineManager) {
             apply(new MyAggregateCreatedEvent(command.id));
 
             String deadlineName = "deadlineName";
@@ -972,6 +977,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
             if (command.cancelBeforeDeadline) {
                 deadlineManager.cancelSchedule(deadlineName, deadlineId);
             }
+            return deadlineId;
         }
 
         @CommandHandler

@@ -27,6 +27,7 @@ import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.modelling.command.LockingRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.tracing.SpanFactory;
@@ -83,7 +84,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Instantiate a Builder to be able to create a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and the
-     * {@code identifierConverter} to {@link Function#identity()}. The {@link SpanFactory} is defaulted to a
+     * {@code identifierConverter} to {@link Function#identity()}. The {@link RepositorySpanFactory} is defaulted to a
+     * {@link org.axonframework.modelling.command.DefaultRepositorySpanFactory} backed by a
      * {@link org.axonframework.tracing.NoOpSpanFactory}. A goal of this Builder goal is to create an
      * {@link AggregateModel} specifying generic {@code T} as the aggregate type to be stored. All aggregates in this
      * repository must be {@code instanceOf} this aggregate type. To instantiate this AggregateModel, either an
@@ -199,7 +201,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Builder class to instantiate a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and the
-     * {@code identifierConverter} to {@link Function#identity()}. The {@link SpanFactory} is defaulted to a
+     * {@code identifierConverter} to {@link Function#identity()}. The {@link RepositorySpanFactory} is defaulted to a
+     * {@link org.axonframework.modelling.command.DefaultRepositorySpanFactory} backed by a
      * {@link org.axonframework.tracing.NoOpSpanFactory}.
      * <p>
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
@@ -269,7 +272,14 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         }
 
         @Override
+        @Deprecated
         public Builder<T> spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        public Builder<T> spanFactory(RepositorySpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }

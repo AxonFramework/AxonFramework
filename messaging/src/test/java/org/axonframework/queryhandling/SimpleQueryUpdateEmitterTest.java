@@ -44,8 +44,12 @@ import static org.hamcrest.CoreMatchers.equalTo;
 class SimpleQueryUpdateEmitterTest {
 
     private final TestSpanFactory spanFactory = new TestSpanFactory();
+    private final QueryUpdateEmitterSpanFactory queryBusSpanFactory = DefaultQueryUpdateEmitterSpanFactory
+            .builder()
+            .spanFactory(spanFactory)
+            .build();
     private final SimpleQueryUpdateEmitter testSubject = SimpleQueryUpdateEmitter.builder()
-                                                                                 .spanFactory(spanFactory)
+                                                                                 .spanFactory(queryBusSpanFactory)
                                                                                  .build();
 
     @Test
@@ -181,10 +185,10 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
 
-        spanFactory.verifySpanCompleted("SimpleQueryUpdateEmitter.emit");
-        spanFactory.verifySpanHasType("SimpleQueryUpdateEmitter.emit", TestSpanFactory.TestSpanType.INTERNAL);
-        spanFactory.verifySpanCompleted("SimpleQueryUpdateEmitter.doEmit");
-        spanFactory.verifySpanHasType("SimpleQueryUpdateEmitter.doEmit", TestSpanFactory.TestSpanType.DISPATCH);
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.scheduleQueryUpdateMessage");
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.scheduleQueryUpdateMessage", TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.emitQueryUpdateMessage");
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.emitQueryUpdateMessage", TestSpanFactory.TestSpanType.DISPATCH);
     }
 
     @Test

@@ -21,6 +21,8 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
 import org.axonframework.integrationtests.utils.TestSerializer;
@@ -48,7 +50,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                                          .scheduler(scheduler)
                                          .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
                                          .serializer(TestSerializer.xStreamSerializer())
-                                         .spanFactory(configuration.spanFactory())
+                                         .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
                                          .build();
             scheduler.start();
             return quartzDeadlineManager;

@@ -120,4 +120,14 @@ public class OpenTelemetrySpan implements Span {
         span.setStatus(StatusCode.ERROR, t.getMessage());
         return this;
     }
+
+    @Override
+    public Span addAttribute(String key, String value) {
+        if(this.span == null) {
+            spanBuilder.setAttribute(key, value);
+        } else {
+            span.setAttribute(key, value);
+        }
+        return this;
+    }
 }

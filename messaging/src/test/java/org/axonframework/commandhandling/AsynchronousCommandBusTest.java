@@ -44,6 +44,7 @@ class AsynchronousCommandBusTest {
     private ExecutorService executorService;
     private AsynchronousCommandBus testSubject;
     private TestSpanFactory spanFactory;
+    private CommandBusSpanFactory commandBusSpanFactory;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -53,11 +54,12 @@ class AsynchronousCommandBusTest {
         dispatchInterceptor = mock(MessageDispatchInterceptor.class);
         handlerInterceptor = mock(MessageHandlerInterceptor.class);
         spanFactory = new TestSpanFactory();
+        commandBusSpanFactory = DefaultCommandBusSpanFactory.builder().spanFactory(spanFactory).build();
         doAnswer(invocation -> {
             ((Runnable) invocation.getArguments()[0]).run();
             return null;
         }).when(executorService).execute(isA(Runnable.class));
-        testSubject = AsynchronousCommandBus.builder().executor(executorService).spanFactory(spanFactory).build();
+        testSubject = AsynchronousCommandBus.builder().executor(executorService).spanFactory(commandBusSpanFactory).build();
         testSubject.registerDispatchInterceptor(dispatchInterceptor);
         testSubject.registerHandlerInterceptor(handlerInterceptor);
         when(dispatchInterceptor.handle(isA(CommandMessage.class)))
@@ -75,10 +77,10 @@ class AsynchronousCommandBusTest {
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, mockCallback);
 
-        spanFactory.verifySpanCompleted("AsynchronousCommandBus.dispatch");
-        spanFactory.verifySpanPropagated("AsynchronousCommandBus.dispatch", command);
+        spanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
+        spanFactory.verifySpanPropagated("CommandBus.dispatchCommand", command);
 
-        spanFactory.verifySpanCompleted("AsynchronousCommandBus.handle");
+        spanFactory.verifySpanCompleted("CommandBus.handleCommand");
 
         InOrder inOrder = inOrder(mockCallback,
                                   executorService,
@@ -105,11 +107,11 @@ class AsynchronousCommandBusTest {
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, NoOpCallback.INSTANCE);
 
-        spanFactory.verifySpanCompleted("AsynchronousCommandBus.dispatch");
-        spanFactory.verifySpanPropagated("AsynchronousCommandBus.dispatch", command);
+        spanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
+        spanFactory.verifySpanPropagated("CommandBus.dispatchCommand", command);
 
 
-        spanFactory.verifySpanCompleted("AsynchronousCommandBus.handle");
+        spanFactory.verifySpanCompleted("CommandBus.handleCommand");
 
         InOrder inOrder = inOrder(executorService, commandHandler, dispatchInterceptor, handlerInterceptor);
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
@@ -139,7 +141,7 @@ class AsynchronousCommandBusTest {
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
-        spanFactory.verifySpanHasException("AsynchronousCommandBus.dispatch", NoHandlerForCommandException.class);
+        spanFactory.verifySpanHasException("CommandBus.dispatchCommand", NoHandlerForCommandException.class);
     }
 
     @Test

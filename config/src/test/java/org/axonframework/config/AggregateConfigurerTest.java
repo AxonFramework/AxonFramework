@@ -260,7 +260,7 @@ public class AggregateConfigurerTest {
         String testAggregateIdentifier = "123";
         commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
 
-        testSpanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+        testSpanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
 
         config.shutdown();
     }
@@ -309,7 +309,7 @@ public class AggregateConfigurerTest {
         CommandGateway commandGateway = config.commandGateway();
         String testAggregateIdentifier = "123";
         commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
-        testSpanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+        testSpanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
 
         config.shutdown();
     }
@@ -356,7 +356,7 @@ public class AggregateConfigurerTest {
         String testAggregateIdentifier = "123";
         commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
 
-        testSpanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+        testSpanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
 
         config.shutdown();
     }

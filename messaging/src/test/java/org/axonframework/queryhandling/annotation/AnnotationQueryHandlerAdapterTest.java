@@ -19,6 +19,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
+import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -54,6 +55,7 @@ class AnnotationQueryHandlerAdapterTest {
         testSubject = new AnnotationQueryHandlerAdapter<>(new MyQueryHandler());
     }
 
+    @SuppressWarnings("resource")
     @Test
     void subscribe() {
         when(queryBus.subscribe(any(), any(), any())).thenReturn(() -> true);
@@ -140,7 +142,7 @@ class AnnotationQueryHandlerAdapterTest {
         List<QueryMessage<?, ?>> withInterceptor = new ArrayList<>();
         List<QueryMessage<?, ?>> withoutInterceptor = new ArrayList<>();
         testSubject = new AnnotationQueryHandlerAdapter<>(
-                new MyInterceptingQueryHandler(withoutInterceptor, withInterceptor)
+                new MyInterceptingQueryHandler(withoutInterceptor, withInterceptor, new ArrayList<>())
         );
 
         QueryMessage<String, String> testQueryMessage =
@@ -162,6 +164,26 @@ class AnnotationQueryHandlerAdapterTest {
 
         assertTrue(testSubject.canHandle(testIntegerQuery));
         assertFalse(testSubject.canHandle(testLongQuery));
+    }
+
+    @Test
+    void exceptionHandlerAnnotatedMethodsAreSupportedForQueryHandlingComponents() throws Exception {
+        List<Exception> interceptedExceptions = new ArrayList<>();
+        testSubject = new AnnotationQueryHandlerAdapter<>(
+                new MyInterceptingQueryHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions)
+        );
+
+        QueryMessage<ArrayList<Object>, Object> testQueryMessage =
+                new GenericQueryMessage<>(new ArrayList<>(), ResponseTypes.instanceOf(Object.class));
+
+        Object result = testSubject.handle(testQueryMessage);
+
+        assertNull(result);
+        assertFalse(interceptedExceptions.isEmpty());
+        assertEquals(1, interceptedExceptions.size());
+        Exception interceptedException = interceptedExceptions.get(0);
+        assertTrue(interceptedException instanceof RuntimeException);
+        assertEquals("Some exception", interceptedException.getMessage());
     }
 
     @SuppressWarnings("unused")
@@ -195,6 +217,11 @@ class AnnotationQueryHandlerAdapterTest {
             }
             return value;
         }
+
+        @QueryHandler
+        public Object handle(ArrayList<Object> query) {
+            throw new RuntimeException("Some exception");
+        }
     }
 
     @SuppressWarnings("unused")
@@ -219,11 +246,14 @@ class AnnotationQueryHandlerAdapterTest {
 
         private final List<QueryMessage<?, ?>> interceptedWithoutInterceptorChain;
         private final List<QueryMessage<?, ?>> interceptedWithInterceptorChain;
+        private final List<Exception> interceptedExceptions;
 
         private MyInterceptingQueryHandler(List<QueryMessage<?, ?>> interceptedWithoutInterceptorChain,
-                                           List<QueryMessage<?, ?>> interceptedWithInterceptorChain) {
+                                           List<QueryMessage<?, ?>> interceptedWithInterceptorChain,
+                                           List<Exception> interceptedExceptions) {
             this.interceptedWithoutInterceptorChain = interceptedWithoutInterceptorChain;
             this.interceptedWithInterceptorChain = interceptedWithInterceptorChain;
+            this.interceptedExceptions = interceptedExceptions;
         }
 
         @MessageHandlerInterceptor
@@ -235,6 +265,11 @@ class AnnotationQueryHandlerAdapterTest {
         public Object interceptAny(QueryMessage<?, ?> query, InterceptorChain chain) throws Exception {
             interceptedWithInterceptorChain.add(query);
             return chain.proceed();
+        }
+
+        @ExceptionHandler(resultType = RuntimeException.class)
+        public void handle(RuntimeException exception) {
+            interceptedExceptions.add(exception);
         }
     }
 }

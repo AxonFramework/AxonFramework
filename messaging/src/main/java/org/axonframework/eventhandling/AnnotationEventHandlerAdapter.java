@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.replay.GenericResetContext;
 import org.axonframework.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -26,6 +27,7 @@ import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberCha
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
+import java.util.Collection;
 import java.util.Optional;
 
 /**
@@ -83,6 +85,10 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
                                                                handlerDefinition);
     }
 
+    private static boolean supportsReplay(MessageHandlingMember<? super Object> h) {
+        return h.attribute(HandlerAttributes.ALLOW_REPLAY).map(Boolean.TRUE::equals).orElse(Boolean.TRUE);
+    }
+
     @Override
     public Object handle(EventMessage<?> event) throws Exception {
         Optional<MessageHandlingMember<? super Object>> handler =
@@ -135,8 +141,18 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implNote This implementation will consider any class that has a single handler that accepts a replay, to support
+     * reset. If no handlers explicitly indicate whether replay is supported, the method returns {@code true}.
+     */
     @Override
     public boolean supportsReset() {
-        return true;
+        return inspector.getAllHandlers()
+                        .values()
+                        .stream()
+                        .flatMap(Collection::stream)
+                        .anyMatch(AnnotationEventHandlerAdapter::supportsReplay);
     }
 }

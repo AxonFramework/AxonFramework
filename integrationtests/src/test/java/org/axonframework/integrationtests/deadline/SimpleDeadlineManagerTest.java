@@ -19,6 +19,8 @@ package org.axonframework.integrationtests.deadline;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.junit.jupiter.api.*;
@@ -37,7 +39,7 @@ class SimpleDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     public DeadlineManager buildDeadlineManager(Configuration configuration) {
         return SimpleDeadlineManager.builder()
                                     .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
-                                    .spanFactory(configuration.spanFactory())
+                                    .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
                                     .build();
     }
 

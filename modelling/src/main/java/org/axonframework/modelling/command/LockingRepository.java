@@ -93,7 +93,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
 
         Supplier<Lock> lockSupplier;
         if (!Objects.isNull(aggregateIdentifier)) {
-            Lock lock = spanFactory.createInternalSpan(() -> "LockingRepository.obtainLock")
+            Lock lock = spanFactory.createObtainLockSpan(aggregateIdentifier)
                                    .runSupplier(() -> lockFactory.obtainLock(aggregateIdentifier));
             unitOfWork.onCleanup(u -> lock.release());
             lockSupplier = () -> lock;
@@ -131,7 +131,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      */
     @Override
     protected LockAwareAggregate<T, A> doLoad(String aggregateIdentifier, Long expectedVersion) {
-        Lock lock = spanFactory.createInternalSpan(() -> "LockingRepository.obtainLock")
+        Lock lock = spanFactory.createObtainLockSpan(aggregateIdentifier)
                                .runSupplier(() -> lockFactory.obtainLock(aggregateIdentifier));
         try {
             final A aggregate = doLoadWithLock(aggregateIdentifier, expectedVersion);
@@ -147,7 +147,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     @Override
     protected LockAwareAggregate<T, A> doLoadOrCreate(String aggregateIdentifier,
                                                       Callable<T> factoryMethod) throws Exception {
-        Lock lock = spanFactory.createInternalSpan(() -> "LockingRepository.obtainLock")
+        Lock lock = spanFactory.createObtainLockSpan(aggregateIdentifier)
                                .runSupplier(() -> lockFactory.obtainLock(aggregateIdentifier));
         try {
             final A aggregate = doLoadWithLock(aggregateIdentifier, null);
@@ -289,6 +289,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         }
 
         @Override
+        @Deprecated
         public Builder<T> spanFactory(SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;

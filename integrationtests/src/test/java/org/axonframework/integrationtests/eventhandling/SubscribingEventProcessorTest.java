@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
@@ -60,7 +61,9 @@ class SubscribingEventProcessorTest {
                                                .eventHandlerInvoker(eventHandlerInvoker)
                                                .messageSource(eventBus)
                                                .transactionManager(transactionManager)
-                                               .spanFactory(spanFactory)
+                                               .spanFactory(DefaultEventProcessorSpanFactory.builder()
+                                                                                            .spanFactory(spanFactory)
+                                                                                            .build())
                                                .build();
     }
 
@@ -90,7 +93,7 @@ class SubscribingEventProcessorTest {
     void subscribingEventProcessorIsTraced() throws Exception {
         doAnswer(invocation -> {
             EventMessage<?> message = invocation.getArgument(0, EventMessage.class);
-            spanFactory.verifySpanActive("SubscribingEventProcessor[test].process", message);
+            spanFactory.verifySpanActive("EventProcessor.process", message);
             return null;
         }).when(mockHandler).handle(any());
 
@@ -98,7 +101,7 @@ class SubscribingEventProcessorTest {
 
         List<DomainEventMessage<?>> events = EventTestUtils.createEvents(2);
         eventBus.publish(events);
-        events.forEach(e -> spanFactory.verifySpanCompleted("SubscribingEventProcessor[test].process", e));
+        events.forEach(e -> spanFactory.verifySpanCompleted("EventProcessor.process", e));
     }
 
     @Test

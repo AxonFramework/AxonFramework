@@ -46,11 +46,14 @@ class SimpleCommandBusTest {
 
     private TestSpanFactory spanFactory;
     private SimpleCommandBus testSubject;
+    private DefaultCommandBusSpanFactory commandBusSpanFactory;
 
     @BeforeEach
     void setUp() {
         this.spanFactory = new TestSpanFactory();
-        this.testSubject = SimpleCommandBus.builder().spanFactory(spanFactory).build();
+        this.commandBusSpanFactory = DefaultCommandBusSpanFactory.builder().spanFactory(spanFactory).build();
+        this.testSubject = SimpleCommandBus.builder()
+                                           .spanFactory(commandBusSpanFactory).build();
     }
 
     @AfterEach
@@ -79,11 +82,11 @@ class SimpleCommandBusTest {
         testSubject.subscribe(String.class.getName(), new MyStringCommandHandler());
         testSubject.dispatch(asCommandMessage("Say hi!"),
                              (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
-                                 spanFactory.verifySpanActive("SimpleCommandBus.dispatch");
-                                 spanFactory.verifySpanPropagated("SimpleCommandBus.dispatch", command);
-                                 spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+                                 spanFactory.verifySpanActive("CommandBus.dispatchCommand");
+                                 spanFactory.verifySpanPropagated("CommandBus.dispatchCommand", command);
+                                 spanFactory.verifySpanCompleted("CommandBus.handleCommand");
                              });
-        spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
+        spanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
     }
 
     @Test
@@ -94,11 +97,11 @@ class SimpleCommandBusTest {
         });
         testSubject.dispatch(asCommandMessage("Say hi!"),
                              (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
-                                 spanFactory.verifySpanPropagated("SimpleCommandBus.dispatch", command);
-                                 spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+                                 spanFactory.verifySpanPropagated("CommandBus.dispatchCommand", command);
+                                 spanFactory.verifySpanCompleted("CommandBus.handleCommand");
                              });
-        spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
-        spanFactory.verifySpanHasException("SimpleCommandBus.dispatch", RuntimeException.class);
+        spanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
+        spanFactory.verifySpanHasException("CommandBus.dispatchCommand", RuntimeException.class);
     }
 
     @Test

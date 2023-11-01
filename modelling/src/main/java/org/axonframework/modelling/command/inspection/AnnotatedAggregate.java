@@ -68,7 +68,7 @@ import static java.lang.String.format;
  */
 public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggregate<T>, ApplyMore {
 
-    private final AggregateModel<T> inspector;
+    protected final AggregateModel<T> inspector;
     private final RepositoryProvider repositoryProvider;
     private final Queue<Runnable> delayedTasks = new LinkedList<>();
     private final EventBus eventBus;

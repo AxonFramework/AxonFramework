@@ -152,6 +152,12 @@ public class LoggingSpanFactory implements SpanFactory {
             logger.info("[{}][{}] Span recorded exception", identifier, name, t);
             return this;
         }
+
+        @Override
+        public Span addAttribute(String key, String value) {
+            return this;
+        }
+
         private class Slf4jSpanScope implements SpanScope {
             @Override
             public void close() {

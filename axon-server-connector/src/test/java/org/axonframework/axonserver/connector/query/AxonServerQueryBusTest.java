@@ -43,6 +43,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
+import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
@@ -131,7 +132,11 @@ class AxonServerQueryBusTest {
                                         .messageSerializer(serializer)
                                         .genericSerializer(serializer)
                                         .targetContextResolver(targetContextResolver)
-                                        .spanFactory(spanFactory)
+                                        .spanFactory(
+                                                DefaultQueryBusSpanFactory.builder()
+                                                                          .spanFactory(spanFactory)
+                                                                          .build()
+                                        )
                                         .build();
 
         AxonServerConnection mockConnection = mock(AxonServerConnection.class);
@@ -191,8 +196,8 @@ class AxonServerQueryBusTest {
         assertEquals("test", testSubject.query(testQuery).get().getPayload());
 
         verify(targetContextResolver).resolveContext(testQuery);
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
-        spanFactory.verifySpanPropagated("AxonServerQueryBus.query", testQuery);
+        spanFactory.verifySpanCompleted("QueryBus.queryDistributed");
+        spanFactory.verifySpanPropagated("QueryBus.queryDistributed", testQuery);
     }
 
     @Test
@@ -213,8 +218,8 @@ class AxonServerQueryBusTest {
         }
 
         verify(targetContextResolver).resolveContext(testQuery);
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
-        spanFactory.verifySpanHasException("AxonServerQueryBus.query", AxonServerQueryDispatchException.class);
+        spanFactory.verifySpanCompleted("QueryBus.queryDistributed");
+        spanFactory.verifySpanHasException("QueryBus.queryDistributed", AxonServerQueryDispatchException.class);
     }
 
     @Test
@@ -237,8 +242,8 @@ class AxonServerQueryBusTest {
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), remoteQueryHandlingException.getErrorCode());
 
         verify(targetContextResolver).resolveContext(testQuery);
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
-        spanFactory.verifySpanHasException("AxonServerQueryBus.query", QueryExecutionException.class);
+        spanFactory.verifySpanCompleted("QueryBus.queryDistributed");
+        spanFactory.verifySpanHasException("QueryBus.queryDistributed", QueryExecutionException.class);
     }
 
     @Test
@@ -265,8 +270,8 @@ class AxonServerQueryBusTest {
 
         verify(targetContextResolver).resolveContext(testQuery);
         await().untilAsserted(() -> {
-            spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
-            spanFactory.verifySpanHasException("AxonServerQueryBus.query", QueryExecutionException.class);
+            spanFactory.verifySpanCompleted("QueryBus.queryDistributed");
+            spanFactory.verifySpanHasException("QueryBus.queryDistributed", QueryExecutionException.class);
         });
     }
 
@@ -319,8 +324,8 @@ class AxonServerQueryBusTest {
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && -1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
         await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> {
-            spanFactory.verifySpanCompleted("AxonServerQueryBus.scatterGather", testQuery);
-            spanFactory.verifySpanPropagated("AxonServerQueryBus.scatterGather", testQuery);
+            spanFactory.verifySpanCompleted("QueryBus.scatterGatherQueryDistributed", testQuery);
+            spanFactory.verifySpanPropagated("QueryBus.scatterGatherQueryDistributed", testQuery);
         });
     }
 
@@ -348,8 +353,8 @@ class AxonServerQueryBusTest {
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
         await().atMost(Duration.ofSeconds(3))
                .untilAsserted(() -> {
-                   spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery", testQuery);
-                   spanFactory.verifySpanPropagated("AxonServerQueryBus.streamingQuery", testQuery);
+                   spanFactory.verifySpanCompleted("QueryBus.streamingQueryDistributed", testQuery);
+                   spanFactory.verifySpanPropagated("QueryBus.streamingQueryDistributed", testQuery);
                });
     }
 
@@ -371,8 +376,8 @@ class AxonServerQueryBusTest {
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
         await().atMost(Duration.ofSeconds(3))
                .untilAsserted(() -> {
-                   spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery");
-                   spanFactory.verifySpanHasException("AxonServerQueryBus.streamingQuery", RuntimeException.class);
+                   spanFactory.verifySpanCompleted("QueryBus.streamingQueryDistributed");
+                   spanFactory.verifySpanHasException("QueryBus.streamingQueryDistributed", RuntimeException.class);
                });
     }
 

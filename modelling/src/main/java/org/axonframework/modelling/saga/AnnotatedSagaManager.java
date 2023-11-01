@@ -50,10 +50,10 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * Instantiate a {@link AnnotatedSagaManager} based on the fields contained in the {@link Builder}.
      * <p>
      * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
-     * {@link SagaInstantiationException} if it fails, the {@link SpanFactory} defaults to a
-     * {@link org.axonframework.tracing.NoOpSpanFactory}, and the {@link ListenerInvocationErrorHandler} is defaulted to
-     * a {@link LoggingErrorHandler}. The {@link SagaRepository} and {@code sagaType} are <b>hard requirements</b> and
-     * as such should be provided.
+     * {@link SagaInstantiationException} if it fails, the {@link SagaManagerSpanFactory} defaults to a
+     * {@link DefaultSagaManagerSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}, and the
+     * {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler}. The {@link SagaRepository}
+     * and {@code sagaType} are <b>hard requirements</b> and as such should be provided.
      * <p>
      * Will assert that the {@link SagaRepository}, {@code sagaType}, {@code sagaFactory} and
      * {@link ListenerInvocationErrorHandler} are not {@code null}, and will throw an
@@ -74,8 +74,8 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * <p>
      * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
      * {@link SagaInstantiationException} if it fails, the {@link ListenerInvocationErrorHandler} is defaulted to a
-     * {@link LoggingErrorHandler} and the {@link SpanFactory} is defaulted to a
-     * {@link org.axonframework.tracing.NoOpSpanFactory}.
+     * {@link LoggingErrorHandler} and the {@link SagaManagerSpanFactory} is defaulted to a
+     * {@link DefaultSagaManagerSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.
      * <p>
      * This Builder either allows directly setting a {@link SagaModel} of generic type {@code T}, or it will generate
      * one based of the required {@code sagaType} field of type {@link Class}. Thus, either the SagaModel <b>or</b> the
@@ -170,7 +170,14 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
         }
 
         @Override
+        @Deprecated
         public Builder<T> spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
+        @Override
+        public Builder<T> spanFactory(SagaManagerSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }

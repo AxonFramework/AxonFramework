@@ -30,10 +30,12 @@ import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.TestTargetContextResolver;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
+import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
@@ -89,10 +91,12 @@ class AxonServerCommandBusTest {
     private AxonServerConnection mockConnection;
     private CommandChannel mockCommandChannel;
     private TestSpanFactory spanFactory;
+    private CommandBusSpanFactory commandBusSpanFactory;
 
     @BeforeEach
     void setup() throws Exception {
         spanFactory = new TestSpanFactory();
+        commandBusSpanFactory = DefaultCommandBusSpanFactory.builder().spanFactory(spanFactory).build();
         dummyMessagePlatformServer = new DummyMessagePlatformServer();
         dummyMessagePlatformServer.start();
 
@@ -100,7 +104,7 @@ class AxonServerCommandBusTest {
         configuration.setServers(dummyMessagePlatformServer.getAddress());
         configuration.setClientId("JUnit");
         configuration.setComponentName("JUnit");
-        configuration.setInitialNrOfPermits(100);
+        configuration.setPermits(100);
         configuration.setNewPermitsThreshold(10);
         configuration.setNrOfNewPermits(1000);
         configuration.setContext(BOUNDED_CONTEXT);
@@ -122,7 +126,7 @@ class AxonServerCommandBusTest {
                                           .routingStrategy(command -> "RoutingKey")
                                           .targetContextResolver(targetContextResolver)
                                           .loadFactorProvider(command -> 36)
-                                          .spanFactory(spanFactory)
+                                          .spanFactory(commandBusSpanFactory)
                                           .build();
     }
 
@@ -141,7 +145,7 @@ class AxonServerCommandBusTest {
         AtomicReference<Throwable> failure = new AtomicReference<>();
 
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
-            spanFactory.verifySpanActive("AxonServerCommandBus.dispatch", commandMessage);
+            spanFactory.verifySpanActive("CommandBus.dispatchDistributedCommand", commandMessage);
             if (result.isExceptional()) {
                 failure.set(result.exceptionResult());
             } else {
@@ -158,11 +162,11 @@ class AxonServerCommandBusTest {
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
         await().atMost(Duration.ofSeconds(3l))
                 .untilAsserted(
-                        () -> spanFactory.verifySpanCompleted("AxonServerCommandBus.dispatch")
+                        () -> spanFactory.verifySpanCompleted("CommandBus.dispatchDistributedCommand")
                 );
         await().atMost(Duration.ofSeconds(3l))
                 .untilAsserted(
-                        () -> spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage)
+                        () -> spanFactory.verifySpanPropagated("CommandBus.dispatchDistributedCommand", commandMessage)
                 );
     }
 
@@ -284,7 +288,7 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
-        spanFactory.verifySpanHasException("AxonServerCommandBus.dispatch", RuntimeException.class);
+        spanFactory.verifySpanHasException("CommandBus.dispatchDistributedCommand", RuntimeException.class);
     }
 
     @Test
