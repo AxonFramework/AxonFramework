@@ -17,14 +17,10 @@
 package org.axonframework.serialization;
 
 import com.fasterxml.jackson.annotation.JsonCreator.Mode;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
-import com.fasterxml.jackson.dataformat.cbor.CBORGenerator;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -32,11 +28,8 @@ import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.beans.ConstructorProperties;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.EnumSet;
-
-import static com.fasterxml.jackson.dataformat.cbor.CBORGenerator.Feature.WRITE_TYPE_HEADER;
 
 /**
  * Enumeration of serializers for testing purposes.
