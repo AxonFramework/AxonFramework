@@ -37,8 +37,6 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  */
 @Entity
 @IdClass(TokenEntry.PK.class)
-@javax.persistence.Entity
-@javax.persistence.IdClass(TokenEntry.PK.class)
 public class TokenEntry {
 
     /**
@@ -48,26 +46,19 @@ public class TokenEntry {
 
     @Lob
     @Column(length = 10000)
-    @javax.persistence.Lob
-    @javax.persistence.Column(length = 10000)
     private byte[] token;
     @Basic
-    @javax.persistence.Basic
     private String tokenType;
 
     @Basic(optional = false)
-    @javax.persistence.Basic(optional = false)
     private String timestamp;
 
     @Basic
-    @javax.persistence.Basic
     private String owner;
 
     @Id
-    @javax.persistence.Id
     private String processorName;
     @Id
-    @javax.persistence.Id
     private int segment;
 
     /**

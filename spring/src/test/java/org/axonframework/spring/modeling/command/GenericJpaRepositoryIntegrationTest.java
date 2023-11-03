@@ -16,15 +16,18 @@
 
 package org.axonframework.spring.modeling.command;
 
-import org.axonframework.common.legacyjpa.EntityManagerProvider;
-import org.axonframework.common.legacyjpa.SimpleEntityManagerProvider;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.legacyjpa.GenericJpaRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,9 +52,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,13 +78,13 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     @BeforeEach
     void setUp() {
         SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
-                                                                                 .eventHandlers(this)
-                                                                                 .build();
+                .eventHandlers(this)
+                .build();
         eventProcessor = SubscribingEventProcessor.builder()
-                                                  .name("test")
-                                                  .eventHandlerInvoker(eventHandlerInvoker)
-                                                  .messageSource(eventBus)
-                                                  .build();
+                .name("test")
+                .eventHandlerInvoker(eventHandlerInvoker)
+                .messageSource(eventBus)
+                .build();
         eventProcessor.start();
     }
 
@@ -200,7 +200,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
                 DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactoryBean.setPersistenceUnitName("AxonSpringTest");
+            entityManagerFactoryBean.setPersistenceUnitName("sb3integrationtest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
             jpaVendorAdapter.setDatabasePlatform(dialect);
@@ -240,9 +240,9 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         public Repository<JpaAggregate> simpleRepository(EntityManagerProvider entityManagerProvider,
                                                          EventBus eventBus) {
             return GenericJpaRepository.builder(JpaAggregate.class)
-                                       .entityManagerProvider(entityManagerProvider)
-                                       .eventBus(eventBus)
-                                       .build();
+                    .entityManagerProvider(entityManagerProvider)
+                    .eventBus(eventBus)
+                    .build();
         }
     }
 }

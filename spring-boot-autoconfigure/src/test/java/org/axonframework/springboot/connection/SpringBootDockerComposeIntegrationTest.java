@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.springboot.service.connection;
+package org.axonframework.springboot.connection;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.springboot.service.connection.AxonServerConnectionDetails;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -49,8 +50,8 @@ class SpringBootDockerComposeIntegrationTest {
         assertTrue(application.isRunning());
         AxonServerConfiguration config = application.getBean(AxonServerConfiguration.class);
 
-        assertNotNull(application.getBean(AxonServerConnectionDetails.class),
-                      "Expected an AxonServerConnectionDetails bean pointing to Axon Server in Docker");
+        Assertions.assertNotNull(application.getBean(AxonServerConnectionDetails.class),
+                                 "Expected an AxonServerConnectionDetails bean pointing to Axon Server in Docker");
 
         assertNotNull(config);
         assertNotEquals("localhost:8124", config.getServers());

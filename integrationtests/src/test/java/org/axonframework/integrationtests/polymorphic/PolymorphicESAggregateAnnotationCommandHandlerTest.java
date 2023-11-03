@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.polymorphic;
 
+import jakarta.persistence.EntityManager;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -26,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
 
 /**
  * Tests for ES aggregate polymorphism.

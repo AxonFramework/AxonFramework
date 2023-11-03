@@ -207,8 +207,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
     private class AnnotatedAggregateModel<T> implements AggregateModel<T> {
 
-        private static final String JAKARTA_PERSISTENCE_ID = "jakarta.persistence.Id";
-        private static final String JAVAX_PERSISTENCE_ID = "javax.persistence.Id";
+        private static final String PERSISTENCE_ID = "jakarta.persistence.Id";
 
         private final Class<? extends T> inspectedType;
         private final Map<Class<?>, List<ChildEntity<T>>> children;
@@ -371,10 +370,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 for (Field field : ReflectionUtils.fieldsOf(handledType, NOT_RECURSIVE)) {
                     createChildDefinitions(childEntityDefinitions, handledType, field);
                     findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> entityIdMembers.add(field));
-                    findAnnotationAttributes(field, JAKARTA_PERSISTENCE_ID).ifPresent(
-                            attributes -> persistenceIdMembers.add(field)
-                    );
-                    findAnnotationAttributes(field, JAVAX_PERSISTENCE_ID).ifPresent(
+                    findAnnotationAttributes(field, PERSISTENCE_ID).ifPresent(
                             attributes -> persistenceIdMembers.add(field)
                     );
                     findAnnotationAttributes(field, AggregateVersion.class).ifPresent(
@@ -388,12 +384,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                         assertValidValueProvidingMethod(method, EntityId.class.getSimpleName());
                         entityIdMembers.add(method);
                     });
-                    findAnnotationAttributes(method, JAKARTA_PERSISTENCE_ID).ifPresent(attributes -> {
-                        assertValidValueProvidingMethod(method, JAKARTA_PERSISTENCE_ID);
-                        persistenceIdMembers.add(method);
-                    });
-                    findAnnotationAttributes(method, JAVAX_PERSISTENCE_ID).ifPresent(attributes -> {
-                        assertValidValueProvidingMethod(method, JAVAX_PERSISTENCE_ID);
+                    findAnnotationAttributes(method, PERSISTENCE_ID).ifPresent(attributes -> {
+                        assertValidValueProvidingMethod(method, PERSISTENCE_ID);
                         persistenceIdMembers.add(method);
                     });
                     findAnnotationAttributes(method, AggregateVersion.class).ifPresent(attributes -> {

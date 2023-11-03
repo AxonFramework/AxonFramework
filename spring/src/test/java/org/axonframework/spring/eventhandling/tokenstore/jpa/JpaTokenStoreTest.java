@@ -16,12 +16,14 @@
 
 package org.axonframework.spring.eventhandling.tokenstore.jpa;
 
-import org.axonframework.common.legacyjpa.EntityManagerProvider;
-import org.axonframework.common.legacyjpa.SimpleEntityManagerProvider;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.TokenEntry;
-import org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore;
 import org.axonframework.serialization.TestSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
@@ -43,8 +45,6 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.*;
@@ -123,7 +123,7 @@ class JpaTokenStoreTest {
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.hbm2ddl.auto", "create-drop"));
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.show_sql", "false"));
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.connection.url",
-                                                                      "jdbc:hsqldb:mem:testdb"));
+                    "jdbc:hsqldb:mem:testdb"));
             return sessionFactory;
         }
 
@@ -135,20 +135,20 @@ class JpaTokenStoreTest {
         @Bean
         public JpaTokenStore jpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return JpaTokenStore.builder()
-                                .entityManagerProvider(entityManagerProvider)
-                                .serializer(TestSerializer.XSTREAM.getSerializer())
-                                .nodeId("local")
-                                .build();
+                    .entityManagerProvider(entityManagerProvider)
+                    .serializer(TestSerializer.XSTREAM.getSerializer())
+                    .nodeId("local")
+                    .build();
         }
 
         @Bean
         public JpaTokenStore stealingJpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return JpaTokenStore.builder()
-                                .entityManagerProvider(entityManagerProvider)
-                                .serializer(TestSerializer.XSTREAM.getSerializer())
-                                .claimTimeout(Duration.ofSeconds(-1))
-                                .nodeId("stealing")
-                                .build();
+                    .entityManagerProvider(entityManagerProvider)
+                    .serializer(TestSerializer.XSTREAM.getSerializer())
+                    .claimTimeout(Duration.ofSeconds(-1))
+                    .nodeId("stealing")
+                    .build();
         }
 
         @Bean

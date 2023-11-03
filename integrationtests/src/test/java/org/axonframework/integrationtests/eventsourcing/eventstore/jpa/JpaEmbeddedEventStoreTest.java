@@ -16,12 +16,15 @@
 
 package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 
-import org.axonframework.common.legacyjpa.EntityManagerProvider;
-import org.axonframework.common.legacyjpa.SimpleEntityManagerProvider;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStoreTest;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.legacyjpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -45,9 +48,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 /**
@@ -69,8 +69,8 @@ class JpaEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
     @BeforeEach
     public void clearEventStore() {
         transactionManager.executeInTransaction(() -> entityManagerProvider.getEntityManager()
-                                                                           .createQuery("DELETE FROM DomainEventEntry e")
-                                                                           .executeUpdate());
+                .createQuery("DELETE FROM DomainEventEntry e")
+                .executeUpdate());
     }
 
     @Override
@@ -83,11 +83,11 @@ class JpaEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
     public EventStorageEngine createStorageEngine() {
         Serializer testSerializer = TestSerializer.JACKSON.getSerializer();
         return JpaEventStorageEngine.builder()
-                                    .eventSerializer(testSerializer)
-                                    .snapshotSerializer(testSerializer)
-                                    .entityManagerProvider(entityManagerProvider)
-                                    .transactionManager(transactionManager)
-                                    .build();
+                .eventSerializer(testSerializer)
+                .snapshotSerializer(testSerializer)
+                .entityManagerProvider(entityManagerProvider)
+                .transactionManager(transactionManager)
+                .build();
     }
 
     @Configuration
@@ -124,7 +124,7 @@ class JpaEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
         ) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
+            entityManagerFactoryBean.setPersistenceUnitName("sb3eventStore");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
             jpaVendorAdapter.setDatabasePlatform(dialect);

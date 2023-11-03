@@ -115,11 +115,6 @@
             <version>${jakarta.persistence.with11.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>javax.persistence</groupId>
-            <artifactId>javax.persistence-api</artifactId>
-            <scope>test</scope>
-        </dependency>
         <!-- Validation -->
         <dependency>
             <groupId>jakarta.el</groupId>

@@ -16,13 +16,12 @@
 
 package org.axonframework.config;
 
+import jakarta.inject.Inject;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.jupiter.api.*;
-
-import javax.inject.Inject;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,8 +33,8 @@ public class ConfigurationResourceInjectorTest {
     @BeforeEach
     void setUp() {
         configuration = DefaultConfigurer.defaultConfiguration()
-                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                .buildConfiguration();
+                                         .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                         .buildConfiguration();
         testSubject = new ConfigurationResourceInjector(configuration);
     }
 

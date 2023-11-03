@@ -31,23 +31,17 @@ import org.axonframework.serialization.Serializer;
  * @since 0.7
  */
 @Entity
-@javax.persistence.Entity
 public class SagaEntry<T> {
 
     @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
     @Id
-    @javax.persistence.Id
     protected String sagaId; // NOSONAR
     @Basic
-    @javax.persistence.Basic
     protected String sagaType;
     @Basic
-    @javax.persistence.Basic
     protected String revision;
     @Lob
     @Column(length = 10000)
-    @javax.persistence.Lob
-    @javax.persistence.Column(length = 10000)
     protected byte[] serializedSaga;
 
     /**

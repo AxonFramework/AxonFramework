@@ -49,7 +49,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Named;
 import javax.sql.DataSource;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -65,15 +64,15 @@ class JdbcTokenStoreTest {
     private DataSource dataSource;
 
     @Autowired
-    @Named("tokenStore")
+    @jakarta.inject.Named("tokenStore")
     private JdbcTokenStore tokenStore;
 
     @Autowired
-    @Named("concurrentTokenStore")
+    @jakarta.inject.Named("concurrentTokenStore")
     private JdbcTokenStore concurrentTokenStore;
 
     @Autowired
-    @Named("stealingTokenStore")
+    @jakarta.inject.Named("stealingTokenStore")
     private JdbcTokenStore stealingTokenStore;
 
     @Autowired

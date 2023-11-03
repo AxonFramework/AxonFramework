@@ -44,36 +44,24 @@ import java.util.Objects;
         @Index(columnList = "processingGroup,sequenceIdentifier"),
         @Index(columnList = "processingGroup,sequenceIdentifier,sequenceIndex", unique = true),
 })
-@javax.persistence.Entity
-@javax.persistence.Table(indexes = {
-        @javax.persistence.Index(columnList = "processingGroup"),
-        @javax.persistence.Index(columnList = "processingGroup,sequenceIdentifier"),
-        @javax.persistence.Index(columnList = "processingGroup,sequenceIdentifier,sequenceIndex", unique = true),
-})
 public class DeadLetterEntry {
 
     @Id
-    @javax.persistence.Id
     private String deadLetterId;
 
     @Basic(optional = false)
-    @javax.persistence.Basic(optional = false)
     private String processingGroup;
 
     @Basic(optional = false)
-    @javax.persistence.Basic(optional = false)
     private String sequenceIdentifier;
 
     @Basic(optional = false)
-    @javax.persistence.Basic(optional = false)
     private long sequenceIndex;
 
     @Embedded
-    @javax.persistence.Embedded
     private DeadLetterEventEntry message;
 
     @Basic(optional = false)
-    @javax.persistence.Basic(optional = false)
     private Instant enqueuedAt;
 
     private Instant lastTouched;
@@ -82,15 +70,11 @@ public class DeadLetterEntry {
 
     private String causeType;
     @Column(length = 1023)
-    @javax.persistence.Column(length = 1023)
     private String causeMessage;
 
     @Basic
     @Lob
     @Column(length = 10000)
-    @javax.persistence.Basic
-    @javax.persistence.Lob
-    @javax.persistence.Column(length = 10000)
     private byte[] diagnostics;
 
     /**

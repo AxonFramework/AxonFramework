@@ -282,16 +282,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void findJavaxPersistenceIdentifier() {
-        AggregateModel<JakartaPersistenceAnnotatedHandlers> inspector =
-                AnnotatedAggregateMetaModelFactory.inspectAggregate(JakartaPersistenceAnnotatedHandlers.class);
-
-        assertEquals("id", inspector.getIdentifier(new JakartaPersistenceAnnotatedHandlers()));
-        assertEquals("id", inspector.routingKey());
-    }
-
-    @Test
-    void findJakartaPersistenceGetterIdentifier() {
+    void findPersistenceGetterIdentifier() {
         AggregateModel<JakartaPersistenceGetterAnnotatedHandlers> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(JakartaPersistenceGetterAnnotatedHandlers.class);
 
@@ -449,7 +440,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
         @AggregateIdentifier
         private String id = "id";
         @Id
-        private String javaxPersistenceId = "javaxPersistenceId";
+        private String persistenceId = "javaxPersistenceId";
 
         @CommandHandler
         public boolean testInt(Integer test) {

@@ -16,16 +16,15 @@
 
 package org.axonframework.spring.modeling.command;
 
+import jakarta.persistence.Basic;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Version;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.eventsourcing.utils.StubDomainEvent;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.AggregateVersion;
-import org.axonframework.spring.utils.StubDomainEvent;
-
-import javax.persistence.Basic;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Version;
 
 @Entity
 public class JpaAggregate {

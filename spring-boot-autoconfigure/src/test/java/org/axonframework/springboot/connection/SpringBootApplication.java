@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.springboot.service.connection;
+package org.axonframework.springboot.connection;
 
 
 import org.springframework.boot.SpringApplication;

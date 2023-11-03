@@ -16,14 +16,13 @@
 
 package org.axonframework.modelling.saga.repository.jpa;
 
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.MappedSuperclass;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.Lob;
-import javax.persistence.MappedSuperclass;
 
 /**
  * Java Persistence Entity allowing sagas to be stored in a relational database. The serialized type of the

@@ -16,18 +16,18 @@
 
 package org.axonframework.integrationtests.polymorphic;
 
+import jakarta.persistence.EntityManager;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.modelling.command.legacyjpa.GenericJpaRepository;
 
-import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nonnull;
 
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests JPA aggregate polymorphism.

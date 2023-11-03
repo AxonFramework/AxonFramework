@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot.service.connection;
 
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.springframework.boot.autoconfigure.service.connection.ConnectionDetails;
 
 /**
