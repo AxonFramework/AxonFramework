@@ -55,7 +55,7 @@ class AxonServerContainerUtils {
      *                     {@code hostname} and {@code port}.
      */
     static void initCluster(String hostname, int port, boolean shouldBeReused) throws IOException {
-        if (shouldBeReused && initialized(hostname, port)){
+        if (shouldBeReused && initialized(hostname, port)) {
             return;
         }
         final URL url = new URL(String.format("http://%s:%d/v1/context/init", hostname, port));
