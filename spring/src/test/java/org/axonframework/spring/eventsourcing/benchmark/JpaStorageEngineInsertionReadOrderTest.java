@@ -244,7 +244,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         @Bean
         public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactory = new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactory.setPersistenceUnitName("sb3eventStore");
+            entityManagerFactory.setPersistenceUnitName("AxonSpringTest");
 
             HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
             vendorAdapter.setDatabasePlatform("org.hibernate.dialect.HSQLDialect");
