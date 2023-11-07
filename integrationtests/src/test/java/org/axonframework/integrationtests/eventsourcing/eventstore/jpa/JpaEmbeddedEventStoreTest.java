@@ -124,7 +124,7 @@ class JpaEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
         ) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactoryBean.setPersistenceUnitName("sb3eventStore");
+            entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
             jpaVendorAdapter.setDatabasePlatform(dialect);
