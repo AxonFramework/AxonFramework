@@ -79,7 +79,7 @@
         <maven-javadoc.version>3.5.0</maven-javadoc.version>
         <maven-release.version>3.0.1</maven-release.version>
         <maven-source.version>3.3.0</maven-source.version>
-        <maven-surefire.version>3.2.1</maven-surefire.version>
+        <maven-surefire.version>3.2.2</maven-surefire.version>
         <maven-resources.version>3.3.1</maven-resources.version>
         <!--
         Deactivate dokka by default, and make the build faster for all projects.
