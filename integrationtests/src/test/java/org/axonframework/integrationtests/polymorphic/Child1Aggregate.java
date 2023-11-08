@@ -16,12 +16,11 @@
 
 package org.axonframework.integrationtests.polymorphic;
 
+import jakarta.persistence.Entity;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
-
-import javax.persistence.Entity;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
