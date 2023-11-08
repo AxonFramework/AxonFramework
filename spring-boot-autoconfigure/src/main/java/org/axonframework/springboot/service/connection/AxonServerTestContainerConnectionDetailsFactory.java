@@ -51,8 +51,7 @@ public class AxonServerTestContainerConnectionDetailsFactory extends ContainerCo
 
         @Override
         public String routingServers() {
-            // TODO
-            return "getContainer().getAxonServerAddress() +  + getContainer().getGrpcPort()";
+            return getContainer().getAxonServerAddress() + ":" + getContainer().getGrpcPort();
         }
     }
 }
