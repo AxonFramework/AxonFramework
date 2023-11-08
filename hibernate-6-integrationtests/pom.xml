@@ -106,7 +106,7 @@
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>${hsqldb.with11.version}</version>
+            <version>${hsqldb.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

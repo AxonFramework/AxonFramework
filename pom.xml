@@ -79,10 +79,8 @@
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <!-- Database -->
         <c3p0.version>0.9.1.2</c3p0.version>
-        <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
-        <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
-        <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.3.1.Final</hibernate-core.6.version>
+        <hsqldb.version>2.7.2</hsqldb.version>
+        <hibernate-core.version>6.3.1.Final</hibernate-core.version>
         <mysql-connector-java.version>8.0.33</mysql-connector-java.version>
         <postgresql.version>42.6.0</postgresql.version>
         <!-- Jakarta -->
@@ -129,8 +127,7 @@
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.1</testcontainers.version>
         <!-- Validation -->
-        <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
-        <hibernate-validator.8.version>8.0.1.Final</hibernate-validator.8.version>
+        <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
         <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>5.1.9</felix.maven-bundle-plugin.version>
@@ -250,18 +247,8 @@
                 <version>${c3p0.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-core</artifactId>
-                <version>${hibernate-core.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>${hibernate-core.6.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-core-jakarta</artifactId>
                 <version>${hibernate-core.version}</version>
             </dependency>
             <dependency>
@@ -477,14 +464,9 @@
             </dependency>
             <!-- Validation -->
             <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-validator</artifactId>
-                <version>${hibernate-validator.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>${hibernate-validator.8.version}</version>
+                <version>${hibernate-validator.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
