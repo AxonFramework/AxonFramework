@@ -112,7 +112,7 @@
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
-            <version>${jakarta.persistence.with11.version}</version>
+            <version>${jakarta.persistence.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Validation -->
