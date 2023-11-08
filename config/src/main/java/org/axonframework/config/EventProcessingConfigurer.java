@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -824,6 +824,7 @@ public interface EventProcessingConfigurer {
         }
     }
 
+    // tag::RegisterDeadLetterQueueProvider[]
     /**
      * Register the given {@code deadLetterProvider} as a default to build a {@link SequencedDeadLetterQueue} for
      * {@link EventProcessor}s created in this configuration.
@@ -840,4 +841,5 @@ public interface EventProcessingConfigurer {
             Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider) {
         return this;
     }
+    // end::RegisterDeadLetterQueueProvider[]
 }
