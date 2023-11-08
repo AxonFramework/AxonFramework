@@ -17,6 +17,7 @@
 package org.axonframework.springboot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.commandhandling.CommandBus;
@@ -29,7 +30,6 @@ import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
@@ -80,8 +80,8 @@ class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         assertNotNull(applicationContext.getBean("eventSerializer", Serializer.class));
         org.axonframework.config.Configuration axonConfiguration =
                 applicationContext.getBean(org.axonframework.config.Configuration.class);
-        assertSame(axonConfiguration.serializer(), axonConfiguration.eventSerializer());
-        assertNotSame(axonConfiguration.serializer(), axonConfiguration.messageSerializer());
+        assertNotSame(axonConfiguration.serializer(), axonConfiguration.eventSerializer());
+        assertSame(axonConfiguration.serializer(), axonConfiguration.messageSerializer());
         assertNotSame(axonConfiguration.messageSerializer(), axonConfiguration.eventSerializer());
         assertNotNull(applicationContext.getBean(TokenStore.class));
         assertNotNull(applicationContext.getBean(JpaEventStorageEngine.class));
@@ -101,7 +101,7 @@ class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         final Serializer messageSerializer = applicationContext.getBean("messageSerializer", Serializer.class);
         final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);
 
-        assertTrue(messageSerializer instanceof JavaSerializer);
+        assertTrue(messageSerializer instanceof JacksonSerializer);
         assertEquals(serializer, engine.getSnapshotSerializer());
         assertEquals(eventSerializer, engine.getEventSerializer());
     }
@@ -113,7 +113,7 @@ class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         final ObjectMapper objectMapper = applicationContext.getBean("testObjectMapper", ObjectMapper.class);
 
         assertTrue(serializer instanceof JacksonSerializer);
-        assertEquals(objectMapper, ((JacksonSerializer) serializer).getObjectMapper());
+        assertTrue(((JacksonSerializer) serializer).getObjectMapper() instanceof CBORMapper);
         assertTrue(eventSerializer instanceof JacksonSerializer);
         assertEquals(objectMapper, ((JacksonSerializer) eventSerializer).getObjectMapper());
     }
