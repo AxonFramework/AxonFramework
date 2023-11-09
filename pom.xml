@@ -38,7 +38,6 @@
         <module>spring-boot-starter</module>
         <module>test</module>
         <module>tracing-opentelemetry</module>
-        <module>spring-boot-3-integrationtests</module>
     </modules>
     <packaging>pom</packaging>
 
