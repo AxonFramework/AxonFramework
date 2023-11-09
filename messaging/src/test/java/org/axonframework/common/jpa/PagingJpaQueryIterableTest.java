@@ -22,9 +22,7 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Iterator;
 import java.util.List;
@@ -34,13 +32,13 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 class PagingJpaQueryIterableTest {
 
     private final TransactionManager transactionManager = spy(new NoOpTransactionManager());
     // We use te the jpatest which includes the simple TestJpaEntry as entity
-    private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("h6jpatest");
+    private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("jpatest");
     private final EntityManager entityManager = emf.createEntityManager();
     private EntityTransaction transaction;
 

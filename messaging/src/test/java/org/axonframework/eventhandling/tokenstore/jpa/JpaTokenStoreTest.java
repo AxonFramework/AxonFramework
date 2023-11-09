@@ -44,7 +44,7 @@ import static org.mockito.Mockito.verify;
 
 class JpaTokenStoreTest {
 
-    private final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("h6tokenstore");
+    private final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("tokenstore");
     private final EntityManager entityManager = entityManagerFactory.createEntityManager();
     private final EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
 

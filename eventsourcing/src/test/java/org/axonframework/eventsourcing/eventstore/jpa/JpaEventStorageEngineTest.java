@@ -26,16 +26,21 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventData;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Clock;
@@ -55,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link org.axonframework.eventsourcing.eventstore.legacy_jpa.JpaEventStorageEngine}.
+ * Test class validating the {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine}.
  *
  * @author Rene de Waele
  */
@@ -65,7 +70,8 @@ class JpaEventStorageEngineTest
 
     private JpaEventStorageEngine testSubject;
 
-    private final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("h6eventstore");
+    private final EntityManagerFactory entityManagerFactory =
+            Persistence.createEntityManagerFactory("jpaEventStorageEngineTest");
     private final EntityManager entityManager = entityManagerFactory.createEntityManager();
     private final EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
     private final TransactionManager transactionManager = spy(new NoOpTransactionManager());

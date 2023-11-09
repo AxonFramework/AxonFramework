@@ -47,7 +47,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 64;
 
     private final TransactionManager transactionManager = spy(new NoOpTransactionManager());
-    private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("h6dlq");
+    private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("dlq");
     private final EntityManager entityManager = emf.createEntityManager();
     private EntityTransaction transaction;
 

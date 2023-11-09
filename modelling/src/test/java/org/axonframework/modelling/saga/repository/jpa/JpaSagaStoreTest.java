@@ -32,9 +32,7 @@ import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.StubSaga;
 import org.axonframework.modelling.utils.TestSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Set;
 
@@ -49,7 +47,8 @@ class JpaSagaStoreTest {
 
     private AnnotatedSagaRepository<StubSaga> repository;
 
-    private final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("h6sagastore");
+    private final EntityManagerFactory entityManagerFactory =
+            Persistence.createEntityManagerFactory("jpaSagaStorePersistenceUnit");
     private final EntityManager entityManager = entityManagerFactory.createEntityManager();
     private final EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
     private DefaultUnitOfWork<Message<?>> unitOfWork;
@@ -57,10 +56,9 @@ class JpaSagaStoreTest {
     @BeforeEach
     void setUp() {
         JpaSagaStore sagaStore = JpaSagaStore.builder()
-                .entityManagerProvider(entityManagerProvider)
-                .serializer(
-                        TestSerializer.xStreamSerializer())
-                .build();
+                                             .entityManagerProvider(entityManagerProvider)
+                                             .serializer(TestSerializer.xStreamSerializer())
+                                             .build();
         repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
 
         entityManager.clear();
@@ -73,7 +71,7 @@ class JpaSagaStoreTest {
         // the serialized form of the Saga exceeds the default length of a blob.
         // So we must alter the table to prevent data truncation
         entityManager.createNativeQuery("ALTER TABLE SagaEntry ALTER COLUMN serializedSaga VARBINARY(1024)")
-                .executeUpdate();
+                     .executeUpdate();
         transaction.commit();
 
         startUnitOfWork();
