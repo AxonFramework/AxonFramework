@@ -26,7 +26,7 @@
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect"/>
             <property name="jakarta.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:hsqldb:mem:tokens"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:hsqldb:mem:axontest"/>
             <property name="jakarta.persistence.jdbc.user" value="sa"/>
             <property name="jakarta.persistence.jdbc.password" value=""/>
             <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create"/>

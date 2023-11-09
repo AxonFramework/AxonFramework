@@ -16,52 +16,53 @@
 
 package org.axonframework.spring.modeling.command;
 
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.sql.DataSource;
+import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import javax.sql.DataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = GenericJpaRepositoryIntegrationTest.TestContext.class)
-@TestPropertySource("classpath:hsqldb.database.properties")
 @Transactional
 class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
 
@@ -78,13 +79,13 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     @BeforeEach
     void setUp() {
         SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
-                .eventHandlers(this)
-                .build();
+                                                                                 .eventHandlers(this)
+                                                                                 .build();
         eventProcessor = SubscribingEventProcessor.builder()
-                .name("test")
-                .eventHandlerInvoker(eventHandlerInvoker)
-                .messageSource(eventBus)
-                .build();
+                                                  .name("test")
+                                                  .eventHandlerInvoker(eventHandlerInvoker)
+                                                  .messageSource(eventBus)
+                                                  .build();
         eventProcessor.start();
     }
 
@@ -179,33 +180,32 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
             public EntityManagerProvider entityManagerProvider() {
                 return new SimpleEntityManagerProvider(entityManager);
             }
-
         }
 
         @Bean
-        public DataSource dataSource(@Value("${jdbc.driverclass}") String driverClass,
-                                     @Value("${jdbc.url}") String url,
-                                     @Value("${jdbc.username}") String username,
-                                     @Value("${jdbc.password}") String password) {
-            DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource(url, username, password);
-            driverManagerDataSource.setDriverClassName(driverClass);
-            return Mockito.spy(driverManagerDataSource);
+        public DataSource dataSource() throws PropertyVetoException {
+            ComboPooledDataSource dataSource = new ComboPooledDataSource();
+            dataSource.setDriverClass("org.hsqldb.jdbcDriver");
+            dataSource.setJdbcUrl("jdbc:hsqldb:mem:axontest");
+            dataSource.setUser("sa");
+            dataSource.setMaxPoolSize(50);
+            dataSource.setMinPoolSize(1);
+            Properties dataSourceProperties = new Properties();
+            dataSourceProperties.setProperty("hsqldb.log_size", "0");
+            dataSource.setProperties(dataSourceProperties);
+            return dataSource;
         }
 
         @Bean("entityManagerFactory")
-        public LocalContainerEntityManagerFactoryBean entityManagerFactory(
-                @Value("${hibernate.sql.dialect}") String dialect,
-                @Value("${hibernate.sql.generateddl}") boolean generateDdl,
-                @Value("${hibernate.sql.show}") boolean showSql,
-                DataSource dataSource) {
+        public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactoryBean.setPersistenceUnitName("AxonSpringTest");
+            entityManagerFactoryBean.setPersistenceUnitName("axonSpringTest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
-            jpaVendorAdapter.setDatabasePlatform(dialect);
-            jpaVendorAdapter.setGenerateDdl(generateDdl);
-            jpaVendorAdapter.setShowSql(showSql);
+            jpaVendorAdapter.setDatabasePlatform("org.hibernate.dialect.HSQLDialect");
+            jpaVendorAdapter.setGenerateDdl(true);
+            jpaVendorAdapter.setShowSql(false);
             entityManagerFactoryBean.setJpaVendorAdapter(jpaVendorAdapter);
 
             entityManagerFactoryBean.setDataSource(dataSource);
@@ -240,9 +240,9 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         public Repository<JpaAggregate> simpleRepository(EntityManagerProvider entityManagerProvider,
                                                          EventBus eventBus) {
             return GenericJpaRepository.builder(JpaAggregate.class)
-                    .entityManagerProvider(entityManagerProvider)
-                    .eventBus(eventBus)
-                    .build();
+                                       .entityManagerProvider(entityManagerProvider)
+                                       .eventBus(eventBus)
+                                       .build();
         }
     }
 }
