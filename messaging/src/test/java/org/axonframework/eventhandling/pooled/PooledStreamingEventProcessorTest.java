@@ -993,14 +993,6 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
-    void buildWithNullSpanFactoryThrowsAxonConfigurationException() {
-        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
-
-        //noinspection ConstantConditions
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory((SpanFactory) null));
-    }
-
-    @Test
     void buildWithNullMessageSourceThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 

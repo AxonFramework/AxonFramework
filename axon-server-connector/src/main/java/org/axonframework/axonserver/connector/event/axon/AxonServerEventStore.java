@@ -212,12 +212,6 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         @Override
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
-        @Override
         public Builder spanFactory(@Nonnull EventBusSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;

@@ -991,13 +991,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             return this;
         }
 
-        @Override
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
         /**
          * Sets the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this {@link EventProcessor} will
          * track.

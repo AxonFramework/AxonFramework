@@ -488,13 +488,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
             return this;
         }
 
-        @Override
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
         /**
          * Sets the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this {@link EventProcessor} will
          * track.
