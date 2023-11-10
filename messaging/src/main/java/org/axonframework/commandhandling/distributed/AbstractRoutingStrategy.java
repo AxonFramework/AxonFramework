@@ -34,18 +34,6 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
     private final RoutingStrategy fallbackRoutingStrategy;
 
     /**
-     * Initializes the strategy using given {@link UnresolvedRoutingKeyPolicy} prescribing the fallback approach when
-     * this implementation cannot resolve a routing key.
-     *
-     * @param fallbackRoutingStrategy the fallback routing to use whenever this {@link RoutingStrategy} doesn't succeed
-     * @deprecated in favor of {@link #AbstractRoutingStrategy(RoutingStrategy)}
-     */
-    @Deprecated
-    public AbstractRoutingStrategy(@Nonnull UnresolvedRoutingKeyPolicy fallbackRoutingStrategy) {
-        this((RoutingStrategy) fallbackRoutingStrategy);
-    }
-
-    /**
      * Initializes the strategy using given {@link RoutingStrategy} prescribing the fallback approach when this
      * implementation cannot resolve a routing key.
      *
