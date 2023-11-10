@@ -21,30 +21,29 @@ import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
@@ -62,6 +61,9 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @since 0.5
  */
 public class SimpleCommandBus implements CommandBus {
+
+    private static final Object RESULT_KEY = new Object();
+    private static final Object EXCEPTIONAL_RESULT_KEY = new Object();
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
@@ -188,19 +190,76 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> void handle(CommandMessage<C> command,
                                  MessageHandler<? super CommandMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
-        CommandResultMessage<R> resultMessage = spanFactory.createHandleCommandSpan(command, false).runSupplier(() -> {
+        CompletableFuture<R> handlingResult = spanFactory.createHandleCommandSpan(command, false).runSupplierAsync(() -> {
             if (logger.isDebugEnabled()) {
-                logger.debug("Handling command [{}]", command.getCommandName());
+                logger.debug("Handling command [{}]",
+                             command.getCommandName());
             }
 
-            UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
-            unitOfWork.attachTransaction(transactionManager);
-            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
+            AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork();
+            // TODO provide UnitOfUtils for transaction management?!
+            unitOfWork.on(ProcessingLifecycle.Phase.PRE_INVOCATION,
+                          context -> {
+                              Transaction transaction = transactionManager.startTransaction();
+                              context.resources(ProcessingContext.ResourceScope.SHARED)
+                                     .put(Transaction.class,
+                                          transaction);
+                              return CompletableFuture.completedFuture(
+                                      null);
+                          });
+            unitOfWork.on(ProcessingLifecycle.Phase.COMMIT,
+                          context -> {
+                              context.resources(ProcessingContext.ResourceScope.SHARED)
+                                     .get(Transaction.class).commit();
+                              return CompletableFuture.completedFuture(
+                                      null);
+                          });
+            unitOfWork.on(ProcessingLifecycle.Phase.ROLLBACK,
+                          context -> {
+                              context.resources(ProcessingContext.ResourceScope.SHARED)
+                                     .get(Transaction.class)
+                                     .rollback();
+                              return CompletableFuture.completedFuture(
+                                      null);
+                          });
 
-            return asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed,
-                                                                       rollbackConfiguration));
+            // TODO simple, yet massive, todo on changing the interceptor logic...T_T
+//            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
+            unitOfWork.on(ProcessingLifecycle.Phase.INVOCATION,
+                          context -> {
+                              CompletableFuture<Object> result = handler.handle(
+                                      command);
+                              result.whenComplete((r, e) -> {
+                                  if (e == null) {
+                                      context.resources(
+                                                     ProcessingContext.ResourceScope.LOCAL)
+                                             .put(RESULT_KEY, r);
+                                  } else {
+                                      context.resources(
+                                                     ProcessingContext.ResourceScope.LOCAL)
+                                             .put(EXCEPTIONAL_RESULT_KEY,
+                                                  e);
+                                  }
+                              });
+                              return result;
+                          });
+
+            CompletableFuture<R> futureResult = new CompletableFuture<>();
+            unitOfWork.whenComplete(context -> {
+                futureResult.complete(context.resources(
+                                                     ProcessingContext.ResourceScope.LOCAL)
+                                             .get(RESULT_KEY));
+            });
+            return futureResult;
+//            return asCommandResultMessage(unitOfWork.executeWithResult(
+//                    chain::proceed, rollbackConfiguration
+//            ));
         });
-        callback.onResult(command, resultMessage);
+
+        handlingResult.whenComplete((r, e) -> callback.onResult(
+                command,
+                e == null ? asCommandResultMessage(r) : asCommandResultMessage(e)
+        ));
     }
 
     /**
@@ -254,11 +313,11 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Sets the {@link RollbackConfiguration} that allows you to change when the {@link UnitOfWork} is rolled back. If
-     * not set the, {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} will be used, which triggers a rollback on
+     * Sets the {@link RollbackConfiguration} that allows you to change when the {@link AsyncUnitOfWork} is rolled back.
+     * If not set the, {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} will be used, which triggers a rollback on
      * all unchecked exceptions.
      *
-     * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
+     * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link AsyncUnitOfWork} should be
      *                              rolled back
      */
     public void setRollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
@@ -314,12 +373,12 @@ public class SimpleCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the {@link RollbackConfiguration} which allows you to specify when a {@link UnitOfWork} should be rolled
-         * back. Defaults to a {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, which triggers a rollback on all
-         * unchecked exceptions.
+         * Sets the {@link RollbackConfiguration} which allows you to specify when a {@link AsyncUnitOfWork} should be
+         * rolled back. Defaults to a {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, which triggers a rollback
+         * on all unchecked exceptions.
          *
-         * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
-         *                              rolled back
+         * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link AsyncUnitOfWork} should
+         *                              be rolled back
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
@@ -344,9 +403,9 @@ public class SimpleCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link
-         * #dispatch(CommandMessage)}. Defaults to a {@link LoggingCallback}. Passing {@code null} will result in a
-         * {@link NoOpCallback} being used.
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
+         * {@link #dispatch(CommandMessage)}. Defaults to a {@link LoggingCallback}. Passing {@code null} will result in
+         * a {@link NoOpCallback} being used.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
          * @return the current Builder instance, for fluent interfacing
