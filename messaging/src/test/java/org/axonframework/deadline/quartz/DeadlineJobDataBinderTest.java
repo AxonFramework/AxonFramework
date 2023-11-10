@@ -21,7 +21,6 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.TestScopeDescriptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -63,11 +62,6 @@ class DeadlineJobDataBinderTest {
     public static Stream<Arguments> serializerImplementationAndAssertionSpecifics() {
         return Stream.of(
                 Arguments.arguments(
-                        spy(JavaSerializer.builder().build()),
-                        (Function<Class, String>) Class::getName,
-                        (Predicate<Object>) Objects::nonNull
-                ),
-                Arguments.arguments(
                         spy(TestSerializer.XSTREAM.getSerializer()),
                         (Function<Class, String>) clazz -> clazz.getSimpleName().toLowerCase(),
                         (Predicate<Object>) Objects::isNull
@@ -107,7 +101,6 @@ class DeadlineJobDataBinderTest {
         verify(serializer).serialize(testDeadlineScope, byte[].class);
     }
 
-    @SuppressWarnings("unchecked")
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
     void retrievingDeadlineMessage(
