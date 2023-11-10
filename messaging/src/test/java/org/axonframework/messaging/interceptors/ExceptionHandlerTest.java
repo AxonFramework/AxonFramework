@@ -139,7 +139,7 @@ class ExceptionHandlerTest {
 
     /**
      * This method is a similar approach as followed by the
-     * {@link org.axonframework.eventhandling.AnnotationEventHandlerAdapter#handle(EventMessage)}. Thus, mirroring
+     * {@link org.axonframework.eventhandling.AnnotationEventHandlerAdapter#handleSync(EventMessage)}. Thus, mirroring
      * regular message handling components.
      */
     private Object handle(Message<?> message) throws Exception {

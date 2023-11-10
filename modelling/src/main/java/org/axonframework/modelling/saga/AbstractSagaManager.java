@@ -179,7 +179,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         if (saga.canHandle(event)) {
             Span span = spanFactory.createInvokeSagaSpan(event, sagaType, saga).start();
             try(SpanScope unused = span.makeCurrent()) {
-                saga.handle(event);
+                saga.handleSync(event);
             } catch (Exception e) {
                 span.recordException(e);
                 listenerInvocationErrorHandler.onError(e, event, saga);
@@ -230,7 +230,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
             String sagaIdentifier = ((SagaScopeDescriptor) scopeDescription).getIdentifier().toString();
             Saga<T> saga = sagaRepository.load(sagaIdentifier);
             if (saga != null) {
-                saga.handle((EventMessage<?>) message);
+                saga.handleSync((EventMessage<?>) message);
             } else {
                 logger.debug("Saga (with id: [{}]) cannot be loaded, as it most likely already ended."
                                      + " Hence, message [{}] cannot be handled.", sagaIdentifier, message);

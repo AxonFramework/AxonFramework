@@ -39,7 +39,7 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>> {
      * @return the result of the event handler invocation. Is generally ignored
      * @throws Exception when an exception is raised during event handling
      */
-    Object handle(EventMessage<?> event) throws Exception;
+    Object handleSync(EventMessage<?> event) throws Exception;
 
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this handler.

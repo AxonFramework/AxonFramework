@@ -127,7 +127,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handle(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT);
 
         //noinspection unchecked
         ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
@@ -150,7 +150,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handle(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT);
 
         verify(queue, never()).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
 
@@ -169,7 +169,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handle(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT);
 
         verify(queue, times(1)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
 
@@ -267,13 +267,13 @@ class DeadLetteringEventHandlerInvokerTest {
         DeadLetter<EventMessage<?>> expectedEnqueuedLetter =
                 new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT, testCause);
 
-        doThrow(testCause).when(handler).handle(TEST_EVENT);
+        doThrow(testCause).when(handler).handleSync(TEST_EVENT);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handle(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT);
 
         //noinspection unchecked
         ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
@@ -301,14 +301,14 @@ class DeadLetteringEventHandlerInvokerTest {
 
         RuntimeException testCause = new RuntimeException("some-cause");
 
-        doThrow(testCause).when(handler).handle(TEST_EVENT);
+        doThrow(testCause).when(handler).handleSync(TEST_EVENT);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
         testSubject.handle(nextMessage(TEST_EVENT), Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handle(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT);
 
         verify(queue, times(1)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
     }
@@ -326,12 +326,12 @@ class DeadLetteringEventHandlerInvokerTest {
         DeadLetter<EventMessage<?>> expectedEnqueuedLetter =
                 new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT, testCause);
 
-        doThrow(testCause).when(handler).handle(TEST_EVENT);
+        doThrow(testCause).when(handler).handleSync(TEST_EVENT);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler).handle(TEST_EVENT);
+        verify(handler).handleSync(TEST_EVENT);
 
         //noinspection unchecked
         ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
@@ -355,7 +355,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
-        verify(handler, never()).handle(TEST_EVENT);
+        verify(handler, never()).handleSync(TEST_EVENT);
         verify(queue, never()).enqueue(TEST_SEQUENCE_ID, TEST_DEAD_LETTER);
         verifyNoInteractions(transactionManager);
     }

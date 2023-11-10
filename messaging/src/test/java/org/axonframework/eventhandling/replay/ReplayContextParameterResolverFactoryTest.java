@@ -58,10 +58,10 @@ class ReplayContextParameterResolverFactoryTest {
                                                                                         asEventMessage(2L));
         assertTrue(testSubject.canHandle(replayEvent));
         assertTrue(testSubject.canHandle(liveEvent));
-        testSubject.handle(createMessage(1L, true));
-        testSubject.handle(createMessage(2L, true));
-        testSubject.handle(createMessage(3L, true));
-        testSubject.handle(createMessage(4L, false));
+        testSubject.handleSync(createMessage(1L, true));
+        testSubject.handleSync(createMessage(2L, true));
+        testSubject.handleSync(createMessage(3L, true));
+        testSubject.handleSync(createMessage(4L, false));
 
         assertEquals(asList(1L, 2L, 3L, 4L), handler.receivedLongs);
         assertEquals(asList(2L, 3L), handler.receivedInReplay);

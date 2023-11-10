@@ -79,7 +79,7 @@ class AnnotationEventHandlerAdapterTest {
         SomeHandler annotatedEventListener = new SomeInterceptingHandler();
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener, parameterResolverFactory);
 
-        testSubject.handle(asEventMessage("count"));
+        testSubject.handleSync(asEventMessage("count"));
         assertEquals(3, annotatedEventListener.invocations.stream().filter("count"::equals).count());
     }
 
@@ -92,7 +92,7 @@ class AnnotationEventHandlerAdapterTest {
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener, parameterResolverFactory);
 
         try {
-            testSubject.handle(testEventMessage);
+            testSubject.handleSync(testEventMessage);
             fail("Expected exception");
         } catch (Exception e) {
             assertEquals(RuntimeException.class, e.getClass());
@@ -111,7 +111,7 @@ class AnnotationEventHandlerAdapterTest {
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener, parameterResolverFactory);
 
         try {
-            testSubject.handle(testEventMessage);
+            testSubject.handleSync(testEventMessage);
             fail("Expected exception");
         } catch (Exception e) {
             assertEquals(IllegalArgumentException.class, e.getClass());

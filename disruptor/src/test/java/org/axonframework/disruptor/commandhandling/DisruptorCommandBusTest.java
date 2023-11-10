@@ -687,8 +687,8 @@ class DisruptorCommandBusTest {
         testSubject.dispatch(testMessage, callback);
 
         assertTrue(callback.awaitCompletion(2, TimeUnit.SECONDS), "Expected command to complete");
-        verify(initialHandler, never()).handle(testMessage);
-        verify(duplicateHandler).handle(testMessage);
+        verify(initialHandler, never()).handleSync(testMessage);
+        verify(duplicateHandler).handleSync(testMessage);
     }
 
     @Test
@@ -713,8 +713,8 @@ class DisruptorCommandBusTest {
         //noinspection unchecked
         MessageHandler<CommandMessage<?>> testHandler = mock(MessageHandler.class);
         when(testHandler.canHandle(any())).thenReturn(true);
-        when(testHandler.handle(testCommand)).thenThrow(AggregateStateCorruptedException.class)
-                                             .thenReturn("happy-now");
+        when(testHandler.handleSync(testCommand)).thenThrow(AggregateStateCorruptedException.class)
+                                                 .thenReturn("happy-now");
 
         testSubject = DisruptorCommandBus.builder()
                                          .rescheduleCommandsOnCorruptState(true)
@@ -739,8 +739,8 @@ class DisruptorCommandBusTest {
         //noinspection unchecked
         MessageHandler<CommandMessage<?>> testHandler = mock(MessageHandler.class);
         when(testHandler.canHandle(any())).thenReturn(true);
-        when(testHandler.handle(testCommand)).thenThrow(AggregateStateCorruptedException.class)
-                                             .thenReturn("happy-now");
+        when(testHandler.handleSync(testCommand)).thenThrow(AggregateStateCorruptedException.class)
+                                                 .thenReturn("happy-now");
 
         testSubject = DisruptorCommandBus.builder()
                                          .rescheduleCommandsOnCorruptState(false)
@@ -765,7 +765,7 @@ class DisruptorCommandBusTest {
         //noinspection unchecked
         MessageHandler<CommandMessage<?>> testHandler = mock(MessageHandler.class);
         when(testHandler.canHandle(any())).thenReturn(true);
-        when(testHandler.handle(testCommand)).thenReturn("handled");
+        when(testHandler.handleSync(testCommand)).thenReturn("handled");
 
         testSubject = DisruptorCommandBus.builder()
                                          .publisherInterceptors(Collections.singletonList(
@@ -957,7 +957,7 @@ class DisruptorCommandBusTest {
         }
 
         @Override
-        public Object handle(CommandMessage<?> command) throws Exception {
+        public Object handleSync(CommandMessage<?> command) throws Exception {
             StubCommand payload = (StubCommand) command.getPayload();
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();

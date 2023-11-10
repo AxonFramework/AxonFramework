@@ -165,7 +165,7 @@ class AnnotatedSagaRepositoryTest {
                                                                                   .build();
         Saga<TestSaga> saga =
                 sagaRepository.createInstance(IdentifierFactory.getInstance().generateIdentifier(), TestSaga::new);
-        saga.handle(GenericEventMessage.asEventMessage(new Object()));
+        saga.handleSync(GenericEventMessage.asEventMessage(new Object()));
 
         assertEquals(1, CountingInterceptors.counter.get());
     }

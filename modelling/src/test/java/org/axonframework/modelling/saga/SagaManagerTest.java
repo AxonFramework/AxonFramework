@@ -24,7 +24,6 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.utils.MockException;
-import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -103,9 +102,9 @@ class SagaManagerTest {
             return null;
         });
         verify(mockSagaRepository).find(associationValue);
-        verify(mockSaga1).handle(event);
-        verify(mockSaga2).handle(event);
-        verify(mockSaga3, never()).handle(event);
+        verify(mockSaga1).handleSync(event);
+        verify(mockSaga2).handleSync(event);
+        verify(mockSaga3, never()).handleSync(event);
     }
 
     @Test
@@ -148,7 +147,7 @@ class SagaManagerTest {
     void exceptionPropagated() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         MockException toBeThrown = new MockException();
-        doThrow(toBeThrown).when(mockSaga1).handle(event);
+        doThrow(toBeThrown).when(mockSaga1).handleSync(event);
         doThrow(toBeThrown).when(mockErrorHandler).onError(toBeThrown, event, mockSaga1);
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
         ResultMessage<Object> resultMessage = unitOfWork.executeWithResult(() -> {
@@ -161,7 +160,7 @@ class SagaManagerTest {
         } else {
             fail("Expected exception to be propagated");
         }
-        verify(mockSaga1, times(1)).handle(event);
+        verify(mockSaga1, times(1)).handleSync(event);
         verify(mockErrorHandler).onError(toBeThrown, event, mockSaga1);
     }
 
@@ -245,18 +244,18 @@ class SagaManagerTest {
         testSubject.handle(event, matchesIdSegment);
         testSubject.handle(event, matchesValueSegment);
         verify(mockSagaRepository, never()).createInstance(any(), any());
-        verify(mockSaga1).handle(event);
+        verify(mockSaga1).handleSync(event);
     }
 
     @Test
     void exceptionSuppressed() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         MockException toBeThrown = new MockException();
-        doThrow(toBeThrown).when(mockSaga1).handle(event);
+        doThrow(toBeThrown).when(mockSaga1).handleSync(event);
         testSubject.handle(event, Segment.ROOT_SEGMENT);
-        verify(mockSaga1).handle(event);
-        verify(mockSaga2).handle(event);
-        verify(mockSaga3, never()).handle(event);
+        verify(mockSaga1).handleSync(event);
+        verify(mockSaga2).handleSync(event);
+        verify(mockSaga3, never()).handleSync(event);
         verify(mockErrorHandler).onError(toBeThrown, event, mockSaga1);
     }
 

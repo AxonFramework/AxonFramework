@@ -208,12 +208,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     }
 
     @Override
-    public Object handle(CommandMessage<?> commandMessage) throws Exception {
+    public Object handleSync(CommandMessage<?> commandMessage) throws Exception {
         return handlers.stream()
                        .filter(ch -> ch.canHandle(commandMessage))
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(commandMessage))
-                       .handle(commandMessage);
+                       .handleSync(commandMessage);
     }
 
     @Override
@@ -433,7 +433,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @SuppressWarnings("unchecked")
         @Override
-        public Object handle(CommandMessage<?> command) throws Exception {
+        public Object handleSync(CommandMessage<?> command) throws Exception {
             Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handle(command, null));
             return resolveReturnValue(command, aggregate);
         }
@@ -456,7 +456,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
 
         @Override
-        public Object handle(CommandMessage<?> command) throws Exception {
+        public Object handleSync(CommandMessage<?> command) throws Exception {
             return handleNewInstanceCreation(command, factoryMethod, handler, resolveNullableAggregateId(command));
         }
 
@@ -478,7 +478,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
 
         @Override
-        public Object handle(CommandMessage<?> command) throws Exception {
+        public Object handleSync(CommandMessage<?> command) throws Exception {
             VersionedAggregateIdentifier versionedAggregateIdentifier = resolveNullableAggregateId(command);
 
             Object result;
@@ -563,7 +563,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
 
         @Override
-        public Object handle(CommandMessage<?> command) throws Exception {
+        public Object handleSync(CommandMessage<?> command) throws Exception {
             VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
             return repository.load(iv.getIdentifier(), iv.getVersion()).handle(command);
         }

@@ -114,7 +114,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
      * @throws Exception                    Any exception occurring while handling the command.
      */
     @Override
-    public Object handle(CommandMessage<?> command) throws Exception {
+    public Object handleSync(CommandMessage<?> command) throws Exception {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
                      .filter(ch -> ch.canHandle(command))

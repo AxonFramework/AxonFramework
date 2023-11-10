@@ -107,7 +107,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
-    public final Object handle(EventMessage<?> event) {
+    public final Object handleSync(EventMessage<?> event) {
         if (isActive) {
             return metaModel.findHandlerMethods(event).stream()
                             .filter(handler -> handler.unwrap(SagaMethodMessageHandlingMember.class)

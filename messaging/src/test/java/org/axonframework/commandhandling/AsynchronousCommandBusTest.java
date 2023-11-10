@@ -90,7 +90,7 @@ class AsynchronousCommandBusTest {
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
         inOrder.verify(executorService).execute(isA(Runnable.class));
         inOrder.verify(handlerInterceptor).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(commandHandler).handle(isA(CommandMessage.class));
+        inOrder.verify(commandHandler).handleSync(isA(CommandMessage.class));
         ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
         ArgumentCaptor<CommandResultMessage<Object>> responseCaptor = ArgumentCaptor
                 .forClass(CommandResultMessage.class);
@@ -117,7 +117,7 @@ class AsynchronousCommandBusTest {
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
         inOrder.verify(executorService).execute(isA(Runnable.class));
         inOrder.verify(handlerInterceptor).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(commandHandler).handle(isA(CommandMessage.class));
+        inOrder.verify(commandHandler).handleSync(isA(CommandMessage.class));
     }
 
     @Test

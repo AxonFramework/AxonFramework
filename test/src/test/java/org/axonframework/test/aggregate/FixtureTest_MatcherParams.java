@@ -201,7 +201,7 @@ class FixtureTest_MatcherParams {
                 .when(new StrangeCommand("aggregateId"), Collections.singletonMap("meta", "value"));
 
         final ArgumentCaptor<CommandMessage> captor = ArgumentCaptor.forClass(CommandMessage.class);
-        verify(mockCommandHandler).handle(captor.capture());
+        verify(mockCommandHandler).handleSync(captor.capture());
         List<CommandMessage> dispatched = captor.getAllValues();
         assertEquals(1, dispatched.size());
         assertEquals(1, dispatched.get(0).getMetaData().size());

@@ -58,8 +58,8 @@ class SimpleEventHandlerInvokerTest {
         testSubject.handle(event, Segment.ROOT_SEGMENT);
 
         InOrder inOrder = inOrder(mockHandler1, mockHandler2);
-        inOrder.verify(mockHandler1).handle(event);
-        inOrder.verify(mockHandler2).handle(event);
+        inOrder.verify(mockHandler1).handleSync(event);
+        inOrder.verify(mockHandler2).handleSync(event);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -72,10 +72,10 @@ class SimpleEventHandlerInvokerTest {
         }
 
         InOrder inOrder = inOrder(mockHandler1, mockHandler2);
-        inOrder.verify(mockHandler1).handle(events.get(0));
-        inOrder.verify(mockHandler2).handle(events.get(0));
-        inOrder.verify(mockHandler1).handle(events.get(1));
-        inOrder.verify(mockHandler2).handle(events.get(1));
+        inOrder.verify(mockHandler1).handleSync(events.get(0));
+        inOrder.verify(mockHandler2).handleSync(events.get(0));
+        inOrder.verify(mockHandler1).handleSync(events.get(1));
+        inOrder.verify(mockHandler2).handleSync(events.get(1));
         inOrder.verifyNoMoreInteractions();
     }
 

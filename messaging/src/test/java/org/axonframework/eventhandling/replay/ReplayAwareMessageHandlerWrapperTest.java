@@ -65,10 +65,10 @@ class ReplayAwareMessageHandlerWrapperTest {
         assertTrue(testMethodSubject.canHandle(stringEvent));
         assertTrue(testSubject.canHandle(longEvent));
         assertTrue(testMethodSubject.canHandle(longEvent));
-        testSubject.handle(stringEvent);
-        testMethodSubject.handle(stringEvent);
-        testSubject.handle(longEvent);
-        testMethodSubject.handle(longEvent);
+        testSubject.handleSync(stringEvent);
+        testMethodSubject.handleSync(stringEvent);
+        testSubject.handleSync(longEvent);
+        testMethodSubject.handleSync(longEvent);
 
         assertTrue(handler.receivedLongs.isEmpty());
         assertTrue(methodHandler.receivedLongs.isEmpty());

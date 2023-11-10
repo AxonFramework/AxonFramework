@@ -54,7 +54,7 @@ public class DefaultInterceptorChain<T extends Message<?>> implements Intercepto
         if (chain.hasNext()) {
             return chain.next().handle(unitOfWork, this);
         } else {
-            return handler.handle(unitOfWork.getMessage());
+            return handler.handleSync(unitOfWork.getMessage());
         }
     }
 }

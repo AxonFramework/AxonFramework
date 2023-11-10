@@ -90,7 +90,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public Object handle(EventMessage<?> event) throws Exception {
+    public Object handleSync(EventMessage<?> event) throws Exception {
         Optional<MessageHandlingMember<? super Object>> handler =
                 inspector.getHandlers(listenerType)
                          .filter(h -> h.canHandle(event))

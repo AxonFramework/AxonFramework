@@ -125,7 +125,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     protected void invokeHandlers(EventMessage<?> message) throws Exception {
         for (EventMessageHandler handler : eventHandlingComponents) {
             try {
-                handler.handle(message);
+                handler.handleSync(message);
             } catch (Exception e) {
                 listenerInvocationErrorHandler.onError(e, message, handler);
             }

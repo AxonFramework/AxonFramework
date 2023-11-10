@@ -89,8 +89,8 @@ class DeadLetteredEventProcessingTaskTest {
 
         assertEquals(DoNotEnqueue.class, result.getClass());
         verify(transactionManager).startTransaction();
-        verify(eventHandlerOne).handle(TEST_EVENT);
-        verify(eventHandlerTwo).handle(TEST_EVENT);
+        verify(eventHandlerOne).handleSync(TEST_EVENT);
+        verify(eventHandlerTwo).handleSync(TEST_EVENT);
         verifyNoInteractions(enqueuePolicy);
     }
 
@@ -102,14 +102,14 @@ class DeadLetteredEventProcessingTaskTest {
         when(testLetter.message()).thenReturn(TEST_EVENT);
         Exception testException = new RuntimeException();
 
-        when(eventHandlerTwo.handle(TEST_EVENT)).thenThrow(testException);
+        when(eventHandlerTwo.handleSync(TEST_EVENT)).thenThrow(testException);
 
         EnqueueDecision<EventMessage<?>> result = testSubject.process(testLetter);
 
         assertEquals(TEST_DECISION, result);
         verify(transactionManager).startTransaction();
-        verify(eventHandlerOne).handle(TEST_EVENT);
-        verify(eventHandlerTwo).handle(TEST_EVENT);
+        verify(eventHandlerOne).handleSync(TEST_EVENT);
+        verify(eventHandlerTwo).handleSync(TEST_EVENT);
         verify(enqueuePolicy).decide(testLetter, testException);
     }
 
@@ -126,15 +126,15 @@ class DeadLetteredEventProcessingTaskTest {
         when(testLetter.message()).thenReturn(TEST_EVENT);
         Exception testException = new RuntimeException();
 
-        when(eventHandlerTwo.handle(TEST_EVENT)).thenThrow(testException);
+        when(eventHandlerTwo.handleSync(TEST_EVENT)).thenThrow(testException);
 
         EnqueueDecision<EventMessage<?>> result = testSubject.process(testLetter);
 
         assertFalse(result.shouldEnqueue());
         assertTrue(invoked.get());
         verify(transactionManager).startTransaction();
-        verify(eventHandlerOne).handle(TEST_EVENT);
-        verify(eventHandlerTwo).handle(TEST_EVENT);
+        verify(eventHandlerOne).handleSync(TEST_EVENT);
+        verify(eventHandlerTwo).handleSync(TEST_EVENT);
         verify(enqueuePolicy, never()).decide(testLetter, testException);
     }
 

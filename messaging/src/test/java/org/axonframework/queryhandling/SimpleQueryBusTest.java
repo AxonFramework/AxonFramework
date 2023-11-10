@@ -367,7 +367,7 @@ class SimpleQueryBusTest {
         //noinspection resource
         testSubject.subscribe("query", String.class, failingHandler);
         //noinspection FunctionalExpressionCanBeFolded,Convert2MethodRef,Convert2MethodRef,resource
-        testSubject.subscribe("query", String.class, message -> failingHandler.handle(message));
+        testSubject.subscribe("query", String.class, message -> failingHandler.handleSync(message));
         //noinspection resource
         testSubject.subscribe("query", String.class, passingHandler);
 

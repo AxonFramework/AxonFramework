@@ -101,7 +101,7 @@ class DeadLetteredEventProcessingTask
 
     private void handle(EventMessage<?> eventMessage) throws Exception {
         for (EventMessageHandler handler : eventHandlingComponents) {
-            handler.handle(eventMessage);
+            handler.handleSync(eventMessage);
         }
     }
 

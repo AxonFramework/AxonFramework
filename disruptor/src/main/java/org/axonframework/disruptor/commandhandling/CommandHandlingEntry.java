@@ -211,7 +211,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         result = null;
         aggregateIdentifier = null;
         invocationInterceptorChain = callable::call;
-        publisherInterceptorChain = () -> repeatingCommandHandler.handle(null);
+        publisherInterceptorChain = () -> repeatingCommandHandler.handleSync(null);
         reset(null);
     }
 
@@ -232,7 +232,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     private class RepeatingCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         @Override
-        public Object handle(CommandMessage<?> message) throws Exception {
+        public Object handleSync(CommandMessage<?> message) throws Exception {
             return result;
         }
     }

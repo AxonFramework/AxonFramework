@@ -88,7 +88,7 @@ public class EventValidator implements EventMessageHandler {
     }
 
     @Override
-    public Object handle(EventMessage<?> event) {
+    public Object handleSync(EventMessage<?> event) {
         publishedEvents.add(event);
         return null;
     }
@@ -98,7 +98,7 @@ public class EventValidator implements EventMessageHandler {
      */
     public void startRecording() {
         if (!recording) {
-            eventBus.subscribe(eventMessages -> eventMessages.forEach(this::handle));
+            eventBus.subscribe(eventMessages -> eventMessages.forEach(this::handleSync));
             recording = true;
         }
         publishedEvents.clear();

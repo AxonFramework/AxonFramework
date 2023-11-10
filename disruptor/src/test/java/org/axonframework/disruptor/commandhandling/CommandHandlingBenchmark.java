@@ -119,7 +119,7 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<?> command) {
+        public Object handleSync(CommandMessage<?> command) {
             repository.load(aggregateIdentifier.toString()).execute(MyAggregate::doSomething);
             return null;
         }

@@ -32,7 +32,7 @@ public interface ListenerInvocationErrorHandler {
      * <p>
      * <ul> <li>To ignore this error no special action is required. Processing will continue for this and subsequent
      * events.</li> <li>To retry processing the event, implementations can re-invoke {@link
-     * EventMessageHandler#handle(EventMessage)} on the eventListener once or multiple times.</li> <li>To terminate event
+     * EventMessageHandler#handleSync(EventMessage)} on the eventListener once or multiple times.</li> <li>To terminate event
      * handling altogether and stop propagating the event to other listeners implementations may throw an
      * exception.</li></ul>
      *

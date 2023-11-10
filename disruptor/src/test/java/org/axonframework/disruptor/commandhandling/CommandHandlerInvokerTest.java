@@ -118,7 +118,7 @@ class CommandHandlerInvokerTest {
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
-        when(mockCommandHandler.handle(eq(mockCommandMessage)))
+        when(mockCommandHandler.handleSync(eq(mockCommandMessage)))
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
         when(mockEventStore.readEvents(any()))
                 .thenReturn(DomainEventStream.of(
@@ -137,7 +137,7 @@ class CommandHandlerInvokerTest {
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
-        when(mockCommandHandler.handle(eq(mockCommandMessage)))
+        when(mockCommandHandler.handleSync(eq(mockCommandMessage)))
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
         when(mockCache.get(aggregateIdentifier)).thenAnswer(
                 invocationOnMock -> new AggregateCacheEntry<>(
@@ -156,7 +156,7 @@ class CommandHandlerInvokerTest {
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
-        when(mockCommandHandler.handle(eq(mockCommandMessage))).thenAnswer(invocationOnMock -> {
+        when(mockCommandHandler.handleSync(eq(mockCommandMessage))).thenAnswer(invocationOnMock -> {
             Aggregate<StubAggregate> aggregate = repository.newInstance(() -> new StubAggregate(aggregateIdentifier));
             aggregate.execute(StubAggregate::doSomething);
             return aggregate.invoke(Function.identity());

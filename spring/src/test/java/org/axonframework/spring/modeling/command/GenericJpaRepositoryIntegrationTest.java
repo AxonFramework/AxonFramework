@@ -158,7 +158,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     }
 
     @Override
-    public Object handle(EventMessage event) {
+    public Object handleSync(EventMessage event) {
         this.capturedEvents.add(event);
         return null;
     }

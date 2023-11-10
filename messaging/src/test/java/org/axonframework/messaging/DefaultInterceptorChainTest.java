@@ -39,7 +39,7 @@ class DefaultInterceptorChainTest {
     void setUp() throws Exception {
         unitOfWork = new DefaultUnitOfWork<>(null);
         mockHandler = mock(MessageHandler.class);
-        when(mockHandler.handle(isA(Message.class))).thenReturn("Result");
+        when(mockHandler.handleSync(isA(Message.class))).thenReturn("Result");
     }
 
     @Test
@@ -60,6 +60,6 @@ class DefaultInterceptorChainTest {
         String actual = (String) testSubject.proceed();
 
         assertSame("Result", actual);
-        verify(mockHandler).handle(argThat(x -> (x != null) && x.getPayload().equals("testing")));
+        verify(mockHandler).handleSync(argThat(x -> (x != null) && x.getPayload().equals("testing")));
     }
 }

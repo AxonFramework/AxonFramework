@@ -107,7 +107,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
     }
 
     @Override
-    public Object handle(QueryMessage<?, ?> message) throws Exception {
+    public Object handleSync(QueryMessage<?, ?> message) throws Exception {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
                      .filter(m -> m.canHandle(message))

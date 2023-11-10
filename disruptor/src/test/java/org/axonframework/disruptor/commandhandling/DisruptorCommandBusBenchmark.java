@@ -172,7 +172,7 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<?> message) {
+        public Object handleSync(CommandMessage<?> message) {
             StubCommand payload = (StubCommand) message.getPayload();
             repository.load(payload.getAggregateIdentifier()).execute(StubAggregate::doSomething);
             return null;

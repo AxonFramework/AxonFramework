@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Interface for a component that processes Messages.
  *
@@ -32,7 +34,12 @@ public interface MessageHandler<T extends Message<?>> {
      * @return The result of the message processing.
      * @throws Exception any exception that occurs during message handling
      */
-    Object handle(T message) throws Exception;
+    // TODO replace this operation for the new handle method
+    default Object handleSync(T message) throws Exception {
+        return handle(message).get();
+    }
+
+    CompletableFuture<Object> handle(T message);
 
     /**
      * Indicates whether this handler can handle the given message
