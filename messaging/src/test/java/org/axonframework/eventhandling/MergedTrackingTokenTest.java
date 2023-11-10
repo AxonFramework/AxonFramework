@@ -77,16 +77,20 @@ class MergedTrackingTokenTest {
         TrackingToken incomingMessage = new GlobalSequenceTrackingToken(0);
 
         MergedTrackingToken currentToken = new MergedTrackingToken(
-                new ReplayToken(new GlobalSequenceTrackingToken(9), new GlobalSequenceTrackingToken(9)),
-                new ReplayToken(new GlobalSequenceTrackingToken(9), new GlobalSequenceTrackingToken(-1))
+                new GlobalSequenceTrackingToken(9),
+                ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(9), new GlobalSequenceTrackingToken(-1))
         );
 
         TrackingToken advancedToken = currentToken.advancedTo(incomingMessage);
 
         assertTrue(advancedToken instanceof MergedTrackingToken);
         MergedTrackingToken actual = (MergedTrackingToken) advancedToken;
-        assertTrue(actual.lowerSegmentToken() instanceof ReplayToken); // this token should not have been modified
-        assertTrue(actual.upperSegmentToken() instanceof ReplayToken, "Wrong upper segment: " + actual.upperSegmentToken()); // this token should not have been modified
+        // this token should not have been modified
+        assertTrue(actual.lowerSegmentToken() instanceof GlobalSequenceTrackingToken);
+        // this token should not have been modified
+        assertTrue(
+                actual.upperSegmentToken() instanceof ReplayToken, "Wrong upper segment: " + actual.upperSegmentToken()
+        );
     }
 
     @Test

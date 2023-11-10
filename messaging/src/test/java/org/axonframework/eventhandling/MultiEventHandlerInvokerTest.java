@@ -45,9 +45,10 @@ class MultiEventHandlerInvokerTest {
     @BeforeEach
     void setUp() {
         testEventMessage = GenericEventMessage.asEventMessage("some-event");
-        replayMessage = new GenericTrackedEventMessage<>(new ReplayToken(new GlobalSequenceTrackingToken(10),
-                                                                         new GlobalSequenceTrackingToken(0)),
-                                                         GenericEventMessage.asEventMessage("replay-event"));
+        TrackingToken testToken = ReplayToken.createReplayToken(
+                new GlobalSequenceTrackingToken(10), new GlobalSequenceTrackingToken(0)
+        );
+        replayMessage = new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("replay-event"));
         testSegment = new Segment(1, 1);
 
         when(mockedEventHandlerInvokerOne.canHandle(any(), eq(testSegment))).thenReturn(true);
