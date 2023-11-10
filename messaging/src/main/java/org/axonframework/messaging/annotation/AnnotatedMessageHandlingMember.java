@@ -180,16 +180,6 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     }
 
     @Override
-    public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
-        return AnnotationUtils.isAnnotationPresent(executable, annotationType);
-    }
-
-    @Override
-    public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
-        return AnnotationUtils.findAnnotationAttributes(executable, annotationType);
-    }
-
-    @Override
     public <R> Optional<R> attribute(String attributeKey) {
         return Optional.ofNullable(attributes.get(attributeKey));
     }

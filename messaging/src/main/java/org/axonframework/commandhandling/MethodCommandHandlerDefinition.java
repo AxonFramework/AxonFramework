@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -26,7 +27,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 
 /**
@@ -39,9 +40,13 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        return original.annotationAttributes(CommandHandler.class)
-                       .map(attr -> (MessageHandlingMember<T>) new MethodCommandMessageHandlingMember<>(original, attr))
-                       .orElse(original);
+        Optional<String> optionalRoutingKey = original.attribute(HandlerAttributes.COMMAND_ROUTING_KEY);
+        Optional<String> optionalCommandName = original.attribute(HandlerAttributes.COMMAND_NAME);
+        return optionalRoutingKey.isPresent() && optionalCommandName.isPresent()
+                ? new MethodCommandMessageHandlingMember<>(original,
+                                                           optionalRoutingKey.get(),
+                                                           optionalCommandName.get())
+                : original;
     }
 
     private static class MethodCommandMessageHandlingMember<T>
@@ -53,18 +58,18 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
         private final String routingKey;
 
         private MethodCommandMessageHandlingMember(MessageHandlingMember<T> delegate,
-                                                   Map<String, Object> annotationAttributes) {
+                                                   String routingKeyAttribute,
+                                                   String commandNameAttribute) {
             super(delegate);
-            this.routingKey = "".equals(annotationAttributes.get("routingKey")) ? null :
-                    (String) annotationAttributes.get("routingKey");
-            Executable executable = delegate.unwrap(Executable.class).orElseThrow(() -> new AxonConfigurationException(
-                    "The @CommandHandler annotation must be put on an Executable (either directly or as Meta " +
-                            "Annotation)"));
-            if ("".equals(annotationAttributes.get("commandName"))) {
-                commandName = delegate.payloadType().getName();
-            } else {
-                commandName = (String) annotationAttributes.get("commandName");
-            }
+            Executable executable =
+                    delegate.unwrap(Executable.class)
+                            .orElseThrow(() -> new AxonConfigurationException(
+                                    "The @CommandHandler annotation must be put on an Executable "
+                                            + "(either directly or as Meta Annotation)"
+                            ));
+
+            routingKey = "".equals(routingKeyAttribute) ? null : routingKeyAttribute;
+            commandName = "".equals(commandNameAttribute) ? delegate.payloadType().getName() : commandNameAttribute;
             final boolean factoryMethod = executable instanceof Method && Modifier.isStatic(executable.getModifiers());
             if (factoryMethod && !executable.getDeclaringClass()
                                             .isAssignableFrom(((Method) executable).getReturnType())) {

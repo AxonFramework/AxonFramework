@@ -16,18 +16,20 @@
 
 package org.axonframework.modelling.saga;
 
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
+import java.lang.reflect.Executable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A {@link HandlerEnhancerDefinition} inspecting the existence of the {@link EndSaga} annotation on {@link
- * MessageHandlingMember}s. If present, the given {@code MessageHandlingMember} will be wrapped in a {@link
- * EndSageMessageHandlingMember}.
+ * A {@link HandlerEnhancerDefinition} inspecting the existence of the {@link EndSaga} annotation on
+ * {@link MessageHandlingMember}s. If present, the given {@code MessageHandlingMember} will be wrapped in a
+ * {@link EndSageMessageHandlingMember}.
  *
  * @author Steven van Beelen
  * @since 4.5
@@ -35,9 +37,11 @@ import javax.annotation.Nullable;
 public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull
-    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        return original.hasAnnotation(EndSaga.class) ? new EndSageMessageHandlingMember<>(original) : original;
+    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+        return original.unwrap(Executable.class)
+                       .filter(executable -> AnnotationUtils.isAnnotationPresent(executable, EndSaga.class))
+                       .map(e -> (MessageHandlingMember<T>) new EndSageMessageHandlingMember<>(original))
+                       .orElse(original);
     }
 
     /**

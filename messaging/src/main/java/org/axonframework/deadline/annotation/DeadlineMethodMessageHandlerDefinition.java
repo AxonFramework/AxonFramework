@@ -17,12 +17,12 @@
 package org.axonframework.deadline.annotation;
 
 import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
-import java.util.Map;
 import javax.annotation.Nonnull;
 
 /**
@@ -36,21 +36,23 @@ public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDe
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        return original.annotationAttributes(DeadlineHandler.class)
-                       .map(attr -> (MessageHandlingMember<T>) new DeadlineMethodMessageHandlingMember<>(original,
-                                                                                                         attr))
+        //noinspection rawtypes,unchecked
+        return original.<String>attribute(HandlerAttributes.DEADLINE_NAME)
+                       .map(deadlineName -> (MessageHandlingMember<T>) new DeadlineMethodMessageHandlingMember(
+                               original, deadlineName
+                       ))
                        .orElse(original);
     }
 
-    private static class DeadlineMethodMessageHandlingMember<T> extends WrappedMessageHandlingMember<T>
+    private static class DeadlineMethodMessageHandlingMember<T>
+            extends WrappedMessageHandlingMember<T>
             implements DeadlineHandlingMember<T> {
 
         private final String deadlineName;
 
-        private DeadlineMethodMessageHandlingMember(MessageHandlingMember<T> delegate,
-                                                    Map<String, Object> annotationAttributes) {
+        private DeadlineMethodMessageHandlingMember(MessageHandlingMember<T> delegate, String deadlineName) {
             super(delegate);
-            deadlineName = (String) annotationAttributes.get("deadlineName");
+            this.deadlineName = deadlineName;
         }
 
         @Override
@@ -65,7 +67,7 @@ public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDe
         }
 
         private boolean deadlineNameMatchesAll() {
-            return deadlineName.equals("");
+            return deadlineName.isEmpty();
         }
 
         @Override

@@ -18,10 +18,8 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
-import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -138,38 +136,15 @@ public interface MessageHandlingMember<T> {
     }
 
     /**
-     * Checks whether the method of the target entity contains the given {@code annotationType}.
-     *
-     * @param annotationType Annotation to check for on the target method
-     * @return {@code true} if the annotation is present on the target method, {@code false} otherwise
-     * @deprecated in favor of {@link #attribute(String)}
-     */
-    @Deprecated
-    boolean hasAnnotation(Class<? extends Annotation> annotationType);
-
-    /**
-     * Get the attributes of an annotation of given {@code annotationType} on the method of the target entity. If the
-     * annotation is present on the target method an Optional is returned containing the properties mapped by their
-     * name. If the annotation is not present an empty Optional is returned.
-     *
-     * @param annotationType The annotation to check for on the target method
-     * @return An optional containing a map of the properties of the annotation, or an empty optional if the annotation
-     * is missing on the method
-     * @deprecated in favor of {@link #attribute(String)}
-     */
-    @Deprecated
-    Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType);
-
-    /**
      * Retrieve a single attributes for the given {@code attributeKey}. If this {@link MessageHandlingMember} does not
-     * hold a value referencing the {@code attributeKey}, an {@link Optional#empty()} is returned. Otherwise a non-empty
-     * {@link Optional} containing the attribute will be provided.
+     * hold a value referencing the {@code attributeKey}, an {@link Optional#empty()} is returned. Otherwise, a
+     * non-empty {@link Optional} containing the attribute will be provided.
      * <p>
      * When using the method, consider checking the {@link org.axonframework.messaging.HandlerAttributes} for a list of
      * common handler attributes.
      *
      * @param attributeKey the key to retrieve an attribute for
-     * @return a non-empty {@link Optional} of the attribute referencing the given {@code attributeKey}. Otherwise an
+     * @return a non-empty {@link Optional} of the attribute referencing the given {@code attributeKey}. Otherwise, an
      * {@link Optional#empty()} will be returned
      */
     default <R> Optional<R> attribute(String attributeKey) {

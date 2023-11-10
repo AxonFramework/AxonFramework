@@ -17,13 +17,13 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 
-import java.util.Map;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 
@@ -36,11 +36,11 @@ import javax.annotation.Nonnull;
 public class MethodCommandHandlerInterceptorDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull
-    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        return original.annotationAttributes(CommandHandlerInterceptor.class)
-                       .map(attr -> (MessageHandlingMember<T>) new MethodCommandHandlerInterceptorHandlingMember<>(
-                               original, attr))
+    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+        return original.<String>attribute(HandlerAttributes.COMMAND_NAME_PATTERN)
+                       .map(commandNamePattern -> (MessageHandlingMember<T>)
+                               new MethodCommandHandlerInterceptorHandlingMember<>(original, commandNamePattern)
+                       )
                        .orElse(original);
     }
 
@@ -54,15 +54,16 @@ public class MethodCommandHandlerInterceptorDefinition implements HandlerEnhance
          * @param delegate the actual message handling member to delegate to
          */
         private MethodCommandHandlerInterceptorHandlingMember(MessageHandlingMember<T> delegate,
-                                                              Map<String, Object> annotationAttributes) {
+                                                              String commandNamePattern) {
             super(delegate);
-            commandNamePattern = Pattern.compile((String) annotationAttributes.get("commandNamePattern"));
+            this.commandNamePattern = Pattern.compile(commandNamePattern);
         }
 
         @Override
         public boolean canHandle(@Nonnull Message<?> message) {
-            return super.canHandle(message) && commandNamePattern.matcher(((CommandMessage) message).getCommandName())
-                                                                 .matches();
+            return super.canHandle(message)
+                    && commandNamePattern.matcher(((CommandMessage<?>) message).getCommandName())
+                                         .matches();
         }
     }
 }
