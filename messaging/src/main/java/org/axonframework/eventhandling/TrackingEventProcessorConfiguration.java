@@ -231,23 +231,6 @@ public class TrackingEventProcessorConfiguration {
      * This is used for both the graceful termination and the potential forced termination of active workers. It is thus
      * possible that it is used twice during the shutdown phase. Defaults to 5000ms.
      *
-     * @param workerTerminationTimeoutInMilliseconds The timeout for workers to terminate on a shutdown in
-     *                                               milliseconds.
-     * @return {@code this} for method chaining.
-     * @deprecated Use {@link #andWorkerTerminationTimeout(long, TimeUnit)} instead.
-     */
-    @Deprecated
-    public TrackingEventProcessorConfiguration andWorkerTerminationTimeout(
-            long workerTerminationTimeoutInMilliseconds) {
-        return andWorkerTerminationTimeout(workerTerminationTimeoutInMilliseconds, TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * Sets the shutdown timeout to terminate active workers.
-     * <p>
-     * This is used for both the graceful termination and the potential forced termination of active workers. It is thus
-     * possible that it is used twice during the shutdown phase. Defaults to 5000ms.
-     *
      * @param workerTerminationTimeout The timeout for workers to terminate on a shutdown.
      * @param timeUnit                 The unit of time.
      * @return {@code this} for method chaining.

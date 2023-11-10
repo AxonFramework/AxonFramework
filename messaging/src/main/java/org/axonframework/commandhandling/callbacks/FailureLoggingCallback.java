@@ -47,36 +47,6 @@ public class FailureLoggingCallback<C, R> implements CommandCallback<C, R> {
         this.delegate = null;
     }
 
-    /**
-     * Initialize the callback to delegate calls to the given {@code delegate}, logging failures on a logger
-     * for this class (on warn level).
-     *
-     * @deprecated Please use {@link CommandCallback#wrap(CommandCallback)} to wrap a command with a delegate and use
-     * the {@link FailureLoggingCallback#FailureLoggingCallback} to create this callback
-     *
-     * @param delegate The command callback to forward invocations to
-     */
-    @Deprecated
-    public FailureLoggingCallback(CommandCallback<C, R> delegate) {
-        this(LoggerFactory.getLogger(FailureLoggingCallback.class), delegate);
-    }
-
-    /**
-     * Initialize the callback to delegate calls to the given {@code delegate}, logging failures on the given {@code
-     * logger} (on warn level).
-     *
-     * @deprecated Please use {@link CommandCallback#wrap(CommandCallback)} to wrap a command with a delegate and use
-     * the {@link FailureLoggingCallback#FailureLoggingCallback(Logger)} to specify you custom logger.
-     *
-     * @param logger   The logger to log exceptions on
-     * @param delegate The command callback to forward invocations to
-     */
-    @Deprecated
-    public FailureLoggingCallback(@Nonnull Logger logger, @Nonnull CommandCallback<C, R> delegate) {
-        this.logger = logger;
-        this.delegate = delegate;
-    }
-
     @Override
     public void onResult(@Nonnull CommandMessage<? extends C> commandMessage,
                          @Nonnull CommandResultMessage<? extends R> commandResultMessage) {

@@ -67,7 +67,7 @@ class CommandCallbackRepositoryTest {
     }
 
     @Test
-    void cancelCallbacks() {
+    void cancelCallbacksForChannel() {
         CommandCallbackRepository<Object> repository = new CommandCallbackRepository<>();
         repository.store("A", createWrapper("A"));
         repository.store("B", createWrapper("A"));
@@ -76,10 +76,10 @@ class CommandCallbackRepositoryTest {
 
         assertEquals(4, repository.callbacks().size());
 
-        repository.cancelCallbacks("C");
+        repository.cancelCallbacksForChannel("C");
         assertEquals(4, repository.callbacks().size());
 
-        repository.cancelCallbacks("A");
+        repository.cancelCallbacksForChannel("A");
         assertEquals(1, repository.callbacks().size());
 
         assertEquals(3, failCounter);

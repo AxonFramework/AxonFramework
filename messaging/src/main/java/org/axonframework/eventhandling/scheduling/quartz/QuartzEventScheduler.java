@@ -232,27 +232,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
      */
     public static class DirectEventJobDataBinder implements EventJobDataBinder {
 
-        /**
-         * The key used to locate the event in the {@link JobDataMap}.
-         *
-         * @deprecated in favor of the default message keys | only maintained for backwards compatibility
-         */
-        @Deprecated
-        public static final String EVENT_KEY = EventMessage.class.getName();
-
         private final Serializer serializer;
-
-        /**
-         * Instantiate a {@link DirectEventJobDataBinder} which defaults to a {@link XStreamSerializer} for
-         * de-/serializing event messages.
-         *
-         * @deprecated in favor of {@link DirectEventJobDataBinder#DirectEventJobDataBinder(Serializer)}, as the {@link
-         * Serializer} is a hard requirement.
-         */
-        @Deprecated
-        public DirectEventJobDataBinder() {
-            this(XStreamSerializer.defaultSerializer());
-        }
 
         /**
          * Instantiate a {@link DirectEventJobDataBinder} with the provided {@link Serializer} for
@@ -286,36 +266,12 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             return jobData;
         }
 
-        /**
-         * <b>Note</b> that this function is able to retrieve an Event Message in two formats. The first is the
-         * original, deprecated approach, which uses the Quartz serializer (read Java serialization) to serialize an
-         * entire event message at once. The second approach uses the configurable {@link Serializer} in this class to
-         * serialized the payload and metadata of an event message. All fields which required to instantiate a
-         * {@link GenericEventMessage} are currently stored in the {@code jobDataMap} when calling the
-         * {@link DirectEventJobDataBinder#toJobData(Object)} function.
-         * Approach one only exists for backwards compatibility and should be removed in subsequent major releases.
-         * <p>
-         * {@inheritDoc}
-         */
         @Override
         public Object fromJobData(JobDataMap jobDataMap) {
-            if (jobDataMap.containsKey(SERIALIZED_MESSAGE_PAYLOAD)) {
-                return new GenericEventMessage<>((String) jobDataMap.get(MESSAGE_ID),
-                                                 deserializePayload(jobDataMap),
-                                                 deserializeMetaData(jobDataMap),
-                                                 retrieveDeadlineTimestamp(jobDataMap));
-            }
-
-            return fromJobDataMap(jobDataMap);
-        }
-
-        /**
-         * @deprecated this private function is in place for backwards compatibility only. Ideally, the event message is
-         * retrieved based on the serialized keys.
-         */
-        @Deprecated
-        private Object fromJobDataMap(JobDataMap jobDataMap) {
-            return jobDataMap.get(EVENT_KEY);
+            return new GenericEventMessage<>((String) jobDataMap.get(MESSAGE_ID),
+                                             deserializePayload(jobDataMap),
+                                             deserializeMetaData(jobDataMap),
+                                             retrieveDeadlineTimestamp(jobDataMap));
         }
 
         private Object deserializePayload(JobDataMap jobDataMap) {

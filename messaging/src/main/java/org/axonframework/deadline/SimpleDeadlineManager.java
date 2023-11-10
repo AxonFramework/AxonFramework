@@ -115,7 +115,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
                            @Nonnull String deadlineName,
                            Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
-        DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
+        DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineMessageId = deadlineMessage.getIdentifier();
         DeadlineId deadlineId = new DeadlineId(deadlineName, deadlineScope, deadlineMessageId);
         Span span = spanFactory.createScheduleSpan(deadlineName, deadlineMessageId, deadlineMessage);

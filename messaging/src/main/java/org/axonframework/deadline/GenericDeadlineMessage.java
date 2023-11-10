@@ -42,25 +42,6 @@ public class GenericDeadlineMessage<T> extends GenericEventMessage<T> implements
     private final String deadlineName;
 
     /**
-     * Returns the given {@code deadlineName} and {@code messageOrPayload} as a DeadlineMessage. If the
-     * {@code messageOrPayload} parameter is of type {@link Message}, a new DeadlineMessage will be created using the
-     * payload and meta data of the given deadline.
-     * Otherwise, the given {@code messageOrPayload} is wrapped into a GenericDeadlineMessage as its payload.
-     *
-     * @param deadlineName     A {@link String} denoting the deadline's name
-     * @param messageOrPayload A {@link Message} or payload to wrap as a DeadlineMessage
-     * @param <T>              The generic type of the expected payload of the resulting object
-     * @return a DeadlineMessage using the {@code deadlineName} as its deadline name and containing the given
-     * {@code messageOrPayload} as the payload
-     * @deprecated Use {@link #asDeadlineMessage(String, Object, Instant)} instead, as it sets the timestamp of the
-     * deadline, rather than the current time
-     */
-    @Deprecated
-    public static <T> DeadlineMessage<T> asDeadlineMessage(@Nonnull String deadlineName, Object messageOrPayload) {
-        return asDeadlineMessage(deadlineName, messageOrPayload, clock.instant());
-    }
-
-    /**
      * Returns the given {@code deadlineName} and {@code messageOrPayload} as a DeadlineMessage which expires at the
      * given {@code expiryTime}. If the {@code messageOrPayload} parameter is of type {@link Message}, a new
      * {@code DeadlineMessage} instance will be created using the payload and meta data of the given message.

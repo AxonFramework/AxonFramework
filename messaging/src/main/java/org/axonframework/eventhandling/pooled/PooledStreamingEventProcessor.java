@@ -570,21 +570,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *                       by this {@link PooledStreamingEventProcessor}
          *
          * @return the current Builder instance, for fluent interfacing
-         * @deprecated in favor of {@link #workerExecutor(ScheduledExecutorService)}
-         */
-        @Deprecated
-        public Builder workerExecutorService(@Nonnull ScheduledExecutorService workerExecutor) {
-            return workerExecutor(workerExecutor);
-        }
-
-        /**
-         * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
-         * {@link PooledStreamingEventProcessor}.
-         *
-         * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
-         *                       by this {@link PooledStreamingEventProcessor}
-         *
-         * @return the current Builder instance, for fluent interfacing
          */
         public Builder workerExecutor(@Nonnull ScheduledExecutorService workerExecutor) {
             assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
