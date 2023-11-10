@@ -452,34 +452,6 @@ public class SimpleQueryBus implements QueryBus {
         return response;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated in favor use of {{@link #subscriptionQuery(SubscriptionQueryMessage, int)}
-     */
-    @Deprecated
-    @Override
-    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
-            SubscriptionQueryBackpressure backpressure,
-            int updateBufferSize
-    ) {
-        assertSubQueryResponseTypes(query);
-        if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
-            throw new IllegalArgumentException("There is already a subscription with the given message identifier");
-        }
-
-        Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
-                                                          .doOnError(error -> logger.error(format(
-                                                                  "An error happened while trying to report an initial result. Query: %s",
-                                                                  query), error));
-
-        UpdateHandlerRegistration<U> updateHandlerRegistration =
-                queryUpdateEmitter.registerUpdateHandler(query, backpressure, updateBufferSize);
-
-        return getSubscriptionQueryResult(initialResult, updateHandlerRegistration);
-    }
-
     @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             @Nonnull SubscriptionQueryMessage<Q, I, U> query,

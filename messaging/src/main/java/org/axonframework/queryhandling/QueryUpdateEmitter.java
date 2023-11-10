@@ -157,23 +157,6 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
     boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage<?, ?, ?> query);
 
     /**
-     * Registers an Update Handler for given {@code query} with given {@code backpressure} and {@code
-     * updateBufferSize}.
-     *
-     * @param query            the subscription query for which we register an Update Handler
-     * @param backpressure     the backpressure mechanism to be used for emitting updates
-     * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
-     *                         made
-     * @param <U>              the incremental response types of the query
-     * @return the object which contains updates and a registration which can be used to cancel them
-     * @deprecated in favour of using {{@link #registerUpdateHandler(SubscriptionQueryMessage, int)}}
-     */
-    @Deprecated
-    <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
-                                                           SubscriptionQueryBackpressure backpressure,
-                                                           int updateBufferSize);
-
-    /**
      * Registers an Update Handler for given {@code query} with given {@code updateBufferSize}.
      *
      * @param query            the subscription query for which we register an Update Handler

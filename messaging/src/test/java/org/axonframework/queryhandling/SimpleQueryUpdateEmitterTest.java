@@ -61,11 +61,7 @@ class SimpleQueryUpdateEmitterTest {
                 ResponseTypes.instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
-                queryMessage,
-                SubscriptionQueryBackpressure.defaultBackpressure(),
-                1024
-        );
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(queryMessage, 1024);
 
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
@@ -106,7 +102,7 @@ class SimpleQueryUpdateEmitterTest {
                 ResponseTypes.instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> registration = testSubject.registerUpdateHandler(queryMessage, SubscriptionQueryBackpressure.defaultBackpressure(), 128);
+        UpdateHandlerRegistration<Object> registration = testSubject.registerUpdateHandler(queryMessage, 128);
 
         ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < 100; i++) {
@@ -130,11 +126,7 @@ class SimpleQueryUpdateEmitterTest {
                 ResponseTypes.instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
-                queryMessage,
-                SubscriptionQueryBackpressure.defaultBackpressure(),
-                1024
-        );
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(queryMessage, 1024);
 
         testSubject.emit(any -> true, "some-awesome-text");
         result.getRegistration().cancel();

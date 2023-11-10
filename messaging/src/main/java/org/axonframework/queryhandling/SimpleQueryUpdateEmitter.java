@@ -31,9 +31,7 @@ import org.axonframework.tracing.Span;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
@@ -99,32 +97,6 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         return updateHandlers.keySet()
                              .stream()
                              .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated in favour of using {{@link #registerUpdateHandler(SubscriptionQueryMessage, int)}}
-     */
-    @Deprecated
-    @Override
-    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
-                                                                  SubscriptionQueryBackpressure backpressure,
-                                                                  int updateBufferSize) {
-        EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create(updateBufferSize);
-        FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
-        sink.onDispose(() -> updateHandlers.remove(query));
-        FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
-        updateHandlers.put(query, fluxSinkWrapper);
-
-        Registration registration = () -> {
-            updateHandlers.remove(query);
-            return true;
-        };
-
-        return new UpdateHandlerRegistration<>(registration,
-                                               processor.replay(updateBufferSize).autoConnect(),
-                                               fluxSinkWrapper::complete);
     }
 
     @Override

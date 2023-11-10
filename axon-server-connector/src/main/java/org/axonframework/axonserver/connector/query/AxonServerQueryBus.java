@@ -73,7 +73,6 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.StreamingQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -432,21 +431,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             span.recordException(e).end();
             throw e;
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated in favor of using the {{@link #subscriptionQuery(SubscriptionQueryMessage, int)}}
-     */
-    @Deprecated
-    @Override
-    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
-            SubscriptionQueryBackpressure backPressure,
-            int updateBufferSize
-    ) {
-        return subscriptionQuery(query, updateBufferSize);
     }
 
     @Override
