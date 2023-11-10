@@ -60,7 +60,6 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -359,13 +358,6 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         private void buildStorageEngine() {
-            if (snapshotSerializer == null) {
-                snapshotSerializer = XStreamSerializer::defaultSerializer;
-            }
-            if (eventSerializer == null) {
-                eventSerializer = XStreamSerializer::defaultSerializer;
-            }
-
             assertNonNull(configuration, "The AxonServerConfiguration is a hard requirement and should be provided");
             assertNonNull(axonServerConnectionManager,
                           "The PlatformConnectionManager is a hard requirement and should be provided");

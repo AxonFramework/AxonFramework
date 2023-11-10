@@ -32,7 +32,6 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -446,9 +445,6 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
             if (jobDataBinderSupplier == null) {
-                if (serializer == null) {
-                    serializer = XStreamSerializer::defaultSerializer;
-                }
                 jobDataBinderSupplier = () -> new DirectEventJobDataBinder(serializer.get());
             }
         }

@@ -350,12 +350,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            if (snapshotSerializer == null) {
-                snapshotSerializer = XStreamSerializer::defaultSerializer;
-            }
-            if (eventSerializer == null) {
-                eventSerializer = XStreamSerializer::defaultSerializer;
-            }
+            // Kept for overriding
         }
     }
 }
