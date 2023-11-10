@@ -20,7 +20,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.DirectEventProcessingStrategy;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
@@ -657,9 +656,9 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerTokenStore(String processingGroup,
+    public EventProcessingConfigurer registerTokenStore(String processorName,
                                                         Function<Configuration, TokenStore> tokenStore) {
-        this.tokenStore.put(processingGroup, new Component<>(() -> configuration,
+        this.tokenStore.put(processorName, new Component<>(() -> configuration,
                                                              "tokenStore",
                                                              tokenStore));
         return this;
