@@ -19,13 +19,11 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nonnull;
@@ -146,25 +144,8 @@ class HandlerComparatorTest {
                    "Reversed-order-Object handler should appear before reversed-order-String handler");
     }
 
-    private static class StubMessageHandlingMember implements MessageHandlingMember<Object> {
-
-        private final Class<?> payloadType;
-        private final int priority;
-
-        StubMessageHandlingMember(Class<?> payloadType, int priority) {
-            this.payloadType = payloadType;
-            this.priority = priority;
-        }
-
-        @Override
-        public Class<?> payloadType() {
-            return payloadType;
-        }
-
-        @Override
-        public int priority() {
-            return priority;
-        }
+    private record StubMessageHandlingMember(Class<?> payloadType, int priority)
+            implements MessageHandlingMember<Object> {
 
         @Override
         public boolean canHandle(@Nonnull Message<?> message) {
@@ -184,16 +165,6 @@ class HandlerComparatorTest {
 
         @Override
         public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
-            return Optional.empty();
-        }
-
-        @Override
-        public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
-            return false;
-        }
-
-        @Override
-        public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
             return Optional.empty();
         }
 
@@ -211,25 +182,8 @@ class HandlerComparatorTest {
         }
     }
 
-    private static class ReversedOrderMessageHandlingMember implements MessageHandlingMember<Object> {
-
-        private final Class<?> payloadType;
-        private final int priority;
-
-        ReversedOrderMessageHandlingMember(Class<?> payloadType, int priority) {
-            this.payloadType = payloadType;
-            this.priority = priority;
-        }
-
-        @Override
-        public Class<?> payloadType() {
-            return payloadType;
-        }
-
-        @Override
-        public int priority() {
-            return priority;
-        }
+    private record ReversedOrderMessageHandlingMember(Class<?> payloadType, int priority)
+            implements MessageHandlingMember<Object> {
 
         @Override
         public boolean canHandle(@Nonnull Message<?> message) {
@@ -253,17 +207,8 @@ class HandlerComparatorTest {
         }
 
         @Override
-        public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
-            return false;
-        }
-
-        @Override
-        public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
-            return Optional.empty();
-        }
-
-        @Override
         public <R> Optional<R> attribute(String attributeKey) {
+            //noinspection unchecked
             return "ResultHandler.resultType".equals(attributeKey) ? Optional.of((R) Object.class) : Optional.empty();
         }
 
