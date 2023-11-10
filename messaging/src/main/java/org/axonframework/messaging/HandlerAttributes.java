@@ -61,6 +61,10 @@ public interface HandlerAttributes {
      * Attribute key referencing the exception result type the handler can handle.
      */
     String EXCEPTION_RESULT_TYPE = "ExceptionHandler.resultType";
+    /**
+     * Attribute key reference the command name pattern for a command message interceptor.
+     */
+    String COMMAND_NAME_PATTERN = "CommandHandlerInterceptor.commandNamePattern";
 
     /**
      * Attribute key referencing whether the handler forces the creation of a new saga instance.
@@ -98,6 +102,12 @@ public interface HandlerAttributes {
      * Attribute key referencing whether the handler is allowed to be invoked on replays.
      */
     String ALLOW_REPLAY = "AllowReplay.allowReplay";
+
+    /**
+     * Attribute key referencing the name of the {@link org.axonframework.deadline.DeadlineMessage} the handler can
+     * handle.
+     */
+    String DEADLINE_NAME = "DeadlineHandler.deadlineName";
 
     /**
      * Retrieve the attribute for the given {@code attributeKey}. Might be {@code null} if there is no attribute present
