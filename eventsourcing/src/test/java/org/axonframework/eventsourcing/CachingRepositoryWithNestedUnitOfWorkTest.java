@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.caching.Cache;
-import org.axonframework.common.caching.EhCache3Adapter;
+import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.common.caching.NoCache;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
@@ -114,7 +114,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         DefaultConfiguration config = new DefaultConfiguration(caches, null);
         cacheManager = new EhcacheManager(config);
         cacheManager.init();
-        realCache = new EhCache3Adapter((Ehcache) cacheManager.createCache(
+        realCache = new EhCacheAdapter((Ehcache) cacheManager.createCache(
                 "name",
                 CacheConfigurationBuilder
                         .newCacheConfigurationBuilder(
