@@ -24,19 +24,14 @@ import io.axoniq.axonserver.connector.impl.CloseAwareReplyChannel;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
-import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
-import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.DefaultInstructionAckSource;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.InstructionAckSource;
 import org.axonframework.axonserver.connector.PriorityRunnable;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerRegistration;
@@ -46,7 +41,6 @@ import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
 import org.axonframework.axonserver.connector.util.PriorityTaskSchedulers;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
-import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonException;
@@ -105,7 +99,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
@@ -677,36 +670,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         public Builder executorServiceBuilder(ExecutorServiceBuilder executorServiceBuilder) {
             assertNonNull(executorServiceBuilder, "ExecutorServiceBuilder may not be null");
             this.executorServiceBuilder = executorServiceBuilder;
-            return this;
-        }
-
-        /**
-         * Sets the request stream factory that creates a request stream based on upstream. Defaults to
-         * {@link UpstreamAwareStreamObserver#getRequestStream()}.
-         *
-         * @param requestStreamFactory factory that creates a request stream based on upstream
-         * @return the current Builder instance, for fluent interfacing
-         * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer
-         * java connector</a>
-         */
-        @Deprecated
-        public Builder requestStreamFactory(
-                Function<UpstreamAwareStreamObserver<QueryProviderInbound>, StreamObserver<QueryProviderOutbound>> requestStreamFactory
-        ) {
-            return this;
-        }
-
-        /**
-         * Sets the instruction ack source used to send instruction acknowledgements. Defaults to
-         * {@link DefaultInstructionAckSource}.
-         *
-         * @param instructionAckSource used to send instruction acknowledgements
-         * @return the current Builder instance, for fluent interfacing
-         * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer
-         * java connector</a>
-         */
-        @Deprecated
-        public Builder instructionAckSource(InstructionAckSource<QueryProviderOutbound> instructionAckSource) {
             return this;
         }
 
