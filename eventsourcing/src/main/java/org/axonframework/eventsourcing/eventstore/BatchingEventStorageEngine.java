@@ -215,18 +215,6 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
             return this;
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
-         */
-        @Override
-        @Deprecated
-        public BatchingEventStorageEngine.Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
-            super.snapshotFilter(snapshotFilter);
-            return this;
-        }
-
         @Override
         public BatchingEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
             super.snapshotFilter(snapshotFilter);

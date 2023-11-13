@@ -732,21 +732,6 @@ public class AxonServerEventStore extends AbstractEventStore {
                 return this;
             }
 
-            /**
-             * {@inheritDoc}
-             *
-             * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
-             */
-            @Override
-            @Deprecated
-            public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
-                if (snapshotFilter != null) {
-                    super.snapshotFilter(snapshotFilter);
-                    snapshotFilterSet = true;
-                }
-                return this;
-            }
-
             @Override
             public Builder snapshotFilter(SnapshotFilter snapshotFilter) {
                 if (snapshotFilter != null) {

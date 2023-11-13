@@ -1121,18 +1121,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
             return this;
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
-         */
-        @Override
-        @Deprecated
-        public JdbcEventStorageEngine.Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
-            super.snapshotFilter(snapshotFilter);
-            return this;
-        }
-
         @Override
         public JdbcEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
             super.snapshotFilter(snapshotFilter);

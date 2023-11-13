@@ -315,20 +315,6 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
         /**
          * Sets the {@code snapshotFilter} deciding whether to take a snapshot into account. Can be set to filter out
-         * specific snapshot revisions which should not be applied. Defaults to a {@link Predicate} which returns {@code
-         * true} regardless.
-         *
-         * @param snapshotFilter a {@link Predicate} which decides whether to take a snapshot into account
-         * @return the current Builder instance, for fluent interfacing
-         * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
-         */
-        @Deprecated
-        public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
-            return snapshotFilter(snapshotFilter::test);
-        }
-
-        /**
-         * Sets the {@code snapshotFilter} deciding whether to take a snapshot into account. Can be set to filter out
          * specific snapshot revisions which should not be applied. Defaults to {@link SnapshotFilter#allowAll()}.
          * <p>
          * Note that {@link SnapshotFilter} instances can be combined and should return {@code true} if they handle a

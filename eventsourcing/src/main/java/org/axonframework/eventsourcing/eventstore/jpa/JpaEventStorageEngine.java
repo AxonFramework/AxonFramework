@@ -557,18 +557,6 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
             return this;
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
-         */
-        @Override
-        @Deprecated
-        public JpaEventStorageEngine.Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
-            super.snapshotFilter(snapshotFilter);
-            return this;
-        }
-
         @Override
         public JpaEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
