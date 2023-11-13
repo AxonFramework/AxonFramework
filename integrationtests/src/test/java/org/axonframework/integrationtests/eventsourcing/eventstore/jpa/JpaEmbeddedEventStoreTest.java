@@ -16,20 +16,22 @@
 
 package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 
-import org.axonframework.common.legacyjpa.EntityManagerProvider;
-import org.axonframework.common.legacyjpa.SimpleEntityManagerProvider;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStoreTest;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.legacyjpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -41,13 +43,9 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 /**
@@ -58,7 +56,6 @@ import javax.sql.DataSource;
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = JpaEmbeddedEventStoreTest.TestContext.class)
-@TestPropertySource("classpath:hsqldb.database.properties")
 class JpaEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
 
     @Autowired
@@ -106,30 +103,23 @@ class JpaEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
         }
 
         @Bean
-        public DataSource dataSource(@Value("${jdbc.driverclass}") String driverClass,
-                                     @Value("${jdbc.url}") String url,
-                                     @Value("${jdbc.username}") String username,
-                                     @Value("${jdbc.password}") String password) {
-            DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource(url, username, password);
-            driverManagerDataSource.setDriverClassName(driverClass);
+        public DataSource dataSource() {
+            DriverManagerDataSource driverManagerDataSource
+                    = new DriverManagerDataSource("jdbc:hsqldb:mem:axontest", "sa", "password");
+            driverManagerDataSource.setDriverClassName("org.hsqldb.jdbcDriver");
             return Mockito.spy(driverManagerDataSource);
         }
 
         @Bean("entityManagerFactory")
-        public LocalContainerEntityManagerFactoryBean entityManagerFactory(
-                @Value("${hibernate.sql.dialect}") String dialect,
-                @Value("${hibernate.sql.generateddl}") boolean generateDdl,
-                @Value("${hibernate.sql.show}") boolean showSql,
-                DataSource dataSource
-        ) {
+        public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
             entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
-            jpaVendorAdapter.setDatabasePlatform(dialect);
-            jpaVendorAdapter.setGenerateDdl(generateDdl);
-            jpaVendorAdapter.setShowSql(showSql);
+            jpaVendorAdapter.setDatabasePlatform("org.hibernate.dialect.HSQLDialect");
+            jpaVendorAdapter.setGenerateDdl(true);
+            jpaVendorAdapter.setShowSql(false);
             entityManagerFactoryBean.setJpaVendorAdapter(jpaVendorAdapter);
 
             entityManagerFactoryBean.setDataSource(dataSource);

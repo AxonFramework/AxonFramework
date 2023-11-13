@@ -35,33 +35,22 @@ import org.axonframework.modelling.saga.AssociationValue;
         @Index(columnList = "sagaId, sagaType", unique = false)
 })
 @Entity
-@javax.persistence.Table(indexes = {
-        @javax.persistence.Index(columnList = "sagaType, associationKey, associationValue", unique = false),
-        @javax.persistence.Index(columnList = "sagaId, sagaType", unique = false)
-})
-@javax.persistence.Entity
 public class AssociationValueEntry {
 
     @Id
     @GeneratedValue
-    @javax.persistence.Id
-    @javax.persistence.GeneratedValue
     private Long id;
 
     @Basic(optional = false)
-    @javax.persistence.Basic(optional = false)
     private String sagaId;
 
     @Basic(optional = false)
-    @javax.persistence.Basic(optional = false)
     private String associationKey;
 
     @Basic
-    @javax.persistence.Basic
     private String associationValue;
 
     @Basic
-    @javax.persistence.Basic
     private String sagaType;
 
     /**

@@ -38,9 +38,6 @@
         <module>spring-boot-starter</module>
         <module>test</module>
         <module>tracing-opentelemetry</module>
-        <module>spring-boot3-dummy</module>
-        <module>hibernate-6-integrationtests</module>
-        <module>spring-boot-3-integrationtests</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -77,12 +74,11 @@
         <!-- Caching -->
         <ehcache.version>2.10.9.2</ehcache.version>
         <ehcache3.version>3.10.8</ehcache3.version>
+        <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <!-- Database -->
         <c3p0.version>0.9.1.2</c3p0.version>
-        <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
-        <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
-        <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.3.1.Final</hibernate-core.6.version>
+        <hsqldb.version>2.7.2</hsqldb.version>
+        <hibernate-core.version>6.3.1.Final</hibernate-core.version>
         <mysql-connector-java.version>8.0.33</mysql-connector-java.version>
         <postgresql.version>42.6.0</postgresql.version>
         <!-- Jakarta -->
@@ -90,18 +86,8 @@
         <jakarta.el.version>4.0.0</jakarta.el.version>
         <jakarta.el-impl.version>4.0.2</jakarta.el-impl.version>
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
-        <jakarta.persistence.version>3.0.0</jakarta.persistence.version><!-- Don't upgrade due to JDK8 -->
-        <jakarta.persistence.with11.version>3.1.0</jakarta.persistence.with11.version>
+        <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
         <jakarta.validation.version>3.0.2</jakarta.validation.version>
-        <!-- Javax -->
-        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
-        <javax.cache-api.version>1.1.1</javax.cache-api.version>
-        <javax.el-api.version>3.0.1-b06</javax.el-api.version>
-        <javax.el-impl.version>2.2</javax.el-impl.version>
-        <javax.inject.version>1</javax.inject.version>
-        <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
-        <javax.persistence-api.version>2.2</javax.persistence-api.version>
-        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <!-- Logging -->
         <log4j.version>2.21.1</log4j.version>
         <slf4j.version>2.0.9</slf4j.version>
@@ -128,9 +114,9 @@
         <jobrunr.version>6.3.2</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
-        <spring.version>5.3.30</spring.version>
-        <spring.boot.version>2.7.17</spring.boot.version>
-        <spring-security.version>5.8.7</spring-security.version>
+        <spring.version>6.0.13</spring.version>
+        <spring.boot.version>3.1.5</spring.boot.version>
+        <spring-security.version>6.1.5</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.2.0</awaitility.version>
         <hamcrest.version>2.2</hamcrest.version>
@@ -139,8 +125,7 @@
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.1</testcontainers.version>
         <!-- Validation -->
-        <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
-        <hibernate-validator.8.version>8.0.1.Final</hibernate-validator.8.version>
+        <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
         <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>5.1.9</felix.maven-bundle-plugin.version>
@@ -260,18 +245,8 @@
                 <version>${c3p0.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-core</artifactId>
-                <version>${hibernate-core.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>${hibernate-core.6.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-core-jakarta</artifactId>
                 <version>${hibernate-core.version}</version>
             </dependency>
             <dependency>
@@ -280,8 +255,8 @@
                 <version>${hsqldb.version}</version>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-connector-java.version}</version>
             </dependency>
             <dependency>
@@ -289,21 +264,11 @@
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
             </dependency>
-            <!-- Javax / Jakarta -->
-            <dependency>
-                <groupId>javax.annotation</groupId>
-                <artifactId>javax.annotation-api</artifactId>
-                <version>${javax.annotation-api.version}</version>
-            </dependency>
+            <!-- Jakarta -->
             <dependency>
                 <groupId>jakarta.annotation</groupId>
                 <artifactId>jakarta.annotation-api</artifactId>
                 <version>${jakarta.annotation.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${javax.validation-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.validation</groupId>
@@ -316,34 +281,14 @@
                 <version>${jakarta.el-impl.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish.web</groupId>
-                <artifactId>el-impl</artifactId>
-                <version>${javax.el-impl.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.el</groupId>
-                <artifactId>javax.el-api</artifactId>
-                <version>${javax.el-api.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.el</groupId>
                 <artifactId>jakarta.el-api</artifactId>
                 <version>${jakarta.el.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.inject</groupId>
-                <artifactId>javax.inject</artifactId>
-                <version>${javax.inject.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.inject</groupId>
                 <artifactId>jakarta.inject-api</artifactId>
                 <version>${jakarta.inject.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.persistence</groupId>
-                <artifactId>javax.persistence-api</artifactId>
-                <version>${javax.persistence-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.persistence</groupId>
@@ -517,14 +462,9 @@
             </dependency>
             <!-- Validation -->
             <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-validator</artifactId>
-                <version>${hibernate-validator.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>${hibernate-validator.8.version}</version>
+                <version>${hibernate-validator.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

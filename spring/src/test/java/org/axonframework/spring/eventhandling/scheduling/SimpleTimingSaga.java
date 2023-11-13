@@ -16,12 +16,12 @@
 
 package org.axonframework.spring.eventhandling.scheduling;
 
+import jakarta.inject.Inject;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 
 import java.time.Duration;
-import javax.inject.Inject;
 
 /**
  * @author Allard Buijze
@@ -52,5 +52,4 @@ public class SimpleTimingSaga {
     public void setTimer(EventScheduler timer) {
         this.timer = timer;
     }
-
 }

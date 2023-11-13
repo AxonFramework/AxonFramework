@@ -16,13 +16,13 @@
 
 package org.axonframework.modelling.saga;
 
+import jakarta.inject.Inject;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.utils.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.inject.Inject;
 
 import static org.junit.jupiter.api.Assertions.*;
 

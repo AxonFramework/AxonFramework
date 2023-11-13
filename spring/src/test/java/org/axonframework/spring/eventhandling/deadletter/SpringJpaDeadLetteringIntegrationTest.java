@@ -16,18 +16,21 @@
 
 package org.axonframework.spring.eventhandling.deadletter;
 
-import org.axonframework.common.legacyjpa.EntityManagerProvider;
-import org.axonframework.common.legacyjpa.SimpleEntityManagerProvider;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
 import org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry;
 import org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry;
-import org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterJpaConverter;
-import org.axonframework.eventhandling.deadletter.legacyjpa.EventMessageDeadLetterJpaConverter;
-import org.axonframework.eventhandling.deadletter.legacyjpa.JpaDeadLetter;
-import org.axonframework.eventhandling.deadletter.legacyjpa.JpaSequencedDeadLetterQueue;
+import org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter;
+import org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter;
+import org.axonframework.eventhandling.deadletter.jpa.JpaDeadLetter;
+import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -57,9 +60,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
@@ -71,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
+
 @ExtendWith(SpringExtension.class)
 @ExtendWith(MysqlTestContainerExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
@@ -78,23 +79,17 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
 
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
-    @SuppressWarnings("deprecation")
     @Autowired
     private EntityManagerProvider entityManagerProvider;
     private final Serializer serializer = TestSerializer.JACKSON.getSerializer();
-    @SuppressWarnings("deprecation")
     private final DeadLetterJpaConverter<EventMessage<?>> converter = new EventMessageDeadLetterJpaConverter();
-
-    @SuppressWarnings("deprecation")
     private JpaSequencedDeadLetterQueue<EventMessage<?>> jpaDeadLetterQueue;
 
     @BeforeEach
     public void clear() {
-        getTransactionManager().executeInTransaction(
-                () -> entityManagerProvider.getEntityManager()
-                                           .createQuery("delete from DeadLetterEntry e")
-                                           .executeUpdate()
-        );
+        getTransactionManager().executeInTransaction(() -> {
+            entityManagerProvider.getEntityManager().createQuery("delete from DeadLetterEntry e").executeUpdate();
+        });
     }
 
     @Override
@@ -104,7 +99,6 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
 
     @Override
     protected SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
-        //noinspection deprecation
         jpaDeadLetterQueue = JpaSequencedDeadLetterQueue.builder()
                                                         .processingGroup(PROCESSING_GROUP)
                                                         .entityManagerProvider(entityManagerProvider)
@@ -142,9 +136,7 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
 
             GenericDeadLetter<EventMessage<?>> expected = entry.getValue();
             DeadLetter<? extends EventMessage<?>> result = resultIterator.next();
-            //noinspection deprecation
             assertTrue(result instanceof JpaDeadLetter);
-            //noinspection deprecation
             JpaDeadLetter<? extends EventMessage<?>> actual = ((JpaDeadLetter<? extends EventMessage<?>>) result);
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
@@ -181,10 +173,8 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
             @PersistenceContext
             private EntityManager entityManager;
 
-            @SuppressWarnings("deprecation")
             @Bean
             public EntityManagerProvider entityManagerProvider() {
-                //noinspection deprecation
                 return new SimpleEntityManagerProvider(entityManager);
             }
         }
@@ -198,7 +188,7 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
         public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactoryBean.setPersistenceUnitName("AxonSpringTest");
+            entityManagerFactoryBean.setPersistenceUnitName("axonSpringTest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
             jpaVendorAdapter.setGenerateDdl(true);

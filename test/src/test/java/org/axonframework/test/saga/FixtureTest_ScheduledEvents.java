@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import jakarta.inject.Inject;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
@@ -26,7 +27,6 @@ import org.junit.jupiter.api.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-import javax.inject.Inject;
 
 /**
  * Test class validating the event scheduler operations of the {@link SagaTestFixture}.

@@ -14,21 +14,21 @@
   ~ limitations under the License.
   -->
 
-<persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
     <persistence-unit name="jpaSagaStorePersistenceUnit" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
         <properties>
-            <property name="hibernate.dialect"
-                      value="org.hibernate.dialect.HSQLDialect"/>
-            <property name="hibernate.connection.driver_class"
-                      value="org.hsqldb.jdbcDriver"/>
-            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
-            <property name="hibernate.connection.username" value="sa"/>
-            <property name="hibernate.connection.password" value=""/>
-            <property name="hibernate.connection.url"
-                      value="jdbc:hsqldb:mem:axontest"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect"/>
+            <property name="jakarta.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:hsqldb:mem:axontest"/>
+            <property name="jakarta.persistence.jdbc.user" value="sa"/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create"/>
         </properties>
     </persistence-unit>
 </persistence>

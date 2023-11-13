@@ -35,18 +35,13 @@ import java.util.Objects;
  */
 @MappedSuperclass
 @IdClass(AbstractSnapshotEventEntry.PK.class)
-@javax.persistence.MappedSuperclass
-@javax.persistence.IdClass(AbstractSnapshotEventEntry.PK.class)
 public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T> implements DomainEventData<T> {
 
     @Id
-    @javax.persistence.Id
     private String aggregateIdentifier;
     @Id
-    @javax.persistence.Id
     private long sequenceNumber;
     @Id
-    @javax.persistence.Id
     private String type;
 
     /**

@@ -29,7 +29,6 @@ import org.axonframework.serialization.Serializer;
  * @author Rene de Waele
  */
 @Entity
-@javax.persistence.Entity
 public class SnapshotEventEntry extends AbstractSnapshotEventEntry<byte[]> {
 
     /**

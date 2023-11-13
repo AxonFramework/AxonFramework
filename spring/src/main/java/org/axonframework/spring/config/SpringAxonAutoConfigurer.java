@@ -21,7 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.common.legacyjpa.EntityManagerProvider;
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
@@ -51,8 +51,8 @@ import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.legacyjpa.GenericJpaRepository;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.queryhandling.QueryBus;
@@ -386,7 +386,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                         );
                     }
 
-                    if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {
+                    if (AnnotationUtils.isAnnotationPresent(aggregateType, "jakarta.persistence.Entity")) {
                         aggregateConfigurer.configureRepository(
                                 c -> GenericJpaRepository.builder(aggregateType)
                                                          .parameterResolverFactory(c.parameterResolverFactory())
