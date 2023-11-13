@@ -74,7 +74,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -295,21 +294,6 @@ public class AxonServerEventStore extends AbstractEventStore {
             assertNonEmpty(defaultContext, "The default context may not be null");
             this.defaultContext = defaultContext;
             return this;
-        }
-
-        /**
-         * Sets the {@link Predicate} used to filter snapshots when returning aggregate events. When not set all
-         * snapshots are used.
-         * <p>
-         * This object is used by the AxonServer {@link EventStorageEngine} implementation.
-         *
-         * @param snapshotFilter The snapshot filter predicate
-         * @return the current Builder instance, for fluent interfacing
-         * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
-         */
-        @Deprecated
-        public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
-            return snapshotFilter(snapshotFilter::test);
         }
 
         /**

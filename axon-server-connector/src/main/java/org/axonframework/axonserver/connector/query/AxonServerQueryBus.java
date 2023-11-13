@@ -80,7 +80,6 @@ import org.axonframework.queryhandling.UpdateHandlerRegistration;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.SpanScope;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -720,21 +719,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         public Builder defaultContext(String defaultContext) {
             assertNonEmpty(defaultContext, "The context may not be null or empty");
             this.defaultContext = defaultContext;
-            return this;
-        }
-
-        /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         * @deprecated Use {@link #spanFactory(QueryBusSpanFactory)} instead as it provides more configurability.
-         */
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            assertNonNull(spanFactory, "The SpanFactory may not be null or empty");
-            this.spanFactory = DefaultQueryBusSpanFactory.builder().spanFactory(spanFactory).build();
             return this;
         }
 
