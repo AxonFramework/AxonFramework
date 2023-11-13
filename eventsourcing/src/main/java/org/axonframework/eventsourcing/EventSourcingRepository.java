@@ -297,13 +297,6 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         }
 
         @Override
-        @Deprecated
-        public Builder<T> spanFactory(SpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
-        @Override
         public Builder<T> spanFactory(RepositorySpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;

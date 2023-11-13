@@ -533,21 +533,6 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         * @deprecated Use {@link #spanFactory(RepositorySpanFactory)} instead, as it provides more configuration options
-         */
-        @Deprecated
-        public Builder<T> spanFactory(SpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = DefaultRepositorySpanFactory.builder().spanFactory(spanFactory).build();
-            return this;
-        }
-
-        /**
          * Sets the {@link RepositorySpanFactory} implementation to use for providing tracing capabilities. Defaults to a
          * {@link DefaultRepositorySpanFactory} backed by a {@link NoOpSpanFactory}, which provides no tracing capabilities.
          *
