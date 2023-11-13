@@ -782,28 +782,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     /**
-     * Returns a comma separated list of domain event column names to select from an event or snapshot entry.
-     *
-     * @return comma separated domain event column names.
-     * @deprecated in favor of {@link EventSchema#domainEventFields()}
-     */
-    @Deprecated
-    protected String domainEventFields() {
-        return schema.domainEventFields();
-    }
-
-    /**
-     * Returns a comma separated list of tracked domain event column names to select from an event entry.
-     *
-     * @return comma separated tracked domain event column names.
-     * @deprecated in favor of {@link EventSchema#trackedEventFields()}
-     */
-    @Deprecated
-    protected String trackedEventFields() {
-        return schema.trackedEventFields();
-    }
-
-    /**
      * Returns the {@link EventSchema} that defines the table and column names of event tables in the database.
      *
      * @return the event schema.
