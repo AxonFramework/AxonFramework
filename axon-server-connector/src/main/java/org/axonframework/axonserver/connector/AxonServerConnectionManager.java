@@ -18,7 +18,6 @@ package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
-import io.axoniq.axonserver.connector.impl.ContextConnection;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.grpc.Channel;
@@ -34,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -188,16 +186,6 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
         return defaultContext;
     }
 
-    @Deprecated
-    public Channel getChannel() {
-        return ((ContextConnection) getConnection(defaultContext)).getManagedChannel();
-    }
-
-    @Deprecated
-    public Channel getChannel(String context) {
-        return ((ContextConnection) getConnection(context)).getManagedChannel();
-    }
-
     @Override
     public Map<String, Boolean> connections() {
         return connections.entrySet()
@@ -262,20 +250,6 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
          */
         public Builder channelCustomizer(UnaryOperator<ManagedChannelBuilder<?>> channelCustomization) {
             this.channelCustomization = channelCustomization;
-            return this;
-        }
-
-        /**
-         * Sets the Axon Framework version resolver used in order to communicate the client version to send to Axon
-         * Server.
-         *
-         * @param axonFrameworkVersionResolver a string supplier that retrieve the current Axon Framework version
-         *
-         * @return the current Builder instance, for fluent interfacing
-         * @deprecated Not ued anymore
-         */
-        @Deprecated
-        public Builder axonFrameworkVersionResolver(Supplier<String> axonFrameworkVersionResolver) {
             return this;
         }
 
