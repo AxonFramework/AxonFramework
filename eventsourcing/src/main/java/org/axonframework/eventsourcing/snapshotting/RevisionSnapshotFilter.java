@@ -64,19 +64,6 @@ public class RevisionSnapshotFilter implements SnapshotFilter {
         this.revision = builder.revision;
     }
 
-    /**
-     * Construct a {@link RevisionSnapshotFilter} which returns {@code true} on {@link #allow(DomainEventData)}
-     * invocations where the {@link DomainEventData} contains the given {@code revision}.
-     *
-     * @param allowedRevision the revision which is allowed by this {@link SnapshotFilter}
-     * @deprecated in favor of using the {@link Builder}
-     */
-    @Deprecated
-    public RevisionSnapshotFilter(String allowedRevision) {
-        this.revision = allowedRevision;
-        this.type = "no-aggregate-type";
-    }
-
     @Override
     public boolean test(DomainEventData<?> domainEventData) {
         String type = domainEventData.getType();
