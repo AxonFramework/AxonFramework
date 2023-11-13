@@ -33,7 +33,6 @@ import org.axonframework.lifecycle.Phase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -85,31 +84,6 @@ public class EventProcessorControlService implements Lifecycle {
              eventProcessingConfiguration,
              axonServerConfiguration.getContext(),
              axonServerConfiguration.getEventhandling().getProcessors());
-    }
-
-    /**
-     * Initialize a {@link EventProcessorControlService}.
-     * <p>
-     * This service adds processor instruction handlers to the {@link ControlChannel} of the given {@code context}.
-     * Doing so ensures operation like the {@link EventProcessor#start() start} and
-     * {@link EventProcessor#shutDown() shutdown} can be triggered through Axon Server. Furthermore, it sets the
-     * configured load balancing strategies} through the {@link AdminChannel}  of the {@code context}.
-     *
-     * @param axonServerConnectionManager  A {@link AxonServerConnectionManager} from which to retrieve the
-     *                                     {@link ControlChannel} and {@link AdminChannel}.
-     * @param eventProcessingConfiguration The {@link EventProcessor} configuration of this application, used to
-     *                                     retrieve the registered event processors from.
-     * @param context                      The context of this application instance to retrieve the
-     *                                     {@link ControlChannel} and {@link AdminChannel} for.
-     * @deprecated Please use
-     * {@link #EventProcessorControlService(AxonServerConnectionManager, EventProcessingConfiguration, String, Map)} to
-     * ensure processor settings are provided.
-     */
-    @Deprecated
-    public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
-                                        EventProcessingConfiguration eventProcessingConfiguration,
-                                        String context) {
-        this(axonServerConnectionManager, eventProcessingConfiguration, context, Collections.emptyMap());
     }
 
     /**
