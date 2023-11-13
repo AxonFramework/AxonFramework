@@ -17,11 +17,9 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.control.NodeInfo;
-import org.axonframework.axonserver.connector.event.util.EventCipher;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -85,14 +83,6 @@ public class AxonServerConfiguration {
      * Use TLS for connection to AxonServer.
      */
     private boolean sslEnabled;
-
-    /**
-     * Initial number of permits send for message streams (events, commands, queries).
-     *
-     * @deprecated In favor of {@code permits}.
-     */
-    @Deprecated
-    private Integer initialNrOfPermits;
 
     /**
      * Initial number of permits send for message streams (events, commands, queries).
@@ -160,16 +150,6 @@ public class AxonServerConfiguration {
     private int processorsNotificationInitialDelay = 5000;
 
     /**
-     * An {@link EventCipher} which is used to encrypt and decrypt events and snapshots. Defaults to
-     * {@link EventCipher#EventCipher()}.
-     *
-     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
-     * Connector</a> project.
-     */
-    @Deprecated
-    private EventCipher eventCipher = new EventCipher();
-
-    /**
      * Timeout (in ms) for keep alive requests.
      */
     private long keepAliveTimeout = 5000;
@@ -186,16 +166,6 @@ public class AxonServerConfiguration {
     private int snapshotPrefetch = 1;
 
     /**
-     * Indicates whether the download advice message should be suppressed, even when default connection properties
-     * (which are generally only used in DEV mode) are used. Defaults to false.
-     *
-     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
-     * Connector</a> project, which enables the download message in absence of configured servers.
-     */
-    @Deprecated
-    private boolean suppressDownloadMessage = false;
-
-    /**
      * GRPC max inbound message size, 0 keeps default value.
      */
     private int maxMessageSize = 0;
@@ -206,18 +176,6 @@ public class AxonServerConfiguration {
     private int commitTimeout = 10000;
 
     /**
-     * Flag that allows blacklisting of Event types to be disabled. Disabling this may have serious performance impact,
-     * as it requires all messages from AxonServer to be sent to clients, even if a Client is unable to process the
-     * message.
-     * <p>
-     * Default is to have blacklisting enabled.
-     *
-     * @deprecated In favor of the {@code eventBlockListingEnabled} property.
-     */
-    @Deprecated
-    private boolean disableEventBlacklisting = false;
-
-    /**
      * Flag that allows block-listing of event types to be enabled.
      * <p>
      * Disabling this may have serious performance impact, as it requires all
@@ -225,18 +183,6 @@ public class AxonServerConfiguration {
      * client is unable to process the event. Default is to have block-listing enabled.
      */
     private boolean eventBlockListingEnabled = true;
-
-    /**
-     * The number of messages that may be in-transit on the network/grpc level when streaming data from the server.
-     * <p>
-     * Setting this to 0 (or a negative value) will disable buffering, and requires each message sent by the server to
-     * be acknowledged before the next message may be sent. Defaults to 500.
-     *
-     * @deprecated This property is no longer used through adjustments in the <a
-     * href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java Connector</a> project.
-     */
-    @Deprecated
-    private int maxGrpcBufferedMessages = 500;
 
     /**
      * It represents the fixed value of load factor sent to Axon Server for any command's subscription if no specific
@@ -385,22 +331,6 @@ public class AxonServerConfiguration {
         this.sslEnabled = sslEnabled;
     }
 
-    /**
-     * @deprecated In favor of {@link #getPermits()}
-     */
-    @Deprecated
-    public Integer getInitialNrOfPermits() {
-        return initialNrOfPermits;
-    }
-
-    /**
-     * @deprecated In favor of {@link #setPermits(Integer)}
-     */
-    @Deprecated
-    public void setInitialNrOfPermits(Integer initialNrOfPermits) {
-        this.permits = initialNrOfPermits;
-    }
-
     public Integer getPermits() {
         return permits;
     }
@@ -448,26 +378,6 @@ public class AxonServerConfiguration {
             }
             return NodeInfo.newBuilder().setHostName(s[0]).setGrpcPort(DEFAULT_GRPC_PORT).build();
         }).collect(Collectors.toList());
-    }
-
-    /**
-     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
-     * Connector</a> project.
-     */
-    @Deprecated
-    public EventCipher getEventCipher() {
-        return eventCipher;
-    }
-
-    /**
-     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
-     * Connector</a> project.
-     */
-    @Deprecated
-    private void setEventSecretKey(String key) {
-        if (key != null && !key.isEmpty()) {
-            eventCipher = new EventCipher(key.getBytes(StandardCharsets.US_ASCII));
-        }
     }
 
     public Integer getCommandThreads() {
@@ -522,24 +432,6 @@ public class AxonServerConfiguration {
         this.keepAliveTime = keepAliveTime;
     }
 
-    /**
-     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
-     * Connector</a> project, which enables the download message in absence of configured servers.
-     */
-    @Deprecated
-    public boolean getSuppressDownloadMessage() {
-        return suppressDownloadMessage;
-    }
-
-    /**
-     * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
-     * Connector</a> project, which enables the download message in absence of configured servers.
-     */
-    @Deprecated
-    public void setSuppressDownloadMessage(boolean suppressDownloadMessage) {
-        this.suppressDownloadMessage = suppressDownloadMessage;
-    }
-
     public int getMaxMessageSize() {
         return maxMessageSize;
     }
@@ -556,22 +448,6 @@ public class AxonServerConfiguration {
         this.snapshotPrefetch = snapshotPrefetch;
     }
 
-    /**
-     * @deprecated In favor of {@link #setEventBlockListingEnabled(boolean)}.
-     */
-    @Deprecated
-    public boolean isDisableEventBlacklisting() {
-        return disableEventBlacklisting;
-    }
-
-    /**
-     * @deprecated In favor of {@link #setEventBlockListingEnabled(boolean)}.
-     */
-    @Deprecated
-    public void setDisableEventBlacklisting(boolean disableEventBlacklisting) {
-        this.eventBlockListingEnabled = !disableEventBlacklisting;
-    }
-
     public boolean isEventBlockListingEnabled() {
         return eventBlockListingEnabled;
     }
@@ -586,24 +462,6 @@ public class AxonServerConfiguration {
 
     public void setCommitTimeout(int commitTimeout) {
         this.commitTimeout = commitTimeout;
-    }
-
-    /**
-     * @deprecated This property is no longer used through adjustments in the <a
-     * href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java Connector</a> project.
-     */
-    @Deprecated
-    public int getMaxGrpcBufferedMessages() {
-        return maxGrpcBufferedMessages;
-    }
-
-    /**
-     * @deprecated This property is no longer used through adjustments in the <a
-     * href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java Connector</a> project.
-     */
-    @Deprecated
-    public void setMaxGrpcBufferedMessages(int maxGrpcBufferedMessages) {
-        this.maxGrpcBufferedMessages = maxGrpcBufferedMessages;
     }
 
     public int getCommandLoadFactor() {
@@ -746,14 +604,6 @@ public class AxonServerConfiguration {
 
         /**
          * Initial number of permits send for message streams (events, commands, queries).
-         *
-         * @deprecated In favor of {@code permits}.
-         */
-        @Deprecated
-        private Integer initialNrOfPermits;
-
-        /**
-         * Initial number of permits send for message streams (events, commands, queries).
          */
         private Integer permits;
 
@@ -787,22 +637,6 @@ public class AxonServerConfiguration {
             this.permits = permits;
             this.nrOfNewPermits = nrOfNewPermits;
             this.newPermitsThreshold = newPermitsThreshold;
-        }
-
-        /**
-         * @deprecated In favor of {@link #getPermits()}.
-         */
-        @Deprecated
-        public Integer getInitialNrOfPermits() {
-            return this.permits;
-        }
-
-        /**
-         * @deprecated In favor of {@link #setPermits(Integer)}.
-         */
-        @Deprecated
-        public void setInitialNrOfPermits(Integer initialNrOfPermits) {
-            this.permits = initialNrOfPermits;
         }
 
         public Integer getPermits() {
@@ -1042,26 +876,6 @@ public class AxonServerConfiguration {
             return this;
         }
 
-        /**
-         * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
-         * Connector</a> project.
-         */
-        @Deprecated
-        public Builder setEventSecretKey(String key) {
-            instance.setEventSecretKey(key);
-            return this;
-        }
-
-        /**
-         * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
-         * Connector</a> project.
-         */
-        @Deprecated
-        public Builder eventCipher(EventCipher eventCipher) {
-            instance.eventCipher = eventCipher;
-            return this;
-        }
-
         public Builder maxMessageSize(int maxMessageSize) {
             instance.maxMessageSize = maxMessageSize;
             return this;
@@ -1088,16 +902,6 @@ public class AxonServerConfiguration {
 
         public Builder servers(String servers) {
             instance.setServers(servers);
-            return this;
-        }
-
-        /**
-         * @deprecated Through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">Axon Server Java
-         * Connector</a> project, which enables the download message in absence of configured servers.
-         */
-        @Deprecated
-        public Builder suppressDownloadMessage() {
-            instance.setSuppressDownloadMessage(true);
             return this;
         }
 
