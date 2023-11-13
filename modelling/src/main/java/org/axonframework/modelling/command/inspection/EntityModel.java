@@ -58,18 +58,6 @@ public interface EntityModel<T> {
     void publish(EventMessage<?> message, T target);
 
     /**
-     * Gets a mapping of {@link MessageHandlingMember} to command name (obtained via {@link
-     * org.axonframework.commandhandling.CommandMessage#getCommandName()}) for this {@link #entityClass()}.
-     *
-     * @return a map of message handler to command name
-     * @deprecated use {@link #allCommandHandlers()} or {@link #commandHandlers(Class)} instead
-     */
-    @Deprecated
-    default List<MessageHandlingMember<? super T>> commandHandlers() {
-        return commandHandlers(entityClass()).collect(Collectors.toList());
-    }
-
-    /**
      * Gets all command handlers per type in this aggregate hierarchy.
      *
      * @return a map of command handlers per type
@@ -86,17 +74,6 @@ public interface EntityModel<T> {
      */
     default Stream<MessageHandlingMember<? super T>> commandHandlers(Class<? extends T> type) {
         return Stream.empty();
-    }
-
-    /**
-     * Gets a list of command handler interceptors for this {@link #entityClass()}.
-     *
-     * @return list of command handler interceptors
-     * @deprecated use {@link #allCommandHandlerInterceptors()} or {@link #commandHandlerInterceptors(Class)} instead
-     */
-    @Deprecated
-    default List<MessageHandlingMember<? super T>> commandHandlerInterceptors() {
-        return commandHandlerInterceptors(entityClass()).collect(Collectors.toList());
     }
 
     /**
