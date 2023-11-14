@@ -281,21 +281,6 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void testCustomCommandTargetResolverWiring() {
-        FutureCallback<Object, Object> callback1 = new FutureCallback<>();
-        commandBus.dispatch(asCommandMessage(new Context.CreateMyOtherAggregateCommand("id")), callback1);
-        callback1.getResult();
-
-        when(myCommandTargetResolver.resolveTarget(any())).thenReturn(new VersionedAggregateIdentifier("id", null));
-
-        FutureCallback<Object, Object> callback2 = new FutureCallback<>();
-        commandBus.dispatch(asCommandMessage(new Context.UpdateMyOtherAggregateCommand("id")), callback2);
-        callback2.getResult();
-
-        verify(myCommandTargetResolver).resolveTarget(any());
-    }
-
-    @Test
     void testListenerInvocationErrorHandler() {
         eventBus.publish(asEventMessage("Testing 123"));
 

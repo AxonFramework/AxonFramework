@@ -28,6 +28,7 @@ import org.axonframework.modelling.command.ForwardingMode;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -71,18 +72,6 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
                 (msg, parent) -> resolveCommandTarget(msg, parent, member, childEntityModel),
                 (msg, parent) -> resolveEventTargets(msg, parent, member, eventForwardingMode)
         ));
-    }
-
-    /**
-     * Check whether the given {@link Field} is of a type supported by this definition.
-     *
-     * @param field a {@link Field} containing a Child Entity
-     * @return true if the type is as required by the implementation and false if it is not
-     * @deprecated in favour of {@link #isMemberTypeSupported(Member)}
-     */
-    @Deprecated
-    protected boolean isFieldTypeSupported(Field field) {
-        return isMemberTypeSupported(field);
     }
 
     /**
@@ -150,8 +139,7 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      */
     protected Map<String, Property<Object>> extractCommandHandlerRoutingKeys(Member member,
                                                                              EntityModel<Object> childEntityModel) {
-        return childEntityModel.commandHandlers()
-                               .stream()
+        return childEntityModel.commandHandlers(childEntityModel.entityClass())
                                .map(commandHandler -> commandHandler.unwrap(CommandMessageHandlingMember.class)
                                                                     .orElse(null))
                                .filter(Objects::nonNull)

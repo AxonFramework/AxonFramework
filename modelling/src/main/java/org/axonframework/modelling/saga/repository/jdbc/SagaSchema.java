@@ -42,21 +42,6 @@ public class SagaSchema {
         this(builder());
     }
 
-    /**
-     * Initialize SagaSchema with custom locations for event entry tables.
-     *
-     * @param sagaEntryTable             The name of the entry table
-     * @param associationValueEntryTable The name of the association value table
-     * @deprecated use {@link Builder} instead
-     */
-    @Deprecated
-    public SagaSchema(String sagaEntryTable, String associationValueEntryTable) {
-        this(builder()
-                .sagaEntryTable(sagaEntryTable)
-                .associationValueEntryTable(associationValueEntryTable)
-        );
-    }
-
     protected SagaSchema(Builder builder) {
         this.sagaEntryTable = builder.sagaEntryTable;
         this.revisionColumn = builder.revisionColumn;

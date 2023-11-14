@@ -324,22 +324,6 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
             return this;
         }
 
-
-        /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory}, which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         * @deprecated Use {@link #spanFactory(SagaManagerSpanFactory) instead as it provides more configuration options.
-         */
-        @Deprecated
-        public Builder<T> spanFactory(SpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = DefaultSagaManagerSpanFactory.builder().spanFactory(spanFactory).build();
-            return this;
-        }
-
         /**
          * Sets the {@link SagaManagerSpanFactory} implementation to use for providing tracing capabilities. Defaults to
          * a {@link DefaultSagaManagerSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no

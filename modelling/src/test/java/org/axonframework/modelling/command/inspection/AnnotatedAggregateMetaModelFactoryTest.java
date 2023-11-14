@@ -29,12 +29,21 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.AggregateVersion;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import javax.annotation.Nonnull;
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Spliterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ForkJoinPool;
@@ -42,6 +51,7 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
@@ -408,9 +418,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> MessageHandlingMember<T> getHandler(AggregateModel<?> members, CommandMessage<?> message) {
-        return (MessageHandlingMember<T>) members.commandHandlers()
-                                                 .stream()
+    private <T> MessageHandlingMember<T> getHandler(AggregateModel<T> member, CommandMessage<?> message) {
+        return (MessageHandlingMember<T>) member.commandHandlers(member.entityClass())
                                                  .filter(ch -> ch.canHandle(message))
                                                  .findFirst()
                                                  .orElseThrow(() -> new AssertionError(

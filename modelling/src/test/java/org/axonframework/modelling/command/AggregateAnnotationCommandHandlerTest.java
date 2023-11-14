@@ -721,7 +721,7 @@ class AggregateAnnotationCommandHandlerTest {
     @SuppressWarnings("unused")
     private abstract static class AbstractStubCommandAnnotatedAggregate {
 
-        @AggregateIdentifier(routingKey = "aggregateIdentifier")
+        @AggregateIdentifier
         private String identifier;
 
         AbstractStubCommandAnnotatedAggregate(String identifier) {

@@ -288,13 +288,6 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
             return this;
         }
 
-        @Override
-        @Deprecated
-        public Builder<T> spanFactory(SpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
         /**
          * Sets the {@link LockFactory} used to lock an aggregate. Defaults to a pessimistic locking strategy,
          * implemented in the {@link PessimisticLockFactory}.

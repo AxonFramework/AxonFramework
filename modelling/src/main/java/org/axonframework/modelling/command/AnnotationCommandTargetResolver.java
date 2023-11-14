@@ -63,15 +63,6 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
     }
 
     /**
-     * @deprecated Please use the {@link #builder()}.
-     */
-    @Deprecated
-    public AnnotationCommandTargetResolver() {
-        this.identifierAnnotation = TargetAggregateIdentifier.class;
-        this.versionAnnotation = TargetAggregateVersion.class;
-    }
-
-    /**
      * Instantiate a {@link AnnotationCommandTargetResolver} based on the fields contained in the {@link Builder}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AnnotationCommandTargetResolver} instance

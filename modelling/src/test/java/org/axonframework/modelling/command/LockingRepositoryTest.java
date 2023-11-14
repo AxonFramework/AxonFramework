@@ -336,12 +336,6 @@ class LockingRepositoryTest {
             }
 
             @Override
-            public Builder spanFactory(SpanFactory spanFactory) {
-                super.spanFactory(spanFactory);
-                return this;
-            }
-
-            @Override
             public Builder spanFactory(RepositorySpanFactory spanFactory) {
                 super.spanFactory(spanFactory);
                 return this;
