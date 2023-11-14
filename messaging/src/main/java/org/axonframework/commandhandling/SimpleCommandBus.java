@@ -385,7 +385,7 @@ public class SimpleCommandBus implements CommandBus {
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications
          */
-        protected void validate() {
+        protected void validate() throws AxonConfigurationException {
             // Method kept for overriding
         }
     }
