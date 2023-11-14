@@ -186,5 +186,15 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         public AsynchronousCommandBus build() {
             return new AsynchronousCommandBus(this);
         }
+
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            super.validate();
+        }
     }
 }

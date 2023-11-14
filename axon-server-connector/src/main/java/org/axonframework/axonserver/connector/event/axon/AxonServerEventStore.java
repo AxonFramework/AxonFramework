@@ -366,7 +366,9 @@ public class AxonServerEventStore extends AbstractEventStore {
          */
         @Override
         protected void validate() throws AxonConfigurationException {
-            BuilderUtils.assertNonNull(snapshotFilter, "The SnapshotFilter is a hard requirement and should be provided");
+            assertNonNull(eventSerializer, "The event Serializer is a hard requirement and should be provided");
+            assertNonNull(snapshotSerializer, "The snapshot Serializer is a hard requirement and should be provided");
+            assertNonNull(snapshotFilter, "The SnapshotFilter is a hard requirement and should be provided");
             super.validate();
         }
     }
@@ -755,6 +757,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             @Override
             protected void validate() throws AxonConfigurationException {
+                super.validate();
                 assertNonNull(configuration,
                               "The AxonServerConfiguration is a hard requirement and should be provided");
                 assertNonNull(connectionManager,

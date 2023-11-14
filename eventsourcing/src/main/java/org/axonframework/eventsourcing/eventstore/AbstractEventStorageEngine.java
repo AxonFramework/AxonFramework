@@ -336,7 +336,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            // Kept for overriding
+            assertNonNull(eventSerializer, "The event Serializer is a hard requirement and should be provided");
+            assertNonNull(snapshotSerializer, "The snapshot Serializer is a hard requirement and should be provided");
         }
     }
 }
