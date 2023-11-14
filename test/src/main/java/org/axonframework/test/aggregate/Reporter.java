@@ -63,42 +63,6 @@ public class Reporter {
     }
 
     /**
-     * Report an error in the ordering or count of events. This is typically a difference that can be shown to the user
-     * by enumerating the expected and actual events
-     *
-     * @param actualEvents  The events that were found
-     * @param expectation   A Description of what was expected
-     * @param probableCause An optional exception that might be the reason for wrong events
-     * @deprecated This method has been previously used to report non-matching {@link org.hamcrest.Matcher} results.
-     *             Has been replaced by {@link #reportWrongEvent(Collection, Description, Description, Throwable)}.
-     *             The method is kept for api backwards compatibility only and my be removed in a future release.
-     */
-    @Deprecated
-    public void reportWrongEvent(Collection<?> actualEvents, StringDescription expectation, Throwable probableCause) {
-        StringBuilder sb = new StringBuilder(
-                "The published events do not match the expected events.");
-        sb.append("Expected:")
-          .append(NEWLINE)
-          .append(expectation)
-          .append(NEWLINE)
-          .append(" But got");
-        if (actualEvents.isEmpty()) {
-            sb.append(" none");
-        } else {
-            sb.append(":");
-        }
-        for (Object publishedEvent : actualEvents) {
-            sb.append(NEWLINE)
-              .append(publishedEvent.getClass().getSimpleName())
-              .append(": ")
-              .append(publishedEvent);
-        }
-        appendProbableCause(probableCause, sb);
-
-        throw new AxonAssertionError(sb.toString());
-    }
-
-    /**
      * Report an error of events not matching expectations defined by {@link org.hamcrest.Matcher}s. This method will
      * receive two different {@link Description}s:
      * <ul>
