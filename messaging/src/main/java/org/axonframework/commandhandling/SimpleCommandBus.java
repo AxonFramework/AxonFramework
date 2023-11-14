@@ -357,22 +357,6 @@ public class SimpleCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation.
-         * @return The current Builder instance, for fluent interfacing.
-         * @deprecated Use {@link #spanFactory(CommandBusSpanFactory)} instead as it provides more configurability.
-         */
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.builderSpanFactory = DefaultCommandBusSpanFactory
-                    .builder().spanFactory(spanFactory).build();
-            return this;
-        }
-
-        /**
          * Sets the {@link CommandBusSpanFactory} implementation to use for providing tracing capabilities. Defaults to
          * a {@link DefaultCommandBusSpanFactory} backed by {@link NoOpSpanFactory} by default, which provides no
          * tracing capabilities.
@@ -401,7 +385,7 @@ public class SimpleCommandBus implements CommandBus {
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications
          */
-        protected void validate() {
+        protected void validate() throws AxonConfigurationException {
             // Method kept for overriding
         }
     }

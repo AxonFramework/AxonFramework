@@ -179,21 +179,6 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
         throw new UnsupportedOperationException(String.format(NOT_SUPPORTED_MSG, "cancelAllWithinScope"));
     }
 
-
-    /**
-     * This function should only be called via JobRunr when a deadline was triggered. It will try to execute the
-     * scheduled deadline on the set scope. It will throw a {@link DeadlineException} in case of errors such that they
-     * will be optionally retried by JobRunr.
-     *
-     * @param serializedDeadlineDetails {@code byte[]} containing the serialized {@link DeadlineDetails} object with all
-     *                                  the needed details to execute.
-     * @deprecated Kept for backwards compatibility, use {@link #execute(String, String)} instead.
-     */
-    @Deprecated
-    public void execute(@Nonnull String serializedDeadlineDetails) {
-        execute(serializedDeadlineDetails, null);
-    }
-
     /**
      * This function should only be called via JobRunr when a deadline was triggered. It will try to execute the
      * scheduled deadline on the set scope. It will throw a {@link DeadlineException} in case of errors such that they
@@ -337,21 +322,6 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
-            return this;
-        }
-
-        /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         * @deprecated Use {@link #spanFactory(DeadlineManagerSpanFactory)} instead as it provides more configuration options.
-         */
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = DefaultDeadlineManagerSpanFactory.builder().spanFactory(spanFactory).build();
             return this;
         }
 

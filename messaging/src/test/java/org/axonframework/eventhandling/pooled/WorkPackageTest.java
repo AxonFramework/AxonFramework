@@ -224,7 +224,7 @@ class WorkPackageTest {
 
     @Test
     void replayTokenIsPropagatedAndAdvancedWithoutCurrent() {
-        testSubjectBuilder.initialToken(new ReplayToken(new GlobalSequenceTrackingToken(1L)));
+        testSubjectBuilder.initialToken(ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(1L)));
         testSubject = testSubjectBuilder.build();
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> expectedEvent =
@@ -235,18 +235,17 @@ class WorkPackageTest {
         List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
 
-        ReplayToken expectedAdvancedToken = new ReplayToken(
-                new GlobalSequenceTrackingToken(1L),
-                new GlobalSequenceTrackingToken(1L)
-        );
-        assertEquals(expectedAdvancedToken, ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
+        TrackingToken resultAdvancedToken = ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken();
+        assertTrue(resultAdvancedToken instanceof ReplayToken);
+        assertEquals(expectedToken, ((ReplayToken) resultAdvancedToken).getCurrentToken());
+        assertEquals(expectedToken, ((ReplayToken) resultAdvancedToken).getTokenAtReset());
     }
 
 
     @Test
     void replayTokenIsPropagatedAndAdvancedWithCurrent() {
-        testSubjectBuilder.initialToken(new ReplayToken(new GlobalSequenceTrackingToken(1L),
-                                                        new GlobalSequenceTrackingToken(0L)));
+        testSubjectBuilder.initialToken(ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(1L),
+                                                                      new GlobalSequenceTrackingToken(0L)));
         testSubject = testSubjectBuilder.build();
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> expectedEvent =
@@ -257,11 +256,10 @@ class WorkPackageTest {
         List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
 
-        ReplayToken expectedAdvancedToken = new ReplayToken(
-                new GlobalSequenceTrackingToken(1L),
-                new GlobalSequenceTrackingToken(1L)
-        );
-        assertEquals(expectedAdvancedToken, ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
+        TrackingToken resultAdvancedToken = ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken();
+        assertTrue(resultAdvancedToken instanceof ReplayToken);
+        assertEquals(expectedToken, ((ReplayToken) resultAdvancedToken).getCurrentToken());
+        assertEquals(expectedToken, ((ReplayToken) resultAdvancedToken).getTokenAtReset());
     }
 
     @Test
@@ -504,7 +502,7 @@ class WorkPackageTest {
         verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
         assertEquals(expectedToken, tokenCaptor.getValue());
 
-        assertTrue(trackerStatusUpdates.size() >= 1);
+        assertFalse(trackerStatusUpdates.isEmpty());
         OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
         assertTrue(resultPosition.isPresent());
         assertEquals(1L, resultPosition.getAsLong());

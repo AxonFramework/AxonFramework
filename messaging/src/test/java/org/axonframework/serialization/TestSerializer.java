@@ -39,25 +39,6 @@ import java.util.EnumSet;
 @SuppressWarnings("unused")
 public enum TestSerializer {
 
-    JAVA {
-        @SuppressWarnings("deprecation")
-        private final Serializer serializer = JavaSerializer.builder().build();
-
-        @Override
-        public Serializer getSerializer() {
-            return serializer;
-        }
-
-        @Override
-        protected byte[] serialize(Object object) {
-            return getSerializer().serialize(object, byte[].class).getData();
-        }
-
-        @Override
-        protected <T> T deserialize(byte[] serialized, Class<T> type) {
-            return getSerializer().deserialize(asSerializedData(serialized, type));
-        }
-    },
     XSTREAM {
         private final Serializer serializer = createSerializer();
 

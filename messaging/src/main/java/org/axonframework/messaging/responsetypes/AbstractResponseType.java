@@ -28,7 +28,6 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 /**
@@ -62,18 +61,6 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     @Override
     public Class<?> getExpectedResponseType() {
         return expectedResponseType;
-    }
-
-    /**
-     * Tries to unwrap generic type if provided {@code type} is of type {@link Future}.
-     *
-     * @param type to be unwrapped
-     * @return unwrapped generic, or original if provided {@code type} is not of type {@link Future}
-     * @deprecated Use {@link ReflectionUtils#unwrapIfType(Type, Class[])} instead
-     */
-    @Deprecated
-    protected Type unwrapIfTypeFuture(Type type) {
-        return ReflectionUtils.unwrapIfType(type, Future.class);
     }
 
     protected boolean isPublisherOfExpectedType(Type responseType) {

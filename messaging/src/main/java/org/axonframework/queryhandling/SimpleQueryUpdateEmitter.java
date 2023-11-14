@@ -28,13 +28,10 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
@@ -100,32 +97,6 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         return updateHandlers.keySet()
                              .stream()
                              .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated in favour of using {{@link #registerUpdateHandler(SubscriptionQueryMessage, int)}}
-     */
-    @Deprecated
-    @Override
-    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
-                                                                  SubscriptionQueryBackpressure backpressure,
-                                                                  int updateBufferSize) {
-        EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create(updateBufferSize);
-        FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
-        sink.onDispose(() -> updateHandlers.remove(query));
-        FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
-        updateHandlers.put(query, fluxSinkWrapper);
-
-        Registration registration = () -> {
-            updateHandlers.remove(query);
-            return true;
-        };
-
-        return new UpdateHandlerRegistration<>(registration,
-                                               processor.replay(updateBufferSize).autoConnect(),
-                                               fluxSinkWrapper::complete);
     }
 
     @Override
@@ -338,21 +309,6 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             return this;
         }
 
-
-        /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation.
-         * @return The current Builder instance, for fluent interfacing.
-         * @deprecated Use {@link #spanFactory(QueryUpdateEmitterSpanFactory)}  instead as it provides more configurability.
-         */
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = DefaultQueryUpdateEmitterSpanFactory.builder().spanFactory(spanFactory).build();
-            return this;
-        }
         /**
          * Sets the {@link QueryUpdateEmitterSpanFactory} implementation to use for providing tracing capabilities. Defaults to a
          * {@link DefaultQueryUpdateEmitterSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no tracing capabilities.

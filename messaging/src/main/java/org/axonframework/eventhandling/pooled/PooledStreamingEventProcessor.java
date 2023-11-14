@@ -488,13 +488,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
             return this;
         }
 
-        @Override
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
         /**
          * Sets the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this {@link EventProcessor} will
          * track.
@@ -567,21 +560,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                           "The Coordinator's ScheduledExecutorService builder may not be null");
             this.coordinatorExecutorBuilder = coordinatorExecutorBuilder;
             return this;
-        }
-
-        /**
-         * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
-         * {@link PooledStreamingEventProcessor}.
-         *
-         * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
-         *                       by this {@link PooledStreamingEventProcessor}
-         *
-         * @return the current Builder instance, for fluent interfacing
-         * @deprecated in favor of {@link #workerExecutor(ScheduledExecutorService)}
-         */
-        @Deprecated
-        public Builder workerExecutorService(@Nonnull ScheduledExecutorService workerExecutor) {
-            return workerExecutor(workerExecutor);
         }
 
         /**

@@ -264,17 +264,6 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     /**
-     * Returns a list of detected members of the inspected entity that are capable of handling certain messages.
-     *
-     * @return a list of detected message handlers
-     * @deprecated use {@link #getAllHandlers()} or {@link #getHandlers(Class)} instead
-     */
-    @Deprecated
-    public List<MessageHandlingMember<? super T>> getHandlers() {
-        return getHandlers(inspectedType).collect(Collectors.toList());
-    }
-
-    /**
      * Returns a list of detected members of given {@code type} that are capable of handling certain messages.
      *
      * @param type a type of inspected entity

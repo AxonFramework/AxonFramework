@@ -140,13 +140,6 @@ public class SerializerProperties {
          */
         CBOR,
         /**
-         * Uses the Java Serialization API (see {@link java.io.ObjectOutputStream}) to write objects. The Java
-         * serializer's output is not interoperable and should really be only used in very specific cases. It is not
-         * recommended to use this serializer as an Event Serializer, as it could cause Events to be stored in format
-         * that is difficult to upcast when the structure of Events changes.
-         */
-        JAVA,
-        /**
          * Defines that the default serializer should be used. For "general serializer", this means an XStream based
          * serializer. For the "message serializer", this means the "general serializer" is used. Similarly, the "event
          * serializer" will default to the "message serializer" (or the "general serializer").

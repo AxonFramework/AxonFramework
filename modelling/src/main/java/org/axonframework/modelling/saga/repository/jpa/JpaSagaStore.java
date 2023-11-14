@@ -405,9 +405,7 @@ public class JpaSagaStore implements SagaStore<Object> {
         protected void validate() throws AxonConfigurationException {
             assertNonNull(entityManagerProvider,
                           "The EntityManagerProvider is a hard requirement and should be provided");
-            if (serializer == null) {
-                serializer = XStreamSerializer::defaultSerializer;
-            }
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
         }
     }
 

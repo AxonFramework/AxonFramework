@@ -30,18 +30,8 @@ import static org.axonframework.commandhandling.GenericCommandResultMessage.asCo
  * @param <A> The type of the endpoint identifier.
  */
 public class CommandCallbackRepository<A> {
-    private final Map<String, CommandCallbackWrapper> callbacks = new ConcurrentHashMap<>();
 
-    /**
-     * Removes all callbacks for a given channel. Registered callbacks will receive a failure response containing a
-     * {@link CommandBusConnectorCommunicationException}.
-     *
-     * @param channelId the channel identifier
-     * @deprecated use {@link #cancelCallbacksForChannel(Object)} instead
-     */
-    public void cancelCallbacks(A channelId) {
-        cancelCallbacksForChannel(channelId);
-    }
+    private final Map<String, CommandCallbackWrapper> callbacks = new ConcurrentHashMap<>();
 
     /**
      * Removes all callbacks for a given channel. Registered callbacks will receive a failure response containing a

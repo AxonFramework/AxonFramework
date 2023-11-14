@@ -60,15 +60,6 @@ class ChildForwardingCommandMessageHandlingMemberTest {
     }
 
     @Test
-    void hasAnnotationIsDelegatedToChildHandler() {
-        when(childMember.hasAnnotation(any())).thenReturn(true);
-
-        assertTrue(testSubject.hasAnnotation(CommandHandler.class));
-
-        verify(childMember).hasAnnotation(CommandHandler.class);
-    }
-
-    @Test
     void attributeIsDelegatedToChildHandler() {
         AggregateCreationPolicy expectedPolicy = AggregateCreationPolicy.NEVER;
         when(childMember.attribute(HandlerAttributes.AGGREGATE_CREATION_POLICY))

@@ -93,60 +93,6 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
         this.annotationType = builder.annotationType;
     }
 
-    /**
-     * Initializes a Routing Strategy that fails when an incoming command does not define a field as the {@link
-     * RoutingKey} to base the routing on.
-     *
-     * @deprecated in favor of the {@link #builder()}
-     */
-    @Deprecated
-    public AnnotationRoutingStrategy() {
-        this(RoutingKey.class);
-    }
-
-    /**
-     * Initializes a Routing Strategy that uses the given annotation to resolve the targeted identifier.
-     *
-     * @param annotationType the type of annotation marking the field or method providing the identifier of the targeted
-     *                       model
-     * @deprecated in favor of the {@link #builder()}
-     */
-    @Deprecated
-    public AnnotationRoutingStrategy(Class<? extends Annotation> annotationType) {
-        this(annotationType, UnresolvedRoutingKeyPolicy.ERROR);
-    }
-
-    /**
-     * Initializes a Routing Strategy that uses the given {@code unresolvedRoutingKeyPolicy} when an incoming command
-     * does not define a {@link RoutingKey} annotated field to base the routing on.
-     *
-     * @param unresolvedRoutingKeyPolicy a {@link UnresolvedRoutingKeyPolicy} indicating what should be done when a
-     *                                   Command does not contain information about the routing key to use
-     * @deprecated in favor of the {@link #builder()}
-     */
-    @Deprecated
-    public AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy) {
-        this(RoutingKey.class, unresolvedRoutingKeyPolicy);
-    }
-
-    /**
-     * Initializes a Routing Strategy that uses the given annotation to resolve the targeted identifier and the given
-     * {@code unresolvedRoutingKeyPolicy} when an incoming command does not define an Identifier to base the routing key
-     * on.
-     *
-     * @param annotationType             the type of annotation marking the field or method providing the identifier of
-     *                                   the targeted model
-     * @param unresolvedRoutingKeyPolicy a {@link UnresolvedRoutingKeyPolicy} indicating what should be done when a
-     *                                   Command does not contain information about the routing key to use
-     * @deprecated in favor of the {@link #builder()}
-     */
-    @Deprecated
-    public AnnotationRoutingStrategy(Class<? extends Annotation> annotationType,
-                                     UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy) {
-        super(unresolvedRoutingKeyPolicy);
-        this.annotationType = annotationType;
-    }
-
     @Override
     protected String doResolveRoutingKey(@Nonnull CommandMessage<?> command) {
         String routingKey;

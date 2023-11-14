@@ -15,7 +15,6 @@
  */
 package org.axonframework.queryhandling;
 
-import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
@@ -37,7 +36,6 @@ import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolut
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.SpanScope;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -454,34 +452,6 @@ public class SimpleQueryBus implements QueryBus {
         return response;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated in favor use of {{@link #subscriptionQuery(SubscriptionQueryMessage, int)}
-     */
-    @Deprecated
-    @Override
-    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
-            SubscriptionQueryBackpressure backpressure,
-            int updateBufferSize
-    ) {
-        assertSubQueryResponseTypes(query);
-        if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
-            throw new IllegalArgumentException("There is already a subscription with the given message identifier");
-        }
-
-        Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
-                                                          .doOnError(error -> logger.error(format(
-                                                                  "An error happened while trying to report an initial result. Query: %s",
-                                                                  query), error));
-
-        UpdateHandlerRegistration<U> updateHandlerRegistration =
-                queryUpdateEmitter.registerUpdateHandler(query, backpressure, updateBufferSize);
-
-        return getSubscriptionQueryResult(initialResult, updateHandlerRegistration);
-    }
-
     @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             @Nonnull SubscriptionQueryMessage<Q, I, U> query,
@@ -737,21 +707,6 @@ public class SimpleQueryBus implements QueryBus {
         public Builder queryUpdateEmitter(@Nonnull QueryUpdateEmitter queryUpdateEmitter) {
             assertNonNull(queryUpdateEmitter, "QueryUpdateEmitter may not be null");
             this.queryUpdateEmitter = queryUpdateEmitter;
-            return this;
-        }
-
-        /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         * @deprecated Use {@link #spanFactory(QueryBusSpanFactory)} instead as it provides more configurability.
-         */
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = DefaultQueryBusSpanFactory.builder().spanFactory(spanFactory).build();
             return this;
         }
 

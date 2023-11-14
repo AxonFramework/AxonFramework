@@ -223,13 +223,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
             return this;
         }
 
-        @Override
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
         /**
          * Sets the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
          * implementation will subscribe itself to receive {@link EventMessage}s.

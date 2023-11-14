@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
@@ -50,12 +49,6 @@ class AnnotatedMessageHandlingMemberTest {
     void canHandleMessageType() {
         assertTrue(testSubject.canHandleMessageType(EventMessage.class));
         assertFalse(testSubject.canHandleMessageType(CommandMessage.class));
-    }
-
-    @Test
-    void hasAnnotation() {
-        assertTrue(testSubject.hasAnnotation(EventHandler.class));
-        assertFalse(testSubject.hasAnnotation(CommandHandler.class));
     }
 
     @Test

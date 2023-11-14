@@ -21,7 +21,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.junit.jupiter.api.*;
 
-import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -59,25 +58,16 @@ class PayloadAssociationResolverTest {
         assertEquals(TEST_PROPERTY_VALUE, result);
     }
 
-    private class TestEvent {
+    private record TestEvent(int testProperty) {
 
-        private final int testProperty;
-
-        public TestEvent(int testProperty) {
-            this.testProperty = testProperty;
-        }
-
-        public int getTestProperty() {
-            return testProperty;
-        }
     }
 
     /**
      * Sleep added to {@link #payloadType()} such that the
-     * {@link PayLoadAssociationResolverTest#resolveWorksThreadSafe()} test would always fail with a non thread safe
+     * {@link PayloadAssociationResolverTest#resolveWorksThreadSafe()} test would always fail with a non thread safe
      * map.
      */
-    private class TestHandlingMember implements MessageHandlingMember {
+    private static class TestHandlingMember implements MessageHandlingMember<Object> {
 
         @Override
         public Class<?> payloadType() {
@@ -90,32 +80,22 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public Optional<Map<String, Object>> annotationAttributes(Class annotationType) {
+        public <H> Optional<H> unwrap(Class<H> handlerType) {
             return Optional.empty();
         }
 
         @Override
-        public boolean hasAnnotation(Class annotationType) {
-            return false;
-        }
-
-        @Override
-        public Optional unwrap(Class handlerType) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Object handle(@Nonnull Message message, @Nullable Object target) throws Exception {
+        public Object handle(@Nonnull Message<?> message, @Nullable Object target) {
             return null;
         }
 
         @Override
-        public boolean canHandleMessageType(@Nonnull Class messageType) {
+        public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
             return true;
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message) {
+        public boolean canHandle(@Nonnull Message<?> message) {
             return true;
         }
     }

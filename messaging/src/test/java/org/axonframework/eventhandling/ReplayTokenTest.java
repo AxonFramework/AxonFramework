@@ -17,16 +17,13 @@
 package org.axonframework.eventhandling;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.Collections;
 
 import static java.util.Collections.emptySet;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link ReplayToken}.
@@ -44,7 +41,7 @@ class ReplayTokenTest {
 
     @Test
     void advanceReplayTokenWithinReplaySegment() {
-        ReplayToken testSubject = new ReplayToken(innerToken);
+        ReplayToken testSubject = (ReplayToken) ReplayToken.createReplayToken(innerToken);
         TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(8, emptySet()));
         assertTrue(actual instanceof ReplayToken);
         assertTrue(ReplayToken.isReplay(actual));
@@ -62,7 +59,7 @@ class ReplayTokenTest {
     @Test
     void serializationDeserialization() throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
-        ReplayToken replayToken = new ReplayToken(innerToken);
+        TrackingToken replayToken = ReplayToken.createReplayToken(innerToken);
         String serializedReplayToken = objectMapper.writer().writeValueAsString(replayToken);
         ReplayToken deserializedReplayToken = objectMapper.readerFor(ReplayToken.class)
                                                           .readValue(serializedReplayToken);

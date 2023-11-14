@@ -28,7 +28,6 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -36,7 +35,6 @@ import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.junit.jupiter.api.*;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Hooks;
 import reactor.test.StepVerifier;
 import reactor.test.StepVerifierOptions;
@@ -240,39 +238,6 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
                 queryBus.subscriptionQuery(queryMessage,
-                                           Queues.SMALL_BUFFER_SIZE);
-        Executors.newSingleThreadScheduledExecutor().schedule(() -> {
-            chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
-            chatQueryHandler.emitter.completeExceptionally(String.class, TEST_PAYLOAD::equals, toBeThrown);
-            chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update2");
-        }, 500, TimeUnit.MILLISECONDS);
-
-        // then
-        StepVerifier.create(result.initialResult().map(Message::getPayload))
-                    .expectNext(Arrays.asList("Message1", "Message2", "Message3"))
-                    .verifyComplete();
-        StepVerifier.create(result.updates().map(Message::getPayload))
-                    .expectNext("Update1")
-                    .expectErrorMatches(toBeThrown::equals)
-                    .verify();
-    }
-
-    @Deprecated
-    @Test
-    void completingSubscriptionQueryExceptionallyDeprecated() {
-        // given
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                TEST_PAYLOAD,
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
-        );
-        RuntimeException toBeThrown = new RuntimeException();
-
-        // when
-        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
-                queryBus.subscriptionQuery(queryMessage,
-                                           new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.IGNORE),
                                            Queues.SMALL_BUFFER_SIZE);
         Executors.newSingleThreadScheduledExecutor().schedule(() -> {
             chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
@@ -494,76 +459,6 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
                 queryBus.subscriptionQuery(queryMessage,
-                                           8);
-        List<String> initial1 = new ArrayList<>();
-        List<String> initial2 = new ArrayList<>();
-        List<String> update1 = new ArrayList<>();
-        List<String> update2 = new ArrayList<>();
-        List<String> update3 = new ArrayList<>();
-        result.initialResult().map(Message::getPayload).subscribe(initial1::addAll);
-        result.initialResult().map(Message::getPayload).subscribe(initial2::addAll);
-        chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
-        result.updates().map(Message::getPayload).subscribe(update1::add);
-        result.updates().map(Message::getPayload).subscribe(update2::add);
-        for (int i = 2; i < 10; i++) {
-            chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update" + i);
-        }
-        result.updates().map(Message::getPayload).subscribe(update3::add);
-        chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update10");
-        chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update11");
-        chatQueryHandler.emitter.complete(String.class, TEST_PAYLOAD::equals);
-
-        assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial1);
-        assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial2);
-        assertEquals(Arrays.asList("Update1",
-                                   "Update2",
-                                   "Update3",
-                                   "Update4",
-                                   "Update5",
-                                   "Update6",
-                                   "Update7",
-                                   "Update8",
-                                   "Update9",
-                                   "Update10",
-                                   "Update11"), update1);
-        assertEquals(Arrays.asList("Update1",
-                                   "Update2",
-                                   "Update3",
-                                   "Update4",
-                                   "Update5",
-                                   "Update6",
-                                   "Update7",
-                                   "Update8",
-                                   "Update9",
-                                   "Update10",
-                                   "Update11"), update2);
-        assertEquals(Arrays.asList("Update2",
-                                   "Update3",
-                                   "Update4",
-                                   "Update5",
-                                   "Update6",
-                                   "Update7",
-                                   "Update8",
-                                   "Update9",
-                                   "Update10",
-                                   "Update11"), update3);
-    }
-
-    @Deprecated
-    @Test
-    void severalSubscriptionsDeprecated() {
-        // given
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                TEST_PAYLOAD,
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
-        );
-
-        // when
-        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
-                queryBus.subscriptionQuery(queryMessage,
-                                           new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR),
                                            8);
         List<String> initial1 = new ArrayList<>();
         List<String> initial2 = new ArrayList<>();
@@ -866,98 +761,6 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         latch.await(500, TimeUnit.MILLISECONDS);
         assertEquals(Collections.singletonList("Initial"), initialResult);
         assertTrue(updates.isEmpty());
-    }
-
-    @Deprecated
-    @Test
-    void subscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnUpdateDeprecated() {
-        // given
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                TEST_PAYLOAD,
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
-        );
-
-        // when
-        List<String> initialResult = new ArrayList<>();
-        List<String> updates = new ArrayList<>();
-        queryBus.subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.DROP), 1)
-                .handle(initial -> initialResult.addAll(initial.getPayload()),
-                        update -> {
-                            updates.add(update.getPayload());
-                            throw new IllegalStateException("oops");
-                        });
-        chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
-        chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update2");
-
-        // then
-        assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
-        assertEquals(Collections.singletonList("Update1"), updates);
-
-        assertTrue(queryUpdateEmitter.activeSubscriptions().isEmpty(), "Expected subscriptions to be cancelled");
-    }
-
-    @Deprecated
-    @Test
-    void bufferOverflowDeprecated() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                TEST_PAYLOAD,
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
-        );
-
-        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
-                queryBus.subscriptionQuery(queryMessage,
-                                           new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR),
-                                           200);
-
-        for (int i = 0; i < 201; i++) {
-            chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update" + i);
-        }
-        chatQueryHandler.emitter.complete(String.class, TEST_PAYLOAD::equals);
-
-        StepVerifier.create(result.updates())
-                    .expectErrorMatches(
-                            t -> "The receiver is overrun by more signals than expected (bounded queue...)".equals(
-                                    t.getMessage()
-                            )
-                    )
-                    .verify();
-    }
-
-    @Deprecated
-    @Test
-    void subscriptionQueryResultHandleWhenThereIsAnErrorConsumingABufferedUpdateDeprecated() {
-        // given
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                TEST_PAYLOAD,
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
-        );
-
-        // when
-        List<String> initialResult = new ArrayList<>();
-        List<String> updates = new ArrayList<>();
-        queryBus.subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.DROP), 1)
-                .handle(initial -> {
-                            // make sure the update is emitted before subscribing to updates
-                            chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
-                            initialResult.addAll(initial.getPayload());
-                        },
-                        update -> {
-                            updates.add(update.getPayload());
-                            throw new IllegalStateException("oops");
-                        });
-        chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update2");
-
-        // then
-        assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
-        assertEquals(Collections.singletonList("Update1"), updates);
-
-        assertTrue(queryUpdateEmitter.activeSubscriptions().isEmpty(), "Expected subscriptions to be cancelled");
     }
 
     @Test

@@ -16,13 +16,13 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
 
-import java.util.Map;
 import javax.annotation.Nonnull;
 
 /**
@@ -34,23 +34,24 @@ import javax.annotation.Nonnull;
 public class MethodCreationPolicyDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull
-    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        return original.annotationAttributes(CreationPolicy.class)
-                       .map(attr -> (MessageHandlingMember<T>) new MethodCreationPolicyHandlingMember<>(
-                               original, attr))
+    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+        return original.<AggregateCreationPolicy>attribute(HandlerAttributes.AGGREGATE_CREATION_POLICY)
+                       .map(creationPolicy -> (MessageHandlingMember<T>) new MethodCreationPolicyHandlingMember<>(
+                               original, creationPolicy
+                       ))
                        .orElse(original);
     }
 
-    private static class MethodCreationPolicyHandlingMember<T> extends WrappedMessageHandlingMember<T>
+    private static class MethodCreationPolicyHandlingMember<T>
+            extends WrappedMessageHandlingMember<T>
             implements CreationPolicyMember<T> {
 
         private final AggregateCreationPolicy creationPolicy;
 
-        private MethodCreationPolicyHandlingMember(
-                MessageHandlingMember<T> delegate, Map<String, Object> attr) {
+        private MethodCreationPolicyHandlingMember(MessageHandlingMember<T> delegate,
+                                                   AggregateCreationPolicy creationPolicy) {
             super(delegate);
-            creationPolicy = (AggregateCreationPolicy) attr.get("creationPolicy");
+            this.creationPolicy = creationPolicy;
         }
 
         @Override

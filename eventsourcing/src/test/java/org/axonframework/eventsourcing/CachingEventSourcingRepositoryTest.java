@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.caching.Cache;
-import org.axonframework.common.caching.EhCache3Adapter;
+import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
@@ -76,7 +76,7 @@ class CachingEventSourcingRepositoryTest {
                                         Object.class,
                                         ResourcePoolsBuilder.heap(100L).build())
                                 .build());
-        cache = spy(new EhCache3Adapter(ehCache));
+        cache = spy(new EhCacheAdapter(ehCache));
 
         testSubject = CachingEventSourcingRepository.builder(StubAggregate.class)
                                                     .aggregateFactory(new StubAggregateFactory())

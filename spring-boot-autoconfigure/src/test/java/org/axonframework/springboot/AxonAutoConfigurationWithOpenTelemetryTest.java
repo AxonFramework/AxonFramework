@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.tracing.NestingSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory;
 import org.junit.jupiter.api.*;
@@ -30,7 +29,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 
-import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AxonAutoConfigurationWithOpenTelemetryTest {

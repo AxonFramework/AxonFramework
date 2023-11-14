@@ -37,7 +37,6 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -324,9 +323,7 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
         }
 
         protected void validate() throws AxonConfigurationException {
-            if (serializer == null) {
-                serializer = XStreamSerializer::defaultSerializer;
-            }
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
             assertNonNull(axonServerConnectionManager,
                           "The AxonServerConnectionManager is a hard requirement and should be provided");
         }

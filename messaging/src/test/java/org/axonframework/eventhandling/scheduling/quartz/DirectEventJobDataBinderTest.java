@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.scheduling.quartz;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -56,18 +55,13 @@ class DirectEventJobDataBinderTest {
     static Stream<Arguments> serializerImplementationAndAssertionSpecifics() {
         return Stream.of(
                 Arguments.arguments(
-                        spy(JavaSerializer.builder().build()),
-                        (Function<Class, String>) Class::getName,
-                        (Predicate<Object>) Objects::nonNull
-                ),
-                Arguments.arguments(
                         spy(TestSerializer.XSTREAM.getSerializer()),
-                        (Function<Class, String>) clazz -> clazz.getSimpleName().toLowerCase(),
+                        (Function<Class<?>, String>) clazz -> clazz.getSimpleName().toLowerCase(),
                         (Predicate<Object>) Objects::isNull
                 ),
                 Arguments.arguments(
                         spy(JacksonSerializer.builder().build()),
-                        (Function<Class, String>) Class::getName,
+                        (Function<Class<?>, String>) Class::getName,
                         (Predicate<Object>) Objects::isNull
                 )
         );
@@ -77,7 +71,7 @@ class DirectEventJobDataBinderTest {
     @ParameterizedTest
     void eventMessageToJobData(
             Serializer serializer,
-            Function<Class, String> expectedSerializedClassType,
+            Function<Class<?>, String> expectedSerializedClassType,
             Predicate<Object> revisionMatcher
     ) {
         QuartzEventScheduler.DirectEventJobDataBinder testSubject = new QuartzEventScheduler.DirectEventJobDataBinder(serializer);
@@ -103,7 +97,7 @@ class DirectEventJobDataBinderTest {
     @ParameterizedTest
     void eventMessageFromJobData(
             Serializer serializer,
-            Function<Class, String> expectedSerializedClassType,
+            Function<Class<?>, String> expectedSerializedClassType,
             Predicate<Object> revisionMatcher
     ) {
         QuartzEventScheduler.DirectEventJobDataBinder testSubject = new QuartzEventScheduler.DirectEventJobDataBinder(serializer);
@@ -127,10 +121,11 @@ class DirectEventJobDataBinderTest {
     }
 
     private static class MatchEventMessageSerializedObject implements ArgumentMatcher<SimpleSerializedObject<?>> {
-        private final Function<Class, String> expectedSerializedClassType;
+        private final Function<Class<?>, String> expectedSerializedClassType;
         private final Predicate<Object> revisionMatcher;
 
-        MatchEventMessageSerializedObject(Function<Class, String> expectedSerializedClassType, Predicate<Object> revisionMatcher) {
+        MatchEventMessageSerializedObject(Function<Class<?>, String> expectedSerializedClassType,
+                                          Predicate<Object> revisionMatcher) {
             this.expectedSerializedClassType = expectedSerializedClassType;
             this.revisionMatcher = revisionMatcher;
         }

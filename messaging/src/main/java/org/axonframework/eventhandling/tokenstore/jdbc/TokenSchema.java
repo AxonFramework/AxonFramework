@@ -116,17 +116,6 @@ public class TokenSchema {
      * Returns the name of the column containing the name of the machine that is currently the owner of this token.
      *
      * @return the name of the column containing the name of the owner node
-     * @deprecated in favor of {@link #ownerColumn}
-     */
-    @Deprecated
-    public String ownerColum() {
-        return ownerColumn();
-    }
-
-    /**
-     * Returns the name of the column containing the name of the machine that is currently the owner of this token.
-     *
-     * @return the name of the column containing the name of the owner node
      */
     public String ownerColumn() {
         return ownerColumn;
@@ -209,18 +198,6 @@ public class TokenSchema {
         public Builder setTimestampColumn(String columnName) {
             this.timestampColumn = columnName;
             return this;
-        }
-
-        /**
-         * Sets the name of the owner column. Defaults to 'owner'.
-         *
-         * @param columnName the name of the column
-         * @return the modified Builder instance
-         * @deprecated in favor of {@link #setOwnerColumn(String)}
-         */
-        @Deprecated
-        public Builder setOwnerColum(String columnName) {
-            return setOwnerColumn(columnName);
         }
 
         /**

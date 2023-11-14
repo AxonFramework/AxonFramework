@@ -16,11 +16,14 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.ReplayStatus;
+import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +37,7 @@ class ReplayParameterResolverFactoryTest {
 
     private SomeHandler handler;
     private AnnotationEventHandlerAdapter testSubject;
-    private ReplayToken replayToken;
+    private TrackingToken replayToken;
     private GlobalSequenceTrackingToken regularToken;
 
     @BeforeEach
@@ -42,7 +45,7 @@ class ReplayParameterResolverFactoryTest {
         handler = new SomeHandler();
         testSubject = new AnnotationEventHandlerAdapter(handler);
         regularToken = new GlobalSequenceTrackingToken(1L);
-        replayToken = new ReplayToken(regularToken);
+        replayToken = ReplayToken.createReplayToken(regularToken);
     }
 
     @Test
@@ -60,8 +63,8 @@ class ReplayParameterResolverFactoryTest {
 
     private static class SomeHandler {
 
-        private List<Long> receivedLongs = new ArrayList<>();
-        private List<Long> receivedInReplay = new ArrayList<>();
+        private final List<Long> receivedLongs = new ArrayList<>();
+        private final List<Long> receivedInReplay = new ArrayList<>();
 
         @EventHandler
         public void handle(Long event, TrackingToken token, ReplayStatus replayStatus) {
@@ -72,5 +75,4 @@ class ReplayParameterResolverFactoryTest {
             }
         }
     }
-
 }

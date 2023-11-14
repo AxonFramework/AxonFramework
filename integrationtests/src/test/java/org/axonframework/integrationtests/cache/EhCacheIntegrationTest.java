@@ -16,14 +16,19 @@
 
 package org.axonframework.integrationtests.cache;
 
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Ehcache;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.SizeOfPolicyConfiguration;
-import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
+import org.ehcache.CacheManager;
+import org.ehcache.config.CacheConfiguration;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.core.Ehcache;
+import org.ehcache.core.EhcacheManager;
+import org.ehcache.core.config.DefaultConfiguration;
 import org.junit.jupiter.api.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * {@link Ehcache} specific implementation of the {@link CachingIntegrationTestSuite}.
@@ -37,38 +42,31 @@ class EhCacheIntegrationTest extends CachingIntegrationTestSuite {
     @Override
     @BeforeEach
     void setUp() {
-        cacheManager = CacheManager.create(getEhCacheConfiguration());
+        Map<String, CacheConfiguration<?, ?>> caches = new HashMap<>();
+        DefaultConfiguration config = new DefaultConfiguration(caches, null);
+        cacheManager = new EhcacheManager(config);
+        cacheManager.init();
         super.setUp();
     }
 
     @AfterEach
     void tearDown() {
-        cacheManager.shutdown();
+        cacheManager.close();
     }
 
     @Override
     public Cache buildCache(String name) {
-        Ehcache cache = createCache(name);
-        cacheManager.addCache(cache);
-        return new EhCacheAdapter(cache);
+        return new EhCacheAdapter(createCache(name));
     }
 
     private Ehcache createCache(String name) {
-        CacheConfiguration cacheConfig = new CacheConfiguration(name, 10_000)
-                .name(name)
-                .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU)
-                .eternal(false)
-                .timeToLiveSeconds(600)
-                .timeToIdleSeconds(600);
-        return new net.sf.ehcache.Cache(cacheConfig);
-    }
-
-    private net.sf.ehcache.config.Configuration getEhCacheConfiguration() {
-        net.sf.ehcache.config.Configuration configuration = new net.sf.ehcache.config.Configuration();
-        SizeOfPolicyConfiguration sizeOfPolicyConfiguration = new SizeOfPolicyConfiguration();
-        sizeOfPolicyConfiguration.maxDepth(13000);
-        sizeOfPolicyConfiguration.maxDepthExceededBehavior(SizeOfPolicyConfiguration.MaxDepthExceededBehavior.ABORT);
-        configuration.addSizeOfPolicy(sizeOfPolicyConfiguration);
-        return configuration;
+        return (Ehcache) cacheManager.createCache(
+                name,
+                CacheConfigurationBuilder
+                        .newCacheConfigurationBuilder(
+                                Object.class,
+                                Object.class,
+                                ResourcePoolsBuilder.heap(100L).build())
+                        .build());
     }
 }

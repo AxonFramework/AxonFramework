@@ -16,19 +16,18 @@
 
 package org.axonframework.queryhandling.annotation;
 
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
-import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Future;
 import javax.annotation.Nonnull;
@@ -38,8 +37,8 @@ import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperTy
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 
 /**
- * Definition of handlers that can handle {@link QueryMessage}s. These handlers are wrapped with a {@link
- * QueryHandlingMember} that exposes query-specific handler information.
+ * Definition of handlers that can handle {@link QueryMessage}s. These handlers are wrapped with a
+ * {@link QueryHandlingMember} that exposes query-specific handler information.
  *
  * @author Allard Buijze
  * @since 3.1
@@ -47,12 +46,11 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull
-    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        return original.annotationAttributes(QueryHandler.class)
-                       .map(attr -> (MessageHandlingMember<T>)
+    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+        return original.<String>attribute(HandlerAttributes.QUERY_NAME)
+                       .map(queryName -> (MessageHandlingMember<T>)
                                new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember<>(
-                                       original, attr
+                                       original, queryName
                                )
                        )
                        .orElse(original);
@@ -65,10 +63,9 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         private final String queryName;
         private final Type resultType;
 
-        public MethodQueryMessageHandlingMember(MessageHandlingMember<T> original, Map<String, Object> attr) {
+        public MethodQueryMessageHandlingMember(MessageHandlingMember<T> original, String queryNameAttribute) {
             super(original);
 
-            String queryNameAttribute = (String) attr.get("queryName");
             if ("".equals(queryNameAttribute)) {
                 queryNameAttribute = original.payloadType().getName();
             }

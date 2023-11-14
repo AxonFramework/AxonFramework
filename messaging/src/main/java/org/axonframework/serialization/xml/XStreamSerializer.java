@@ -80,43 +80,6 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
-     * Instantiate a default {@link XStreamSerializer}.
-     * <p>
-     * The {@link XStream} is defaulted to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing a {@link
-     * CompactDriver}, the {@link Charset} is defaulted to a {@link Charset#forName(String)} using the {@code UTF-8}
-     * character set, the {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and the {@link
-     * Converter} defaults to a {@link ChainingConverter}. Lastly, the builder adds Axon types for XStream's security
-     * settings by including {@code "org.axonframework.**} as a wildcard type.
-     * <p>
-     * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the {@link
-     * GenericDomainEventMessage}, the {@link org.axonframework.commandhandling.GenericCommandMessage} and the {@link
-     * org.axonframework.messaging.MetaData} objects among others. Additionally, a MetaData Converter is registered too.
-     * Lastly, if the provided Converter instance is of type ChainingConverter, then the {@link
-     * XStreamSerializer#registerConverters(ChainingConverter)} function will be called. This will register the {@link
-     * Dom4JToByteArrayConverter}, {@link InputStreamToDom4jConverter}, {@link XomToStringConverter} and {@link
-     * InputStreamToXomConverter} to the Converter chain.
-     *
-     * @return a {@link XStreamSerializer}
-     * @deprecated in favor of using the {@link #builder()} to construct an instance using a configured {@code XStream}
-     * instance. Using this shorthand still works, but will use an {@code XStream} instance that <b>allows
-     * everything</b>. Although this works, XStream expects the types or wildcards for the types to be defined to ensure
-     * the application stays secure. As such, it is <b>highly recommended</b> to follow their recommended approach.
-     */
-    @Deprecated
-    public static XStreamSerializer defaultSerializer() {
-        logger.warn("An unsecured XStream instance allowing all types is used. "
-                            + "It is strongly recommended to set the security context yourself instead!",
-                    new AxonConfigurationException(
-                            "An unsecured XStream instance allowing all types is used. "
-                                    + "It is strongly recommended to set the security context yourself instead!"
-                    ));
-        XStream xStream = new XStream(new CompactDriver());
-        xStream.allowTypeHierarchy(Object.class);
-        return builder().xStream(xStream)
-                        .build();
-    }
-
-    /**
      * Instantiate a {@link XStreamSerializer} based on the fields contained in the {@link Builder}. The {@link XStream}
      * instance is configured with several converters for the most common types in Axon.
      *

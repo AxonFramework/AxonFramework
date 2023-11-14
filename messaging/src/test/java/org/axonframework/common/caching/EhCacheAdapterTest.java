@@ -16,83 +16,46 @@
 
 package org.axonframework.common.caching;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import org.junit.jupiter.api.*;
+import org.ehcache.Cache;
+import org.ehcache.CacheManager;
+import org.ehcache.config.CacheConfiguration;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ExpiryPolicyBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.core.Ehcache;
+import org.ehcache.core.EhcacheManager;
+import org.ehcache.core.config.DefaultConfiguration;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.junit.jupiter.api.Assertions.*;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Test class validating the {@link EhCacheAdapter}.
  *
  * @author Steven van Beelen
+ * @author Gerard Klijs
  */
-class EhCacheAdapterTest {
+class EhCacheAdapterTest extends AbstractCacheAdapterTest {
 
-    private EhCacheAdapter testSubject;
-
-    private CacheManager cacheManager;
-
-    @BeforeEach
-    void setUp() {
-        Cache cache = new Cache("test", 100, false, false, 10, 10);
-        cacheManager = CacheManager.create();
-        cacheManager.addCache(cache);
-
-        testSubject = new EhCacheAdapter(cache);
-    }
-
-    @AfterEach
-    void tearDown() {
-        cacheManager.shutdown();
-    }
-
-    @Test
-    void removeAllRemovesAllEntries() {
-        testSubject.put("one", new Object());
-        testSubject.put("two", new Object());
-        testSubject.put("three", new Object());
-        testSubject.put("four", new Object());
-
-        assertTrue(testSubject.containsKey("one"));
-        assertTrue(testSubject.containsKey("two"));
-        assertTrue(testSubject.containsKey("three"));
-        assertTrue(testSubject.containsKey("four"));
-
-        testSubject.removeAll();
-
-        assertFalse(testSubject.containsKey("one"));
-        assertFalse(testSubject.containsKey("two"));
-        assertFalse(testSubject.containsKey("three"));
-        assertFalse(testSubject.containsKey("four"));
-    }
-
-    @Test
-    void computeIfPresentDoesNotUpdateNonExistingEntry() {
-        AtomicBoolean invoked = new AtomicBoolean(false);
-
-        testSubject.computeIfPresent("some-key", v -> {
-            invoked.set(true);
-            return v;
-        });
-
-        assertFalse(invoked.get());
-    }
-
-    @Test
-    void computeIfPresentUpdatesExistingEntry() {
-        String testKey = "some-key";
-        testSubject.put(testKey, new Object());
-
-        AtomicBoolean invoked = new AtomicBoolean(false);
-
-        testSubject.computeIfPresent(testKey, v -> {
-            invoked.set(true);
-            return v;
-        });
-
-        assertTrue(invoked.get());
+    @Override
+    @SuppressWarnings("rawtypes")
+    AbstractCacheAdapterTest.TestSubjectWrapper getTestSubjectWrapper() {
+        Map<String, CacheConfiguration<?, ?>> caches = new HashMap<>();
+        DefaultConfiguration config = new DefaultConfiguration(caches, null);
+        CacheManager cacheManager = new EhcacheManager(config);
+        cacheManager.init();
+        Cache cache = cacheManager
+                .createCache(
+                        "test",
+                        CacheConfigurationBuilder
+                                .newCacheConfigurationBuilder(
+                                        Object.class,
+                                        Object.class,
+                                        ResourcePoolsBuilder.heap(10L).build())
+                                .withExpiry(ExpiryPolicyBuilder.timeToIdleExpiration(Duration.ofMillis(200L)))
+                                .build());
+        EhCacheAdapter testSubject = new EhCacheAdapter((Ehcache) cache);
+        return new TestSubjectWrapper(testSubject, cacheManager::close);
     }
 }

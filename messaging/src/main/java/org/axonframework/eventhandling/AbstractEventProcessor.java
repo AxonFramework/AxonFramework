@@ -314,21 +314,6 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         * @deprecated Use {@link #spanFactory(EventProcessorSpanFactory) for more configuration options instead
-         */
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = DefaultEventProcessorSpanFactory.builder().spanFactory(spanFactory).build();
-            return this;
-        }
-
-        /**
          * Sets the {@link EventProcessorSpanFactory} implementation to use for providing tracing capabilities. Defaults
          * to a {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides
          * no tracing capabilities.

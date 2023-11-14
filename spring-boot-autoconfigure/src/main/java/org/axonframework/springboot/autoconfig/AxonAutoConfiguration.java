@@ -66,7 +66,6 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -213,8 +212,6 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                         .converter(cborConverter)
                                         .objectMapper(cborMapper)
                                         .build();
-            case JAVA:
-                return JavaSerializer.builder().revisionResolver(revisionResolver).build();
             case XSTREAM:
             case DEFAULT:
             default:

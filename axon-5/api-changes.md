@@ -19,10 +19,11 @@ TODO
 Moved / Remove Classes
 ======================
 
-### Moved
+### Moved / Renamed
 
-| Axon 4 | Axon 5 |
-|--------|--------|
+| Axon 4                                           | Axon 5                                          |
+|--------------------------------------------------|-------------------------------------------------|
+| org.axonframework.common.caching.EhCache3Adapter | org.axonframework.common.caching.EhCacheAdapter |
 
 ### Removed
 

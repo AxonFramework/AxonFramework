@@ -151,16 +151,6 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     }
 
     @Override
-    public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
-        return childHandler.hasAnnotation(annotationType);
-    }
-
-    @Override
-    public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
-        return childHandler.annotationAttributes(annotationType);
-    }
-
-    @Override
     public <R> Optional<R> attribute(String attributeKey) {
         return childHandler.attribute(attributeKey);
     }

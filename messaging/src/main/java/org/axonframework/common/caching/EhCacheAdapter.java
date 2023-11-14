@@ -16,24 +16,28 @@
 
 package org.axonframework.common.caching;
 
-import net.sf.ehcache.CacheException;
-import net.sf.ehcache.Ehcache;
-import net.sf.ehcache.Element;
-import net.sf.ehcache.event.CacheEventListener;
 import org.axonframework.common.Registration;
+import org.ehcache.core.Ehcache;
+import org.ehcache.event.CacheEvent;
+import org.ehcache.event.CacheEventListener;
+import org.ehcache.event.EventFiring;
+import org.ehcache.event.EventOrdering;
+import org.ehcache.event.EventType;
 
+import java.util.EnumSet;
 import java.util.function.UnaryOperator;
 
 /**
  * Cache implementation that delegates all calls to an EhCache instance.
  *
  * @author Allard Buijze
+ * @author Gerard Klijs
  * @since 2.1.2
- * @deprecated since ehcache 2 is nearing eol, we added {@link EhCache3Adapter} instead, which uses ehcache 3.
  */
-@Deprecated
+@SuppressWarnings("rawtypes")
 public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
 
+    @SuppressWarnings("rawtypes")
     private final Ehcache ehCache;
 
     /**
@@ -41,45 +45,56 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
      *
      * @param ehCache The cache instance to forward calls to
      */
+    @SuppressWarnings("rawtypes")
     public EhCacheAdapter(Ehcache ehCache) {
         this.ehCache = ehCache;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <K, V> V get(K key) {
-        final Element element = ehCache.get(key);
+        final Object value = ehCache.get(key);
         //noinspection unchecked
-        return element == null ? null : (V) element.getObjectValue();
+        return value != null ? (V) value : null;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void put(Object key, Object value) {
-        ehCache.put(new Element(key, value));
+        ehCache.put(key, value);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean putIfAbsent(Object key, Object value) {
-        return ehCache.putIfAbsent(new Element(key, value)) == null;
+        return ehCache.putIfAbsent(key, value) == null;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean remove(Object key) {
-        return ehCache.remove(key);
+        Object value = ehCache.get(key);
+        if (value == null) {
+            return false;
+        }
+        return ehCache.remove(key, value);
     }
 
     @Override
     public void removeAll() {
-        ehCache.removeAll();
+        ehCache.clear();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean containsKey(Object key) {
-        return ehCache.isKeyInCache(key);
+        return ehCache.containsKey(key);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
-        Element oldValue;
+        Object oldValue;
         V newValue;
         do {
             oldValue = ehCache.get(key);
@@ -87,14 +102,14 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
                 break;
             }
             //noinspection unchecked
-            newValue = update.apply((V) oldValue.getObjectValue());
+            newValue = update.apply((V) oldValue);
         } while (!replaceOrRemove(key, oldValue, newValue));
     }
 
     /**
      * Replace or remove the element under {@code key}. If the {@code newValue} is not {@code null}, we invoke replace.
      * If the {@code newValue} is {@code null}, the compute task decided to remove the entry instead. Since an
-     * invocation of {@link Ehcache#replace(Element, Element)} does not remove an {@link Element} if it's value is
+     * invocation of {@link Ehcache#replace(Object, Object, Object)} does not remove an {@link Object} if it's value is
      * {@code null}, we need to do this ourselves.
      *
      * @param key      The reference to the value to replace or remove, depending on whether the {@code newValue} is
@@ -102,83 +117,67 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
      * @param oldValue The old entry to replace with the {@code newValue}, if {@code newValue} is not {@code null}.
      * @param newValue The new value to replace with the {@code oldValue}, if it is not {@code null}.
      * @param <V>      The generic type of the value stored under the given {@code key}.
-     * @return A boolean stating whether the {@link Ehcache#replace(Element, Element)} or {@link Ehcache#remove(Object)}
+     * @return A boolean stating whether the {@link Ehcache#replace(Object, Object, Object)} or {@link #remove(Object)}
      * task succeeded.
      */
-    private <V> boolean replaceOrRemove(Object key, Element oldValue, V newValue) {
-        return newValue != null ? ehCache.replace(oldValue, new Element(key, newValue)) : ehCache.remove(key);
+    @SuppressWarnings("unchecked")
+    private <V> boolean replaceOrRemove(Object key, V oldValue, V newValue) {
+        return newValue != null ? ehCache.replace(key, oldValue, newValue) : remove(key);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
-    protected EhCacheAdapter.CacheEventListenerAdapter createListenerAdapter(EntryListener cacheEntryListener) {
-        return new EhCacheAdapter.CacheEventListenerAdapter(ehCache, cacheEntryListener);
+    protected CacheEventListener createListenerAdapter(EntryListener cacheEntryListener) {
+        return new EhCacheAdapter.CacheEventListenerAdapter(cacheEntryListener);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     protected Registration doRegisterListener(CacheEventListener listenerAdapter) {
-        ehCache.getCacheEventNotificationService().registerListener(listenerAdapter);
-        return () -> ehCache.getCacheEventNotificationService().unregisterListener(listenerAdapter);
+        ehCache.getRuntimeConfiguration().registerCacheEventListener(
+                listenerAdapter,
+                EventOrdering.ORDERED,
+                EventFiring.SYNCHRONOUS,
+                EnumSet.allOf(EventType.class)
+        );
+        return () -> {
+            try {
+                ehCache.getRuntimeConfiguration().deregisterCacheEventListener(listenerAdapter);
+            } catch (IllegalStateException e) {
+                return false;
+            }
+            return true;
+        };
     }
 
-    private static class CacheEventListenerAdapter implements CacheEventListener, Cloneable {
+    @SuppressWarnings("rawtypes")
+    private static class CacheEventListenerAdapter implements CacheEventListener {
 
-        private Ehcache ehCache;
-        private EntryListener delegate;
+        private final EntryListener delegate;
 
-        public CacheEventListenerAdapter(Ehcache ehCache, EntryListener delegate) {
-            this.ehCache = ehCache;
+        public CacheEventListenerAdapter(EntryListener delegate) {
             this.delegate = delegate;
         }
 
         @Override
-        public void notifyElementRemoved(Ehcache cache, Element element) throws CacheException {
-            if (cache.equals(ehCache)) {
-                delegate.onEntryRemoved(element.getObjectKey());
+        public void onEvent(CacheEvent event) {
+            switch (event.getType()) {
+                case CREATED:
+                    delegate.onEntryCreated(event.getKey(), event.getNewValue());
+                    break;
+                case UPDATED:
+                    delegate.onEntryUpdated(event.getKey(), event.getNewValue());
+                    break;
+                case REMOVED:
+                case EVICTED:
+                    delegate.onEntryRemoved(event.getKey());
+                    break;
+                case EXPIRED:
+                    delegate.onEntryExpired(event.getKey());
+                    break;
+                default:
+                    throw new AssertionError("Unsupported event type " + event.getType());
             }
-        }
-
-        @Override
-        public void notifyElementPut(Ehcache cache, Element element) throws CacheException {
-            if (cache.equals(ehCache)) {
-                delegate.onEntryCreated(element.getObjectKey(), element.getObjectValue());
-            }
-        }
-
-        @Override
-        public void notifyElementUpdated(Ehcache cache, Element element) throws CacheException {
-            if (cache.equals(ehCache)) {
-                delegate.onEntryUpdated(element.getObjectKey(), element.getObjectValue());
-            }
-        }
-
-        @Override
-        public void notifyElementExpired(Ehcache cache, Element element) {
-            if (cache.equals(ehCache)) {
-                delegate.onEntryExpired(element.getObjectKey());
-            }
-        }
-
-        @Override
-        public void notifyElementEvicted(Ehcache cache, Element element) {
-            if (cache.equals(ehCache)) {
-                delegate.onEntryExpired(element.getObjectKey());
-            }
-        }
-
-        @Override
-        public void notifyRemoveAll(Ehcache cache) {
-        }
-
-        @Override
-        public void dispose() {
-        }
-
-        @Override
-        public CacheEventListenerAdapter clone() throws CloneNotSupportedException {
-            CacheEventListenerAdapter clone = (CacheEventListenerAdapter) super.clone();
-            clone.ehCache = (Ehcache) ehCache.clone();
-            clone.delegate = (EntryListener) delegate.clone();
-            return clone;
         }
     }
 }

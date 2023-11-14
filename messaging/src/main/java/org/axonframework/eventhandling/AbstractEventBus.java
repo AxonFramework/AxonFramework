@@ -311,21 +311,6 @@ public abstract class AbstractEventBus implements EventBus {
 
         /**
          * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         * @deprecated Please use {@link #spanFactory(EventBusSpanFactory)} which is more configurable
-         */
-        @Deprecated
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = DefaultEventBusSpanFactory.builder().spanFactory(spanFactory).build();
-            return this;
-        }
-
-        /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
          * {@link DefaultEventBusSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
          * @param spanFactory The {@link EventBusSpanFactory} implementation

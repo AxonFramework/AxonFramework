@@ -31,7 +31,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -119,26 +118,6 @@ public class DefaultQueryGateway implements QueryGateway {
         GenericQueryMessage<?, R> queryMessage = new GenericQueryMessage<>(asMessage(query), queryName, responseType);
         return queryBus.scatterGather(processInterceptors(queryMessage), timeout, timeUnit)
                        .map(QueryResponseMessage::getPayload);
-    }
-
-    /**
-     * @deprecated in favour of the {{@link #subscriptionQuery(String, Object, ResponseType, ResponseType, int)}}
-     */
-    @Deprecated
-    @Override
-    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull String queryName,
-                                                                     @Nonnull Q query,
-                                                                     @Nonnull ResponseType<I> initialResponseType,
-                                                                     @Nonnull ResponseType<U> updateResponseType,
-                                                                     @Nullable SubscriptionQueryBackpressure backpressure,
-                                                                     int updateBufferSize) {
-        SubscriptionQueryMessage<?, I, U> interceptedQuery =
-                getSubscriptionQueryMessage(queryName, query, initialResponseType, updateResponseType);
-
-        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result =
-                queryBus.subscriptionQuery(interceptedQuery, backpressure, updateBufferSize);
-
-        return getSubscriptionQueryResult(result);
     }
 
     @Override

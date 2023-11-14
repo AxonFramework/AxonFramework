@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.common.Assert;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -27,10 +26,8 @@ import java.lang.reflect.Parameter;
 import java.util.concurrent.Callable;
 
 /**
- * Parameter resolver factory that adds support for resolving current {@link InterceptorChain}. {@link
- * InterceptorChain}
- * can be initialized using static method {@link InterceptorChainParameterResolverFactory#initialize(InterceptorChain)}.
- * This can function only if there is an active {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
+ * Parameter resolver factory that adds support for resolving current {@link InterceptorChain}. This can function only
+ * if there is an active {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
  *
  * @author Milan Savic
  * @since 3.3
@@ -42,19 +39,6 @@ public class InterceptorChainParameterResolverFactory
     private static final String INTERCEPTOR_CHAIN_EMITTER_KEY = InterceptorChain.class.getName();
 
     private static final ThreadLocal<InterceptorChain> CURRENT = new ThreadLocal<>();
-    /**
-     * Initializes current unit of work with interceptor chain.
-     *
-     * @param interceptorChain the interceptor chain
-     *
-     * @deprecated in favor of {@link #callWithInterceptorChain(InterceptorChain, Callable)}
-     */
-    @Deprecated
-    public static void initialize(InterceptorChain interceptorChain) {
-        Assert.state(CurrentUnitOfWork.isStarted(),
-                     () -> "An active Unit of Work is required for injecting interceptor chain");
-        CurrentUnitOfWork.get().resources().put(INTERCEPTOR_CHAIN_EMITTER_KEY, interceptorChain);
-    }
 
     /**
      * Invoke the given {@code action} with the given {@code interceptorChain} being available

@@ -62,33 +62,6 @@ public class MetaDataRoutingStrategy extends AbstractRoutingStrategy {
         this.metaDataKey = builder.metaDataKey;
     }
 
-    /**
-     * Initializes the MetaDataRoutingStrategy where the given {@code metaDataKey} is used to get the Meta Data value.
-     * An error is raised when the MetaData key cannot be found.
-     *
-     * @param metaDataKey the key on which the value is retrieved from the MetaData
-     * @deprecated in favor of the {@link #builder()}
-     */
-    @Deprecated
-    public MetaDataRoutingStrategy(String metaDataKey) {
-        this(metaDataKey, UnresolvedRoutingKeyPolicy.ERROR);
-    }
-
-    /**
-     * Initializes the MetaDataRoutingStrategy where the given {@code metaDataKey} is used to get the Meta Data value.
-     * The given {@code unresolvedRoutingKeyPolicy} prescribes what to do when the Meta Data properties cannot be
-     * found.
-     *
-     * @param metaDataKey                the key on which the value is retrieved from the MetaData
-     * @param unresolvedRoutingKeyPolicy the policy prescribing behavior when the routing key cannot be resolved
-     * @deprecated in favor of the {@link #builder()}
-     */
-    @Deprecated
-    public MetaDataRoutingStrategy(String metaDataKey, UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy) {
-        super(unresolvedRoutingKeyPolicy);
-        this.metaDataKey = metaDataKey;
-    }
-
     @Override
     protected String doResolveRoutingKey(@Nonnull CommandMessage<?> command) {
         Object value = command.getMetaData().get(metaDataKey);

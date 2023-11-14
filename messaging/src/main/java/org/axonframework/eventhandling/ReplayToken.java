@@ -48,38 +48,6 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     private final transient boolean lastMessageWasReplay;
 
     /**
-     * Initialize a ReplayToken, using the given {@code tokenAtReset} to represent the position at which a reset was
-     * triggered. The current token is reset to the initial position.
-     * <p>
-     * Using the {@link #createReplayToken(TrackingToken)} is preferred, as it executes sanity checks on the
-     * parameters.
-     *
-     * @param tokenAtReset The token representing the position at which the reset was triggered.
-     * @deprecated Use the {@link #createReplayToken(TrackingToken)} method instead.
-     */
-    @Deprecated
-    public ReplayToken(TrackingToken tokenAtReset) {
-        this(tokenAtReset, null, null);
-    }
-
-    /**
-     * Initializes a ReplayToken with {@code tokenAtReset} which represents the position at which a reset was triggered
-     * and the {@code newRedeliveryToken} which represents current token.
-     * <p>
-     * Using the {@link #createReplayToken(TrackingToken, TrackingToken)} is preferred, as it executes sanity checks on
-     * the parameters.
-     *
-     * @param tokenAtReset       The token representing the position at which the reset was triggered
-     * @param newRedeliveryToken The current token
-     * @deprecated Use the {@link #createReplayToken(TrackingToken, TrackingToken)} method instead.
-     */
-    @Deprecated
-    public ReplayToken(TrackingToken tokenAtReset,
-                       TrackingToken newRedeliveryToken) {
-        this(tokenAtReset, newRedeliveryToken, null, true);
-    }
-
-    /**
      * Initializes a ReplayToken with {@code tokenAtReset} which represents the position at which a reset was triggered
      * and the {@code newRedeliveryToken} which represents current token.
      *

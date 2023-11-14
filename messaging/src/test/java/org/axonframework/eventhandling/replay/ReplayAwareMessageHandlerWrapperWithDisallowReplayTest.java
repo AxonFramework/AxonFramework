@@ -41,25 +41,26 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
     private SomeMethodHandler methodHandler;
     private AnnotationEventHandlerAdapter testSubject;
     private AnnotationEventHandlerAdapter testMethodSubject;
-    private ReplayPreventingHandler disallowingHandler;
-    private ReplayToken replayToken;
+    private TrackingToken replayToken;
     private AnnotationEventHandlerAdapter testDisallowingSubject;
 
     @BeforeEach
     void setUp() {
         handler = new SomeHandler();
-        disallowingHandler = new ReplayPreventingHandler();
+        ReplayPreventingHandler disallowingHandler = new ReplayPreventingHandler();
         methodHandler = new SomeMethodHandler();
         testSubject = new AnnotationEventHandlerAdapter(handler);
         testMethodSubject = new AnnotationEventHandlerAdapter(methodHandler);
         testDisallowingSubject = new AnnotationEventHandlerAdapter(disallowingHandler);
-        replayToken = new ReplayToken(new GlobalSequenceTrackingToken(1L));
+        replayToken = ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(1L));
     }
 
     @Test
     void invokeWithReplayTokens() throws Exception {
-        GenericTrackedEventMessage<Object> stringEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage("1"));
-        GenericTrackedEventMessage<Object> longEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage(1L));
+        GenericTrackedEventMessage<Object> stringEvent = new GenericTrackedEventMessage<>(replayToken,
+                                                                                          asEventMessage("1"));
+        GenericTrackedEventMessage<Object> longEvent = new GenericTrackedEventMessage<>(replayToken,
+                                                                                        asEventMessage(1L));
         assertTrue(testSubject.canHandle(stringEvent));
         assertTrue(testMethodSubject.canHandle(stringEvent));
         assertTrue(testSubject.canHandle(longEvent));
@@ -77,14 +78,13 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
         assertTrue(testSubject.supportsReset());
         assertTrue(testMethodSubject.supportsReset());
         assertFalse(testDisallowingSubject.supportsReset());
-
     }
 
     @DisallowReplay
     private static class SomeHandler {
 
-        private List<String> receivedStrings = new ArrayList<>();
-        private List<Long> receivedLongs = new ArrayList<>();
+        private final List<String> receivedStrings = new ArrayList<>();
+        private final List<Long> receivedLongs = new ArrayList<>();
 
         @AllowReplay
         @EventHandler
@@ -102,8 +102,8 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
 
     private static class SomeMethodHandler {
 
-        private List<String> receivedStrings = new ArrayList<>();
-        private List<Long> receivedLongs = new ArrayList<>();
+        private final List<String> receivedStrings = new ArrayList<>();
+        private final List<Long> receivedLongs = new ArrayList<>();
 
         @AllowReplay
         @EventHandler
@@ -123,8 +123,8 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
     @DisallowReplay
     private static class ReplayPreventingHandler {
 
-        private List<String> receivedStrings = new ArrayList<>();
-        private List<Long> receivedLongs = new ArrayList<>();
+        private final List<String> receivedStrings = new ArrayList<>();
+        private final List<Long> receivedLongs = new ArrayList<>();
 
         @EventHandler
         public void handle(String event, TrackingToken token) {
@@ -138,5 +138,4 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
             receivedLongs.add(event);
         }
     }
-
 }

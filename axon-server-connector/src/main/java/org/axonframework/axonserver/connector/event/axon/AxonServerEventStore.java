@@ -60,7 +60,6 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -212,12 +211,6 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         @Override
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
-        @Override
         public Builder spanFactory(@Nonnull EventBusSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
@@ -365,13 +358,6 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         private void buildStorageEngine() {
-            if (snapshotSerializer == null) {
-                snapshotSerializer = XStreamSerializer::defaultSerializer;
-            }
-            if (eventSerializer == null) {
-                eventSerializer = XStreamSerializer::defaultSerializer;
-            }
-
             assertNonNull(configuration, "The AxonServerConfiguration is a hard requirement and should be provided");
             assertNonNull(axonServerConnectionManager,
                           "The PlatformConnectionManager is a hard requirement and should be provided");
@@ -396,7 +382,9 @@ public class AxonServerEventStore extends AbstractEventStore {
          */
         @Override
         protected void validate() throws AxonConfigurationException {
-            BuilderUtils.assertNonNull(snapshotFilter, "The SnapshotFilter is a hard requirement and should be provided");
+            assertNonNull(eventSerializer, "The event Serializer is a hard requirement and should be provided");
+            assertNonNull(snapshotSerializer, "The snapshot Serializer is a hard requirement and should be provided");
+            assertNonNull(snapshotFilter, "The SnapshotFilter is a hard requirement and should be provided");
             super.validate();
         }
     }
@@ -800,6 +788,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             @Override
             protected void validate() throws AxonConfigurationException {
+                super.validate();
                 assertNonNull(configuration,
                               "The AxonServerConfiguration is a hard requirement and should be provided");
                 assertNonNull(connectionManager,

@@ -18,8 +18,6 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
 
-import java.lang.annotation.Annotation;
-import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
@@ -84,16 +82,6 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
             return (Optional<HT>) Optional.of(delegate);
         }
         return delegate.unwrap(handlerType);
-    }
-
-    @Override
-    public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
-        return delegate.annotationAttributes(annotationType);
-    }
-
-    @Override
-    public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
-        return delegate.hasAnnotation(annotationType);
     }
 
     @Override
