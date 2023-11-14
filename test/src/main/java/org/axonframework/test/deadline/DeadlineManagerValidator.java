@@ -123,17 +123,6 @@ public class DeadlineManagerValidator {
     }
 
     /**
-     * Asserts that deadlines have been met (which have passed in time) match the given {@code matcher}.
-     *
-     * @param matcher The matcher that will validate the actual deadlines
-     * @deprecated in favor of {@link #assertTriggeredDeadlinesMatching(Matcher)}
-     */
-    @Deprecated
-    public void assertDeadlinesMetMatching(Matcher<? extends Iterable<?>> matcher) {
-        assertTriggeredDeadlinesMatching(matcher);
-    }
-
-    /**
      * Asserts that the triggered deadlines match the given {@code matcher}.
      *
      * @param matcher the matcher that will validate the actual deadlines
@@ -154,17 +143,6 @@ public class DeadlineManagerValidator {
                     expected, actual
             ));
         }
-    }
-
-    /**
-     * Asserts that the given {@code expected} deadlines have been met (which have passed in time).
-     *
-     * @param expected The deadlines that must have been met
-     * @deprecated in favor of {@link #assertTriggeredDeadlines(Object...)}
-     */
-    @Deprecated
-    public void assertDeadlinesMet(Object... expected) {
-        assertTriggeredDeadlines(expected);
     }
 
     /**

@@ -462,33 +462,12 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName);
 
     /**
-     * Asserts that deadlines matching the given {@code matcher} have been met (which have passed in time) on this aggregate.
-     *
-     * @param matcher The matcher that defines the expected list of deadlines
-     * @return the current ResultValidator, for fluent interfacing
-     * @deprecated in favor of {@link #expectTriggeredDeadlinesMatching(Matcher)}
-     */
-    @Deprecated
-    ResultValidator<T> expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
-
-    /**
      * Asserts that deadlines matching the given {@code matcher} have been triggered for this aggregate.
      *
      * @param matcher the matcher that defines the expected list of deadlines
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
-
-    /**
-     * Asserts that given {@code expected} deadlines have been met (which have passed in time). Deadlines are compared
-     * comparing their type and fields using "equals".
-     *
-     * @param expected The sequence of deadlines expected to be met
-     * @return the current ResultValidator, for fluent interfacing
-     * @deprecated in favor of {@link #expectTriggeredDeadlines(Object...)}
-     */
-    @Deprecated
-    ResultValidator<T> expectDeadlinesMet(Object... expected);
 
     /**
      * Asserts that given {@code expected} deadlines have been triggered. Deadlines are compared by their type
