@@ -21,9 +21,10 @@ Moved / Remove Classes
 
 ### Moved / Renamed
 
-| Axon 4                                           | Axon 5                                          |
-|--------------------------------------------------|-------------------------------------------------|
-| org.axonframework.common.caching.EhCache3Adapter | org.axonframework.common.caching.EhCacheAdapter |
+| Axon 4                                                        | Axon 5                                                       |
+|---------------------------------------------------------------|--------------------------------------------------------------|
+| org.axonframework.common.caching.EhCache3Adapter              | org.axonframework.common.caching.EhCacheAdapter              |
+| org.axonframework.eventsourcing.MultiStreamableMessageSource  | org.axonframework.eventhandling.MultiStreamableMessageSource |
 
 ### Removed
 
