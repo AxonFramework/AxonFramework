@@ -180,12 +180,6 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
         }
 
         @Override
-        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
-        @Override
         public Builder spanFactory(@Nonnull SnapshotterSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;

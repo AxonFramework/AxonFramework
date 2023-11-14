@@ -782,28 +782,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     /**
-     * Returns a comma separated list of domain event column names to select from an event or snapshot entry.
-     *
-     * @return comma separated domain event column names.
-     * @deprecated in favor of {@link EventSchema#domainEventFields()}
-     */
-    @Deprecated
-    protected String domainEventFields() {
-        return schema.domainEventFields();
-    }
-
-    /**
-     * Returns a comma separated list of tracked domain event column names to select from an event entry.
-     *
-     * @return comma separated tracked domain event column names.
-     * @deprecated in favor of {@link EventSchema#trackedEventFields()}
-     */
-    @Deprecated
-    protected String trackedEventFields() {
-        return schema.trackedEventFields();
-    }
-
-    /**
      * Returns the {@link EventSchema} that defines the table and column names of event tables in the database.
      *
      * @return the event schema.
@@ -823,33 +801,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         } catch (SQLException e) {
             throw new EventStoreException("Failed to obtain a database connection", e);
         }
-    }
-
-    /**
-     * Sets the amount of time until a 'gap' in a TrackingToken may be considered timed out. This setting will affect
-     * the cleaning process of gaps. Gaps that have timed out will be removed from Tracking Tokens to improve
-     * performance of reading events. Defaults to 60000 (1 minute).
-     *
-     * @param gapTimeout The amount of time, in milliseconds until a gap may be considered timed out.
-     *
-     * @deprecated Use the {@link Builder#gapTimeout(int) gapTimeout(int)} in the {@link #builder()} instead
-     */
-    @Deprecated
-    public void setGapTimeout(int gapTimeout) {
-        this.gapTimeout = gapTimeout;
-    }
-
-    /**
-     * Sets the threshold of number of gaps in a token before an attempt to clean gaps up is taken. Defaults to 250.
-     *
-     * @param gapCleaningThreshold The number of gaps before triggering a cleanup.
-     *
-     * @deprecated Use the {@link Builder#gapCleaningThreshold(int) gapCleaningThreshold(int)} in the {@link #builder()}
-     * instead
-     */
-    @Deprecated
-    public void setGapCleaningThreshold(int gapCleaningThreshold) {
-        this.gapCleaningThreshold = gapCleaningThreshold;
     }
 
     /**
@@ -1118,18 +1069,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         @Override
         public JdbcEventStorageEngine.Builder finalAggregateBatchPredicate(Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
             super.finalAggregateBatchPredicate(finalAggregateBatchPredicate);
-            return this;
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
-         */
-        @Override
-        @Deprecated
-        public JdbcEventStorageEngine.Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
-            super.snapshotFilter(snapshotFilter);
             return this;
         }
 
