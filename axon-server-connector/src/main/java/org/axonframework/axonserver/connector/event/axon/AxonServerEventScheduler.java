@@ -323,6 +323,7 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
         }
 
         protected void validate() throws AxonConfigurationException {
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
             assertNonNull(axonServerConnectionManager,
                           "The AxonServerConnectionManager is a hard requirement and should be provided");
         }
