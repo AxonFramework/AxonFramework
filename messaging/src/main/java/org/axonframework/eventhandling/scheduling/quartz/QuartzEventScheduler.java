@@ -400,6 +400,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         protected void validate() throws AxonConfigurationException {
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
             if (jobDataBinderSupplier == null) {
                 jobDataBinderSupplier = () -> new DirectEventJobDataBinder(serializer.get());
             }
