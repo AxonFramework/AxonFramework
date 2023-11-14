@@ -29,7 +29,10 @@ import java.util.Objects;
  * @param <T> The type of object
  * @author Allard Buijze
  * @since 1.1
+ * @deprecated In favor of the {@link DeepEqualsMatcher}, which takes into account whether the invoked object can be
+ * reflectively accessed.
  */
+@Deprecated
 public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
 
     private final T expected;
