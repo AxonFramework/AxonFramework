@@ -104,7 +104,8 @@ class JacksonSerializerTest {
 
     @Test
     void serializeAndDeserializeList() {
-        objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
+        objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(),
+                                           ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
         SimpleSerializableType toSerialize =
                 new SimpleSerializableType("first", time, new SimpleSerializableType("nested"));
 
