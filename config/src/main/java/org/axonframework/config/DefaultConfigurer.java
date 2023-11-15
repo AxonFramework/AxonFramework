@@ -184,6 +184,7 @@ public class DefaultConfigurer implements Configurer {
     private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
     private final TreeMap<Integer, List<LifecycleHandler>> shutdownHandlers = new TreeMap<>(Comparator.reverseOrder());
     private final List<ModuleConfiguration> modules = new ArrayList<>();
+    private final List<ComponentDecorator> decorators = new ArrayList<>();
     private long lifecyclePhaseTimeout = 5;
     private TimeUnit lifecyclePhaseTimeunit = TimeUnit.SECONDS;
 
@@ -836,6 +837,19 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
+    public <C> Configurer registerComponentDecorator(
+            @Nonnull Class<C> componentType,
+            @Nonnull BiFunction<Configuration, C, C> decoratorFunction,
+            boolean registerOriginalLifeCycleHandlers
+    ) {
+        if(initialized) {
+            throw new AxonConfigurationException("Can not register decorators after configuration has been initialized.");
+        }
+        decorators.add(new ComponentTypeSafeDecorator<>(componentType, registerOriginalLifeCycleHandlers, decoratorFunction));
+        return this;
+    }
+
+    @Override
     public Configurer registerCommandHandler(@Nonnull Function<Configuration, Object> commandHandlerBuilder) {
         messageHandlerRegistrars.add(new Component<>(
                 () -> config,
@@ -1227,6 +1241,11 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public HandlerDefinition handlerDefinition(Class<?> inspectedType) {
             return handlerDefinition.get().apply(inspectedType);
+        }
+
+        @Override
+        public List<ComponentDecorator> getDecorators() {
+            return decorators;
         }
     }
 }

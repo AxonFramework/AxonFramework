@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
@@ -74,8 +76,11 @@ public class Component<B> {
 
     /**
      * Retrieves the object contained in this component, triggering the builder function if the component hasn't been
-     * built yet. Upon initiation of the instance the {@link LifecycleHandlerInspector#registerLifecycleHandlers(Configuration,
-     * Object)} methods will be called to resolve and register lifecycle methods.
+     * built yet. Upon initiation of the instance the
+     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(Configuration, Object)} methods will be called to
+     * resolve and register lifecycle methods.
+     * <p>
+     * After building the initial definition, the decorators contained in the {@link Configuration} will be applied.
      *
      * @return the initialized component contained in this instance
      */
@@ -83,6 +88,11 @@ public class Component<B> {
         if (instance == null) {
             Configuration configuration = configSupplier.get();
             instance = builderFunction.apply(configuration);
+            List<ComponentDecorator> decorators = configuration != null ? configuration.getDecorators() : Collections.emptyList();
+            for (ComponentDecorator applicableDecorator : decorators) {
+                //noinspection unchecked
+                instance = (B) applicableDecorator.decorate(configuration, instance);
+            }
             logger.debug("Instantiated component [{}]: {}", name, instance);
             LifecycleHandlerInspector.registerLifecycleHandlers(configuration, instance);
         }

@@ -132,11 +132,11 @@ public interface SpanFactory {
      * {@link SpanUtils#determineMessageName(Message)}.
      *
      * @param operationNameSupplier Supplier of the operation's name.
-     * @param parentMessage  The message that is being handled.
+     * @param message  The message that is being sent.
      * @param linkedSiblings Optional parameter, providing this will link the provided messages to the current.
      * @return The created {@link Span}.
      */
-    Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, Message<?>... linkedSiblings);
+    Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> message, Message<?>... linkedSiblings);
 
     /**
      * Creates a new {@link Span} linked to the currently active span. This is useful for tracing different parts of

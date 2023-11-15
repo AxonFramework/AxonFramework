@@ -627,6 +627,24 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    void canDecorateComponentsSuchAsSpanFactory() {
+        SpanFactory custom = mock(SpanFactory.class);
+        SpanFactory decorated = mock(SpanFactory.class);
+
+        SpanFactory result = DefaultConfigurer.defaultConfiguration()
+                                              .configureSpanFactory((config) -> custom)
+                                              .registerComponentDecorator(SpanFactory.class,
+                                                                          (configuration, component) -> {
+                                                                              assertSame(custom, component);
+                                                                              return decorated;
+                                                                          }, false)
+                                              .buildConfiguration()
+                                              .spanFactory();
+
+        assertSame(decorated, result);
+    }
+
+    @Test
     void defaultConfiguredScopeAwareProvider() {
         ScopeAwareProvider result = DefaultConfigurer.defaultConfiguration()
                                                      .buildConfiguration()
