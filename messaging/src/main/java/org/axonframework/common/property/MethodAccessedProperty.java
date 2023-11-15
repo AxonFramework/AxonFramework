@@ -42,6 +42,7 @@ public class MethodAccessedProperty<T> implements Property<T> {
      * @param accessorMethod The method providing the property value
      * @param propertyName   The name of the property
      */
+    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     public MethodAccessedProperty(Method accessorMethod, String propertyName) {
         property = propertyName;
         method = ensureAccessible(accessorMethod);

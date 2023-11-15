@@ -54,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class EventProcessorConfigurationTest {
 
+    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     @Test
     void processorConfigurationWithCustomPolicy() {
         new ApplicationContextRunner()

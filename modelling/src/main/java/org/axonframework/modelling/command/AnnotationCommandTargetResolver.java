@@ -110,6 +110,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         return asLong(invokeAnnotated(command, versionAnnotation));
     }
 
+    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     private static Object invokeAnnotated(
             Message<?> command, Class<? extends Annotation> annotation
     ) throws InvocationTargetException, IllegalAccessException {

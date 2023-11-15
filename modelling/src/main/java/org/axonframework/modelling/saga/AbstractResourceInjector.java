@@ -72,6 +72,7 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
      */
     protected abstract <R> Optional<R> findResource(Class<R> requiredType);
 
+    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     private void injectFieldResource(Object saga, Field injectField, Object resource) {
         try {
             ReflectionUtils.ensureAccessible(injectField);
@@ -91,6 +92,7 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
                                 }));
     }
 
+    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     private void injectMethodResource(Object saga, Method injectMethod, Object resource) {
         try {
             ReflectionUtils.ensureAccessible(injectMethod);

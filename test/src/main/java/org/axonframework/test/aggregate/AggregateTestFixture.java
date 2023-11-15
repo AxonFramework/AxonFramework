@@ -695,6 +695,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                           fieldFilter);
     }
 
+    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     private void ensureValuesEqual(Object workingValue,
                                    Object eventSourcedValue,
                                    String propertyPath,
