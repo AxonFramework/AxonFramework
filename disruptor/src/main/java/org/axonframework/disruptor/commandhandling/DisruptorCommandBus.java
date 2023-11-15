@@ -79,6 +79,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
@@ -114,14 +115,14 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * AggregateStateCorruptedException} exception. These commands are automatically rescheduled for processing by
  * default. Use {@link Builder#rescheduleCommandsOnCorruptState(boolean)} to disable this feature. Note
  * that the order in which commands are executed is not fully guaranteed when this feature is enabled (default).
- *
+ * <p>
  * <em>Limitations of this implementation</em>
  * <p>
  * Although this implementation allows applications to achieve extreme performance (over 1M commands on commodity
  * hardware), it does have some limitations. It only allows a single aggregate to be invoked during command processing.
  * <p>
  * This implementation can only work with Event Sourced Aggregates.
- *
+ * <p>
  * <em>Infrastructure considerations</em>
  * <p>
  * This CommandBus implementation has special requirements for the Repositories being used during Command Processing.
@@ -182,6 +183,7 @@ public class DisruptorCommandBus implements CommandBus {
      * <li>The {@code invokerThreadCount} defaults to {@code 1}.</li>
      * <li>The {@link Cache} defaults to {@link NoCache#INSTANCE}.</li>
      * <li>The {@link DuplicateCommandHandlerResolver} defaults to {@link DuplicateCommandHandlerResolution#logAndOverride()}.</li>
+     * <li>The {@link Builder#threadFactory(ThreadFactory) ThreadFactory} defaults to an {@link AxonThreadFactory}.</li>
      * </ul>
      * The (2) Threads required for command execution are created immediately. Additional threads are used to invoke
      * response callbacks and to initialize a recovery process in the case of errors. The thread creation process can
@@ -220,9 +222,10 @@ public class DisruptorCommandBus implements CommandBus {
         invokerInterceptors = new CopyOnWriteArrayList<>(builder.invokerInterceptors);
         publisherInterceptors = new ArrayList<>(builder.publisherInterceptors);
 
+        ThreadFactory threadFactory = builder.threadFactory;
         Executor executor = builder.executor;
         if (executor == null) {
-            executorService = Executors.newCachedThreadPool(new AxonThreadFactory("DisruptorCommandBus"));
+            executorService = Executors.newCachedThreadPool(threadFactory);
             executor = executorService;
         } else {
             executorService = null;
@@ -240,10 +243,9 @@ public class DisruptorCommandBus implements CommandBus {
         publisherCount = publishers.length;
         messageMonitor = builder.messageMonitor;
         duplicateCommandHandlerResolver = builder.duplicateCommandHandlerResolver;
-
         disruptor = new Disruptor<>(CommandHandlingEntry::new,
                                     builder.bufferSize,
-                                    executor,
+                                    threadFactory,
                                     builder.producerType,
                                     builder.waitStrategy);
         // Configure invoker Threads
@@ -621,6 +623,7 @@ public class DisruptorCommandBus implements CommandBus {
      * <li>The {@code invokerThreadCount} defaults to {@code 1}.</li>
      * <li>The {@link Cache} defaults to {@link NoCache#INSTANCE}.</li>
      * <li>The {@link DuplicateCommandHandlerResolver} defaults to {@link DuplicateCommandHandlerResolution#logAndOverride()}.</li>
+     * <li>The {@link Builder#threadFactory(ThreadFactory) ThreadFactory} defaults to an {@link AxonThreadFactory}.</li>
      * </ul>
      * The (2) Threads required for command execution are created immediately. Additional threads are used to invoke
      * response callbacks and to initialize a recovery process in the case of errors. The thread creation process can
@@ -644,6 +647,7 @@ public class DisruptorCommandBus implements CommandBus {
         private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors =
                 new ArrayList<>();
         private Executor executor;
+        private ThreadFactory threadFactory = new AxonThreadFactory("DisruptorCommandBus");
         private boolean rescheduleCommandsOnCorruptState = true;
         private long coolingDownPeriod = 1000;
         private CommandTargetResolver commandTargetResolver = AnnotationCommandTargetResolver.builder().build();
@@ -710,12 +714,12 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the {@link Executor} that provides the processing resources (Threads) for the components of the {@link
-         * DisruptorCommandBus}. The provided executor must be capable of providing the required number of threads.
-         * Three threads are required immediately at startup and will not be returned until the CommandBus is stopped.
-         * Additional threads are used to invoke callbacks and start a recovery process in case aggregate state has been
-         * corrupted. Failure to do this results in the disruptor hanging at startup, waiting for resources to become
-         * available.
+         * Sets the {@link Executor} that provides the processing resources (Threads) for the
+         * {@link {@link EventPublisher} of this {@link DisruptorCommandBus}. The provided executor must be capable of
+         * providing the required number of threads. Three threads are required immediately at startup and will not be
+         * returned until the CommandBus is stopped. Additional threads are used to invoke callbacks and start a
+         * recovery process in case aggregate state has been corrupted. Failure to do this results in the disruptor
+         * hanging at startup, waiting for resources to become available.
          * <p/>
          * Defaults to {@code null}, causing the DisruptorCommandBus to create the necessary threads itself. In that
          * case, threads are created in the DisruptorCommandBus ThreadGroup.
@@ -725,6 +729,22 @@ public class DisruptorCommandBus implements CommandBus {
          */
         public Builder executor(Executor executor) {
             this.executor = executor;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ThreadFactory} that constructs the threads for the components of the
+         * {@link DisruptorCommandBus}. When no {@link #executor(Executor) executor} is provided, the given {@code threadFactory} is used to build an {@link Executor} for the {@link EventPublisher}
+         * <p/>
+         * Defaults to an {@link AxonThreadFactory} with the base name {@code "DisruptorCommandBus"}.
+         *
+         * @param threadFactory The {@link ThreadFactory} constructing thread for components of the
+         *                      {@link DisruptorCommandBus}
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder threadFactory(ThreadFactory threadFactory) {
+            assertNonNull(threadFactory, "ThreadFactory may not be null");
+            this.threadFactory = threadFactory;
             return this;
         }
 
