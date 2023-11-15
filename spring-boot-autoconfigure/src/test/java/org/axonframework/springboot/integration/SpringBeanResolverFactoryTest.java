@@ -14,34 +14,32 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.config.annotation;
+package org.axonframework.springboot.integration;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.annotation.UnsupportedHandlerException;
-import org.axonframework.spring.config.AnnotationDriven;
+import org.axonframework.spring.config.annotation.SpringBeanDependencyResolverFactory;
+import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
+import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.ApplicationContext;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
-import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -49,136 +47,167 @@ import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests the functionality of Spring dependency resolution at the application context level. This covers both {@link
- * SpringBeanDependencyResolverFactory} and {@link SpringBeanParameterResolverFactory}, which behave differently but
- * exist within the same application context.
+ * Tests the functionality of Spring dependency resolution at the application context level. This covers both
+ * {@link SpringBeanDependencyResolverFactory} and {@link SpringBeanParameterResolverFactory}, which behave differently
+ * but exist within the same application context.
  *
  * @author Allard Buijze
  * @author Joel Feinstein
  * @see SpringBeanDependencyResolverFactory
  * @see SpringBeanParameterResolverFactory
  */
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {SpringBeanResolverFactoryTest.AppContext.class})
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class SpringBeanResolverFactoryTest {
+class SpringBeanResolverFactoryTest {
 
-    @Autowired
-    private AnnotatedEventHandlerWithResources annotatedHandler;
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+    private static final EventMessage<Object> EVENT_MESSAGE = asEventMessage("Hi there");
 
-    @Autowired
-    private ApplicationContext applicationContext;
-
-    private static final AtomicInteger counter = new AtomicInteger();
-
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    @Autowired
-    private ParameterResolverFactory parameterResolver;
+    private ApplicationContextRunner testApplicationContext;
 
     @BeforeEach
     void setUp() {
-        counter.set(0);
-        assertTrue(applicationContext.getBean("duplicateResourceWithPrimary1", DuplicateResourceWithPrimary.class)
-                                     .isPrimary());
-        assertFalse(applicationContext.getBean("duplicateResourceWithPrimary2", DuplicateResourceWithPrimary.class)
-                                      .isPrimary());
+        COUNTER.set(0);
+        testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
+                                                               .withUserConfiguration(TestContext.class);
     }
 
     @Test
-    void methodsAreProperlyInjected() throws Exception {
-        assertNotNull(annotatedHandler);
-        new AnnotationEventHandlerAdapter(annotatedHandler, parameterResolver).handle(asEventMessage("Hello"));
-        // make sure the invocation actually happened
-        assertEquals(1, counter.get());
+    void methodsAreProperlyInjected() {
+        testApplicationContext.run(context -> {
+            ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
+            AnnotatedEventHandlerWithResources annotatedHandler =
+                    context.getBean(AnnotatedEventHandlerWithResources.class);
+
+            assertNotNull(annotatedHandler);
+            new AnnotationEventHandlerAdapter(annotatedHandler, parameterResolver).handle(EVENT_MESSAGE);
+            // make sure the invocation actually happened
+            assertEquals(1, COUNTER.get());
+        });
     }
 
     @Test
-    void newInstanceIsCreatedEachTimePrototypeResourceIsInjected() throws Exception {
-        Object handler = applicationContext.getBean("prototypeResourceHandler");
-        AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(
-                handler, applicationContext.getBean(ParameterResolverFactory.class)
-        );
-        adapter.handle(asEventMessage("Hello1"));
-        adapter.handle(asEventMessage("Hello2"));
-        assertEquals(2, counter.get());
+    void newInstanceIsCreatedEachTimePrototypeResourceIsInjected() {
+        testApplicationContext.run(context -> {
+            Object handler = context.getBean("prototypeResourceHandler");
+            AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(
+                    handler, context.getBean(ParameterResolverFactory.class)
+            );
+            adapter.handle(EVENT_MESSAGE);
+            adapter.handle(asEventMessage("Hello2"));
+            assertEquals(2, COUNTER.get());
+        });
     }
 
     @Test
     void methodsAreProperlyInjected_ErrorOnMissingParameterType() {
-        // this should generate an error
-        Object bean = applicationContext.getBean("missingResourceHandler");
-        assertThrows(
-                UnsupportedHandlerException.class, () -> new AnnotationEventHandlerAdapter(bean, parameterResolver)
-        );
+        testApplicationContext.run(context -> {
+            Object bean = context.getBean("missingResourceHandler");
+            ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
+
+            // Generates a FixtureExecutionException due to the inclusion of axon-test,
+            //  which includes the FixtureResourceParameterResolverFactory
+            assertThrows(
+                    FixtureExecutionException.class,
+                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE)
+            );
+        });
     }
 
     @Test
-    void methodsAreProperlyInjected_NullableParameterType() throws Exception {
-        new AnnotationEventHandlerAdapter(applicationContext.getBean("nullableResourceHandler"),
-                                          parameterResolver).handle(asEventMessage("Hi there"));
+    void methodsAreProperlyInjected_NullableParameterType() {
+        testApplicationContext.run(context -> {
+            ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
+            new AnnotationEventHandlerAdapter(
+                    context.getBean("nullableResourceHandler"), parameterResolver
+            ).handle(EVENT_MESSAGE);
 
-        assertEquals(1, counter.get());
+            assertEquals(1, COUNTER.get());
+        });
     }
 
     @Test
     void methodsAreProperlyInjected_ErrorOnDuplicateParameterType() {
-        // this should generate an error
-        Object bean = applicationContext.getBean("duplicateResourceHandler");
-        assertThrows(
-                UnsupportedHandlerException.class, () -> new AnnotationEventHandlerAdapter(bean, parameterResolver)
-        );
+        testApplicationContext.run(context -> {
+            Object bean = context.getBean("duplicateResourceHandler");
+            ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
+
+            // Generates a FixtureExecutionException due to the inclusion of axon-test,
+            //  which includes the FixtureResourceParameterResolverFactory
+            assertThrows(
+                    FixtureExecutionException.class,
+                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE)
+            );
+        });
     }
 
     @Test
     @DirtiesContext
-    void methodsAreProperlyInjected_DuplicateParameterTypeWithPrimary() throws Exception {
-        // this should generate an error
-        new AnnotationEventHandlerAdapter(applicationContext.getBean("duplicateResourceHandlerWithPrimary"),
-                                          parameterResolver).handle(asEventMessage("Hi there"));
+    void methodsAreProperlyInjected_DuplicateParameterTypeWithPrimary() {
+        testApplicationContext.run(context -> {
+            Object bean = context.getBean("duplicateResourceHandlerWithPrimary");
+            ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-        assertEquals(1, counter.get());
+            new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE);
+            assertEquals(1, COUNTER.get());
+        });
     }
 
     @Test
     @DirtiesContext
-    void methodsAreProperlyInjected_DuplicateParameterTypeWithQualifier() throws Exception {
-        new AnnotationEventHandlerAdapter(applicationContext.getBean("duplicateResourceHandlerWithQualifier"),
-                                          parameterResolver).handle(asEventMessage("Hi there"));
+    void methodsAreProperlyInjected_DuplicateParameterTypeWithQualifier() {
+        testApplicationContext.run(context -> {
+            Object bean = context.getBean("duplicateResourceHandlerWithQualifier");
+            ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-        assertEquals(1, counter.get());
+            new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE);
+            assertEquals(1, COUNTER.get());
+        });
     }
 
     @Test
     @DirtiesContext
-    void methodsAreProperlyInjected_QualifierPrecedesPrimary() throws Exception {
-        new AnnotationEventHandlerAdapter(
-                applicationContext.getBean("duplicateResourceHandlerWithQualifierAndPrimary"),
-                parameterResolver
-        ).handle(asEventMessage("Hi there"));
+    void methodsAreProperlyInjected_QualifierPrecedesPrimary() {
+        testApplicationContext.run(context -> {
+            Object bean = context.getBean("duplicateResourceHandlerWithQualifierAndPrimary");
+            ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-        assertEquals(1, counter.get());
+            new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE);
+            assertEquals(1, COUNTER.get());
+        });
     }
 
     @Test
     @DirtiesContext
     void methodsAreProperlyInjected_DuplicateParameterWithAutowired() {
-        Object handler = applicationContext.getBean("duplicateResourceHandlerWithAutowired");
-        AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(
-                handler, applicationContext.getBean(ParameterResolverFactory.class)
-        );
-        // Spring dependency resolution will resolve at time of execution
-        assertThrows(NoUniqueBeanDefinitionException.class, () -> adapter.handle(asEventMessage("Hi there")));
+        testApplicationContext.run(context -> {
+            Object handler = context.getBean("duplicateResourceHandlerWithAutowired");
+            ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
+
+            AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(handler, parameterResolver);
+            // Spring dependency resolution will resolve at time of execution
+            assertThrows(NoUniqueBeanDefinitionException.class, () -> adapter.handle(EVENT_MESSAGE));
+        });
     }
 
     @Test
     @DirtiesContext
-    void methodsAreProperlyInjectedForDuplicateResourceHandlerWithAutowiredAndQualifier() throws Exception {
-        new AnnotationEventHandlerAdapter(
-                applicationContext.getBean("duplicateResourceHandlerWithAutowiredAndQualifier"),
-                parameterResolver).handle(asEventMessage("Hi there")
-        );
+    void methodsAreProperlyInjectedForDuplicateResourceHandlerWithAutowiredAndQualifier() {
+        testApplicationContext.run(context -> {
+            Object bean = context.getBean("duplicateResourceHandlerWithAutowiredAndQualifier");
+            ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-        assertEquals(1, counter.get());
+            new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE);
+            assertEquals(1, COUNTER.get());
+        });
+    }
+
+    @Test
+    void validatePrimaryBeans() {
+        testApplicationContext.run(context -> {
+            assertTrue(context.getBean("duplicateResourceWithPrimary1", DuplicateResourceWithPrimary.class)
+                              .isPrimary());
+            assertFalse(context.getBean("duplicateResourceWithPrimary2", DuplicateResourceWithPrimary.class)
+                               .isPrimary());
+        });
     }
 
     public interface DuplicateResourceWithPrimary {
@@ -194,9 +223,9 @@ public class SpringBeanResolverFactoryTest {
 
     }
 
-    @AnnotationDriven
     @Configuration
-    public static class AppContext {
+    @EnableAutoConfiguration
+    static class TestContext {
 
         @Bean(name = "annotatedHandler")
         public AnnotatedEventHandlerWithResources createHandler() {
@@ -319,7 +348,7 @@ public class SpringBeanResolverFactoryTest {
 
         @EventHandler
         public void handle(String message, ThisResourceReallyDoesntExist dataSource) {
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
         }
     }
 
@@ -328,7 +357,7 @@ public class SpringBeanResolverFactoryTest {
 
         @EventHandler
         public void handle(String message, @Autowired(required = false) ThisResourceReallyDoesntExist dataSource) {
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
         }
     }
 
@@ -337,7 +366,7 @@ public class SpringBeanResolverFactoryTest {
 
         @EventHandler
         public void handle(String message, DuplicateResource dataSource) {
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
         }
     }
 
@@ -346,7 +375,7 @@ public class SpringBeanResolverFactoryTest {
 
         @EventHandler
         public void handle(String message, DuplicateResourceWithPrimary dataSource) {
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
         }
     }
 
@@ -355,7 +384,7 @@ public class SpringBeanResolverFactoryTest {
 
         @EventHandler
         public void handle(String message, @Qualifier("qualifiedByName") DuplicateResourceWithQualifier resource) {
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
         }
     }
 
@@ -366,7 +395,7 @@ public class SpringBeanResolverFactoryTest {
         public void handle(String message,
                            @Qualifier("duplicateResourceWithPrimary2") DuplicateResourceWithPrimary resource) {
             assertFalse(resource.isPrimary(), "expect the non-primary bean to be autowired here");
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
         }
     }
 
@@ -375,7 +404,7 @@ public class SpringBeanResolverFactoryTest {
 
         @EventHandler
         public void handle(String message, @Autowired DuplicateResource resource) {
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
         }
     }
 
@@ -385,7 +414,7 @@ public class SpringBeanResolverFactoryTest {
         @EventHandler
         public void handle(String message,
                            @Autowired @Qualifier("qualifiedByName") DuplicateResourceWithQualifier resource) {
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
         }
     }
 
@@ -397,7 +426,7 @@ public class SpringBeanResolverFactoryTest {
         @EventHandler
         public void handle(String message, PrototypeResource resource) {
             assertNotEquals(this.resource, this.resource = resource);
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
         }
     }
 
@@ -408,7 +437,7 @@ public class SpringBeanResolverFactoryTest {
             assertNotNull(message);
             assertNotNull(commandBus);
             assertNotNull(eventBus);
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
         }
     }
 
