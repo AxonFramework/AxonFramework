@@ -764,16 +764,6 @@ class AxonServerQueryBusTest {
         }
 
         @Override
-        public void sendAck() {
-            // Do nothing - no-op implementation
-        }
-
-        @Override
-        public void sendNack(ErrorMessage errorMessage) {
-            // Do nothing - no-op implementation
-        }
-
-        @Override
         public void complete() {
             // Do nothing - no-op implementation
         }
