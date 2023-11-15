@@ -75,9 +75,9 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers the {@link MeterRegistry} with the given {@code configurer} via {@link
-     * Configurer#configureMessageMonitor(Function)}. Components registered by the {@link Configurer} will be added by
-     * invocation of {@link #registerComponent(Class, String)}.
+     * Registers the {@link MeterRegistry} with the given {@code configurer} via
+     * {@link Configurer#configureMessageMonitor(Function)}. Components registered by the {@link Configurer} will be
+     * added by invocation of {@link #registerComponent(Class, String)}.
      *
      * @param configurer the application's {@link Configurer}
      * @return the {@link Configurer}, with the new registration applied, for chaining
@@ -92,9 +92,9 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers the {@link MeterRegistry} with the given {@code configurer} via {@link
-     * Configurer#configureMessageMonitor(Function)}. Components registered by the {@link Configurer} will be added by
-     * invocation of {@link #registerComponentWithDefaultTags(Class, String)}.
+     * Registers the {@link MeterRegistry} with the given {@code configurer} via
+     * {@link Configurer#configureMessageMonitor(Function)}. Components registered by the {@link Configurer} will be
+     * added by invocation of {@link #registerComponentWithDefaultTags(Class, String)}.
      *
      * @param configurer the application's {@link Configurer}
      * @return the {@link Configurer}, with the new registration applied using {@link Tag}s, for chaining
@@ -110,8 +110,8 @@ public class GlobalMetricRegistry {
 
     /**
      * Registers new metrics to the registry to monitor a component of the given {@code componentType}. The monitor will
-     * be registered with the {@link MeterRegistry} under the given {@code componentName}. The returned {@link
-     * MessageMonitor} can be installed on the component to initiate the monitoring.
+     * be registered with the {@link MeterRegistry} under the given {@code componentName}. The returned
+     * {@link MessageMonitor} can be installed on the component to initiate the monitoring.
      *
      * @param componentType the type of component to register
      * @param componentName the name under which the component should be registered to the registry
@@ -148,7 +148,11 @@ public class GlobalMetricRegistry {
      */
     public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String eventProcessorName) {
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
-        monitors.add(MessageTimerMonitor.buildMonitor(eventProcessorName, registry));
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder()
+                                                                     .meterNamePrefix(eventProcessorName)
+                                                                     .meterRegistry(registry)
+                                                                     .build();
+        monitors.add(messageTimerMonitor);
         monitors.add(EventProcessorLatencyMonitor.builder()
                                                  .meterNamePrefix(eventProcessorName)
                                                  .meterRegistry(registry)
@@ -172,23 +176,26 @@ public class GlobalMetricRegistry {
 
     /**
      * Registers new metrics to the registry to monitor an {@link EventBus}. The monitor will be registered with the
-     * registry under the given {@code eventBusName}. The returned {@link MessageMonitor} can be installed on the {@code
-     * EventBus} to initiate the monitoring.
+     * registry under the given {@code eventBusName}. The returned {@link MessageMonitor} can be installed on the
+     * {@code EventBus} to initiate the monitoring.
      *
      * @param eventBusName the name under which the {@link EventBus} should be registered to the registry
      * @return a {@link MessageMonitor} to monitor the behavior of an {@link EventBus}
      */
     public MessageMonitor<? super EventMessage<?>> registerEventBus(String eventBusName) {
         MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(eventBusName, registry);
-        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(eventBusName, registry);
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder()
+                                                                     .meterNamePrefix(eventBusName)
+                                                                     .meterRegistry(registry)
+                                                                     .build();
 
         return new MultiMessageMonitor<>(Arrays.asList(messageCountingMonitor, messageTimerMonitor));
     }
 
     /**
      * Registers new metrics to the registry to monitor a {@link QueryBus}. The monitor will be registered with the
-     * registry under the given {@code queryBusName}. The returned {@link MessageMonitor} can be installed on the {@code
-     * QueryBus} to initiate the monitoring.
+     * registry under the given {@code queryBusName}. The returned {@link MessageMonitor} can be installed on the
+     * {@code QueryBus} to initiate the monitoring.
      *
      * @param queryBusName the name under which the {@link QueryBus} should be registered to the registry
      * @return a {@link MessageMonitor} to monitor the behavior of a {@link QueryBus}
@@ -213,14 +220,14 @@ public class GlobalMetricRegistry {
     /**
      * Registers new metrics to the registry to monitor a component of the given {@code componentType}. The monitor will
      * be registered with the registry under the given {@code componentName}, utilizing {@link Tag}s. The default set of
-     * {@link Tag}s includes the 'message payload type' and additionally the 'processor name' for the {@link
-     * EventProcessor} instances. The returned {@link MessageMonitor} can be installed on the component to initiate the
-     * monitoring.
+     * {@link Tag}s includes the 'message payload type' and additionally the 'processor name' for the
+     * {@link EventProcessor} instances. The returned {@link MessageMonitor} can be installed on the component to
+     * initiate the monitoring.
      *
      * @param componentType the type of component to register
      * @param componentName the name under which the component should be registered to the registry
-     * @return a {@link MessageMonitor} with {@link Tag}s enabled to monitor the behavior of the given {@code
-     * componentType}
+     * @return a {@link MessageMonitor} with {@link Tag}s enabled to monitor the behavior of the given
+     * {@code componentType}
      */
     public MessageMonitor<? extends Message<?>> registerComponentWithDefaultTags(Class<?> componentType,
                                                                                  String componentName) {
@@ -257,23 +264,6 @@ public class GlobalMetricRegistry {
      * Registers new metrics to the registry to monitor an {@link EventProcessor} using {@link Tag}s through the given
      * {@code tagsBuilder}. The monitor will be registered with the registry under the given {@code eventProcessorName}.
      * The returned {@link MessageMonitor} can be installed on the {@code EventProcessor} to initiate the monitoring.
-     *
-     * @param eventProcessorName the name under which the {@link EventProcessor} should be registered to the registry
-     * @param tagsBuilder        the function used to construct the list of {@link Tag}, based on the ingested message
-     * @return a {@link MessageMonitor} to monitor the behavior of an {@link EventProcessor}
-     * @deprecated Please use the {@link #registerEventProcessor(String, Function, Function)} instead, which has
-     * separate tags for the latency metric.
-     */
-    @Deprecated
-    public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String eventProcessorName,
-                                                                          Function<Message<?>, Iterable<Tag>> tagsBuilder) {
-        return registerEventProcessor(eventProcessorName, tagsBuilder, tagsBuilder);
-    }
-
-    /**
-     * Registers new metrics to the registry to monitor an {@link EventProcessor} using {@link Tag}s through the given
-     * {@code tagsBuilder}. The monitor will be registered with the registry under the given {@code eventProcessorName}.
-     * The returned {@link MessageMonitor} can be installed on the {@code EventProcessor} to initiate the monitoring.
      * <p>
      * The second tags builder parameter is specifically for the latency metric. These tags might be wanted to be less
      * specific than the others. For example, the {@link MessageTimerMonitor} makes sense per payload type, but the
@@ -287,9 +277,14 @@ public class GlobalMetricRegistry {
     public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String eventProcessorName,
                                                                           Function<Message<?>, Iterable<Tag>> tagsBuilder,
                                                                           Function<Message<?>, Iterable<Tag>> latencyTagsBuilder
-                                                                          ) {
+    ) {
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
-        monitors.add(MessageTimerMonitor.buildMonitor(eventProcessorName, registry, tagsBuilder));
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder()
+                                                                     .meterNamePrefix(eventProcessorName)
+                                                                     .meterRegistry(registry)
+                                                                     .tagsBuilder(tagsBuilder)
+                                                                     .build();
+        monitors.add(messageTimerMonitor);
         monitors.add(EventProcessorLatencyMonitor.builder()
                                                  .meterNamePrefix(eventProcessorName)
                                                  .meterRegistry(registry)
@@ -301,8 +296,8 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers new metrics to the registry to monitor a {@link CommandBus} using {@link Tag}s through the given {@code
-     * tagsBuilder}. The monitor will be registered with the registry under the given {@code commandBusName}. The
+     * Registers new metrics to the registry to monitor a {@link CommandBus} using {@link Tag}s through the given
+     * {@code tagsBuilder}. The monitor will be registered with the registry under the given {@code commandBusName}. The
      * returned {@link MessageMonitor} can be installed on the {@code CommandBus} to initiate the monitoring.
      *
      * @param commandBusName the name under which the {@link CommandBus} should be registered to the registry
@@ -315,9 +310,9 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers new metrics to the registry to monitor an {@link EventBus} using {@link Tag}s through the given {@code
-     * tagsBuilder}. The monitor will be registered with the registry under the given {@code eventBusName}. The returned
-     * {@link MessageMonitor} can be installed on the {@code EventBus} to initiate the monitoring.
+     * Registers new metrics to the registry to monitor an {@link EventBus} using {@link Tag}s through the given
+     * {@code tagsBuilder}. The monitor will be registered with the registry under the given {@code eventBusName}. The
+     * returned {@link MessageMonitor} can be installed on the {@code EventBus} to initiate the monitoring.
      *
      * @param eventBusName the name under which the {@link EventBus} should be registered to the registry
      * @param tagsBuilder  the function used to construct the list of {@link Tag}, based on the ingested message
@@ -326,15 +321,19 @@ public class GlobalMetricRegistry {
     public MessageMonitor<? super EventMessage<?>> registerEventBus(String eventBusName,
                                                                     Function<Message<?>, Iterable<Tag>> tagsBuilder) {
         MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(eventBusName, registry);
-        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(eventBusName, registry, tagsBuilder);
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder()
+                                                                     .meterNamePrefix(eventBusName)
+                                                                     .meterRegistry(registry)
+                                                                     .tagsBuilder(tagsBuilder)
+                                                                     .build();
 
         return new MultiMessageMonitor<>(Arrays.asList(messageCountingMonitor, messageTimerMonitor));
     }
 
     /**
-     * Registers new metrics to the registry to monitor a {@link QueryBus} using {@link Tag}s through the given {@code
-     * tagsBuilder}. The monitor will be registered with the registry under the given {@code queryBusName}. The returned
-     * {@link MessageMonitor} can be installed on the {@code QueryBus} to initiate the monitoring.
+     * Registers new metrics to the registry to monitor a {@link QueryBus} using {@link Tag}s through the given
+     * {@code tagsBuilder}. The monitor will be registered with the registry under the given {@code queryBusName}. The
+     * returned {@link MessageMonitor} can be installed on the {@code QueryBus} to initiate the monitoring.
      *
      * @param queryBusName the name under which the {@link QueryBus} should be registered to the registry
      * @param tagsBuilder  the function used to construct the list of {@link Tag}, based on the ingested message
@@ -347,9 +346,9 @@ public class GlobalMetricRegistry {
 
     /**
      * Registers new metrics to the registry to monitor a {@link QueryUpdateEmitter}, using {@link Tag}s through the
-     * given {@code tagsBuilder}. The monitor will be registered with the registry under the given {@code
-     * updateEmitterName}. The returned {@link MessageMonitor} can be installed on the {@code QueryUpdateEmitter} to
-     * initiate the monitoring.
+     * given {@code tagsBuilder}. The monitor will be registered with the registry under the given
+     * {@code updateEmitterName}. The returned {@link MessageMonitor} can be installed on the {@code QueryUpdateEmitter}
+     * to initiate the monitoring.
      *
      * @param updateEmitterName the name under which the {@link QueryUpdateEmitter} should be registered to the
      *                          registry
@@ -362,7 +361,10 @@ public class GlobalMetricRegistry {
     }
 
     private MessageMonitor<Message<?>> registerDefaultHandlerMessageMonitor(String name) {
-        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry);
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder()
+                                                                     .meterNamePrefix(name)
+                                                                     .meterRegistry(registry)
+                                                                     .build();
         CapacityMonitor capacityMonitor = CapacityMonitor.buildMonitor(name, registry);
         MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name, registry);
 
@@ -371,7 +373,11 @@ public class GlobalMetricRegistry {
 
     private MessageMonitor<Message<?>> registerDefaultHandlerMessageMonitor(String name,
                                                                             Function<Message<?>, Iterable<Tag>> tagsBuilder) {
-        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry, tagsBuilder);
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder()
+                                                                     .meterNamePrefix(name)
+                                                                     .meterRegistry(registry)
+                                                                     .tagsBuilder(tagsBuilder)
+                                                                     .build();
         CapacityMonitor capacityMonitor = CapacityMonitor.buildMonitor(name, registry, tagsBuilder);
         MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name,
                                                                                             registry,
