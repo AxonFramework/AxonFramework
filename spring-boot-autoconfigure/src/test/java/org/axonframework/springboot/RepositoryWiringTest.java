@@ -17,8 +17,12 @@
 package org.axonframework.springboot;
 
 import com.thoughtworks.xstream.XStream;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.springboot.utils.TestSerializer;
@@ -57,6 +61,7 @@ class RepositoryWiringTest {
 
             Repository<SingleAggregateContext.AggregateOne> repositoryFromHandler = externalHandler.getRepository();
             assertNotNull(repositoryFromHandler);
+            assertEquals(repositoryFromHandler.getClass(), EventSourcingRepository.class);
             Object repositoryFromContext =
                     context.getBean(repositoryBeanName(SingleAggregateContext.AggregateOne.class));
             assertNotNull(repositoryFromContext);
@@ -75,6 +80,7 @@ class RepositoryWiringTest {
             Repository<SeveralAggregatesContext.AggregateOne> repositoryOneFromHandler =
                     externalHandler.getRepositoryOne();
             assertNotNull(repositoryOneFromHandler);
+            assertEquals(repositoryOneFromHandler.getClass(), EventSourcingRepository.class);
             Object repositoryOneFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateOne.class));
             assertNotNull(repositoryOneFromContext);
@@ -83,6 +89,7 @@ class RepositoryWiringTest {
             Repository<SeveralAggregatesContext.AggregateTwo> repositoryTwoFromHandler =
                     externalHandler.getRepositoryTwo();
             assertNotNull(repositoryTwoFromHandler);
+            assertEquals(repositoryTwoFromHandler.getClass(), EventSourcingRepository.class);
             Object repositoryTwoFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateTwo.class));
             assertNotNull(repositoryTwoFromContext);
@@ -91,6 +98,7 @@ class RepositoryWiringTest {
             Repository<SeveralAggregatesContext.AggregateThree> repositoryThreeFromHandler =
                     externalHandler.getRepositoryThree();
             assertNotNull(repositoryThreeFromHandler);
+            assertEquals(repositoryThreeFromHandler.getClass(), EventSourcingRepository.class);
             Object repositoryThreeFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateThree.class));
             assertNotNull(repositoryThreeFromContext);
@@ -107,6 +115,7 @@ class RepositoryWiringTest {
 
             Repository<?> repositoryOneFromHandler = externalHandler.getRepositoryOne();
             assertNotNull(repositoryOneFromHandler);
+            assertEquals(repositoryOneFromHandler.getClass(), EventSourcingRepository.class);
             Object repositoryOneFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateOne.class));
             assertNotNull(repositoryOneFromContext);
@@ -114,6 +123,7 @@ class RepositoryWiringTest {
 
             Repository<?> repositoryTwoFromHandler = externalHandler.getRepositoryTwo();
             assertNotNull(repositoryTwoFromHandler);
+            assertEquals(repositoryTwoFromHandler.getClass(), EventSourcingRepository.class);
             Object repositoryTwoFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateTwo.class));
             assertNotNull(repositoryTwoFromContext);
@@ -121,10 +131,30 @@ class RepositoryWiringTest {
 
             Repository<?> repositoryThreeFromHandler = externalHandler.getRepositoryThree();
             assertNotNull(repositoryThreeFromHandler);
+            assertEquals(repositoryThreeFromHandler.getClass(), EventSourcingRepository.class);
             Object repositoryThreeFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateThree.class));
             assertNotNull(repositoryThreeFromContext);
             assertEquals(repositoryThreeFromHandler, repositoryThreeFromContext);
+        });
+    }
+
+    @Test
+    void statedStoredAggregateRepositoryIsWiredToExternalCommandHandler() {
+        testApplicationContext.withUserConfiguration(StateStoredAggregateContext.class).run(context -> {
+            StateStoredAggregateContext.ExternalCommandHandlerForStateStoredAggregate externalHandler =
+                    context.getBean(StateStoredAggregateContext.ExternalCommandHandlerForStateStoredAggregate.class);
+            assertNotNull(externalHandler);
+
+            Repository<StateStoredAggregateContext.StateStoredAggregate> repositoryFromHandler =
+                    externalHandler.getRepository();
+            assertNotNull(repositoryFromHandler);
+            assertEquals(repositoryFromHandler.getClass(), GenericJpaRepository.class);
+            Object repositoryFromContext =
+                    context.getBean(repositoryBeanName(StateStoredAggregateContext.StateStoredAggregate.class));
+            assertNotNull(repositoryFromContext);
+
+            assertEquals(repositoryFromHandler, repositoryFromContext);
         });
     }
 
@@ -251,6 +281,35 @@ class RepositoryWiringTest {
 
             public Repository<?> getRepositoryThree() {
                 return repositoryThree;
+            }
+        }
+    }
+
+    @Configuration
+    static class StateStoredAggregateContext {
+
+        @Entity
+        @Aggregate
+        static class StateStoredAggregate {
+
+            @SuppressWarnings("unused") @Id
+            private final String aggregateId = "some-id";
+
+            public StateStoredAggregate() {
+            }
+        }
+
+        @Component
+        static class ExternalCommandHandlerForStateStoredAggregate {
+
+            private final Repository<StateStoredAggregate> repository;
+
+            ExternalCommandHandlerForStateStoredAggregate(Repository<StateStoredAggregate> repository) {
+                this.repository = repository;
+            }
+
+            public Repository<StateStoredAggregate> getRepository() {
+                return repository;
             }
         }
     }

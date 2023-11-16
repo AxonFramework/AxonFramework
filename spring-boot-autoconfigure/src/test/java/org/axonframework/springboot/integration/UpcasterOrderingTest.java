@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.config;
+package org.axonframework.springboot.integration;
 
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingModule;
@@ -22,58 +22,58 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Scope;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.stream.Stream;
 
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating that usage of the {@link org.springframework.core.annotation.Order} on {@link
- * org.axonframework.serialization.upcasting.event.EventUpcaster} beans is taken into account when constructing an
- * {@link org.axonframework.serialization.upcasting.event.EventUpcasterChain}.
+ * Test class validating that usage of the {@link org.springframework.core.annotation.Order} on
+ * {@link org.axonframework.serialization.upcasting.event.EventUpcaster} beans is taken into account when constructing
+ * an {@link org.axonframework.serialization.upcasting.event.EventUpcasterChain}.
  *
  * @author Steven van Beelen
  */
-@ContextConfiguration
-@ExtendWith(SpringExtension.class)
 class UpcasterOrderingTest {
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    @Autowired
-    private Configuration axonConfig;
+    private ApplicationContextRunner testApplicationContext;
+
+    @BeforeEach
+    void setUp() {
+        testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
+                                                               .withUserConfiguration(
+                                                                       DefaultContext.class, OtherContext.class
+                                                               );
+    }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     void upcastersAreRegisteredInOrder() {
         //noinspection unchecked
         Stream<IntermediateEventRepresentation> mockStream = mock(Stream.class);
+        testApplicationContext.run(context -> {
+            EventUpcasterChain testSubject = context.getBean(Configuration.class).upcasterChain();
 
-        EventUpcasterChain testSubject = axonConfig.upcasterChain();
+            testSubject.upcast(mockStream);
 
-        testSubject.upcast(mockStream);
-
-        // Since InOrder only works with mocks, we verify the invoked methods on the test stream.
-        InOrder upcasterOrder = inOrder(mockStream);
-        upcasterOrder.verify(mockStream).sorted(); // Invoked in FirstUpcaster
-        upcasterOrder.verify(mockStream).filter(any()); // Invoked in SecondUpcaster
-        upcasterOrder.verify(mockStream).distinct(); // Invoked in ThirdUpcaster
-        upcasterOrder.verify(mockStream).map(any()); // Invoked in UnorderedUpcaster
+            // Since InOrder only works with mocks, we verify the invoked methods on the test stream.
+            InOrder upcasterOrder = inOrder(mockStream);
+            upcasterOrder.verify(mockStream).sorted(); // Invoked in FirstUpcaster
+            upcasterOrder.verify(mockStream).filter(any()); // Invoked in SecondUpcaster
+            upcasterOrder.verify(mockStream).distinct(); // Invoked in ThirdUpcaster
+            upcasterOrder.verify(mockStream).map(any()); // Invoked in UnorderedUpcaster
+        });
     }
 
-    @Scope
-    @Import(SpringAxonAutoConfigurer.ImportSelector.class)
     @org.springframework.context.annotation.Configuration
-    public static class TestContext {
+    @EnableAutoConfiguration
+    static class DefaultContext {
 
         // Normally constructed through Spring Boot autoconfig.
         // As this is the plain Spring module, we need to construct it ourselves.
@@ -82,7 +82,7 @@ class UpcasterOrderingTest {
             return new EventProcessingModule();
         }
 
-        @SuppressWarnings({"unused", "RedundantStreamOptionalCall", "ResultOfMethodCallIgnored"})
+        @SuppressWarnings({"unused", "RedundantStreamOptionalCall", "ResultOfMethodCallIgnored", "DataFlowIssue"})
         @Component
         public static class UnorderedUpcaster implements EventUpcaster {
 
@@ -95,7 +95,7 @@ class UpcasterOrderingTest {
             }
         }
 
-        @SuppressWarnings({"unused", "ResultOfMethodCallIgnored"})
+        @SuppressWarnings({"unused", "ResultOfMethodCallIgnored", "DataFlowIssue"})
         @Order(0)
         @Component
         public static class FirstUpcaster implements EventUpcaster {
@@ -110,11 +110,10 @@ class UpcasterOrderingTest {
         }
     }
 
-    @Scope
     @org.springframework.context.annotation.Configuration
-    public static class OtherTestContext {
+    public static class OtherContext {
 
-        @SuppressWarnings({"unused", "RedundantStreamOptionalCall", "ResultOfMethodCallIgnored"})
+        @SuppressWarnings({"unused", "RedundantStreamOptionalCall", "ResultOfMethodCallIgnored", "DataFlowIssue"})
         @Order(1)
         @Component
         public static class SecondUpcaster implements EventUpcaster {
@@ -128,6 +127,7 @@ class UpcasterOrderingTest {
             }
         }
 
+        @SuppressWarnings("ClassEscapesDefinedScope")
         @Bean
         @Order(2)
         public ThirdUpcaster someSecondUpcaster() {
@@ -135,7 +135,7 @@ class UpcasterOrderingTest {
         }
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "DataFlowIssue"})
     private static class ThirdUpcaster implements EventUpcaster {
 
         @Override

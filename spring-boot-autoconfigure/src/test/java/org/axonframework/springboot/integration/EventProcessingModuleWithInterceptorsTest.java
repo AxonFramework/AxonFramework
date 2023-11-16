@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.config;
+package org.axonframework.springboot.integration;
 
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
@@ -26,15 +26,11 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.context.annotation.Import;
-import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collections;
 import javax.annotation.Nonnull;
@@ -46,24 +42,31 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
-@ExtendWith(SpringExtension.class)
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class EventProcessingModuleWithInterceptorsTest {
+class EventProcessingModuleWithInterceptorsTest {
 
-    @Autowired
-    private EventBus eventBus;
-    @Autowired
-    private Context.MyEventHandler myEventHandler;
+    private ApplicationContextRunner testApplicationContext;
+
+    @BeforeEach
+    void setUp() {
+        testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
+                                                               .withUserConfiguration(TestContext.class);
+    }
 
     @Test
     void interceptorRegistration() {
-        eventBus.publish(GenericEventMessage.asEventMessage("myEvent"));
-        assertEquals("myMetaDataValue", myEventHandler.getMetaDataValue());
+        testApplicationContext.run(context -> {
+            EventBus eventBus = context.getBean(EventBus.class);
+            TestContext.MyEventHandler myEventHandler = context.getBean(TestContext.MyEventHandler.class);
+
+            eventBus.publish(GenericEventMessage.asEventMessage("myEvent"));
+
+            assertEquals("myMetaDataValue", myEventHandler.getMetaDataValue());
+        });
     }
 
-    @Import(SpringAxonAutoConfigurer.ImportSelector.class)
     @Configuration
-    public static class Context {
+    @EnableAutoConfiguration
+    static class TestContext {
 
         @Bean
         public EventProcessingModule eventProcessingConfiguration() {
@@ -73,7 +76,7 @@ public class EventProcessingModuleWithInterceptorsTest {
             return eventProcessingModule;
         }
 
-        public class MyInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
+        static class MyInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
 
             @Override
             public Object handle(@Nonnull UnitOfWork<? extends EventMessage<?>> unitOfWork,
@@ -86,7 +89,7 @@ public class EventProcessingModuleWithInterceptorsTest {
         }
 
         @Component
-        public class MyEventHandler {
+        static class MyEventHandler {
 
             private String metaDataValue;
 

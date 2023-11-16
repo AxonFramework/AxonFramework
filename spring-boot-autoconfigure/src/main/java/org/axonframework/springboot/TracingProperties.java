@@ -234,50 +234,6 @@ public class TracingProperties {
     }
 
     /**
-     * Getting value for nesting handlers in dispatching traces.
-     *
-     * @return Whether handlers should be nested in dispatching traces
-     * @deprecated Use {@link EventProcessorProperties#isDistributedInSameTrace()} instead.
-     */
-    @Deprecated
-    public boolean isNestedHandlers() {
-        return eventProcessor.isDistributedInSameTrace();
-    }
-
-    /**
-     * Setting value for nesting handlers in dispatching traces.
-     *
-     * @param nestedHandlers The new value for nesting handlers in dispatching trace.
-     * @deprecated Use {@link EventProcessorProperties#setDisableBatchTrace(boolean)} instead.
-     */
-    @Deprecated
-    public void setNestedHandlers(boolean nestedHandlers) {
-        eventProcessor.setDistributedInSameTrace(nestedHandlers);
-    }
-
-    /**
-     * The time limit set on nested handlers inside dispatching trace. Only affects events and deadlines, other messages
-     * are always nested.
-     *
-     * @return For how long event messages should be nested in their dispatching trace.
-     * @deprecated Use {@link EventProcessorProperties#getDistributedInSameTraceTimeLimit()} instead.
-     */
-    @Deprecated
-    public Duration getNestedTimeLimit() {
-        return eventProcessor.getDistributedInSameTraceTimeLimit();
-    }
-
-    /**
-     * Sets the value for the time limit set on nested handlers inside dispatching trace. Only affects events. Commands
-     * and queries are always nested.
-     * @deprecated Use {@link EventProcessorProperties#setDistributedInSameTraceTimeLimit(Duration)} instead.
-     */
-    @Deprecated
-    public void setNestedTimeLimit(Duration nestedTimeLimit) {
-        eventProcessor.setDistributedInSameTraceTimeLimit(nestedTimeLimit);
-    }
-
-    /**
      * The value for which {@link org.axonframework.tracing.SpanAttributesProvider}s are enabled.
      *
      * @return The {@link AttributeProviders} value.
