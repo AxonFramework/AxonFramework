@@ -39,11 +39,11 @@ import java.util.OptionalLong;
 public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     private static final long serialVersionUID = -4102464856247630944L;
-    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
     private final TrackingToken tokenAtReset;
-    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
     private final TrackingToken currentToken;
-    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
     private final Object context;
     private final transient boolean lastMessageWasReplay;
 
