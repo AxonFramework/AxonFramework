@@ -90,41 +90,6 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
         this.clock = builder.clock;
     }
 
-    /**
-     * Build an {@link EventProcessorLatencyMonitor}
-     *
-     * @param meterNamePrefix the prefix for the meter name that will be created in the given {@code meterRegistry}
-     * @param meterRegistry   the meter registry used to create and register the meters
-     * @return the created {@link EventProcessorLatencyMonitor}
-     * @deprecated in favor of using the {@link #builder()}
-     */
-    @Deprecated
-    public static EventProcessorLatencyMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
-        return builder().meterNamePrefix(meterNamePrefix)
-                        .meterRegistry(meterRegistry)
-                        .build();
-    }
-
-    /**
-     * Build an {@link EventProcessorLatencyMonitor}.
-     *
-     * @param meterNamePrefix the prefix for the meter name that will be created in the given {@code meterRegistry}
-     * @param meterRegistry   the meter registry used to create and register the meters
-     * @param tagsBuilder     the function used to construct the list of micrometer {@link Tag}, based on the ingested
-     *                        message
-     * @return the created {@link EventProcessorLatencyMonitor}
-     * @deprecated in favor of using the {@link #builder()}
-     */
-    @Deprecated
-    public static EventProcessorLatencyMonitor buildMonitor(String meterNamePrefix,
-                                                            MeterRegistry meterRegistry,
-                                                            Function<Message<?>, Iterable<Tag>> tagsBuilder) {
-        return builder().meterNamePrefix(meterNamePrefix)
-                        .meterRegistry(meterRegistry)
-                        .tagsBuilder(tagsBuilder)
-                        .build();
-    }
-
     @SuppressWarnings("PackageAccessibility")
     @Override
     public MonitorCallback onMessageIngested(@Nonnull EventMessage<?> message) {

@@ -76,30 +76,6 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>>, MetricSe
         ignoredTimer = new Timer(reservoirFactory.get(), clock);
     }
 
-    /**
-     * Creates a MessageTimerMonitor using a default clock
-     *
-     * @deprecated in favor of the {@link #builder()}
-     */
-    @Deprecated
-    public MessageTimerMonitor() {
-        this(Clock.defaultClock());
-    }
-
-    /**
-     * Creates a MessageTimerMonitor using the provided clock
-     *
-     * @param clock the clock used to measure the process time of each message
-     * @deprecated in favor of the {@link #builder()}
-     */
-    @Deprecated
-    public MessageTimerMonitor(Clock clock) {
-        allTimer = new Timer(new ExponentiallyDecayingReservoir(), clock);
-        successTimer = new Timer(new ExponentiallyDecayingReservoir(), clock);
-        failureTimer = new Timer(new ExponentiallyDecayingReservoir(), clock);
-        ignoredTimer = new Timer(new ExponentiallyDecayingReservoir(), clock);
-    }
-
     @Override
     public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
         final Timer.Context allTimerContext = this.allTimer.time();
