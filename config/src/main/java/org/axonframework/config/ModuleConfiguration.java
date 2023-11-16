@@ -37,47 +37,6 @@ public interface ModuleConfiguration {
     void initialize(Configuration config);
 
     /**
-     * Defines a phase in which this module's {@link #initialize(Configuration)}, {@link #start()}, {@link #shutdown()}
-     * will be invoked.
-     *
-     * @return this module's phase
-     * @deprecated a {@link ModuleConfiguration}'s phase is no longer used, as distinct phases might be necessary for
-     * any of the start or shutdown processes added in the {@link #initialize(Configuration)} method
-     */
-    @Deprecated
-    default int phase() {
-        return 0;
-    }
-
-    /**
-     * Invoked when the Configuration is started.
-     *
-     * @see Configuration#start()
-     * @deprecated in favor of maintaining start operations in the {@link Component}. Any lifecycle operations not
-     * covered through the components created by this {@link ModuleConfiguration} should be added to the {@link
-     * Configuration} in {@link #initialize(Configuration)} through {@link Configuration#onStart(int,
-     * LifecycleHandler)}
-     */
-    @Deprecated
-    default void start() {
-        //No-op
-    }
-
-    /**
-     * Invoked prior to shutdown of the application.
-     *
-     * @see Configuration#shutdown()
-     * @deprecated in favor of maintaining shutdown operations in the {@link Component}. Any lifecycle operations not
-     * covered through the components created by this {@link ModuleConfiguration} should be added to the {@link
-     * Configuration} in {@link #initialize(Configuration)} through {@link Configuration#onShutdown(int,
-     * LifecycleHandler)}
-     */
-    @Deprecated
-    default void shutdown() {
-        //No-op
-    }
-
-    /**
      * Returns the actual module configuration instance. Usually, it is the instance itself. However, in case of module
      * configuration wrappers, we would like to provide the wrapped module configuration as the instance.
      *
