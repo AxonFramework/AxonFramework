@@ -35,16 +35,13 @@ import java.util.stream.Collectors;
  * lifecycle instance can be activated (see {@link #activate()}) and deactivated (see {@link #close()}) at will. Events
  * applied while it is active are stored and can be retrieved using {@link #getAppliedEvents()} or
  * {@link #getAppliedEventPayloads()}.
- * <p>
- * When using with JUnit, consider using the {@link StubAggregateLifecycleRule} with {@link org.junit.Rule &#064;Rule}
- * instead, as it is easier and safer to use.
  */
 public class StubAggregateLifecycle extends AggregateLifecycle {
 
     private static final String AGGREGATE_TYPE = "stubAggregate";
 
     private Runnable registration;
-    private List<EventMessage<?>> appliedMessages = new CopyOnWriteArrayList<>();
+    private final List<EventMessage<?>> appliedMessages = new CopyOnWriteArrayList<>();
     private boolean deleted;
 
     /**
@@ -53,7 +50,7 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
      */
     public void activate() {
         super.startScope();
-        this.registration = () -> super.endScope();
+        this.registration = super::endScope;
     }
 
     /**

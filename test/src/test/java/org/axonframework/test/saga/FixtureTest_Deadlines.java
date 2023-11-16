@@ -114,13 +114,12 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void deadlineMetMatching() {
-        //noinspection deprecation
+    void expectTriggeredDeadlinesMatching() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
-               .expectDeadlinesMetMatching(payloadsMatching(exactSequenceOf(deepEquals(DEADLINE_PAYLOAD))))
+               .expectTriggeredDeadlinesMatching(payloadsMatching(exactSequenceOf(deepEquals(DEADLINE_PAYLOAD))))
                .expectNoScheduledEvents();
     }
 
@@ -135,13 +134,12 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void deadlineMet() {
-        //noinspection deprecation
+    void expectTriggeredDeadlines() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
-               .expectDeadlinesMet(DEADLINE_PAYLOAD)
+               .expectTriggeredDeadlines(DEADLINE_PAYLOAD)
                .expectNoScheduledEvents();
     }
 

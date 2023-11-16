@@ -520,17 +520,6 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectPublishedEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher);
 
     /**
-     * Asserts that deadlines match given {@code matcher} have been met (which have passed in time) on this saga.
-     *
-     * @param matcher The matcher that defines the expected list of deadlines
-     * @return the FixtureExecutionResult for method chaining
-     * @deprecated in favor of {@link #expectTriggeredDeadlinesMatching(Matcher)}
-     */
-    @Deprecated
-    FixtureExecutionResult expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
-
-
-    /**
      * Asserts that deadlines matching the given {@code matcher} have been triggered for this aggregate.
      *
      * @param matcher the matcher that defines the expected list of deadlines
@@ -547,17 +536,6 @@ public interface FixtureExecutionResult {
      * @return the FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectPublishedEvents(Object... expected);
-
-    /**
-     * Asserts that given {@code expected} deadlines have been met (which have passed in time). Deadlines are compared
-     * comparing their type and fields using "equals".
-     *
-     * @param expected The sequence of deadlines expected to be met
-     * @return the FixtureExecutionResult for method chaining
-     * @deprecated in favor of {@link #expectTriggeredDeadlines(Object...)}
-     */
-    @Deprecated
-    FixtureExecutionResult expectDeadlinesMet(Object... expected);
 
     /**
      * Asserts that given {@code expected} deadlines have been triggered. Deadlines are compared comparing their type

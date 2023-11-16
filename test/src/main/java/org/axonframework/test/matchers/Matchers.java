@@ -167,41 +167,6 @@ public abstract class Matchers {
     }
 
     /**
-     * Matches against each event of the same runtime type that has all field values equal to the fields in the expected
-     * event. All fields are compared, except for the aggregate identifier and sequence number, as they are generally
-     * not set on the expected event.
-     *
-     * @param expected The event with the expected field values
-     * @param <T>      The type of event to match against
-     * @return a matcher that matches based on the equality of field values
-     * @deprecated Please use the {@link #deepEquals(Object)} instead. Using this method will lead to unwanted
-     * exceptions when ran on JDK 17 and up, due to adjustments in reflective access.
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed") // Used in tests
-    @Deprecated
-    public static <T> EqualFieldsMatcher<T> equalTo(T expected) {
-        return new EqualFieldsMatcher<>(expected);
-    }
-
-    /**
-     * Matches against each event of the same runtime type that has all field values equal to the fields in the expected
-     * event. All fields are compared, except for the aggregate identifier and sequence number, as they are generally
-     * not set on the expected event.
-     *
-     * @param expected The event with the expected field values
-     * @param filter   The filter describing the Fields to include in the comparison
-     * @param <T>      The type of event to match against
-     * @return a matcher that matches based on the equality of field values
-     * @deprecated Please use the {@link #deepEquals(Object, FieldFilter)} instead. Using this method will lead to
-     * unwanted exceptions when ran on JDK 17 and up, due to adjustments in reflective access.
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed") // Used in tests
-    @Deprecated
-    public static <T> EqualFieldsMatcher<T> equalTo(T expected, FieldFilter filter) {
-        return new EqualFieldsMatcher<>(expected, filter);
-    }
-
-    /**
      * Constructs a deep equals {@link Matcher}. This {@code Matcher} will first perform a regular equals check based on
      * the given {@code expected} and {@code actual} (provided during the {@link Matcher#matches(Object)} invocation).
      * If this fails and given type <em>does not</em> override {@link Object#equals(Object)}, this {@code Matcher} will

@@ -291,21 +291,11 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public ResultValidator<T> expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher) {
-        return expectTriggeredDeadlinesMatching(matcher);
-    }
-
-    @Override
     public ResultValidator<T> expectTriggeredDeadlinesMatching(
             Matcher<? extends List<? super DeadlineMessage<?>>> matcher
     ) {
         deadlineManagerValidator.assertTriggeredDeadlinesMatching(matcher);
         return this;
-    }
-
-    @Override
-    public ResultValidator<T> expectDeadlinesMet(Object... expected) {
-        return expectTriggeredDeadlines(expected);
     }
 
     @Override

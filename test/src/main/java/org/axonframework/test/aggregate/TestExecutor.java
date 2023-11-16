@@ -127,45 +127,8 @@ public interface TestExecutor<T> {
      *
      * @param elapsedTime a {@link Duration} specifying the amount of time that will elapse
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
-     *
-     * @deprecated in favor of {@link #whenTimeElapses(Duration)}. This function incorrectly suggests you can
-     * proceed with other operations after calling it, which is made impossible due to the {@link ResultValidator}
-     * return type
      */
-    @Deprecated
-    default ResultValidator andThenTimeElapses(Duration elapsedTime) {
-        return whenTimeElapses(elapsedTime);
-    }
-
-    /**
-     * Simulates the time elapsing in the current given state using a {@link Duration} as the unit of time. This can be
-     * useful when the time between given events is of importance, for example when leveraging the
-     * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
-     *
-     * @param elapsedTime a {@link Duration} specifying the amount of time that will elapse
-     * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
-     * @deprecated since 4.6. Use {@link #whenTimeAdvancesTo(Instant)} method
-     */
-    @Deprecated
-    ResultValidator<T> whenThenTimeElapses(Duration elapsedTime);
-
-    /**
-     * Simulates the time elapsing in the current given state using a {@link Duration} as the unit of time. This can be
-     * useful when the time between given events is of importance, for example when leveraging the
-     * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
-     * <p>
-     * Note: As this method is added to the interface as a replacement for the deprecated
-     * {@link #whenThenTimeAdvancesTo(Instant)} method, and in case there are other implementations by 3rd party
-     * libraries, this method is changed to a default method that rely on the deprecated method so that there is no
-     * breaking changes in the API in case an external implementation of this interface. Nevertheless, the recommended
-     * approach is to override this implementation.
-     *
-     * @param elapsedTime a {@link Duration} specifying the amount of time that will elapse
-     * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
-     */
-    default ResultValidator<T> whenTimeElapses(Duration elapsedTime) {
-        return whenThenTimeElapses(elapsedTime);
-    }
+    ResultValidator<T> whenTimeElapses(Duration elapsedTime);
 
     /**
      * Simulates the time advancing in the current given state using an {@link Instant} as the unit of time. This can be
@@ -174,45 +137,8 @@ public interface TestExecutor<T> {
      *
      * @param newPointInTime an {@link Instant} specifying the amount of time to advance the clock to
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
-     *
-     * @deprecated in favor of {@link #whenTimeAdvancesTo(Instant)}. This function incorrectly suggests you can
-     * proceed with other operations after calling it, which is made impossible due to the {@link ResultValidator}
-     * return type
      */
-    @Deprecated
-    default ResultValidator andThenTimeAdvancesTo(Instant newPointInTime) {
-        return whenTimeAdvancesTo(newPointInTime);
-    }
-
-    /**
-     * Simulates the time advancing in the current given state using an {@link Instant} as the unit of time. This can be
-     * useful when the time between given events is of importance, for example when leveraging the
-     * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
-     *
-     * @param newPointInTime an {@link Instant} specifying the amount of time to advance the clock to
-     * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
-     * @deprecated since 4.6. Use {@link #whenTimeAdvancesTo(Instant)} method
-     */
-    @Deprecated
-    ResultValidator<T> whenThenTimeAdvancesTo(Instant newPointInTime);
-
-    /**
-     * Simulates the time advancing in the current given state using an {@link Instant} as the unit of time. This can be
-     * useful when the time between given events is of importance, for example when leveraging the
-     * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
-     * <p>
-     * Note: As this method is added to the interface as a replacement for the deprecated
-     * {@link #whenThenTimeAdvancesTo(Instant)} method, and in case there are other implementations by 3rd party
-     * libraries, this method is changed to a default method that rely on the deprecated method so that there is no
-     * breaking changes in the API in case an external implementation of this interface. Nevertheless, the recommended
-     * approach is to override this implementation.
-     *
-     * @param newPointInTime an {@link Instant} specifying the amount of time to advance the clock to
-     * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
-     */
-    default ResultValidator<T> whenTimeAdvancesTo(Instant newPointInTime) {
-        return whenThenTimeAdvancesTo(newPointInTime);
-    }
+    ResultValidator<T> whenTimeAdvancesTo(Instant newPointInTime);
 
     /**
      * Invokes the given {@code aggregateFactory} expecting an aggregate instance of type {@code T} to be returned.
