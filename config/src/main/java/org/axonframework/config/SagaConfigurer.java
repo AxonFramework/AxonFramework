@@ -185,17 +185,6 @@ public class SagaConfigurer<T> {
         }
 
         @Override
-        public <T extends EventProcessor> T eventProcessor() {
-            ensureInitialized();
-            //noinspection unchecked
-            return (T) config.eventProcessingConfiguration()
-                             .sagaEventProcessor(configurer.type)
-                             .orElseThrow(() -> new IllegalStateException(format(
-                                     "Saga %s does not have a processor configured.",
-                                     configurer.type)));
-        }
-
-        @Override
         public String processingGroup() {
             ensureInitialized();
             return config.eventProcessingConfiguration()

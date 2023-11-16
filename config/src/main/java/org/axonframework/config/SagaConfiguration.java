@@ -67,14 +67,6 @@ public interface SagaConfiguration<S> {
     ListenerInvocationErrorHandler listenerInvocationErrorHandler();
 
     /**
-     * Gets the {@link EventProcessor} responsible for delivering events to this Saga.
-     *
-     * @param <T> the type of the {@link EventProcessor}
-     * @return the {@link EventProcessor} for this Saga
-     */
-    <T extends EventProcessor> T eventProcessor();
-
-    /**
      * Gets the Processing Group this Saga is assigned to.
      *
      * @return the Processing Group this Saga is assigned to
