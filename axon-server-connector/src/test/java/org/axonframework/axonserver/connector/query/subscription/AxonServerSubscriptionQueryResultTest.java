@@ -25,7 +25,10 @@ import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
 import io.grpc.stub.ClientCallStreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
+import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.tracing.NoOpSpanFactory;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
@@ -39,27 +42,22 @@ import static org.mockito.Mockito.*;
 
 class AxonServerSubscriptionQueryResultTest {
 
-    private AxonServerSubscriptionQueryResult<String, String> testSubject;
-    private AxonServerConfiguration configuration;
-    private Serializer serializer;
-    private CompletableFuture<QueryResponse> initialResult;
-    private SubscriptionQueryUpdateBuffer subscriptionQueryUpdateBuffer;
-    private ClientCallStreamObserver<SubscriptionQueryRequest> mockUpstream;
     private ScheduledExecutorService executorService;
+
+    private SubscriptionQueryUpdateBuffer subscriptionQueryUpdateBuffer;
+
+    private AxonServerSubscriptionQueryResult<String, String> testSubject;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
         executorService = Executors.newScheduledThreadPool(1);
 
-        configuration = new AxonServerConfiguration();
-        serializer = TestSerializer.xStreamSerializer();
-        SubscriptionMessageSerializer stubSerializer = new SubscriptionMessageSerializer(serializer, serializer, configuration);
         subscriptionQueryUpdateBuffer = new SubscriptionQueryUpdateBuffer("testClient", "queryId", 10, 3);
         SubscriptionQueryResult result = new SubscriptionQueryResult() {
             @Override
             public CompletableFuture<QueryResponse> initialResult() {
-                return initialResult;
+                return CompletableFuture.completedFuture(null);
             }
 
             @Override
@@ -67,9 +65,21 @@ class AxonServerSubscriptionQueryResultTest {
                 return subscriptionQueryUpdateBuffer;
             }
         };
-        mockUpstream = mock(ClientCallStreamObserver.class);
+        ClientCallStreamObserver<SubscriptionQueryRequest> mockUpstream = mock(ClientCallStreamObserver.class);
         subscriptionQueryUpdateBuffer.beforeStart(mockUpstream);
-        testSubject = new AxonServerSubscriptionQueryResult<>(result, stubSerializer);
+
+        AxonServerConfiguration configuration = new AxonServerConfiguration();
+        Serializer serializer = TestSerializer.xStreamSerializer();
+        SubscriptionMessageSerializer testSerializer =
+                new SubscriptionMessageSerializer(serializer, serializer, configuration);
+        QueryBusSpanFactory noOpSpanFactory = DefaultQueryBusSpanFactory.builder()
+                                                                        .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                        .build();
+        testSubject = new AxonServerSubscriptionQueryResult<>(null,
+                                                              result,
+                                                              testSerializer,
+                                                              noOpSpanFactory,
+                                                              NoOpSpanFactory.NoOpSpan.INSTANCE);
     }
 
     @AfterEach
@@ -79,9 +89,9 @@ class AxonServerSubscriptionQueryResultTest {
 
     @Test
     void subscriptionQueryClosesUpdateFluxWithErrorOnErrorInResultStream() {
-        executorService.schedule(() -> {
-            subscriptionQueryUpdateBuffer.onError(new RuntimeException("Test"));
-        }, 10, TimeUnit.MILLISECONDS);
+        executorService.schedule(
+                () -> subscriptionQueryUpdateBuffer.onError(new RuntimeException("Test")), 10, TimeUnit.MILLISECONDS
+        );
 
         StepVerifier.create(testSubject.updates())
                     .expectError(RuntimeException.class)
@@ -90,9 +100,7 @@ class AxonServerSubscriptionQueryResultTest {
 
     @Test
     void subscriptionQueryCompletesUpdateFluxOnCompletedResultStream() {
-        executorService.schedule(() -> {
-            subscriptionQueryUpdateBuffer.onCompleted();
-        }, 10, TimeUnit.MILLISECONDS);
+        executorService.schedule(() -> subscriptionQueryUpdateBuffer.onCompleted(), 10, TimeUnit.MILLISECONDS);
 
         StepVerifier.create(testSubject.updates())
                     .expectComplete()

@@ -18,15 +18,12 @@ package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
-import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -47,41 +44,10 @@ public class AxonServerSubscriptionQueryResult<I, U>
         implements SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> {
 
     private final Logger logger = LoggerFactory.getLogger(AxonServerSubscriptionQueryResult.class);
+
     private final Mono<QueryResponseMessage<I>> initialResult;
     private final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result;
     private final Flux<SubscriptionQueryUpdateMessage<U>> updates;
-
-    /**
-     * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
-     * the subscription query.
-     *
-     * @deprecated Deprecated in favor of constructor with a {@link SpanFactory}. This constructor defaults to a
-     * {@link NoOpSpanFactory}.
-     */
-    @Deprecated
-    public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
-                                             final SubscriptionMessageSerializer subscriptionSerializer) {
-        this(result, NoOpSpanFactory.INSTANCE, subscriptionSerializer);
-    }
-
-
-    /**
-     * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
-     * the subscription query.
-     *
-     * @deprecated Deprecated in favor of constructor with a {@link QueryBusSpanFactory}. This constructor defaults to a
-     * {@link DefaultQueryBusSpanFactory} with the provided {@link SpanFactory}.
-     */
-    @Deprecated
-    public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
-                                             final SpanFactory spanFactory,
-                                             final SubscriptionMessageSerializer subscriptionSerializer) {
-        this(null,
-             result,
-             subscriptionSerializer,
-             DefaultQueryBusSpanFactory.builder().spanFactory(spanFactory).build(),
-             new NoOpSpanFactory.NoOpSpan());
-    }
 
     /**
      * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
