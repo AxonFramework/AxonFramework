@@ -126,7 +126,7 @@
         <jobrunr.version>6.3.3</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
-        <spring.version>5.3.30</spring.version>
+        <spring.version>5.3.31</spring.version>
         <spring.boot.version>2.7.17</spring.boot.version>
         <spring-security.version>5.8.7</spring-security.version>
         <!-- Testing -->
