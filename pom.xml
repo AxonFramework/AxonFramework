@@ -561,17 +561,6 @@
                     </archiverConfig>
                 </configuration>
             </plugin>
-            <!-- package -->
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven-assembly.version}</version>
-                <configuration>
-                    <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
-                    <archiverConfig>
-                        <duplicateBehavior>skip</duplicateBehavior>
-                    </archiverConfig>
-                </configuration>
-            </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven-jar.version}</version>

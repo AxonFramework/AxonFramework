@@ -116,6 +116,7 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
                           .identify(command.getPayload());
     }
 
+    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     private RoutingKeyResolver createResolver(Class<?> type) {
         for (Method m : methodsOf(type)) {
             if (AnnotationUtils.findAnnotationAttributes(m, annotationType).isPresent()) {

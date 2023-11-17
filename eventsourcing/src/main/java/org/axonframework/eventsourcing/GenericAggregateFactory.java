@@ -63,6 +63,7 @@ public class GenericAggregateFactory<T> extends AbstractAggregateFactory<T> {
      *
      * @param aggregateModel the model of aggregate this factory creates instances of
      */
+    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     public GenericAggregateFactory(AggregateModel<T> aggregateModel) {
         super(aggregateModel);
         aggregateModel.types()

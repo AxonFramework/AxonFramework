@@ -370,7 +370,8 @@ public class JacksonSerializer implements Serializer {
                 objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
             }
             if (defaultTyping) {
-                objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
+                objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(),
+                                                   ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
             }
             if (classLoader != null) {
                 objectMapper.setTypeFactory(objectMapper.getTypeFactory().withClassLoader(classLoader));

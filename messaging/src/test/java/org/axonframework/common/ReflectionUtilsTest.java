@@ -142,6 +142,7 @@ class ReflectionUtilsTest {
         assertEquals(expectedFieldValue, testObject.getField3());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     void isAccessible() throws NoSuchFieldException {
         Field field1 = SomeType.class.getDeclaredField("field1");

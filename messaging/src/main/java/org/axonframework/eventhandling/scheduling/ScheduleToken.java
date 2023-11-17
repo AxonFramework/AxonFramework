@@ -27,7 +27,7 @@ import java.io.Serializable;
  * @author Allard Buijze
  * @since 0.7
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
 public interface ScheduleToken extends Serializable {
 
 }

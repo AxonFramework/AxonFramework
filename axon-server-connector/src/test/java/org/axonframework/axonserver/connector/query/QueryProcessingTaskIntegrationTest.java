@@ -854,16 +854,6 @@ class QueryProcessingTaskIntegrationTest {
         }
 
         @Override
-        public void sendAck() {
-            // noop
-        }
-
-        @Override
-        public void sendNack(ErrorMessage errorMessage) {
-            // noop
-        }
-
-        @Override
         public void complete() {
             completed = true;
         }

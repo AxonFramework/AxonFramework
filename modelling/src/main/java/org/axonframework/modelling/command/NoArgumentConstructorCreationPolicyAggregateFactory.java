@@ -49,6 +49,7 @@ public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements C
      * @param identifier The identifier to create the aggregate with. Not used by this factory.
      * @return An aggregate instance.
      */
+    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     @Nonnull
     @Override
     public A create(@Nullable Object identifier) {

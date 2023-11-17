@@ -17,20 +17,17 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -62,6 +59,7 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
      * @param explicitPayloadType      the expected message payload type
      * @param parameterResolverFactory factory used to resolve method parameters
      */
+    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     public AnnotatedMessageHandlingMember(Executable executable,
                                           @SuppressWarnings("rawtypes") Class<? extends Message> messageType,
                                           Class<?> explicitPayloadType,

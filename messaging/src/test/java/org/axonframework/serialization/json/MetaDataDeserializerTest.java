@@ -52,7 +52,7 @@ class MetaDataDeserializerTest {
                 new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer()));
 
         if (defaultTyping != null) {
-            objectMapper.enableDefaultTyping(defaultTyping);
+            objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(), defaultTyping);
         }
         return objectMapper;
     }

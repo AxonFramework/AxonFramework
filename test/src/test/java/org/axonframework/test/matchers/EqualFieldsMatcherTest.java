@@ -24,10 +24,12 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link EqualFieldsMatcher}.
+ * Test class validating the {@link EqualFieldsMatcher}. Use of deprecated code is suppressed as we still have the
+ * responsibility to validate our own code.
  *
  * @author Allard Buijze
  */
+@SuppressWarnings("deprecation")
 class EqualFieldsMatcherTest {
 
     private EqualFieldsMatcher<MyEvent> testSubject;

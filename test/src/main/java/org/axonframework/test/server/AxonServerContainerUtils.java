@@ -24,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +56,7 @@ class AxonServerContainerUtils {
      *                     {@code hostname} and {@code port}.
      */
     static void initCluster(String hostname, int port) throws IOException {
-        final URL url = new URL(String.format("http://%s:%d/v1/context/init", hostname, port));
+        final URL url = URI.create(String.format("http://%s:%d/v1/context/init", hostname, port)).toURL();
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
@@ -88,7 +89,7 @@ class AxonServerContainerUtils {
      *                     {@code hostname} and {@code port}.
      */
     static List<String> contexts(String hostname, int port) throws IOException {
-        final URL url = new URL(String.format("http://%s:%d/v1/public/context", hostname, port));
+        final URL url = URI.create(String.format("http://%s:%d/v1/public/context", hostname, port)).toURL();
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();

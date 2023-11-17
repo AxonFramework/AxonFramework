@@ -173,7 +173,11 @@ public abstract class ReflectionUtils {
      * @return the given {@code member}, for easier method chaining
      * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be
      *                               made accessible
+     * @deprecated Since the used {@link AccessController} will be removed in future JDK versions. The effort to
+     * implement a workaround is drafted in issue #2901.
      */
+    @SuppressWarnings("removal") // Suppressed AccessController usage
+    @Deprecated
     public static <T extends AccessibleObject> T ensureAccessible(T member) {
         if (!isAccessible(member)) {
             AccessController.doPrivileged(new MemberAccessibilityCallback(member));
@@ -182,12 +186,15 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Indicates whether the given {@code member} is accessible. It does so by checking whether the member is
-     * non-final and public, or made accessible via reflection.
+     * Indicates whether the given {@code member} is accessible. It does so by checking whether the member is non-final
+     * and public, or made accessible via reflection.
      *
      * @param member The member (field, method, constructor, etc) to check for accessibility
      * @return {@code true} if the member is accessible, otherwise {@code false}.
+     * @deprecated Since the used {@link AccessibleObject#isAccessible()} should be replaced for
+     * {@link AccessibleObject#canAccess(Object)}. The effort to implement a workaround is drafted in issue #2901.
      */
+    @Deprecated
     public static boolean isAccessible(AccessibleObject member) {
         return member.isAccessible() || (member instanceof Member && isNonFinalPublicMember((Member) member));
     }
