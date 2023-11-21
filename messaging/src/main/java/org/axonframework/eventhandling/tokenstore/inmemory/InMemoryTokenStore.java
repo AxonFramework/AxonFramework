@@ -53,12 +53,7 @@ public class InMemoryTokenStore implements TokenStore {
      * No-arg constructor for the {@link InMemoryTokenStore} which will log a warning on initialization.
      */
     public InMemoryTokenStore() {
-        logger.warn(
-                "An in memory token store is being created.\n" +
-                        "This means the event processor using this token store might process the " +
-                        "same events again when the application is restarted.\n" +
-                        "If the use of an in memory token store is intentional, this warning can be ignored.\n" +
-                        "If the tokens should be persisted, use the JPA, JDBC or MongoDB token store instead.");
+        logger.warn("An in memory token store is being created.\nThis means the event processor using this token store might process the same events again when the application is restarted.\nIf the use of an in memory token store is intentional, this warning can be ignored.\nIf the tokens should be persisted, use the JPA, JDBC or MongoDB token store instead.");
     }
 
     @Override

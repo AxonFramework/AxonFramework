@@ -472,9 +472,9 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
-                                                          .doOnError(error -> logger.error(format(
-                                                                  "An error happened while trying to report an initial result. Query: %s",
-                                                                  query), error));
+                                                          .doOnError(error -> logger.error(
+                                                                  "An error happened while trying to report an initial result. Query: {}",
+                                                                  query, error));
 
         UpdateHandlerRegistration<U> updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, backpressure, updateBufferSize);
@@ -493,9 +493,9 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
-                                                          .doOnError(error -> logger.error(format(
-                                                                  "An error happened while trying to report an initial result. Query: %s",
-                                                                  query), error));
+                                                          .doOnError(error -> logger.error(
+                                                                  "An error happened while trying to report an initial result. Query: {}",
+                                                                  query, error));
         UpdateHandlerRegistration<U> updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, updateBufferSize);
 

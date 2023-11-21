@@ -104,12 +104,10 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      */
     @Deprecated
     public static XStreamSerializer defaultSerializer() {
-        logger.warn("An unsecured XStream instance allowing all types is used. "
-                            + "It is strongly recommended to set the security context yourself instead!",
-                    new AxonConfigurationException(
-                            "An unsecured XStream instance allowing all types is used. "
-                                    + "It is strongly recommended to set the security context yourself instead!"
-                    ));
+        logger.warn("An unsecured XStream instance allowing all types is used. It is strongly recommended to set the security context yourself instead!", new AxonConfigurationException(
+                "An unsecured XStream instance allowing all types is used. "
+                        + "It is strongly recommended to set the security context yourself instead!"
+        ));
         XStream xStream = new XStream(new CompactDriver());
         xStream.allowTypeHierarchy(Object.class);
         return builder().xStream(xStream)
@@ -228,12 +226,10 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
          */
         public XStreamSerializer build() {
             if (xStream == null) {
-                logger.warn("An unsecured XStream instance allowing all types is used. "
-                                    + "It is strongly recommended to set the security context yourself instead!",
-                            new AxonConfigurationException(
-                                    "An unsecured XStream instance allowing all types is used. "
-                                            + "It is strongly recommended to set the security context yourself instead!"
-                            ));
+                logger.warn("An unsecured XStream instance allowing all types is used. It is strongly recommended to set the security context yourself instead!", new AxonConfigurationException(
+                        "An unsecured XStream instance allowing all types is used. "
+                                + "It is strongly recommended to set the security context yourself instead!"
+                ));
                 xStream = new XStream(new CompactDriver());
             }
             return new XStreamSerializer(this);

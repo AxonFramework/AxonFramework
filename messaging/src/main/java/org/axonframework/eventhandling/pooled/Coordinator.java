@@ -295,8 +295,7 @@ class Coordinator {
                 }
                 tokenStoreInitialized.set(true);
             } catch (Exception e) {
-                logger.info("Error while initializing the Token Store. " +
-                                    "This may simply indicate concurrent attempts to initialize.", e);
+                logger.info("Error while initializing the Token Store. This may simply indicate concurrent attempts to initialize.", e);
             }
         });
         return tokenStoreInitialized.get();
@@ -704,8 +703,7 @@ class Coordinator {
             }
 
             if (!runState.get().isRunning()) {
-                logger.debug("Stopped processing. Runnable flag is false.\n"
-                                     + "Releasing claims and closing the event stream for Processor [{}].", name);
+                logger.debug("Stopped processing. Runnable flag is false.\nReleasing claims and closing the event stream for Processor [{}].", name);
                 abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
                 closeQuietly(eventStream);
                 return;
@@ -724,8 +722,7 @@ class Coordinator {
                         });
 
             if (coordinatorExtendsClaims) {
-                logger.debug("Processor [{}] will extend the claim of work packages"
-                                     + " that are busy processing events and have met the claim threshold.", name);
+                logger.debug("Processor [{}] will extend the claim of work packages that are busy processing events and have met the claim threshold.", name);
                 // Extend the claims of each work package busy processing events.
                 // Doing so relieves this effort from the work package as an optimization.
                 workPackages.values()
@@ -825,7 +822,7 @@ class Coordinator {
             } catch (Exception e) {
                 logger.warn("Exception occurred while Processor [{}] was coordinating the work packages.", name, e);
                 if (e instanceof InterruptedException) {
-                    logger.error(String.format("Processor [%s] was interrupted. Shutting down.", name), e);
+                    logger.error("Processor [{}] was interrupted. Shutting down.", name, e);
                     stop();
                     Thread.currentThread().interrupt();
                 } else {

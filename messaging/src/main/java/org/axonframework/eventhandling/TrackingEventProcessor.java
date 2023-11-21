@@ -501,7 +501,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             checkSegmentCaughtUp(segment, eventStream);
         } catch (InterruptedException e) {
             if (isRunning()) {
-                logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
+                logger.error("Event processor [{}] was interrupted. Shutting down.", getName(), e);
                 setShutdownState();
             }
             Thread.currentThread().interrupt();
@@ -767,10 +767,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                         workerThread.interrupt();
                                         workerThread.join(workerTerminationTimeout);
                                         if (workerThread.isAlive()) {
-                                            logger.warn(
-                                                    "Forced shutdown of Tracking Processor Worker '{}' was unsuccessful. "
-                                                            + "Consider increasing workerTerminationTimeout.",
-                                                    worker.getKey()
+                                            logger.warn("Forced shutdown of Tracking Processor Worker '{}' was unsuccessful. Consider increasing workerTerminationTimeout.", worker.getKey()
                                             );
                                         }
                                     }
@@ -1324,10 +1321,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                 });
                             } catch (UnableToClaimTokenException ucte) {
                                 // When not able to claim a token for a given segment, we skip the
-                                logger.debug(
-                                        "Unable to claim the token for segment: {}. "
-                                                + "It is owned by another process or has been split/merged concurrently",
-                                        segmentId
+                                logger.debug("Unable to claim the token for segment: {}. It is owned by another process or has been split/merged concurrently", segmentId
                                 );
 
                                 TrackerStatus removedStatus = activeSegments.remove(segmentId);
