@@ -199,8 +199,7 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
 
         boolean canMatchContainedType = responseIterator.hasNext();
         if (!canMatchContainedType) {
-            logger.debug("The given response is an Iterable without any contents, hence we cannot verify if the "
-                                 + "contained type is assignable to the expected type.");
+            logger.debug("The given response is an Iterable without any contents, hence we cannot verify if the contained type is assignable to the expected type.");
             return true;
         }
 

@@ -575,8 +575,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                 cleanToken = cleanToken.withGapsTruncatedAt(sequenceNumber);
                             }
                         } catch (DateTimeParseException e) {
-                            logger.info("Unable to parse timestamp to clean old gaps. "
-                                                + "Tokens may contain large numbers of gaps, decreasing Tracking performance.");
+                            logger.info("Unable to parse timestamp to clean old gaps. Tokens may contain large numbers of gaps, decreasing Tracking performance.");
                             break;
                         }
                     }

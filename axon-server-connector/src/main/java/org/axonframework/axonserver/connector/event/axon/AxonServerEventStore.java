@@ -526,8 +526,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                          logger.debug("Snapshot created for aggregate type {}, identifier {}",
                                                       snapshot.getType(), snapshot.getAggregateIdentifier());
                                      } else {
-                                         logger.warn("Snapshot creation failed for unknown reason. "
-                                                             + "Check server logs for details.");
+                                         logger.warn("Snapshot creation failed for unknown reason. Check server logs for details.");
                                      }
                                  }
                              });

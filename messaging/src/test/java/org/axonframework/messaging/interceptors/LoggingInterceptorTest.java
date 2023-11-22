@@ -132,7 +132,7 @@ class LoggingInterceptorTest {
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
         verify(mockLogger).logIfEnabled(
-                anyString(), eq(Level.WARN), isNull(), and(contains("failed"), contains("StubMessage")), eq(exception)
+                anyString(), eq(Level.WARN), isNull(), contains("failed"), contains("StubMessage"), eq(exception)
         );
         verifyNoMoreInteractions(mockLogger);
     }
