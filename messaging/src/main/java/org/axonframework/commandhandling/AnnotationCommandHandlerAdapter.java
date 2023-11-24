@@ -127,6 +127,17 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
     }
 
     @Override
+    public CompletableFuture<Object> handle(CommandMessage<?> command) {
+        MessageHandlingMember<? super T> handler =
+                model.getHandlers(target.getClass())
+                     .filter(ch -> ch.canHandle(command))
+                     .findFirst()
+                     .orElseThrow(() -> new NoHandlerForCommandException(command));
+        // TODO: 24-11-2023 interceptor chain logic!
+        return handler.handle(command, target);
+    }
+
+    @Override
     public boolean canHandle(CommandMessage<?> message) {
         return model.getAllHandlers()
                     .values()
