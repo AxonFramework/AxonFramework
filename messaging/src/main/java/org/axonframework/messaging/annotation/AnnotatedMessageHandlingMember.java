@@ -16,21 +16,20 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Implementation of a {@link MessageHandlingMember} that is used to invoke message handler methods on the target type.
@@ -46,9 +45,11 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     private final Class<?> payloadType;
     private final int parameterCount;
     private final ParameterResolver<?>[] parameterResolvers;
-    private final Executable executable;
+   // private final Executable executable;
     private final Class<? extends Message<?>> messageType;
     private final HandlerAttributes attributes;
+
+    private final MessageHandlerInvoker<T> handlerInvoker;
 
     /**
      * Initializes a new instance that will invoke the given {@code executable} (method) on a target to handle a message
@@ -59,15 +60,12 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
      * @param explicitPayloadType      the expected message payload type
      * @param parameterResolverFactory factory used to resolve method parameters
      */
-    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     public AnnotatedMessageHandlingMember(Executable executable,
-                                          @SuppressWarnings("rawtypes") Class<? extends Message> messageType,
+                                          Class<? extends Message<?>> messageType,
                                           Class<?> explicitPayloadType,
                                           ParameterResolverFactory parameterResolverFactory) {
-        this.executable = executable;
-        //noinspection unchecked
-        this.messageType = (Class<? extends Message<?>>) messageType;
-        ReflectionUtils.ensureAccessible(this.executable);
+        this.messageType = messageType;
+        this.handlerInvoker = new ExecutableMessageHandlerInvoker<>(executable, messageType);
         Parameter[] parameters = executable.getParameters();
         this.parameterCount = executable.getParameterCount();
         parameterResolvers = new ParameterResolver[parameterCount];
@@ -145,28 +143,13 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     }
 
     @Override
-    public Object handle(@Nonnull Message<?> message, T target) throws Exception {
-        try {
-            if (executable instanceof Method) {
-                return ((Method) executable).invoke(target, resolveParameterValues(message));
-            } else if (executable instanceof Constructor) {
-                return ((Constructor<?>) executable).newInstance(resolveParameterValues(message));
-            } else {
-                throw new IllegalStateException("What kind of handler is this?");
-            }
-        } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-            checkAndRethrowForExceptionOrError(e);
-            throw new MessageHandlerInvocationException(
-                    String.format("Error handling an object of type [%s]", message.getPayloadType()), e);
-        }
+    public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
+        return handle(message, target).join();
     }
 
-    private void checkAndRethrowForExceptionOrError(ReflectiveOperationException e) throws Exception {
-        if (e.getCause() instanceof Exception) {
-            throw (Exception) e.getCause();
-        } else if (e.getCause() instanceof Error) {
-            throw (Error) e.getCause();
-        }
+    @Override
+    public CompletableFuture<Object> handle(@Nonnull Message<?> message, @Nullable T target) {
+        return handlerInvoker.invoke(target, Arrays.asList(resolveParameterValues(message)));
     }
 
     private Object[] resolveParameterValues(Message<?> message) {
@@ -188,20 +171,21 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
         if (handlerType.isInstance(this)) {
             return (Optional<H>) Optional.of(this);
         }
-        if (handlerType.isInstance(executable)) {
-            return (Optional<H>) Optional.of(executable);
+        if (handlerInvoker instanceof ExecutableMessageHandlerInvoker
+                && handlerType.isInstance(((ExecutableMessageHandlerInvoker<T>) handlerInvoker).getExecutable())) {
+            return (Optional<H>) Optional.of(((ExecutableMessageHandlerInvoker<T>) handlerInvoker).getExecutable());
         }
         return Optional.empty();
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " " + executable.toGenericString();
+        return getClass().getSimpleName() + " " + handlerInvoker.toString();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(executable);
+        return Objects.hash(handlerInvoker);
     }
 
     @Override
@@ -213,6 +197,6 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
             return false;
         }
         AnnotatedMessageHandlingMember<?> that = (AnnotatedMessageHandlingMember<?>) o;
-        return executable.equals(that.executable);
+        return handlerInvoker.equals(that.handlerInvoker);
     }
 }
