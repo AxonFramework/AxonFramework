@@ -16,6 +16,38 @@ public interface ProcessingLifecycle {
 
     ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action);
 
+    default ProcessingLifecycle onPreInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.PRE_INVOCATION, action);
+    }
+
+    default ProcessingLifecycle onInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.INVOCATION, action);
+    }
+
+    default ProcessingLifecycle onPostInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.POST_INVOCATION, action);
+    }
+
+    default ProcessingLifecycle onPrepareCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.PREPARE_COMMIT, action);
+    }
+
+    default ProcessingLifecycle onCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.COMMIT, action);
+    }
+
+    default ProcessingLifecycle onAfterCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.AFTER_COMMIT, action);
+    }
+
+    default ProcessingLifecycle onRollback(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.ROLLBACK, action);
+    }
+
+    default ProcessingLifecycle onCompleted(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.COMPLETED, action);
+    }
+
     /* These methods DO NOT belong on the interface - we don't want users to invoke this
     Can be
     1. null
