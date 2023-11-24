@@ -357,7 +357,7 @@ public class AnnotatedHandlerInspector<T> {
 
         private Object doHandle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception {
             if (delegate.canHandle(message)) {
-                return delegate.handle(message, target);
+                return delegate.handleSync(message, target);
             }
             return next.handle(message, target, handler);
         }

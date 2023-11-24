@@ -447,7 +447,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                                "Aggregate cannot handle command [" + command.getCommandName()
                                        + "], as there is no entity instance within the aggregate to forward it to."
                        ))
-                       .handle(command, aggregateRoot);
+                       .handleSync(command, aggregateRoot);
     }
 
     private Object handle(EventMessage<?> eventMessage) {

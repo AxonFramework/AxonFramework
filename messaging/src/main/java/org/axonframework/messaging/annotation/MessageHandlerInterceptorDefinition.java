@@ -90,7 +90,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception {
+        public Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception {
             InterceptorChain chain = InterceptorChainParameterResolverFactory.currentInterceptorChain();
             try {
                 return chain.proceed();
@@ -100,7 +100,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                 }
                 return ResultParameterResolverFactory.callWithResult(e, () -> {
                     if (super.canHandle(message)) {
-                        return super.handle(message, target);
+                        return super.handleSync(message, target);
                     }
                     throw e;
                 });
@@ -131,8 +131,8 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception {
-            Object result = super.handle(message, target);
+        public Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception {
+            Object result = super.handleSync(message, target);
             if (shouldInvokeInterceptorChain) {
                 return InterceptorChainParameterResolverFactory.currentInterceptorChain().proceed();
             }

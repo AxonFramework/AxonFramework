@@ -71,7 +71,7 @@ class MethodQueryMessageHandlerDefinitionTest {
 
         assertTrue(handler.canHandle(message));
 
-        Object invocationResult = handler.handle(message, this);
+        Object invocationResult = handler.handleSync(message, this);
         assertNull(invocationResult);
     }
 

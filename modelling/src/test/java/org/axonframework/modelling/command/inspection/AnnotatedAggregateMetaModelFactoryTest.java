@@ -70,8 +70,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedHandlers.class);
 
         CommandMessage<?> message = asCommandMessage("ok");
-        assertEquals(true, getHandler(inspector, message).handle(message, new SomeAnnotatedHandlers()));
-        assertEquals(false, getHandler(inspector, message).handle(asCommandMessage("ko"), new SomeAnnotatedHandlers()));
+        assertEquals(true, getHandler(inspector, message).handleSync(message, new SomeAnnotatedHandlers()));
+        assertEquals(false, getHandler(inspector, message).handleSync(asCommandMessage("ko"), new SomeAnnotatedHandlers()));
     }
 
     @Test
@@ -81,8 +81,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
         SomeSubclass target = new SomeSubclass();
         CommandMessage<?> message = asCommandMessage("sub");
-        assertEquals(true, getHandler(inspector, message).handle(message, target));
-        assertEquals(false, getHandler(inspector, message).handle(asCommandMessage("ok"), target));
+        assertEquals(true, getHandler(inspector, message).handleSync(message, target));
+        assertEquals(false, getHandler(inspector, message).handleSync(asCommandMessage("ok"), target));
     }
 
     @Test
@@ -238,7 +238,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
         GenericCommandMessage<?> message = new GenericCommandMessage<>(BigDecimal.ONE);
         SomeSubclass target = new SomeSubclass();
         MessageHandlingMember<? super SomeSubclass> handler = getHandler(inspector, message);
-        assertEquals("1", handler.handle(message, target));
+        assertEquals("1", handler.handleSync(message, target));
     }
 
     @Test

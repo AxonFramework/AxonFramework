@@ -29,6 +29,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;

@@ -86,8 +86,8 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception {
-            Object result = super.handle(message, target);
+        public Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception {
+            Object result = super.handleSync(message, target);
             if (result instanceof Optional) {
                 return ((Optional<?>) result).orElse(null);
             }

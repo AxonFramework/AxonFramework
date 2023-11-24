@@ -182,7 +182,7 @@ class AnnotatedSagaRepositoryTest {
         public Object handle(@Nonnull Message<?> message, @Nonnull TestSaga target,
                              @Nonnull MessageHandlingMember<? super TestSaga> handler) throws Exception {
             counter.incrementAndGet();
-            return handler.handle(message, target);
+            return handler.handleSync(message, target);
         }
     }
 

@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -97,7 +98,17 @@ public interface MessageHandlingMember<T> {
      * @throws Exception when there was a problem that prevented invocation of the method or if an exception was thrown
      *                   from the invoked method
      */
-    Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception;
+    @Deprecated
+    Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception;
+
+    default CompletableFuture<Object> handle(@Nonnull Message<?> message, @Nullable T target) {
+        try {
+            // TODO: 24-11-2023 proper impl
+            return CompletableFuture.completedFuture(handleSync(message, target));
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
 
     /**
      * Returns the wrapped handler object if its type is an instance of the given {@code handlerType}. For instance, if

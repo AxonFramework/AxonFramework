@@ -85,7 +85,7 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nullable Object target) {
+        public Object handleSync(@Nonnull Message<?> message, @Nullable Object target) {
             return null;
         }
 

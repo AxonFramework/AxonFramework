@@ -434,7 +434,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         @SuppressWarnings("unchecked")
         @Override
         public Object handleSync(CommandMessage<?> command) throws Exception {
-            Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handle(command, null));
+            Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handleSync(command, null));
             return resolveReturnValue(command, aggregate);
         }
 

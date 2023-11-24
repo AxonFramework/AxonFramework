@@ -56,7 +56,7 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                 interceptorChain,
                 () -> delegate.canHandle(unitOfWork.getMessage())
-                        ? delegate.handle(unitOfWork.getMessage(), target)
+                        ? delegate.handleSync(unitOfWork.getMessage(), target)
                         : interceptorChain.proceed());
     }
 }

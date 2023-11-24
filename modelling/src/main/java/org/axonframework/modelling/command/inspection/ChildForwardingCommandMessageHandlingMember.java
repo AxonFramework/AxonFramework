@@ -25,9 +25,7 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 
-import java.lang.annotation.Annotation;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -115,7 +113,7 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
 
     @SuppressWarnings("unchecked")
     @Override
-    public Object handle(@Nonnull Message<?> message, @Nullable P target) throws Exception {
+    public Object handleSync(@Nonnull Message<?> message, @Nullable P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
             throw new AggregateEntityNotFoundException(
@@ -132,11 +130,11 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
 
         Object result;
         if (interceptors.isEmpty()) {
-            result = childHandler.handle(message, childEntity);
+            result = childHandler.handleSync(message, childEntity);
         } else {
             result = new DefaultInterceptorChain<>((UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
                                                    interceptors,
-                                                   m -> childHandler.handle(message, childEntity)).proceed();
+                                                   m -> childHandler.handleSync(message, childEntity)).proceed();
         }
         return result;
     }
