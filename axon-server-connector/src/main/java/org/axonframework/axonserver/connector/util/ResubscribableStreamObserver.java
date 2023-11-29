@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.axonframework.axonserver.connector.util;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import io.grpc.netty.shaded.io.netty.util.internal.OutOfDirectMemoryError;
 import io.grpc.stub.StreamObserver;
-import io.netty.util.internal.OutOfDirectMemoryError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
