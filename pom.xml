@@ -108,7 +108,7 @@
         <micrometer.version>1.12.0</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.14.10</byte-buddy.version>
-        <commons-io.version>2.15.0</commons-io.version>
+        <commons-io.version>2.15.1</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.29.2-GA</javassist.version>
