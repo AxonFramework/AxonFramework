@@ -25,10 +25,13 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -73,6 +76,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
@@ -109,6 +113,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     private boolean transienceCheckEnabled = true;
     private boolean resourcesInitialized = false;
+    private final AtomicLong globalSequence = new AtomicLong();
 
     /**
      * Creates an instance of the AnnotatedSagaTestFixture to test sagas of the given {@code sagaType}.
@@ -147,7 +152,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     protected void handleInSaga(EventMessage<?> event) {
         ensureSagaResourcesInitialized();
-        DefaultUnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(event);
+        TrackedEventMessage<?> trackedEventMessage = asTrackedEventMessage(event);
+        DefaultUnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(trackedEventMessage);
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> new DefaultInterceptorChain<>(
                 unitOfWork,
                 eventHandlerInterceptors,
@@ -164,6 +170,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             }
             throw new FixtureExecutionException("Exception occurred while handling an event", e);
         }
+    }
+
+    private TrackedEventMessage<?> asTrackedEventMessage(EventMessage<?> event) {
+        return new GenericTrackedEventMessage<>(
+                new GlobalSequenceTrackingToken(globalSequence.getAndIncrement()),
+                event);
     }
 
     /**
