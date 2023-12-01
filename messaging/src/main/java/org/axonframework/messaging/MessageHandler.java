@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -35,8 +37,15 @@ public interface MessageHandler<T extends Message<?>> {
      * @throws Exception any exception that occurs during message handling
      */
     // TODO replace this operation for the new handle method
-    default Object handleSync(T message) throws Exception {
-        return handle(message).get();
+    @Deprecated
+    Object handleSync(T message) throws Exception;
+
+    default CompletableFuture<Object> handle(T message, ProcessingContext processingContext) {
+        try {
+            return CompletableFuture.completedFuture(handleSync(message));
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     CompletableFuture<Object> handle(T message);
@@ -47,6 +56,7 @@ public interface MessageHandler<T extends Message<?>> {
      * @param message The message to verify
      * @return {@code true} if this handler can handle the message, otherwise {@code false}
      */
+    @Deprecated
     default boolean canHandle(T message) {
         return true;
     }
@@ -56,6 +66,7 @@ public interface MessageHandler<T extends Message<?>> {
      *
      * @return Returns the instance type that this handler delegates to
      */
+    @Deprecated
     default Class<?> getTargetType() {
         return getClass();
     }
@@ -66,6 +77,7 @@ public interface MessageHandler<T extends Message<?>> {
      * @param payloadType The payloadType to verify
      * @return {@code true} if this handler can handle the payloadType, otherwise {@code false}
      */
+    @Deprecated
     default boolean canHandleType(Class<?> payloadType) {
         return true;
     }
