@@ -19,7 +19,9 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.messaging.Message;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Abstract implementation of a {@link MessageHandlingMember} that delegates to a wrapped MessageHandlingMember. Extend
@@ -60,6 +62,11 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     @Override
     public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
         return delegate.handleSync(message, target);
+    }
+
+    @Override
+    public CompletableFuture<Object> handle(@Nonnull Message<?> message, @Nullable T target) {
+        return delegate.handle(message, target);
     }
 
     @Override

@@ -31,6 +31,7 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.CreationPolicyMember;
@@ -45,6 +46,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -69,6 +71,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
     private final Repository<T> repository;
     private final CommandTargetResolver commandTargetResolver;
+    // TODO replace these MessageHandlers for MessageHandlingMembers, as the latter dictate the use of annotations
     private final List<MessageHandler<CommandMessage<?>>> handlers;
     private final Set<String> supportedCommandNames;
     private final Map<String, Set<MessageHandler<CommandMessage<?>>>> supportedCommandsByName;
@@ -214,6 +217,15 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(commandMessage))
                        .handleSync(commandMessage);
+    }
+
+    @Override
+    public CompletableFuture<Object> handle(CommandMessage<?> message, ProcessingContext processingContext) {
+        return handlers.stream()
+                       .filter(ch -> ch.canHandle(message))
+                       .findFirst()
+                       .orElseThrow(() -> new NoHandlerForCommandException(message))
+                       .handle(message, processingContext);
     }
 
     @Override

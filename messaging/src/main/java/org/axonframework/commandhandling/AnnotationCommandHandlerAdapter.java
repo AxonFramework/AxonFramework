@@ -24,6 +24,7 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -127,7 +128,8 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
     }
 
     @Override
-    public CompletableFuture<Object> handle(CommandMessage<?> command) {
+    public CompletableFuture<Object> handle(CommandMessage<?> command,
+                                            ProcessingContext processingContext) {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
                      .filter(ch -> ch.canHandle(command))
