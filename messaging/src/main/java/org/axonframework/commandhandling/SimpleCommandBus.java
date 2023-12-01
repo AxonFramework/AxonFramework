@@ -190,76 +190,45 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> void handle(CommandMessage<C> command,
                                  MessageHandler<? super CommandMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
-        CompletableFuture<R> handlingResult = spanFactory.createHandleCommandSpan(command, false).runSupplierAsync(() -> {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Handling command [{}]",
-                             command.getCommandName());
-            }
+        spanFactory.createHandleCommandSpan(command, false)
+                   .runSupplierAsync(() -> {
+                       if (logger.isDebugEnabled()) {
+                           logger.debug("Handling command [{}]",
+                                        command.getCommandName());
+                       }
 
-            AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork();
-            // TODO provide UnitOfUtils for transaction management?!
-            unitOfWork.on(ProcessingLifecycle.Phase.PRE_INVOCATION,
-                          context -> {
-                              Transaction transaction = transactionManager.startTransaction();
-                              context.resources(ProcessingContext.ResourceScope.SHARED)
-                                     .put(Transaction.class,
-                                          transaction);
-                              return CompletableFuture.completedFuture(
-                                      null);
-                          });
-            unitOfWork.on(ProcessingLifecycle.Phase.COMMIT,
-                          context -> {
-                              context.resources(ProcessingContext.ResourceScope.SHARED)
-                                     .get(Transaction.class).commit();
-                              return CompletableFuture.completedFuture(
-                                      null);
-                          });
-            unitOfWork.on(ProcessingLifecycle.Phase.ROLLBACK,
-                          context -> {
-                              context.resources(ProcessingContext.ResourceScope.SHARED)
-                                     .get(Transaction.class)
-                                     .rollback();
-                              return CompletableFuture.completedFuture(
-                                      null);
-                          });
+                       AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork();
+                       // TODO provide UnitOfUtils for transaction management?!
+                       unitOfWork.onPreInvocation(context -> {
+                           Transaction transaction = transactionManager.startTransaction();
+                           context.resources(ProcessingContext.ResourceScope.SHARED)
+                                  .put(Transaction.class,
+                                       transaction);
+                           return CompletableFuture.completedFuture(
+                                   null);
+                       });
+                       unitOfWork.onCommit(context -> {
+                           context.resources(ProcessingContext.ResourceScope.SHARED)
+                                  .get(Transaction.class).commit();
+                           return CompletableFuture.completedFuture(null);
+                       });
+                       unitOfWork.onRollback(context -> {
+                           context.resources(ProcessingContext.ResourceScope.SHARED)
+                                  .get(Transaction.class)
+                                  .rollback();
+                           return CompletableFuture.completedFuture(null);
+                       });
 
-            // TODO simple, yet massive, todo on changing the interceptor logic...T_T
+                       // TODO simple, yet massive, todo on changing the interceptor logic...T_T
 //            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
-            unitOfWork.on(ProcessingLifecycle.Phase.INVOCATION,
-                          context -> {
-                              CompletableFuture<Object> result = handler.handle(
-                                      command);
-                              result.whenComplete((r, e) -> {
-                                  if (e == null) {
-                                      context.resources(
-                                                     ProcessingContext.ResourceScope.LOCAL)
-                                             .put(RESULT_KEY, r);
-                                  } else {
-                                      context.resources(
-                                                     ProcessingContext.ResourceScope.LOCAL)
-                                             .put(EXCEPTIONAL_RESULT_KEY,
-                                                  e);
-                                  }
-                              });
-                              return result;
-                          });
-
-            CompletableFuture<R> futureResult = new CompletableFuture<>();
-            unitOfWork.whenComplete(context -> {
-                futureResult.complete(context.resources(
-                                                     ProcessingContext.ResourceScope.LOCAL)
-                                             .get(RESULT_KEY));
-            });
-            return futureResult;
+                       return unitOfWork.executeWithResult(c -> handler.handle(command, unitOfWork.processingContext()));
 //            return asCommandResultMessage(unitOfWork.executeWithResult(
 //                    chain::proceed, rollbackConfiguration
 //            ));
-        });
-
-        handlingResult.whenComplete((r, e) -> callback.onResult(
-                command,
-                e == null ? asCommandResultMessage(r) : asCommandResultMessage(e)
-        ));
+                   })
+                   .thenApply(GenericCommandResultMessage::<R>asCommandResultMessage)
+                   .exceptionally(GenericCommandResultMessage::asCommandResultMessage)
+                   .thenAccept(r -> callback.onResult(command, r));
     }
 
     /**
