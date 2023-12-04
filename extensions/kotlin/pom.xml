@@ -63,7 +63,7 @@
         <slf4j.version>2.0.9</slf4j.version>
         <log4j.version>2.13.3</log4j.version>
         <!-- Testing -->
-        <junit.jupiter.version>5.9.1</junit.jupiter.version>
+        <junit.jupiter.version>5.10.1</junit.jupiter.version>
         <mockk.version>1.12.4</mockk.version>
         <!-- Build -->
         <dokka.version>1.7.20</dokka.version>
