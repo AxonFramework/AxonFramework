@@ -73,7 +73,7 @@
         <dependency>
             <groupId>org.axonframework.extensions.mongo</groupId>
             <artifactId>axon-mongo</artifactId>
-            <version>4.6.0</version>
+            <version>4.9.0</version>
             <optional>true</optional>
             <exclusions>
                 <!-- these dependencies mess up the IDE inspections -->
