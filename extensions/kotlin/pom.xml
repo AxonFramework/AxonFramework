@@ -55,7 +55,7 @@
         </sonar.coverage.jacoco.xmlReportPaths>
         <!-- Main -->
         <axon.version>4.9.0</axon.version>
-        <kotlin.version>1.7.21</kotlin.version>
+        <kotlin.version>1.9.21</kotlin.version>
         <!-- Serialization -->
         <jackson-kotlin.version>2.16.0</jackson-kotlin.version>
         <!-- Logging -->
