@@ -67,7 +67,7 @@
         <mockk.version>1.12.4</mockk.version>
         <!-- Build -->
         <dokka.version>1.7.20</dokka.version>
-        <jacoco-maven.version>0.8.8</jacoco-maven.version>
+        <jacoco-maven.version>0.8.11</jacoco-maven.version>
         <maven-assembly.version>3.6.0</maven-assembly.version>
         <maven-clean.version>3.3.2</maven-clean.version>
         <maven-compiler.version>3.11.0</maven-compiler.version>
