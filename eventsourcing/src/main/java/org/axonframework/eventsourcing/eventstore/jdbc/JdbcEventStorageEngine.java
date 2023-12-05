@@ -687,10 +687,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                     : Collections.emptySortedSet()
             );
         } else {
-            token = token.advanceTo(globalSequence, maxGapOffset);
-            if (!allowGaps) {
-                token = token.withGapsTruncatedAt(globalSequence);
-            }
+            token = token.advanceTo(globalSequence, allowGaps ? maxGapOffset : 0);
         }
         return new TrackedDomainEventData<>(token, domainEvent);
     }
