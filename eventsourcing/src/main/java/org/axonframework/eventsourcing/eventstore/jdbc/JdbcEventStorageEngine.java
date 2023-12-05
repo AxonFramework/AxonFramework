@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
@@ -504,8 +505,11 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
-        isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
-               () -> "Unsupported token format: " + lastToken);
+        Assert.isTrue(
+                lastToken == null || lastToken instanceof GapAwareTrackingToken,
+                () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
+                                    lastToken, GapAwareTrackingToken.class.getSimpleName())
+        );
 
         return transactionManager.fetchInTransaction(() -> {
             // If there are many gaps, it worthwhile checking if it is possible to clean them up.

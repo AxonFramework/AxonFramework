@@ -37,6 +37,7 @@ import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventData;
@@ -551,8 +552,11 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         public TrackingEventStream openStream(TrackingToken trackingToken) {
-            Assert.isTrue(trackingToken == null || trackingToken instanceof GlobalSequenceTrackingToken,
-                          () -> "Invalid tracking token type. Must be GlobalSequenceTrackingToken.");
+            Assert.isTrue(
+                    trackingToken == null || trackingToken instanceof GlobalSequenceTrackingToken,
+                    () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
+                                        trackingToken, GlobalSequenceTrackingToken.class.getSimpleName())
+            );
             long nextToken = trackingToken == null
                     ? -1
                     : ((GlobalSequenceTrackingToken) trackingToken).getGlobalIndex();
