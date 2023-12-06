@@ -184,7 +184,8 @@ public class AxonServerEventStore extends AbstractEventStore {
         private Supplier<Serializer> eventSerializer;
         private EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private SnapshotFilter snapshotFilter;
-
+        private Predicate<? super EventMessage<?>> eventMessageFilter = event -> true;
+        
         @Override
         public Builder storageEngine(EventStorageEngine storageEngine) {
             super.storageEngine(storageEngine);
@@ -297,6 +298,12 @@ public class AxonServerEventStore extends AbstractEventStore {
             return this;
         }
 
+        public Builder eventMessageFilter(Predicate<? super EventMessage<?>> eventMessageFilter) {
+            assertNonNull(eventMessageFilter, "The eventMessageFilter may not be null");
+            this.eventMessageFilter = eventMessageFilter;
+            return this;
+        }
+        
         /**
          * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a {@link
          * NoOpEventUpcaster}.
@@ -359,6 +366,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                         .upcasterChain(upcasterChain)
                                                         .snapshotFilter(snapshotFilter)
                                                         .eventSerializer(eventSerializer.get())
+                                                        .eventMessageFilter(eventMessageFilter)
                                                         .configuration(configuration)
                                                         .eventStoreClient(axonServerConnectionManager)
                                                         .converter(new GrpcMetaDataConverter(eventSerializer.get()))
@@ -742,6 +750,14 @@ public class AxonServerEventStore extends AbstractEventStore {
                     super.snapshotFilter(snapshotFilter);
                     snapshotFilterSet = true;
                 }
+                return this;
+            }
+
+            public Builder eventMessageFilter(Predicate<? super EventMessage<?>> eventMessageFilter) {
+                if (eventMessageFilter != null) {
+                    super.eventMessageFilter(eventMessageFilter);
+                }
+                
                 return this;
             }
 

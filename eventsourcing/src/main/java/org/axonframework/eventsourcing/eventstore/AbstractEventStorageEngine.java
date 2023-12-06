@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -61,6 +62,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     private final PersistenceExceptionResolver persistenceExceptionResolver;
     private final Serializer eventSerializer;
     private final SnapshotFilter snapshotFilter;
+    private final Predicate<? super EventMessage<?>> eventMessageFilter;
 
     /**
      * Instantiate a {@link AbstractEventStorageEngine} based on the fields contained in the {@link Builder}.
@@ -77,6 +79,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         this.persistenceExceptionResolver = builder.persistenceExceptionResolver;
         this.eventSerializer = builder.eventSerializer.get();
         this.snapshotFilter = builder.snapshotFilter;
+        this.eventMessageFilter = builder.eventMessageFilter;
     }
 
     @Override
@@ -106,7 +109,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     @Override
     public void appendEvents(List<? extends EventMessage<?>> events) {
-        appendEvents(events, getEventSerializer());
+        List<? extends EventMessage<?>> filteredEvents = events.stream().filter(eventMessageFilter).collect(Collectors.toList());
+        
+        if (!filteredEvents.isEmpty())
+        	appendEvents(filteredEvents, getEventSerializer());
     }
 
     @Override
@@ -263,6 +269,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         private PersistenceExceptionResolver persistenceExceptionResolver;
         private Supplier<Serializer> eventSerializer;
         private SnapshotFilter snapshotFilter = SnapshotFilter.allowAll();
+        private Predicate<? super EventMessage<?>> eventMessageFilter = event -> true; 
 
         /**
          * Sets the {@link Serializer} used to serialize and deserialize snapshots.
@@ -346,7 +353,13 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
             this.snapshotFilter = snapshotFilter;
             return this;
         }
-
+        
+        public Builder eventMessageFilter(Predicate<? super EventMessage<?>> eventMessageFilter) {
+            assertNonNull(eventMessageFilter, "The eventMessageFilter may not be null");
+            this.eventMessageFilter = eventMessageFilter;
+            return this;
+        }
+        
         /**
          * Validates whether the fields contained in this Builder are set accordingly.
          *

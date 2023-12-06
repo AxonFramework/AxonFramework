@@ -749,7 +749,8 @@ public class DefaultConfigurer implements Configurer {
             try {
                 handlers.stream()
                         .map(LifecycleHandler::run)
-                        .reduce((cf1, cf2) -> CompletableFuture.allOf(cf1, cf2))
+                        .map(c -> c.thenRun(() -> {}))
+                        .reduce(CompletableFuture::allOf)
                         .orElse(CompletableFuture.completedFuture(null))
                         .get(lifecyclePhaseTimeout, lifecyclePhaseTimeunit);
             } catch (CompletionException | ExecutionException e) {
