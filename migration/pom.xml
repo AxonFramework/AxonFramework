@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.openrewrite</groupId>
             <artifactId>rewrite-test</artifactId>
-            <version>7.35.0</version>
+            <version>7.40.8</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
