@@ -65,7 +65,7 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public CompletableFuture<Object> handle(@Nonnull Message<?> message, @Nullable T target) {
+    public CompletableFuture<?> handle(@Nonnull Message<?> message, @Nullable T target) {
         return delegate.handle(message, target);
     }
 

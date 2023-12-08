@@ -220,7 +220,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     }
 
     @Override
-    public CompletableFuture<Object> handle(CommandMessage<?> message, ProcessingContext processingContext) {
+    public CompletableFuture<?> handle(CommandMessage<?> message, ProcessingContext processingContext) {
         return handlers.stream()
                        .filter(ch -> ch.canHandle(message))
                        .findFirst()

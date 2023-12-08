@@ -128,7 +128,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
     }
 
     @Override
-    public CompletableFuture<Object> handle(CommandMessage<?> command,
+    public CompletableFuture<?> handle(CommandMessage<?> command,
                                             ProcessingContext processingContext) {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
