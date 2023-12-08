@@ -26,11 +26,14 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.test.matchers.Matchers.listWithAnyOf;
@@ -140,8 +143,9 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         @Override
         public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
-                                                                    @Nonnull Executable executable,
-                                                                    @Nonnull ParameterResolverFactory parameterResolverFactory) {
+                                                                    @Nonnull Method method,
+                                                                    @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                                                    Function<Object, CompletableFuture<Object>> returnTypeConverter) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,
             //  only that this method is called to ensure its part of the FixtureConfiguration.

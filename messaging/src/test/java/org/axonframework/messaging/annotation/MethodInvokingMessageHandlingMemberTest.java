@@ -23,25 +23,35 @@ import org.axonframework.messaging.HandlerAttributes;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link AnnotatedMessageHandlingMember}.
+ * Test class validating the {@link MethodInvokingMessageHandlingMember}.
  *
  * @author Steven van Beelen
  */
-class AnnotatedMessageHandlingMemberTest {
+class MethodInvokingMessageHandlingMemberTest {
 
-    private AnnotatedMessageHandlingMember<AnnotatedHandler> testSubject;
+    private MethodInvokingMessageHandlingMember<AnnotatedHandler> testSubject;
+
+    // TODO This local static function should be replaced with a dedicated interface that converts types.
+    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
+    private static CompletableFuture<Object> returnTypeConverter(Object result) {
+        return result instanceof CompletableFuture<?>
+                ? (CompletableFuture<Object>) result
+                : CompletableFuture.completedFuture(result);
+    }
 
     @BeforeEach
     void setUp() {
-        testSubject = new AnnotatedMessageHandlingMember<>(
+        testSubject = new MethodInvokingMessageHandlingMember<>(
                 AnnotatedHandler.class.getMethods()[0],
                 EventMessage.class,
                 String.class,
-                ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class)
+                ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class),
+                MethodInvokingMessageHandlingMemberTest::returnTypeConverter
         );
     }
 

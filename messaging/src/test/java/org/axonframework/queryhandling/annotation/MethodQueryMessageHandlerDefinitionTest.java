@@ -94,12 +94,22 @@ class MethodQueryMessageHandlerDefinitionTest {
         assertEquals(CharSequence.class, handler.getResultType());
     }
 
+    // TODO This local static function should be replaced with a dedicated interface that converts types.
+    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
+    private static CompletableFuture<Object> returnTypeConverter(Object result) {
+        return result instanceof CompletableFuture<?>
+                ? (CompletableFuture<Object>) result
+                : CompletableFuture.completedFuture(result);
+    }
+
     private <R> QueryHandlingMember<R> messageHandler(String methodName) {
         try {
             MessageHandlingMember<MethodQueryMessageHandlerDefinitionTest> handler = handlerDefinition.createHandler(
                     MethodQueryMessageHandlerDefinitionTest.class,
                     MethodQueryMessageHandlerDefinitionTest.class.getDeclaredMethod(methodName, String.class),
-                    parameterResolver).orElseThrow(IllegalArgumentException::new);
+                    parameterResolver,
+                    MethodQueryMessageHandlerDefinitionTest::returnTypeConverter
+            ).orElseThrow(IllegalArgumentException::new);
             //noinspection unchecked
             return testSubject.wrapHandler(handler)
                               .unwrap(QueryHandlingMember.class)

@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,24 +64,48 @@ class AnnotatedHandlerInspectorTest {
                                                           new HashSet<>(asList(D.class, C.class)));
     }
 
+    // TODO This local static function should be replaced with a dedicated interface that converts types.
+    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
+    private static CompletableFuture<Object> returnTypeConverter(Object result) {
+        return result instanceof CompletableFuture<?>
+                ? (CompletableFuture<Object>) result
+                : CompletableFuture.completedFuture(result);
+    }
+
     @Test
     void complexHandlerHierarchy() throws NoSuchMethodException {
-        AnnotatedMessageHandlingMember<pA> paHandle = new AnnotatedMessageHandlingMember<>(pA.class.getMethod(
-                "paHandle", String.class), CommandMessage.class, String.class, parameterResolverFactory);
-        AnnotatedMessageHandlingMember<A> aHandle = new AnnotatedMessageHandlingMember<>(A.class.getMethod(
-                "aHandle", String.class), CommandMessage.class, String.class, parameterResolverFactory);
-        AnnotatedMessageHandlingMember<A> aOn = new AnnotatedMessageHandlingMember<>(A.class.getMethod(
-                "aOn", Integer.class), EventMessage.class, Integer.class, parameterResolverFactory);
-        AnnotatedMessageHandlingMember<B> bHandle = new AnnotatedMessageHandlingMember<>(B.class.getMethod(
-                "bHandle", Boolean.class), CommandMessage.class, Boolean.class, parameterResolverFactory);
-        AnnotatedMessageHandlingMember<B> bOn = new AnnotatedMessageHandlingMember<>(B.class.getMethod(
-                "bOn", Long.class), EventMessage.class, Long.class, parameterResolverFactory);
-        AnnotatedMessageHandlingMember<C> cHandle = new AnnotatedMessageHandlingMember<>(C.class.getMethod(
-                "cHandle", Boolean.class), CommandMessage.class, Boolean.class, parameterResolverFactory);
-        AnnotatedMessageHandlingMember<C> cOn = new AnnotatedMessageHandlingMember<>(C.class.getMethod(
-                "cOn", Integer.class), EventMessage.class, Integer.class, parameterResolverFactory);
-        AnnotatedMessageHandlingMember<D> dHandle = new AnnotatedMessageHandlingMember<>(D.class.getMethod(
-                "dHandle", String.class), CommandMessage.class, String.class, parameterResolverFactory);
+        MethodInvokingMessageHandlingMember<pA> paHandle = new MethodInvokingMessageHandlingMember<>(
+                pA.class.getMethod("paHandle", String.class), CommandMessage.class, String.class,
+                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+        );
+        MethodInvokingMessageHandlingMember<A> aHandle = new MethodInvokingMessageHandlingMember<>(
+                A.class.getMethod("aHandle", String.class), CommandMessage.class, String.class,
+                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+        );
+        MethodInvokingMessageHandlingMember<A> aOn = new MethodInvokingMessageHandlingMember<>(
+                A.class.getMethod("aOn", Integer.class), EventMessage.class, Integer.class,
+                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+        );
+        MethodInvokingMessageHandlingMember<B> bHandle = new MethodInvokingMessageHandlingMember<>(
+                B.class.getMethod("bHandle", Boolean.class), CommandMessage.class, Boolean.class,
+                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+        );
+        MethodInvokingMessageHandlingMember<B> bOn = new MethodInvokingMessageHandlingMember<>(
+                B.class.getMethod("bOn", Long.class), EventMessage.class, Long.class,
+                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+        );
+        MethodInvokingMessageHandlingMember<C> cHandle = new MethodInvokingMessageHandlingMember<>(
+                C.class.getMethod("cHandle", Boolean.class), CommandMessage.class, Boolean.class,
+                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+        );
+        MethodInvokingMessageHandlingMember<C> cOn = new MethodInvokingMessageHandlingMember<>(
+                C.class.getMethod("cOn", Integer.class), EventMessage.class, Integer.class,
+                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+        );
+        MethodInvokingMessageHandlingMember<D> dHandle = new MethodInvokingMessageHandlingMember<>(
+                D.class.getMethod("dHandle", String.class), CommandMessage.class, String.class,
+                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+        );
 
         Map<Class<?>, SortedSet<MessageHandlingMember<? super A>>> allHandlers = inspector.getAllHandlers();
         assertEquals(5, allHandlers.size());
@@ -90,14 +115,14 @@ class AnnotatedHandlerInspectorTest {
                 paHandle,
                 allHandlers.get(pA.class)
                            .first()
-                           .unwrap(AnnotatedMessageHandlingMember.class).get()
+                           .unwrap(MethodInvokingMessageHandlingMember.class).get()
         );
         //noinspection OptionalGetWithoutIsPresent
         assertEquals(
                 paHandle,
                 inspector.getHandlers(pA.class)
                          .findFirst()
-                         .flatMap(h -> h.unwrap(AnnotatedMessageHandlingMember.class)).get()
+                         .flatMap(h -> h.unwrap(MethodInvokingMessageHandlingMember.class)).get()
         );
 
         assertEquals(asList(aOn, aHandle, paHandle), unwrapToList(allHandlers.get(A.class).stream()));
@@ -128,12 +153,12 @@ class AnnotatedHandlerInspectorTest {
         assertEquals(1, (int) aaInspector.getAllHandlers().values().stream().flatMap(Collection::stream).count());
     }
 
-    private <T extends MessageHandlingMember<?>> List<AnnotatedMessageHandlingMember<?>> unwrapToList(
+    private <T extends MessageHandlingMember<?>> List<MethodInvokingMessageHandlingMember<?>> unwrapToList(
             Stream<T> stream
     ) {
         //noinspection OptionalGetWithoutIsPresent
-        return stream.map(e -> e.unwrap(AnnotatedMessageHandlingMember.class)
-                                .map(handler -> (AnnotatedMessageHandlingMember<?>) handler).get())
+        return stream.map(e -> e.unwrap(MethodInvokingMessageHandlingMember.class)
+                                .map(handler -> (MethodInvokingMessageHandlingMember<?>) handler).get())
                      .collect(Collectors.toList());
     }
 

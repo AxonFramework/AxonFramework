@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -198,18 +199,27 @@ public class AnnotatedHandlerInspector<T> {
         return inspector;
     }
 
+    // TODO This local static function should be replaced with a dedicated interface that converts types.
+    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
+    private static CompletableFuture<Object> returnTypeConverter(Object result) {
+        return result instanceof CompletableFuture<?>
+                ? (CompletableFuture<Object>) result
+                : CompletableFuture.completedFuture(result);
+    }
+
     @SuppressWarnings("unchecked")
     private void initializeMessageHandlers(ParameterResolverFactory parameterResolverFactory,
                                            HandlerDefinition handlerDefinition) {
         handlers.put(inspectedType, new TreeSet<>(HandlerComparator.instance()));
         for (Method method : inspectedType.getDeclaredMethods()) {
-            handlerDefinition.createHandler(inspectedType, method, parameterResolverFactory)
+            handlerDefinition.createHandler(inspectedType, method, parameterResolverFactory, AnnotatedHandlerInspector::returnTypeConverter)
                              .ifPresent(h -> registerHandler(inspectedType, h));
         }
-        for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
-            handlerDefinition.createHandler(inspectedType, constructor, parameterResolverFactory)
-                             .ifPresent(h -> registerHandler(inspectedType, h));
-        }
+        // TODO constructor support is already removed in this branch, so that's why this code is commneted.
+//        for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
+//            handlerDefinition.createHandler(inspectedType, constructor, parameterResolverFactory, )
+//                             .ifPresent(h -> registerHandler(inspectedType, h));
+//        }
 
         // we need to consider handlers from parent/subclasses as well
         subClassInspectors.forEach(sci -> sci.getAllHandlers()
