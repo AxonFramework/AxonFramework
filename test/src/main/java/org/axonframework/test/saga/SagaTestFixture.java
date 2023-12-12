@@ -174,8 +174,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     private TrackedEventMessage<?> asTrackedEventMessage(EventMessage<?> event) {
         return new GenericTrackedEventMessage<>(
-                new GlobalSequenceTrackingToken(globalSequence.getAndIncrement()),
-                event);
+                new GlobalSequenceTrackingToken(globalSequence.getAndIncrement()), event
+        );
     }
 
     /**
