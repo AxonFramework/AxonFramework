@@ -249,6 +249,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
+    public FixtureConfiguration<T> registerInjectableResources(Object... resources) {
+        for (Object resource : resources)
+            registerInjectableResource(resource);
+        return this;
+    }
+
+    @Override
     public FixtureConfiguration<T> registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
         if (repository != null) {
             throw new FixtureExecutionException(
