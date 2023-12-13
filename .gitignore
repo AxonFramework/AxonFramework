@@ -15,6 +15,7 @@ axon.iws
 .project
 .settings/
 .factorypath
+/.metadata/
 
 events/
 
