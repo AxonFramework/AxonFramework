@@ -905,6 +905,14 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>quick-install</id>
+            <properties>
+                <!-- Test classes are shared between modules, so we should build these modules, but don't run them.-->
+                <skipTests>true</skipTests>
+            </properties>
+        </profile>
     </profiles>
 
     <!-- deploy and release configuration -->
