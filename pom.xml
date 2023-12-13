@@ -81,7 +81,7 @@
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
         <hibernate-core.6.version>6.4.0.Final</hibernate-core.6.version>
-        <mysql-connector-java.version>8.0.33</mysql-connector-java.version>
+        <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.1</postgresql.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
@@ -148,14 +148,14 @@
         <maven-compiler.version>3.11.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
-        <maven-failsafe.version>3.2.2</maven-failsafe.version>
+        <maven-failsafe.version>3.2.3</maven-failsafe.version>
         <maven-gpg.version>3.1.0</maven-gpg.version>
         <maven-install.version>3.1.1</maven-install.version>
         <maven-jar.version>3.3.0</maven-jar.version>
         <maven-javadoc.version>3.6.3</maven-javadoc.version>
         <maven-release.version>3.0.1</maven-release.version>
         <maven-source.version>3.3.0</maven-source.version>
-        <maven-surefire.version>3.2.2</maven-surefire.version>
+        <maven-surefire.version>3.2.3</maven-surefire.version>
         <maven-resources.version>3.3.1</maven-resources.version>
     </properties>
 
