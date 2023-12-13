@@ -35,7 +35,7 @@
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
             <!-- Version is intended as the recipe is to migrate to AF 4.7 -->
-            <version>4.7.3</version>
+            <version>4.7.6</version>
             <scope>test</scope>
         </dependency>
 
