@@ -619,17 +619,6 @@
                     </archiverConfig>
                 </configuration>
             </plugin>
-            <!-- package -->
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven-assembly.version}</version>
-                <configuration>
-                    <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
-                    <archiverConfig>
-                        <duplicateBehavior>skip</duplicateBehavior>
-                    </archiverConfig>
-                </configuration>
-            </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven-jar.version}</version>
@@ -915,6 +904,14 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>quick-install</id>
+            <properties>
+                <!-- Test classes are shared between modules, so we should build these modules, but don't run them.-->
+                <skipTests>true</skipTests>
+            </properties>
         </profile>
     </profiles>
 
