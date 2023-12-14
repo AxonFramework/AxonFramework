@@ -33,7 +33,7 @@ updates:
   reviewers:
     - "AxonFramework/framework-developers"
   groups:
-    github-dependencies:
+    maven-dependencies:
       update-types:
         - "patch"
         - "minor"
