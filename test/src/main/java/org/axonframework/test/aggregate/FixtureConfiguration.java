@@ -287,6 +287,7 @@ public interface FixtureConfiguration<T> {
      * @param declaringClass The class declaring the field
      * @param fieldName      The name of the field
      * @return the current FixtureConfiguration, for fluent interfacing
+     *
      * @throws FixtureExecutionException when no such field is declared
      */
     FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
