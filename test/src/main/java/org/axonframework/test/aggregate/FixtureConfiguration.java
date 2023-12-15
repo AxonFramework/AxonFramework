@@ -189,15 +189,20 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerInjectableResource(Object resource);
 
     /**
-     * Registers resources that are eligible for injection in handler method (e.g. methods annotated with {@link
+     * Default implementation to register multiple resources in handler method (e.g. methods annotated with {@link
      * CommandHandler @CommandHandler}, {@link EventSourcingHandler @EventSourcingHandler} and {@link EventHandler}.
      * These resource must be registered <em>before</em> registering any command handler.
-     * Internally this method calls {@link #registerInjectableResource(Object) for each object.
+     * Internally this method calls {@link #registerInjectableResource(Object) for each resource.
      *
      * @param resources collection of resources eligible for injection
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerInjectableResources(Object... resources);
+    default FixtureConfiguration<T> registerInjectableResources(Object... resources) {
+        for (Object resource : resources) {
+            registerInjectableResource(resource);
+        }
+        return this;
+    }
 
     /**
      * Registers a {@link ParameterResolverFactory} within this fixture. The given {@code parameterResolverFactory}
@@ -282,7 +287,6 @@ public interface FixtureConfiguration<T> {
      * @param declaringClass The class declaring the field
      * @param fieldName      The name of the field
      * @return the current FixtureConfiguration, for fluent interfacing
-     *
      * @throws FixtureExecutionException when no such field is declared
      */
     FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
