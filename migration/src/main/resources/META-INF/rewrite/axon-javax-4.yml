@@ -1,12 +1,12 @@
 type: specs.openrewrite.org/v1beta/recipe
-name: org.axonframework.migration.UpgradeAxonFramework_4_7_Javax
-displayName: Upgrade to Axonframework 4.7 Javax
+name: org.axonframework.migration.UpgradeAxonFramework_4_Javax
+displayName: Upgrade to Axonframework 4.x Javax
 description: Migration file to upgrade an Axon Framework Javax-specific project and remain on Javax.
 recipeList:
   - org.openrewrite.maven.UpgradeDependencyVersion:
       groupId: org.axonframework
       artifactId: "*"
-      newVersion: 4.7.x
+      newVersion: 4.x
   # Move all classes from org.axonframework.common.jpa to org.axonframework.common.legacyjpa
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.axonframework.common.jpa
