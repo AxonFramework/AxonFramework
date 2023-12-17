@@ -80,7 +80,7 @@
         <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.4.0.Final</hibernate-core.6.version>
+        <hibernate-core.6.version>6.4.1.Final</hibernate-core.6.version>
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.1</postgresql.version>
         <!-- Jakarta -->
@@ -111,7 +111,7 @@
         <commons-io.version>2.15.1</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
-        <javassist.version>3.29.2-GA</javassist.version>
+        <javassist.version>3.30.0-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
         <projectreactor.version>3.6.1</projectreactor.version>
