@@ -195,7 +195,7 @@ public interface FixtureConfiguration<T> {
      * Internally this method calls {@link #registerInjectableResource(Object) for each resource.
      *
      * @param resources collection of resources eligible for injection
-     * @return the current FixtureConfiguration, for fluent interfacing.
+     * @return the current FixtureConfiguration, for fluent interfacing
      */
     default FixtureConfiguration<T> registerInjectableResources(Object... resources) {
         for (Object resource : resources) {
