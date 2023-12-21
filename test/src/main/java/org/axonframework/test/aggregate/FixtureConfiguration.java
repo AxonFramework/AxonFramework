@@ -189,6 +189,22 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerInjectableResource(Object resource);
 
     /**
+     * Default implementation to register multiple resources in handler method (e.g. methods annotated with {@link
+     * CommandHandler @CommandHandler}, {@link EventSourcingHandler @EventSourcingHandler} and {@link EventHandler}.
+     * These resource must be registered <em>before</em> registering any command handler.
+     * Internally this method calls {@link #registerInjectableResource(Object) for each resource.
+     *
+     * @param resources collection of resources eligible for injection
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    default FixtureConfiguration<T> registerInjectableResources(Object... resources) {
+        for (Object resource : resources) {
+            registerInjectableResource(resource);
+        }
+        return this;
+    }
+
+    /**
      * Registers a {@link ParameterResolverFactory} within this fixture. The given {@code parameterResolverFactory}
      * will be added to the other parameter resolver factories introduced through {@link
      * org.axonframework.messaging.annotation.ClasspathParameterResolverFactory#forClass(Class)} and the {@link
