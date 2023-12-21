@@ -571,7 +571,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                           configuration.isForceReadFromLeader()
                                                   );
 
-            return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isEventBlockListingEnabled());
+            return new EventBuffer(stream, upcasterChain, eventSerializer, !configuration.isEventBlockListingEnabled());
         }
 
         public QueryResultStream query(String query, boolean liveUpdates) {
