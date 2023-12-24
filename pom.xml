@@ -107,11 +107,11 @@
         <dropwizard.metrics.version>4.2.23</dropwizard.metrics.version>
         <micrometer.version>1.12.1</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.14.10</byte-buddy.version>
+        <byte-buddy.version>1.14.11</byte-buddy.version>
         <commons-io.version>2.15.1</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
-        <javassist.version>3.30.0-GA</javassist.version>
+        <javassist.version>3.30.1-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
         <projectreactor.version>3.6.1</projectreactor.version>
@@ -128,7 +128,7 @@
         <!-- Spring -->
         <spring.version>5.3.31</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
-        <spring-security.version>5.8.8</spring-security.version>
+        <spring-security.version>5.8.9</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.2.0</awaitility.version>
         <hamcrest.version>2.2</hamcrest.version>
@@ -145,7 +145,7 @@
         <jacoco-maven.version>0.8.11</jacoco-maven.version>
         <maven-assembly.version>3.6.0</maven-assembly.version>
         <maven-clean.version>3.3.2</maven-clean.version>
-        <maven-compiler.version>3.11.0</maven-compiler.version>
+        <maven-compiler.version>3.12.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
         <maven-failsafe.version>3.2.3</maven-failsafe.version>
