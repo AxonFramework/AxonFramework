@@ -24,36 +24,32 @@ import java.util.function.Function;
  */
 public class AsyncUnitOfWork implements ProcessingLifecycle {
 
-    private static final Logger logger = LoggerFactory.getLogger(UnitOfWork.class);
+    private static final Logger logger = LoggerFactory.getLogger(AsyncUnitOfWork.class);
 
-    private final String name;
+    private final String identifier;
     private final UnitOfWorkProcessingContext context;
 
     public AsyncUnitOfWork() {
         this(UUID.randomUUID().toString());
     }
 
-    public AsyncUnitOfWork(String name) {
-        this(name, Runnable::run);
+    public AsyncUnitOfWork(String identifier) {
+        this(identifier, Runnable::run);
     }
 
-    public AsyncUnitOfWork(String name, Executor workScheduler) {
-        this(name, null, workScheduler);
+    public AsyncUnitOfWork(String identifier, Executor workScheduler) {
+        this(identifier, null, workScheduler);
     }
 
-    public AsyncUnitOfWork(String name, ProcessingContext parent, Executor workScheduler) {
-        this.name = name;
-        this.context = new UnitOfWorkProcessingContext(name, parent, workScheduler);
-    }
-
-    public static <R> CompletableFuture<R> createAndExecute(Function<ProcessingContext, CompletableFuture<R>> action) {
-        return new AsyncUnitOfWork().execute(action);
+    public AsyncUnitOfWork(String identifier, ProcessingContext parent, Executor workScheduler) {
+        this.identifier = identifier;
+        this.context = new UnitOfWorkProcessingContext(identifier, parent, workScheduler);
     }
 
     @Override
     public String toString() {
         return "AsyncUnitOfWork{" +
-                "name='" + name + '\'' +
+                "id='" + identifier + '\'' +
                 "phase='" + context.currentPhase.get() + '\'' +
                 '}';
     }
@@ -72,11 +68,32 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
     /**
      * Executes all the registered handlers in their respective phases.
      *
-     * @return a {@link CompletableFuture} that returns normally when the Unit Of Work has been committed or exceptionally with
+     * @return a CompletableFuture that returns normally when the Unit Of Work has been committed or exceptionally with
      * the exception that caused the Unit of Work to have been rolled back.
      */
     public CompletableFuture<Void> execute() {
         return context.commit();
+    }
+
+    /**
+     * Registers the given invocation for the {@link Phase#INVOCATION Invocation Phase} and executes the Unit of Work.
+     * The return value of the invocation is returned when this Unit of Work is committed.
+     *
+     * @param invocation The handler to execute in the {@link Phase#INVOCATION Invocation Phase}
+     * @param <R>        The type of return value returned by the invocation
+     * @return a CompletableFuture that returns normally with the return value of the invocation when the Unit Of Work
+     * has been committed or exceptionally with the exception that caused the Unit of Work to have been rolled back.
+     */
+    public <R> CompletableFuture<R> executeWithResult(Function<ProcessingContext, CompletableFuture<R>> invocation) {
+        CompletableFuture<R> result = new CompletableFuture<>();
+        on(Phase.INVOCATION, p -> invocation.apply(p).whenComplete((r, e) -> {
+            if (e == null) {
+                result.complete(r);
+            } else {
+                result.completeExceptionally(e);
+            }
+        }));
+        return execute().thenCombine(result, (v, r) -> r);
     }
 
     public ProcessingContext processingContext() {
