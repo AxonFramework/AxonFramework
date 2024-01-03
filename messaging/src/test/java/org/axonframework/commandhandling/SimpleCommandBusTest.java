@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
@@ -24,6 +25,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -31,6 +33,7 @@ import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -397,11 +400,82 @@ class SimpleCommandBusTest {
         verify(initialHandler, never()).handleSync(testMessage);
     }
 
+    @Test
+    void asyncHandlerInvocation() {
+        var ourFutureIsBright = new CompletableFuture<>();
+        testSubject.subscribe(String.class.getName(), new MyStringAsyncCommandHandler(ourFutureIsBright));
+
+        FutureCallback<String, String> callback = new FutureCallback<>();
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("some-string"), callback);
+
+        assertFalse(callback.isDone());
+        ourFutureIsBright.complete("42");
+        assertTrue(callback.isDone());
+        assertEquals("42", callback.getResult().getPayload());
+    }
+
+    @Test
+    void asyncHandlerCompletion() throws Exception {
+        var ourFutureIsBright = new CompletableFuture<>();
+        testSubject.subscribe(String.class.getName(), new MyStringAsyncCommandHandler(ourFutureIsBright));
+
+        FutureCallback<String, String> callback = new FutureCallback<>();
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("some-string"), callback);
+
+        assertFalse(callback.isDone());
+        CompletableFuture<String> stringCompletableFuture = callback.thenApply(crm -> Thread.currentThread().getName());
+
+        Thread t = new Thread(() -> ourFutureIsBright.complete("42"));
+        t.start();
+        t.join();
+
+        assertTrue(stringCompletableFuture.isDone());
+        assertEquals(t.getName(), stringCompletableFuture.get());
+    }
+
+    @Test
+    void asyncHandlerVirtual() throws Exception {
+        var ourFutureIsBright = new CompletableFuture<>();
+        testSubject.subscribe(String.class.getName(), new MyStringAsyncCommandHandler(ourFutureIsBright));
+
+        FutureCallback<String, String> callback = new FutureCallback<>();
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("some-string"), callback);
+
+        assertFalse(callback.isDone());
+        CompletableFuture<String> stringCompletableFuture = callback.thenApply(crm -> Thread.currentThread().getName());
+
+        Thread t = Thread.startVirtualThread(() -> ourFutureIsBright.complete("42"));
+        t.join();
+
+        assertTrue(stringCompletableFuture.isDone());
+        assertEquals(t.getName(), stringCompletableFuture.get());
+    }
+
     private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         @Override
         public Object handleSync(CommandMessage<?> message) {
             return message;
+        }
+    }
+
+    private static class MyStringAsyncCommandHandler implements MessageHandler<CommandMessage<?>> {
+
+        private final CompletableFuture<?> result;
+
+
+        private MyStringAsyncCommandHandler(CompletableFuture<?> result) {
+            this.result = result;
+        }
+
+        @Override
+        public Object handleSync(CommandMessage<?> message) throws Exception {
+            return null;
+        }
+
+        @Override
+        public CompletableFuture<?> handle(CommandMessage<?> message, ProcessingContext processingContext) {
+            return result;
         }
     }
 }
