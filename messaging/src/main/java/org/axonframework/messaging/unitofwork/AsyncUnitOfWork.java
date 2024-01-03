@@ -69,13 +69,13 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         return context.whenComplete(action);
     }
 
-    private <R> CompletableFuture<R> execute(Function<ProcessingContext, CompletableFuture<R>> action) {
-        AtomicReference<R> result = new AtomicReference<>();
-        on(Phase.INVOCATION, c -> action.apply(c).whenComplete((r, e) -> result.set(r)));
-        return start().thenApply(n -> result.get());
-    }
-
-    public CompletableFuture<Void> start() {
+    /**
+     * Executes all the registered handlers in their respective phases.
+     *
+     * @return a {@link CompletableFuture} that returns normally when the Unit Of Work has been committed or exceptionally with
+     * the exception that caused the Unit of Work to have been rolled back.
+     */
+    public CompletableFuture<Void> execute() {
         return context.commit();
     }
 
@@ -276,7 +276,6 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         private CompletableFuture<Void> innerCommit() {
-
             return runPhase(Phase.PRE_INVOCATION)
                     .thenCompose(r -> runPhase(Phase.INVOCATION))
                     .thenCompose(r -> runPhase(Phase.POST_INVOCATION))
