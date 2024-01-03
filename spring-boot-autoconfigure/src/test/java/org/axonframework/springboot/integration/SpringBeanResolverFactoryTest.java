@@ -107,7 +107,7 @@ class SpringBeanResolverFactoryTest {
             //  which includes the FixtureResourceParameterResolverFactory
             assertThrows(
                     FixtureExecutionException.class,
-                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE)
+                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver).handleSync(EVENT_MESSAGE)
             );
         });
     }
@@ -134,7 +134,7 @@ class SpringBeanResolverFactoryTest {
             //  which includes the FixtureResourceParameterResolverFactory
             assertThrows(
                     FixtureExecutionException.class,
-                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE)
+                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver).handleSync(EVENT_MESSAGE)
             );
         });
     }
