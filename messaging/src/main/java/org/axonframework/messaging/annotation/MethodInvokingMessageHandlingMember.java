@@ -46,7 +46,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     private final Class<?> payloadType;
     private final int parameterCount;
     private final ParameterResolver<?>[] parameterResolvers;
-    private final Function<Object, CompletableFuture<Object>> returnTypeConverter;
+    private final Function<Object, CompletableFuture<?>> returnTypeConverter;
     private final Method method;
     private final Class<? extends Message> messageType;
     private final HandlerAttributes attributes;
@@ -64,7 +64,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                                Class<? extends Message> messageType,
                                                Class<?> explicitPayloadType,
                                                ParameterResolverFactory parameterResolverFactory,
-                                               Function<Object, CompletableFuture<Object>> returnTypeConverter) {
+                                               Function<Object, CompletableFuture<?>> returnTypeConverter) {
         this.messageType = messageType;
         this.method = method;
         this.returnTypeConverter = returnTypeConverter;
@@ -151,7 +151,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public CompletableFuture<Object> handle(@Nonnull Message<?> message, @Nullable T target) {
+    public CompletableFuture<?> handle(@Nonnull Message<?> message, @Nullable T target) {
         Object invocationResult;
         try {
             invocationResult = method.invoke(target, resolveParameterValues(message));

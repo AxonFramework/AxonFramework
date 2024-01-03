@@ -49,7 +49,7 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
     public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
                                                                 @Nonnull Method method,
                                                                 @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                                Function<Object, CompletableFuture<Object>> returnTypeConverter) {
+                                                                Function<Object, CompletableFuture<?>> returnTypeConverter) {
         return findAnnotationAttributes(method, MessageHandler.class)
                 .map(attr -> new MethodInvokingMessageHandlingMember<>(
                         method,

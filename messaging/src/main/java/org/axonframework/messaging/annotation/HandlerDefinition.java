@@ -46,5 +46,5 @@ public interface HandlerDefinition {
     <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
                                                          @Nonnull Method method,
                                                          @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                         Function<Object, CompletableFuture<Object>> returnTypeConverter);
+                                                         Function<Object, CompletableFuture<?>> returnTypeConverter);
 }

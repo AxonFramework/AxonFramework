@@ -40,7 +40,7 @@ public interface MessageHandler<T extends Message<?>> {
     @Deprecated
     Object handleSync(T message) throws Exception;
 
-    default CompletableFuture<Object> handle(T message, ProcessingContext processingContext) {
+    default CompletableFuture<?> handle(T message, ProcessingContext processingContext) {
         try {
             return CompletableFuture.completedFuture(handleSync(message));
         } catch (Exception e) {

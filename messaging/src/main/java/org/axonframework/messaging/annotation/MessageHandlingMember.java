@@ -101,7 +101,7 @@ public interface MessageHandlingMember<T> {
     @Deprecated
     Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception;
 
-    default CompletableFuture<Object> handle(@Nonnull Message<?> message, @Nullable T target) {
+    default CompletableFuture<?> handle(@Nonnull Message<?> message, @Nullable T target) {
         try {
             // TODO: 24-11-2023 proper impl
             return CompletableFuture.completedFuture(handleSync(message, target));
