@@ -48,8 +48,6 @@ public interface MessageHandler<T extends Message<?>> {
         }
     }
 
-    CompletableFuture<Object> handle(T message);
-
     /**
      * Indicates whether this handler can handle the given message
      *
