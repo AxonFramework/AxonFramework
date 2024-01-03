@@ -145,7 +145,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
         public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
                                                                     @Nonnull Method method,
                                                                     @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                                    Function<Object, CompletableFuture<Object>> returnTypeConverter) {
+                                                                    Function<Object, CompletableFuture<?>> returnTypeConverter) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,
             //  only that this method is called to ensure its part of the FixtureConfiguration.
