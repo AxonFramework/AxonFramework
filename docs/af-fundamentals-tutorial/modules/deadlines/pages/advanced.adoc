@@ -33,7 +33,7 @@ public void on(CardRedeemedEvent event) {
 }
 ----
 
-A test to make sure the deadline is cancelled:
+A test to make sure the deadline cancellation was successful:
 
 [source,java]
 ----

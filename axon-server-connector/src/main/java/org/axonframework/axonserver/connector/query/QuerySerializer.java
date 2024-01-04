@@ -191,8 +191,7 @@ public class QuerySerializer {
                 responseBuilder.setPayload(exceptionDetailsSerializer.apply(optionalDetails.get()));
             } else {
                 logger.warn("Serializing exception [{}] without details.", exceptionResult.getClass(), exceptionResult);
-                logger.info("To share exceptional information with the recipient it is recommended to wrap the "
-                                    + "exception in a QueryExecutionException with provided details.");
+                logger.info("To share exceptional information with the recipient it is recommended to wrap the exception in a QueryExecutionException with provided details.");
             }
         } else {
             responseBuilder.setPayload(payloadSerializer.apply(queryResponse));

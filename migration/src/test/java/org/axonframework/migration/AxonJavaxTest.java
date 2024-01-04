@@ -31,7 +31,7 @@ class AxonJavaxTest implements RewriteTest {
                 .parser(JavaParser.fromJavaVersion()
                         .logCompilationWarningsAndErrors(true)
                         .classpath("axon-messaging"))
-                .recipe("/META-INF/rewrite/axon-javax-47.yml", "org.axonframework.migration.UpgradeAxonFramework_4_7_Javax");
+                .recipe("/META-INF/rewrite/axon-javax-4.yml", "org.axonframework.migration.UpgradeAxonFramework_4_Javax");
     }
 
     @Test

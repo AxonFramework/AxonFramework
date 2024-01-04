@@ -471,8 +471,7 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
                 return;
             }
             tailingConsumers.stream().filter(EventConsumer::behindGlobalCache).forEach(consumer -> {
-                logger.debug("An event stream cannot read from the local cache. It either runs behind, or its " +
-                                     "current token cannot be found in the cache. Opening a dedicated stream.");
+                logger.debug("An event stream cannot read from the local cache. It either runs behind, or its current token cannot be found in the cache. Opening a dedicated stream.");
                 consumer.stopTailingGlobalStream();
             });
         }

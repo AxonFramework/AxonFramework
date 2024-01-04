@@ -22,7 +22,7 @@ import io.axoniq.axonserver.connector.impl.ServerAddress;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.lifecycle.Lifecycle;
@@ -76,8 +76,8 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerConnectionManager}.
      * <p>
-     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()}. The {@link
-     * AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
+     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()}. The
+     * {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link AxonServerConnectionManager}
      */
@@ -93,8 +93,8 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
 
     /**
      * Starts the {@link AxonServerConnectionManager}. Will enable heartbeat messages to be send to the connected Axon
-     * Server instance in the {@link Phase#INSTRUCTION_COMPONENTS} phase, if this has been enabled through the {@link
-     * AxonServerConfiguration.HeartbeatConfiguration#isEnabled()}.
+     * Server instance in the {@link Phase#INSTRUCTION_COMPONENTS} phase, if this has been enabled through the
+     * {@link AxonServerConfiguration.HeartbeatConfiguration#isEnabled()}.
      */
     public void start() {
         if (heartbeatEnabled) {
@@ -117,7 +117,6 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
      * Retrieves the {@link AxonServerConnection} used for the given {@code context} of this application.
      *
      * @param context the context for which to retrieve an {@link AxonServerConnection}
-     *
      * @return the {@link AxonServerConnection} used for the given {@code context} of this application.
      */
     public AxonServerConnection getConnection(String context) {
@@ -139,7 +138,6 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
      *
      * @param context the (Bounded) Context for for which is verified the AxonServer connection through the gRPC
      *                channel
-     *
      * @return if the gRPC channel is opened, false otherwise
      */
     public boolean isConnected(String context) {
@@ -196,8 +194,8 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
     /**
      * Builder class to instantiate an {@link AxonServerConnectionManager}.
      * <p>
-     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()}. The {@link
-     * AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
+     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()}. The
+     * {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -211,7 +209,6 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
          *
          * @param axonServerConfiguration an {@link AxonServerConfiguration} used to correctly configure the connections
          *                                created by an {@link AxonServerConnectionManager} instance
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder axonServerConfiguration(AxonServerConfiguration axonServerConfiguration) {
@@ -228,7 +225,6 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
          *
          * @param tagsConfiguration a {@link TagsConfiguration} to add the tags of this Axon instance as client
          *                          information when setting up a channel
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder tagsConfiguration(TagsConfiguration tagsConfiguration) {
@@ -238,14 +234,13 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
         }
 
         /**
-         * Registers the given {@code channelCustomization}, which configures the underling {@link
-         * ManagedChannelBuilder} used to set up connections to AxonServer.
+         * Registers the given {@code channelCustomization}, which configures the underling
+         * {@link ManagedChannelBuilder} used to set up connections to AxonServer.
          * <p>
          * This method may be used in case none of the operations on this Builder provide support for the required
          * feature.
          *
          * @param channelCustomization A function defining the customization to make on the ManagedChannelBuilder
-         *
          * @return this builder for further configuration
          */
         public Builder channelCustomizer(UnaryOperator<ManagedChannelBuilder<?>> channelCustomization) {

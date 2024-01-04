@@ -41,7 +41,7 @@ class AxonJakartaTest implements RewriteTest {
                 .recipe(Environment.builder()
                         .scanRuntimeClasspath()
                         .build()
-                        .activateRecipes("org.axonframework.migration.UpgradeAxonFramework_4_7_Jakarta"));
+                        .activateRecipes("org.axonframework.migration.UpgradeAxonFramework_4_Jakarta"));
     }
 
     @Test
@@ -69,7 +69,6 @@ class AxonJakartaTest implements RewriteTest {
         rewriteRun(
                 mavenProject("any-project",
                         pomXml(
-
                                 "    <project>\n" +
                                         "        <modelVersion>4.0.0</modelVersion>\n" +
                                         "        <groupId>com.example</groupId>\n" +
@@ -84,8 +83,8 @@ class AxonJakartaTest implements RewriteTest {
                                         "        </dependencies>\n" +
                                         "    </project>\n",
                                 spec -> spec.after(pom -> {
-                                    Matcher version = Pattern.compile("4.[7-9].\\d+").matcher(pom);
-                                    assertThat(version.find()).describedAs("Expected 4.7.x in %s", pom).isTrue();
+                                    Matcher version = Pattern.compile("4\\.[^06]\\d?.\\d+").matcher(pom);
+                                    assertThat(version.find()).describedAs("Expected 4.x in %s", pom).isTrue();
                                     return String.format(
                                             "    <project>\n" +
                                             "        <modelVersion>4.0.0</modelVersion>\n" +

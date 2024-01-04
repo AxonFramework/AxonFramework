@@ -92,9 +92,7 @@ public final class ClasspathParameterResolverFactory {
                 ParameterResolverFactory factory = iterator.next();
                 factories.add(factory);
             } catch (ServiceConfigurationError e) {
-                logger.info(
-                        "ParameterResolverFactory instance ignored, as one of the required classes is not available" +
-                                "on the classpath: {}", e.getMessage());
+                logger.info("ParameterResolverFactory instance ignored, as one of the required classes is not availableon the classpath: {}", e.getMessage());
             } catch (NoClassDefFoundError e) {
                 logger.info("ParameterResolverFactory instance ignored. It relies on a class that cannot be found: {}",
                             e.getMessage());

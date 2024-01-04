@@ -16,12 +16,13 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,31 +30,24 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.emptySortedSet;
-import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static java.util.Collections.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GapAwareTrackingTokenTest {
 
     @Test
     void gapAwareTokenConcurrency() throws InterruptedException {
         AtomicLong counter = new AtomicLong();
-        AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1, emptySortedSet()));
+        AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1,
+                                                                                                                      emptySortedSet()));
 
         ExecutorService executorService = Executors.newCachedThreadPool();
 
         // we need more threads than available processors, for a high likelihood to trigger this concurrency issue
         int threadCount = Runtime.getRuntime().availableProcessors() + 1;
+        Future<?>[] results = new Future<?>[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            executorService.submit(() -> {
+            results[i] = executorService.submit(() -> {
                 long deadline = System.currentTimeMillis() + 1000;
                 while (System.currentTimeMillis() < deadline) {
                     long next = counter.getAndIncrement();
@@ -65,8 +59,40 @@ class GapAwareTrackingTokenTest {
         assertTrue(executorService.awaitTermination(5, TimeUnit.SECONDS),
                    "ExecutorService not stopped within expected reasonable time frame");
 
+        for (Future<?> result : results) {
+            assertDoesNotThrow(() -> result.get(1, TimeUnit.SECONDS));
+        }
+
         assertTrue(counter.get() > 0, "The test did not seem to have generated any tokens");
         assertEquals(counter.get() - 1, currentToken.get().getIndex());
+        assertEquals(emptySortedSet(), currentToken.get().getGaps());
+    }
+
+    @Test
+    void gapAwareTokenConcurrency_HighConcurrency() throws InterruptedException {
+        long counter = 0;
+        AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1,
+                                                                                                                      emptySortedSet()));
+
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        Future<?>[] results = new Future<?>[1_000_000];
+        for (int i = 0; i < 1_000_000; i++) {
+            long next = counter++;
+            results[i] = executorService.submit(() -> {
+                currentToken.getAndUpdate(t -> t.advanceTo(next, Integer.MAX_VALUE));
+            });
+        }
+        executorService.shutdown();
+        assertTrue(executorService.awaitTermination(5, TimeUnit.SECONDS),
+                   "ExecutorService not stopped within expected reasonable time frame");
+
+        for (Future<?> result : results) {
+            assertDoesNotThrow(() -> result.get(1, TimeUnit.SECONDS));
+        }
+
+        assertTrue(counter > 0, "The test did not seem to have generated any tokens");
+        assertEquals(counter - 1, currentToken.get().getIndex());
         assertEquals(emptySortedSet(), currentToken.get().getGaps());
     }
 
@@ -110,6 +136,14 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
+    void advanceToOldGapClearsOldGaps() {
+        GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(15L, asList(1L, 5L, 12L));
+        subject = subject.advanceTo(1L, 10);
+        assertEquals(15L, subject.getIndex());
+        assertEquals(Stream.of(5L, 12L).collect(Collectors.toCollection(TreeSet::new)), subject.getGaps());
+    }
+
+    @Test
     void advanceToHigherSequenceClearsOldGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(15L, asList(1L, 5L, 12L));
         subject = subject.advanceTo(16L, 10);
@@ -120,12 +154,12 @@ class GapAwareTrackingTokenTest {
     @Test
     void advanceToLowerSequenceThatIsNotAGapNotAllowed() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(15L, asList(1L, 5L, 12L));
-        assertThrows(Exception.class, () -> subject.advanceTo(4L, 10));
+        assertThrows(IllegalArgumentException.class, () -> subject.advanceTo(4L, 10));
     }
 
     @Test
     void newInstanceWithGapHigherThanSequenceNotAllowed() {
-        assertThrows(Exception.class, () -> GapAwareTrackingToken.newInstance(9L, asList(1L, 5L, 12L)));
+        assertThrows(IllegalArgumentException.class, () -> GapAwareTrackingToken.newInstance(9L, asList(1L, 5L, 12L)));
     }
 
     @Test
@@ -159,7 +193,9 @@ class GapAwareTrackingTokenTest {
     @Test
     void occurrenceOfInconsistentRangeException() {
         // verifies issue 655 (https://github.com/AxonFramework/AxonFramework/issues/655)
-        GapAwareTrackingToken.newInstance(10L, asList(0L, 1L, 2L, 8L, 9L)).advanceTo(0L, 5).covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
+        GapAwareTrackingToken.newInstance(10L, asList(0L, 1L, 2L, 8L, 9L))
+                             .advanceTo(0L, 5)
+                             .covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
     }
 
     @Test
@@ -231,6 +267,13 @@ class GapAwareTrackingTokenTest {
         GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(15, asList(14L, 9L, 8L));
 
         assertEquals(15L, token.position().getAsLong());
+    }
+
+    @Test
+    void noMemoryLeakWhenJumpingLargeGaps() {
+        GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(0, emptyList());
+        GapAwareTrackingToken advancedToken = token.advanceTo(Long.MAX_VALUE, 1_234);
+        assertEquals(1_234, advancedToken.getGaps().size());
     }
 
     private TreeSet<Long> asTreeSet(Long... elements) {

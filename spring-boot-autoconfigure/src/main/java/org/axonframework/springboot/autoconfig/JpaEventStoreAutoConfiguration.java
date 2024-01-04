@@ -22,14 +22,15 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
@@ -42,9 +43,9 @@ import org.springframework.context.annotation.Bean;
  */
 @AutoConfiguration
 @ConditionalOnBean(EntityManagerFactory.class)
-@ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
-@ConditionalOnExpression("${axon.axonserver.enabled:true} == false")
-@AutoConfigureAfter(AxonServerAutoConfiguration.class)
+@ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class, EventStore.class})
+@AutoConfigureAfter(AxonServerBusAutoConfiguration.class)
+@AutoConfigureBefore(AxonAutoConfiguration.class)
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventsourcing.eventstore.jpa"
 })

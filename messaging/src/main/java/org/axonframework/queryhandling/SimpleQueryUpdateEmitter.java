@@ -220,8 +220,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         try {
             updateHandler.error(cause);
         } catch (Exception e) {
-            logger.error(format("An error happened while trying to inform update handler about the error. Query: %s",
-                                query));
+            logger.error("An error happened while trying to inform update handler about the error. Query: {}",
+                                query);
         }
     }
 

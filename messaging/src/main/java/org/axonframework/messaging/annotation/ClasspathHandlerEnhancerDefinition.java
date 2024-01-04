@@ -97,9 +97,7 @@ public final class ClasspathHandlerEnhancerDefinition {
                 HandlerEnhancerDefinition factory = iterator.next();
                 enhancers.add(factory);
             } catch (ServiceConfigurationError e) {
-                LOGGER.info(
-                        "HandlerEnhancerDefinition instance ignored, as one of the required classes is not available" +
-                                "on the classpath: {}", e.getMessage());
+                LOGGER.info("HandlerEnhancerDefinition instance ignored, as one of the required classes is not availableon the classpath: {}", e.getMessage());
             } catch (NoClassDefFoundError e) {
                 LOGGER.info("HandlerEnhancerDefinition instance ignored. It relies on a class that cannot be found: {}",
                             e.getMessage());
