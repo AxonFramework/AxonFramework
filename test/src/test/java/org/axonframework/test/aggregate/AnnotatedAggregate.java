@@ -105,7 +105,7 @@ class AnnotatedAggregate implements AnnotatedAggregateInterface {
     @EventSourcingHandler
     public void handleAll(DomainEventMessage<?> event) {
         // We don't care about events
-        logger.debug("Invoked with payload: " + event.getPayloadType().getName());
+        logger.debug("Invoked with payload: {}", event.getPayloadType().getName());
     }
 
     @Override

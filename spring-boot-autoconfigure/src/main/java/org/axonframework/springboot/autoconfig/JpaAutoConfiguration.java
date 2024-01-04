@@ -98,6 +98,7 @@ public class JpaAutoConfiguration {
         return new SQLErrorCodesResolver(dataSource);
     }
 
+    // tag::JpaDeadLetterQueueProviderConfigurerModule[]
     @Bean
     @ConditionalOnMissingBean
     public DeadLetterQueueProviderConfigurerModule deadLetterQueueProviderConfigurerModule(
@@ -118,4 +119,5 @@ public class JpaAutoConfiguration {
                                                                         .build()
         );
     }
+    // end::JpaDeadLetterQueueProviderConfigurerModule[]
 }

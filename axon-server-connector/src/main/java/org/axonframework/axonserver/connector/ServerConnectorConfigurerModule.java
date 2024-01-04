@@ -71,8 +71,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
         configurer.configureQueryBus(this::buildQueryBus);
         configurer.registerModule(new EventProcessorInfoConfiguration());
         configurer.registerComponent(TokenStore.class, c -> {
-            logger.warn("BEWARE! Falling back to an in-memory token store. It is highly recommended to configure a " +
-                                "persistent implementation, based on the activity of the handler.");
+            logger.warn("BEWARE! Falling back to an in-memory token store. It is highly recommended to configure a persistent implementation, based on the activity of the handler.");
             return new InMemoryTokenStore();
         });
         configurer.registerComponent(TargetContextResolver.class, configuration -> TargetContextResolver.noOp());

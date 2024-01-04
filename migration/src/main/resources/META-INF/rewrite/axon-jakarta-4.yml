@@ -1,12 +1,12 @@
 type: specs.openrewrite.org/v1beta/recipe
-name: org.axonframework.migration.UpgradeAxonFramework_4_7_Jakarta
-displayName: Upgrade to Axonframework 4.7 Jakarta
+name: org.axonframework.migration.UpgradeAxonFramework_4_Jakarta
+displayName: Upgrade to Axonframework 4.x Jakarta
 description: Migration file to upgrade from an Axon Framework Javax-specific project to Jakarta.
 recipeList:
   - org.openrewrite.maven.UpgradeDependencyVersion:
       groupId: org.axonframework
       artifactId: "*"
-      newVersion: 4.7.x
+      newVersion: 4.x
   # Include the Jakarta migration recipe
   - org.openrewrite.java.migrate.jakarta.JavaxMigrationToJakarta
   # Swap 4.6 dependencies for 4.7 dependencies
@@ -14,22 +14,22 @@ recipeList:
       oldGroupId: org.axonframework
       oldArtifactId: axon-configuration-jakarta
       newArtifactId: axon-configuration
-      newVersion: 4.7.x
+      newVersion: 4.x
   - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
       oldGroupId: org.axonframework
       oldArtifactId: axon-eventsourcing-jakarta
       newArtifactId: axon-eventsourcing
-      newVersion: 4.7.x
+      newVersion: 4.x
   - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
       oldGroupId: org.axonframework
       oldArtifactId: axon-messaging-jakarta
       newArtifactId: axon-messaging
-      newVersion: 4.7.x
+      newVersion: 4.x
   - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
       oldGroupId: org.axonframework
       oldArtifactId: axon-modelling-jakarta
       newArtifactId: axon-modelling
-      newVersion: 4.7.x
+      newVersion: 4.x
   # Convert legacy JPA packages to Jakarta JPA packages
   - org.openrewrite.java.ChangePackage:
       oldPackageName: org.axonframework.common.legacyjpa

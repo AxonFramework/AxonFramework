@@ -92,7 +92,7 @@ import static org.junit.jupiter.api.Assertions.*;
         AxonServerAutoConfiguration.class,
         AxonServerActuatorAutoConfiguration.class
 })
-@TestPropertySource(properties = {"axon.axonserver.enabled=false", "spring.main.banner-mode=off"})
+@TestPropertySource(properties = "spring.main.banner-mode=off")
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class TrackingEventProcessorIntegrationTest {
 

@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
@@ -504,8 +505,11 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
-        isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
-               () -> "Unsupported token format: " + lastToken);
+        Assert.isTrue(
+                lastToken == null || lastToken instanceof GapAwareTrackingToken,
+                () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
+                                    lastToken, GapAwareTrackingToken.class.getSimpleName())
+        );
 
         return transactionManager.fetchInTransaction(() -> {
             // If there are many gaps, it worthwhile checking if it is possible to clean them up.
@@ -575,8 +579,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                 cleanToken = cleanToken.withGapsTruncatedAt(sequenceNumber);
                             }
                         } catch (DateTimeParseException e) {
-                            logger.info("Unable to parse timestamp to clean old gaps. "
-                                                + "Tokens may contain large numbers of gaps, decreasing Tracking performance.");
+                            logger.info("Unable to parse timestamp to clean old gaps. Tokens may contain large numbers of gaps, decreasing Tracking performance.");
                             break;
                         }
                     }
@@ -683,10 +686,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                     : Collections.emptySortedSet()
             );
         } else {
-            token = token.advanceTo(globalSequence, maxGapOffset);
-            if (!allowGaps) {
-                token = token.withGapsTruncatedAt(globalSequence);
-            }
+            token = token.advanceTo(globalSequence, allowGaps ? maxGapOffset : 0);
         }
         return new TrackedDomainEventData<>(token, domainEvent);
     }

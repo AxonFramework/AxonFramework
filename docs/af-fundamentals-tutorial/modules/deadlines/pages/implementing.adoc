@@ -2,7 +2,7 @@
 :navtitle: Add a handler
 
 The `SimpleDeadlineManager` is part of the messaging module of Axon Framework and uses Java's `ScheduledExecutorService`, therefore, it requires no additional dependencies.
-The `SimpleDeadlineManager` can be configured either as an Axon Configuration component or as a Spring Bean.
+You can configure the `SimpleDeadlineManager` either as an Axon Configuration component or as a Spring Bean.
 For this how-to, it's configured as a Spring Bean.
 
 [source,java]
@@ -70,9 +70,9 @@ public class ExpiringGiftCard {
 ----
 
 <1> Adding the deadline manager to the method makes it easily testable compared to other ways of accessing it from the aggregate.
-Any component registered to the Axon Configuration, or when using Spring, any bean in the Spring Context, can be injected in this way.
+You can inject this way any component registered in the Axon Configuration, or when using Spring, any bean in the Spring Context.
 <2> Schedule the deadline, so it triggers at midnight.
 <3> It's important to use the same in the annotation as when calling the schedule method.
-<4> An idempotency check, so even if there is some problem with the deadline manager, only one `ExpiringCardExpiredEvent` event is sent.
+<4> An idempotency check, so even if there is some problem with the deadline manager, the application sends only one `ExpiringCardExpiredEvent` event.
 <5> On the `ExpiringCardExpiredEvent`, change the aggregate's state.
 

@@ -57,10 +57,7 @@ public class XStreamAutoConfiguration {
     @ConditionalOnMissingBean
     @Conditional(XStreamConfiguredCondition.class)
     public XStream defaultAxonXStream(ApplicationContext applicationContext) {
-        logger.info(
-                "Initializing an XStream instance since none was found. "
-                        + "The auto configuration base packages will be used as wildcards for the XStream security settings."
-        );
+        logger.info("Initializing an XStream instance since none was found. The auto configuration base packages will be used as wildcards for the XStream security settings.");
         XStream xStream = new XStream(new CompactDriver());
         xStream.allowTypesByWildcard(autoConfigBasePackages(applicationContext));
         return xStream;

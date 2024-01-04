@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.event;
 
 import io.grpc.Server;
-import io.grpc.netty.NettyServerBuilder;
+import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import org.axonframework.axonserver.connector.utils.ContextInterceptor;
 import org.axonframework.axonserver.connector.utils.PlatformService;
 
@@ -28,7 +28,7 @@ public class StubServer {
 
     private final Server server;
     private final PlatformService platformService;
-    private int port;
+    private final int port;
 
     public StubServer(int port) {
         this(port, port);
