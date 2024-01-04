@@ -59,8 +59,7 @@ public abstract class XStreamSecurityTypeUtility {
                                             })
                                             .toArray(String[]::new);
         } else {
-            logger.warn("Cannot extract types, because the provided ApplicationContext "
-                                + "does not contain any @EnableAutoConfiguration annotated beans.");
+            logger.warn("Cannot extract types, because the provided ApplicationContext does not contain any @EnableAutoConfiguration annotated beans.");
             return new String[]{};
         }
     }

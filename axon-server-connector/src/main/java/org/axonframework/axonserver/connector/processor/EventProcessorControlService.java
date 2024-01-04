@@ -147,9 +147,7 @@ public class EventProcessorControlService implements Lifecycle {
                                .stream()
                                .filter(entry -> {
                                    if (!processorNames.contains(entry.getKey())) {
-                                       logger.info("Event Processor [{}] is not a registered. "
-                                                           + "Please check the name or register the Event Processor",
-                                                   entry.getKey());
+                                       logger.info("Event Processor [{}] is not a registered. Please check the name or register the Event Processor", entry.getKey());
                                        return false;
                                    }
                                    return true;
@@ -159,8 +157,7 @@ public class EventProcessorControlService implements Lifecycle {
         strategiesPerProcessor.forEach((processorName, strategy) -> {
             Optional<String> optionalIdentifier = tokenStoreIdentifierFor(processorName);
             if (!optionalIdentifier.isPresent()) {
-                logger.warn("Cannot find token store identifier for processor [{}]. "
-                                    + "Load balancing cannot be configured without this identifier.", processorName);
+                logger.warn("Cannot find token store identifier for processor [{}]. Load balancing cannot be configured without this identifier.", processorName);
                 return;
             }
             String tokenStoreIdentifier = optionalIdentifier.get();

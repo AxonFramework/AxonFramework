@@ -35,19 +35,19 @@
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
             <!-- Version is intended as the recipe is to migrate to AF 4.7 -->
-            <version>4.7.3</version>
+            <version>4.7.6</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.openrewrite.recipe</groupId>
             <artifactId>rewrite-migrate-java</artifactId>
-            <version>1.16.0</version>
+            <version>1.21.1</version>
         </dependency>
         <dependency>
             <groupId>org.openrewrite</groupId>
             <artifactId>rewrite-test</artifactId>
-            <version>7.35.0</version>
+            <version>7.40.8</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
