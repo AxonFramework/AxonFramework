@@ -1062,17 +1062,15 @@ public class DefaultConfigurer implements Configurer {
                 exceptionHandler.accept(e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                logger.warn(String.format(
-                        "Completion interrupted during %s phase [%d]. Proceeding to following phase",
-                        lifecycleState.description, currentLifecyclePhase
-                ));
+                logger.warn(
+                        "Completion interrupted during {} phase [{}]. Proceeding to following phase",
+                        lifecycleState.description, currentLifecyclePhase);
             } catch (TimeoutException e) {
                 final long lifecyclePhaseTimeoutInSeconds = TimeUnit.SECONDS.convert(lifecyclePhaseTimeout,
                                                                                      lifecyclePhaseTimeunit);
-                logger.warn(String.format(
-                        "Timed out during %s phase [%d] after %d second(s). Proceeding to following phase",
-                        lifecycleState.description, currentLifecyclePhase, lifecyclePhaseTimeoutInSeconds
-                ));
+                logger.warn(
+                        "Timed out during {} phase [{}] after {} second(s). Proceeding to following phase",
+                        lifecycleState.description, currentLifecyclePhase, lifecyclePhaseTimeoutInSeconds);
             }
         } while ((phasedHandlers = lifecycleHandlerMap.higherEntry(currentLifecyclePhase)) != null);
         currentLifecyclePhase = null;

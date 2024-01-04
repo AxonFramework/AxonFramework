@@ -1,0 +1,43 @@
+= Retrying Failed Dead Letter Sequences
+:navtitle: Retrying failed sequences
+
+The dead letter queue is a stop-gap. It's important to strive to have the queue empty as soon as possible. Ideally by retrying the events, and removing them from the queue.
+You can retrieve a `SequencedDeadLetterProcessor` from the `EventProcessingConfiguration` based on a processing group name.
+Additionally, it's also possible to use AxonIQ Console and process a queue manually.
+
+To schedule processing dead letter sequences you can do something like:
+
+[source,java]
+----
+@Component
+public class ProcessDeadLetterComponent {
+
+    private final EventProcessingConfiguration config;
+
+    ProcessDeadLetterComponent(EventProcessingConfiguration config) {
+        this.config = config;
+    }
+
+    @Scheduled(fixedDelay = 30_000, initialDelay = 30_000) // <1>
+    public void process() {
+        for(String processingGroup : config.eventProcessors().keySet()) { // <2>
+            config.sequencedDeadLetterProcessor(processingGroup).ifPresent(
+                    SequencedDeadLetterProcessor::processAny // <3>
+            );
+        }
+    }
+}
+----
+
+<1> Spring-specific way to wait 30 seconds, then invoke the method every 30 seconds.
+You want a large interval to not stress the system too much.
+Especially as you don't know what's going wrong, it might be the application is already having a hard time.
+<2> A way to get all the processing groups.
+You might also use different intervals, depending on the processing group.
+Or don't have automatic processing for some groups.
+<3> The `processAny()` rotates the sequence to try based on when it was last tried.
+Once there are multiple queues present, it might take some time before they're all processed with this approach.
+You could also get the whole queue from the configuration, and process each existing sequence.
+
+By default, the framework enqueues a letter again, unless a processor can process it successfully.
+How to change this, is part of the next session.

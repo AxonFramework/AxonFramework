@@ -88,7 +88,7 @@ public class LoggingInterceptor<T extends Message<?>>
                         returnValue == null ? "null" : returnValue.getClass().getSimpleName());
             return returnValue;
         } catch (Exception t) {
-            logger.warn(format("[%s] execution failed:", message.getPayloadType().getSimpleName()), t);
+            logger.warn("[{}] execution failed:", message.getPayloadType().getSimpleName(), t);
             throw t;
         }
     }

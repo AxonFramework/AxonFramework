@@ -107,7 +107,7 @@ public abstract class TypeReflectionUtils {
         } else if (type instanceof GenericArrayType) {
             return Array.newInstance(erase(((GenericArrayType) type).getGenericComponentType()), 0).getClass();
         }
-        logger.debug(type.getClass() + " is not supported for type erasure. Will by default return Object.");
+        logger.debug("{} is not supported for type erasure. Will by default return Object.", type.getClass());
         return Object.class;
     }
 
@@ -127,10 +127,7 @@ public abstract class TypeReflectionUtils {
             throw new IllegalArgumentException("Cannot handle given Type of null");
         }
 
-        logger.debug(
-                type.getClass() + " is not supported for retrieving the exact direct super types from. Will by "
-                        + "default return the type contained in an Type[]"
-        );
+        logger.debug("{} is not supported for retrieving the exact direct super types from. Will by default return the type contained in an Type[]", type.getClass());
         return new Type[]{type};
     }
 
@@ -216,10 +213,7 @@ public abstract class TypeReflectionUtils {
         } else if (type instanceof ParameterizedType) {
             return false;
         } else {
-            logger.debug(
-                    type.getClass() + " is not supported for checking if there are missing type parameters. "
-                            + "Will by default return false."
-            );
+            logger.debug("{} is not supported for checking if there are missing type parameters. Will by default return false.", type.getClass());
             return false;
         }
     }
@@ -266,9 +260,7 @@ public abstract class TypeReflectionUtils {
                 return new ParameterizedTypeImpl((Class<?>) pType.getRawType(), actualTypeArguments, ownerType);
             }
 
-            logger.debug(
-                    type.getClass() + " is not supported for variable mapping. Will by default return the type as is."
-            );
+            logger.debug("{} is not supported for variable mapping. Will by default return the type as is.", type.getClass());
             return type;
         }
 

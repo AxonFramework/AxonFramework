@@ -824,6 +824,7 @@ public interface EventProcessingConfigurer {
         }
     }
 
+    // tag::RegisterDeadLetterQueueProvider[]
     /**
      * Register the given {@code deadLetterProvider} as a default to build a {@link SequencedDeadLetterQueue} for
      * {@link EventProcessor}s created in this configuration.
@@ -840,4 +841,5 @@ public interface EventProcessingConfigurer {
             Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider) {
         return this;
     }
+    // end::RegisterDeadLetterQueueProvider[]
 }

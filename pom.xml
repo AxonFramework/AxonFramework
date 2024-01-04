@@ -70,7 +70,7 @@
             ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
         <!-- Axon Server -->
-        <axonserver-connector-java.version>2023.1.1</axonserver-connector-java.version>
+        <axonserver-connector-java.version>2023.2.0</axonserver-connector-java.version>
         <!-- Caching -->
         <ehcache.version>2.10.9.2</ehcache.version>
         <ehcache3.version>3.10.8</ehcache3.version>
@@ -78,9 +78,9 @@
         <!-- Database -->
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>6.3.1.Final</hibernate-core.version>
-        <mysql-connector-java.version>8.0.33</mysql-connector-java.version>
-        <postgresql.version>42.6.0</postgresql.version>
+        <hibernate-core.version>6.4.1.Final</hibernate-core.version>
+        <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
+        <postgresql.version>42.7.1</postgresql.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
         <jakarta.el.version>4.0.0</jakarta.el.version>
@@ -89,29 +89,29 @@
         <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
         <jakarta.validation.version>3.0.2</jakarta.validation.version>
         <!-- Logging -->
-        <log4j.version>2.21.1</log4j.version>
-        <slf4j.version>2.0.9</slf4j.version>
+        <log4j.version>2.22.1</log4j.version>
+        <slf4j.version>2.0.10</slf4j.version>
         <!-- Metrics -->
-        <dropwizard.metrics.version>4.2.13</dropwizard.metrics.version>
-        <micrometer.version>1.11.5</micrometer.version>
+        <dropwizard.metrics.version>4.2.23</dropwizard.metrics.version>
+        <micrometer.version>1.12.1</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.14.9</byte-buddy.version>
-        <commons-io.version>2.15.0</commons-io.version>
+        <byte-buddy.version>1.14.11</byte-buddy.version>
+        <commons-io.version>2.15.1</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
-        <javassist.version>3.29.2-GA</javassist.version>
+        <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.5.11</projectreactor.version>
+        <projectreactor.version>3.6.1</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.10.1</gson.version>
-        <jackson.version>2.14.3</jackson.version>
+        <jackson.version>2.16.1</jackson.version>
         <xstream.version>1.4.20</xstream.version>
         <!-- Scheduling -->
-        <db-scheduler.version>12.5.0</db-scheduler.version>
-        <jobrunr.version>6.3.2</jobrunr.version>
+        <db-scheduler.version>13.0.0</db-scheduler.version>
+        <jobrunr.version>6.3.3</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
         <spring.version>6.0.13</spring.version>
@@ -121,7 +121,7 @@
         <awaitility.version>4.2.0</awaitility.version>
         <hamcrest.version>2.2</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.10.0</junit.jupiter.version>
+        <junit.jupiter.version>5.10.1</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.1</testcontainers.version>
         <!-- Validation -->
@@ -132,17 +132,17 @@
         <jacoco-maven.version>0.8.11</jacoco-maven.version>
         <maven-assembly.version>3.6.0</maven-assembly.version>
         <maven-clean.version>3.3.2</maven-clean.version>
-        <maven-compiler.version>3.11.0</maven-compiler.version>
+        <maven-compiler.version>3.12.1</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
-        <maven-failsafe.version>3.2.1</maven-failsafe.version>
+        <maven-failsafe.version>3.2.3</maven-failsafe.version>
         <maven-gpg.version>3.1.0</maven-gpg.version>
         <maven-install.version>3.1.1</maven-install.version>
         <maven-jar.version>3.3.0</maven-jar.version>
-        <maven-javadoc.version>3.6.0</maven-javadoc.version>
+        <maven-javadoc.version>3.6.3</maven-javadoc.version>
         <maven-release.version>3.0.1</maven-release.version>
         <maven-source.version>3.3.0</maven-source.version>
-        <maven-surefire.version>3.2.1</maven-surefire.version>
+        <maven-surefire.version>3.2.3</maven-surefire.version>
         <maven-resources.version>3.3.1</maven-resources.version>
     </properties>
 
@@ -826,6 +826,14 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>quick-install</id>
+            <properties>
+                <!-- Test classes are shared between modules, so we should build these modules, but don't run them.-->
+                <skipTests>true</skipTests>
+            </properties>
         </profile>
     </profiles>
 

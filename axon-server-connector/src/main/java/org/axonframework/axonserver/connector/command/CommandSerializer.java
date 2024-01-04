@@ -138,8 +138,7 @@ public class CommandSerializer {
                 responseBuilder.setPayload(objectSerializer.apply(optionalDetails.get()));
             } else {
                 logger.warn("Serializing exception [{}] without details.", throwable.getClass(), throwable);
-                logger.info("To share exceptional information with the recipient it is recommended to wrap the "
-                                    + "exception in a CommandExecutionException with provided details.");
+                logger.info("To share exceptional information with the recipient it is recommended to wrap the exception in a CommandExecutionException with provided details.");
             }
         } else if (commandResultMessage.getPayload() != null) {
             responseBuilder.setPayload(objectSerializer.apply(commandResultMessage.getPayload()));
