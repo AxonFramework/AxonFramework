@@ -123,7 +123,7 @@
         <xstream.version>1.4.20</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version>
-        <jobrunr.version>6.3.3</jobrunr.version>
+        <jobrunr.version>6.3.4</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
         <spring.version>5.3.31</spring.version>
