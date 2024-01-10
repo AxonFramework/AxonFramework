@@ -93,8 +93,8 @@ class SimpleEventHandlerInvokerTest {
 
         testSubject.performReset(resetContext);
 
-        verify(mockHandler1).prepareReset(eq(resetContext));
-        verify(mockHandler2).prepareReset(eq(resetContext));
+        verify(mockHandler1).prepareReset(resetContext);
+        verify(mockHandler2).prepareReset(resetContext);
     }
 
     @Test
@@ -145,5 +145,21 @@ class SimpleEventHandlerInvokerTest {
         SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
         //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.sequencingPolicy(null));
+    }
+
+    @Test
+    void shouldSupportResetWhenAtLeastOneEventMessageHandlerSupportsReset() {
+        doReturn(true).when(mockHandler1).supportsReset();
+        doReturn(false).when(mockHandler2).supportsReset();
+
+        assertTrue(testSubject.supportsReset());
+    }
+
+    @Test
+    void shouldNotSupportResetWhenNoEventMessageHandlerSupportsReset() {
+        doReturn(false).when(mockHandler1).supportsReset();
+        doReturn(false).when(mockHandler2).supportsReset();
+
+        assertFalse(testSubject.supportsReset());
     }
 }
