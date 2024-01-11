@@ -153,12 +153,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public boolean supportsReset() {
-        for (EventMessageHandler eventHandler : eventHandlingComponents) {
-            if (!eventHandler.supportsReset()) {
-                return false;
-            }
-        }
-        return true;
+        return eventHandlingComponents.stream().anyMatch(EventMessageHandler::supportsReset);
     }
 
     @Override
