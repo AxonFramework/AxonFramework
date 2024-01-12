@@ -101,8 +101,10 @@ public interface ProcessingLifecycle {
     ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action);
 
     // TODO add interface with order, so that users can define their own phases among our fixed phases
-    // TODO make special case out of rollback/onError with its own order
+    // TODO make special case out of rollback/onError with its own order, receiving the exception and the phase it was thrown in
     // TODO make special case out of completed with a dedicated method and no phase instance
+    // TODO get rid of the AFTER_COMPLETE, as onComplete takes care of this.
+    // TODO whenever there's a form of clean-up task, that needs to happen on a failure/rollback path and an on successful path, we add an onFinally that registered on both.
     enum Phase {
 
         // handling stuff...
