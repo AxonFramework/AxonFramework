@@ -36,7 +36,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
      *
      * @return A test subject.
      */
-    abstract PL testSubject();
+    abstract PL createTestSubject();
 
     /**
      * Execute the given {@code testSubject}, starting the test.
@@ -48,7 +48,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
     @Test
     void synchronousActionsRegisteredInTheSamePhaseAlwaysCompleteBeforeEnteringTheSubsequentPhase() throws Exception {
-        PL testSubject = testSubject();
+        PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
         // Phase PreInvocation
@@ -80,7 +80,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
     @Test
     void synchronousActionsRegisteredInReversePhaseOrderAreExecutedInTheIntendedPhaseOrder() throws Exception {
-        PL testSubject = testSubject();
+        PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
         // Phase Completed
@@ -112,7 +112,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
     @Test
     void asynchronousActionsRegisteredInTheSamePhaseAlwaysCompleteBeforeEnteringTheSubsequentPhase() throws Exception {
-        PL testSubject = testSubject();
+        PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
         // Phase PreInvocation
@@ -144,7 +144,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
     @Test
     void asynchronousActionsRegisteredInReversePhaseOrderAreExecutedInTheIntendedPhaseOrder() throws Exception {
-        PL testSubject = testSubject();
+        PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
         // Phase Completed
@@ -177,7 +177,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void asynchronousActionsRegisteredInReversePhaseOrderWithDifferingTimeoutsAreExecutedInTheIntendedPhaseOrder()
             throws Exception {
-        PL testSubject = testSubject();
+        PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
         // Phase Completed
@@ -209,7 +209,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
     @Test
     void asynchronousActionsRegisteredByShufflingThePhasesAreExecutedInTheIntendedPhaseOrder() throws Exception {
-        PL testSubject = testSubject();
+        PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
         Random random = ThreadLocalRandom.current();

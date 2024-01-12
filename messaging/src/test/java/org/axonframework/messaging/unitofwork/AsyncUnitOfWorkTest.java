@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 class AsyncUnitOfWorkTest extends ProcessingLifecycleTest<AsyncUnitOfWork> {
 
     @Override
-    AsyncUnitOfWork testSubject() {
+    AsyncUnitOfWork createTestSubject() {
         return new AsyncUnitOfWork();
     }
 
