@@ -12,38 +12,6 @@ public interface ProcessingLifecycle {
 
     ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action);
 
-    default ProcessingLifecycle onPreInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.PRE_INVOCATION, action);
-    }
-
-    default ProcessingLifecycle onInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.INVOCATION, action);
-    }
-
-    default ProcessingLifecycle onPostInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.POST_INVOCATION, action);
-    }
-
-    default ProcessingLifecycle onPrepareCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.PREPARE_COMMIT, action);
-    }
-
-    default ProcessingLifecycle onCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.COMMIT, action);
-    }
-
-    default ProcessingLifecycle onAfterCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.AFTER_COMMIT, action);
-    }
-
-    default ProcessingLifecycle onRollback(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.ROLLBACK, action);
-    }
-
-    default ProcessingLifecycle onCompleted(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.COMPLETED, action);
-    }
-
     /**
      * TODO next session
      * Drop execute/streamingResult. ProcessingLifecycle isn't aware o the exact result, just that there's a result.
@@ -55,6 +23,70 @@ public interface ProcessingLifecycle {
      */
     default ProcessingLifecycle runOn(Phase phase, Consumer<ProcessingContext> action) {
         return on(phase, c -> CompletableFuture.runAsync(() -> action.accept(c), Runnable::run));
+    }
+
+    default ProcessingLifecycle onPreInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.PRE_INVOCATION, action);
+    }
+
+    default ProcessingLifecycle runOnPreInvocation(Consumer<ProcessingContext> action) {
+        return runOn(Phase.PRE_INVOCATION, action);
+    }
+
+    default ProcessingLifecycle onInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.INVOCATION, action);
+    }
+
+    default ProcessingLifecycle runOnInvocation(Consumer<ProcessingContext> action) {
+        return runOn(Phase.INVOCATION, action);
+    }
+
+    default ProcessingLifecycle onPostInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.POST_INVOCATION, action);
+    }
+
+    default ProcessingLifecycle runOnPostInvocation(Consumer<ProcessingContext> action) {
+        return runOn(Phase.POST_INVOCATION, action);
+    }
+
+    default ProcessingLifecycle onPrepareCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.PREPARE_COMMIT, action);
+    }
+
+    default ProcessingLifecycle runOnPrepareCommit(Consumer<ProcessingContext> action) {
+        return runOn(Phase.PREPARE_COMMIT, action);
+    }
+
+    default ProcessingLifecycle onCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.COMMIT, action);
+    }
+
+    default ProcessingLifecycle runOnCommit(Consumer<ProcessingContext> action) {
+        return runOn(Phase.COMMIT, action);
+    }
+
+    default ProcessingLifecycle onAfterCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.AFTER_COMMIT, action);
+    }
+
+    default ProcessingLifecycle runOnAfterCommit(Consumer<ProcessingContext> action) {
+        return runOn(Phase.AFTER_COMMIT, action);
+    }
+
+    default ProcessingLifecycle onRollback(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.ROLLBACK, action);
+    }
+
+    default ProcessingLifecycle runOnRollback(Consumer<ProcessingContext> action) {
+        return runOn(Phase.ROLLBACK, action);
+    }
+
+    default ProcessingLifecycle onCompleted(Function<ProcessingContext, CompletableFuture<?>> action) {
+        return on(Phase.COMPLETED, action);
+    }
+
+    default ProcessingLifecycle runOnCompleted(Consumer<ProcessingContext> action) {
+        return runOn(Phase.COMPLETED, action);
     }
 
     /**
