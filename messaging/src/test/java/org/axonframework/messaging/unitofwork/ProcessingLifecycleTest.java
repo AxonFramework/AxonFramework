@@ -243,21 +243,29 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     private static class ProcessingLifecycleFixture {
 
         private final Map<ProcessingLifecycle.Phase, Integer> phaseToHandlerCount = new ConcurrentHashMap<>();
-        private final List<ExecutionCompleted> executedHandlers = new CopyOnWriteArrayList<>();
+        private final List<ExecutionCompleted> completedExecutions = new CopyOnWriteArrayList<>();
 
         private SyncHandler createSyncHandler(ProcessingLifecycle.Phase phase) {
             incrementCounter(phase);
-            return new SyncHandler(phase, executedHandlers);
+            return new SyncHandler(phase, completedExecutions);
         }
 
         private AsyncHandler createAsyncHandler(ProcessingLifecycle.Phase phase) {
-
             return createAsyncHandler(phase, 100);
         }
 
         private AsyncHandler createAsyncHandler(ProcessingLifecycle.Phase phase, int sleepMilliseconds) {
             incrementCounter(phase);
-            return new AsyncHandler(phase, executedHandlers, sleepMilliseconds);
+            return new AsyncHandler(phase, completedExecutions, sleepMilliseconds);
+        }
+
+        private ExceptionThrower createExceptionThrower(ProcessingLifecycle.Phase phase) {
+            return createExceptionThrower(phase, new IllegalStateException("Some exception"));
+        }
+
+        private ExceptionThrower createExceptionThrower(ProcessingLifecycle.Phase phase, Throwable throwable) {
+            incrementCounter(phase);
+            return new ExceptionThrower(throwable, phase, completedExecutions);
         }
 
         private void incrementCounter(ProcessingLifecycle.Phase phase) {
@@ -289,7 +297,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         }
 
         private void assertInvoked(ProcessingLifecycle.Phase phase) {
-            assertEquals(phaseToHandlerCount.get(phase), countExecuted(phase));
+            int expected = phaseToHandlerCount.get(phase) == null ? 0 : phaseToHandlerCount.get(phase);
+            assertEquals(expected, countExecuted(phase));
         }
 
         private void assertNotInvoked(ProcessingLifecycle.Phase phase) {
@@ -297,14 +306,13 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         }
 
         private int countExecuted(ProcessingLifecycle.Phase phase) {
-            return (int) executedHandlers.stream()
-                                         .filter(executionCompleted -> executionCompleted.phase().equals(phase))
-                                         .count();
+            return (int) completedExecutions.stream()
+                                            .filter(executionCompleted -> executionCompleted.phase().equals(phase))
+                                            .count();
         }
 
         private void assertAmountOfHandlers(long nonRollbackHandlerCount) {
-            System.out.println(executedHandlers);
-            assertEquals(nonRollbackHandlerCount, executedHandlers.size());
+            assertEquals(nonRollbackHandlerCount, completedExecutions.size());
         }
 
         private long filteredHandlerCount(Predicate<Map.Entry<ProcessingLifecycle.Phase, Integer>> phaseFilter) {
@@ -317,15 +325,15 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         }
 
         private void assertAmountOfExecutedHandlers(long nonRollbackHandlerCount) {
-            Set<String> ids = executedHandlers.stream()
-                                              .map(ExecutionCompleted::id)
-                                              .collect(Collectors.toSet());
+            Set<String> ids = completedExecutions.stream()
+                                                 .map(ExecutionCompleted::id)
+                                                 .collect(Collectors.toSet());
             assertEquals(nonRollbackHandlerCount, ids.size());
         }
 
         private void assertExecutionOrder() {
             ProcessingLifecycle.Phase prevPhase = ProcessingLifecycle.Phase.PRE_INVOCATION;
-            for (ExecutionCompleted executionCompleted : executedHandlers) {
+            for (ExecutionCompleted executionCompleted : completedExecutions) {
                 assertTrue(executionCompleted.phase.ordinal() >= prevPhase.ordinal());
                 prevPhase = executionCompleted.phase;
             }
@@ -339,52 +347,74 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
     }
 
-    private static class SyncHandler implements Function<ProcessingContext, CompletableFuture<?>> {
+    private static class SyncHandler extends Handler {
 
-        private final String id = UUID.randomUUID()
-                                      .toString();
-        private final ProcessingLifecycle.Phase expectedPhase;
-        private final List<ExecutionCompleted> executionCompleted;
-
-        private SyncHandler(ProcessingLifecycle.Phase expectedPhase, List<ExecutionCompleted> executionCompleted) {
-            this.expectedPhase = expectedPhase;
-            this.executionCompleted = executionCompleted;
+        private SyncHandler(ProcessingLifecycle.Phase phase, List<ExecutionCompleted> completedExecutions) {
+            super(phase, completedExecutions);
         }
 
         @Override
         public CompletableFuture<?> apply(ProcessingContext processingContext) {
-            executionCompleted.add(new ExecutionCompleted(id, expectedPhase));
+            completedExecutions.add(new ExecutionCompleted(id, phase));
             return CompletableFuture.completedFuture(null);
         }
     }
 
-    private static class AsyncHandler implements Function<ProcessingContext, CompletableFuture<?>> {
+    private static class AsyncHandler extends Handler {
 
-        private final String id = UUID.randomUUID()
-                                      .toString();
-        private final ProcessingLifecycle.Phase expectedPhase;
-        private final List<ExecutionCompleted> executionCompleted;
-        private final int sleepMilliseconds;
+        private final int sleepMs;
 
-        private AsyncHandler(ProcessingLifecycle.Phase expectedPhase,
-                             List<ExecutionCompleted> executionCompleted,
-                             int sleepMilliseconds) {
-            this.expectedPhase = expectedPhase;
-            this.executionCompleted = executionCompleted;
-            this.sleepMilliseconds = sleepMilliseconds;
+        private AsyncHandler(ProcessingLifecycle.Phase phase,
+                             List<ExecutionCompleted> completedExecutions,
+                             int sleepMs) {
+            super(phase, completedExecutions);
+            this.sleepMs = sleepMs;
         }
 
         @Override
         public CompletableFuture<?> apply(ProcessingContext processingContext) {
             return CompletableFuture.runAsync(() -> {
-                // how do we sleep when our beds are burning?
                 try {
-                    Thread.sleep(sleepMilliseconds);
-                    executionCompleted.add(new ExecutionCompleted(id, expectedPhase));
+                    Thread.sleep(sleepMs);
+                    completedExecutions.add(new ExecutionCompleted(id, phase));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             });
         }
     }
+
+    private static class ExceptionThrower extends Handler {
+
+        private final Throwable throwable;
+
+        public ExceptionThrower(Throwable throwable,
+                                ProcessingLifecycle.Phase phase,
+                                List<ExecutionCompleted> completedExecutions) {
+            super(phase, completedExecutions);
+            this.throwable = throwable;
+        }
+
+        @Override
+        public CompletableFuture<?> apply(ProcessingContext processingContext) {
+            completedExecutions.add(new ExecutionCompleted(id, phase));
+            return CompletableFuture.failedFuture(throwable);
+        }
+    }
+
+    private static abstract class Handler implements Function<ProcessingContext, CompletableFuture<?>> {
+
+        final String id = UUID.randomUUID().toString();
+        final ProcessingLifecycle.Phase phase;
+        final List<ExecutionCompleted> completedExecutions;
+
+        private Handler(ProcessingLifecycle.Phase phase, List<ExecutionCompleted> completedExecutions) {
+            this.phase = phase;
+            this.completedExecutions = completedExecutions;
+        }
+    }
 }
+
+
+
+
