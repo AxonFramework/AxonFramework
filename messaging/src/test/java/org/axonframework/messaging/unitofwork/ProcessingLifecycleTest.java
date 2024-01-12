@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -226,14 +227,59 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     }
 
     @Test
-    void rollbackRegisteredActionsAreNotInvokedWhenEverythingSucceeds() {
+    void rollbackRegisteredActionsAreNotInvokedWhenEverythingSucceeds() throws Exception {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+        AtomicBoolean invoked = new AtomicBoolean(false);
 
+        testSubject.runOnRollback(context -> invoked.set(true));
+
+        execute(testSubject).get(1, TimeUnit.SECONDS);
+
+        fixture.assertCompleteExecution();
+        assertFalse(invoked.get());
     }
 
     @Test
     void rollbackRegisteredActionsAreInvokedWhenAnActionFailsInAnyPhaseExceptForCompleted() {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+        AtomicBoolean invoked = new AtomicBoolean(false);
 
+        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION));
+        testSubject.runOnRollback(context -> invoked.set(true));
+
+        CompletableFuture<?> result = execute(testSubject);
+        assertTrue(result.isCompletedExceptionally());
+
+        fixture.assertCompleteExecution();
+        fixture.assertErrorHappeningInPhase(INVOCATION);
+        assertTrue(invoked.get());
     }
+
+    @Test
+    void phasesOccurringAfterTheFailingPhaseAreNotExecuted() {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+
+        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION));
+        testSubject.onPostInvocation(fixture.createSyncHandler(POST_INVOCATION));
+        testSubject.onPrepareCommit(fixture.createAsyncHandler(PREPARE_COMMIT));
+        testSubject.onCommit(fixture.createSyncHandler(COMMIT));
+        testSubject.onAfterCommit(fixture.createAsyncHandler(AFTER_COMMIT));
+
+        CompletableFuture<?> result = execute(testSubject);
+        assertTrue(result.isCompletedExceptionally());
+
+        fixture.assertCompleteExecution();
+        fixture.assertErrorHappeningInPhase(INVOCATION);
+        fixture.assertNotInvoked(POST_INVOCATION);
+        fixture.assertNotInvoked(PREPARE_COMMIT);
+        fixture.assertNotInvoked(COMMIT);
+        fixture.assertNotInvoked(AFTER_COMMIT);
+    }
+
+    // TODO draft up test cases test
 
     /**
      * Test fixture intended for validating the invocation of actions registered in
