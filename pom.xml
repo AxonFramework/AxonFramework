@@ -102,10 +102,10 @@
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <!-- Logging -->
         <log4j.version>2.22.1</log4j.version>
-        <slf4j.version>2.0.10</slf4j.version>
+        <slf4j.version>2.0.11</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.23</dropwizard.metrics.version>
-        <micrometer.version>1.12.1</micrometer.version>
+        <micrometer.version>1.12.2</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.14.11</byte-buddy.version>
         <commons-io.version>2.15.1</commons-io.version>
@@ -114,7 +114,7 @@
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.6.1</projectreactor.version>
+        <projectreactor.version>3.6.2</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <dom4j.version>2.1.4</dom4j.version>
@@ -148,14 +148,14 @@
         <maven-compiler.version>3.12.1</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
-        <maven-failsafe.version>3.2.3</maven-failsafe.version>
+        <maven-failsafe.version>3.2.5</maven-failsafe.version>
         <maven-gpg.version>3.1.0</maven-gpg.version>
         <maven-install.version>3.1.1</maven-install.version>
         <maven-jar.version>3.3.0</maven-jar.version>
         <maven-javadoc.version>3.6.3</maven-javadoc.version>
         <maven-release.version>3.0.1</maven-release.version>
         <maven-source.version>3.3.0</maven-source.version>
-        <maven-surefire.version>3.2.3</maven-surefire.version>
+        <maven-surefire.version>3.2.5</maven-surefire.version>
         <maven-resources.version>3.3.1</maven-resources.version>
     </properties>
 
