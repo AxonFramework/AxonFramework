@@ -1,19 +1,17 @@
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.EnumSet;
 import java.util.LinkedList;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -38,12 +36,8 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
     }
 
     public AsyncUnitOfWork(String identifier, Executor workScheduler) {
-        this(identifier, null, workScheduler);
-    }
-
-    public AsyncUnitOfWork(String identifier, ProcessingContext parent, Executor workScheduler) {
         this.identifier = identifier;
-        this.context = new UnitOfWorkProcessingContext(identifier, parent, workScheduler);
+        this.context = new UnitOfWorkProcessingContext(identifier, workScheduler);
     }
 
     @Override
@@ -68,8 +62,8 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
     /**
      * Executes all the registered handlers in their respective phases.
      *
-     * @return a CompletableFuture that returns normally when the Unit Of Work has been committed or exceptionally with
-     * the exception that caused the Unit of Work to have been rolled back.
+     * @return a {@link CompletableFuture} that returns normally when the Unit Of Work has been committed or
+     * exceptionally with the exception that caused the Unit of Work to have been rolled back.
      */
     public CompletableFuture<Void> execute() {
         return context.commit();
@@ -93,35 +87,24 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
                 result.completeExceptionally(e);
             }
         }));
-        return execute().thenCombine(result, (v, r) -> r);
-    }
-
-    public ProcessingContext processingContext() {
-        return context;
+        return execute().thenCombine(result, (executeResult, invocationResult) -> invocationResult);
     }
 
     private static class UnitOfWorkProcessingContext implements ProcessingContext {
 
-        private static final ThreadLocal<ProcessingContext> currentProcessingContext = new ThreadLocal<>();
-
         private final ConcurrentHashMap<Phase, Queue<Function<ProcessingContext, CompletableFuture<?>>>> phaseHandlers = new ConcurrentHashMap<>();
         private final AtomicReference<Phase> currentPhase = new AtomicReference<>(null);
-        private final AtomicBoolean isRoot = new AtomicBoolean();
-        private final AtomicReference<ProcessingContext> parentProcessingContext = new AtomicReference<>();
         private final LocalResources resources = new LocalResources();
         private final EnumSet<Phase> phases = EnumSet.noneOf(Phase.class);
         private final Queue<Consumer<ProcessingContext>> afterCompleteHandlers = new ConcurrentLinkedQueue<>();
         private final String name;
         private final Executor workScheduler;
 
-        public UnitOfWorkProcessingContext(String name, ProcessingContext parent, Executor workScheduler) {
+        public UnitOfWorkProcessingContext(String name, Executor workScheduler) {
             this.name = name;
             this.workScheduler = workScheduler;
-            if (parent != null) {
-                this.parentProcessingContext.set(parent);
-            }
             phaseHandlers.computeIfAbsent(Phase.COMPLETED, k -> new ConcurrentLinkedQueue<>())
-                         .add(safe(Phase.COMPLETED, withContext(this::complete)));
+                         .add(safe(Phase.COMPLETED, this::complete));
         }
 
         private CompletableFuture<?> complete(ProcessingContext context) {
@@ -135,53 +118,9 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
             }, workScheduler);
         }
 
-        private <T, R> Function<T, R> withContext(Function<T, R> function) {
-            return t -> {
-                var previous = currentProcessingContext.get();
-                currentProcessingContext.set(this);
-                try {
-                    return function.apply(t);
-                } finally {
-                    if (previous == null) {
-                        currentProcessingContext.remove();
-                    } else {
-                        currentProcessingContext.set(previous);
-                    }
-                }
-            };
-        }
-
-        private <T> Consumer<T> withContext(Consumer<T> callable) {
-            return t -> {
-                var previous = currentProcessingContext.get();
-                currentProcessingContext.set(this);
-                try {
-                    callable.accept(t);
-                } finally {
-                    if (previous == null) {
-                        currentProcessingContext.remove();
-                    } else {
-                        currentProcessingContext.set(previous);
-                    }
-                }
-            };
-        }
-
         @Override
-        public Resources resources(ResourceScope scope) {
-            if (isRoot.get()) {
-                return resources;
-            } else {
-                var parent = parentProcessingContext.get();
-                if (parent == null) {
-                    throw new IllegalStateException("Resources can only be accessed in lifecycle methods");
-                }
-                return switch (scope) {
-                    case LOCAL -> resources;
-                    case INHERITED -> new InheritableResources(resources, parent.resources(scope));
-                    case SHARED -> parent.resources(scope);
-                };
-            }
+        public Resources resources() {
+            return resources;
         }
 
         @Override
@@ -211,22 +150,21 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
                 throw new IllegalStateException("ProcessingContext is already in " + phase.name() + " phase");
             }
             phaseHandlers.computeIfAbsent(phase, k -> new ConcurrentLinkedQueue<>())
-                         .add(safe(phase, withContext(action)));
+                         .add(safe(phase, action));
             return this;
         }
 
         @Override
         public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
-            var contextualAction = withContext(action);
-            this.afterCompleteHandlers.add(contextualAction);
+            this.afterCompleteHandlers.add(action);
             var p = currentPhase.get();
             if (p != null && Phase.COMPLETED.ordinal() <= p.ordinal()
-                    && afterCompleteHandlers.remove(contextualAction)) {
+                    && afterCompleteHandlers.remove(action)) {
                 // when in the completed phase, execute immediately
-                // the removal attempt is to make sure that we aren't concurrently  executing from the registering thread
-                // as well as the thread that switched the phase to completed.
+                // the removal attempt is to make sure that we aren't concurrently executing from the registering thread
+                // as well as the thread that completed the processing context.
                 try {
-                    contextualAction.accept(this);
+                    action.accept(this);
                 } catch (Exception e) {
                     logger.debug("A phase handler threw an exception", e);
                 }
@@ -236,8 +174,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
 
         private Function<ProcessingContext, CompletableFuture<?>> safe(
                 Phase phase,
-                Function<ProcessingContext, CompletableFuture<?>> action
-        ) {
+                Function<ProcessingContext, CompletableFuture<?>> action) {
             return c -> action.apply(c)
                               .whenComplete((r, e) -> logger.debug(
                                       "A handler threw an exception in phase {}", phase, e
@@ -248,57 +185,17 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
             if (currentPhase.get() != null) {
                 throw new IllegalStateException("ProcessingContext cannot be committed (again)");
             }
-            return resolveParent().map(this::commitNested)
-                                  .orElseGet(this::commitNormal);
-        }
-
-        private Optional<ProcessingContext> resolveParent() {
-            var registeredParent = Optional.ofNullable(parentProcessingContext.get());
-            var parentFromContext = Optional.ofNullable(currentProcessingContext.get());
-            if (parentFromContext.isPresent() && registeredParent.isPresent()) {
-                if (!Objects.equals(parentFromContext.get(), registeredParent.get())) {
-                    throw new IllegalStateException(
-                            "Inconsistent registration of Unit of Work nesting. "
-                                    + "Registered parent does not match parent from subscriber context."
-                    );
-                }
-            } else if (parentFromContext.isPresent()) {
-                return parentFromContext;
-            }
-            return registeredParent;
-        }
-
-        private CompletableFuture<Void> commitNested(ProcessingContext parent) {
-            parentProcessingContext.set(parent);
-            return innerCommit()
-                    .thenAccept(r -> {
-                        parent.on(Phase.AFTER_COMMIT, p -> runPhase(Phase.AFTER_COMMIT));
-                        parent.on(Phase.ROLLBACK, p -> runPhase(Phase.ROLLBACK));
-                        parent.on(Phase.COMPLETED, p -> runPhase(Phase.COMPLETED));
-                    })
-                    .exceptionallyCompose(e -> {
-                        parent.on(Phase.COMPLETED, p -> runPhase(Phase.COMPLETED));
-                        return CompletableFuture.failedFuture(e);
-                    });
-        }
-
-        private CompletableFuture<Void> commitNormal() {
-            isRoot.set(true);
-            return innerCommit()
-                    .thenCompose(r -> runPhase(Phase.AFTER_COMMIT))
-                    .thenCompose(r -> runPhase(Phase.COMPLETED))
-                    .exceptionallyCompose(e -> runPhase(Phase.COMPLETED)
-                            // always continue with the original error
-                            .thenCompose(r -> CompletableFuture.failedFuture(e)));
-        }
-
-        private CompletableFuture<Void> innerCommit() {
             return runPhase(Phase.PRE_INVOCATION)
                     .thenCompose(r -> runPhase(Phase.INVOCATION))
                     .thenCompose(r -> runPhase(Phase.POST_INVOCATION))
                     .thenCompose(r -> runPhase(Phase.PREPARE_COMMIT))
                     .thenCompose(r -> runPhase(Phase.COMMIT))
                     .exceptionallyCompose(e -> runPhase(Phase.ROLLBACK)
+                            // always continue with the original error
+                            .thenCompose(r -> CompletableFuture.failedFuture(e)))
+                    .thenCompose(r -> runPhase(Phase.AFTER_COMMIT))
+                    .thenCompose(r -> runPhase(Phase.COMPLETED))
+                    .exceptionallyCompose(e -> runPhase(Phase.COMPLETED)
                             // always continue with the original error
                             .thenCompose(r -> CompletableFuture.failedFuture(e)));
         }
@@ -317,17 +214,15 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
                     handlers.stream()
                             .map(handler -> CompletableFuture.completedFuture(null)
                                                              .thenComposeAsync(r -> handler.apply(this), workScheduler)
-                                                             .thenAccept(c -> {
-                                                                 // TODO?
-                                                             }))
+                                                             .thenAccept(FutureUtils::ignoreResult))
                             .reduce(CompletableFuture::allOf)
-                            .orElse(CompletableFuture.completedFuture(null));
+                            .orElseGet(FutureUtils::emptyCompletedFuture);
 
             return result.exceptionallyCompose(e -> {
                 if (phase.isRollbackOnFailure()) {
                     return CompletableFuture.failedFuture(e);
                 }
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             });
         }
 
