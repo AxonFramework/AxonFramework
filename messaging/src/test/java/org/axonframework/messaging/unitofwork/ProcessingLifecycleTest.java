@@ -271,7 +271,6 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         CompletableFuture<?> result = execute(testSubject);
         assertTrue(result.isCompletedExceptionally());
 
-        fixture.assertCompleteExecution();
         fixture.assertErrorHappeningInPhase(INVOCATION);
         fixture.assertNotInvoked(POST_INVOCATION);
         fixture.assertNotInvoked(PREPARE_COMMIT);
@@ -326,18 +325,19 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         }
 
         public void assertErrorHappeningInPhase(ProcessingLifecycle.Phase phase) {
-            for (int i = 0; i < phase.ordinal(); i++) {
+            // assert everything before and during given phase is invoked
+            for (int i = 0; i <= phase.ordinal(); i++) {
                 ProcessingLifecycle.Phase p = ProcessingLifecycle.Phase.values()[i];
                 assertInvoked(p);
             }
 
+            // assert everything after give phase but rollback and complete is not invoked
             for (int i = phase.ordinal() + 1; i < ROLLBACK.ordinal(); i++) {
                 ProcessingLifecycle.Phase p = ProcessingLifecycle.Phase.values()[i];
-                assertInvoked(p);
+                assertNotInvoked(p);
             }
 
-            // assert everything before given phase is invoked
-            // assert everything after give phase but rollback and complete is not invoked
+            // assert that rollback and complete are invoked
             assertInvoked(ROLLBACK);
             assertInvoked(COMPLETED);
         }
