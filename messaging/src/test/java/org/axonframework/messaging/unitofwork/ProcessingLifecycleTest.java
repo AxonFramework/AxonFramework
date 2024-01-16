@@ -4,6 +4,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -12,6 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,16 +21,17 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.axonframework.messaging.unitofwork.ProcessingLifecycle.Phase.*;
+import static org.axonframework.messaging.unitofwork.ProcessingLifecycle.DefaultPhases.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite for implementations of the {@link ProcessingLifecycle}.
+ *
+ * @param <PL> The implementation of the {@link ProcessingLifecycle} being tested.
  * @author Gerard Klijs
  * @author Milan Savić
  * @author Sara Pellegrini
  * @author Steven van Beelen
- * @param <PL> The implementation of the {@link ProcessingLifecycle} being tested.
  */
 abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
@@ -53,8 +56,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
         // Phase PreInvocation
-        testSubject.onPreInvocation(fixture.createSyncHandler(ProcessingLifecycle.Phase.PRE_INVOCATION));
-        testSubject.onPreInvocation(fixture.createSyncHandler(ProcessingLifecycle.Phase.PRE_INVOCATION));
+        testSubject.onPreInvocation(fixture.createSyncHandler(ProcessingLifecycle.DefaultPhases.PRE_INVOCATION));
+        testSubject.onPreInvocation(fixture.createSyncHandler(ProcessingLifecycle.DefaultPhases.PRE_INVOCATION));
         // Phase Invocation
         testSubject.onInvocation(fixture.createSyncHandler(INVOCATION));
         testSubject.onInvocation(fixture.createSyncHandler(INVOCATION));
@@ -70,9 +73,6 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         // Phase AfterCommit
         testSubject.onAfterCommit(fixture.createSyncHandler(AFTER_COMMIT));
         testSubject.onAfterCommit(fixture.createSyncHandler(AFTER_COMMIT));
-        // Phase Completed
-        testSubject.onCompleted(fixture.createSyncHandler(COMPLETED));
-        testSubject.onCompleted(fixture.createSyncHandler(COMPLETED));
 
         execute(testSubject).get(1, TimeUnit.SECONDS);
 
@@ -84,9 +84,6 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
-        // Phase Completed
-        testSubject.onCompleted(fixture.createSyncHandler(COMPLETED));
-        testSubject.onCompleted(fixture.createSyncHandler(COMPLETED));
         // Phase AfterCommit
         testSubject.onAfterCommit(fixture.createSyncHandler(AFTER_COMMIT));
         testSubject.onAfterCommit(fixture.createSyncHandler(AFTER_COMMIT));
@@ -103,8 +100,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         testSubject.onInvocation(fixture.createSyncHandler(INVOCATION));
         testSubject.onInvocation(fixture.createSyncHandler(INVOCATION));
         // Phase PreInvocation
-        testSubject.onPreInvocation(fixture.createSyncHandler(ProcessingLifecycle.Phase.PRE_INVOCATION));
-        testSubject.onPreInvocation(fixture.createSyncHandler(ProcessingLifecycle.Phase.PRE_INVOCATION));
+        testSubject.onPreInvocation(fixture.createSyncHandler(PRE_INVOCATION));
+        testSubject.onPreInvocation(fixture.createSyncHandler(PRE_INVOCATION));
 
         execute(testSubject).get(1, TimeUnit.SECONDS);
 
@@ -117,8 +114,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
         // Phase PreInvocation
-        testSubject.onPreInvocation(fixture.createAsyncHandler(ProcessingLifecycle.Phase.PRE_INVOCATION));
-        testSubject.onPreInvocation(fixture.createAsyncHandler(ProcessingLifecycle.Phase.PRE_INVOCATION));
+        testSubject.onPreInvocation(fixture.createAsyncHandler(PRE_INVOCATION));
+        testSubject.onPreInvocation(fixture.createAsyncHandler(PRE_INVOCATION));
         // Phase Invocation
         testSubject.onInvocation(fixture.createAsyncHandler(INVOCATION));
         testSubject.onInvocation(fixture.createAsyncHandler(INVOCATION));
@@ -134,9 +131,6 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         // Phase AfterCommit
         testSubject.onAfterCommit(fixture.createAsyncHandler(AFTER_COMMIT));
         testSubject.onAfterCommit(fixture.createAsyncHandler(AFTER_COMMIT));
-        // Phase Completed
-        testSubject.onCompleted(fixture.createAsyncHandler(COMPLETED));
-        testSubject.onCompleted(fixture.createAsyncHandler(COMPLETED));
 
         execute(testSubject).get(1, TimeUnit.SECONDS);
 
@@ -148,9 +142,6 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
-        // Phase Completed
-        testSubject.onCompleted(fixture.createAsyncHandler(COMPLETED));
-        testSubject.onCompleted(fixture.createAsyncHandler(COMPLETED));
         // Phase AfterCommit
         testSubject.onAfterCommit(fixture.createAsyncHandler(AFTER_COMMIT));
         testSubject.onAfterCommit(fixture.createAsyncHandler(AFTER_COMMIT));
@@ -167,8 +158,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         testSubject.onInvocation(fixture.createAsyncHandler(INVOCATION));
         testSubject.onInvocation(fixture.createAsyncHandler(INVOCATION));
         // Phase PreInvocation
-        testSubject.onPreInvocation(fixture.createAsyncHandler(ProcessingLifecycle.Phase.PRE_INVOCATION));
-        testSubject.onPreInvocation(fixture.createAsyncHandler(ProcessingLifecycle.Phase.PRE_INVOCATION));
+        testSubject.onPreInvocation(fixture.createAsyncHandler(PRE_INVOCATION));
+        testSubject.onPreInvocation(fixture.createAsyncHandler(PRE_INVOCATION));
 
         execute(testSubject).get(1, TimeUnit.SECONDS);
 
@@ -181,9 +172,6 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
 
-        // Phase Completed
-        testSubject.onCompleted(fixture.createAsyncHandler(COMPLETED, 5));
-        testSubject.onCompleted(fixture.createAsyncHandler(COMPLETED, 5));
         // Phase AfterCommit
         testSubject.onAfterCommit(fixture.createAsyncHandler(AFTER_COMMIT, 10));
         testSubject.onAfterCommit(fixture.createAsyncHandler(AFTER_COMMIT, 10));
@@ -200,8 +188,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         testSubject.onInvocation(fixture.createAsyncHandler(INVOCATION, 30));
         testSubject.onInvocation(fixture.createAsyncHandler(INVOCATION, 30));
         // Phase PreInvocation
-        testSubject.onPreInvocation(fixture.createAsyncHandler(ProcessingLifecycle.Phase.PRE_INVOCATION, 35));
-        testSubject.onPreInvocation(fixture.createAsyncHandler(ProcessingLifecycle.Phase.PRE_INVOCATION, 35));
+        testSubject.onPreInvocation(fixture.createAsyncHandler(PRE_INVOCATION, 35));
+        testSubject.onPreInvocation(fixture.createAsyncHandler(PRE_INVOCATION, 35));
 
         execute(testSubject).get(1, TimeUnit.SECONDS);
 
@@ -232,7 +220,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
         AtomicBoolean invoked = new AtomicBoolean(false);
 
-        testSubject.runOnRollback(context -> invoked.set(true));
+        testSubject.onError((context, phase, e) -> invoked.set(true));
 
         execute(testSubject).get(1, TimeUnit.SECONDS);
 
@@ -241,20 +229,49 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     }
 
     @Test
-    void rollbackRegisteredActionsAreInvokedWhenAnActionFailsInAnyPhaseExceptForCompleted() {
+    void errorHandlersAreInvokedWhenAnActionFailsInInvocationPhase() {
         PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
-        AtomicBoolean invoked = new AtomicBoolean(false);
+        AtomicBoolean onErrorInvoked = new AtomicBoolean(false);
+        AtomicBoolean whenCompleteInvoked = new AtomicBoolean(false);
+        AtomicBoolean doFinallyInvoked = new AtomicBoolean(false);
 
-        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION));
-        testSubject.runOnRollback(context -> invoked.set(true));
+        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION))
+                   .onError((context, phase, e) -> onErrorInvoked.set(true))
+                   .whenComplete((context) -> whenCompleteInvoked.set(true))
+                   .doFinally((context) -> doFinallyInvoked.set(true));
 
         CompletableFuture<?> result = execute(testSubject);
         assertTrue(result.isCompletedExceptionally());
 
         fixture.assertCompleteExecution();
         fixture.assertErrorHappeningInPhase(INVOCATION);
-        assertTrue(invoked.get());
+        assertTrue(onErrorInvoked.get());
+        assertFalse(whenCompleteInvoked.get());
+        assertTrue(doFinallyInvoked.get());
+    }
+
+    @Test
+    void errorHandlersAreInvokedWhenAnActionFailsInCommitPhase() {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+        AtomicBoolean onErrorInvoked = new AtomicBoolean(false);
+        AtomicBoolean whenCompleteInvoked = new AtomicBoolean(false);
+        AtomicBoolean doFinallyInvoked = new AtomicBoolean(false);
+
+        testSubject.onInvocation(fixture.createExceptionThrower(COMMIT));
+        testSubject.onError((context, phase, e) -> onErrorInvoked.set(true));
+        testSubject.whenComplete((context) -> whenCompleteInvoked.set(true));
+        testSubject.doFinally((context) -> doFinallyInvoked.set(true));
+
+        CompletableFuture<?> result = execute(testSubject);
+        assertTrue(result.isCompletedExceptionally());
+
+        fixture.assertCompleteExecution();
+        fixture.assertErrorHappeningInPhase(COMMIT);
+        assertTrue(onErrorInvoked.get());
+        assertFalse(whenCompleteInvoked.get());
+        assertTrue(doFinallyInvoked.get());
     }
 
     @Test
@@ -269,16 +286,184 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         testSubject.onAfterCommit(fixture.createAsyncHandler(AFTER_COMMIT));
 
         CompletableFuture<?> result = execute(testSubject);
+        assertTrue(result.isDone());
         assertTrue(result.isCompletedExceptionally());
 
         fixture.assertErrorHappeningInPhase(INVOCATION);
-        fixture.assertNotInvoked(POST_INVOCATION);
-        fixture.assertNotInvoked(PREPARE_COMMIT);
-        fixture.assertNotInvoked(COMMIT);
-        fixture.assertNotInvoked(AFTER_COMMIT);
+        fixture.assertNotInvoked(p -> p.order() > INVOCATION.order());
     }
 
-    // TODO draft up test cases test
+    @Test
+    void customPhasesAreExecutedRespectingOrder() {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+
+        ProcessingLifecycle.Phase customPhase = () -> Integer.MIN_VALUE + 1;
+        testSubject.on(customPhase, fixture.createSyncHandler(customPhase));
+        testSubject.onInvocation(fixture.createSyncHandler(INVOCATION));
+        testSubject.onPostInvocation(fixture.createSyncHandler(POST_INVOCATION));
+        testSubject.onPrepareCommit(fixture.createSyncHandler(PREPARE_COMMIT));
+        testSubject.onCommit(fixture.createSyncHandler(COMMIT));
+        testSubject.onAfterCommit(fixture.createSyncHandler(AFTER_COMMIT));
+
+        CompletableFuture<?> result = execute(testSubject);
+        assertFalse(result.isCompletedExceptionally());
+        assertTrue(result.isDone());
+
+        assertEquals(1, fixture.countExecuted(phase -> phase == customPhase));
+    }
+
+    @Test
+    void handlersRegisteredDuringExecutionOfTheFirstPhaseAreExecuted() {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+
+        testSubject.onInvocation(fixture.createSyncHandler(INVOCATION).andThen(f -> {
+            testSubject.onPostInvocation(fixture.createSyncHandler(POST_INVOCATION));
+            testSubject.onPrepareCommit(fixture.createSyncHandler(PREPARE_COMMIT));
+            testSubject.onCommit(fixture.createSyncHandler(COMMIT));
+            testSubject.onAfterCommit(fixture.createSyncHandler(AFTER_COMMIT));
+            return f;
+        }));
+
+        CompletableFuture<?> result = execute(testSubject);
+        assertTrue(result.isDone());
+        assertEquals(1, fixture.countExecuted(phase -> phase == COMMIT));
+    }
+
+    @Test
+    void handlersRegisteredDuringExecutionOfAnEarlierPhaseAreExecuted() {
+        PL testSubject = createTestSubject();
+        LinkedList<CompletableFuture<Void>> futures = new LinkedList<>();
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        testSubject.onPreInvocation(c -> {
+                                        c.onInvocation(c1 -> {
+                                            c1.onCommit(c2 -> {
+                                                c2.onAfterCommit(c3 -> {
+                                                    invoked.set(true);
+                                                    CompletableFuture<Void> e = new CompletableFuture<>();
+                                                    futures.add(e);
+                                                    return e;
+                                                });
+                                                CompletableFuture<Void> e = new CompletableFuture<>();
+                                                futures.add(e);
+                                                return e;
+                                            });
+                                            CompletableFuture<Void> e = new CompletableFuture<>();
+                                            futures.add(e);
+                                            return e;
+                                        });
+                                        CompletableFuture<Void> e = new CompletableFuture<>();
+                                        futures.add(e);
+                                        return e;
+                                    }
+        );
+
+        CompletableFuture<?> result = execute(testSubject);
+        assertFalse(result.isDone());
+        while (!futures.isEmpty()) {
+            futures.poll().complete(null);
+        }
+        assertTrue(result.isDone());
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void registeringHandlersInPastPhasesCausesHandlerToFail() {
+        PL testSubject = createTestSubject();
+
+        testSubject.onInvocation(ctx -> {
+            ctx.onPreInvocation(c2 -> CompletableFuture.completedFuture(null));
+            return CompletableFuture.completedFuture(null);
+        });
+
+        CompletableFuture<?> actual = execute(testSubject);
+        ExecutionException actualException = assertThrows(ExecutionException.class, actual::get);
+        assertTrue(actualException.getMessage().contains("ProcessingContext is already in phase INVOCATION"));
+    }
+
+    @Test
+    void completionHandlersAreInvokedImmediatelyWhenProcessingContextIsAlreadyCompleted() {
+        PL testSubject = createTestSubject();
+        CompletableFuture<?> actual = execute(testSubject);
+
+        assertTrue(actual.isDone());
+        AtomicBoolean invoked = new AtomicBoolean();
+        testSubject.whenComplete(pc -> invoked.set(true));
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void completionHandlersAreNotInvokedWhenProcessingContextIsCompletedWithError() {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION));
+
+        CompletableFuture<?> actual = execute(testSubject);
+
+        assertTrue(actual.isDone());
+        AtomicBoolean invoked = new AtomicBoolean();
+        testSubject.whenComplete(pc -> invoked.set(true));
+        assertFalse(invoked.get());
+    }
+
+    @Test
+    void errorHandlersAreInvokedImmediatelyWhenProcessingContextIsAlreadyCompletedWithError() {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+
+        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION));
+
+        CompletableFuture<?> actual = execute(testSubject);
+        assertTrue(actual.isDone());
+        fixture.assertErrorHappeningInPhase(INVOCATION);
+
+        AtomicBoolean invoked = new AtomicBoolean();
+        testSubject.onError((pc, phase, e) -> invoked.set(true));
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void errorHandlersAreNotInvokedWhenProcessingContextIsCompleted() {
+        PL testSubject = createTestSubject();
+
+
+        CompletableFuture<?> actual = execute(testSubject);
+        assertTrue(actual.isDone());
+
+        AtomicBoolean invoked = new AtomicBoolean();
+        testSubject.onError((pc, phase, e) -> invoked.set(true));
+        assertFalse(invoked.get());
+    }
+
+    @Test
+    void finallyHandlersAreInvokedImmediatelyWhenProcessingContextIsAlreadyCompleted() {
+        PL testSubject = createTestSubject();
+        CompletableFuture<?> actual = execute(testSubject);
+
+        assertTrue(actual.isDone());
+        AtomicBoolean invoked = new AtomicBoolean();
+        testSubject.doFinally(pc -> invoked.set(true));
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void finallyHandlersAreInvokedImmediatelyWhenProcessingContextIsAlreadyCompletedWithError() {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+
+        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION));
+
+        CompletableFuture<?> actual = execute(testSubject);
+        assertTrue(actual.isDone());
+        fixture.assertErrorHappeningInPhase(INVOCATION);
+
+        AtomicBoolean invoked = new AtomicBoolean();
+        testSubject.doFinally(pc -> invoked.set(true));
+        assertTrue(invoked.get());
+    }
+
+    // TODO - Add tests to validate registration of resources
 
     /**
      * Test fixture intended for validating the invocation of actions registered in
@@ -318,42 +503,36 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         }
 
         public void assertCompleteExecution() {
-            long nonRollbackHandlerCount = filteredHandlerCount(entry -> entry.getKey() != ROLLBACK);
-            assertAmountOfHandlers(nonRollbackHandlerCount);
-            assertAmountOfExecutedHandlers(nonRollbackHandlerCount);
+            long handlerCount = filteredHandlerCount(entry -> true);
+            assertAmountOfHandlers(handlerCount);
+            assertAmountOfExecutedHandlers(handlerCount);
             assertExecutionOrder();
         }
 
         public void assertErrorHappeningInPhase(ProcessingLifecycle.Phase phase) {
             // assert everything before and during given phase is invoked
-            for (int i = 0; i <= phase.ordinal(); i++) {
-                ProcessingLifecycle.Phase p = ProcessingLifecycle.Phase.values()[i];
-                assertInvoked(p);
-            }
+            assertInvoked(p -> !p.isAfter(phase));
 
-            // assert everything after give phase but rollback and complete is not invoked
-            for (int i = phase.ordinal() + 1; i < ROLLBACK.ordinal(); i++) {
-                ProcessingLifecycle.Phase p = ProcessingLifecycle.Phase.values()[i];
-                assertNotInvoked(p);
-            }
-
-            // assert that rollback and complete are invoked
-            assertInvoked(ROLLBACK);
-            assertInvoked(COMPLETED);
+            // assert everything after give phase is not invoked
+            assertNotInvoked(p -> p.isAfter(phase));
         }
 
-        private void assertInvoked(ProcessingLifecycle.Phase phase) {
-            int expected = phaseToHandlerCount.get(phase) == null ? 0 : phaseToHandlerCount.get(phase);
-            assertEquals(expected, countExecuted(phase));
+        private void assertInvoked(Predicate<ProcessingLifecycle.Phase> phaseFilter) {
+            int expected = phaseToHandlerCount.entrySet()
+                                              .stream()
+                                              .filter(ks -> phaseFilter.test(ks.getKey()))
+                                              .mapToInt(Map.Entry::getValue)
+                                              .sum();
+            assertEquals(expected, countExecuted(phaseFilter));
         }
 
-        private void assertNotInvoked(ProcessingLifecycle.Phase phase) {
-            assertEquals(0, countExecuted(phase));
+        private void assertNotInvoked(Predicate<ProcessingLifecycle.Phase> phaseFilter) {
+            assertEquals(0, countExecuted(phaseFilter));
         }
 
-        private int countExecuted(ProcessingLifecycle.Phase phase) {
+        private int countExecuted(Predicate<ProcessingLifecycle.Phase> phaseFilter) {
             return (int) completedExecutions.stream()
-                                            .filter(executionCompleted -> executionCompleted.phase().equals(phase))
+                                            .filter(executionCompleted -> phaseFilter.test(executionCompleted.phase()))
                                             .count();
         }
 
@@ -378,10 +557,13 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         }
 
         private void assertExecutionOrder() {
-            ProcessingLifecycle.Phase prevPhase = ProcessingLifecycle.Phase.PRE_INVOCATION;
+            int phaseOrder = Integer.MIN_VALUE;
             for (ExecutionCompleted executionCompleted : completedExecutions) {
-                assertTrue(executionCompleted.phase.ordinal() >= prevPhase.ordinal());
-                prevPhase = executionCompleted.phase;
+                assertTrue(executionCompleted.phase.order() >= phaseOrder,
+                           "Phase [" + executionCompleted.phase + "] (" + executionCompleted.phase.order()
+                                   + ") was executed out of order, as it executed after another phase with order "
+                                   + phaseOrder);
+                phaseOrder = executionCompleted.phase.order();
             }
         }
     }

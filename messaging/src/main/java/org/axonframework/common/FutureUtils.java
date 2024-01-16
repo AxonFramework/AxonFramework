@@ -24,10 +24,10 @@ public abstract class FutureUtils {
     }
 
     /**
-     * Utility method that doesn't do anything. It's purpose is to simplify conversion of a {@code CompletableFuture}
+     * Utility method that doesn't do anything. Its purpose is to simplify conversion of a {@code CompletableFuture}
      * with any generic type to a {@code CompletableFuture<Void>}.
      * <p>
-     * Example: {@code completableFuture.thenApply(ObjectUtils::ignoreResult}
+     * Example: {@code completableFuture.thenApply(FutureUtils::ignoreResult}
      *
      * @param toIgnore the actual result of the completable future
      * @param <T>      the declared result of the completable future to ignore the result of

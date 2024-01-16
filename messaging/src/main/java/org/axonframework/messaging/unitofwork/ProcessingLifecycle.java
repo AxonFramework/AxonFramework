@@ -26,107 +26,128 @@ public interface ProcessingLifecycle {
     }
 
     default ProcessingLifecycle onPreInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.PRE_INVOCATION, action);
+        return on(DefaultPhases.PRE_INVOCATION, action);
     }
 
     default ProcessingLifecycle runOnPreInvocation(Consumer<ProcessingContext> action) {
-        return runOn(Phase.PRE_INVOCATION, action);
+        return runOn(DefaultPhases.PRE_INVOCATION, action);
     }
 
     default ProcessingLifecycle onInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.INVOCATION, action);
+        return on(DefaultPhases.INVOCATION, action);
     }
 
     default ProcessingLifecycle runOnInvocation(Consumer<ProcessingContext> action) {
-        return runOn(Phase.INVOCATION, action);
+        return runOn(DefaultPhases.INVOCATION, action);
     }
 
     default ProcessingLifecycle onPostInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.POST_INVOCATION, action);
+        return on(DefaultPhases.POST_INVOCATION, action);
     }
 
     default ProcessingLifecycle runOnPostInvocation(Consumer<ProcessingContext> action) {
-        return runOn(Phase.POST_INVOCATION, action);
+        return runOn(DefaultPhases.POST_INVOCATION, action);
     }
 
     default ProcessingLifecycle onPrepareCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.PREPARE_COMMIT, action);
+        return on(DefaultPhases.PREPARE_COMMIT, action);
     }
 
     default ProcessingLifecycle runOnPrepareCommit(Consumer<ProcessingContext> action) {
-        return runOn(Phase.PREPARE_COMMIT, action);
+        return runOn(DefaultPhases.PREPARE_COMMIT, action);
     }
 
     default ProcessingLifecycle onCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.COMMIT, action);
+        return on(DefaultPhases.COMMIT, action);
     }
 
     default ProcessingLifecycle runOnCommit(Consumer<ProcessingContext> action) {
-        return runOn(Phase.COMMIT, action);
+        return runOn(DefaultPhases.COMMIT, action);
     }
 
     default ProcessingLifecycle onAfterCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.AFTER_COMMIT, action);
+        return on(DefaultPhases.AFTER_COMMIT, action);
     }
 
     default ProcessingLifecycle runOnAfterCommit(Consumer<ProcessingContext> action) {
-        return runOn(Phase.AFTER_COMMIT, action);
+        return runOn(DefaultPhases.AFTER_COMMIT, action);
     }
 
-    default ProcessingLifecycle onRollback(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.ROLLBACK, action);
-    }
+    ProcessingLifecycle onError(ErrorHandler action);
 
-    default ProcessingLifecycle runOnRollback(Consumer<ProcessingContext> action) {
-        return runOn(Phase.ROLLBACK, action);
-    }
+    ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action);
 
-    default ProcessingLifecycle onCompleted(Function<ProcessingContext, CompletableFuture<?>> action) {
-        return on(Phase.COMPLETED, action);
-    }
-
-    default ProcessingLifecycle runOnCompleted(Consumer<ProcessingContext> action) {
-        return runOn(Phase.COMPLETED, action);
+    default ProcessingLifecycle doFinally(Consumer<ProcessingContext> action) {
+        onError((c, p, e) -> action.accept(c));
+        whenComplete(action);
+        return this;
     }
 
     /**
-     * Register the given {@code action} to be invoked once the {@link Phase#COMPLETED completed phase} is reached. The
-     * given {@code action} will be invoked immediately if this {@code ProcessingLifecycle} already reached the
-     * {@link Phase#COMPLETED completed phase}.
-     *
-     * @param action The action to perform once the {@link Phase#COMPLETED completed phase} is reached or has already
-     *               been reached.
-     * @return The current {@link ProcessingLifecycle}, for chaining.
+     * Interface describing a component that gets notified when an error is detected within a Processing Context
      */
-    ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action);
+    @FunctionalInterface
+    interface ErrorHandler {
 
-    // TODO add interface with order, so that users can define their own phases among our fixed phases
-    // TODO make special case out of rollback/onError with its own order, receiving the exception and the phase it was thrown in
-    // TODO make special case out of completed with a dedicated method and no phase instance
-    // TODO get rid of the AFTER_COMPLETE, as onComplete takes care of this.
-    // TODO whenever there's a form of clean-up task, that needs to happen on a failure/rollback path and an on successful path, we add an onFinally that registered on both.
-    enum Phase {
+        /**
+         * Invoked when an error is detected in a Processing Context and its lifecycle has been aborted. The state of
+         * the lifecycle will always return {@code true} for {@link ProcessingContext#isError()} and
+         * {@link ProcessingContext#isCompleted()}.
+         *
+         * @param processingContext The context in which the error occurred
+         * @param phase             The phase used to register the handler which caused the ProcessingContext to fail
+         * @param error             The exception or error describing the cause
+         */
+        void handle(ProcessingContext processingContext, Phase phase, Throwable error);
+    }
 
-        // handling stuff...
-        PRE_INVOCATION(true),
-        INVOCATION(true),
-        POST_INVOCATION(true),
-        // potentially transactional stuff...
-        PREPARE_COMMIT(true),
-        COMMIT(true),
-        AFTER_COMMIT(false),
-        ROLLBACK(false),
-        // done, hurray!
-        COMPLETED(false);
+    /**
+     * Interface describing a possible Phase for a ProcessingLifecycle. Lifecycle handlers are invoked in the order of
+     * their respective phase, where handlers in phases with the same order may be invoked in parallel.
+     */
+    interface Phase {
 
-        private final boolean rollbackOnFailure;
+        /**
+         * The order of this phase compared to other phases. Phases with the same order are considered "simultaneous"
+         * and may have their handlers invoked in parallel.
+         *
+         * @return the int describing the relative order of this phase
+         */
+        int order();
 
-        Phase(boolean rollbackOnFailure) {
-            this.rollbackOnFailure = rollbackOnFailure;
+        default boolean isBefore(Phase other) {
+            return this.order() < other.order();
         }
 
-        public boolean isRollbackOnFailure() {
-            return rollbackOnFailure;
+        default boolean isAfter(Phase other) {
+            return this.order() > other.order();
+        }
+    }
+
+    /**
+     * Default phases used for the shorthand methods in the ProcessingLifecycle
+     */
+    enum DefaultPhases implements Phase {
+
+        // handling stuff...
+        PRE_INVOCATION(-10000),
+        INVOCATION(0),
+        POST_INVOCATION(10000),
+
+        // potentially transactional stuff...
+        PREPARE_COMMIT(20000),
+        COMMIT(30000),
+        AFTER_COMMIT(40000);
+
+        private final int order;
+
+        DefaultPhases(int order) {
+            this.order = order;
+        }
+
+        @Override
+        public int order() {
+            return order;
         }
     }
 }

@@ -9,7 +9,7 @@ public interface ProcessingContext extends ProcessingLifecycle {
 
     boolean isStarted();
 
-    boolean isRolledBack();
+    boolean isError();
 
     boolean isCommitted();
 
