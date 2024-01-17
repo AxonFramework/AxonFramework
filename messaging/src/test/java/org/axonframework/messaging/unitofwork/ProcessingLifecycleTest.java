@@ -1,5 +1,6 @@
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
@@ -49,6 +50,14 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
      * @return A {@link CompletableFuture} completing once the given {@code testSubject} executed.
      */
     abstract CompletableFuture<?> execute(PL testSubject);
+
+    @Test
+    void secondAttemptToCommitIsRejected() {
+        PL testSubject = createTestSubject();
+        execute(testSubject).join();
+
+        assertThrows(Exception.class, () -> execute(testSubject));
+    }
 
     @Test
     void synchronousActionsRegisteredInTheSamePhaseAlwaysCompleteBeforeEnteringTheSubsequentPhase() throws Exception {
@@ -383,6 +392,50 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     }
 
     @Test
+    void completionHandlersAreInvokedAtWhenProcessingContextCompletes() {
+        PL testSubject = createTestSubject();
+        AtomicBoolean invoked = new AtomicBoolean();
+        testSubject.whenComplete(pc -> invoked.set(true));
+
+        CompletableFuture<?> actual = execute(testSubject);
+        assertTrue(actual.isDone());
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void exceptionsInCompletionHandlersAreLoggedAndSuppressed() {
+        PL testSubject = createTestSubject();
+
+        AtomicBoolean invoked = new AtomicBoolean();
+        testSubject.whenComplete(pc -> {
+            invoked.set(true);
+            throw new MockException("Mocking failure");
+        });
+
+        CompletableFuture<?> actual = execute(testSubject);
+        assertTrue(actual.isDone());
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void exceptionsInErrorHandlersAreLoggedAndSuppressed() {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION));
+
+
+        AtomicBoolean invoked = new AtomicBoolean();
+        testSubject.onError((pc, ph, e) -> {
+            invoked.set(true);
+            throw new MockException("Mocking failure");
+        });
+
+        CompletableFuture<?> actual = execute(testSubject);
+        assertTrue(actual.isDone());
+        assertTrue(invoked.get());
+    }
+
+    @Test
     void completionHandlersAreInvokedImmediatelyWhenProcessingContextIsAlreadyCompleted() {
         PL testSubject = createTestSubject();
         CompletableFuture<?> actual = execute(testSubject);
@@ -463,7 +516,155 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         assertTrue(invoked.get());
     }
 
-    // TODO - Add tests to validate registration of resources
+    @Test
+    void resourceRegisteredInOnePhaseAreAccessibleInAnother() {
+        PL testSubject = createTestSubject();
+        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+
+        testSubject.runOnInvocation(pc -> pc.putResource(testKey, "testValue"));
+        testSubject.runOnInvocation(pc -> pc.putResource(ProcessingContext.ResourceKey.create("testKey"),
+                                                         "anotherTestValue"));
+        testSubject.runOnPostInvocation(pc -> assertEquals("testValue", pc.getResource(testKey)));
+
+        execute(testSubject).join();
+    }
+
+    @Test
+    void putIfAbsentIgnoredWhenValueExists() {
+        PL testSubject = createTestSubject();
+        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+
+        testSubject.runOnInvocation(pc -> pc.putResource(testKey, "testValue"));
+        testSubject.runOnPostInvocation(pc -> pc.putResourceIfAbsent(testKey, "anotherTestValue"));
+        testSubject.runOnAfterCommit(pc -> assertEquals("testValue", pc.getResource(testKey)));
+
+        execute(testSubject).join();
+    }
+
+    @Test
+    void putIfAbsentStoresValue() {
+        PL testSubject = createTestSubject();
+        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+
+        testSubject.runOnInvocation(pc -> assertNull(pc.putResourceIfAbsent(testKey, "testValue")));
+        testSubject.runOnPostInvocation(pc -> assertEquals("testValue", pc.getResource(testKey)));
+
+        execute(testSubject).join();
+    }
+
+    @Test
+    void computeIfAbsentIgnoredWhenValueExists() {
+        PL testSubject = createTestSubject();
+        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+
+        testSubject.runOnInvocation(pc -> pc.putResource(testKey, "testValue"));
+        testSubject.runOnPostInvocation(pc -> assertEquals("testValue",
+                                                           pc.computeResourceIfAbsent(testKey,
+                                                                                      () -> Assertions.fail(
+                                                                                              "Should not have invoked supplier"))));
+        testSubject.runOnAfterCommit(pc -> assertEquals("testValue", pc.getResource(testKey)));
+
+        execute(testSubject).join();
+    }
+
+    @Test
+    void computeIfAbsentStoresValue() {
+        PL testSubject = createTestSubject();
+        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+
+        testSubject.runOnInvocation(pc -> assertEquals("testValue",
+                                                       pc.computeResourceIfAbsent(testKey, () -> "testValue")));
+        testSubject.runOnPostInvocation(pc -> assertEquals("testValue", pc.getResource(testKey)));
+
+        execute(testSubject).join();
+    }
+
+    @Test
+    void updateResourceStoresUpdatedResource() {
+        PL testSubject = createTestSubject();
+        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+
+        testSubject.runOnPreInvocation(pc -> pc.putResource(testKey, "testValue"));
+        testSubject.runOnInvocation(pc -> assertEquals("testValue2", pc.updateResource(testKey, s -> s + "2")));
+        testSubject.runOnPostInvocation(pc -> assertEquals("testValue2", pc.getResource(testKey)));
+
+        execute(testSubject).join();
+    }
+
+    @Test
+    void putResourceOverwritesExisting() {
+        PL testSubject = createTestSubject();
+        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+
+        testSubject.runOnInvocation(pc -> pc.putResource(testKey, "testValue1"));
+        testSubject.runOnPostInvocation(pc -> assertEquals("testValue1", pc.putResource(testKey, "testValue2")));
+        testSubject.runOnAfterCommit(pc -> pc.putResource(ProcessingContext.ResourceKey.create("testKey"),
+                                                          "anotherTestValue"));
+        testSubject.runOnAfterCommit(pc -> assertEquals("testValue2", pc.getResource(testKey)));
+
+        execute(testSubject).join();
+    }
+
+    @Test
+    void removeResource() {
+        PL testSubject = createTestSubject();
+        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+
+        testSubject.runOnPreInvocation(pc -> pc.putResource(testKey, "testValue"));
+        testSubject.runOnInvocation(pc -> assertEquals("testValue", pc.removeResource(testKey)));
+        testSubject.runOnPostInvocation(pc -> assertFalse(pc.containsResource(testKey)));
+        testSubject.runOnPostInvocation(pc -> assertNull(pc.getResource(testKey)));
+
+        execute(testSubject).join();
+    }
+
+    @Test
+    void removeResourceIgnoresWhenCurrentResourceDoesNotMatch() {
+        PL testSubject = createTestSubject();
+        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+
+        testSubject.runOnPreInvocation(pc -> pc.putResource(testKey, "testValue"));
+        testSubject.runOnInvocation(pc -> assertFalse(pc.removeResource(testKey, "anotherValue")));
+        testSubject.runOnAfterCommit(pc -> assertTrue(pc.containsResource(testKey)));
+        testSubject.runOnAfterCommit(pc -> assertEquals("testValue", pc.getResource(testKey)));
+
+        execute(testSubject).join();
+    }
+
+    @Test
+    void removeResourceWhenCurrentResourceMatches() {
+        PL testSubject = createTestSubject();
+        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+
+        testSubject.runOnPreInvocation(pc -> pc.putResource(testKey, "testValue"));
+        testSubject.runOnInvocation(pc -> assertTrue(pc.removeResource(testKey, "testValue")));
+        testSubject.runOnAfterCommit(pc -> assertFalse(pc.containsResource(testKey)));
+        testSubject.runOnPostInvocation(pc -> assertNull(pc.getResource(testKey)));
+
+        execute(testSubject).join();
+    }
+
+    @Test
+    void resourceKeysShowDebugStringInOutput() {
+        ProcessingContext.ResourceKey<Object> resourceKey = ProcessingContext.ResourceKey.create(
+                "myRandomDebugStringValue");
+
+        assertTrue(resourceKey.toString().contains("[myRandomDebugStringValue]"));
+    }
+
+    @Test
+    void resourceKeysWithEmptyDebugKeyShowsKeyIdOnly() {
+        ProcessingContext.ResourceKey<Object> resourceKey = ProcessingContext.ResourceKey.create("");
+
+        assertFalse(resourceKey.toString().contains("["));
+    }
+
+    @Test
+    void resourceKeysWithNullDebugKeyShowsKeyIdOnly() {
+        ProcessingContext.ResourceKey<Object> resourceKey = ProcessingContext.ResourceKey.create(null);
+
+        assertFalse(resourceKey.toString().contains("["));
+    }
 
     /**
      * Test fixture intended for validating the invocation of actions registered in

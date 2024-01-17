@@ -12,17 +12,11 @@ public interface ProcessingLifecycle {
 
     ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action);
 
-    /**
-     * TODO next session
-     * Drop execute/streamingResult. ProcessingLifecycle isn't aware o the exact result, just that there's a result.
-     * The infra component (bus/store/processor) is in charge of checking the result type and acting accordingly.
-     * - CommandBus         -> 0 / 1
-     * - QueryBus           -> 0 / n / many
-     * - EventBus           -> 0
-     * - EventProcessor     -> 0
-     */
     default ProcessingLifecycle runOn(Phase phase, Consumer<ProcessingContext> action) {
-        return on(phase, c -> CompletableFuture.runAsync(() -> action.accept(c), Runnable::run));
+        return on(phase, c -> {
+            action.accept(c);
+            return CompletableFuture.completedFuture(null);
+        });
     }
 
     default ProcessingLifecycle onPreInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {

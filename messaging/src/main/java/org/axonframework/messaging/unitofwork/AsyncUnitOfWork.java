@@ -9,13 +9,16 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * The UnitOfWork is a hook to phase tasks
@@ -98,7 +101,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         private final ConcurrentNavigableMap<Phase, Queue<Function<ProcessingContext, CompletableFuture<?>>>> phaseHandlers = new ConcurrentSkipListMap<>(
                 Comparator.comparingInt(Phase::order));
         private final AtomicReference<Phase> currentPhase = new AtomicReference<>(null);
-        private final LocalResources resources = new LocalResources();
+        private final ConcurrentMap<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
         private final AtomicReference<Status> status = new AtomicReference<>(Status.NOT_STARTED);
         private final Queue<ErrorHandler> errorHandlers = new ConcurrentLinkedQueue<>();
         private final Queue<Consumer<ProcessingContext>> completeHandlers = new ConcurrentLinkedQueue<>();
@@ -111,10 +114,6 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
             this.workScheduler = workScheduler;
         }
 
-        @Override
-        public Resources resources() {
-            return resources;
-        }
 
         @Override
         public boolean isStarted() {
@@ -136,6 +135,52 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
             Status currentStatus = status.get();
             return currentStatus == Status.COMPLETED
                     || currentStatus == Status.COMPLETED_ERROR;
+        }
+
+        @Override
+        public boolean containsResource(ResourceKey<?> key) {
+            return resources.containsKey(key);
+        }
+
+        @Override
+        public <T> T getResource(ResourceKey<T> key) {
+            //noinspection unchecked
+            return (T) resources.get(key);
+        }
+
+        @Override
+        public <T> T updateResource(ResourceKey<T> key, Function<T, T> update) {
+            //noinspection unchecked
+            return (T) resources.compute(key, (k, v) -> update.apply((T) v));
+        }
+
+        @Override
+        public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> instance) {
+            //noinspection unchecked
+            return (T) resources.computeIfAbsent(key, t -> instance.get());
+        }
+
+        @Override
+        public <T> T putResource(ResourceKey<T> key, T instance) {
+            //noinspection unchecked
+            return (T) resources.put(key, instance);
+        }
+
+        @Override
+        public <T> T putResourceIfAbsent(ResourceKey<T> key, T newValue) {
+            //noinspection unchecked
+            return (T) resources.putIfAbsent(key, newValue);
+        }
+
+        @Override
+        public <T> T removeResource(ResourceKey<T> key) {
+            //noinspection unchecked
+            return (T) resources.remove(key);
+        }
+
+        @Override
+        public <T> boolean removeResource(ResourceKey<T> key, T expectedInstance) {
+            return resources.remove(key, expectedInstance);
         }
 
         @Override
@@ -194,7 +239,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
                 try {
                     action.accept(p);
                 } catch (Throwable e) {
-                    logger.warn("A whenComplete handler threw an exception.", e);
+                    logger.warn("A Completion handler threw an exception.", e);
                 }
             };
         }
