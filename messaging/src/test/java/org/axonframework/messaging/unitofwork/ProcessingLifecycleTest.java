@@ -284,6 +284,28 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     }
 
     @Test
+    void multipleExceptionsInSamePhaseAreSuppressedByFirstException() {
+        PL testSubject = createTestSubject();
+        ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
+        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION, new RuntimeException("First")));
+        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION, new RuntimeException("Second")));
+        testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION, new RuntimeException("Third")));
+
+        CompletableFuture<?> result = execute(testSubject);
+        assertTrue(result.isCompletedExceptionally());
+
+        try {
+            result.get();
+            fail("Expected exception");
+        } catch (ExecutionException e) {
+            assertEquals("First", e.getCause().getMessage());
+            assertEquals(2, e.getCause().getSuppressed().length);
+        } catch (InterruptedException e) {
+            fail("Wrong exception");
+        }
+    }
+
+    @Test
     void phasesOccurringAfterTheFailingPhaseAreNotExecuted() {
         PL testSubject = createTestSubject();
         ProcessingLifecycleFixture fixture = new ProcessingLifecycleFixture();
@@ -474,12 +496,40 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         AtomicBoolean invoked = new AtomicBoolean();
         testSubject.onError((pc, phase, e) -> invoked.set(true));
         assertTrue(invoked.get());
+
+        assertTrue(testSubject.isError());
+        assertTrue(testSubject.isCompleted());
+        assertFalse(testSubject.isCommitted());
+        assertTrue(testSubject.isStarted());
+    }
+
+    @Test
+    void lifecycleStatusIsStartedInLifecycleHandlers() {
+        PL testSubject = createTestSubject();
+
+        assertFalse(testSubject.isStarted());
+        assertFalse(testSubject.isCommitted());
+        assertFalse(testSubject.isCompleted());
+        assertFalse(testSubject.isError());
+
+        testSubject.runOnInvocation(pc -> {
+            assertFalse(testSubject.isError());
+            assertFalse(testSubject.isCompleted());
+            assertFalse(testSubject.isCommitted());
+            assertTrue(testSubject.isStarted());
+        });
+
+        execute(testSubject).join();
+
+        assertFalse(testSubject.isError());
+        assertTrue(testSubject.isCompleted());
+        assertTrue(testSubject.isCommitted());
+        assertTrue(testSubject.isStarted());
     }
 
     @Test
     void errorHandlersAreNotInvokedWhenProcessingContextIsCompleted() {
         PL testSubject = createTestSubject();
-
 
         CompletableFuture<?> actual = execute(testSubject);
         assertTrue(actual.isDone());

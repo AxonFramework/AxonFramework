@@ -8,14 +8,6 @@ import java.util.function.Supplier;
  */
 public interface ProcessingContext extends ProcessingLifecycle {
 
-    boolean isStarted();
-
-    boolean isError();
-
-    boolean isCommitted();
-
-    boolean isCompleted();
-
     /**
      * Indicates whether a resource has been registered with the given {@code key} in this processing context
      *
@@ -117,7 +109,7 @@ public interface ProcessingContext extends ProcessingLifecycle {
         private final String toString;
 
         private ResourceKey(String debugString) {
-            String keyId = "Key@" + Integer.toHexString(System.identityHashCode(this));
+            String keyId = "ResourceKey@" + Integer.toHexString(System.identityHashCode(this));
             if (debugString == null || debugString.isBlank()) {
                 this.toString = keyId;
             } else {

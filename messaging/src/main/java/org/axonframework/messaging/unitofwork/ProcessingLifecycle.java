@@ -7,8 +7,15 @@ import java.util.function.Function;
 /**
  * Reasons to live: 1. support (not provide) transactionality 2. to be a "hook api"
  */
-// TODO Does the lifecycle deal with Messages only?!
 public interface ProcessingLifecycle {
+
+    boolean isStarted();
+
+    boolean isError();
+
+    boolean isCommitted();
+
+    boolean isCompleted();
 
     ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action);
 

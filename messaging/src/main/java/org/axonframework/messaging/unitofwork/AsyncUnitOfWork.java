@@ -50,6 +50,26 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
     }
 
     @Override
+    public boolean isStarted() {
+        return context.isStarted();
+    }
+
+    @Override
+    public boolean isError() {
+        return context.isError();
+    }
+
+    @Override
+    public boolean isCommitted() {
+        return context.isCommitted();
+    }
+
+    @Override
+    public boolean isCompleted() {
+        return context.isCompleted();
+    }
+
+    @Override
     public AsyncUnitOfWork on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
         context.on(phase, action);
         return this;
@@ -262,8 +282,9 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
                     result = CompletableFuture.failedFuture(e);
                 }
                 return result.exceptionallyCompose((e) -> {
-                    errorCause.compareAndSet(null, new CauseAndPhase(phase, e));
-                    logger.debug("A handler threw an exception in phase {}", phase, e);
+                    if (!errorCause.compareAndSet(null, new CauseAndPhase(phase, e))) {
+                        errorCause.get().cause().addSuppressed(e);
+                    }
                     return CompletableFuture.failedFuture(e);
                 });
             };
