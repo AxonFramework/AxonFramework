@@ -42,7 +42,7 @@ import javax.annotation.Nonnull;
  * @author Marc Gathier
  * @since 3.1
  */
-public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage<?, ?>> {
+public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage<?, ?>, Object> {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;

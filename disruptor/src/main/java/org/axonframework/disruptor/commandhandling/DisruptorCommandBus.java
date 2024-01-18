@@ -27,6 +27,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolution;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.MonitorAwareCallback;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
@@ -51,6 +52,7 @@ import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -81,6 +83,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -146,7 +149,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
 
-    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> commandHandlers =
+    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>>> commandHandlers =
             new ConcurrentHashMap<>();
 
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
@@ -207,11 +210,11 @@ public class DisruptorCommandBus implements CommandBus {
      * required for command execution are immediately requested from the Configuration's Executor, if any. Otherwise,
      * they are created.
      * <p>
-     * Will assert that the {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration}, {@link
-     * ProducerType}, {@link WaitStrategy} and {@link Cache} are not {@code null}. Additional verification is done on
-     * the the {@code coolingDownPeriod}, {@code publisherThreadCount}, {@code bufferSize} and {@code
-     * invokerThreadCount} to check whether they are positive numbers. If any of these checks fails, an {@link
-     * AxonConfigurationException} will be thrown.
+     * Will assert that the {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration},
+     * {@link ProducerType}, {@link WaitStrategy} and {@link Cache} are not {@code null}. Additional verification is
+     * done on the the {@code coolingDownPeriod}, {@code publisherThreadCount}, {@code bufferSize} and
+     * {@code invokerThreadCount} to check whether they are positive numbers. If any of these checks fails, an
+     * {@link AxonConfigurationException} will be thrown.
      *
      * @param builder the {@link Builder} used to instantiate a {@link DisruptorCommandBus} instance
      */
@@ -272,26 +275,24 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
-        dispatch(command, defaultCommandCallback);
-    }
-
-    @Override
-    public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
-                                @Nonnull CommandCallback<? super C, ? super R> callback) {
+    public <C, R> CompletableFuture<CommandResultMessage<R>> dispatch(@Nonnull CommandMessage<C> command,
+                                                                      @Nullable ProcessingContext processingContext) {
         Assert.state(started, () -> "CommandBus has been shut down. It is not accepting any Commands");
         CommandMessage<? extends C> commandToDispatch = command;
+        CompletableFuture<CommandResultMessage<R>> result = new CompletableFuture<>();
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
             commandToDispatch = (CommandMessage<? extends C>) interceptor.handle(commandToDispatch);
         }
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(commandToDispatch);
 
         try {
-            doDispatch(commandToDispatch, new MonitorAwareCallback<>(callback, monitorCallback));
+            doDispatch(commandToDispatch, new MonitorAwareCallback<>((c, r) -> result.complete(
+                    GenericCommandResultMessage.asCommandResultMessage(r)), monitorCallback));
         } catch (Exception e) {
             monitorCallback.reportFailure(e);
-            callback.onResult(commandToDispatch, asCommandResultMessage(e));
+            result.complete(GenericCommandResultMessage.asCommandResultMessage(e));
         }
+        return result;
     }
 
     /**
@@ -305,7 +306,8 @@ public class DisruptorCommandBus implements CommandBus {
     @SuppressWarnings("Duplicates")
     private <C, R> void doDispatch(CommandMessage<? extends C> command, CommandCallback<? super C, R> callback) {
         Assert.state(!disruptorShutDown, () -> "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
-        final MessageHandler<? super CommandMessage<?>> commandHandler = commandHandlers.get(command.getCommandName());
+        final MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> commandHandler = commandHandlers.get(
+                command.getCommandName());
         if (commandHandler == null) {
             callback.onResult(command, asCommandResultMessage(new NoHandlerForCommandException(format(
                     "No handler was subscribed for command [%s].", command.getCommandName()
@@ -429,9 +431,9 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     /**
-     * Creates a repository instance for an Event Sourced aggregate that is created by the given {@code
-     * aggregateFactory} and sourced from given {@code eventStore}. Parameters of the annotated methods are resolved
-     * using the given {@code parameterResolverFactory}.
+     * Creates a repository instance for an Event Sourced aggregate that is created by the given
+     * {@code aggregateFactory} and sourced from given {@code eventStore}. Parameters of the annotated methods are
+     * resolved using the given {@code parameterResolverFactory}.
      *
      * @param eventStore               The Event Store to retrieve and persist events
      * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
@@ -450,10 +452,10 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     /**
-     * Creates a repository instance for an Event Sourced aggregate that is created by the given {@code
-     * aggregateFactory} and sourced from given {@code eventStore}. Parameters of the annotated methods are resolved
-     * using the given {@code parameterResolverFactory}. The given {@code handlerDefinition} is used to create handler
-     * instances.
+     * Creates a repository instance for an Event Sourced aggregate that is created by the given
+     * {@code aggregateFactory} and sourced from given {@code eventStore}. Parameters of the annotated methods are
+     * resolved using the given {@code parameterResolverFactory}. The given {@code handlerDefinition} is used to create
+     * handler instances.
      *
      * @param eventStore               The Event Store to retrieve and persist events
      * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
@@ -536,7 +538,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler) {
         logger.debug("Subscribing command with name [{}]", commandName);
         commandHandlers.compute(commandName, (cn, existingHandler) -> {
             if (existingHandler == null || existingHandler == handler) {
@@ -664,12 +666,12 @@ public class DisruptorCommandBus implements CommandBus {
         private CommandCallback<Object, Object> defaultCommandCallback = FailureLoggingCommandCallback.INSTANCE;
 
         /**
-         * Set the {@link MessageHandlerInterceptor} of generic type {@link CommandMessage} to use with the {@link
-         * DisruptorCommandBus} during in the invocation thread. The interceptors are invoked by the thread that also
-         * executes the command handler.
+         * Set the {@link MessageHandlerInterceptor} of generic type {@link CommandMessage} to use with the
+         * {@link DisruptorCommandBus} during in the invocation thread. The interceptors are invoked by the thread that
+         * also executes the command handler.
          * <p/>
-         * Note that this is *not* the thread that stores and publishes the generated events. See {@link
-         * #publisherInterceptors(java.util.List)}.
+         * Note that this is *not* the thread that stores and publishes the generated events. See
+         * {@link #publisherInterceptors(java.util.List)}.
          *
          * @param invokerInterceptors the {@link MessageHandlerInterceptor}s to invoke when handling an incoming
          *                            command
@@ -699,9 +701,9 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         /**
-         * Configures {@link MessageDispatchInterceptor} of generic type {@link CommandMessage} to use with the {@link
-         * DisruptorCommandBus} when commands are dispatched. The interceptors are invoked by the thread that provides
-         * the commands to the command bus.
+         * Configures {@link MessageDispatchInterceptor} of generic type {@link CommandMessage} to use with the
+         * {@link DisruptorCommandBus} when commands are dispatched. The interceptors are invoked by the thread that
+         * provides the commands to the command bus.
          *
          * @param dispatchInterceptors the {@link MessageDispatchInterceptor}s dispatch interceptors to invoke when
          *                             dispatching a command
@@ -734,7 +736,8 @@ public class DisruptorCommandBus implements CommandBus {
 
         /**
          * Sets the {@link ThreadFactory} that constructs the threads for the components of the
-         * {@link DisruptorCommandBus}. When no {@link #executor(Executor) executor} is provided, the given {@code threadFactory} is used to build an {@link Executor} for the {@link EventPublisher}
+         * {@link DisruptorCommandBus}. When no {@link #executor(Executor) executor} is provided, the given
+         * {@code threadFactory} is used to build an {@link Executor} for the {@link EventPublisher}
          * <p/>
          * Defaults to an {@link AxonThreadFactory} with the base name {@code "DisruptorCommandBus"}.
          *
@@ -773,8 +776,8 @@ public class DisruptorCommandBus implements CommandBus {
          * <p/>
          * Defaults to 1000 ms (1 second).
          *
-         * @param coolingDownPeriod a {@code long} specifying the cooling down period for the shutdown of the {@link
-         *                          DisruptorCommandBus}, in milliseconds.
+         * @param coolingDownPeriod a {@code long} specifying the cooling down period for the shutdown of the
+         *                          {@link DisruptorCommandBus}, in milliseconds.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder coolingDownPeriod(long coolingDownPeriod) {
@@ -785,8 +788,8 @@ public class DisruptorCommandBus implements CommandBus {
 
         /**
          * Sets the {@link CommandTargetResolver} that must be used to indicate which Aggregate instance will be invoked
-         * by an incoming command. The {@link DisruptorCommandBus} only uses this value if {@link
-         * #invokerThreadCount(int)}}, or {@link #publisherThreadCount(int)} is greater than {@code 1}.
+         * by an incoming command. The {@link DisruptorCommandBus} only uses this value if
+         * {@link #invokerThreadCount(int)}}, or {@link #publisherThreadCount(int)} is greater than {@code 1}.
          * <p/>
          * Defaults to an {@link AnnotationCommandTargetResolver} instance.
          *
@@ -801,8 +804,8 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the number of Threads that should be used to store and publish the generated Events. Defaults to {@code
-         * 1}.
+         * Sets the number of Threads that should be used to store and publish the generated Events. Defaults to
+         * {@code 1}.
          * <p/>
          * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount
          * of I/O that the process requires. If no I/O is involved, a good starting value is {@code [processors / 2]}.
@@ -915,8 +918,8 @@ public class DisruptorCommandBus implements CommandBus {
          * Sets the number of Threads that should be used to invoke the Command Handlers. Defaults to {@code 1}.
          * <p/>
          * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount
-         * of I/O that the process requires. A good range, if no I/O is involved is {@code 1 .. ([processor count] /
-         * 2)}.
+         * of I/O that the process requires. A good range, if no I/O is involved is
+         * {@code 1 .. ([processor count] / 2)}.
          *
          * @param invokerThreadCount an {@code int} specifying the number of Threads to use for Command Handler
          *                           invocation
@@ -946,8 +949,8 @@ public class DisruptorCommandBus implements CommandBus {
 
         /**
          * Sets the {@link DuplicateCommandHandlerResolver} used to resolves the road to take when a duplicate command
-         * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#logAndOverride() Log and
-         * Override}.
+         * handler is subscribed. Defaults to
+         * {@link DuplicateCommandHandlerResolution#logAndOverride() Log and Override}.
          *
          * @param duplicateCommandHandlerResolver a {@link DuplicateCommandHandlerResolver} used to resolves the road to
          *                                        take when a duplicate command handler is subscribed
@@ -962,9 +965,9 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link
-         * #dispatch(CommandMessage)}. Defaults to a {@link FailureLoggingCommandCallback}, which logs failed commands
-         * to a logger. Passing {@code null} will result in a {@link NoOpCallback} being used.
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
+         * {@link CommandBus#dispatch(CommandMessage, ProcessingContext)}. Defaults to a {@link FailureLoggingCommandCallback}, which logs failed
+         * commands to a logger. Passing {@code null} will result in a {@link NoOpCallback} being used.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
          * @return the current Builder instance, for fluent interfacing

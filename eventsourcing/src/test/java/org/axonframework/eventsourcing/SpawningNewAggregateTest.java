@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.Repository;
@@ -100,7 +101,8 @@ class SpawningNewAggregateTest {
     @Test
     void spawningNewAggregate() throws Exception {
         initializeAggregate1Repository(repositoryProvider);
-        commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")));
+        commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
+                            ProcessingContext.NONE);
 
         verify(aggregate1Repository).newInstance(any());
         verify(repositoryProvider).repositoryFor(Aggregate2.class);

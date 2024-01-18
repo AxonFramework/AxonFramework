@@ -99,7 +99,8 @@ class SimpleQueryBusTest {
                                     .errorHandler(errorHandler)
                                     .spanFactory(queryBusSpanFactory)
                                     .queryUpdateEmitter(SimpleQueryUpdateEmitter.builder()
-                                                                                .spanFactory(queryUpdateEmitterSpanFactory)
+                                                                                .spanFactory(
+                                                                                        queryUpdateEmitterSpanFactory)
                                                                                 .build())
                                     .duplicateQueryHandlerResolver(silentlyAdd())
                                     .build();
@@ -150,7 +151,7 @@ class SimpleQueryBusTest {
     @Test
     void subscribingSameHandlerTwiceInvokedOnce() throws Exception {
         AtomicInteger invocationCount = new AtomicInteger();
-        MessageHandler<QueryMessage<?, String>> handler = message -> {
+        MessageHandler<QueryMessage<?, String>, Object> handler = message -> {
             invocationCount.incrementAndGet();
             return "reply";
         };
@@ -178,8 +179,8 @@ class SimpleQueryBusTest {
                                     .errorHandler(errorHandler)
                                     .duplicateQueryHandlerResolver(DuplicateQueryHandlerResolution.rejectDuplicates())
                                     .build();
-        MessageHandler<QueryMessage<?, String>> handlerOne = message -> "reply";
-        MessageHandler<QueryMessage<?, String>> handlerTwo = message -> "reply";
+        MessageHandler<QueryMessage<?, String>, Object> handlerOne = message -> "reply";
+        MessageHandler<QueryMessage<?, String>, Object> handlerTwo = message -> "reply";
         //noinspection resource
         testSubject.subscribe("test", String.class, handlerOne);
         //noinspection resource
@@ -356,11 +357,11 @@ class SimpleQueryBusTest {
     @Test
     void queryForSingleResultWithUnsuitableHandlers() throws Exception {
         AtomicInteger invocationCount = new AtomicInteger();
-        MessageHandler<? super QueryMessage<?, ?>> failingHandler = message -> {
+        MessageHandler<? super QueryMessage<?, ?>, Object> failingHandler = message -> {
             invocationCount.incrementAndGet();
             throw new NoHandlerForQueryException("Mock");
         };
-        MessageHandler<? super QueryMessage<?, String>> passingHandler = message -> {
+        MessageHandler<? super QueryMessage<?, String>, Object> passingHandler = message -> {
             invocationCount.incrementAndGet();
             return "reply";
         };
@@ -429,7 +430,7 @@ class SimpleQueryBusTest {
 
     @Test
     void queryForSingleResultWillReportErrors() throws Exception {
-        MessageHandler<? super QueryMessage<?, ?>> failingHandler = message -> {
+        MessageHandler<? super QueryMessage<?, ?>, Object> failingHandler = message -> {
             throw new MockException("Mock");
         };
         //noinspection resource

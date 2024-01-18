@@ -25,6 +25,7 @@ import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.caching.WeakReferenceCache;
@@ -60,6 +61,7 @@ import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
@@ -79,6 +81,7 @@ import org.quartz.SchedulerException;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -122,8 +125,7 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
         config.start();
 
-        FutureCallback<Object, Object> callback = new FutureCallback<>();
-        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+        CompletableFuture<CommandResultMessage<Object>> callback = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), ProcessingContext.NONE);
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(EventSourcingRepository.class, config.repository(StubAggregate.class).getClass());

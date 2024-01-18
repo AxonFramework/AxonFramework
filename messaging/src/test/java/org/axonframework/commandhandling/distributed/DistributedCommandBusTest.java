@@ -31,6 +31,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
@@ -128,7 +129,7 @@ class DistributedCommandBusTest {
                                            .defaultCommandCallback(mockCallback)
                                            .build();
 
-        testSubject.dispatch(message);
+        testSubject.dispatch(message, ProcessingContext.NONE);
 
         verify(mockCallback).onResult(eq(message), any());
     }
@@ -156,7 +157,7 @@ class DistributedCommandBusTest {
                                            .connector(mockConnector)
                                            .build();
 
-        testSubject.dispatch(testCommandMessage);
+        testSubject.dispatch(testCommandMessage, ProcessingContext.NONE);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
         verify(mockConnector, times(1)).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
@@ -316,7 +317,7 @@ class DistributedCommandBusTest {
 
         @Override
         public Registration subscribe(@Nonnull String commandName,
-                                      @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
+                                      @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler) {
             return null;
         }
 

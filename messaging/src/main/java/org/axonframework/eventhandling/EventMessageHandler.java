@@ -29,7 +29,7 @@ import java.util.Objects;
  * @see EventHandler
  * @since 0.1
  */
-public interface EventMessageHandler extends MessageHandler<EventMessage<?>> {
+public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Void> {
 
     /**
      * Process the given event. The implementation may decide to process or skip the given event. It is highly

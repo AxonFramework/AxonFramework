@@ -40,7 +40,7 @@ class AsynchronousCommandBusTest {
 
     private MessageHandlerInterceptor<CommandMessage<?>> handlerInterceptor;
     private MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor;
-    private MessageHandler<CommandMessage<?>> commandHandler;
+    private MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler;
     private ExecutorService executorService;
     private AsynchronousCommandBus testSubject;
     private TestSpanFactory spanFactory;
@@ -102,7 +102,7 @@ class AsynchronousCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test
     void dispatchWithoutCallback() throws Exception {
-        MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler = mock(MessageHandler.class);
         testSubject.subscribe(Object.class.getName(), commandHandler);
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, NoOpCallback.INSTANCE);

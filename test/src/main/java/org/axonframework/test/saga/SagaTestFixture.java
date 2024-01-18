@@ -157,7 +157,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> new DefaultInterceptorChain<>(
                 unitOfWork,
                 eventHandlerInterceptors,
-                (MessageHandler<EventMessage<?>>) message -> {
+                (MessageHandler<EventMessage<?>, Void>) message -> {
                     sagaManager.handle(message, Segment.ROOT_SEGMENT);
                     return null;
                 }).proceed()

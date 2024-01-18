@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
 public class QuerySubscription<R> {
 
     private final Type responseType;
-    private final MessageHandler<? super QueryMessage<?, R>> queryHandler;
+    private final MessageHandler<? super QueryMessage<?, R>, Object> queryHandler;
 
     /**
      * Instantiate a {@link QuerySubscription} with a specific {@code responseType} and {@code queryHandler}.
@@ -44,7 +44,7 @@ public class QuerySubscription<R> {
      * @param responseType a {@link java.lang.reflect.Type} as the response type of this subscription
      * @param queryHandler the subscribed {@link org.axonframework.messaging.MessageHandler}
      */
-    public QuerySubscription(@Nonnull Type responseType, @Nonnull MessageHandler<? super QueryMessage<?, R>> queryHandler) {
+    public QuerySubscription(@Nonnull Type responseType, @Nonnull MessageHandler<? super QueryMessage<?, R>, Object> queryHandler) {
         this.responseType = responseType;
         this.queryHandler = queryHandler;
     }
@@ -75,7 +75,7 @@ public class QuerySubscription<R> {
      *
      * @return the {@link org.axonframework.messaging.MessageHandler} tied to this subscription
      */
-    public MessageHandler<? super QueryMessage<?, R>> getQueryHandler() {
+    public MessageHandler<? super QueryMessage<?, R>, Object> getQueryHandler() {
         return queryHandler;
     }
 

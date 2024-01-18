@@ -48,9 +48,9 @@ public class LoggingDuplicateCommandHandlerResolver implements DuplicateCommandH
     }
 
     @Override
-    public MessageHandler<? super CommandMessage<?>> resolve(@Nonnull String commandName,
-                                                             @Nonnull MessageHandler<? super CommandMessage<?>> registeredHandler,
-                                                             @Nonnull MessageHandler<? super CommandMessage<?>> candidateHandler) {
+    public MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> resolve(@Nonnull String commandName,
+                                                                                      @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> registeredHandler,
+                                                                                      @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> candidateHandler) {
 
         logger.warn("A duplicate command handler was found for command [{}]. "
                             + "The handler in [{}] has been replaced by the handler in [{}].",

@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.spring.config.annotation.SpringBeanDependencyResolverFactory;
 import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
@@ -47,6 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests the functionality of Spring dependency resolution at the application context level. This covers both
@@ -70,7 +70,7 @@ class SpringBeanResolverFactoryTest {
     @BeforeEach
     void setUp() {
         COUNTER.set(0);
-        processingContext = new AsyncUnitOfWork().processingContext();
+        processingContext = mock(ProcessingContext.class);
         testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
                                                                .withUserConfiguration(TestContext.class);
     }

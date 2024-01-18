@@ -16,6 +16,8 @@
 
 package org.axonframework.common.transaction;
 
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
+
 import java.util.function.Supplier;
 
 /**
@@ -52,9 +54,17 @@ public interface TransactionManager {
         }
     }
 
+    default void attachToProcessingLifecycle(ProcessingLifecycle processingLifecycle) {
+        processingLifecycle.runOnPreInvocation(pc -> {
+            Transaction transaction = startTransaction();
+            pc.runOnCommit(p -> transaction.commit());
+            pc.onError((p, phase, e) -> transaction.rollback());
+        });
+    }
+
     /**
-     * Invokes the given {@code supplier} in a transaction managed by the current TransactionManager. Upon completion
-     * of the call, the transaction will be committed in the case of a regular return value, or rolled back in case an
+     * Invokes the given {@code supplier} in a transaction managed by the current TransactionManager. Upon completion of
+     * the call, the transaction will be committed in the case of a regular return value, or rolled back in case an
      * exception occurred.
      * <p>
      * This method is an alternative to {@link #executeInTransaction(Runnable)} in cases where a result needs to be

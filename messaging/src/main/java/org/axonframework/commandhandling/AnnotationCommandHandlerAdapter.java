@@ -44,7 +44,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @see CommandHandler
  * @since 0.5
  */
-public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler {
+public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingComponent {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
@@ -128,15 +128,16 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
     }
 
     @Override
-    public CompletableFuture<?> handle(CommandMessage<?> command,
-                                            ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> handle(CommandMessage<?> command,
+                                                             ProcessingContext processingContext) {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
                      .filter(ch -> ch.canHandle(command))
                      .findFirst()
                      .orElseThrow(() -> new NoHandlerForCommandException(command));
         // TODO: 24-11-2023 interceptor chain logic!
-        return handler.handle(command, target);
+        return handler.handle(command, target)
+                      .thenApply(GenericCommandResultMessage::asCommandResultMessage);
     }
 
     @Override

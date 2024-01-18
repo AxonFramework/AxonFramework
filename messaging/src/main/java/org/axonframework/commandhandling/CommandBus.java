@@ -20,8 +20,11 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * The mechanism that dispatches Command objects to their appropriate CommandHandler. CommandHandlers can subscribe and
@@ -35,24 +38,26 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
         MessageDispatchInterceptorSupport<CommandMessage<?>> {
 
     /**
-     * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name. No
-     * feedback is given about the status of the dispatching process. Implementations may return immediately after
-     * asserting a valid handler is registered for the given command.
+     * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.
      *
-     * @param <C>     The payload type of the command to dispatch
-     * @param command The Command to dispatch
+     * @param <C>               The payload type of the command to dispatch
+     * @param command           The Command to dispatch
+     * @param processingContext The processing context which processing cause this message to be dispatched
+     * @return the result of CommandHandling. The CompletableFuture may complete exceptionally if an exception occurred
+     * during dispatching of the command.
      * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}'s name.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
-    <C> void dispatch(@Nonnull CommandMessage<C> command);
+    <C, R> CompletableFuture<CommandResultMessage<R>> dispatch(@Nonnull CommandMessage<C> command,
+                                                               @Nullable ProcessingContext processingContext);
 
     /**
      * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name. When the
      * command is processed, one of the callback's methods is called, depending on the result of the processing.
      * <p/>
      * There are no guarantees about the successful completion of command dispatching or handling after the method
-     * returns. Implementations are highly recommended to perform basic validation of the command before returning
-     * from this method call.
+     * returns. Implementations are highly recommended to perform basic validation of the command before returning from
+     * this method call.
      * <p/>
      * Implementations must start a UnitOfWork when before dispatching the command, and either commit or rollback after
      * a successful or failed execution, respectively.
@@ -64,7 +69,18 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
      * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
-    <C, R> void dispatch(@Nonnull CommandMessage<C> command, @Nonnull CommandCallback<? super C, ? super R> callback);
+    @Deprecated
+    default <C, R> void dispatch(@Nonnull CommandMessage<C> command,
+                                 @Nonnull CommandCallback<? super C, ? super R> callback) {
+        this.<C, R>dispatch(command, ProcessingContext.NONE)
+            .whenComplete((r, e) -> {
+                if (e == null) {
+                    callback.onResult(command, r);
+                } else {
+                    callback.onResult(command, GenericCommandResultMessage.asCommandResultMessage(e));
+                }
+            });
+    }
 
     /**
      * Subscribe the given {@code handler} to commands with the given {@code commandName}.
@@ -77,5 +93,6 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
      * @param handler     The handler instance that handles the given type of command
      * @return a handle to unsubscribe the {@code handler}. When unsubscribed it will no longer receive commands.
      */
-    Registration subscribe(@Nonnull String commandName, @Nonnull MessageHandler<? super CommandMessage<?>> handler);
+    Registration subscribe(@Nonnull String commandName,
+                           @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler);
 }

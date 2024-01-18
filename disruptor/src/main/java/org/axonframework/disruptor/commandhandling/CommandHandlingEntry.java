@@ -35,7 +35,7 @@ import java.util.concurrent.Callable;
  */
 public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>> {
 
-    private final MessageHandler<CommandMessage<?>> repeatingCommandHandler;
+    private final MessageHandler<CommandMessage<?>, CommandResultMessage<?>> repeatingCommandHandler;
     private InterceptorChain invocationInterceptorChain;
     private InterceptorChain publisherInterceptorChain;
     private CommandResultMessage<?> result;
@@ -151,7 +151,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      * @param publisherInterceptors The interceptors to invoke during the publication phase
      */
     public void reset(CommandMessage<?> newCommand,
-                      MessageHandler<? super CommandMessage<?>> newCommandHandler,// NOSONAR - Not important
+                      MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> newCommandHandler,// NOSONAR - Not important
                       int newInvokerSegmentId,
                       int newPublisherSegmentId,
                       BlacklistDetectingCallback<?, ?> newCallback,
@@ -229,10 +229,10 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         this.aggregateIdentifier = aggregateIdentifier;
     }
 
-    private class RepeatingCommandHandler implements MessageHandler<CommandMessage<?>> {
+    private class RepeatingCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         @Override
-        public Object handleSync(CommandMessage<?> message) throws Exception {
+        public Object handleSync(CommandMessage<?> message) {
             return result;
         }
     }

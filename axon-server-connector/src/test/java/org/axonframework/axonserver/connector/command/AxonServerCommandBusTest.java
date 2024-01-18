@@ -40,6 +40,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.TestSpanFactory;
@@ -257,7 +258,7 @@ class AxonServerCommandBusTest {
             return null;
         }).when(mockDefaultCommandCallback).onResult(any(), any());
 
-        testSubject.dispatch(commandMessage);
+        testSubject.dispatch(commandMessage, ProcessingContext.NONE);
 
         assertTrue(cdl.await(1, TimeUnit.SECONDS), "Expected default callback to have been invoked");
         verify(mockDefaultCommandCallback).onResult(eq(commandMessage), any());
@@ -373,7 +374,7 @@ class AxonServerCommandBusTest {
             results.add(b.getPayload());
             return b;
         });
-        testSubject.dispatch(new GenericCommandMessage<>("payload"));
+        testSubject.dispatch(new GenericCommandMessage<>("payload"), ProcessingContext.NONE);
         assertEquals("payload", results.get(0));
         assertEquals(1, results.size());
     }
@@ -442,7 +443,7 @@ class AxonServerCommandBusTest {
         GenericCommandMessage<String> command = new GenericCommandMessage<>("some-command");
         assertThrows(
                 ShutdownInProgressException.class,
-                () -> testSubject.dispatch(command)
+                () -> testSubject.dispatch(command, ProcessingContext.NONE)
         );
     }
 

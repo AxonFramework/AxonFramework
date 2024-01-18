@@ -45,6 +45,7 @@ import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
@@ -60,6 +61,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -153,15 +155,17 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     }
 
     @Override
-    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
-        dispatch(command, defaultCommandCallback);
+    public <C, R> CompletableFuture<CommandResultMessage<R>> dispatch(@Nonnull CommandMessage<C> commandMessage,
+                                                                      @Nullable ProcessingContext processingContext) {
+        CompletableFuture<CommandResultMessage<R>> result = new CompletableFuture<>();
+        doDispatch(dispatchInterceptors.intercept(commandMessage), (c, r) -> result.complete((CommandResultMessage<R>) r));
+        return result;
     }
 
     @Override
     public <C, R> void dispatch(@Nonnull CommandMessage<C> commandMessage,
-                                @Nonnull CommandCallback<? super C, ? super R> commandCallback) {
-        logger.debug("Dispatch command [{}] with callback", commandMessage.getCommandName());
-        doDispatch(dispatchInterceptors.intercept(commandMessage), commandCallback);
+                                @Nonnull CommandCallback<? super C, ? super R> callback) {
+        doDispatch(dispatchInterceptors.intercept(commandMessage), callback);
     }
 
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
@@ -207,8 +211,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>> messageHandler) {
-        logger.debug("Subscribing command with name [{}] to this distributed CommandBus. Expect similar logging on the local segment.", commandName);
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> messageHandler) {
+        logger.debug(
+                "Subscribing command with name [{}] to this distributed CommandBus. Expect similar logging on the local segment.",
+                commandName);
         Registration localRegistration = localSegment.subscribe(commandName, messageHandler);
         io.axoniq.axonserver.connector.Registration serverRegistration =
                 axonServerConnectionManager.getConnection(context)
@@ -425,7 +431,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
         /**
          * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
-         * {@link #dispatch(CommandMessage)}. Defaults to a {@link NoOpCallback}. Passing {@code null} will result in a
+         * {@link CommandBus#dispatch(CommandMessage, ProcessingContext)}. Defaults to a {@link NoOpCallback}. Passing {@code null} will result in a
          * {@link NoOpCallback} being used.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command

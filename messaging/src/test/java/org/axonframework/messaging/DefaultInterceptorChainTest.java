@@ -18,11 +18,10 @@ package org.axonframework.messaging;
 
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -32,7 +31,7 @@ import static org.mockito.Mockito.*;
 class DefaultInterceptorChainTest {
 
     private UnitOfWork<Message<?>> unitOfWork;
-    private MessageHandler<Message<?>> mockHandler;
+    private MessageHandler<Message<?>, ?> mockHandler;
 
     @BeforeEach
     @SuppressWarnings("unchecked")

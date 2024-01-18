@@ -18,17 +18,19 @@ package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.modelling.command.AbstractRepository;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.command.AbstractRepository;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -77,10 +79,10 @@ public class CommandHandlingBenchmark {
         cb.subscribe(String.class.getName(), new MyCommandHandler(repository));
 
         long COMMAND_COUNT = 5 * 1000 * 1000;
-        cb.dispatch(GenericCommandMessage.asCommandMessage("ready,"));
+        cb.dispatch(GenericCommandMessage.asCommandMessage("ready,"), ProcessingContext.NONE);
         long t1 = System.currentTimeMillis();
         for (int t = 0; t < COMMAND_COUNT; t++) {
-            cb.dispatch(GenericCommandMessage.asCommandMessage("go!"));
+            cb.dispatch(GenericCommandMessage.asCommandMessage("go!"), ProcessingContext.NONE);
         }
         long t2 = System.currentTimeMillis();
         System.out.printf("Just did %d commands per second%n", ((COMMAND_COUNT * 1000) / (t2 - t1)));
@@ -110,7 +112,7 @@ public class CommandHandlingBenchmark {
 
     }
 
-    private static class MyCommandHandler implements MessageHandler<CommandMessage<?>> {
+    private static class MyCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         private final Repository<MyAggregate> repository;
 

@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Rene de Waele
  * @since 3.0
  */
-public interface MessageHandler<T extends Message<?>> {
+public interface MessageHandler<T extends Message<?>, R> {
 
     /**
      * Handles the given {@code message}.
@@ -40,9 +41,9 @@ public interface MessageHandler<T extends Message<?>> {
     @Deprecated
     Object handleSync(T message) throws Exception;
 
-    default CompletableFuture<?> handle(T message, ProcessingContext processingContext) {
+    default CompletableFuture<R> handle(T message, ProcessingContext processingContext) {
         try {
-            return CompletableFuture.completedFuture(handleSync(message));
+            return CompletableFuture.completedFuture((R) GenericCommandResultMessage.asCommandResultMessage(handleSync(message)));
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }

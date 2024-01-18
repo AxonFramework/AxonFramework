@@ -17,6 +17,7 @@
 package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
@@ -64,7 +65,7 @@ class CommandHandlerInvokerTest {
     private CommandHandlingEntry commandHandlingEntry;
     private String aggregateIdentifier;
     private CommandMessage<?> mockCommandMessage;
-    private MessageHandler<CommandMessage<?>> mockCommandHandler;
+    private MessageHandler<CommandMessage<?>, CommandResultMessage<?>> mockCommandHandler;
     private SnapshotTriggerDefinition snapshotTriggerDefinition;
     private SnapshotTrigger mockTrigger;
 

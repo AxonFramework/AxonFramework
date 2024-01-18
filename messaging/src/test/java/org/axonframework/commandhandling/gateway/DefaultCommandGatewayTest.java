@@ -27,6 +27,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -338,7 +339,7 @@ class DefaultCommandGatewayTest {
                 }
             });
             return null;
-        }).when(mockCommandBus).dispatch(any(), any());
+        }).when(mockCommandBus).dispatch(any(), any(ProcessingContext.class));
 
         CompletableFuture<String> actual = testSubject.send("command");
         assertTrue(actual.isDone());

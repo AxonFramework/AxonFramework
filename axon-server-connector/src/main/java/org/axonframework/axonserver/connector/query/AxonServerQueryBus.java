@@ -229,7 +229,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     @Override
     public <R> Registration subscribe(@Nonnull String queryName,
                                       @Nonnull Type responseType,
-                                      @Nonnull MessageHandler<? super QueryMessage<?, R>> handler) {
+                                      @Nonnull MessageHandler<? super QueryMessage<?, R>, Object> handler) {
         Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
         QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType);
         io.axoniq.axonserver.connector.Registration serverRegistration =

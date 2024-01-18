@@ -20,8 +20,9 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
-import org.axonframework.commandhandling.MonitorAwareCallback;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
@@ -35,11 +36,11 @@ import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,9 +52,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.lang.String.format;
-import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -84,7 +85,6 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
 
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final AtomicReference<CommandMessageFilter> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
-    private final CommandCallback<Object, Object> defaultCommandCallback;
     private final CommandBusSpanFactory spanFactory;
 
     private volatile int loadFactor = INITIAL_LOAD_FACTOR;
@@ -93,9 +93,9 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * Instantiate a Builder to be able to create a {@link DistributedCommandBus}.
      * <p>
      * The {@link CommandCallback} is defaulted to a {@link LoggingCallback}. The {@link MessageMonitor} is defaulted to
-     * a {@link NoOpMessageMonitor}. The {@link CommandBusSpanFactory} is defaulted to a {@link DefaultCommandBusSpanFactory}
-     * backed by a {@link NoOpSpanFactory}. The {@link CommandRouter} and {@link CommandBusConnector} are <b>hard
-     * requirements</b> and as such should be provided.
+     * a {@link NoOpMessageMonitor}. The {@link CommandBusSpanFactory} is defaulted to a
+     * {@link DefaultCommandBusSpanFactory} backed by a {@link NoOpSpanFactory}. The {@link CommandRouter} and
+     * {@link CommandBusConnector} are <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link DistributedCommandBus}
      */
@@ -116,7 +116,6 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
         this.commandRouter = builder.commandRouter;
         this.connector = builder.connector;
         this.messageMonitor = builder.messageMonitor;
-        this.defaultCommandCallback = builder.defaultCommandCallback;
         this.spanFactory = builder.spanFactory;
     }
 
@@ -146,30 +145,29 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     }
 
     @Override
-    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
+    public <C, R> CompletableFuture<CommandResultMessage<R>> dispatch(@Nonnull CommandMessage<C> command,
+                                                                      @Nullable ProcessingContext processingContext) {
         logger.debug("Dispatch command [{}] with callback", command.getCommandName());
-        dispatch(command, defaultCommandCallback);
-    }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws CommandDispatchException when an error occurs while dispatching the command to a segment
-     */
-    @Override
-    public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
-                                @Nonnull CommandCallback<? super C, ? super R> callback) {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
         Optional<Member> optionalDestination = commandRouter.findDestination(interceptedCommand);
         Span span = spanFactory.createDispatchCommandSpan(command, true).start();
+        CompletableFuture<CommandResultMessage<R>> result = new CompletableFuture<CommandResultMessage<R>>()
+                .whenComplete((r, e) -> {
+                    if (e == null) {
+                        messageMonitorCallback.reportSuccess();
+                    } else {
+                        messageMonitorCallback.reportFailure(e);
+                    }
+                });
         try (SpanScope ignored = span.makeCurrent()) {
             if (optionalDestination.isPresent()) {
                 Member destination = optionalDestination.get();
 
                 connector.send(destination,
                                spanFactory.propagateContext(interceptedCommand),
-                               new MonitorAwareCallback<>(callback, messageMonitorCallback));
+                               (c, r) -> result.complete(GenericCommandResultMessage.asCommandResultMessage(r)));
             } else {
                 throw new NoHandlerForCommandException(
                         format("No node known to accept command [%s].", interceptedCommand.getCommandName())
@@ -177,18 +175,12 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
             }
         } catch (Exception e) {
             span.recordException(e);
-            messageMonitorCallback.reportFailure(e);
             optionalDestination.ifPresent(Member::suspect);
-            if (e instanceof NoHandlerForCommandException) {
-                callback.onResult(interceptedCommand, asCommandResultMessage(e));
-            } else {
-                callback.onResult(interceptedCommand, asCommandResultMessage(
-                        new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)
-                ));
-            }
+            result.completeExceptionally(e);
         } finally {
             span.end();
         }
+        return result;
     }
 
     @SuppressWarnings("unchecked")
@@ -207,8 +199,10 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      */
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
-        logger.debug("Subscribing command with name [{}] to this distributed CommandBus. Expect similar logging on the local segment.", commandName);
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler) {
+        logger.debug(
+                "Subscribing command with name [{}] to this distributed CommandBus. Expect similar logging on the local segment.",
+                commandName);
         Registration reg = connector.subscribe(commandName, handler);
         updateFilter(commandFilter.get().or(new CommandNameFilter(commandName)));
 
@@ -331,7 +325,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
 
         /**
          * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
-         * {@link #dispatch(CommandMessage)}. Defaults to using a logging callback, which requests the connectors to use
+         * {@link CommandBus#dispatch(CommandMessage, ProcessingContext)}. Defaults to using a logging callback, which requests the connectors to use
          * a fire-and-forget strategy for dispatching event.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command

@@ -38,8 +38,8 @@ public class DuplicateCommandHandlerSubscriptionException extends AxonNonTransie
      * @param duplicateHandler the duplicated {@link MessageHandler}
      */
     public DuplicateCommandHandlerSubscriptionException(String commandName,
-                                                        MessageHandler<? super CommandMessage<?>> initialHandler,
-                                                        MessageHandler<? super CommandMessage<?>> duplicateHandler) {
+                                                        MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> initialHandler,
+                                                        MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> duplicateHandler) {
         this(String.format("A duplicate Command Handler for command [%s] has been subscribed residing in class [%s]"
                                    + " that would override an identical handler in class [%s].",
                            commandName,
