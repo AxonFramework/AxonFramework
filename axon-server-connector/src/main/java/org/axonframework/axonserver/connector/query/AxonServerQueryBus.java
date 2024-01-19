@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -414,9 +414,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                                                  .queryChannel()
                                                                                  .query(queryRequest);
 
+            AtomicBoolean closed = new AtomicBoolean(false);
             Runnable closeHandler = () -> {
-                queryInTransit.end();
-                span.end();
+                if(closed.compareAndSet(false, true)) {
+                    queryInTransit.end();
+                    span.end();
+                }
             };
             return StreamSupport.stream(
                     new QueryResponseSpliterator<>(queryMessage,
