@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.1</version>
+        <version>3.2.2</version>
         <relativePath/>
     </parent>
 
@@ -36,8 +36,8 @@
 
     <properties>
         <jobrunr.version>6.3.4</jobrunr.version>
-        <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
-        <spring-boot-3.version>3.2.1</spring-boot-3.version>
+        <mysql-connector-java.version>8.3.0</mysql-connector-java.version>
+        <spring-boot-3.version>3.2.2</spring-boot-3.version>
         <!-- Build / Plugin -->
         <jacoco-maven.version>0.8.11</jacoco-maven.version>
         <maven-compiler.version>3.12.1</maven-compiler.version>
