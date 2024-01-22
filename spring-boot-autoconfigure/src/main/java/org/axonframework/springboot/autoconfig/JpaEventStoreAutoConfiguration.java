@@ -32,6 +32,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 
 
@@ -44,7 +45,7 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration
 @ConditionalOnBean(EntityManagerFactory.class)
 @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class, EventStore.class})
-@AutoConfigureAfter(AxonServerBusAutoConfiguration.class)
+@AutoConfigureAfter({AxonServerBusAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventsourcing.eventstore.jpa"

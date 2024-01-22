@@ -34,7 +34,7 @@ public class MysqlTestContainerExtension extends MySQLContainer<MysqlTestContain
     private static MysqlTestContainerExtension container;
 
     public MysqlTestContainerExtension() {
-        super("mysql:latest");
+        super("mysql:8.0");
     }
 
     public static MysqlTestContainerExtension getInstance() {
