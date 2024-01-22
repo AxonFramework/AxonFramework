@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class MysqlJdbcEventStorageEngineTest {
 
     @Container
-    private static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>("mysql")
+    private static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.0")
             .withDatabaseName("axon")
             .withUsername("admin")
             .withPassword("some-password");
