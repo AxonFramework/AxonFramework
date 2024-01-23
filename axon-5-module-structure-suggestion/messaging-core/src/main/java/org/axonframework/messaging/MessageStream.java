@@ -15,4 +15,9 @@ public interface MessageStream<M extends Message> {
      * 1. Throw exception for second invocation
      */
     Publisher<M> asPublisher();
+
+    /*
+     * 1. Throw exception for second invocation
+     */
+    CompletableFuture<M> first();
 }
