@@ -4,7 +4,14 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * @author Awesome People
+ * TODO Add/enhance documentation as described in #2966.
+ *
+ * @author Allard Buijze
+ * @author Gerard Klijs
+ * @author Milan Savić
+ * @author Mitchell Herrijgers
+ * @author Sara Pellegrini
+ * @author Steven van Beelen
  */
 public interface ProcessingContext extends ProcessingLifecycle {
 
