@@ -18,6 +18,11 @@ package org.axonframework.common;
 
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * TODO Add/enhance documentation as described in #2966.
+ *
+ * @author Allard Buijze
+ */
 public abstract class FutureUtils {
 
     private FutureUtils() {

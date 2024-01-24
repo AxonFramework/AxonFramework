@@ -5,7 +5,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Reasons to live: 1. support (not provide) transactionality 2. to be a "hook api"
+ * TODO Add/enhance documentation as described in #2966.
+ *
+ * @author Allard Buijze
+ * @author Gerard Klijs
+ * @author Milan Savić
+ * @author Mitchell Herrijgers
+ * @author Sara Pellegrini
+ * @author Steven van Beelen
  */
 public interface ProcessingLifecycle {
 
@@ -130,12 +137,9 @@ public interface ProcessingLifecycle {
      */
     enum DefaultPhases implements Phase {
 
-        // handling stuff...
         PRE_INVOCATION(-10000),
         INVOCATION(0),
         POST_INVOCATION(10000),
-
-        // potentially transactional stuff...
         PREPARE_COMMIT(20000),
         COMMIT(30000),
         AFTER_COMMIT(40000);
