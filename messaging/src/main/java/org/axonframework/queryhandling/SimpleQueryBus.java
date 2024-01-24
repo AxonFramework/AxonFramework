@@ -502,7 +502,7 @@ public class SimpleQueryBus implements QueryBus {
     ) {
         return uow.executeWithResult(() -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
-            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
+            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync();
             if (queryResponse instanceof CompletableFuture) {
                 return ((CompletableFuture<?>) queryResponse).thenCompose(
                         result -> buildCompletableFuture(responseType, result));
@@ -527,7 +527,7 @@ public class SimpleQueryBus implements QueryBus {
         try (SpanScope unused = span.makeCurrent()) {
             DefaultUnitOfWork<StreamingQueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(query);
             return uow.executeWithResult(() -> {
-                Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
+                Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync();
                 return Flux.from(query.getResponseType()
                                       .convert(queryResponse))
                            .map(GenericQueryResponseMessage::asResponseMessage);

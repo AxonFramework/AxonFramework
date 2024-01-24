@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,7 +175,7 @@ class WorkPackage {
         BatchProcessingEntry batchProcessingEntry = new BatchProcessingEntry();
         boolean canHandleAny = events.stream()
                                      .map(event -> {
-                                         boolean canHandle = canHandle(event);
+                                         boolean canHandle = canHandle(event, null);
                                          batchProcessingEntry.add(new DefaultProcessingEntry(event, canHandle));
                                          return canHandle;
                                      })
@@ -220,7 +221,7 @@ class WorkPackage {
         logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
                      event.getIdentifier(), event.trackingToken().position().orElse(-1), segment.getSegmentId());
 
-        boolean canHandle = canHandle(event);
+        boolean canHandle = canHandle(event, null);
         processingQueue.add(new DefaultProcessingEntry(event, canHandle));
         lastDeliveredToken = event.trackingToken();
         // the worker must always be scheduled to ensure claims are extended
@@ -243,7 +244,7 @@ class WorkPackage {
         return lastDeliveredToken != null && lastDeliveredToken.covers(event.trackingToken());
     }
 
-    private boolean canHandle(TrackedEventMessage<?> event) {
+    private boolean canHandle(TrackedEventMessage<?> event, ProcessingContext processingContext) {
         try {
             return eventFilter.canHandle(event, segment);
         } catch (Exception e) {

@@ -50,7 +50,7 @@ public class DefaultInterceptorChain<T extends Message<?>, R> implements Interce
     }
 
     @Override
-    public Object proceed() throws Exception {
+    public Object proceedSync() throws Exception {
         if (chain.hasNext()) {
             return chain.next().handle(unitOfWork, this);
         } else {

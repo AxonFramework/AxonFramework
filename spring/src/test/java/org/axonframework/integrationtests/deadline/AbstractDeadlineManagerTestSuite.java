@@ -282,7 +282,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
                     .asDeadlineMessage(deadlineMessage.getDeadlineName(),
                                        new DeadlinePayload("fakeId"),
                                        deadlineMessage.getTimestamp()));
-            return chain.proceed();
+            return chain.proceedSync();
         });
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
 
@@ -337,7 +337,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void failedExecution() {
         //noinspection resource
         configuration.deadlineManager().registerHandlerInterceptor((uow, interceptorChain) -> {
-            interceptorChain.proceed();
+            interceptorChain.proceedSync();
             throw new AxonNonTransientException("Simulating handling error") {
             };
         });
@@ -455,7 +455,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
             uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
                     .asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload("fakeId"),
                                        deadlineMessage.getTimestamp()));
-            return chain.proceed();
+            return chain.proceedSync();
         });
         configuration.eventStore().publish(testEventMessage);
 

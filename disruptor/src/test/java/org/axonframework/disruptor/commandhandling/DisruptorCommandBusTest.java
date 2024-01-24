@@ -167,7 +167,7 @@ class DisruptorCommandBusTest {
                     unitOfWork.onPrepareCommit(mockPrepareCommitConsumer);
                     unitOfWork.afterCommit(mockAfterCommitConsumer);
                     unitOfWork.onCleanup(mockCleanUpConsumer);
-                    return ((InterceptorChain) invocation.getArguments()[1]).proceed();
+                    return ((InterceptorChain) invocation.getArguments()[1]).proceedSync();
                 });
         CommandMessage<StubCommand> command = asCommandMessage(new StubCommand(aggregateIdentifier));
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
@@ -359,7 +359,7 @@ class DisruptorCommandBusTest {
 
         //noinspection unchecked
         when(mockInterceptor.handle(any(UnitOfWork.class), any(InterceptorChain.class))).thenAnswer(
-                invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed()
+                invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceedSync()
         );
         testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)), ProcessingContext.NONE);
         //noinspection unchecked
@@ -773,7 +773,7 @@ class DisruptorCommandBusTest {
                                          .publisherInterceptors(Collections.singletonList(
                                                  (unitOfWork, interceptorChain) -> {
                                                      invocationCounter.incrementAndGet();
-                                                     return interceptorChain.proceed();
+                                                     return interceptorChain.proceedSync();
                                                  }
                                          ))
                                          .build();

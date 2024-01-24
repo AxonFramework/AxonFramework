@@ -18,6 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
      * Initializes a new instance that will invoke the given {@code executable} (method) on a target to handle a message
      * of the given {@code messageType}.
      *
-     * @param method               the method to invoke on a target
+     * @param method                   the method to invoke on a target
      * @param messageType              the type of message that is expected by the target method
      * @param explicitPayloadType      the expected message payload type
      * @param parameterResolverFactory factory used to resolve method parameters
@@ -99,10 +100,10 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message) {
+    public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
         return typeMatches(message)
                 && payloadType.isAssignableFrom(message.getPayloadType())
-                && parametersMatch(message);
+                && parametersMatch(message, processingContext);
     }
 
     @Override
@@ -118,8 +119,8 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
 
     /**
      * Checks if this member can handle the type of the given {@code message}. This method does not check if the
-     * parameter resolvers of this member are compatible with the given message. Use {@link #parametersMatch(Message)}
-     * for that.
+     * parameter resolvers of this member are compatible with the given message. Use
+     * {@link #parametersMatch(Message, ProcessingContext)} for that.
      *
      * @param message the message to check for
      * @return {@code true} if this member can handle the message type. {@code false} otherwise
@@ -134,9 +135,9 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
      * @param message the message to check for
      * @return {@code true} if the parameter resolvers can handle this message. {@code false} otherwise
      */
-    protected boolean parametersMatch(Message<?> message) {
+    protected boolean parametersMatch(Message<?> message, ProcessingContext processingContext) {
         for (ParameterResolver<?> resolver : parameterResolvers) {
-            if (!resolver.matches(message)) {
+            if (!resolver.matches(message, processingContext)) {
                 logger.debug("Parameter Resolver [{}] did not match message [{}] for payload type [{}].",
                              resolver.getClass(), message, message.getPayloadType());
                 return false;
@@ -147,29 +148,35 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
 
     @Override
     public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
-        return handle(message, target).get();
+        // FIXME - null processingContext should not be allowed here
+        //noinspection DataFlowIssue
+        return handle(message, null, target).get();
     }
 
     @Override
-    public CompletableFuture<?> handle(@Nonnull Message<?> message, @Nullable T target) {
+    public CompletableFuture<?> handle(@Nonnull Message<?> message,
+                                       @Nonnull ProcessingContext processingContext,
+                                       @Nullable T target) {
         Object invocationResult;
         try {
-            invocationResult = method.invoke(target, resolveParameterValues(message));
+            invocationResult = method.invoke(target, resolveParameterValues(message, processingContext));
         } catch (IllegalAccessException | InvocationTargetException e) {
             if (e.getCause() instanceof Exception) {
                 return CompletableFuture.failedFuture(e.getCause());
             } else if (e.getCause() instanceof Error) {
                 throw (Error) e.getCause();
             }
-            return CompletableFuture.failedFuture(new MessageHandlerInvocationException(String.format("Error handling an object of type [%s]", messageType), e));
+            return CompletableFuture.failedFuture(new MessageHandlerInvocationException(String.format(
+                    "Error handling an object of type [%s]",
+                    messageType), e));
         }
         return returnTypeConverter.apply(invocationResult);
     }
 
-    private Object[] resolveParameterValues(Message<?> message) {
+    private Object[] resolveParameterValues(Message<?> message, ProcessingContext processingContext) {
         Object[] params = new Object[parameterCount];
         for (int i = 0; i < parameterCount; i++) {
-            params[i] = parameterResolvers[i].resolveParameterValue(message);
+            params[i] = parameterResolvers[i].resolveParameterValue(message, processingContext);
         }
         return params;
     }

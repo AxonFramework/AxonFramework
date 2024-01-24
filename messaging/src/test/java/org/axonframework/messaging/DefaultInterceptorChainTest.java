@@ -46,9 +46,9 @@ class DefaultInterceptorChainTest {
     void chainWithDifferentProceedCalls() throws Exception {
         MessageHandlerInterceptor interceptor1 = (unitOfWork, interceptorChain) -> {
             unitOfWork.transformMessage(m -> new GenericMessage<>("testing"));
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         };
-        MessageHandlerInterceptor interceptor2 = (unitOfWork, interceptorChain) -> interceptorChain.proceed();
+        MessageHandlerInterceptor interceptor2 = (unitOfWork, interceptorChain) -> interceptorChain.proceedSync();
 
 
         unitOfWork.transformMessage(m -> new GenericMessage<>("original"));
@@ -56,7 +56,7 @@ class DefaultInterceptorChainTest {
                 unitOfWork, asList(interceptor1, interceptor2), mockHandler
         );
 
-        String actual = (String) testSubject.proceed();
+        String actual = (String) testSubject.proceedSync();
 
         assertSame("Result", actual);
         verify(mockHandler).handleSync(argThat(x -> (x != null) && x.getPayload().equals("testing")));

@@ -36,10 +36,10 @@ import java.lang.annotation.Target;
  * <p>
  * It is possible to specify {@link org.axonframework.messaging.InterceptorChain} parameter as part of command handler
  * interceptor signature. If this parameter is not specified, command handler will be executed automatically, as if
- * the {@link InterceptorChain#proceed()} was invoked as the last instruction.
+ * the {@link InterceptorChain#proceedSync()} was invoked as the last instruction.
  * <p>
  * If a parameter of type {@link InterceptorChain} is defined, it must be called to have the command handler invoked.
- * It may choose to return the result of the {@link InterceptorChain#proceed()} call directly, change it, or even
+ * It may choose to return the result of the {@link InterceptorChain#proceedSync()} call directly, change it, or even
  * discard it.
  * <p>
  * Annotated methods that do not declare an {@link InterceptorChain} parameter must declare a {@code void} return type,
@@ -49,7 +49,7 @@ import java.lang.annotation.Target;
  * <ul>
  * <li>Throwing an exception</li>
  * <li>Specifying {@link org.axonframework.messaging.InterceptorChain} parameter and not calling {@link
- * org.axonframework.messaging.InterceptorChain#proceed()} method on it</li>
+ * org.axonframework.messaging.InterceptorChain#proceedSync()} method on it</li>
  * </ul>
  * <p>
  * It is possible to have multiple interceptors for the same command. In that case, if there are interceptors in both

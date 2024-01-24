@@ -37,6 +37,7 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,7 +125,7 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage<?> message, ProcessingContext processingContext, @Nonnull Segment segment) throws Exception {
         if (!super.sequencingPolicyMatchesSegment(message, segment)) {
             logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].",
                          message.getIdentifier(), segment);
@@ -212,19 +213,19 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     @Override
-    public void performReset() {
+    public void performReset(ProcessingContext processingContext) {
         if (allowReset) {
             transactionManager.executeInTransaction(queue::clear);
         }
-        super.performReset(null);
+        super.performReset(null, processingContext);
     }
 
     @Override
-    public <R> void performReset(R resetContext) {
+    public <R> void performReset(R resetContext, ProcessingContext processingContext) {
         if (allowReset) {
             transactionManager.executeInTransaction(queue::clear);
         }
-        super.performReset(resetContext);
+        super.performReset(resetContext, processingContext);
     }
 
     @Override
@@ -329,7 +330,7 @@ public class DeadLetteringEventHandlerInvoker
         /**
          * Sets whether this {@link DeadLetteringEventHandlerInvoker} supports resets of the provided
          * {@link SequencedDeadLetterQueue}. If set to {@code true}, {@link SequencedDeadLetterQueue#clear()} will be
-         * invoked upon a {@link #performReset()}/{@link #performReset(Object)} invocation. Defaults to {@code false}.
+         * invoked upon a {@link EventHandlerInvoker#performReset(ProcessingContext)}/{@link EventHandlerInvoker#performReset(Object, ProcessingContext)} invocation. Defaults to {@code false}.
          *
          * @param allowReset A toggle dictating whether this {@link DeadLetteringEventHandlerInvoker} supports resets of
          *                   the provided {@link SequencedDeadLetterQueue}.

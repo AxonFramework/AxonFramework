@@ -24,8 +24,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.mockito.Mockito.*;
 
@@ -61,7 +60,7 @@ class TransactionManagingInterceptorTest {
 
         subject.handle(unitOfWork, interceptorChain);
         verify(transactionManager).startTransaction();
-        verify(interceptorChain).proceed();
+        verify(interceptorChain).proceedSync();
 
         verify(unitOfWork).onCommit(any());
         verify(unitOfWork).onRollback(any());

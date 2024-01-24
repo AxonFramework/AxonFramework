@@ -41,7 +41,7 @@ public interface MessageHandler<T extends Message<?>, R> {
     @Deprecated
     Object handleSync(T message) throws Exception;
 
-    default CompletableFuture<R> handle(T message, ProcessingContext processingContext) {
+    default CompletableFuture<? extends R> handle(T message, ProcessingContext processingContext) {
         try {
             return CompletableFuture.completedFuture((R) GenericCommandResultMessage.asCommandResultMessage(handleSync(message)));
         } catch (Exception e) {

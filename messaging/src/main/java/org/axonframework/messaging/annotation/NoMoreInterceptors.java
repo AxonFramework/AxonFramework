@@ -17,7 +17,9 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 
 /**
@@ -41,8 +43,14 @@ public class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberCha
     }
 
     @Override
-    public Object handle(@Nonnull Message<?> message, @Nonnull T target,
-                         @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
+    public Object handleSync(@Nonnull Message<?> message, @Nonnull T target,
+                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
         return handler.handleSync(message, target);
+    }
+
+    @Override
+    public CompletableFuture<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
+                                       @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
+        return handler.handle(message, processingContext, target);
     }
 }

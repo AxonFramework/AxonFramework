@@ -227,7 +227,7 @@ class AnnotationCommandHandlerAdapterTest {
         @MessageHandlerInterceptor
         public Object interceptAny(CommandMessage<?> command, InterceptorChain chain) throws Exception {
             interceptedWithInterceptorChain.add(command);
-            return chain.proceed();
+            return chain.proceedSync();
         }
 
         @ExceptionHandler(resultType = RuntimeException.class)

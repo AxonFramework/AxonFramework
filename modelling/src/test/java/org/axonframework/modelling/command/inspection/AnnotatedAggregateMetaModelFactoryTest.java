@@ -420,7 +420,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
     @SuppressWarnings("unchecked")
     private <T> MessageHandlingMember<T> getHandler(AggregateModel<T> member, CommandMessage<?> message) {
         return (MessageHandlingMember<T>) member.commandHandlers(member.entityClass())
-                                                 .filter(ch -> ch.canHandle(message))
+                                                 .filter(ch -> ch.canHandle(message, null))
                                                  .findFirst()
                                                  .orElseThrow(() -> new AssertionError(
                                                          "Expected handler for this message"

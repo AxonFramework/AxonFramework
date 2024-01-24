@@ -115,7 +115,7 @@ class DeadLetteredEventProcessingTask
                     handle(m);
                     return null;
                 }
-        ).proceed();
+        ).proceedSync();
         // There's no result of event handling to return here.
         // We use this methods format to be able to define the Error Handler may throw Exceptions.
         return null;

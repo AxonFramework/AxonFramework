@@ -110,17 +110,17 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
     public Object handleSync(QueryMessage<?, ?> message) throws Exception {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
-                     .filter(m -> m.canHandle(message))
+                     .filter(m -> m.canHandle(message, null))
                      .findFirst()
                      .orElseThrow(() -> new NoHandlerForQueryException(message));
 
         return model.chainedInterceptor(target.getClass())
-                    .handle(message, target, handler);
+                    .handleSync(message, target, handler);
     }
 
     @Override
     public boolean canHandle(QueryMessage<?, ?> message) {
         return model.getHandlers(target.getClass())
-                    .anyMatch(handlingMember -> handlingMember.canHandle(message));
+                    .anyMatch(handlingMember -> handlingMember.canHandle(message, null));
     }
 }

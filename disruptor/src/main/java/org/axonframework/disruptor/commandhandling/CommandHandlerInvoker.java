@@ -104,7 +104,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         } else if (entry.getInvokerId() == segmentId) {
             entry.start();
             try {
-                Object result = entry.getInvocationInterceptorChain().proceed();
+                Object result = entry.getInvocationInterceptorChain().proceedSync();
                 entry.setResult(asCommandResultMessage(result));
             } catch (Exception throwable) {
                 entry.setResult(asCommandResultMessage(throwable));

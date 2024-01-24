@@ -124,7 +124,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handleSync(TEST_EVENT);
@@ -147,7 +147,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handleSync(TEST_EVENT);
@@ -166,7 +166,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handleSync(TEST_EVENT);
@@ -189,9 +189,9 @@ class DeadLetteringEventHandlerInvokerTest {
         EventMessage<?> eventMessageTwo = createEvent("bar", 2);
         EventMessage<?> eventMessageThree = createEvent("foo", 3);
 
-        testSubject.handle(eventMessageOne, Segment.ROOT_SEGMENT);
-        testSubject.handle(eventMessageTwo, Segment.ROOT_SEGMENT);
-        testSubject.handle(eventMessageThree, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageOne, null, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageTwo, null, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageThree, null, Segment.ROOT_SEGMENT);
 
         verify(queue, times(1)).enqueueIfPresent(eq("foo"), any());
         verify(queue, times(1)).enqueueIfPresent(eq("bar"), any());
@@ -214,11 +214,11 @@ class DeadLetteringEventHandlerInvokerTest {
         DomainEventMessage<?> eventMessageTwo = createEvent("bar", 2);
         DomainEventMessage<?> eventMessageThree = nextMessage(eventMessageOne);
 
-        testSubject.handle(eventMessageOne, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageOne, null, Segment.ROOT_SEGMENT);
         // as eventMessageTwo has a different sequence identifier, and the size of the sequenceIdentifierCache is set
         // to just 1, we expect the object identifier of eventMessageOne to be removed.
-        testSubject.handle(eventMessageTwo, Segment.ROOT_SEGMENT);
-        testSubject.handle(eventMessageThree, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageTwo, null, Segment.ROOT_SEGMENT);
+        testSubject.handle(eventMessageThree, null, Segment.ROOT_SEGMENT);
 
         verify(queue, times(2)).enqueueIfPresent(eq("foo"), any());
         verify(queue, times(1)).enqueueIfPresent(eq("bar"), any());
@@ -235,9 +235,9 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
         testSubject.segmentReleased(Segment.ROOT_SEGMENT);
-        testSubject.handle(nextMessage(TEST_EVENT), Segment.ROOT_SEGMENT);
+        testSubject.handle(nextMessage(TEST_EVENT), null, Segment.ROOT_SEGMENT);
 
         verify(queue, times(2)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
 
@@ -250,7 +250,7 @@ class DeadLetteringEventHandlerInvokerTest {
         Segment testSegment = mock(Segment.class);
         when(testSegment.matches(any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, testSegment);
+        testSubject.handle(TEST_EVENT, null, testSegment);
 
         verify(sequencingPolicy).getSequenceIdentifierFor(TEST_EVENT);
         verifyNoInteractions(handler);
@@ -270,7 +270,7 @@ class DeadLetteringEventHandlerInvokerTest {
         doThrow(testCause).when(handler).handleSync(TEST_EVENT);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handleSync(TEST_EVENT);
@@ -304,8 +304,8 @@ class DeadLetteringEventHandlerInvokerTest {
         doThrow(testCause).when(handler).handleSync(TEST_EVENT);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
-        testSubject.handle(nextMessage(TEST_EVENT), Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
+        testSubject.handle(nextMessage(TEST_EVENT), null, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handleSync(TEST_EVENT);
@@ -328,7 +328,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
         doThrow(testCause).when(handler).handleSync(TEST_EVENT);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
-        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handleSync(TEST_EVENT);
@@ -352,7 +352,7 @@ class DeadLetteringEventHandlerInvokerTest {
     void handleMethodDoesNotHandleEventOnDelegateWhenEnqueueIfPresentReturnsTrue() throws Exception {
         when(queue.enqueueIfPresent(any(), any())).thenReturn(true);
 
-        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler, never()).handleSync(TEST_EVENT);
@@ -364,22 +364,22 @@ class DeadLetteringEventHandlerInvokerTest {
     void performResetOnlyInvokesParentWhenAllowResetSetToFalse() {
         setTestSubject(createTestSubject(builder -> builder.allowReset(false)));
 
-        testSubject.performReset();
+        testSubject.performReset(null);
 
         verifyNoInteractions(queue);
         verifyNoInteractions(transactionManager);
-        verify(handler).prepareReset(null);
+        verify(handler).prepareReset(null, null);
     }
 
     @Test
     void performResetClearsOutTheQueueWhenAllowResetSetToTrue() {
         setTestSubject(createTestSubject(builder -> builder.allowReset(true)));
 
-        testSubject.performReset();
+        testSubject.performReset(null);
 
         verify(queue).clear();
         verify(transactionManager).executeInTransaction(any());
-        verify(handler).prepareReset(null);
+        verify(handler).prepareReset(null,null );
     }
 
     @Test
@@ -388,11 +388,11 @@ class DeadLetteringEventHandlerInvokerTest {
 
         String testContext = "some-reset-context";
 
-        testSubject.performReset(testContext);
+        testSubject.performReset(testContext,null );
 
         verifyNoInteractions(queue);
         verifyNoInteractions(transactionManager);
-        verify(handler).prepareReset(testContext);
+        verify(handler).prepareReset(testContext,null );
     }
 
     @Test
@@ -401,11 +401,11 @@ class DeadLetteringEventHandlerInvokerTest {
 
         String testContext = "some-reset-context";
 
-        testSubject.performReset(testContext);
+        testSubject.performReset(testContext,null );
 
         verify(queue).clear();
         verify(transactionManager).executeInTransaction(any());
-        verify(handler).prepareReset(testContext);
+        verify(handler).prepareReset(testContext,null );
     }
 
     @Test

@@ -16,9 +16,12 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Interface to be implemented by classes that can handle events.
@@ -41,21 +44,33 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Voi
      */
     Object handleSync(EventMessage<?> event) throws Exception;
 
-    /**
-     * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
-     */
-    default void prepareReset() {
+    default CompletableFuture<Void> handle(EventMessage<?> event, ProcessingContext processingContext) {
+        try {
+            return CompletableFuture.completedFuture(handleSync(event))
+                                    .thenApply(FutureUtils::ignoreResult);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
      *
-     * @param resetContext a {@code R} used to support the reset operation
-     * @param <R>          the type of the provided {@code resetContext}
+     * @param processingContext
      */
-    default <R> void prepareReset(R resetContext) {
+    default void prepareReset(ProcessingContext processingContext) {
+    }
+
+    /**
+     * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
+     *
+     * @param <R>               the type of the provided {@code resetContext}
+     * @param resetContext      a {@code R} used to support the reset operation
+     * @param processingContext
+     */
+    default <R> void prepareReset(R resetContext, ProcessingContext processingContext) {
         if (Objects.isNull(resetContext)) {
-            prepareReset();
+            prepareReset(processingContext);
         } else {
             throw new UnsupportedOperationException(
                     "EventMessageHandler#prepareReset(R) is not implemented for a non-null reset context."

@@ -65,7 +65,7 @@ class AsynchronousCommandBusTest {
         when(dispatchInterceptor.handle(isA(CommandMessage.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
         when(handlerInterceptor.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed());
+                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceedSync());
     }
 
     @SuppressWarnings("unchecked")

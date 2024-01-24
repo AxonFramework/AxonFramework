@@ -264,7 +264,7 @@ class AnnotationQueryHandlerAdapterTest {
         @MessageHandlerInterceptor
         public Object interceptAny(QueryMessage<?, ?> query, InterceptorChain chain) throws Exception {
             interceptedWithInterceptorChain.add(query);
-            return chain.proceed();
+            return chain.proceedSync();
         }
 
         @ExceptionHandler(resultType = RuntimeException.class)

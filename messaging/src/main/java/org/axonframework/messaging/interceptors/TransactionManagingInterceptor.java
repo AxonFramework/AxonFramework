@@ -50,6 +50,6 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
         Transaction transaction = transactionManager.startTransaction();
         unitOfWork.onCommit(u -> transaction.commit());
         unitOfWork.onRollback(u -> transaction.rollback());
-        return interceptorChain.proceed();
+        return interceptorChain.proceedSync();
     }
 }

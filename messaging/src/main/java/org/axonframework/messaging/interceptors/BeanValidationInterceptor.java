@@ -66,7 +66,7 @@ public class BeanValidationInterceptor<T extends Message<?>>
     public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception {
         handle(unitOfWork.getMessage());
-        return interceptorChain.proceed();
+        return interceptorChain.proceedSync();
     }
 
     @Override

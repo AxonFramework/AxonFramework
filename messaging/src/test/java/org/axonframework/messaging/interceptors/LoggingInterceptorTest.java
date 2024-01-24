@@ -31,8 +31,6 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.AdditionalMatchers.*;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -77,7 +75,7 @@ class LoggingInterceptorTest {
     @Test
     void handlerInterceptorWithIncomingLoggingNullReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        when(interceptorChain.proceed()).thenReturn(null);
+        when(interceptorChain.proceedSync()).thenReturn(null);
 
         testSubject.handle(unitOfWork, interceptorChain);
 
@@ -91,7 +89,7 @@ class LoggingInterceptorTest {
     @Test
     void handlerInterceptorWithSuccessfulExecutionVoidReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        when(interceptorChain.proceed()).thenReturn(null);
+        when(interceptorChain.proceedSync()).thenReturn(null);
 
         testSubject.handle(unitOfWork, interceptorChain);
 
@@ -104,7 +102,7 @@ class LoggingInterceptorTest {
 
     @Test
     void handlerInterceptorWithSuccessfulExecutionCustomReturnValue() throws Exception {
-        when(interceptorChain.proceed()).thenReturn(new StubResponse());
+        when(interceptorChain.proceedSync()).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
         testSubject.handle(unitOfWork, interceptorChain);
@@ -120,7 +118,7 @@ class LoggingInterceptorTest {
     @Test
     void handlerInterceptorWithFailedExecution() throws Exception {
         RuntimeException exception = new RuntimeException();
-        when(interceptorChain.proceed()).thenThrow(exception);
+        when(interceptorChain.proceedSync()).thenThrow(exception);
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
         try {

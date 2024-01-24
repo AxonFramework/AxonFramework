@@ -20,6 +20,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.lang.reflect.Executable;
@@ -58,7 +59,7 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
     static class DeadLetterParameterResolver implements ParameterResolver<DeadLetter<?>> {
 
         @Override
-        public DeadLetter<?> resolveParameterValue(Message<?> message) {
+        public DeadLetter<?> resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
             return CurrentUnitOfWork.isStarted()
                     ? (DeadLetter<?>) CurrentUnitOfWork.map(uow -> uow.getResource(DeadLetter.class.getName()))
                                                        .orElse(null)
@@ -66,7 +67,7 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
         }
 
         @Override
-        public boolean matches(Message<?> message) {
+        public boolean matches(Message<?> message, ProcessingContext processingContext) {
             return true;
         }
     }

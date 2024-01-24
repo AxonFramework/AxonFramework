@@ -64,7 +64,7 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception {
         correlationDataProviders.forEach(unitOfWork::registerCorrelationDataProvider);
-        return interceptorChain.proceed();
+        return interceptorChain.proceedSync();
     }
 
 }

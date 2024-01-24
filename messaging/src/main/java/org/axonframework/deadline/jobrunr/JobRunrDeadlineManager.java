@@ -210,7 +210,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
                                                  deadlineDetails.getDeserializedScopeDescriptor(serializer));
                         return null;
                     });
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
+            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
             if (resultMessage.isExceptional()) {
                 Throwable e = resultMessage.exceptionResult();
                 span.recordException(e);

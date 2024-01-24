@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -55,8 +56,8 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message) {
-        return delegate.canHandle(message);
+    public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        return delegate.canHandle(message, processingContext);
     }
 
     @Override
@@ -65,8 +66,10 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public CompletableFuture<?> handle(@Nonnull Message<?> message, @Nullable T target) {
-        return delegate.handle(message, target);
+    public CompletableFuture<?> handle(@Nonnull Message<?> message,
+                                       @Nonnull ProcessingContext processingContext,
+                                       @Nullable T target) {
+        return delegate.handle(message, processingContext, target);
     }
 
     @Override

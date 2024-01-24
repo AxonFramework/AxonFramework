@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 
-import static java.lang.String.format;
-
 /**
  * {@link MessageDispatchInterceptor} and {@link MessageHandlerInterceptor} implementation that logs dispatched and
  * incoming messages, and their result, to a SLF4J logger. Allows configuration of the name under which the logger
@@ -82,7 +80,7 @@ public class LoggingInterceptor<T extends Message<?>>
         T message = unitOfWork.getMessage();
         logger.info("Incoming message: [{}]", message.getPayloadType().getSimpleName());
         try {
-            Object returnValue = interceptorChain.proceed();
+            Object returnValue = interceptorChain.proceedSync();
             logger.info("[{}] executed successfully with a [{}] return value",
                         message.getPayloadType().getSimpleName(),
                         returnValue == null ? "null" : returnValue.getClass().getSimpleName());

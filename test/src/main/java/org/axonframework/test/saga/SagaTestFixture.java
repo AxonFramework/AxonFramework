@@ -158,9 +158,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                 unitOfWork,
                 eventHandlerInterceptors,
                 (MessageHandler<EventMessage<?>, Void>) message -> {
-                    sagaManager.handle(message, Segment.ROOT_SEGMENT);
+                    sagaManager.handle(message, null, Segment.ROOT_SEGMENT);
                     return null;
-                }).proceed()
+                }).proceedSync()
         );
 
         if (resultMessage.isExceptional()) {

@@ -301,7 +301,7 @@ class FixtureTest_Deadlines {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(
                     deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp())
             );
-            return chain.proceed();
+            return chain.proceedSync();
         })
                .givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)

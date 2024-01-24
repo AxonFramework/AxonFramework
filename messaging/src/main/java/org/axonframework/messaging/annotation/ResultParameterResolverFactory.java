@@ -19,16 +19,19 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.interceptors.ResultHandler;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ResourceOverridingProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.Callable;
-import java.util.function.Supplier;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
 /**
- * ParameterResolverFactory that provides support for Parameters where the result of Handler execution is expected to
- * be injected. This is only possible in interceptor handlers that need to act on the result of downstream interceptors
- * or the regular handler.
+ * ParameterResolverFactory that provides support for Parameters where the result of Handler execution is expected to be
+ * injected. This is only possible in interceptor handlers that need to act on the result of downstream interceptors or
+ * the regular handler.
  * <p>
  * The {@link ResultHandler @ResultHandler} Meta-Annotation needs to be placed on handlers that support interacting with
  * the result type in its parameters.
@@ -41,6 +44,15 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
 
     private static final ThreadLocal<Object> REGISTERED_RESULT = new ThreadLocal<>();
     private static final Object IGNORE_RESULT_PARAMETER_MARKER = new Object();
+    public static final ProcessingContext.ResourceKey<Object> RESOURCE_KEY = ProcessingContext.ResourceKey.create(
+            "Invocation result for interceptors");
+
+
+    public static <T, R extends CompletionStage<T>> R callWithResult(Object result, ProcessingContext processingContext,
+                                                      Function<ProcessingContext, R> action) {
+        ProcessingContext wrapped = new ResourceOverridingProcessingContext<>(processingContext, RESOURCE_KEY, result);
+        return action.apply(wrapped);
+    }
 
     /**
      * Calls the given {@code action} (typically a handler invocation) such that the given {@code result} is available
@@ -48,7 +60,6 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
      *
      * @param result The result to make available for parameter injection
      * @param action The action to take
-     *
      * @return the result of the action
      * @throws Exception any exception thrown while executing the {@code action}
      */
@@ -72,19 +83,13 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
      *
      * @param action The action to perform
      * @param <T>    The type of result expected from the action
-     *
      * @return the result returned by the given action
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T ignoringResultParameters(Supplier<T> action) {
-        try {
-            return (T) callWithResult(IGNORE_RESULT_PARAMETER_MARKER, action::get);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            // oh dear... this shouldn't be possible
-            throw new RuntimeException(e);
-        }
+    public static <T> T ignoringResultParameters(ProcessingContext processingContext, Function<ProcessingContext, T> action) {
+        ProcessingContext wrapped = new ResourceOverridingProcessingContext<>(processingContext, RESOURCE_KEY,
+                                                                              IGNORE_RESULT_PARAMETER_MARKER);
+        return action.apply(wrapped);
+
     }
 
     @Override
@@ -105,16 +110,17 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
         }
 
         @Override
-        public Object resolveParameterValue(Message<?> message) {
+        public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
             return REGISTERED_RESULT.get();
         }
 
         @Override
-        public boolean matches(Message<?> message) {
+        public boolean matches(Message<?> message, ProcessingContext processingContext) {
             // we must always match, because this parameter is based on execution result
             Object registeredResult = REGISTERED_RESULT.get();
 
-            return IGNORE_RESULT_PARAMETER_MARKER.equals(registeredResult) || parameterType.isInstance(registeredResult);
+            return IGNORE_RESULT_PARAMETER_MARKER.equals(registeredResult)
+                    || parameterType.isInstance(registeredResult);
         }
     }
 }

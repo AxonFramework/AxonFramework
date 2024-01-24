@@ -122,7 +122,7 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
         @SuppressWarnings("unchecked")
         public Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage) {
             for (MessageHandlingMember<? super T> handler : handlers) {
-                if (handler.canHandle(eventMessage)) {
+                if (handler.canHandle(eventMessage, null)) {
                     return handler.unwrap(SagaMethodMessageHandlingMember.class)
                                   .map(mh -> mh.getAssociationValue(eventMessage));
                 }
@@ -132,14 +132,14 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
 
         @Override
         public List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage<?> eventMessage) {
-            return handlers.stream().filter(h -> h.canHandle(eventMessage))
+            return handlers.stream().filter(h -> h.canHandle(eventMessage, null))
                            .collect(Collectors.toList());
         }
 
         @Override
         public boolean hasHandlerMethod(EventMessage<?> eventMessage) {
             for (MessageHandlingMember<? super T> handler : handlers) {
-                if (handler.canHandle(eventMessage)) {
+                if (handler.canHandle(eventMessage, null)) {
                     return true;
                 }
             }

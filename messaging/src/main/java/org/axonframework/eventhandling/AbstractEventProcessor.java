@@ -21,6 +21,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -118,7 +119,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @throws Exception if the {@code errorHandler} throws an Exception back on the
      *                   {@link ErrorHandler#handleError(ErrorContext)} call
      */
-    protected boolean canHandle(EventMessage<?> eventMessage, Segment segment) throws Exception {
+    protected boolean canHandle(EventMessage<?> eventMessage, Segment segment)
+            throws Exception {
         try {
             return eventHandlerInvoker.canHandle(eventMessage, segment);
         } catch (Exception e) {
@@ -162,6 +164,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                        UnitOfWork<? extends EventMessage<?>> unitOfWork,
                                        Collection<Segment> processingSegments) throws Exception {
+        // TODO - Change UnitOfWork to ProcessingContext
         spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
             ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
                 EventMessage<?> message = unitOfWork.getMessage();
@@ -170,8 +173,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                                   .runCallable(() -> new DefaultInterceptorChain<>(
                                           unitOfWork,
                                           interceptors,
-                                          m -> processMessageInUnitOfWork(processingSegments, m, monitorCallback))
-                                          .proceed());
+                                          m -> processMessageInUnitOfWork(processingSegments, m, null, monitorCallback))
+                                          .proceedSync());
             }, rollbackConfiguration);
 
             if (resultMessage.isExceptional()) {
@@ -189,10 +192,11 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     private Object processMessageInUnitOfWork(Collection<Segment> processingSegments, EventMessage<?> message,
+                                              ProcessingContext processingContext,
                                               MessageMonitor.MonitorCallback monitorCallback) throws Exception {
         try {
             for (Segment processingSegment : processingSegments) {
-                eventHandlerInvoker.handle(message, processingSegment);
+                eventHandlerInvoker.handle(message, processingContext, processingSegment);
             }
             monitorCallback.reportSuccess();
             return null;

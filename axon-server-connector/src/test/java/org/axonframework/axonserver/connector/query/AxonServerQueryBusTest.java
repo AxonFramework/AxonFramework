@@ -433,7 +433,7 @@ class AxonServerQueryBusTest {
     @Test
     void handlerInterceptorRegisteredWithLocalSegment() {
         MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor =
-                (unitOfWork, interceptorChain) -> interceptorChain.proceed();
+                (unitOfWork, interceptorChain) -> interceptorChain.proceedSync();
 
         testSubject.registerHandlerInterceptor(interceptor);
 

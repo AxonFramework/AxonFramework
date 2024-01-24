@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 
 /**
@@ -58,7 +59,7 @@ public final class SequenceNumberParameterResolverFactory extends
     public static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
 
         @Override
-        public Long resolveParameterValue(Message message) {
+        public Long resolveParameterValue(Message message, ProcessingContext processingContext) {
             if (message instanceof DomainEventMessage) {
                 return ((DomainEventMessage) message).getSequenceNumber();
             }
@@ -66,7 +67,7 @@ public final class SequenceNumberParameterResolverFactory extends
         }
 
         @Override
-        public boolean matches(Message message) {
+        public boolean matches(Message message, ProcessingContext processingContext) {
             return message instanceof DomainEventMessage;
         }
     }

@@ -22,14 +22,12 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 class ConflictResolutionTest {
 
@@ -60,16 +58,16 @@ class ConflictResolutionTest {
     @Test
     void resolve() {
         ConflictResolution.initialize(conflictResolver);
-        assertFalse(subject.matches(GenericEventMessage.asEventMessage("testEvent")));
-        assertTrue(subject.matches(commandMessage));
+        assertFalse(subject.matches(GenericEventMessage.asEventMessage("testEvent"), null));
+        assertTrue(subject.matches(commandMessage, null));
         assertSame(conflictResolver, ConflictResolution.getConflictResolver());
-        assertSame(conflictResolver, subject.resolveParameterValue(commandMessage));
+        assertSame(conflictResolver, subject.resolveParameterValue(commandMessage, null));
     }
 
     @Test
     void resolveWithoutInitializationReturnsNoConflictsResolver() {
-        assertTrue(subject.matches(commandMessage));
-        assertSame(NoConflictResolver.INSTANCE, subject.resolveParameterValue(commandMessage));
+        assertTrue(subject.matches(commandMessage, null));
+        assertSame(NoConflictResolver.INSTANCE, subject.resolveParameterValue(commandMessage, null));
     }
 
     @SuppressWarnings("unused") //used in set up

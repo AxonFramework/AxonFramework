@@ -141,7 +141,8 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> CompletableFuture<CommandResultMessage<R>> doDispatch(CommandMessage<C> command) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
 
-        Optional<MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>>> optionalHandler = findCommandHandlerFor(command);
+        Optional<MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>>> optionalHandler = findCommandHandlerFor(
+                command);
         if (optionalHandler.isPresent()) {
             CommandMessage<C> commandWithContext = spanFactory.propagateContext(command);
             return handle(commandWithContext, optionalHandler.get());
@@ -154,7 +155,8 @@ public class SimpleCommandBus implements CommandBus {
         }
     }
 
-    private Optional<MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>>> findCommandHandlerFor(CommandMessage<?> command) {
+    private Optional<MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>>> findCommandHandlerFor(
+            CommandMessage<?> command) {
         return Optional.ofNullable(subscriptions.get(command.getCommandName()));
     }
 
@@ -182,10 +184,10 @@ public class SimpleCommandBus implements CommandBus {
 //            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
                               return unitOfWork.executeWithResult(c -> handler.handle(command, c));
 //            return asCommandResultMessage(unitOfWork.executeWithResult(
-//                    chain::proceed, rollbackConfiguration
+//                    chain::proceedSync, rollbackConfiguration
 //            ));
                           })
-                .thenApply(GenericCommandResultMessage::asCommandResultMessage);
+                          .thenApply(GenericCommandResultMessage::asCommandResultMessage);
     }
 
     /**
@@ -246,8 +248,8 @@ public class SimpleCommandBus implements CommandBus {
      * {@link DuplicateCommandHandlerResolution#logAndOverride()} and the {@link CommandBusSpanFactory} defaults to a
      * {@link DefaultCommandBusSpanFactory} with a {@link NoOpSpanFactory}.
      * <p>
-     * The {@link TransactionManager} and {@link MessageMonitor} are <b>hard
-     * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
+     * The {@link TransactionManager} and {@link MessageMonitor} are <b>hard requirements</b>. Thus setting them to
+     * {@code null} will result in an {@link AxonConfigurationException}.
      */
     public static class Builder {
 

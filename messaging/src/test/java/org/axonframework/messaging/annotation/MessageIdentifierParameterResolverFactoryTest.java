@@ -63,8 +63,8 @@ class MessageIdentifierParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
-        assertTrue(resolver.matches(eventMessage));
-        assertEquals(eventMessage.getIdentifier(), resolver.resolveParameterValue(eventMessage));
+        assertTrue(resolver.matches(eventMessage, null));
+        assertEquals(eventMessage.getIdentifier(), resolver.resolveParameterValue(eventMessage, null));
     }
 
     @Test
@@ -72,8 +72,9 @@ class MessageIdentifierParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage("test");
-        assertTrue(resolver.matches(commandMessage));
-        assertEquals(commandMessage.getIdentifier(), resolver.resolveParameterValue(commandMessage));
+        assertTrue(resolver.matches(commandMessage, null));
+        assertEquals(commandMessage.getIdentifier(), resolver.resolveParameterValue(commandMessage,
+                                                                                    null));
     }
 
     @Test

@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.lang.reflect.Executable;
@@ -44,7 +45,7 @@ public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResol
     }
 
     @Override
-    public Object resolveParameterValue(Message message) {
+    public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
         if (!CurrentUnitOfWork.isStarted()) {
             return null;
         }
@@ -52,7 +53,7 @@ public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResol
     }
 
     @Override
-    public boolean matches(Message message) {
+    public boolean matches(Message message, ProcessingContext processingContext) {
         return true;
     }
 }

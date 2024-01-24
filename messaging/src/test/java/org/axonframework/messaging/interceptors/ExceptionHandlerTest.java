@@ -145,12 +145,12 @@ class ExceptionHandlerTest {
     private Object handle(Message<?> message) throws Exception {
         Optional<MessageHandlingMember<? super ExceptionHandlingComponent>> handler =
                 inspector.getHandlers(ExceptionHandlingComponent.class)
-                         .filter(h -> h.canHandle(message))
+                         .filter(h -> h.canHandle(message, null))
                          .findFirst();
         if (handler.isPresent()) {
             MessageHandlerInterceptorMemberChain<ExceptionHandlingComponent> interceptorChain =
                     inspector.chainedInterceptor(ExceptionHandlingComponent.class);
-            return interceptorChain.handle(message, messageHandlingComponent, handler.get());
+            return interceptorChain.handleSync(message, messageHandlingComponent, handler.get());
         }
         return null;
     }

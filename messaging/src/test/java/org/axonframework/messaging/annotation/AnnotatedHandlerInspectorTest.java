@@ -181,8 +181,8 @@ class AnnotatedHandlerInspectorTest {
         Optional<MessageHandlingMember<? super A>> optionalHandler = inspector.getHandlers(pA.class).findFirst();
         assertTrue(optionalHandler.isPresent());
         MessageHandlingMember<? super A> resultHandler = optionalHandler.get();
-        chain.handle(testEvent, testTarget, resultHandler);
-        assertThrows(MockException.class, () -> chain.handle(testEventTwo, testTarget, resultHandler));
+        chain.handleSync(testEvent, testTarget, resultHandler);
+        assertThrows(MockException.class, () -> chain.handleSync(testEventTwo, testTarget, resultHandler));
     }
 
     @Test

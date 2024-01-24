@@ -119,25 +119,23 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
     public Object handleSync(CommandMessage<?> command) throws Exception {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
-                     .filter(ch -> ch.canHandle(command))
+                     .filter(ch -> ch.canHandle(command, null))
                      .findFirst()
                      .orElseThrow(() -> new NoHandlerForCommandException(command));
 
         return model.chainedInterceptor(target.getClass())
-                    .handle(command, target, handler);
+                    .handleSync(command, target, handler);
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> handle(CommandMessage<?> command,
-                                                             ProcessingContext processingContext) {
-        MessageHandlingMember<? super T> handler =
-                model.getHandlers(target.getClass())
-                     .filter(ch -> ch.canHandle(command))
-                     .findFirst()
-                     .orElseThrow(() -> new NoHandlerForCommandException(command));
-        // TODO: 24-11-2023 interceptor chain logic!
-        return handler.handle(command, target)
-                      .thenApply(GenericCommandResultMessage::asCommandResultMessage);
+    public CompletableFuture<CommandResultMessage<Object>> handle(CommandMessage<?> command,
+                                                                  ProcessingContext processingContext) {
+        return model.getHandlers(target.getClass())
+                    .filter(ch -> ch.canHandle(command, processingContext))
+                    .findFirst()
+                    .map(handler -> handler.handle(command, processingContext, target)
+                                           .thenApply(GenericCommandResultMessage::asCommandResultMessage))
+                    .orElseGet(() -> CompletableFuture.failedFuture(new NoHandlerForCommandException(command)));
     }
 
     @Override
@@ -146,7 +144,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
                     .values()
                     .stream()
                     .flatMap(Collection::stream)
-                    .anyMatch(h -> h.canHandle(message));
+                    .anyMatch(h -> h.canHandle(message, null));
     }
 
     @Override
