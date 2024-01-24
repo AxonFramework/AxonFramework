@@ -16,9 +16,13 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+
+import java.util.concurrent.CompletableFuture;
+
 /**
  * The interceptor chain manages the flow of a message through a chain of interceptors and ultimately to the message
- * handler. Interceptors may continue processing via this chain by calling the {@link #proceed()} method.
+ * handler. Interceptors may continue processing via this chain by calling the {@link #proceedSync()} method.
  * Alternatively, they can block processing by returning without calling either of these methods.
  *
  * @author Allard Buijze
@@ -33,6 +37,14 @@ public interface InterceptorChain {
      * @return The return value of the message processing
      * @throws Exception any exceptions thrown by interceptors or the message handler
      */
-    Object proceed() throws Exception;
+    Object proceedSync() throws Exception;
+
+    default CompletableFuture<?> proceed(Message<?> message, ProcessingContext processingContext) {
+        try {
+            return CompletableFuture.completedFuture(proceedSync());
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
 
 }

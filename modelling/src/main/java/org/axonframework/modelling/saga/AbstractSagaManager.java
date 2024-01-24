@@ -27,9 +27,9 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +80,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> event, @Nonnull Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage<?> event, ProcessingContext processingContext, @Nonnull Segment segment)
+            throws Exception {
         Set<AssociationValue> associationValues = extractAssociationValues(event);
         List<String> sagaIds =
                 associationValues.stream()
@@ -113,7 +114,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
                 && segment.matches(initializationPolicy.getInitialAssociationValue());
     }
 
-    private void startNewSaga(EventMessage<?> event, AssociationValue associationValue, Segment segment) throws Exception {
+    private void startNewSaga(EventMessage<?> event, AssociationValue associationValue, Segment segment)
+            throws Exception {
         String sagaIdentifier = createSagaIdentifier(segment);
         spanFactory.createCreateSagaInstanceSpan(event, sagaType, sagaIdentifier).runCallable(() -> {
             Saga<T> newSaga = sagaRepository.createInstance(sagaIdentifier, sagaFactory);
@@ -128,9 +130,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
      *
      * @param segment The segment the identifier must match with
      * @return an identifier for a newly created Saga
-     *
-     * @implSpec This implementation will repeatedly generate identifier using the {@link IdentifierFactory}, until
-     * one is returned that matches the given segment. See {@link #matchesSegment(Segment, String)}.
+     * @implSpec This implementation will repeatedly generate identifier using the {@link IdentifierFactory}, until one
+     * is returned that matches the given segment. See {@link #matchesSegment(Segment, String)}.
      */
     protected String createSagaIdentifier(Segment segment) {
         String identifier;
@@ -150,7 +151,6 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
      * @param segment The segment to validate the identifier for
      * @param sagaId  The identifier to test
      * @return {@code true} if the identifier matches the segment, otherwise {@code false}
-     *
      * @implSpec This implementation uses the {@link Segment#matches(Object)} to match against the Saga identifier
      */
     protected boolean matchesSegment(Segment segment, String sagaId) {
@@ -158,8 +158,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     /**
-     * Returns the Saga Initialization Policy for a Saga of the given {@code sagaType} and {@code event}. This
-     * policy provides the conditions to create new Saga instance, as well as the initial association of that saga.
+     * Returns the Saga Initialization Policy for a Saga of the given {@code sagaType} and {@code event}. This policy
+     * provides the conditions to create new Saga instance, as well as the initial association of that saga.
      *
      * @param event The Event that is being dispatched to Saga instances
      * @return the initialization policy for the Saga
@@ -167,8 +167,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     protected abstract SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event);
 
     /**
-     * Extracts the AssociationValues from the given {@code event} as relevant for a Saga of given
-     * {@code sagaType}. A single event may be associated with multiple values.
+     * Extracts the AssociationValues from the given {@code event} as relevant for a Saga of given {@code sagaType}. A
+     * single event may be associated with multiple values.
      *
      * @param event The event containing the association information
      * @return the AssociationValues indicating which Sagas should handle given event
@@ -178,7 +178,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     private boolean doInvokeSaga(EventMessage<?> event, Saga<T> saga) throws Exception {
         if (saga.canHandle(event)) {
             Span span = spanFactory.createInvokeSagaSpan(event, sagaType, saga).start();
-            try(SpanScope unused = span.makeCurrent()) {
+            try (SpanScope unused = span.makeCurrent()) {
                 saga.handleSync(event);
             } catch (Exception e) {
                 span.recordException(e);
@@ -206,12 +206,12 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     @Override
-    public void performReset() {
-        performReset(null);
+    public void performReset(ProcessingContext processingContext) {
+        performReset(null, processingContext);
     }
 
     @Override
-    public void performReset(Object resetContext) {
+    public void performReset(Object resetContext, ProcessingContext processingContext) {
         throw new ResetNotSupportedException("Sagas do no support resetting tokens");
     }
 
@@ -276,7 +276,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         /**
          * Sets the {@link SagaRepository} of generic type {@code T} used to save and load Saga instances.
          *
-         * @param sagaRepository a {@link SagaRepository} of generic type {@code T} used to save and load Saga instances
+         * @param sagaRepository a {@link SagaRepository} of generic type {@code T} used to save and load Saga
+         *                       instances
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> sagaRepository(SagaRepository<T> sagaRepository) {
@@ -298,8 +299,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         }
 
         /**
-         * Sets the {@code sagaFactory} of type {@link Supplier} responsible for creating new Saga instances.
-         * Defaults to a {@code sagaType.newInstance()} call throwing a {@link SagaInstantiationException} if it fails.
+         * Sets the {@code sagaFactory} of type {@link Supplier} responsible for creating new Saga instances. Defaults
+         * to a {@code sagaType.newInstance()} call throwing a {@link SagaInstantiationException} if it fails.
          *
          * @param sagaFactory a {@link Supplier} of Saga type {@code T} responsible for creating new Saga instances
          * @return the current Builder instance, for fluent interfacing

@@ -26,18 +26,14 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link AnnotationEventHandlerAdapter}.
@@ -62,14 +58,14 @@ class AnnotationEventHandlerAdapterTest {
 
     @Test
     void invokeResetHandler() {
-        testSubject.prepareReset();
+        testSubject.prepareReset(null);
 
         assertTrue(annotatedEventListener.invocations.contains("reset"));
     }
 
     @Test
     void invokeResetHandlerWithResetContext() {
-        testSubject.prepareReset("resetContext");
+        testSubject.prepareReset("resetContext", null);
 
         assertTrue(annotatedEventListener.invocations.contains("resetWithContext"));
     }
@@ -224,7 +220,7 @@ class AnnotationEventHandlerAdapterTest {
         @MessageHandlerInterceptor
         public void intercept(String event, InterceptorChain chain) throws Exception {
             invocations.add(event);
-            chain.proceed();
+            chain.proceedSync();
         }
 
         @MessageHandlerInterceptor

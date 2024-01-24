@@ -69,7 +69,7 @@ class MethodQueryMessageHandlerDefinitionTest {
         GenericQueryMessage<String, String> message =
                 new GenericQueryMessage<>("mock", ResponseTypes.instanceOf(String.class));
 
-        assertTrue(handler.canHandle(message));
+        assertTrue(handler.canHandle(message, null));
 
         Object invocationResult = handler.handleSync(message, this);
         assertNull(invocationResult);

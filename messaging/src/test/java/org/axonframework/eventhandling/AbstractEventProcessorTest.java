@@ -71,7 +71,7 @@ class AbstractEventProcessorTest {
         // modified during processing
         testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             unitOfWork.transformMessage(m -> createEvent());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         });
 
         testSubject.processInBatchingUnitOfWork(events);

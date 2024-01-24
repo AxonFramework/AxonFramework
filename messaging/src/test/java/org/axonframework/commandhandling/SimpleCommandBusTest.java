@@ -333,7 +333,7 @@ class SimpleCommandBusTest {
                 mock(MessageHandlerInterceptor.class, "stubName");
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
         when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed());
+                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceedSync());
         testSubject.registerHandlerInterceptor(mockInterceptor1);
         testSubject.registerHandlerInterceptor(mockInterceptor2);
         MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);

@@ -25,11 +25,9 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -58,7 +56,7 @@ class BeanValidationInterceptorTest {
 
         testSubject.handle(uow, interceptorChain);
 
-        verify(interceptorChain).proceed();
+        verify(interceptorChain).proceedSync();
     }
 
     @Test
@@ -70,7 +68,7 @@ class BeanValidationInterceptorTest {
         } catch (org.axonframework.messaging.interceptors.JSR303ViolationException e) {
             assertFalse(e.getViolations().isEmpty());
         }
-        verify(interceptorChain, never()).proceed();
+        verify(interceptorChain, never()).proceedSync();
     }
 
     @Test
@@ -79,7 +77,7 @@ class BeanValidationInterceptorTest {
 
         testSubject.handle(uow, interceptorChain);
 
-        verify(interceptorChain).proceed();
+        verify(interceptorChain).proceedSync();
     }
 
     @Test
@@ -93,7 +91,7 @@ class BeanValidationInterceptorTest {
             assertFalse(e.getViolations().isEmpty());
         }
 
-        verify(interceptorChain, never()).proceed();
+        verify(interceptorChain, never()).proceedSync();
     }
 
     @Test

@@ -440,7 +440,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public boolean canHandle(CommandMessage<?> message) {
-            return handler.canHandle(message);
+            return handler.canHandle(message, null);
         }
     }
 
@@ -462,7 +462,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public boolean canHandle(CommandMessage<?> message) {
-            return handler.canHandle(message);
+            return handler.canHandle(message, null);
         }
     }
 
@@ -498,7 +498,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public boolean canHandle(CommandMessage<?> message) {
-            return handler.canHandle(message);
+            return handler.canHandle(message, null);
         }
     }
 
@@ -570,7 +570,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public boolean canHandle(CommandMessage<?> message) {
-            return handler.canHandle(message);
+            return handler.canHandle(message, null);
         }
     }
 }

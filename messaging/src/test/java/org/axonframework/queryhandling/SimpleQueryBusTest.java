@@ -457,7 +457,7 @@ class SimpleQueryBusTest {
             if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
                 return "fakeReply";
             }
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         });
         //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
@@ -690,7 +690,7 @@ class SimpleQueryBusTest {
             if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
                 return "fakeReply";
             }
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         });
         //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");

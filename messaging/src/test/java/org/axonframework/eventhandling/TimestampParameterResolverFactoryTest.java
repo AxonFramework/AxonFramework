@@ -84,8 +84,8 @@ class TimestampParameterResolverFactoryTest {
                 testSubject.createInstance(instantMethod, instantMethod.getParameters(), 0);
 
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
-        assertTrue(resolver.matches(message));
-        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
+        assertTrue(resolver.matches(message, null));
+        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message, null));
     }
 
     @Test
@@ -94,8 +94,8 @@ class TimestampParameterResolverFactoryTest {
                 testSubject.createInstance(temporalMethod, temporalMethod.getParameters(), 0);
 
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
-        assertTrue(resolver.matches(message));
-        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
+        assertTrue(resolver.matches(message, null));
+        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message, null));
     }
 
     @Test
@@ -116,8 +116,8 @@ class TimestampParameterResolverFactoryTest {
         Parameter[] parameters = metaAnnotatedMethod.getParameters();
         ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, parameters, 0);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
-        assertTrue(resolver.matches(message), "Resolver should be a match for message " + message);
-        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
+        assertTrue(resolver.matches(message, null), "Resolver should be a match for message " + message);
+        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message, null));
     }
 
     @Retention(RetentionPolicy.RUNTIME)

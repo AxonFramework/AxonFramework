@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
@@ -53,12 +54,12 @@ public final class AggregateTypeParameterResolverFactory
     static class AggregateTypeParameterResolver implements ParameterResolver<String> {
 
         @Override
-        public String resolveParameterValue(Message message) {
+        public String resolveParameterValue(Message message, ProcessingContext processingContext) {
             return ((DomainEventMessage) message).getType();
         }
 
         @Override
-        public boolean matches(Message message) {
+        public boolean matches(Message message, ProcessingContext processingContext) {
             return message instanceof DomainEventMessage;
         }
     }

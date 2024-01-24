@@ -21,6 +21,7 @@ import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolver
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * Parameter resolver factory for boolean event handler parameters annotated with {@link ConcludesBatch}. If the event
@@ -46,13 +47,13 @@ public class ConcludesBatchParameterResolverFactory extends AbstractAnnotatedPar
     }
 
     @Override
-    public Boolean resolveParameterValue(Message<?> message) {
+    public Boolean resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
         return CurrentUnitOfWork.map(unitOfWork -> !(unitOfWork instanceof BatchingUnitOfWork<?>) ||
                 ((BatchingUnitOfWork<?>) unitOfWork).isLastMessage(message)).orElse(true);
     }
 
     @Override
-    public boolean matches(Message<?> message) {
+    public boolean matches(Message<?> message, ProcessingContext processingContext) {
         return message instanceof EventMessage<?>;
     }
 }

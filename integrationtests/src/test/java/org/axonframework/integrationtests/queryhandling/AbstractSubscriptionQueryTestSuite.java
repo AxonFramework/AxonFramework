@@ -630,7 +630,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
             if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
                 return interceptedResponse;
             }
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         });
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,

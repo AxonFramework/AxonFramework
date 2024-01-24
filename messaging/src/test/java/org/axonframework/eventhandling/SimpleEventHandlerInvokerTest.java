@@ -55,7 +55,7 @@ class SimpleEventHandlerInvokerTest {
     void singleEventPublication() throws Exception {
         EventMessage<?> event = createEvent();
 
-        testSubject.handle(event, Segment.ROOT_SEGMENT);
+        testSubject.handle(event, null, Segment.ROOT_SEGMENT);
 
         InOrder inOrder = inOrder(mockHandler1, mockHandler2);
         inOrder.verify(mockHandler1).handleSync(event);
@@ -68,7 +68,7 @@ class SimpleEventHandlerInvokerTest {
         List<? extends EventMessage<?>> events = createEvents(2);
 
         for (EventMessage<?> event : events) {
-            testSubject.handle(event, Segment.ROOT_SEGMENT);
+            testSubject.handle(event, null, Segment.ROOT_SEGMENT);
         }
 
         InOrder inOrder = inOrder(mockHandler1, mockHandler2);
@@ -81,20 +81,20 @@ class SimpleEventHandlerInvokerTest {
 
     @Test
     void performReset() {
-        testSubject.performReset();
+        testSubject.performReset(null);
 
-        verify(mockHandler1).prepareReset(NO_RESET_PAYLOAD);
-        verify(mockHandler2).prepareReset(NO_RESET_PAYLOAD);
+        verify(mockHandler1).prepareReset(NO_RESET_PAYLOAD, null);
+        verify(mockHandler2).prepareReset(NO_RESET_PAYLOAD, null);
     }
 
     @Test
     void performResetWithResetContext() {
         String resetContext = "reset-context";
 
-        testSubject.performReset(resetContext);
+        testSubject.performReset(resetContext, null);
 
-        verify(mockHandler1).prepareReset(eq(resetContext));
-        verify(mockHandler2).prepareReset(eq(resetContext));
+        verify(mockHandler1).prepareReset(eq(resetContext), null);
+        verify(mockHandler2).prepareReset(eq(resetContext), null);
     }
 
     @Test

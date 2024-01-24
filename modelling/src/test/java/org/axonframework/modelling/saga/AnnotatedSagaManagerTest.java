@@ -57,15 +57,15 @@ public class AnnotatedSagaManagerTest {
         sagaStore = new InMemorySagaStore();
         sagaRepository = spy(
                 AnnotatedSagaRepository.<MyTestSaga>builder()
-                        .sagaType(MyTestSaga.class)
-                        .sagaStore(sagaStore)
-                        .build()
+                                       .sagaType(MyTestSaga.class)
+                                       .sagaStore(sagaStore)
+                                       .build()
         );
         testSubject = AnnotatedSagaManager.<MyTestSaga>builder()
-                .sagaRepository(sagaRepository)
-                .sagaType(MyTestSaga.class)
-                .sagaFactory(MyTestSaga::new)
-                .build();
+                                          .sagaRepository(sagaRepository)
+                                          .sagaType(MyTestSaga.class)
+                                          .sagaFactory(MyTestSaga::new)
+                                          .build();
     }
 
     @Test
@@ -170,19 +170,19 @@ public class AnnotatedSagaManagerTest {
     void performResetThrowsResetNotSupportedException() {
         AnnotatedSagaManager<MyTestSaga> spiedTestSubject = spy(testSubject);
 
-        assertThrows(ResetNotSupportedException.class, spiedTestSubject::performReset);
+        assertThrows(ResetNotSupportedException.class, () -> spiedTestSubject.performReset(null));
 
-        verify(spiedTestSubject).performReset(null);
+        verify(spiedTestSubject).performReset(null, null);
     }
 
     @Test
     void performResetWithResetInfoThrowsResetNotSupportedException() {
-        assertThrows(ResetNotSupportedException.class, () -> testSubject.performReset("reset-info"));
+        assertThrows(ResetNotSupportedException.class, () -> testSubject.performReset("reset-info", null));
     }
 
     private void handle(EventMessage<?> event) throws Exception {
         ResultMessage<?> resultMessage = DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
-            testSubject.handle(event, Segment.ROOT_SEGMENT);
+            testSubject.handle(event, null, Segment.ROOT_SEGMENT);
             return null;
         });
         if (resultMessage.isExceptional()) {

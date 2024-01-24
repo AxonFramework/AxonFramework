@@ -123,7 +123,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     private Object handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
         try {
-            return executeWithResult(() -> chainedInterceptor.handle(event, sagaInstance, handler));
+            return executeWithResult(() -> chainedInterceptor.handleSync(event, sagaInstance, handler));
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {

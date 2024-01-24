@@ -64,8 +64,9 @@ class SourceIdParameterResolverFactoryTest {
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
         final GenericDomainEventMessage<Object> eventMessage =
                 new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0L, null);
-        assertTrue(resolver.matches(eventMessage));
-        assertEquals(eventMessage.getAggregateIdentifier(), resolver.resolveParameterValue(eventMessage));
+        assertTrue(resolver.matches(eventMessage, null));
+        assertEquals(eventMessage.getAggregateIdentifier(), resolver.resolveParameterValue(eventMessage,
+                                                                                           null));
     }
 
     @Test
@@ -73,7 +74,7 @@ class SourceIdParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage("test");
-        assertFalse(resolver.matches(commandMessage));
+        assertFalse(resolver.matches(commandMessage, null));
     }
 
     @Test

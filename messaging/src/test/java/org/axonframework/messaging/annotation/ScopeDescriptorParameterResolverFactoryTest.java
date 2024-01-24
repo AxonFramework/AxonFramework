@@ -56,8 +56,8 @@ class ScopeDescriptorParameterResolverFactoryTest {
         ParameterResolver<ScopeDescriptor> resolver =
                 testSubject.createInstance(scopeDescriptorUsingMethod, scopeDescriptorUsingMethod.getParameters(), 0);
 
-        assertTrue(resolver.matches(testMessage));
-        assertEquals(NoScopeDescriptor.INSTANCE, resolver.resolveParameterValue(testMessage));
+        assertTrue(resolver.matches(testMessage, null));
+        assertEquals(NoScopeDescriptor.INSTANCE, resolver.resolveParameterValue(testMessage, null));
     }
 
     @SuppressWarnings("unused")

@@ -19,8 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
@@ -72,8 +71,8 @@ class SimpleResourceParameterResolverFactoryTest {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResourceParameter, messageHandlingMethodWithResourceParameter.getParameters(), 1);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
-        assertTrue(resolver.matches(eventMessage));
-        assertEquals(TEST_RESOURCE, resolver.resolveParameterValue(eventMessage));
+        assertTrue(resolver.matches(eventMessage, null));
+        assertEquals(TEST_RESOURCE, resolver.resolveParameterValue(eventMessage, null));
     }
 
     @SuppressWarnings("unchecked")
@@ -82,8 +81,8 @@ class SimpleResourceParameterResolverFactoryTest {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResource2Parameter, messageHandlingMethodWithResource2Parameter.getParameters(), 1);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
-        assertTrue(resolver.matches(eventMessage));
-        assertEquals(TEST_RESOURCE2, resolver.resolveParameterValue(eventMessage));
+        assertTrue(resolver.matches(eventMessage, null));
+        assertEquals(TEST_RESOURCE2, resolver.resolveParameterValue(eventMessage, null));
     }
 
     @Test

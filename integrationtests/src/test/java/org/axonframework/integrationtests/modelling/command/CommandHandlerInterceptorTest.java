@@ -621,7 +621,7 @@ class CommandHandlerInterceptorTest {
         @CommandHandlerInterceptor(commandNamePattern = ".*Nested.*")
         public void interceptAllMatchingPattern(Object command, InterceptorChain interceptorChain) throws Exception {
             apply(new AnyCommandMatchingPatternInterceptedEvent(command.getClass().getName()));
-            interceptorChain.proceed();
+            interceptorChain.proceedSync();
         }
 
         @EventSourcingHandler
@@ -650,7 +650,7 @@ class CommandHandlerInterceptorTest {
         public void intercept(ClearMyAggregateStateCommand command, InterceptorChain interceptorChain)
                 throws Exception {
             if (command.isProceed()) {
-                interceptorChain.proceed();
+                interceptorChain.proceedSync();
             } else {
                 apply(new MyAggregateStateNotClearedEvent(command.getId()));
             }
@@ -732,7 +732,7 @@ class CommandHandlerInterceptorTest {
         @CommandHandlerInterceptor
         public static void interceptAll(Object command, InterceptorChain chain) throws Exception {
             apply(new AnyCommandInterceptedEvent("StaticNestedNested" + command.getClass().getName()));
-            chain.proceed();
+            chain.proceedSync();
         }
 
         private MyNestedNestedEntity(String id) {

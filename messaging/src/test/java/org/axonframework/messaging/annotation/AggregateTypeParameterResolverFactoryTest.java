@@ -20,8 +20,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
@@ -64,8 +63,8 @@ class AggregateTypeParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(aggregateTypeMethod, aggregateTypeMethod.getParameters(), 0);
         final DomainEventMessage<Object> eventMessage = new GenericDomainEventMessage("aggregateType", "id", 0L, "payload");
-        assertTrue(resolver.matches(eventMessage));
-        assertEquals(eventMessage.getType(), resolver.resolveParameterValue(eventMessage));
+        assertTrue(resolver.matches(eventMessage, null));
+        assertEquals(eventMessage.getType(), resolver.resolveParameterValue(eventMessage, null));
     }
 
     @Test
@@ -73,7 +72,7 @@ class AggregateTypeParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(aggregateTypeMethod, aggregateTypeMethod.getParameters(), 0);
         EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
-        assertFalse(resolver.matches(eventMessage));
+        assertFalse(resolver.matches(eventMessage, null));
     }
 
     @Test

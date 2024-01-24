@@ -308,7 +308,7 @@ class TrackingEventProcessorTest_MultiThreaded {
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         testSubject.start();
         eventBus.publish(createEvents(2));
@@ -454,12 +454,12 @@ class TrackingEventProcessorTest_MultiThreaded {
                     throw new MockException();
                 }
             });
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         testSubject.start();
         eventBus.publish(events);

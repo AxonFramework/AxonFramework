@@ -38,13 +38,13 @@ class EventMessageHandlerTest {
 
     @Test
     void prepareResetWithNullResetContextInvokesPrepareReset() {
-        testSubject.prepareReset(null);
+        testSubject.prepareReset(null, null);
 
-        verify(testSubject).prepareReset();
+        verify(testSubject).prepareReset(null);
     }
 
     @Test
     void prepareResetWithNonNullThrowsUnsupportedOperationException() {
-        assertThrows(UnsupportedOperationException.class, () -> testSubject.prepareReset("non-null"));
+        assertThrows(UnsupportedOperationException.class, () -> testSubject.prepareReset("non-null",null ));
     }
 }

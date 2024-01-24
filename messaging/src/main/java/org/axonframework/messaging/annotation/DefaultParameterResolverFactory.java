@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -75,12 +76,12 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public Object resolveParameterValue(Message<?> message) {
+        public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
             return message.getMetaData().get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString());
         }
 
         @Override
-        public boolean matches(Message<?> message) {
+        public boolean matches(Message<?> message, ProcessingContext processingContext) {
             return !(parameterType.isPrimitive() || (boolean) metaDataValue.get(REQUIRED_PROPERTY))
                     || (
                     message.getMetaData().containsKey(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString())
@@ -97,12 +98,12 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public Object resolveParameterValue(Message message) {
+        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
             return message.getMetaData();
         }
 
         @Override
-        public boolean matches(Message message) {
+        public boolean matches(Message message, ProcessingContext processingContext) {
             return true;
         }
     }
@@ -116,12 +117,12 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public Object resolveParameterValue(Message message) {
+        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
             return message;
         }
 
         @Override
-        public boolean matches(Message message) {
+        public boolean matches(Message message, ProcessingContext processingContext) {
             return parameterType.isInstance(message);
         }
     }

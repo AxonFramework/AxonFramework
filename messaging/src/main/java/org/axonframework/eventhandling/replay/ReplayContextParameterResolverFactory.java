@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -57,12 +58,12 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
         }
 
         @Override
-        public Object resolveParameterValue(Message message) {
+        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
             return ReplayToken.replayContext((EventMessage<?>) message, this.type).orElse(null);
         }
 
         @Override
-        public boolean matches(Message message) {
+        public boolean matches(Message message, ProcessingContext processingContext) {
             return message instanceof TrackedEventMessage;
         }
     }

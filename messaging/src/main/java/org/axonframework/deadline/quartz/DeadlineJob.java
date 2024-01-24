@@ -148,7 +148,7 @@ public class DeadlineJob implements Job {
                                                       return null;
                                                   });
 
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
+            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
             if (resultMessage.isExceptional()) {
                 Throwable exceptionResult = resultMessage.exceptionResult();
                 span.recordException(exceptionResult);

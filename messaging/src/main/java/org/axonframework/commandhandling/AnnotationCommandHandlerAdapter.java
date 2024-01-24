@@ -24,6 +24,7 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -118,12 +119,23 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
     public Object handleSync(CommandMessage<?> command) throws Exception {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
-                     .filter(ch -> ch.canHandle(command))
+                     .filter(ch -> ch.canHandle(command, null))
                      .findFirst()
                      .orElseThrow(() -> new NoHandlerForCommandException(command));
 
         return model.chainedInterceptor(target.getClass())
-                    .handle(command, target, handler);
+                    .handleSync(command, target, handler);
+    }
+
+    @Override
+    public CompletableFuture<CommandResultMessage<Object>> handle(CommandMessage<?> command,
+                                                                  ProcessingContext processingContext) {
+        return model.getHandlers(target.getClass())
+                    .filter(ch -> ch.canHandle(command, processingContext))
+                    .findFirst()
+                    .map(handler -> handler.handle(command, processingContext, target)
+                                           .thenApply(GenericCommandResultMessage::asCommandResultMessage))
+                    .orElseGet(() -> CompletableFuture.failedFuture(new NoHandlerForCommandException(command)));
     }
 
     @Override
@@ -132,7 +144,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
                     .values()
                     .stream()
                     .flatMap(Collection::stream)
-                    .anyMatch(h -> h.canHandle(message));
+                    .anyMatch(h -> h.canHandle(message, null));
     }
 
     @Override

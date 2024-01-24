@@ -21,6 +21,7 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.spring.SpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -144,12 +145,12 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
         }
 
         @Override
-        public Object resolveParameterValue(Message<?> message) {
+        public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
             return beanFactory.getBean(beanName);
         }
 
         @Override
-        public boolean matches(Message<?> message) {
+        public boolean matches(Message<?> message, ProcessingContext processingContext) {
             return true;
         }
     }

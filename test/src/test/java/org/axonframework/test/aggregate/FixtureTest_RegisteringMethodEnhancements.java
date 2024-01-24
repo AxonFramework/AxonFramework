@@ -22,6 +22,7 @@ import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Executable;
@@ -113,12 +114,12 @@ public class FixtureTest_RegisteringMethodEnhancements {
         }
 
         @Override
-        public AtomicBoolean resolveParameterValue(Message<?> message) {
+        public AtomicBoolean resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
             return assertion;
         }
 
         @Override
-        public boolean matches(Message<?> message) {
+        public boolean matches(Message<?> message, ProcessingContext processingContext) {
             return message.getPayloadType().isAssignableFrom(ResolveParameterCommand.class);
         }
     }

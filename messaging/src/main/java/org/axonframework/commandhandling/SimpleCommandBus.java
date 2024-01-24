@@ -35,7 +35,6 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +43,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
@@ -197,7 +195,7 @@ public class SimpleCommandBus implements CommandBus {
             unitOfWork.attachTransaction(transactionManager);
             InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
-            return asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed,
+            return asCommandResultMessage(unitOfWork.executeWithResult(chain::proceedSync,
                                                                        rollbackConfiguration));
         });
         callback.onResult(command, resultMessage);

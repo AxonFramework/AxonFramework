@@ -24,9 +24,9 @@ import org.junit.jupiter.api.*;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.utils.EventTestUtils.createEvents;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ConcludesBatchParameterResolverFactoryTest {
 
@@ -42,31 +42,34 @@ class ConcludesBatchParameterResolverFactoryTest {
 
     @Test
     void onlyMatchesEventMessages() {
-        assertTrue(subject.matches(asEventMessage("testEvent")));
-        assertFalse(subject.matches(new GenericCommandMessage<>("testCommand")));
+        assertTrue(subject.matches(asEventMessage("testEvent"), null));
+        assertFalse(subject.matches(new GenericCommandMessage<>("testCommand"), null));
     }
 
     @Test
     void resolvesToTrueWithoutUnitOfWork() {
-        assertTrue(subject.resolveParameterValue(asEventMessage("testEvent")));
+        assertTrue(subject.resolveParameterValue(asEventMessage("testEvent"), null));
     }
 
     @Test
     void resolvesToTrueWithRegularUnitOfWork() {
         EventMessage<?> event = asEventMessage("testEvent");
-        DefaultUnitOfWork.startAndGet(event).execute(() -> assertTrue(subject.resolveParameterValue(event)));
+        DefaultUnitOfWork.startAndGet(event).execute(() -> assertTrue(subject.resolveParameterValue(event,
+                                                                                                    null)));
     }
 
     @Test
     void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsNotLast() {
         List<? extends EventMessage<?>> events = createEvents(5);
-        new BatchingUnitOfWork<>(events).execute(() -> assertFalse(subject.resolveParameterValue(events.get(0))));
+        new BatchingUnitOfWork<>(events).execute(() -> assertFalse(subject.resolveParameterValue(events.get(0),
+                                                                                                 null)));
     }
 
     @Test
     void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsLast() {
         List<? extends EventMessage<?>> events = createEvents(5);
-        new BatchingUnitOfWork<>(events).execute(() -> assertTrue(subject.resolveParameterValue(events.get(4))));
+        new BatchingUnitOfWork<>(events).execute(() -> assertTrue(subject.resolveParameterValue(events.get(4),
+                                                                                                null)));
     }
 
     @SuppressWarnings("unused")
@@ -76,5 +79,4 @@ class ConcludesBatchParameterResolverFactoryTest {
     @SuppressWarnings("unused")
     private void handlePrimitive(String eventPayload, @ConcludesBatch boolean concludesBatch) {
     }
-
 }

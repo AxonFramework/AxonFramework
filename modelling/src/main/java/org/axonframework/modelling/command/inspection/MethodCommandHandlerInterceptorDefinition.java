@@ -22,6 +22,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 
 import java.util.regex.Pattern;
@@ -60,8 +61,8 @@ public class MethodCommandHandlerInterceptorDefinition implements HandlerEnhance
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message) {
-            return super.canHandle(message)
+        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+            return super.canHandle(message, processingContext)
                     && commandNamePattern.matcher(((CommandMessage<?>) message).getCommandName())
                                          .matches();
         }

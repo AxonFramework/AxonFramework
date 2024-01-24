@@ -145,14 +145,14 @@ class AnnotatedSagaTest {
     void prepareResetThrowsResetNotSupportedException() {
         AnnotatedSaga<StubAnnotatedSaga> spiedTestSubject = spy(testSubject);
 
-        assertThrows(ResetNotSupportedException.class, spiedTestSubject::prepareReset);
+        assertThrows(ResetNotSupportedException.class, () -> spiedTestSubject.prepareReset(null));
 
-        verify(spiedTestSubject).prepareReset(null);
+        verify(spiedTestSubject).prepareReset(null, null);
     }
 
     @Test
     void prepareResetWithResetContextThrowsResetNotSupportedException() {
-        assertThrows(ResetNotSupportedException.class, () -> testSubject.prepareReset("some-reset-context"));
+        assertThrows(ResetNotSupportedException.class, () -> testSubject.prepareReset("some-reset-context", null));
     }
 
     @Test

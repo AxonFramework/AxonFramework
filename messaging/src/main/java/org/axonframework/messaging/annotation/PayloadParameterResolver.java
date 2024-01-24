@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * Implementation of a {@link ParameterResolver} that resolves the Message payload as parameter in a handler method.
@@ -37,12 +38,12 @@ public class PayloadParameterResolver implements ParameterResolver {
     }
 
     @Override
-    public Object resolveParameterValue(Message message) {
+    public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
         return message.getPayload();
     }
 
     @Override
-    public boolean matches(Message message) {
+    public boolean matches(Message message, ProcessingContext processingContext) {
         return message.getPayloadType() != null && payloadType.isAssignableFrom(message.getPayloadType());
     }
 

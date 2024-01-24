@@ -84,7 +84,7 @@ class EventProcessingModuleWithInterceptorsTest {
                     throws Exception {
                 unitOfWork.transformMessage(event -> event
                         .andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue")));
-                return interceptorChain.proceed();
+                return interceptorChain.proceedSync();
             }
         }
 

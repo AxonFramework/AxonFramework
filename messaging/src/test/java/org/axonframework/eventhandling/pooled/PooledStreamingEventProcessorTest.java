@@ -34,7 +34,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.axonframework.utils.InMemoryStreamableEventSource;
@@ -238,7 +237,7 @@ class PooledStreamingEventProcessorTest {
                     countDownLatch.countDown();
                     return null;
                 }
-        ).when(stubEventHandler).handle(any(), any());
+        ).when(stubEventHandler).handle(any(), any(), any());
 
         List<EventMessage<Integer>> events = IntStream.range(0, 8)
                                                       .mapToObj(GenericEventMessage::new)
@@ -275,7 +274,7 @@ class PooledStreamingEventProcessorTest {
                     countDownLatch.countDown();
                     return null;
                 }
-        ).when(stubEventHandler).handle(any(), any());
+        ).when(stubEventHandler).handle(any(),any(), any());
 
         List<EventMessage<Integer>> events = IntStream.range(0, 8)
                                                       .mapToObj(GenericEventMessage::new)
@@ -364,7 +363,7 @@ class PooledStreamingEventProcessorTest {
         doThrow(new RuntimeException("Simulating worker failure"))
                 .doNothing()
                 .when(stubEventHandler)
-                .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any());
+                .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any(), any());
 
         testSubject.start();
 
@@ -379,6 +378,7 @@ class PooledStreamingEventProcessorTest {
             try {
                 verify(stubEventHandler).handle(
                         argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())),
+                        any(),
                         argThat(s -> s.getSegmentId() == events.get(2).getPayload())
                 );
             } catch (Exception e) {
@@ -500,7 +500,7 @@ class PooledStreamingEventProcessorTest {
 
         //noinspection unchecked
         ArgumentCaptor<EventMessage<?>> handledEventsCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        verify(stubEventHandler, timeout(500).times(2)).handle(handledEventsCaptor.capture(), any());
+        verify(stubEventHandler, timeout(500).times(2)).handle(handledEventsCaptor.capture(),any(), any());
         List<EventMessage<?>> handledEvents = handledEventsCaptor.getAllValues();
         assertEquals(2, handledEvents.size());
         for (EventMessage<?> validatedEvent : handledEvents) {
@@ -590,7 +590,7 @@ class PooledStreamingEventProcessorTest {
         // Use CountDownLatch to block worker threads from actually doing work, and thus shutting down successfully.
         CountDownLatch latch = new CountDownLatch(1);
         doAnswer(i -> latch.await(10, TimeUnit.MILLISECONDS)).when(stubEventHandler)
-                                                             .handle(any(), any());
+                                                             .handle(any(), any(), any());
 
         testSubject.start();
 
@@ -860,7 +860,7 @@ class PooledStreamingEventProcessorTest {
 
         testSubject.resetTokens();
 
-        verify(stubEventHandler).performReset(null);
+        verify(stubEventHandler).performReset(null, null);
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
         // The token stays the same, as the original and token after reset are identical.
@@ -887,7 +887,7 @@ class PooledStreamingEventProcessorTest {
 
         testSubject.resetTokens(expectedContext);
 
-        verify(stubEventHandler).performReset(expectedContext);
+        verify(stubEventHandler).performReset(expectedContext, null);
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
         // The token stays the same, as the original and token after reset are identical.
@@ -918,7 +918,7 @@ class PooledStreamingEventProcessorTest {
 
         testSubject.resetTokens(StreamableMessageSource::createTailToken);
 
-        verify(stubEventHandler).performReset(null);
+        verify(stubEventHandler).performReset(isNull(), any());
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
@@ -946,7 +946,7 @@ class PooledStreamingEventProcessorTest {
 
         testSubject.resetTokens(StreamableMessageSource::createTailToken, expectedContext);
 
-        verify(stubEventHandler).performReset(expectedContext);
+        verify(stubEventHandler).performReset(eq(expectedContext), any() );
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
@@ -1245,7 +1245,7 @@ class PooledStreamingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         IntStream.range(0, 3)
                  .mapToObj(GenericEventMessage::new)
@@ -1267,7 +1267,7 @@ class PooledStreamingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(0));
         stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(1));
@@ -1287,7 +1287,7 @@ class PooledStreamingEventProcessorTest {
         doAnswer(invocation -> {
             Thread.sleep(1000);
             return null;
-        }).when(stubEventHandler).handle(any(), any());
+        }).when(stubEventHandler).handle(any(), any(), any());
     }
 
     @Test
@@ -1303,7 +1303,7 @@ class PooledStreamingEventProcessorTest {
             isWaiting.set(true);
             return handleLatch.await(5, TimeUnit.SECONDS);
         }).when(stubEventHandler)
-          .handle(any(), any());
+          .handle(any(), any(), any());
 
         List<EventMessage<Integer>> events = IntStream.range(0, 42)
                                                       .mapToObj(GenericEventMessage::new)
@@ -1350,7 +1350,7 @@ class PooledStreamingEventProcessorTest {
             isWaiting.set(true);
             return handleLatch.await(5, TimeUnit.SECONDS);
         }).when(stubEventHandler)
-          .handle(any(), any());
+          .handle(any(), any(), any());
 
         List<EventMessage<Integer>> events = IntStream.range(0, 42)
                                                       .mapToObj(GenericEventMessage::new)

@@ -17,8 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
@@ -42,17 +41,16 @@ class TrackingTokenParameterResolverFactoryTest {
 
         assertNotNull(resolver);
         GenericEventMessage<String> message = new GenericEventMessage<>("test");
-        assertFalse(resolver.matches(message));
+        assertFalse(resolver.matches(message, null));
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(1L);
         GenericTrackedEventMessage<String> trackedEventMessage = new GenericTrackedEventMessage<>(trackingToken,
-                                                                                       message);
-        assertTrue(resolver.matches(trackedEventMessage));
-        assertSame(trackingToken, resolver.resolveParameterValue(trackedEventMessage));
+                                                                                                  message);
+        assertTrue(resolver.matches(trackedEventMessage, null));
+        assertSame(trackingToken, resolver.resolveParameterValue(trackedEventMessage, null));
     }
 
     @SuppressWarnings("unused")
     private void method1(Object param1, TrackingToken token) {
 
     }
-
 }

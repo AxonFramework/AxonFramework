@@ -22,6 +22,7 @@ import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 
@@ -101,8 +102,8 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message) {
-        return childHandler.canHandle(message);
+    public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        return childHandler.canHandle(message, processingContext);
     }
 
     @Override
@@ -123,7 +124,7 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
         }
         List<AnnotatedCommandHandlerInterceptor<? super C>> interceptors =
                 childHandlingInterceptors.stream()
-                                         .filter(chi -> chi.canHandle(message))
+                                         .filter(chi -> chi.canHandle(message, null))
                                          .sorted((chi1, chi2) -> Integer.compare(chi2.priority(), chi1.priority()))
                                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, childEntity))
                                          .collect(Collectors.toList());
@@ -134,7 +135,7 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
         } else {
             result = new DefaultInterceptorChain<>((UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
                                                    interceptors,
-                                                   m -> childHandler.handleSync(message, childEntity)).proceed();
+                                                   m -> childHandler.handleSync(message, childEntity)).proceedSync();
         }
         return result;
     }

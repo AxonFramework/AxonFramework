@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * ParameterResolver implementation that injects a fixed value. Useful for injecting parameter values that do not rely
@@ -40,12 +41,12 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
     }
 
     @Override
-    public T resolveParameterValue(Message message) {
+    public T resolveParameterValue(Message message, ProcessingContext processingContext) {
         return value;
     }
 
     @Override
-    public boolean matches(Message message) {
+    public boolean matches(Message message, ProcessingContext processingContext) {
         return true;
     }
 }
