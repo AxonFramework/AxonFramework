@@ -18,6 +18,7 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -30,7 +31,6 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -128,14 +128,14 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<Object>> handle(CommandMessage<?> command,
+    public MessageStream<CommandResultMessage<Object>> handle(CommandMessage<?> command,
                                                                   ProcessingContext processingContext) {
         return model.getHandlers(target.getClass())
                     .filter(ch -> ch.canHandle(command, processingContext))
                     .findFirst()
                     .map(handler -> handler.handle(command, processingContext, target)
-                                           .thenApply(GenericCommandResultMessage::asCommandResultMessage))
-                    .orElseGet(() -> CompletableFuture.failedFuture(new NoHandlerForCommandException(command)));
+                                           .map(GenericCommandResultMessage::asCommandResultMessage))
+                    .orElseGet(() -> MessageStream.failed(new NoHandlerForCommandException(command)));
     }
 
     @Override

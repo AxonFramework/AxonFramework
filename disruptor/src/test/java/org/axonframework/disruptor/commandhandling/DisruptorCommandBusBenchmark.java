@@ -17,6 +17,7 @@
 package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.Registration;
 import org.axonframework.disruptor.commandhandling.utils.SomethingDoneEvent;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -164,7 +165,7 @@ public class DisruptorCommandBusBenchmark {
         }
     }
 
-    private static class StubHandler implements MessageHandler<CommandMessage<?>> {
+    private static class StubHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         private Repository<StubAggregate> repository;
 

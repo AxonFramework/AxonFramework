@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
+import org.axonframework.messaging.MessageStream;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -24,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
@@ -178,7 +178,7 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
                                                                 @Nonnull Method method,
                                                                 @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                                Function<Object, CompletableFuture<?>> returnTypeConverter) {
+                                                                Function<Object, MessageStream<?>> returnTypeConverter) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {
             handler = handlerDefinition.createHandler(declaringType,

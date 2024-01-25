@@ -16,14 +16,17 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
- * Interceptor that allows messages to be intercepted and modified before they are dispatched. This interceptor
- * provides a very early means to alter or reject Messages, even before any Unit of Work is created.
+ * Interceptor that allows messages to be intercepted and modified before they are dispatched. This interceptor provides
+ * a very early means to alter or reject Messages, even before any Unit of Work is created.
  *
  * @param <T> The message type this interceptor can process
  * @author Allard Buijze
@@ -53,4 +56,10 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
     @Nonnull
     BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages);
 
+
+    default <M extends T, R> MessageStream<? extends R> interceptOnDispatch(@Nonnull M message,
+                                                                            @Nullable ProcessingContext context,
+                                                                            @Nonnull InterceptorChain<M, R> interceptorChain) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
 }

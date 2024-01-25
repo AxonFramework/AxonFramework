@@ -18,17 +18,18 @@ package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.modelling.command.AbstractRepository;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.modelling.command.AbstractRepository;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -110,7 +111,7 @@ public class CommandHandlingBenchmark {
 
     }
 
-    private static class MyCommandHandler implements MessageHandler<CommandMessage<?>> {
+    private static class MyCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         private final Repository<MyAggregate> repository;
 

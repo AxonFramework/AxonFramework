@@ -16,9 +16,10 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.messaging.MessageStream;
+
 import java.lang.reflect.Method;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
@@ -46,5 +47,5 @@ public interface HandlerDefinition {
     <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
                                                          @Nonnull Method method,
                                                          @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                         Function<Object, CompletableFuture<?>> returnTypeConverter);
+                                                         Function<Object, MessageStream<?>> returnTypeConverter);
 }

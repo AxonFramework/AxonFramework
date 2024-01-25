@@ -19,13 +19,13 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ResourceOverridingProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
@@ -39,8 +39,8 @@ import java.util.function.Function;
 public class InterceptorChainParameterResolverFactory
         implements ParameterResolverFactory, ParameterResolver<InterceptorChain> {
 
-    private static final ThreadLocal<InterceptorChain> CURRENT = new ThreadLocal<>();
-    private static final ProcessingContext.ResourceKey<InterceptorChain> INTERCEPTOR_CHAIN_KEY = ProcessingContext.ResourceKey.create(
+    private static final ThreadLocal<InterceptorChain<?, ?>> CURRENT = new ThreadLocal<>();
+    private static final ProcessingContext.ResourceKey<InterceptorChain<?, ?>> INTERCEPTOR_CHAIN_KEY = ProcessingContext.ResourceKey.create(
             "InterceptorChain");
 
     /**
@@ -76,9 +76,9 @@ public class InterceptorChainParameterResolverFactory
      * @param action           The action to invoke
      * @return The response from the invocation of given {@code action}
      */
-    public static CompletableFuture<?> callWithInterceptorChain(ProcessingContext processingContext,
-                                                                InterceptorChain interceptorChain,
-                                                                Function<ProcessingContext, CompletableFuture<?>> action) {
+    public static <M extends Message<?>, T> MessageStream<? extends T> callWithInterceptorChain(ProcessingContext processingContext,
+                                                                       InterceptorChain<M, T> interceptorChain,
+                                                                       Function<ProcessingContext, MessageStream<? extends T>> action) {
         ProcessingContext newProcessingContext = new ResourceOverridingProcessingContext<>(processingContext,
                                                                                            INTERCEPTOR_CHAIN_KEY,
                                                                                            interceptorChain);
@@ -96,8 +96,9 @@ public class InterceptorChainParameterResolverFactory
         return CURRENT.get();
     }
 
-    public static InterceptorChain currentInterceptorChain(ProcessingContext processingContext) {
-        return processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
+    public static <M extends Message<?>, R> InterceptorChain<M, R> currentInterceptorChain(ProcessingContext processingContext) {
+        //noinspection unchecked
+        return (InterceptorChain<M, R>) processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
     }
 
     @Override

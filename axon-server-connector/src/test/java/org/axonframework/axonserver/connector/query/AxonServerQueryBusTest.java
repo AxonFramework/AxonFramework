@@ -582,7 +582,7 @@ class AxonServerQueryBusTest {
         // We create a subscription to force a registration for this type of query.
         // It doesn't get invoked because the localSegment is mocked
         //noinspection resource
-        testSubject.subscribe("testQuery", String.class, (MessageHandler<QueryMessage<?, String>>) message -> "ok");
+        testSubject.subscribe("testQuery", String.class, (MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>>) message -> "ok");
         assertWithin(1, TimeUnit.SECONDS, () -> assertNotNull(queryHandlerRef.get()));
 
         QueryHandler queryHandler = queryHandlerRef.get();

@@ -227,9 +227,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     }
 
     @Override
-    public <R> Registration subscribe(@Nonnull String queryName,
-                                      @Nonnull Type responseType,
-                                      @Nonnull MessageHandler<? super QueryMessage<?, R>> handler) {
+    public <R> Registration subscribe(
+            @Nonnull String queryName,
+            @Nonnull Type responseType,
+            @Nonnull MessageHandler<? super QueryMessage<?, R>, ? extends QueryResponseMessage<?>> handler) {
         Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
         QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType);
         io.axoniq.axonserver.connector.Registration serverRegistration =
@@ -276,7 +277,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                 span.recordException(e).end();
             }
 
-           queryTransaction.whenComplete((r, e) -> {
+            queryTransaction.whenComplete((r, e) -> {
                 queryInTransit.end();
                 if (e != null) {
                     span.recordException(e);
@@ -391,8 +392,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
 
         Span span = spanFactory.createScatterGatherSpan(queryMessage, true).start();
-        try(SpanScope unused = span.makeCurrent()) {
-            QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(queryMessage));
+        try (SpanScope unused = span.makeCurrent()) {
+            QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(
+                    queryMessage));
             long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
             String targetContext = targetContextResolver.resolveContext(interceptedQuery);
             QueryRequest queryRequest =

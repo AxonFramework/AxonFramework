@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
@@ -202,10 +203,10 @@ public class AnnotatedHandlerInspector<T> {
 
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static CompletableFuture<Object> returnTypeConverter(Object result) {
+    private static MessageStream<?> returnTypeConverter(Object result) {
         return result instanceof CompletableFuture<?>
-                ? (CompletableFuture<Object>) result
-                : CompletableFuture.completedFuture(result);
+                ? MessageStream.fromFuture((CompletableFuture<Object>) result)
+                : MessageStream.just(result);
     }
 
     @SuppressWarnings("unchecked")
@@ -369,17 +370,17 @@ public class AnnotatedHandlerInspector<T> {
         }
 
         @Override
-        public CompletableFuture<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
-                                           @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
+        public MessageStream<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
+                                       @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
             return InterceptorChainParameterResolverFactory.callWithInterceptorChain(processingContext,
                                                                                      () -> next.handle(message,
                                                                                                        processingContext,
                                                                                                        target,
                                                                                                        handler),
                                                                                      (pc) -> doHandle(message,
-                                                                                                    pc,
-                                                                                                    target,
-                                                                                                    handler));
+                                                                                                      pc,
+                                                                                                      target,
+                                                                                                      handler));
         }
 
         private Object doHandleSync(Message<?> message, T target, MessageHandlingMember<? super T> handler)
@@ -390,8 +391,8 @@ public class AnnotatedHandlerInspector<T> {
             return next.handleSync(message, target, handler);
         }
 
-        private CompletableFuture<?> doHandle(Message<?> message, ProcessingContext processingContext, T target,
-                                              MessageHandlingMember<? super T> handler) {
+        private MessageStream<?> doHandle(Message<?> message, ProcessingContext processingContext, T target,
+                                          MessageHandlingMember<? super T> handler) {
             if (delegate.canHandle(message, processingContext)) {
                 return delegate.handle(message, processingContext, target);
             }

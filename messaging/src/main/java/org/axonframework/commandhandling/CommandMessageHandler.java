@@ -24,7 +24,7 @@ import java.util.Set;
  * MessageHandler specialization for handlers of Command Messages. Besides handling a message, CommandMessageHandlers
  * also specify which command names they support.
  */
-public interface CommandMessageHandler extends MessageHandler<CommandMessage<?>> {
+public interface CommandMessageHandler extends MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
     /**
      * Returns the set of command names this handler supports.

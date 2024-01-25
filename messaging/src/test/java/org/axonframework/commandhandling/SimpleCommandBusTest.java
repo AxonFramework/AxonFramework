@@ -258,7 +258,7 @@ class SimpleCommandBusTest {
     void interceptorChainCommandHandledSuccessfully() throws Exception {
         MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
-        final MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
+        final MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler = mock(MessageHandler.class);
         when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> mockInterceptor2.handle(
                         (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0],
@@ -293,7 +293,7 @@ class SimpleCommandBusTest {
     void interceptorChainCommandHandlerThrowsException() throws Exception {
         MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
-        final MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
+        final MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler = mock(MessageHandler.class);
         when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> mockInterceptor2.handle(
                         (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0],
@@ -336,7 +336,7 @@ class SimpleCommandBusTest {
                 .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceedSync());
         testSubject.registerHandlerInterceptor(mockInterceptor1);
         testSubject.registerHandlerInterceptor(mockInterceptor2);
-        MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler = mock(MessageHandler.class);
         when(commandHandler.handleSync(isA(CommandMessage.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class.getName(), commandHandler);
         RuntimeException someException = new RuntimeException("Mocking");
@@ -397,7 +397,7 @@ class SimpleCommandBusTest {
         verify(initialHandler, never()).handleSync(testMessage);
     }
 
-    private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>> {
+    private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         @Override
         public Object handleSync(CommandMessage<?> message) {

@@ -41,7 +41,7 @@ public interface DuplicateCommandHandlerResolver {
      * another handler entirely
      * @throws RuntimeException when registration should fail
      */
-    MessageHandler<? super CommandMessage<?>> resolve(@Nonnull String commandName,
-                                                      @Nonnull MessageHandler<? super CommandMessage<?>> registeredHandler,
-                                                      @Nonnull MessageHandler<? super CommandMessage<?>> candidateHandler);
+    MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> resolve(@Nonnull String commandName,
+                                                      @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> registeredHandler,
+                                                      @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> candidateHandler);
 }

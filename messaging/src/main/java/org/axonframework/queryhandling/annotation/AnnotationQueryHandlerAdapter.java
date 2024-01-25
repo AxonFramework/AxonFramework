@@ -28,6 +28,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryHandlerAdapter;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -42,7 +43,7 @@ import javax.annotation.Nonnull;
  * @author Marc Gathier
  * @since 3.1
  */
-public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage<?, ?>> {
+public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage<?, ?>, QueryResponseMessage<?>> {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;

@@ -711,7 +711,7 @@ class DisruptorCommandBusTest {
 
         CommandMessage<String> testCommand = asCommandMessage("some-command");
         //noinspection unchecked
-        MessageHandler<CommandMessage<?>> testHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> testHandler = mock(MessageHandler.class);
         when(testHandler.canHandle(any())).thenReturn(true);
         when(testHandler.handleSync(testCommand)).thenThrow(AggregateStateCorruptedException.class)
                                                  .thenReturn("happy-now");
@@ -737,7 +737,7 @@ class DisruptorCommandBusTest {
 
         CommandMessage<String> testCommand = asCommandMessage("some-command");
         //noinspection unchecked
-        MessageHandler<CommandMessage<?>> testHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> testHandler = mock(MessageHandler.class);
         when(testHandler.canHandle(any())).thenReturn(true);
         when(testHandler.handleSync(testCommand)).thenThrow(AggregateStateCorruptedException.class)
                                                  .thenReturn("happy-now");
@@ -763,7 +763,7 @@ class DisruptorCommandBusTest {
 
         CommandMessage<ExceptionCommand> testCommand = asCommandMessage("some-command");
         //noinspection unchecked
-        MessageHandler<CommandMessage<?>> testHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> testHandler = mock(MessageHandler.class);
         when(testHandler.canHandle(any())).thenReturn(true);
         when(testHandler.handleSync(testCommand)).thenReturn("handled");
 
@@ -949,7 +949,7 @@ class DisruptorCommandBusTest {
         }
     }
 
-    private static class StubHandler implements MessageHandler<CommandMessage<?>> {
+    private static class StubHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         private Repository<StubAggregate> repository;
 

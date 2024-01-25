@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
 import org.axonframework.commandhandling.MonitorAwareCallback;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
@@ -39,7 +40,6 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -207,7 +207,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      */
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
         logger.debug("Subscribing command with name [{}] to this distributed CommandBus. Expect similar logging on the local segment.", commandName);
         Registration reg = connector.subscribe(commandName, handler);
         updateFilter(commandFilter.get().or(new CommandNameFilter(commandName)));

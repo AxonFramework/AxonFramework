@@ -43,7 +43,7 @@ public abstract class FutureUtils {
         return null;
     }
 
-    public static CompletableFuture<Void> emptyCompletedFuture() {
+    public static <T> CompletableFuture<T> emptyCompletedFuture() {
         return CompletableFuture.completedFuture(null);
     }
 }

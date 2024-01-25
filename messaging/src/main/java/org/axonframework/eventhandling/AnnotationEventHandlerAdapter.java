@@ -136,6 +136,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
                      .ifPresent(messageHandlingMember -> messageHandlingMember.handle(resetMessage,
                                                                                       processingContext,
                                                                                       annotatedEventListener)
+                                                                              .asCompletableFuture()
                                                                               .join());
         } catch (Exception e) {
             throw new ResetNotSupportedException("An Error occurred while notifying handlers of the reset", e);

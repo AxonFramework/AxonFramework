@@ -19,6 +19,7 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
@@ -166,7 +167,7 @@ public interface FixtureConfiguration<T> {
      * @param commandHandler The handler to register
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, MessageHandler<CommandMessage<?>> commandHandler);
+    FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler);
 
     /**
      * Registers a {@code commandHandler} to handle commands of the given {@code commandType} with the
@@ -176,7 +177,7 @@ public interface FixtureConfiguration<T> {
      * @param commandHandler The handler to register
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandler(String commandName, MessageHandler<CommandMessage<?>> commandHandler);
+    FixtureConfiguration<T> registerCommandHandler(String commandName, MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler);
 
     /**
      * Registers a resource that is eligible for injection in handler method (e.g. methods annotated with {@link

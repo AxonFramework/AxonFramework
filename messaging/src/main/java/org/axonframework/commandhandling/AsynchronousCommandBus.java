@@ -25,7 +25,6 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.SpanFactory;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -88,7 +87,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
 
     @Override
     protected <C, R> void handle(CommandMessage<C> command,
-                                 MessageHandler<? super CommandMessage<?>> handler,
+                                 MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
         executor.execute(() -> super.handle(command, handler, callback));
     }

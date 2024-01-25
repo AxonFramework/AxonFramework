@@ -19,8 +19,10 @@ package org.axonframework.modelling.command.inspection;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.InterceptorChainParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import javax.annotation.Nonnull;
@@ -53,10 +55,21 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
     public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
                          @Nonnull InterceptorChain interceptorChain)
             throws Exception {
-        return InterceptorChainParameterResolverFactory.callWithInterceptorChain(null,
+        return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(
                 interceptorChain,
-                pc -> delegate.canHandle(unitOfWork.getMessage(), pc)
-                        ? delegate.handle(unitOfWork.getMessage(), pc, target)
-                        : interceptorChain.proceed(unitOfWork.getMessage(), pc));
+                () -> delegate.canHandle(unitOfWork.getMessage(), null)
+                        ? delegate.handleSync(unitOfWork.getMessage(), target)
+                        : interceptorChain.proceedSync());
+    }
+
+    @Override
+    public <M extends CommandMessage<?>, R> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
+                                                                                         @Nonnull ProcessingContext context,
+                                                                                         @Nonnull InterceptorChain<M, R> interceptorChain) {
+        return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
+                context,
+                interceptorChain,
+                ct -> interceptorChain.proceed(message, ct)
+        );
     }
 }

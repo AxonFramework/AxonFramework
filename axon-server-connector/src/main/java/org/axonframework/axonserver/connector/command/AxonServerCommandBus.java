@@ -207,7 +207,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>> messageHandler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> messageHandler) {
         logger.debug("Subscribing command with name [{}] to this distributed CommandBus. Expect similar logging on the local segment.", commandName);
         Registration localRegistration = localSegment.subscribe(commandName, messageHandler);
         io.axoniq.axonserver.connector.Registration serverRegistration =

@@ -19,13 +19,17 @@ package org.axonframework.messaging.interceptors;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 
 /**
@@ -40,6 +44,8 @@ import javax.annotation.Nonnull;
  */
 public class CorrelationDataInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
 
+    public static final ProcessingContext.ResourceKey<Map<String, Object>> CORRELATION_DATA = ProcessingContext.ResourceKey.create(
+            "CorrelationData");
     private final List<CorrelationDataProvider> correlationDataProviders;
 
     /**
@@ -67,4 +73,11 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
         return interceptorChain.proceedSync();
     }
 
+    @Override
+    public <M extends T, R> MessageStream<? extends R> interceptOnHandle(M message, ProcessingContext context,
+                                                                         InterceptorChain<M, R> interceptorChain) {
+        Map<String, Object> map = new ConcurrentHashMap<>();
+        correlationDataProviders.forEach(c -> map.putAll(c.correlationDataFor(message)));
+        return interceptorChain.proceed(message, context.branchedWithResource(CORRELATION_DATA, map));
+    }
 }

@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.ResultHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -111,27 +112,32 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public CompletableFuture<?> handle(@Nonnull Message<?> message,
-                                           @Nonnull ProcessingContext processingContext,
-                                           @Nullable T target) {
-            InterceptorChain chain = InterceptorChainParameterResolverFactory.currentInterceptorChain(processingContext);
-            return chain.proceed(message, processingContext)
-                        .thenApply(r -> (Object) r)
-                        .exceptionallyCompose(error -> {
-                            if (expectedResultType.isInstance(error)) {
-                                return CompletableFuture.failedFuture(error);
-                            }
-                            return ResultParameterResolverFactory.callWithResult(
-                                    error,
-                                    processingContext,
-                                    pc -> {
-                                        if (super.canHandle(message, pc)) {
-                                            return super.handle(message, pc, target)
-                                                    .thenApply(r -> (Object) r);
-                                        }
-                                        return CompletableFuture.failedFuture(error);
-                                    });
-                        });
+        public MessageStream<?> handle(@Nonnull Message<?> message,
+                                       @Nonnull ProcessingContext processingContext,
+                                       @Nullable T target) {
+            InterceptorChain<Message<?>, ?> chain = InterceptorChainParameterResolverFactory.currentInterceptorChain(
+                    processingContext);
+            // TODO - Provide implementation that handles exceptions in streams with more than one item
+            return MessageStream.fromFuture(
+                    chain.proceed(message, processingContext)
+                         .map(r -> (Object) r)
+                         .asCompletableFuture()
+                         .exceptionallyCompose(error -> {
+                             if (expectedResultType.isInstance(error)) {
+                                 return CompletableFuture.failedFuture(error);
+                             }
+                             return ResultParameterResolverFactory.callWithResult(
+                                     error,
+                                     processingContext,
+                                     pc -> {
+                                         if (super.canHandle(message, pc)) {
+                                             return super.handle(message, pc, target)
+                                                         .map(r -> (Object) r)
+                                                         .asCompletableFuture();
+                                         }
+                                         return CompletableFuture.failedFuture(error);
+                                     });
+                         }));
         }
     }
 

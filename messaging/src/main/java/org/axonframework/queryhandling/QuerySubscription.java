@@ -24,10 +24,10 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 /**
- * Encapsulates the identifying fields of a Query Handler when one is subscribed to the {@link
- * org.axonframework.queryhandling.QueryBus}. As such contains the response type of the query handler and the complete
- * handler itself. The first is typically used by the QueryBus to select the right query handler when a query comes in.
- * The latter is used to perform the actual query.
+ * Encapsulates the identifying fields of a Query Handler when one is subscribed to the
+ * {@link org.axonframework.queryhandling.QueryBus}. As such contains the response type of the query handler and the
+ * complete handler itself. The first is typically used by the QueryBus to select the right query handler when a query
+ * comes in. The latter is used to perform the actual query.
  *
  * @param <R> the type of response this query subscription contains
  * @author Steven van Beelen
@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
 public class QuerySubscription<R> {
 
     private final Type responseType;
-    private final MessageHandler<? super QueryMessage<?, R>> queryHandler;
+    private final MessageHandler<? super QueryMessage<?, R>, ? extends QueryResponseMessage<?>> queryHandler;
 
     /**
      * Instantiate a {@link QuerySubscription} with a specific {@code responseType} and {@code queryHandler}.
@@ -44,7 +44,8 @@ public class QuerySubscription<R> {
      * @param responseType a {@link java.lang.reflect.Type} as the response type of this subscription
      * @param queryHandler the subscribed {@link org.axonframework.messaging.MessageHandler}
      */
-    public QuerySubscription(@Nonnull Type responseType, @Nonnull MessageHandler<? super QueryMessage<?, R>> queryHandler) {
+    public QuerySubscription(@Nonnull Type responseType,
+                             @Nonnull MessageHandler<? super QueryMessage<?, R>, ? extends QueryResponseMessage<?>> queryHandler) {
         this.responseType = responseType;
         this.queryHandler = queryHandler;
     }
@@ -59,8 +60,9 @@ public class QuerySubscription<R> {
     }
 
     /**
-     * Check if this {@link QuerySubscription} can handle the given {@code queryResponseType}, by calling the {@link
-     * ResponseType#matches(Type)} function on it and providing the set {@code responseType} of this subscription.
+     * Check if this {@link QuerySubscription} can handle the given {@code queryResponseType}, by calling the
+     * {@link ResponseType#matches(Type)} function on it and providing the set {@code responseType} of this
+     * subscription.
      *
      * @param queryResponseType a {@link ResponseType} to match this subscriptions it's {@code responseType} against
      * @return true of the given {@code queryResponseType} its {@link ResponseType#matches(Type)} returns true, false if
@@ -75,7 +77,7 @@ public class QuerySubscription<R> {
      *
      * @return the {@link org.axonframework.messaging.MessageHandler} tied to this subscription
      */
-    public MessageHandler<? super QueryMessage<?, R>> getQueryHandler() {
+    public MessageHandler<? super QueryMessage<?, R>, ? extends QueryResponseMessage<?>> getQueryHandler() {
         return queryHandler;
     }
 

@@ -108,7 +108,7 @@ class DeadLetteredEventProcessingTask
     private Object handleWithInterceptors(
             UnitOfWork<? extends EventMessage<?>> unitOfWork
     ) throws Exception {
-        new DefaultInterceptorChain<EventMessage<?>>(
+        new DefaultInterceptorChain<EventMessage<?>, Void>(
                 unitOfWork,
                 interceptors,
                 m -> {

@@ -292,7 +292,7 @@ class DisruptorCommandBusMultiThreadedTest {
         }
     }
 
-    private static class StubHandler implements MessageHandler<CommandMessage<?>> {
+    private static class StubHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         private Repository<StubAggregate> repository;
 
