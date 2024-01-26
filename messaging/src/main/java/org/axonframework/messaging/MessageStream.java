@@ -20,6 +20,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 public interface MessageStream<T> {
 
@@ -29,6 +30,10 @@ public interface MessageStream<T> {
 
     static <T> MessageStream<T> fromFuture(CompletableFuture<T> instance) {
         return new SingleValueMessageStream<>(instance);
+    }
+
+    static <T> MessageStream<T> fromStream(Stream<T> stream) {
+        return new StreamMessageStream<>(stream);
     }
 
     static <T> MessageStream<T> just(T instance) {

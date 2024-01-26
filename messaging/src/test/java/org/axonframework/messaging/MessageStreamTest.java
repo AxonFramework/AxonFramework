@@ -22,11 +22,10 @@ import reactor.test.StepVerifier;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class MessageStreamTest<T extends MessageStream<?>, V> {
+public abstract class MessageStreamTest<T extends MessageStream<V>, V> {
 
     abstract T createTestSubject(List<V> values);
 
@@ -35,7 +34,7 @@ public abstract class MessageStreamTest<T extends MessageStream<?>, V> {
     abstract V createRandomValidStreamEntry();
 
     @Test
-    void shouldMapSingleValue() {
+    void shouldMapSingleValue_Future() {
         V in = createRandomValidStreamEntry();
         V out = createRandomValidStreamEntry();
 
@@ -45,7 +44,18 @@ public abstract class MessageStreamTest<T extends MessageStream<?>, V> {
     }
 
     @Test
-    void shouldMapMultipleValues() {
+    void shouldMapSingleValue_Flux() {
+        V in = createRandomValidStreamEntry();
+        V out = createRandomValidStreamEntry();
+
+        T testSubject = createTestSubject(List.of(in));
+        StepVerifier.create(testSubject.map(input -> out).asFlux())
+                    .expectNext(out)
+                    .verifyComplete();
+    }
+
+    @Test
+    void shouldMapMultipleValues_Flux() {
         V in1 = createRandomValidStreamEntry();
         V out1 = createRandomValidStreamEntry();
         V in2 = createRandomValidStreamEntry();
@@ -58,17 +68,13 @@ public abstract class MessageStreamTest<T extends MessageStream<?>, V> {
     }
 
     @Test
-    void shouldMapValuesUntilFailure() {
+    void shouldMapValuesUntilFailure_Flux() {
         V in = createRandomValidStreamEntry();
         V out = createRandomValidStreamEntry();
 
-        AtomicReference<Throwable> encountered = new AtomicReference<>();
-
         MessageStream<V> testSubject = createTestSubject(List.of(in), new MockException())
-                .map(input -> out).onErrorContinue(e -> {
-                    encountered.set(e);
-                    return MessageStream.failed(e);
-                });
+                .map(input -> out)
+                .onErrorContinue(MessageStream::failed);
 
         StepVerifier.create(testSubject.asFlux())
                     .expectNextMatches(out::equals)
@@ -98,7 +104,7 @@ public abstract class MessageStreamTest<T extends MessageStream<?>, V> {
             return i;
         });
         StepVerifier.create(testSubject.asFlux())
-                            .verifyComplete();
+                    .verifyComplete();
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
 

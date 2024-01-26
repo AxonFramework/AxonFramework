@@ -41,6 +41,7 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
      * @param message The message intended to be dispatched
      * @return the message to dispatch
      */
+    @Deprecated
     @Nonnull
     default T handle(@Nonnull T message) {
         return handle(Collections.singletonList(message)).apply(0, message);
@@ -53,6 +54,7 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
      * @param messages The Messages to pre-process
      * @return a function that processes messages based on their position in the list
      */
+    @Deprecated
     @Nonnull
     BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages);
 
