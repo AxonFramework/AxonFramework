@@ -17,9 +17,9 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 
 /**
@@ -48,12 +48,12 @@ public interface MessageHandlerInterceptorMemberChain<T> {
     Object handleSync(@Nonnull Message<?> message, @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler)
             throws Exception;
 
-    default CompletableFuture<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
-                                        @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
+    default MessageStream<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
+                                    @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
         try {
-            return CompletableFuture.completedFuture(handleSync(message, target, handler));
+            return MessageStream.just(handleSync(message, target, handler));
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+            return MessageStream.failed(e);
         }
     }
 }

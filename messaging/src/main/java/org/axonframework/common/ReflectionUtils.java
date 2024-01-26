@@ -25,7 +25,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -173,14 +172,10 @@ public abstract class ReflectionUtils {
      * @return the given {@code member}, for easier method chaining
      * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be
      *                               made accessible
-     * @deprecated Since the used {@link AccessController} will be removed in future JDK versions. The effort to
-     * implement a workaround is drafted in issue #2901.
      */
-    @SuppressWarnings("removal") // Suppressed AccessController usage
-    @Deprecated
     public static <T extends AccessibleObject> T ensureAccessible(T member) {
         if (!isAccessible(member)) {
-            AccessController.doPrivileged(new MemberAccessibilityCallback(member));
+            member.setAccessible(true);
         }
         return member;
     }

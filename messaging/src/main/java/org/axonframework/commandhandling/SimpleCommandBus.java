@@ -60,7 +60,7 @@ public class SimpleCommandBus implements CommandBus {
     private final TransactionManager transactionManager;
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
     private final DuplicateCommandHandlerResolver duplicateCommandHandlerResolver;
-    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>>> subscriptions =
+    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> subscriptions =
             new ConcurrentHashMap<>();
     private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors =
             new CopyOnWriteArrayList<>();
@@ -141,7 +141,7 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> CompletableFuture<CommandResultMessage<R>> doDispatch(CommandMessage<C> command) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
 
-        Optional<MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>>> optionalHandler = findCommandHandlerFor(
+        Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> optionalHandler = findCommandHandlerFor(
                 command);
         if (optionalHandler.isPresent()) {
             CommandMessage<C> commandWithContext = spanFactory.propagateContext(command);
@@ -155,7 +155,7 @@ public class SimpleCommandBus implements CommandBus {
         }
     }
 
-    private Optional<MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>>> findCommandHandlerFor(
+    private Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> findCommandHandlerFor(
             CommandMessage<?> command) {
         return Optional.ofNullable(subscriptions.get(command.getCommandName()));
     }
@@ -169,7 +169,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param <R>     The type of result expected from the command handler
      */
     protected <C, R> CompletableFuture<CommandResultMessage<R>> handle(CommandMessage<C> command,
-                                                                       MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler) {
+                                                                       MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
         return spanFactory.createHandleCommandSpan(command, false)
                           .runSupplierAsync(() -> {
                               if (logger.isDebugEnabled()) {
@@ -182,7 +182,8 @@ public class SimpleCommandBus implements CommandBus {
 
                               // TODO simple, yet massive, todo on changing the interceptor logic...T_T
 //            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
-                              return unitOfWork.executeWithResult(c -> handler.handle(command, c));
+                              return unitOfWork.executeWithResult(c -> handler.handle(command, c)
+                                                                              .asCompletableFuture());
 //            return asCommandResultMessage(unitOfWork.executeWithResult(
 //                    chain::proceedSync, rollbackConfiguration
 //            ));
@@ -197,7 +198,7 @@ public class SimpleCommandBus implements CommandBus {
      */
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
         logger.debug("Subscribing command with name [{}]", commandName);
         assertNonNull(handler, "handler may not be null");
         subscriptions.compute(commandName, (k, existingHandler) -> {

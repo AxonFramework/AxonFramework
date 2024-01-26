@@ -199,10 +199,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      */
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler) {
-        logger.debug(
-                "Subscribing command with name [{}] to this distributed CommandBus. Expect similar logging on the local segment.",
-                commandName);
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+        logger.debug("Subscribing command with name [{}] to this distributed CommandBus. Expect similar logging on the local segment.", commandName);
         Registration reg = connector.subscribe(commandName, handler);
         updateFilter(commandFilter.get().or(new CommandNameFilter(commandName)));
 

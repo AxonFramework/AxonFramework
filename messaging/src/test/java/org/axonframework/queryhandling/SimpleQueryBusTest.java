@@ -151,7 +151,7 @@ class SimpleQueryBusTest {
     @Test
     void subscribingSameHandlerTwiceInvokedOnce() throws Exception {
         AtomicInteger invocationCount = new AtomicInteger();
-        MessageHandler<QueryMessage<?, String>, Object> handler = message -> {
+        MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>> handler = message -> {
             invocationCount.incrementAndGet();
             return "reply";
         };
@@ -179,8 +179,8 @@ class SimpleQueryBusTest {
                                     .errorHandler(errorHandler)
                                     .duplicateQueryHandlerResolver(DuplicateQueryHandlerResolution.rejectDuplicates())
                                     .build();
-        MessageHandler<QueryMessage<?, String>, Object> handlerOne = message -> "reply";
-        MessageHandler<QueryMessage<?, String>, Object> handlerTwo = message -> "reply";
+        MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>> handlerOne = message -> "reply";
+        MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>> handlerTwo = message -> "reply";
         //noinspection resource
         testSubject.subscribe("test", String.class, handlerOne);
         //noinspection resource
@@ -357,11 +357,11 @@ class SimpleQueryBusTest {
     @Test
     void queryForSingleResultWithUnsuitableHandlers() throws Exception {
         AtomicInteger invocationCount = new AtomicInteger();
-        MessageHandler<? super QueryMessage<?, ?>, Object> failingHandler = message -> {
+        MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>> failingHandler = message -> {
             invocationCount.incrementAndGet();
             throw new NoHandlerForQueryException("Mock");
         };
-        MessageHandler<? super QueryMessage<?, String>, Object> passingHandler = message -> {
+        MessageHandler<? super QueryMessage<?, String>, ? extends QueryResponseMessage<?>> passingHandler = message -> {
             invocationCount.incrementAndGet();
             return "reply";
         };
@@ -430,7 +430,7 @@ class SimpleQueryBusTest {
 
     @Test
     void queryForSingleResultWillReportErrors() throws Exception {
-        MessageHandler<? super QueryMessage<?, ?>, Object> failingHandler = message -> {
+        MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>> failingHandler = message -> {
             throw new MockException("Mock");
         };
         //noinspection resource

@@ -317,7 +317,7 @@ class DistributedCommandBusTest {
 
         @Override
         public Registration subscribe(@Nonnull String commandName,
-                                      @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler) {
+                                      @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
             return null;
         }
 

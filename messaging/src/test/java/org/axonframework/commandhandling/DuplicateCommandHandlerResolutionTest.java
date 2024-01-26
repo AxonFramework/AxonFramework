@@ -30,8 +30,8 @@ import static org.mockito.Mockito.*;
  */
 class DuplicateCommandHandlerResolutionTest {
 
-    private MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> initialHandler;
-    private MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> duplicateHandler;
+    private MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> initialHandler;
+    private MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> duplicateHandler;
 
     @BeforeEach
     void setUp() {
@@ -47,7 +47,7 @@ class DuplicateCommandHandlerResolutionTest {
     void logAndOverride() {
         DuplicateCommandHandlerResolver testSubject = DuplicateCommandHandlerResolution.logAndOverride();
 
-        MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> result = testSubject.resolve("test", initialHandler, duplicateHandler);
+        MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> result = testSubject.resolve("test", initialHandler, duplicateHandler);
 
         assertEquals(duplicateHandler, result);
     }
@@ -56,7 +56,7 @@ class DuplicateCommandHandlerResolutionTest {
     void silentlyOverride() {
         DuplicateCommandHandlerResolver testSubject = DuplicateCommandHandlerResolution.silentOverride();
 
-        MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> result = testSubject.resolve("test", initialHandler, duplicateHandler);
+        MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> result = testSubject.resolve("test", initialHandler, duplicateHandler);
 
         assertEquals(duplicateHandler, result);
     }

@@ -149,7 +149,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
 
-    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>>> commandHandlers =
+    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> commandHandlers =
             new ConcurrentHashMap<>();
 
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
@@ -306,8 +306,7 @@ public class DisruptorCommandBus implements CommandBus {
     @SuppressWarnings("Duplicates")
     private <C, R> void doDispatch(CommandMessage<? extends C> command, CommandCallback<? super C, R> callback) {
         Assert.state(!disruptorShutDown, () -> "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
-        final MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> commandHandler = commandHandlers.get(
-                command.getCommandName());
+        final MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> commandHandler = commandHandlers.get(command.getCommandName());
         if (commandHandler == null) {
             callback.onResult(command, asCommandResultMessage(new NoHandlerForCommandException(format(
                     "No handler was subscribed for command [%s].", command.getCommandName()
@@ -538,7 +537,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
         logger.debug("Subscribing command with name [{}]", commandName);
         commandHandlers.compute(commandName, (cn, existingHandler) -> {
             if (existingHandler == null || existingHandler == handler) {

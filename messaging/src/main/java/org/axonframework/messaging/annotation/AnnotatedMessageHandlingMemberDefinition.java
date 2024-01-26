@@ -17,10 +17,10 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
@@ -49,7 +49,7 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
     public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
                                                                 @Nonnull Method method,
                                                                 @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                                Function<Object, CompletableFuture<?>> returnTypeConverter) {
+                                                                Function<Object, MessageStream<?>> returnTypeConverter) {
         return findAnnotationAttributes(method, MessageHandler.class)
                 .map(attr -> new MethodInvokingMessageHandlingMember<>(
                         method,

@@ -21,8 +21,8 @@ import org.axonframework.messaging.MessageHandler;
 import javax.annotation.Nonnull;
 
 /**
- * Implementation of {@link DuplicateCommandHandlerResolver} that throws a {@link DuplicateCommandHandlerSubscriptionException}
- * when a duplicate registration is detected.
+ * Implementation of {@link DuplicateCommandHandlerResolver} that throws a
+ * {@link DuplicateCommandHandlerSubscriptionException} when a duplicate registration is detected.
  *
  * @author Allard Buijze
  * @since 4.2
@@ -44,9 +44,10 @@ public class FailingDuplicateCommandHandlerResolver implements DuplicateCommandH
     }
 
     @Override
-    public MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> resolve(@Nonnull String commandName,
-                                                             @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> registeredHandler,
-                                                             @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> candidateHandler) {
+    public MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> resolve(
+            @Nonnull String commandName,
+            @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> registeredHandler,
+            @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> candidateHandler) {
         throw new DuplicateCommandHandlerSubscriptionException(commandName, registeredHandler, candidateHandler);
     }
 }

@@ -21,6 +21,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -117,10 +118,10 @@ class SimpleCommandBusTest {
             }
 
             @Override
-            public CompletableFuture<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                     ProcessingContext processingContext) {
+            public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                                 ProcessingContext processingContext) {
                 unitOfWork.set(processingContext);
-                return CompletableFuture.completedFuture(GenericCommandResultMessage.asCommandResultMessage(message));
+                return MessageStream.just(GenericCommandResultMessage.asCommandResultMessage(message));
             }
         });
         CompletableFuture<CommandResultMessage<Object>> actual = testSubject.dispatch(asCommandMessage("Say hi!"),
@@ -145,7 +146,7 @@ class SimpleCommandBusTest {
             }
 
             @Override
-            public CompletableFuture<CommandResultMessage<?>> handle(CommandMessage<?> message,
+            public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
                                                                      ProcessingContext processingContext) {
                 unitOfWork.set(processingContext);
                 throw new RuntimeException();
@@ -173,10 +174,10 @@ class SimpleCommandBusTest {
             }
 
             @Override
-            public CompletableFuture<CommandResultMessage<?>> handle(CommandMessage<?> message,
+            public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
                                                                      ProcessingContext processingContext) {
                 unitOfWork.set(processingContext);
-                return CompletableFuture.failedFuture(new MockException("Simulating failure"));
+                return MessageStream.failed(new MockException("Simulating failure"));
             }
         });
 //        testSubject.setRollbackConfiguration(RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
@@ -476,9 +477,9 @@ class SimpleCommandBusTest {
         }
 
         @Override
-        public CompletableFuture<CommandResultMessage<?>> handle(CommandMessage<?> message,
+        public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
                                                                  ProcessingContext processingContext) {
-            return result.thenApply(GenericCommandResultMessage::asCommandResultMessage);
+            return MessageStream.fromFuture(result.thenApply(GenericCommandResultMessage::asCommandResultMessage));
         }
     }
 }

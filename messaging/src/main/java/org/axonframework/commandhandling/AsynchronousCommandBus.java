@@ -85,7 +85,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
 
     @Override
     protected <C, R> CompletableFuture<CommandResultMessage<R>> handle(CommandMessage<C> command,
-                                                                       MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler) {
+                                                                       MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
         CompletableFuture<CommandResultMessage<R>> result = new CompletableFuture<>();
         executor.execute(() -> super.handle(command, handler).whenComplete((r, e) -> {
             if (e == null) {

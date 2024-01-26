@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  * @since 0.5
  */
 @FunctionalInterface
-public interface InterceptorChain {
+public interface InterceptorChain<M extends Message<?>, R> {
 
     /**
      * Signals the Interceptor Chain to continue processing the message.
@@ -39,11 +39,11 @@ public interface InterceptorChain {
      */
     Object proceedSync() throws Exception;
 
-    default CompletableFuture<?> proceed(Message<?> message, ProcessingContext processingContext) {
+    default MessageStream<? extends R> proceed(M message, ProcessingContext processingContext) {
         try {
-            return CompletableFuture.completedFuture(proceedSync());
+            return MessageStream.fromFuture(CompletableFuture.completedFuture((R) proceedSync()));
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+            return MessageStream.fromFuture(CompletableFuture.failedFuture(e));
         }
     }
 

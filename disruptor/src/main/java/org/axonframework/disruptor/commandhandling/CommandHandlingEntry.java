@@ -151,7 +151,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      * @param publisherInterceptors The interceptors to invoke during the publication phase
      */
     public void reset(CommandMessage<?> newCommand,
-                      MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> newCommandHandler,// NOSONAR - Not important
+                      MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> newCommandHandler,// NOSONAR - Not important
                       int newInvokerSegmentId,
                       int newPublisherSegmentId,
                       BlacklistDetectingCallback<?, ?> newCallback,

@@ -40,7 +40,7 @@ class AsynchronousCommandBusTest {
 
     private MessageHandlerInterceptor<CommandMessage<?>> handlerInterceptor;
     private MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor;
-    private MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler;
+    private MessageHandler<CommandMessage<?>, ? extends CommandResultMessage<?>> commandHandler;
     private ExecutorService executorService;
     private AsynchronousCommandBus testSubject;
     private TestSpanFactory spanFactory;

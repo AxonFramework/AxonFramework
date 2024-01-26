@@ -86,7 +86,7 @@ public interface CommandBusConnector extends MessageHandlerInterceptorSupport<Co
      * @param handler     the handler to subscribe
      * @return a handle that can be used to end the subscription
      */
-    Registration subscribe(@Nonnull String commandName, @Nonnull MessageHandler<? super CommandMessage<?>, CommandResultMessage<?>> handler);
+    Registration subscribe(@Nonnull String commandName, @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler);
 
     /**
      * Return an {@link Optional} containing the {@link CommandBus} which is used by this {@link CommandBusConnector} to

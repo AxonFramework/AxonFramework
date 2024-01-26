@@ -29,6 +29,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -48,7 +49,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -223,14 +223,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                             ProcessingContext processingContext) {
+    public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                         ProcessingContext processingContext) {
         return handlers.stream()
                        .filter(ch -> ch.canHandle(message))
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(message))
                        .handle(message, processingContext)
-                       .thenApply(GenericCommandResultMessage::asCommandResultMessage);
+                       .map(GenericCommandResultMessage::asCommandResultMessage);
     }
 
     @Override

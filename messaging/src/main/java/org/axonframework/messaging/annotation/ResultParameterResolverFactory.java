@@ -25,7 +25,6 @@ import org.axonframework.messaging.unitofwork.ResourceOverridingProcessingContex
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 /**
@@ -48,7 +47,7 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
             "Invocation result for interceptors");
 
 
-    public static <T, R extends CompletionStage<T>> R callWithResult(Object result, ProcessingContext processingContext,
+    public static <R> R callWithResult(Object result, ProcessingContext processingContext,
                                                       Function<ProcessingContext, R> action) {
         ProcessingContext wrapped = new ResourceOverridingProcessingContext<>(processingContext, RESOURCE_KEY, result);
         return action.apply(wrapped);

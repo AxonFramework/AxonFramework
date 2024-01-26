@@ -18,10 +18,10 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Interface to be implemented by classes that can handle events.
@@ -44,12 +44,12 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Voi
      */
     Object handleSync(EventMessage<?> event) throws Exception;
 
-    default CompletableFuture<Void> handle(EventMessage<?> event, ProcessingContext processingContext) {
+    default MessageStream<Void> handle(EventMessage<?> event, ProcessingContext processingContext) {
         try {
-            return CompletableFuture.completedFuture(handleSync(event))
-                                    .thenApply(FutureUtils::ignoreResult);
+            handleSync(event);
+            return MessageStream.empty();
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+            return MessageStream.failed(e);
         }
     }
 

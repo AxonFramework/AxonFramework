@@ -16,8 +16,10 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +30,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -47,7 +49,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     private final Class<?> payloadType;
     private final int parameterCount;
     private final ParameterResolver<?>[] parameterResolvers;
-    private final Function<Object, CompletableFuture<?>> returnTypeConverter;
+    private final Function<Object, MessageStream<?>> returnTypeConverter;
     private final Method method;
     private final Class<? extends Message> messageType;
     private final HandlerAttributes attributes;
@@ -65,9 +67,9 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                                Class<? extends Message> messageType,
                                                Class<?> explicitPayloadType,
                                                ParameterResolverFactory parameterResolverFactory,
-                                               Function<Object, CompletableFuture<?>> returnTypeConverter) {
+                                               Function<Object, MessageStream<?>> returnTypeConverter) {
         this.messageType = messageType;
-        this.method = method;
+        this.method = ReflectionUtils.ensureAccessible(method);
         this.returnTypeConverter = returnTypeConverter;
 //        this.handlerInvoker = new ExecutableMessageHandlerInvoker<>(executable, messageType);
         Parameter[] parameters = method.getParameters();
@@ -150,23 +152,31 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
         // FIXME - null processingContext should not be allowed here
         //noinspection DataFlowIssue
-        return handle(message, null, target).get();
+        try {
+            return handle(message, null, target).asCompletableFuture().get();
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof Exception ex) {
+                throw ex;
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Override
-    public CompletableFuture<?> handle(@Nonnull Message<?> message,
-                                       @Nonnull ProcessingContext processingContext,
-                                       @Nullable T target) {
+    public MessageStream<?> handle(@Nonnull Message<?> message,
+                                   @Nonnull ProcessingContext processingContext,
+                                   @Nullable T target) {
         Object invocationResult;
         try {
             invocationResult = method.invoke(target, resolveParameterValues(message, processingContext));
         } catch (IllegalAccessException | InvocationTargetException e) {
             if (e.getCause() instanceof Exception) {
-                return CompletableFuture.failedFuture(e.getCause());
+                return MessageStream.failed(e.getCause());
             } else if (e.getCause() instanceof Error) {
                 throw (Error) e.getCause();
             }
-            return CompletableFuture.failedFuture(new MessageHandlerInvocationException(String.format(
+            return MessageStream.failed(new MessageHandlerInvocationException(String.format(
                     "Error handling an object of type [%s]",
                     messageType), e));
         }
