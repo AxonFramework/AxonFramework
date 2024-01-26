@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -29,6 +30,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -67,7 +69,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                                ParameterResolverFactory parameterResolverFactory,
                                                Function<Object, MessageStream<?>> returnTypeConverter) {
         this.messageType = messageType;
-        this.method = method;
+        this.method = ReflectionUtils.ensureAccessible(method);
         this.returnTypeConverter = returnTypeConverter;
 //        this.handlerInvoker = new ExecutableMessageHandlerInvoker<>(executable, messageType);
         Parameter[] parameters = method.getParameters();
@@ -150,7 +152,15 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
         // FIXME - null processingContext should not be allowed here
         //noinspection DataFlowIssue
-        return handle(message, null, target).asCompletableFuture().get();
+        try {
+            return handle(message, null, target).asCompletableFuture().get();
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof Exception ex) {
+                throw ex;
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Override
