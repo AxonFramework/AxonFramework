@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2023. Axon Framework
+  ~ Copyright (c) 2010-2024. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon-spring-boot-3-integrationtests</artifactId>
-    <version>4.9.2-SNAPSHOT</version>
+    <version>4.9.3-SNAPSHOT</version>
 
     <name>Axon Framework - Spring Boot 3 Integration Tests</name>
     <description>
