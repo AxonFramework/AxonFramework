@@ -34,6 +34,7 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  * @author Allard Buijze
  * @since 0.6
  */
+@Deprecated
 public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
 
     private final MessageProcessingContext<T> processingContext;

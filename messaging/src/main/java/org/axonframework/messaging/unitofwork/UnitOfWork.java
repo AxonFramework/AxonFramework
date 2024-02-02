@@ -41,6 +41,7 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @since 0.6
  */
+@Deprecated
 public interface UnitOfWork<T extends Message<?>> {
 
     /**
