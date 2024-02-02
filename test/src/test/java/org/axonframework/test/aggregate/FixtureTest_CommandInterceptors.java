@@ -216,7 +216,7 @@ class FixtureTest_CommandInterceptors {
         AtomicInteger invocations = new AtomicInteger(0);
         fixture.registerCommandHandlerInterceptor((unitOfWork, interceptorChain) -> {
             invocations.incrementAndGet();
-            interceptorChain.proceed();
+            interceptorChain.proceedSync();
             return null;
         });
 
@@ -294,7 +294,7 @@ class FixtureTest_CommandInterceptors {
             if (this.entity == null) {
                 return "invoked-without-entity";
             }
-            return (String) interceptorChain.proceed();
+            return (String) interceptorChain.proceedSync();
         }
 
         @CommandHandlerInterceptor
@@ -403,7 +403,7 @@ class FixtureTest_CommandInterceptors {
         public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
                              @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.registerCorrelationDataProvider(new SimpleCorrelationDataProvider(HANDLER_META_DATA_KEY));
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }
     }
 }

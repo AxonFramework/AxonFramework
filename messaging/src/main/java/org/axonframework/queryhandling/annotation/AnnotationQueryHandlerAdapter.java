@@ -28,6 +28,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryHandlerAdapter;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -42,7 +43,7 @@ import javax.annotation.Nonnull;
  * @author Marc Gathier
  * @since 3.1
  */
-public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage<?, ?>> {
+public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage<?, ?>, QueryResponseMessage<?>> {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
@@ -107,20 +108,20 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
     }
 
     @Override
-    public Object handle(QueryMessage<?, ?> message) throws Exception {
+    public Object handleSync(QueryMessage<?, ?> message) throws Exception {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
-                     .filter(m -> m.canHandle(message))
+                     .filter(m -> m.canHandle(message, null))
                      .findFirst()
                      .orElseThrow(() -> new NoHandlerForQueryException(message));
 
         return model.chainedInterceptor(target.getClass())
-                    .handle(message, target, handler);
+                    .handleSync(message, target, handler);
     }
 
     @Override
     public boolean canHandle(QueryMessage<?, ?> message) {
         return model.getHandlers(target.getClass())
-                    .anyMatch(handlingMember -> handlingMember.canHandle(message));
+                    .anyMatch(handlingMember -> handlingMember.canHandle(message, null));
     }
 }

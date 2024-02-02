@@ -74,7 +74,7 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handlerDispatchingVoidReturnType() throws Exception {
-        Object actualReturnValue = testSubject.handle(GenericCommandMessage.asCommandMessage(""));
+        Object actualReturnValue = testSubject.handleSync(GenericCommandMessage.asCommandMessage(""));
         assertNull(actualReturnValue);
         assertEquals(1, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
@@ -82,7 +82,7 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handlerDispatchingWithReturnType() throws Exception {
-        Object actualReturnValue = testSubject.handle(GenericCommandMessage.asCommandMessage(1L));
+        Object actualReturnValue = testSubject.handleSync(GenericCommandMessage.asCommandMessage(1L));
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(1, mockTarget.returningHandlerInvoked);
@@ -90,8 +90,8 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handlerDispatchingWithCustomCommandName() throws Exception {
-        Object actualReturnValue = testSubject.handle(new GenericCommandMessage<>(new GenericMessage<>(1L),
-                                                                                  "almostLong"));
+        Object actualReturnValue = testSubject.handleSync(new GenericCommandMessage<>(new GenericMessage<>(1L),
+                                                                                      "almostLong"));
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
@@ -101,7 +101,7 @@ class AnnotationCommandHandlerAdapterTest {
     @Test
     void handlerDispatchingThrowingException() {
         try {
-            testSubject.handle(GenericCommandMessage.asCommandMessage(new HashSet<>()));
+            testSubject.handleSync(GenericCommandMessage.asCommandMessage(new HashSet<>()));
             fail("Expected exception");
         } catch (Exception ex) {
             assertEquals(Exception.class, ex.getClass());
@@ -127,7 +127,7 @@ class AnnotationCommandHandlerAdapterTest {
     void handleNoHandlerForCommand() {
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage(new LinkedList<>());
 
-        assertThrows(NoHandlerForCommandException.class, () -> testSubject.handle(command));
+        assertThrows(NoHandlerForCommandException.class, () -> testSubject.handleSync(command));
     }
 
     @Test
@@ -139,7 +139,7 @@ class AnnotationCommandHandlerAdapterTest {
 
         CommandMessage<String> testCommandMessage = GenericCommandMessage.asCommandMessage("");
 
-        Object result = testSubject.handle(testCommandMessage);
+        Object result = testSubject.handleSync(testCommandMessage);
 
         assertNull(result);
         assertEquals(1, mockTarget.voidHandlerInvoked);
@@ -155,7 +155,7 @@ class AnnotationCommandHandlerAdapterTest {
 
         CommandMessage<String> testCommandMessage = GenericCommandMessage.asCommandMessage(new ArrayList<>());
 
-        String result = (String) testSubject.handle(testCommandMessage);
+        String result = (String) testSubject.handleSync(testCommandMessage);
 
         assertNull(result);
         assertFalse(interceptedExceptions.isEmpty());
@@ -227,7 +227,7 @@ class AnnotationCommandHandlerAdapterTest {
         @MessageHandlerInterceptor
         public Object interceptAny(CommandMessage<?> command, InterceptorChain chain) throws Exception {
             interceptedWithInterceptorChain.add(command);
-            return chain.proceed();
+            return chain.proceedSync();
         }
 
         @ExceptionHandler(resultType = RuntimeException.class)

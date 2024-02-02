@@ -17,6 +17,8 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import javax.annotation.Nonnull;
 
@@ -39,10 +41,19 @@ public interface MessageHandlerInterceptorMemberChain<T> {
      * @param message The message to pass through the interceptor chain
      * @param target  The target instance to invoke the interceptors and handlers on
      * @param handler The actual handler to invoke once all interceptors have received the message
-     *
      * @return the result as returned by the handlers or interceptors
      * @throws Exception any exception thrown by the handler or any of the interceptors
      */
-    Object handle(@Nonnull Message<?> message, @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler)
+    @Deprecated
+    Object handleSync(@Nonnull Message<?> message, @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler)
             throws Exception;
+
+    default MessageStream<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
+                                    @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
+        try {
+            return MessageStream.just(handleSync(message, target, handler));
+        } catch (Exception e) {
+            return MessageStream.failed(e);
+        }
+    }
 }

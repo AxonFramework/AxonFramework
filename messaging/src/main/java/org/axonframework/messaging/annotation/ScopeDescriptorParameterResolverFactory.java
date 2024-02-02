@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -46,7 +47,7 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
     private static class ScopeDescriptorParameterResolver implements ParameterResolver<ScopeDescriptor> {
 
         @Override
-        public ScopeDescriptor resolveParameterValue(Message<?> message) {
+        public ScopeDescriptor resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
             try {
                 return Scope.describeCurrentScope();
             } catch (IllegalStateException e) {
@@ -55,7 +56,7 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
         }
 
         @Override
-        public boolean matches(Message<?> message) {
+        public boolean matches(Message<?> message, ProcessingContext processingContext) {
             return true;
         }
     }

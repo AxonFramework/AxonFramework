@@ -18,10 +18,13 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,54 +35,125 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class HandlerHierarchyTest {
 
-    private interface C {}
-    private interface D extends C {}
-    private interface H extends D {}
-    private interface E extends D {}
-    private static abstract class F implements D {}
-    private static class I implements H {}
-    private static abstract class G implements E {}
-    private static class A {}
-    private static class B {}
+    private interface C {
+
+    }
+
+    private interface D extends C {
+
+    }
+
+    private interface H extends D {
+
+    }
+
+    private interface E extends D {
+
+    }
+
+    private static abstract class F implements D {
+
+    }
+
+    private static class I implements H {
+
+    }
+
+    private static abstract class G implements E {
+
+    }
+
+    private static class A {
+
+    }
+
+    private static class B {
+
+    }
 
     private static class MyEventHandler {
 
-        @EventHandler public void handle(E event) {}
-        @EventHandler public void handle(G event) {}
-        @EventHandler public void handle(A event) {}
-        @EventHandler public void handle(B event) {}
-        @EventHandler public void handle(I event) {}
-        @EventHandler public void handle(F event) {}
+        @EventHandler
+        public void handle(E event) {
+        }
+
+        @EventHandler
+        public void handle(G event) {
+        }
+
+        @EventHandler
+        public void handle(A event) {
+        }
+
+        @EventHandler
+        public void handle(B event) {
+        }
+
+        @EventHandler
+        public void handle(I event) {
+        }
+
+        @EventHandler
+        public void handle(F event) {
+        }
+    }
+
+    // TODO This local static function should be replaced with a dedicated interface that converts types.
+    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
+    private static MessageStream<Object> returnTypeConverter(Object result) {
+        return result instanceof CompletableFuture<?>
+                ? MessageStream.fromFuture((CompletableFuture<Object>) result)
+                : MessageStream.just(result);
     }
 
     @Test
     void hierarchySort() throws NoSuchMethodException {
         MultiParameterResolverFactory multiParameterResolverFactory = MultiParameterResolverFactory.ordered(new DefaultParameterResolverFactory());
 
-        MessageHandlingMember<?> bHandler = new AnnotatedMessageHandlingMember<>(MyEventHandler.class.getMethod("handle", B.class),
-                                                                                 EventMessage.class,
-                                                                                 B.class,
-                                                                                 multiParameterResolverFactory);
-        MessageHandlingMember<?> iHandler = new AnnotatedMessageHandlingMember<>(MyEventHandler.class.getMethod("handle", I.class),
-                                                                                 EventMessage.class,
-                                                                                 I.class,
-                                                                                 multiParameterResolverFactory);
-        MessageHandlingMember<?> fHandler = new AnnotatedMessageHandlingMember<>(MyEventHandler.class.getMethod("handle", F.class),
-                                                                                 EventMessage.class,
-                                                                                 F.class,
-                                                                                 multiParameterResolverFactory);
-        MessageHandlingMember<?> aHandler = new AnnotatedMessageHandlingMember<>(MyEventHandler.class.getMethod("handle", A.class),
-                                                                                 EventMessage.class,
-                                                                                 A.class,
-                                                                                 multiParameterResolverFactory);
-        MessageHandlingMember<?> gHandler = new AnnotatedMessageHandlingMember<>(MyEventHandler.class.getMethod("handle", G.class),
-                                                                                 EventMessage.class,
-                                                                                 G.class,
-                                                                                 multiParameterResolverFactory);
-        MessageHandlingMember<?> eHandler = new AnnotatedMessageHandlingMember<>(MyEventHandler.class.getMethod("handle", E.class),
-                                                                                 EventMessage.class,
-                                                                                 E.class,
-                                                                                 multiParameterResolverFactory);
+
+        Class<? extends Message> eventMessageClass = EventMessage.class;
+        MessageHandlingMember<?> bHandler = new MethodInvokingMessageHandlingMember<>(
+                MyEventHandler.class.getMethod("handle", B.class),
+                eventMessageClass,
+                B.class,
+                multiParameterResolverFactory,
+                HandlerHierarchyTest::returnTypeConverter
+        );
+        MessageHandlingMember<?> iHandler = new MethodInvokingMessageHandlingMember<>(
+                MyEventHandler.class.getMethod("handle", I.class),
+                eventMessageClass,
+                I.class,
+                multiParameterResolverFactory,
+                HandlerHierarchyTest::returnTypeConverter
+        );
+        MessageHandlingMember<?> fHandler = new MethodInvokingMessageHandlingMember<>(
+                MyEventHandler.class.getMethod("handle", F.class),
+                eventMessageClass,
+                F.class,
+                multiParameterResolverFactory,
+                HandlerHierarchyTest::returnTypeConverter
+        );
+        MessageHandlingMember<?> aHandler = new MethodInvokingMessageHandlingMember<>(
+                MyEventHandler.class.getMethod("handle", A.class),
+                eventMessageClass,
+                A.class,
+                multiParameterResolverFactory,
+                HandlerHierarchyTest::returnTypeConverter
+        );
+        MessageHandlingMember<?> gHandler = new MethodInvokingMessageHandlingMember<>(
+                MyEventHandler.class.getMethod("handle", G.class),
+                eventMessageClass,
+                G.class,
+                multiParameterResolverFactory,
+                HandlerHierarchyTest::returnTypeConverter
+        );
+        MessageHandlingMember<?> eHandler = new MethodInvokingMessageHandlingMember<>(
+                MyEventHandler.class.getMethod("handle", E.class),
+                eventMessageClass,
+                E.class,
+                multiParameterResolverFactory,
+                HandlerHierarchyTest::returnTypeConverter
+        );
 
         List<MessageHandlingMember<?>> handlers = Arrays.asList(bHandler,
                                                                 iHandler,

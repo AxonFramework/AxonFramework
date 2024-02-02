@@ -64,12 +64,12 @@ class TracingHandlerEnhancerDefinitionTest {
         MessageHandlingMember<TracingHandlerEnhancerDefinitionTest> messageHandlingMember = definition.wrapHandler(
                 original);
         Message<?> message = mock(Message.class);
-        when(original.handle(any(), any())).thenAnswer(invocationOnMock -> {
+        when(original.handleSync(any(), any())).thenAnswer(invocationOnMock -> {
             spanFactory.verifySpanActive("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
             invoked = true;
             return null;
         });
-        messageHandlingMember.handle(message, this);
+        messageHandlingMember.handleSync(message, this);
 
         assertTrue(invoked);
         spanFactory.verifySpanCompleted("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
@@ -99,12 +99,12 @@ class TracingHandlerEnhancerDefinitionTest {
         MessageHandlingMember<TracingHandlerEnhancerDefinitionTest> messageHandlingMember = definition.wrapHandler(
                 original);
         Message<?> message = mock(Message.class);
-        when(original.handle(any(), any())).thenAnswer(invocationOnMock -> {
+        when(original.handleSync(any(), any())).thenAnswer(invocationOnMock -> {
             spanFactory.verifySpanActive("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
             invoked = true;
             return null;
         });
-        messageHandlingMember.handle(message, this);
+        messageHandlingMember.handleSync(message, this);
 
         assertTrue(invoked);
         spanFactory.verifySpanCompleted("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");

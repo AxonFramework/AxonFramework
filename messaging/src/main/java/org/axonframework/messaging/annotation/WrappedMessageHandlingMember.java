@@ -17,9 +17,12 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Abstract implementation of a {@link MessageHandlingMember} that delegates to a wrapped MessageHandlingMember. Extend
@@ -53,13 +56,20 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message) {
-        return delegate.canHandle(message);
+    public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        return delegate.canHandle(message, processingContext);
     }
 
     @Override
-    public Object handle(@Nonnull Message<?> message, T target) throws Exception {
-        return delegate.handle(message, target);
+    public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
+        return delegate.handleSync(message, target);
+    }
+
+    @Override
+    public MessageStream<?> handle(@Nonnull Message<?> message,
+                                @Nonnull ProcessingContext processingContext,
+                                @Nullable T target) {
+        return delegate.handle(message, processingContext, target);
     }
 
     @Override

@@ -17,6 +17,8 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
@@ -58,10 +60,12 @@ public interface MessageHandlingMember<T> {
     /**
      * Checks if this handler is capable of handling the given {@code message}.
      *
-     * @param message The message that is to be handled
+     * @param message           The message that is to be handled
+     * @param processingContext
      * @return {@code true} if the handler is capable of handling the message, {@code false} otherwise
      */
-    boolean canHandle(@Nonnull Message<?> message);
+    // TODO - ProcessingContext should eventually become non-null when canHandle for event handlers is based on fully-qualified message name only
+    boolean canHandle(@Nonnull Message<?> message, @Nullable ProcessingContext processingContext);
 
     /**
      * Checks if this handler is capable of handling messages with the given {@code payloadType}.
@@ -97,7 +101,19 @@ public interface MessageHandlingMember<T> {
      * @throws Exception when there was a problem that prevented invocation of the method or if an exception was thrown
      *                   from the invoked method
      */
-    Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception;
+    @Deprecated
+    Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception;
+
+    default MessageStream<?> handle(@Nonnull Message<?> message,
+                                    @Nonnull ProcessingContext processingContext,
+                                    @Nullable T target) {
+        try {
+            // TODO: 24-11-2023 proper impl
+            return MessageStream.just(handleSync(message, target));
+        } catch (Exception e) {
+            return MessageStream.failed(e);
+        }
+    }
 
     /**
      * Returns the wrapped handler object if its type is an instance of the given {@code handlerType}. For instance, if

@@ -54,8 +54,8 @@ class ReplayParameterResolverFactoryTest {
         GenericTrackedEventMessage<Object> liveEvent = new GenericTrackedEventMessage<>(regularToken, asEventMessage(2L));
         assertTrue(testSubject.canHandle(replayEvent));
         assertTrue(testSubject.canHandle(liveEvent));
-        testSubject.handle(replayEvent);
-        testSubject.handle(liveEvent);
+        testSubject.handleSync(replayEvent);
+        testSubject.handleSync(liveEvent);
 
         assertEquals(asList(1L, 2L), handler.receivedLongs);
         assertEquals(singletonList(1L), handler.receivedInReplay);

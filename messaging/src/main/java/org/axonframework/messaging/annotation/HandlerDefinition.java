@@ -16,8 +16,11 @@
 
 package org.axonframework.messaging.annotation;
 
-import java.lang.reflect.Executable;
+import org.axonframework.messaging.MessageStream;
+
+import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 /**
@@ -27,19 +30,22 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @since 2.1
  */
+// TODO We should omit the ServiceLoader behavior of the HandlerDefinition, as nobody actually constructs their own HandlerDefinitions
 public interface HandlerDefinition {
 
     /**
-     * Create a {@link MessageHandlingMember} for the given {@code executable} method. Use the given {@code
-     * parameterResolverFactory} to resolve the method's parameters.
+     * Create a {@link MessageHandlingMember} for the given {@code method} method. Use the given
+     * {@code parameterResolverFactory} to resolve the method's parameters.
      *
      * @param <T>                      The type of the declaring object
-     * @param declaringType            The type of object declaring the given executable method
-     * @param executable               The method to inspect
+     * @param declaringType            The type of object declaring the given method method
+     * @param method                   The method to inspect
      * @param parameterResolverFactory Factory for a {@link ParameterResolver} of the method
+     * @param returnTypeConverter
      * @return An optional containing the handler if the method is suitable, or an empty Nullable otherwise
      */
     <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
-                                                         @Nonnull Executable executable,
-                                                         @Nonnull ParameterResolverFactory parameterResolverFactory);
+                                                         @Nonnull Method method,
+                                                         @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                                         Function<Object, MessageStream<?>> returnTypeConverter);
 }

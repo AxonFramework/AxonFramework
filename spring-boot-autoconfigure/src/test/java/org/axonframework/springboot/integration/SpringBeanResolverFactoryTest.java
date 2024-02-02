@@ -78,7 +78,7 @@ class SpringBeanResolverFactoryTest {
                     context.getBean(AnnotatedEventHandlerWithResources.class);
 
             assertNotNull(annotatedHandler);
-            new AnnotationEventHandlerAdapter(annotatedHandler, parameterResolver).handle(EVENT_MESSAGE);
+            new AnnotationEventHandlerAdapter(annotatedHandler, parameterResolver).handleSync(EVENT_MESSAGE);
             // make sure the invocation actually happened
             assertEquals(1, COUNTER.get());
         });
@@ -91,8 +91,8 @@ class SpringBeanResolverFactoryTest {
             AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(
                     handler, context.getBean(ParameterResolverFactory.class)
             );
-            adapter.handle(EVENT_MESSAGE);
-            adapter.handle(asEventMessage("Hello2"));
+            adapter.handleSync(EVENT_MESSAGE);
+            adapter.handleSync(asEventMessage("Hello2"));
             assertEquals(2, COUNTER.get());
         });
     }
@@ -107,7 +107,7 @@ class SpringBeanResolverFactoryTest {
             //  which includes the FixtureResourceParameterResolverFactory
             assertThrows(
                     FixtureExecutionException.class,
-                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE)
+                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver).handleSync(EVENT_MESSAGE)
             );
         });
     }
@@ -118,7 +118,7 @@ class SpringBeanResolverFactoryTest {
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
             new AnnotationEventHandlerAdapter(
                     context.getBean("nullableResourceHandler"), parameterResolver
-            ).handle(EVENT_MESSAGE);
+            ).handleSync(EVENT_MESSAGE);
 
             assertEquals(1, COUNTER.get());
         });
@@ -134,7 +134,7 @@ class SpringBeanResolverFactoryTest {
             //  which includes the FixtureResourceParameterResolverFactory
             assertThrows(
                     FixtureExecutionException.class,
-                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE)
+                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver).handleSync(EVENT_MESSAGE)
             );
         });
     }
@@ -146,7 +146,7 @@ class SpringBeanResolverFactoryTest {
             Object bean = context.getBean("duplicateResourceHandlerWithPrimary");
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-            new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE);
+            new AnnotationEventHandlerAdapter(bean, parameterResolver).handleSync(EVENT_MESSAGE);
             assertEquals(1, COUNTER.get());
         });
     }
@@ -158,7 +158,7 @@ class SpringBeanResolverFactoryTest {
             Object bean = context.getBean("duplicateResourceHandlerWithQualifier");
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-            new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE);
+            new AnnotationEventHandlerAdapter(bean, parameterResolver).handleSync(EVENT_MESSAGE);
             assertEquals(1, COUNTER.get());
         });
     }
@@ -170,7 +170,7 @@ class SpringBeanResolverFactoryTest {
             Object bean = context.getBean("duplicateResourceHandlerWithQualifierAndPrimary");
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-            new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE);
+            new AnnotationEventHandlerAdapter(bean, parameterResolver).handleSync(EVENT_MESSAGE);
             assertEquals(1, COUNTER.get());
         });
     }
@@ -184,7 +184,7 @@ class SpringBeanResolverFactoryTest {
 
             AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(handler, parameterResolver);
             // Spring dependency resolution will resolve at time of execution
-            assertThrows(NoUniqueBeanDefinitionException.class, () -> adapter.handle(EVENT_MESSAGE));
+            assertThrows(NoUniqueBeanDefinitionException.class, () -> adapter.handleSync(EVENT_MESSAGE));
         });
     }
 
@@ -195,7 +195,7 @@ class SpringBeanResolverFactoryTest {
             Object bean = context.getBean("duplicateResourceHandlerWithAutowiredAndQualifier");
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-            new AnnotationEventHandlerAdapter(bean, parameterResolver).handle(EVENT_MESSAGE);
+            new AnnotationEventHandlerAdapter(bean, parameterResolver).handleSync(EVENT_MESSAGE);
             assertEquals(1, COUNTER.get());
         });
     }

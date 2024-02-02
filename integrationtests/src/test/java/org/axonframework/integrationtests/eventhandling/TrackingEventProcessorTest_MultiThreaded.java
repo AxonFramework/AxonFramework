@@ -274,7 +274,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         testSubject.start();
         eventBus.publish(createEvents(4));
@@ -294,7 +294,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
         testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue(countDownLatch.await(5, SECONDS), "Expected Handler to have received 2 published events");
@@ -308,7 +308,7 @@ class TrackingEventProcessorTest_MultiThreaded {
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         testSubject.start();
         eventBus.publish(createEvents(2));
@@ -333,7 +333,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         testSubject.start();
@@ -357,7 +357,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
         testSubject.start();
 
         eventBus.publish(events.subList(0, 2));
@@ -393,7 +393,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch2.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         eventBus.publish(events.subList(2, 4));
         assertEquals(2, countDownLatch2.getCount());
@@ -427,7 +427,7 @@ class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -454,12 +454,12 @@ class TrackingEventProcessorTest_MultiThreaded {
                     throw new MockException();
                 }
             });
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         testSubject.start();
         eventBus.publish(events);

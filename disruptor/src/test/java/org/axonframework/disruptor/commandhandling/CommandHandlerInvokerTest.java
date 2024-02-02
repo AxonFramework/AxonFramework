@@ -17,6 +17,7 @@
 package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
@@ -64,7 +65,7 @@ class CommandHandlerInvokerTest {
     private CommandHandlingEntry commandHandlingEntry;
     private String aggregateIdentifier;
     private CommandMessage<?> mockCommandMessage;
-    private MessageHandler<CommandMessage<?>> mockCommandHandler;
+    private MessageHandler<CommandMessage<?>, CommandResultMessage<?>> mockCommandHandler;
     private SnapshotTriggerDefinition snapshotTriggerDefinition;
     private SnapshotTrigger mockTrigger;
 
@@ -118,7 +119,7 @@ class CommandHandlerInvokerTest {
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
-        when(mockCommandHandler.handle(eq(mockCommandMessage)))
+        when(mockCommandHandler.handleSync(eq(mockCommandMessage)))
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
         when(mockEventStore.readEvents(any()))
                 .thenReturn(DomainEventStream.of(
@@ -137,7 +138,7 @@ class CommandHandlerInvokerTest {
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
-        when(mockCommandHandler.handle(eq(mockCommandMessage)))
+        when(mockCommandHandler.handleSync(eq(mockCommandMessage)))
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
         when(mockCache.get(aggregateIdentifier)).thenAnswer(
                 invocationOnMock -> new AggregateCacheEntry<>(
@@ -156,7 +157,7 @@ class CommandHandlerInvokerTest {
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
-        when(mockCommandHandler.handle(eq(mockCommandMessage))).thenAnswer(invocationOnMock -> {
+        when(mockCommandHandler.handleSync(eq(mockCommandMessage))).thenAnswer(invocationOnMock -> {
             Aggregate<StubAggregate> aggregate = repository.newInstance(() -> new StubAggregate(aggregateIdentifier));
             aggregate.execute(StubAggregate::doSomething);
             return aggregate.invoke(Function.identity());

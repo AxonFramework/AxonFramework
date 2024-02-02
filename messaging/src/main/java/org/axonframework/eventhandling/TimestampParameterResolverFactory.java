@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 
@@ -57,7 +58,7 @@ public final class TimestampParameterResolverFactory
     static class TimestampParameterResolver implements ParameterResolver<Instant> {
 
         @Override
-        public Instant resolveParameterValue(Message message) {
+        public Instant resolveParameterValue(Message message, ProcessingContext processingContext) {
             if (message instanceof EventMessage) {
                 return ((EventMessage) message).getTimestamp();
             }
@@ -65,7 +66,7 @@ public final class TimestampParameterResolverFactory
         }
 
         @Override
-        public boolean matches(Message message) {
+        public boolean matches(Message message, ProcessingContext processingContext) {
             return message instanceof EventMessage;
         }
     }

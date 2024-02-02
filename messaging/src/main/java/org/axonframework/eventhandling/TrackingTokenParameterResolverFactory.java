@@ -20,6 +20,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -43,7 +44,7 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
     private static class TrackingTokenParameterResolver implements ParameterResolver<TrackingToken> {
 
         @Override
-        public TrackingToken resolveParameterValue(Message<?> message) {
+        public TrackingToken resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
             return unwrap(((TrackedEventMessage) message).trackingToken());
         }
 
@@ -52,7 +53,7 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
         }
 
         @Override
-        public boolean matches(Message<?> message) {
+        public boolean matches(Message<?> message, ProcessingContext processingContext) {
             return message instanceof TrackedEventMessage;
         }
     }

@@ -22,6 +22,7 @@ import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
 
 import java.lang.reflect.Member;
@@ -86,8 +87,8 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception {
-            Object result = super.handle(message, target);
+        public Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception {
+            Object result = super.handleSync(message, target);
             if (result instanceof Optional) {
                 return ((Optional<?>) result).orElse(null);
             }
@@ -119,8 +120,8 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message) {
-            return super.canHandle(message)
+        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+            return super.canHandle(message, processingContext)
                     && message instanceof QueryMessage
                     && queryName.equals(((QueryMessage<?, ?>) message).getQueryName())
                     && ((QueryMessage<?, ?>) message).getResponseType().matches(resultType);

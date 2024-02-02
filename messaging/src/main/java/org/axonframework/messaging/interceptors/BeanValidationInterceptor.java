@@ -24,12 +24,16 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Interceptor that applies JSR303 bean validation on incoming {@link Message}s. When validation on a message fails, a
@@ -63,12 +67,42 @@ public class BeanValidationInterceptor<T extends Message<?>>
     }
 
     @Override
+    public <M extends T, R> MessageStream<? extends R> interceptOnDispatch(@Nonnull M message,
+                                                                           @Nullable ProcessingContext context,
+                                                                           @Nonnull InterceptorChain<M, R> interceptorChain) {
+        return intercept(message, context, interceptorChain);
+    }
+
+    @Override
+    public <M extends T, R> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
+                                                                         @Nonnull ProcessingContext context,
+                                                                         @Nonnull InterceptorChain<M, R> interceptorChain) {
+        return intercept(message, context, interceptorChain);
+    }
+
+    private <M extends T, R> MessageStream<? extends R> intercept(M message, @Nullable ProcessingContext context,
+                                                                  InterceptorChain<M, R> interceptorChain) {
+        Set<ConstraintViolation<Object>> violations = validate(message);
+        if (!violations.isEmpty()) {
+            return MessageStream.fromFuture(CompletableFuture.failedFuture(new JSR303ViolationException(violations)));
+        }
+        return interceptorChain.proceed(message, context);
+    }
+
+    private Set<ConstraintViolation<Object>> validate(Message<?> message) {
+        Validator validator = validatorFactory.getValidator();
+        return validateMessage(message.getPayload(), validator);
+    }
+
+    @Deprecated
+    @Override
     public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception {
         handle(unitOfWork.getMessage());
-        return interceptorChain.proceed();
+        return interceptorChain.proceedSync();
     }
 
+    @Deprecated
     @Override
     @Nonnull
     public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {

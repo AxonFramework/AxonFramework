@@ -87,9 +87,10 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        assertTrue(resolver.matches(GenericCommandMessage.asCommandMessage("some-command")));
-        assertTrue(resolver.matches(GenericEventMessage.asEventMessage("some-command")));
-        assertTrue(resolver.matches(new GenericQueryMessage<>("some-query", ResponseTypes.instanceOf(String.class))));
+        assertTrue(resolver.matches(GenericCommandMessage.asCommandMessage("some-command"), null));
+        assertTrue(resolver.matches(GenericEventMessage.asEventMessage("some-command"), null));
+        assertTrue(resolver.matches(new GenericQueryMessage<>("some-query", ResponseTypes.instanceOf(String.class)),
+                                    null));
     }
 
     @Test
@@ -104,7 +105,7 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        DeadLetter<?> result = resolver.resolveParameterValue(testMessage);
+        DeadLetter<?> result = resolver.resolveParameterValue(testMessage, null);
         assertEquals(expected, result);
     }
 
@@ -115,7 +116,7 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        assertNull(resolver.resolveParameterValue(testMessage));
+        assertNull(resolver.resolveParameterValue(testMessage, null));
     }
 
     @Test
@@ -126,6 +127,6 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        assertNull(resolver.resolveParameterValue(testMessage));
+        assertNull(resolver.resolveParameterValue(testMessage, null));
     }
 }

@@ -35,7 +35,6 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +43,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
@@ -68,7 +66,7 @@ public class SimpleCommandBus implements CommandBus {
     private final TransactionManager transactionManager;
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
     private final DuplicateCommandHandlerResolver duplicateCommandHandlerResolver;
-    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions =
+    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> subscriptions =
             new ConcurrentHashMap<>();
     private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors =
             new CopyOnWriteArrayList<>();
@@ -159,7 +157,7 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
 
-        Optional<MessageHandler<? super CommandMessage<?>>> optionalHandler = findCommandHandlerFor(command);
+        Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> optionalHandler = findCommandHandlerFor(command);
         if (optionalHandler.isPresent()) {
             CommandMessage<C> commandWithContext = spanFactory.propagateContext(command);
             handle(commandWithContext, optionalHandler.get(), new MonitorAwareCallback<>(callback, monitorCallback));
@@ -172,7 +170,7 @@ public class SimpleCommandBus implements CommandBus {
         }
     }
 
-    private Optional<MessageHandler<? super CommandMessage<?>>> findCommandHandlerFor(CommandMessage<?> command) {
+    private Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> findCommandHandlerFor(CommandMessage<?> command) {
         return Optional.ofNullable(subscriptions.get(command.getCommandName()));
     }
 
@@ -186,7 +184,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param <R>      The type of result expected from the command handler
      */
     protected <C, R> void handle(CommandMessage<C> command,
-                                 MessageHandler<? super CommandMessage<?>> handler,
+                                 MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
         CommandResultMessage<R> resultMessage = spanFactory.createHandleCommandSpan(command, false).runSupplier(() -> {
             if (logger.isDebugEnabled()) {
@@ -197,7 +195,7 @@ public class SimpleCommandBus implements CommandBus {
             unitOfWork.attachTransaction(transactionManager);
             InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
-            return asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed,
+            return asCommandResultMessage(unitOfWork.executeWithResult(chain::proceedSync,
                                                                        rollbackConfiguration));
         });
         callback.onResult(command, resultMessage);
@@ -210,7 +208,7 @@ public class SimpleCommandBus implements CommandBus {
      */
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
         logger.debug("Subscribing command with name [{}]", commandName);
         assertNonNull(handler, "handler may not be null");
         subscriptions.compute(commandName, (k, existingHandler) -> {

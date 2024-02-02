@@ -17,13 +17,15 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
+import org.axonframework.messaging.MessageStream;
 
-import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 /**
@@ -40,11 +42,10 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     private final HandlerEnhancerDefinition handlerEnhancerDefinition;
 
     /**
-     * Creates a MultiHandlerDefinition instance with the given {@code delegates}, which are automatically ordered
-     * based
+     * Creates a MultiHandlerDefinition instance with the given {@code delegates}, which are automatically ordered based
      * on the {@link org.axonframework.common.Priority @Priority} annotation on their respective classes. Classes with
-     * the same Priority are kept in the order as provided in the {@code delegates}. As an enhancer, {@link
-     * ClasspathHandlerEnhancerDefinition} is used.
+     * the same Priority are kept in the order as provided in the {@code delegates}. As an enhancer,
+     * {@link ClasspathHandlerEnhancerDefinition} is used.
      * <p>
      * If one of the delegates is a MultiHandlerDefinition itself, that factory's delegates are 'mixed' with the given
      * {@code delegates}, based on their respective order.
@@ -57,8 +58,7 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     }
 
     /**
-     * Creates a MultiHandlerDefinition instance with the given {@code delegates}, which are automatically ordered
-     * based
+     * Creates a MultiHandlerDefinition instance with the given {@code delegates}, which are automatically ordered based
      * on the {@link org.axonframework.common.Priority @Priority} annotation on their respective classes. Classes with
      * the same Priority are kept in the order as provided in the {@code delegates}. As an enhancer, provided one is
      * used.
@@ -78,8 +78,8 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     /**
      * Creates a MultiHandlerDefinition instance with the given {@code delegates}, which are automatically ordered based
      * on the {@link org.axonframework.common.Priority @Priority} annotation on their respective classes. Classes with
-     * the same Priority are kept in the order as provided in the {@code delegates}. As an enhancer, {@link
-     * ClasspathHandlerEnhancerDefinition} is used.
+     * the same Priority are kept in the order as provided in the {@code delegates}. As an enhancer,
+     * {@link ClasspathHandlerEnhancerDefinition} is used.
      * <p>
      * If one of the delegates is a MultiHandlerDefinition itself, that factory's delegates are 'mixed' with the given
      * {@code delegates}, based on their respective order.
@@ -110,8 +110,8 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     }
 
     /**
-     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
-     * the given array are not reflected in the created instance.
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in the
+     * given array are not reflected in the created instance.
      *
      * @param delegates The handlerDefinitions providing the parameter values to use
      */
@@ -120,8 +120,8 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     }
 
     /**
-     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
-     * the given list are not reflected in the created instance.
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in the
+     * given list are not reflected in the created instance.
      *
      * @param delegates The handlerDefinitions providing the parameter values to use
      */
@@ -131,8 +131,8 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     }
 
     /**
-     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
-     * the given List are not reflected in the created instance.
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in the
+     * given List are not reflected in the created instance.
      *
      * @param delegates                 The list of handlerDefinitions providing the parameter values to use
      * @param handlerEnhancerDefinition The enhancer used to wrap the delegates
@@ -176,11 +176,15 @@ public class MultiHandlerDefinition implements HandlerDefinition {
 
     @Override
     public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
-                                                                @Nonnull Executable executable,
-                                                                @Nonnull ParameterResolverFactory parameterResolverFactory) {
+                                                                @Nonnull Method method,
+                                                                @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                                                Function<Object, MessageStream<?>> returnTypeConverter) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {
-            handler = handlerDefinition.createHandler(declaringType, executable, parameterResolverFactory);
+            handler = handlerDefinition.createHandler(declaringType,
+                                                      method,
+                                                      parameterResolverFactory,
+                                                      returnTypeConverter);
             if (handler.isPresent()) {
                 return Optional.of(handlerEnhancerDefinition.wrapHandler(handler.get()));
             }

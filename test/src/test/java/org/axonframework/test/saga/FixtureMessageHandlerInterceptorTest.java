@@ -70,7 +70,7 @@ class FixtureMessageHandlerInterceptorTest {
         public Object handle(@NotNull UnitOfWork<? extends EventMessage<?>> unitOfWork,
                              @NotNull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.transformMessage(event -> event.withMetaData(MetaData.with(META_DATA_KEY, value)));
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }
     }
 

@@ -20,13 +20,11 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
@@ -54,6 +52,6 @@ class CorrelationDataInterceptorTest {
         subject.handle(mockUnitOfWork, mockInterceptorChain);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider1);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider2);
-        verify(mockInterceptorChain).proceed();
+        verify(mockInterceptorChain).proceedSync();
     }
 }

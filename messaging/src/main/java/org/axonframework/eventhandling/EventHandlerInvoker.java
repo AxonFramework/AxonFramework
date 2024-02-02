@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,8 +31,8 @@ import javax.annotation.Nullable;
 public interface EventHandlerInvoker {
 
     /**
-     * Check whether or not this invoker has handlers that can handle the given {@code eventMessage} for a given {@code
-     * segment}.
+     * Check whether or not this invoker has handlers that can handle the given {@code eventMessage} for a given
+     * {@code segment}.
      *
      * @param eventMessage The message to be processed
      * @param segment      The segment for which the event handler should be invoked
@@ -60,7 +62,8 @@ public interface EventHandlerInvoker {
      * @param segment The segment for which to handle the message
      * @throws Exception when an exception occurs while handling the message
      */
-    void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception;
+    void handle(@Nonnull EventMessage<?> message, ProcessingContext processingContext,
+                @Nonnull Segment segment) throws Exception;
 
     /**
      * Indicates whether the handlers managed by this invoker support a reset.
@@ -74,18 +77,19 @@ public interface EventHandlerInvoker {
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
      */
-    default void performReset() {
+    default void performReset(ProcessingContext processingContext) {
     }
 
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
      *
-     * @param resetContext a {@code R} used to support the reset operation
-     * @param <R>          the type of the provided {@code resetContext}
+     * @param <R>               the type of the provided {@code resetContext}
+     * @param resetContext      a {@code R} used to support the reset operation
+     * @param processingContext
      */
-    default <R> void performReset(@Nullable R resetContext) {
+    default <R> void performReset(@Nullable R resetContext, ProcessingContext processingContext) {
         if (Objects.isNull(resetContext)) {
-            performReset();
+            performReset(processingContext);
         } else {
             throw new UnsupportedOperationException(
                     "EventHandlerInvoker#performRest(R) is not implemented for a non-null reset context."

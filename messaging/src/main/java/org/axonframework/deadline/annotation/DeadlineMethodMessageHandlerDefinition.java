@@ -22,6 +22,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import javax.annotation.Nonnull;
 
@@ -56,10 +57,10 @@ public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDe
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message) {
+        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
             return message instanceof DeadlineMessage
                     && deadlineNameMatch((DeadlineMessage<?>) message)
-                    && super.canHandle(message);
+                    && super.canHandle(message, processingContext);
         }
 
         private boolean deadlineNameMatch(DeadlineMessage<?> message) {

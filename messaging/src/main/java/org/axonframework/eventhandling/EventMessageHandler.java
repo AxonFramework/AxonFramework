@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
 
@@ -29,7 +31,7 @@ import java.util.Objects;
  * @see EventHandler
  * @since 0.1
  */
-public interface EventMessageHandler extends MessageHandler<EventMessage<?>> {
+public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Void> {
 
     /**
      * Process the given event. The implementation may decide to process or skip the given event. It is highly
@@ -39,23 +41,35 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>> {
      * @return the result of the event handler invocation. Is generally ignored
      * @throws Exception when an exception is raised during event handling
      */
-    Object handle(EventMessage<?> event) throws Exception;
+    Object handleSync(EventMessage<?> event) throws Exception;
 
-    /**
-     * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
-     */
-    default void prepareReset() {
+    default MessageStream<Void> handle(EventMessage<?> event, ProcessingContext processingContext) {
+        try {
+            handleSync(event);
+            return MessageStream.empty();
+        } catch (Exception e) {
+            return MessageStream.failed(e);
+        }
     }
 
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
      *
-     * @param resetContext a {@code R} used to support the reset operation
-     * @param <R>          the type of the provided {@code resetContext}
+     * @param processingContext
      */
-    default <R> void prepareReset(R resetContext) {
+    default void prepareReset(ProcessingContext processingContext) {
+    }
+
+    /**
+     * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
+     *
+     * @param <R>               the type of the provided {@code resetContext}
+     * @param resetContext      a {@code R} used to support the reset operation
+     * @param processingContext
+     */
+    default <R> void prepareReset(R resetContext, ProcessingContext processingContext) {
         if (Objects.isNull(resetContext)) {
-            prepareReset();
+            prepareReset(processingContext);
         } else {
             throw new UnsupportedOperationException(
                     "EventMessageHandler#prepareReset(R) is not implemented for a non-null reset context."

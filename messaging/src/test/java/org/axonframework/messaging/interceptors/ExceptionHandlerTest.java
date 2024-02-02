@@ -139,18 +139,18 @@ class ExceptionHandlerTest {
 
     /**
      * This method is a similar approach as followed by the
-     * {@link org.axonframework.eventhandling.AnnotationEventHandlerAdapter#handle(EventMessage)}. Thus, mirroring
+     * {@link org.axonframework.eventhandling.AnnotationEventHandlerAdapter#handleSync(EventMessage)}. Thus, mirroring
      * regular message handling components.
      */
     private Object handle(Message<?> message) throws Exception {
         Optional<MessageHandlingMember<? super ExceptionHandlingComponent>> handler =
                 inspector.getHandlers(ExceptionHandlingComponent.class)
-                         .filter(h -> h.canHandle(message))
+                         .filter(h -> h.canHandle(message, null))
                          .findFirst();
         if (handler.isPresent()) {
             MessageHandlerInterceptorMemberChain<ExceptionHandlingComponent> interceptorChain =
                     inspector.chainedInterceptor(ExceptionHandlingComponent.class);
-            return interceptorChain.handle(message, messageHandlingComponent, handler.get());
+            return interceptorChain.handleSync(message, messageHandlingComponent, handler.get());
         }
         return null;
     }

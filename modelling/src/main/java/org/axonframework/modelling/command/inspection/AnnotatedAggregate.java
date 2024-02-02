@@ -415,7 +415,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         //noinspection unchecked
         List<MessageHandlingMember<? super T>> potentialHandlers =
                 inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                         .filter(mh -> mh.canHandle(commandMessage))
+                         .filter(mh -> mh.canHandle(commandMessage,  null))
                          .collect(Collectors.toList());
         if (potentialHandlers.isEmpty()) {
             throw new NoHandlerForCommandException(commandMessage);
@@ -430,7 +430,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                     (UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
                     interceptors,
                     m -> findHandlerAndHandleCommand(potentialHandlers, commandMessage)
-            ).proceed();
+            ).proceedSync();
         }
         return result;
     }
@@ -447,7 +447,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                                "Aggregate cannot handle command [" + command.getCommandName()
                                        + "], as there is no entity instance within the aggregate to forward it to."
                        ))
-                       .handle(command, aggregateRoot);
+                       .handleSync(command, aggregateRoot);
     }
 
     private Object handle(EventMessage<?> eventMessage) {

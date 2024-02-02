@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling.annotation;
 
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -69,9 +70,9 @@ class MethodQueryMessageHandlerDefinitionTest {
         GenericQueryMessage<String, String> message =
                 new GenericQueryMessage<>("mock", ResponseTypes.instanceOf(String.class));
 
-        assertTrue(handler.canHandle(message));
+        assertTrue(handler.canHandle(message, null));
 
-        Object invocationResult = handler.handle(message, this);
+        Object invocationResult = handler.handleSync(message, this);
         assertNull(invocationResult);
     }
 
@@ -94,12 +95,22 @@ class MethodQueryMessageHandlerDefinitionTest {
         assertEquals(CharSequence.class, handler.getResultType());
     }
 
+    // TODO This local static function should be replaced with a dedicated interface that converts types.
+    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
+    private static MessageStream<Object> returnTypeConverter(Object result) {
+        return result instanceof CompletableFuture<?>
+                ? MessageStream.fromFuture((CompletableFuture<Object>) result)
+                : MessageStream.just(result);
+    }
+
     private <R> QueryHandlingMember<R> messageHandler(String methodName) {
         try {
             MessageHandlingMember<MethodQueryMessageHandlerDefinitionTest> handler = handlerDefinition.createHandler(
                     MethodQueryMessageHandlerDefinitionTest.class,
                     MethodQueryMessageHandlerDefinitionTest.class.getDeclaredMethod(methodName, String.class),
-                    parameterResolver).orElseThrow(IllegalArgumentException::new);
+                    parameterResolver,
+                    MethodQueryMessageHandlerDefinitionTest::returnTypeConverter
+            ).orElseThrow(IllegalArgumentException::new);
             //noinspection unchecked
             return testSubject.wrapHandler(handler)
                               .unwrap(QueryHandlingMember.class)

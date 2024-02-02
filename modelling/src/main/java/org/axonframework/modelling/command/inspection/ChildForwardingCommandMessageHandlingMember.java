@@ -22,12 +22,11 @@ import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 
-import java.lang.annotation.Annotation;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -103,8 +102,8 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message) {
-        return childHandler.canHandle(message);
+    public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+        return childHandler.canHandle(message, processingContext);
     }
 
     @Override
@@ -115,7 +114,7 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
 
     @SuppressWarnings("unchecked")
     @Override
-    public Object handle(@Nonnull Message<?> message, @Nullable P target) throws Exception {
+    public Object handleSync(@Nonnull Message<?> message, @Nullable P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
             throw new AggregateEntityNotFoundException(
@@ -125,18 +124,18 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
         }
         List<AnnotatedCommandHandlerInterceptor<? super C>> interceptors =
                 childHandlingInterceptors.stream()
-                                         .filter(chi -> chi.canHandle(message))
+                                         .filter(chi -> chi.canHandle(message, null))
                                          .sorted((chi1, chi2) -> Integer.compare(chi2.priority(), chi1.priority()))
                                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, childEntity))
                                          .collect(Collectors.toList());
 
         Object result;
         if (interceptors.isEmpty()) {
-            result = childHandler.handle(message, childEntity);
+            result = childHandler.handleSync(message, childEntity);
         } else {
             result = new DefaultInterceptorChain<>((UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
                                                    interceptors,
-                                                   m -> childHandler.handle(message, childEntity)).proceed();
+                                                   m -> childHandler.handleSync(message, childEntity)).proceedSync();
         }
         return result;
     }

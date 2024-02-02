@@ -22,6 +22,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -79,12 +80,12 @@ public class ConflictResolution implements ParameterResolverFactory, ParameterRe
     }
 
     @Override
-    public ConflictResolver resolveParameterValue(Message<?> message) {
+    public ConflictResolver resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
         return getConflictResolver();
     }
 
     @Override
-    public boolean matches(Message<?> message) {
+    public boolean matches(Message<?> message, ProcessingContext processingContext) {
         return message instanceof CommandMessage;
     }
 

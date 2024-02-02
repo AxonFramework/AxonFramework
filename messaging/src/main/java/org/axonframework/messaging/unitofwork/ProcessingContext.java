@@ -100,6 +100,10 @@ public interface ProcessingContext extends ProcessingLifecycle {
      */
     <T> boolean removeResource(ResourceKey<T> key, T expectedInstance);
 
+    default <T> ProcessingContext branchedWithResource(ResourceKey<T> resourceKey, T resource) {
+        return new ResourceOverridingProcessingContext<>(this, resourceKey, resource);
+    }
+
     /**
      * Object that is used as a key to retrieve and register resources of a given type in a processing context.
      * <p>

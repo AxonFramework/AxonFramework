@@ -562,7 +562,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             getHandler(message, target.getClass()).ifPresent(h -> {
                 try {
                     handlerInspector.chainedInterceptor(target.getClass())
-                                    .handle(message, target, h);
+                                    .handleSync(message, target, h);
                 } catch (Exception e) {
                     throw new MessageHandlerInvocationException(
                             format("Error handling event of type [%s] in aggregate", message.getPayloadType()), e);
@@ -613,7 +613,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
          */
         protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message, Class<?> targetClass) {
             return handlers(allEventHandlers, targetClass)
-                    .filter(handler -> handler.canHandle(message))
+                    .filter(handler -> handler.canHandle(message, null))
                     .findFirst();
         }
 

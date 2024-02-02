@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import javax.annotation.Nonnull;
@@ -33,11 +34,11 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
     /**
      * Invoked before a Message is handled by a designated {@link org.axonframework.messaging.MessageHandler}.
      * <p/>
-     * The interceptor is responsible for the continuation of the handling process by invoking the {@link
-     * InterceptorChain#proceed()} method on the given {@code interceptorChain}.
+     * The interceptor is responsible for the continuation of the handling process by invoking the
+     * {@link InterceptorChain#proceedSync()} method on the given {@code interceptorChain}.
      * <p/>
-     * The given {@code unitOfWork} contains contextual information. Any information gathered by interceptors
-     * may be attached to the unitOfWork.
+     * The given {@code unitOfWork} contains contextual information. Any information gathered by interceptors may be
+     * attached to the unitOfWork.
      * <p/>
      * Interceptors are highly recommended not to change the type of the message handling result, as the dispatching
      * component might expect a result of a specific type.
@@ -45,9 +46,15 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
      * @param unitOfWork       The UnitOfWork that is processing the message
      * @param interceptorChain The interceptor chain that allows this interceptor to proceed the dispatch process
      * @return the result of the message handler. May have been modified by interceptors.
-     *
      * @throws Exception any exception that occurs while handling the message
      */
+    @Deprecated
     Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception;
+
+    default <M extends T, R> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
+                                                                          @Nonnull ProcessingContext context,
+                                                                          @Nonnull InterceptorChain<M, R> interceptorChain) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
 }

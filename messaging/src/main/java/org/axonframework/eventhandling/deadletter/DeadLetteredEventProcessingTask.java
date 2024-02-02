@@ -101,21 +101,21 @@ class DeadLetteredEventProcessingTask
 
     private void handle(EventMessage<?> eventMessage) throws Exception {
         for (EventMessageHandler handler : eventHandlingComponents) {
-            handler.handle(eventMessage);
+            handler.handleSync(eventMessage);
         }
     }
 
     private Object handleWithInterceptors(
             UnitOfWork<? extends EventMessage<?>> unitOfWork
     ) throws Exception {
-        new DefaultInterceptorChain<EventMessage<?>>(
+        new DefaultInterceptorChain<EventMessage<?>, Void>(
                 unitOfWork,
                 interceptors,
                 m -> {
                     handle(m);
                     return null;
                 }
-        ).proceed();
+        ).proceedSync();
         // There's no result of event handling to return here.
         // We use this methods format to be able to define the Error Handler may throw Exceptions.
         return null;

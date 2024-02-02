@@ -31,20 +31,20 @@ class EventMessageHandlerTest {
     @SuppressWarnings("Convert2Lambda") // Cannot spy a lambda
     private final EventMessageHandler testSubject = spy(new EventMessageHandler() {
         @Override
-        public Object handle(EventMessage<?> event) throws Exception {
+        public Object handleSync(EventMessage<?> event) throws Exception {
             return null;
         }
     });
 
     @Test
     void prepareResetWithNullResetContextInvokesPrepareReset() {
-        testSubject.prepareReset(null);
+        testSubject.prepareReset(null, null);
 
-        verify(testSubject).prepareReset();
+        verify(testSubject).prepareReset(null);
     }
 
     @Test
     void prepareResetWithNonNullThrowsUnsupportedOperationException() {
-        assertThrows(UnsupportedOperationException.class, () -> testSubject.prepareReset("non-null"));
+        assertThrows(UnsupportedOperationException.class, () -> testSubject.prepareReset("non-null",null ));
     }
 }

@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import javax.annotation.Nonnull;
@@ -37,20 +38,21 @@ class EventHandlerInvokerTest {
         }
 
         @Override
-        public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
+        public void handle(@Nonnull EventMessage<?> message, ProcessingContext processingContext,
+                           @Nonnull Segment segment) throws Exception {
             // Do nothing
         }
     });
 
     @Test
     void performResetWithNullResetContextInvokesPerformReset() {
-        testSubject.performReset(null);
+        testSubject.performReset(null, null);
 
-        verify(testSubject).performReset();
+        verify(testSubject).performReset(null);
     }
 
     @Test
     void performResetWithNonNullThrowsUnsupportedOperationException() {
-        assertThrows(UnsupportedOperationException.class, () -> testSubject.performReset("non-null"));
+        assertThrows(UnsupportedOperationException.class, () -> testSubject.performReset("non-null", null));
     }
 }

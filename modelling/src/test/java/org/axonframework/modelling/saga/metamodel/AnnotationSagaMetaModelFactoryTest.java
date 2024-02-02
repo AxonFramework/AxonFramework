@@ -65,7 +65,7 @@ class AnnotationSagaMetaModelFactoryTest {
                 .findHandlerMethods(event).stream().findFirst();
         assertTrue(handler.isPresent());
         MessageHandlerInterceptorMemberChain<MySaga> interceptorChain = testSubject.chainedInterceptor(MySaga.class);
-        assertThrows(FooException.class, () -> interceptorChain.handle(event, saga, handler.get()));
+        assertThrows(FooException.class, () -> interceptorChain.handleSync(event, saga, handler.get()));
     }
 
     @Test
@@ -79,7 +79,7 @@ class AnnotationSagaMetaModelFactoryTest {
         assertTrue(handler.isPresent());
         MessageHandlerInterceptorMemberChain<MySagaWithErrorHandler> interceptorChain = testSubject.chainedInterceptor(
                 MySagaWithErrorHandler.class);
-        Object result = interceptorChain.handle(event, saga, handler.get());
+        Object result = interceptorChain.handleSync(event, saga, handler.get());
         assertNull(result);
     }
 

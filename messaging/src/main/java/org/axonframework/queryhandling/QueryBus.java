@@ -54,7 +54,7 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @return a handle to un-subscribe the query handler
      */
     <R> Registration subscribe(@Nonnull String queryName, @Nonnull Type responseType,
-                               @Nonnull MessageHandler<? super QueryMessage<?, R>> handler);
+                               @Nonnull MessageHandler<? super QueryMessage<?, R>, ? extends QueryResponseMessage<?>> handler);
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName and

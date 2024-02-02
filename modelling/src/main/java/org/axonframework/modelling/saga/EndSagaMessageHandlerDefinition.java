@@ -46,7 +46,7 @@ public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinitio
 
     /**
      * A {@link WrappedMessageHandlingMember} implementation dedicated towards {@link MessageHandlingMember}s annotated
-     * with {@link EndSaga}. After invocation of the {@link #handle(Message, Object)} method, the saga's is ended
+     * with {@link EndSaga}. After invocation of the {@link #handleSync(Message, Object)} method, the saga's is ended
      * through the {@link SagaLifecycle#end()} method.
      *
      * @param <T> the entity type wrapped by this {@link MessageHandlingMember}
@@ -63,9 +63,9 @@ public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinitio
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception {
+        public Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception {
             try {
-                return super.handle(message, target);
+                return super.handleSync(message, target);
             } finally {
                 SagaLifecycle.end();
             }

@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,8 +37,8 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * Implementation of an {@link EventHandlerInvoker} that forwards events to a list of registered {@link
- * EventMessageHandler}.
+ * Implementation of an {@link EventHandlerInvoker} that forwards events to a list of registered
+ * {@link EventMessageHandler}.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -51,8 +52,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     /**
      * Instantiate a {@link SimpleEventHandlerInvoker} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that at least one {@link EventMessageHandler} is provided, and will throw an {@link
-     * AxonConfigurationException} if this is not the case.
+     * Will assert that at least one {@link EventMessageHandler} is provided, and will throw an
+     * {@link AxonConfigurationException} if this is not the case.
      *
      * @param builder the {@link Builder} used to instantiate a {@link SimpleEventHandlerInvoker} instance
      */
@@ -107,7 +108,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage<?> message, ProcessingContext processingContext, @Nonnull Segment segment)
+            throws Exception {
         if (!sequencingPolicyMatchesSegment(message, segment)) {
             return;
         }
@@ -125,7 +127,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     protected void invokeHandlers(EventMessage<?> message) throws Exception {
         for (EventMessageHandler handler : eventHandlingComponents) {
             try {
-                handler.handle(message);
+                handler.handleSync(message);
             } catch (Exception e) {
                 listenerInvocationErrorHandler.onError(e, message, handler);
             }
@@ -133,7 +135,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment) {
+    public boolean canHandle(@Nonnull EventMessage<?> eventMessage,
+                             @Nonnull Segment segment) {
         return hasHandler(eventMessage) && sequencingPolicyMatchesSegment(eventMessage, segment);
     }
 
@@ -162,14 +165,14 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void performReset() {
-        performReset(null);
+    public void performReset(ProcessingContext processingContext) {
+        performReset(null, processingContext);
     }
 
     @Override
-    public <R> void performReset(@Nullable R resetContext) {
+    public <R> void performReset(@Nullable R resetContext, ProcessingContext processingContext) {
         for (EventMessageHandler eventHandler : eventHandlingComponents) {
-            eventHandler.prepareReset(resetContext);
+            eventHandler.prepareReset(resetContext, null);
         }
     }
 
@@ -194,9 +197,9 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     /**
      * Builder class to instantiate a {@link SimpleEventHandlerInvoker}.
      * <p>
-     * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler} and the {@link
-     * SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler is a <b>hard
-     * requirement</b> and as such should be provided.
+     * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler} and the
+     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler is a
+     * <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder<B extends Builder<?>> {
 
@@ -238,8 +241,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         /**
          * Sets the {@link ParameterResolverFactory} used to resolve parameter values for annotated handlers in the
          * {@link AnnotationEventHandlerAdapter} this {@link EventHandlerInvoker} instantiates. This invoker will only
-         * instantiate a new {@link EventMessageHandler} if a given Event Handler (through {@link
-         * #eventHandlers(Object...)} or {@link #eventHandlers(List)}) is not assignable to EventMessageHandler.
+         * instantiate a new {@link EventMessageHandler} if a given Event Handler (through
+         * {@link #eventHandlers(Object...)} or {@link #eventHandlers(List)}) is not assignable to EventMessageHandler.
          *
          * @param parameterResolverFactory the {@link ParameterResolverFactory} used to resolve parameter values for
          *                                 instantiated {@link AnnotationEventHandlerAdapter}s
@@ -253,10 +256,10 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         }
 
         /**
-         * Sets the {@link HandlerDefinition} used to create concrete handlers in the annotated handlers in the {@link
-         * AnnotationEventHandlerAdapter} this {@link EventHandlerInvoker} instantiates. This invoker will only
-         * instantiate a new {@link EventMessageHandler} if a given Event Handler (through {@link
-         * #eventHandlers(Object...)} or {@link #eventHandlers(List)}) is not assignable to EventMessageHandler.
+         * Sets the {@link HandlerDefinition} used to create concrete handlers in the annotated handlers in the
+         * {@link AnnotationEventHandlerAdapter} this {@link EventHandlerInvoker} instantiates. This invoker will only
+         * instantiate a new {@link EventMessageHandler} if a given Event Handler (through
+         * {@link #eventHandlers(Object...)} or {@link #eventHandlers(List)}) is not assignable to EventMessageHandler.
          *
          * @param handlerDefinition the {@link HandlerDefinition} used to create concrete handlers in the instantiated
          *                          {@link AnnotationEventHandlerAdapter}s
@@ -288,9 +291,9 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
         /**
          * Sets the {@link SequencingPolicy} in charge of deciding whether a given event should be handled (through
-         * {@link EventHandlerInvoker#handle(EventMessage, Segment)}) by the given {@link Segment}. Used when this
-         * {@link EventHandlerInvoker} is invoked for multiple Segments (i.e. using parallel processing). Defaults to a
-         * {@link SequentialPerAggregatePolicy},
+         * {@link EventHandlerInvoker#handle(EventMessage, ProcessingContext, Segment)}) by the given {@link Segment}.
+         * Used when this {@link EventHandlerInvoker} is invoked for multiple Segments (i.e. using parallel processing).
+         * Defaults to a {@link SequentialPerAggregatePolicy},
          *
          * @param sequencingPolicy a {@link SequencingPolicy} in charge of deciding whether a given event should be
          *                         handled by the given {@link Segment}
@@ -313,10 +316,10 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         }
 
         /**
-         * Wrap a given {@code eventHandler} in an {@link AnnotationEventHandlerAdapter} to allow this {@link
-         * EventHandlerInvoker} to correctly pass {@link EventMessage}s to it. If a {@link ParameterResolverFactory} or
-         * both a ParameterResolverFactory and {@link HandlerDefinition} are present, one/both will be given to the
-         * AnnotationEventHandlerAdapter
+         * Wrap a given {@code eventHandler} in an {@link AnnotationEventHandlerAdapter} to allow this
+         * {@link EventHandlerInvoker} to correctly pass {@link EventMessage}s to it. If a
+         * {@link ParameterResolverFactory} or both a ParameterResolverFactory and {@link HandlerDefinition} are
+         * present, one/both will be given to the AnnotationEventHandlerAdapter
          *
          * @param eventHandler an {@link Object} which will be wrapped in an {@link AnnotationEventHandlerAdapter}
          * @return an {@link AnnotationEventHandlerAdapter} which the given {@code eventHandler} will be wrapped in

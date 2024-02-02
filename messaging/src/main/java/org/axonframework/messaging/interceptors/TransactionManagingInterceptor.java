@@ -21,6 +21,8 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import javax.annotation.Nonnull;
@@ -50,6 +52,17 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
         Transaction transaction = transactionManager.startTransaction();
         unitOfWork.onCommit(u -> transaction.commit());
         unitOfWork.onRollback(u -> transaction.rollback());
-        return interceptorChain.proceed();
+        return interceptorChain.proceedSync();
+    }
+
+    @Override
+    public <M extends T, R> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
+                                                                         @Nonnull ProcessingContext context,
+                                                                         @Nonnull InterceptorChain<M, R> interceptorChain) {
+        Transaction transaction = transactionManager.startTransaction();
+        context.runOnCommit(u -> transaction.commit());
+        context.onError((u, p, e) -> transaction.rollback());
+
+        return interceptorChain.proceed(message, context);
     }
 }

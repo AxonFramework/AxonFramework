@@ -135,7 +135,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     private void invokeInterceptorChain(CommandHandlingEntry entry) {
         CommandResultMessage<?> commandResultMessage;
         try {
-            commandResultMessage = asCommandResultMessage(entry.getPublisherInterceptorChain().proceed());
+            commandResultMessage = asCommandResultMessage(entry.getPublisherInterceptorChain().proceedSync());
         } catch (Exception throwable) {
             commandResultMessage = asCommandResultMessage(throwable);
         }

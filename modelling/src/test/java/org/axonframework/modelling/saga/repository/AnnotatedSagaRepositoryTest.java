@@ -22,19 +22,18 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.modelling.saga.AssociationValue;
-import org.axonframework.modelling.saga.Saga;
-import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.saga.AssociationValue;
+import org.axonframework.modelling.saga.Saga;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.annotation.Nonnull;
 
 import static java.util.Collections.singleton;
@@ -165,7 +164,7 @@ class AnnotatedSagaRepositoryTest {
                                                                                   .build();
         Saga<TestSaga> saga =
                 sagaRepository.createInstance(IdentifierFactory.getInstance().generateIdentifier(), TestSaga::new);
-        saga.handle(GenericEventMessage.asEventMessage(new Object()));
+        saga.handleSync(GenericEventMessage.asEventMessage(new Object()));
 
         assertEquals(1, CountingInterceptors.counter.get());
     }
@@ -179,10 +178,10 @@ class AnnotatedSagaRepositoryTest {
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nonnull TestSaga target,
-                             @Nonnull MessageHandlingMember<? super TestSaga> handler) throws Exception {
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull TestSaga target,
+                                 @Nonnull MessageHandlingMember<? super TestSaga> handler) throws Exception {
             counter.incrementAndGet();
-            return handler.handle(message, target);
+            return handler.handleSync(message, target);
         }
     }
 

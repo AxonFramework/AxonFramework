@@ -17,6 +17,7 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.test.AxonAssertionError;
@@ -194,14 +195,14 @@ class FixtureTest_MatcherParams {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
-        MessageHandler<CommandMessage<?>> mockCommandHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> mockCommandHandler = mock(MessageHandler.class);
         fixture.registerCommandHandler(StrangeCommand.class, mockCommandHandler);
         fixture
                 .given(givenEvents)
                 .when(new StrangeCommand("aggregateId"), Collections.singletonMap("meta", "value"));
 
         final ArgumentCaptor<CommandMessage> captor = ArgumentCaptor.forClass(CommandMessage.class);
-        verify(mockCommandHandler).handle(captor.capture());
+        verify(mockCommandHandler).handleSync(captor.capture());
         List<CommandMessage> dispatched = captor.getAllValues();
         assertEquals(1, dispatched.size());
         assertEquals(1, dispatched.get(0).getMetaData().size());

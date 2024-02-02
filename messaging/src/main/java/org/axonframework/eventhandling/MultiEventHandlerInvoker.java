@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -85,10 +87,10 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage<?> message, ProcessingContext processingContext, @Nonnull Segment segment) throws Exception {
         for (EventHandlerInvoker i : delegates) {
             if (canHandle(i, message, segment)) {
-                i.handle(message, segment);
+                i.handle(message, processingContext, segment);
             }
         }
     }
@@ -100,14 +102,14 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void performReset() {
-        performReset(null);
+    public void performReset(ProcessingContext processingContext) {
+        performReset(null,processingContext );
     }
 
     @Override
-    public <R> void performReset(R resetContext) {
+    public <R> void performReset(R resetContext, ProcessingContext processingContext) {
         delegates.stream()
                  .filter(EventHandlerInvoker::supportsReset)
-                 .forEach(eventHandlerInvoker -> eventHandlerInvoker.performReset(resetContext));
+                 .forEach(eventHandlerInvoker -> eventHandlerInvoker.performReset(resetContext, processingContext));
     }
 }

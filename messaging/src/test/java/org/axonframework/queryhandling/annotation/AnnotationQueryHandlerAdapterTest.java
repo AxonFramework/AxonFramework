@@ -88,7 +88,7 @@ class AnnotationQueryHandlerAdapterTest {
         String testResponse = "hello";
         QueryMessage<String, String> testQueryMessage =
                 new GenericQueryMessage<>(testResponse, ResponseTypes.instanceOf(String.class));
-        Object result = testSubject.handle(testQueryMessage);
+        Object result = testSubject.handleSync(testQueryMessage);
 
         assertEquals(testResponse, result);
     }
@@ -98,7 +98,7 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<String, Integer> testQuery =
                 new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class));
 
-        assertThrows(MockException.class, () -> testSubject.handle(testQuery));
+        assertThrows(MockException.class, () -> testSubject.handleSync(testQuery));
     }
 
     @Test
@@ -106,7 +106,7 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<String, String> testQuery =
                 new GenericQueryMessage<>("hello", "noEcho", ResponseTypes.instanceOf(String.class));
 
-        assertNull(testSubject.handle(testQuery));
+        assertNull(testSubject.handleSync(testQuery));
     }
 
     @Test
@@ -114,7 +114,7 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<String, String> testQuery =
                 new GenericQueryMessage<>("hello", "Hello", ResponseTypes.instanceOf(String.class));
 
-        assertEquals("hello", testSubject.handle(testQuery));
+        assertEquals("hello", testSubject.handleSync(testQuery));
     }
 
     @Test
@@ -124,7 +124,7 @@ class AnnotationQueryHandlerAdapterTest {
                 new GenericQueryMessage<>(testResponse, ResponseTypes.multipleInstancesOf(String.class));
 
         //noinspection unchecked
-        Collection<String> result = (Collection<String>) testSubject.handle(testQueryMessage);
+        Collection<String> result = (Collection<String>) testSubject.handleSync(testQueryMessage);
 
         assertEquals(testResponse, result.size());
     }
@@ -134,7 +134,7 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<Long, List<String>> testQueryMessage =
                 new GenericQueryMessage<>(42L, ResponseTypes.multipleInstancesOf(String.class));
 
-        assertThrows(NoHandlerForQueryException.class, () -> testSubject.handle(testQueryMessage));
+        assertThrows(NoHandlerForQueryException.class, () -> testSubject.handleSync(testQueryMessage));
     }
 
     @Test
@@ -148,7 +148,7 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<String, String> testQueryMessage =
                 new GenericQueryMessage<>("Hi", "Hello", ResponseTypes.instanceOf(String.class));
 
-        String result = (String) testSubject.handle(testQueryMessage);
+        String result = (String) testSubject.handleSync(testQueryMessage);
 
         assertEquals("Hi", result);
         assertEquals(Collections.singletonList(testQueryMessage), withInterceptor);
@@ -176,7 +176,7 @@ class AnnotationQueryHandlerAdapterTest {
         QueryMessage<ArrayList<Object>, Object> testQueryMessage =
                 new GenericQueryMessage<>(new ArrayList<>(), ResponseTypes.instanceOf(Object.class));
 
-        Object result = testSubject.handle(testQueryMessage);
+        Object result = testSubject.handleSync(testQueryMessage);
 
         assertNull(result);
         assertFalse(interceptedExceptions.isEmpty());
@@ -264,7 +264,7 @@ class AnnotationQueryHandlerAdapterTest {
         @MessageHandlerInterceptor
         public Object interceptAny(QueryMessage<?, ?> query, InterceptorChain chain) throws Exception {
             interceptedWithInterceptorChain.add(query);
-            return chain.proceed();
+            return chain.proceedSync();
         }
 
         @ExceptionHandler(resultType = RuntimeException.class)

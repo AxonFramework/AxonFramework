@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts
@@ -53,7 +54,7 @@ public final class SourceIdParameterResolverFactory extends AbstractAnnotatedPar
     static class SourceIdParameterResolver implements ParameterResolver<String> {
 
         @Override
-        public String resolveParameterValue(Message message) {
+        public String resolveParameterValue(Message message, ProcessingContext processingContext) {
             if (message instanceof DomainEventMessage) {
                 return ((DomainEventMessage) message).getAggregateIdentifier();
             }
@@ -61,7 +62,7 @@ public final class SourceIdParameterResolverFactory extends AbstractAnnotatedPar
         }
 
         @Override
-        public boolean matches(Message message) {
+        public boolean matches(Message message, ProcessingContext processingContext) {
             return message instanceof DomainEventMessage;
         }
 

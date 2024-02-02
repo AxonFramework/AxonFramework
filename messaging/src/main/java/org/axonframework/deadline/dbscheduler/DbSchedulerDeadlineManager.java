@@ -51,7 +51,6 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.SpanScope;
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
@@ -367,7 +366,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
                         executeScheduledDeadline(interceptedDeadlineMessage, scopeDescriptor);
                         return null;
                     });
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
+            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
             if (resultMessage.isExceptional()) {
                 Throwable e = resultMessage.exceptionResult();
                 span.recordException(e);

@@ -14,6 +14,8 @@ Major API Changes
   recommended resolution path in the JavaDoc. It is strongly recommended to (1) upgrade to the latest Axon Framework 4
   version, (2) adjust any deprecations from Axon Framework you are using as recommended, and then (3) to make the change
   towards Axon Framework 5.
+* We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
+  longer contain the `@CommandHandler` annotation. Instead, the `@CreationPolicy` should be used.
 
 Other API changes
 =================

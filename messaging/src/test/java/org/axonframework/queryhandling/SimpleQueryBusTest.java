@@ -150,7 +150,7 @@ class SimpleQueryBusTest {
     @Test
     void subscribingSameHandlerTwiceInvokedOnce() throws Exception {
         AtomicInteger invocationCount = new AtomicInteger();
-        MessageHandler<QueryMessage<?, String>> handler = message -> {
+        MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>> handler = message -> {
             invocationCount.incrementAndGet();
             return "reply";
         };
@@ -178,8 +178,8 @@ class SimpleQueryBusTest {
                                     .errorHandler(errorHandler)
                                     .duplicateQueryHandlerResolver(DuplicateQueryHandlerResolution.rejectDuplicates())
                                     .build();
-        MessageHandler<QueryMessage<?, String>> handlerOne = message -> "reply";
-        MessageHandler<QueryMessage<?, String>> handlerTwo = message -> "reply";
+        MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>> handlerOne = message -> "reply";
+        MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>> handlerTwo = message -> "reply";
         //noinspection resource
         testSubject.subscribe("test", String.class, handlerOne);
         //noinspection resource
@@ -356,18 +356,18 @@ class SimpleQueryBusTest {
     @Test
     void queryForSingleResultWithUnsuitableHandlers() throws Exception {
         AtomicInteger invocationCount = new AtomicInteger();
-        MessageHandler<? super QueryMessage<?, ?>> failingHandler = message -> {
+        MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>> failingHandler = message -> {
             invocationCount.incrementAndGet();
             throw new NoHandlerForQueryException("Mock");
         };
-        MessageHandler<? super QueryMessage<?, String>> passingHandler = message -> {
+        MessageHandler<? super QueryMessage<?, String>, ? extends QueryResponseMessage<?>> passingHandler = message -> {
             invocationCount.incrementAndGet();
             return "reply";
         };
         //noinspection resource
         testSubject.subscribe("query", String.class, failingHandler);
         //noinspection FunctionalExpressionCanBeFolded,Convert2MethodRef,Convert2MethodRef,resource
-        testSubject.subscribe("query", String.class, message -> failingHandler.handle(message));
+        testSubject.subscribe("query", String.class, message -> failingHandler.handleSync(message));
         //noinspection resource
         testSubject.subscribe("query", String.class, passingHandler);
 
@@ -429,7 +429,7 @@ class SimpleQueryBusTest {
 
     @Test
     void queryForSingleResultWillReportErrors() throws Exception {
-        MessageHandler<? super QueryMessage<?, ?>> failingHandler = message -> {
+        MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>> failingHandler = message -> {
             throw new MockException("Mock");
         };
         //noinspection resource
@@ -457,7 +457,7 @@ class SimpleQueryBusTest {
             if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
                 return "fakeReply";
             }
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         });
         //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
@@ -690,7 +690,7 @@ class SimpleQueryBusTest {
             if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
                 return "fakeReply";
             }
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         });
         //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");

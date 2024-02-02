@@ -17,6 +17,7 @@
 package org.axonframework.test.utils;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.jupiter.api.*;
@@ -73,7 +74,7 @@ class RecordingCommandBusTest {
 
     @Test
     void registerHandler() {
-        MessageHandler<? super CommandMessage<?>> handler = command -> {
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> handler = command -> {
             fail("Did not expect handler to be invoked");
             return null;
         };

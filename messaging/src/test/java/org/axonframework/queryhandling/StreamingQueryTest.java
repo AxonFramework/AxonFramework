@@ -254,7 +254,7 @@ class StreamingQueryTest {
     @Test
     void handlerInterceptor() {
         queryBus.registerHandlerInterceptor((unitOfWork, interceptorChain) ->
-                                                    ((Flux) interceptorChain.proceed()).map(it -> "a"));
+                                                    ((Flux) interceptorChain.proceedSync()).map(it -> "a"));
 
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "fluxQuery", String.class);

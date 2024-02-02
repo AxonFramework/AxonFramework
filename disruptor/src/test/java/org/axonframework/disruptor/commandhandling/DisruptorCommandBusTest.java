@@ -166,7 +166,7 @@ class DisruptorCommandBusTest {
                     unitOfWork.onPrepareCommit(mockPrepareCommitConsumer);
                     unitOfWork.afterCommit(mockAfterCommitConsumer);
                     unitOfWork.onCleanup(mockCleanUpConsumer);
-                    return ((InterceptorChain) invocation.getArguments()[1]).proceed();
+                    return ((InterceptorChain) invocation.getArguments()[1]).proceedSync();
                 });
         CommandMessage<StubCommand> command = asCommandMessage(new StubCommand(aggregateIdentifier));
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
@@ -358,7 +358,7 @@ class DisruptorCommandBusTest {
 
         //noinspection unchecked
         when(mockInterceptor.handle(any(UnitOfWork.class), any(InterceptorChain.class))).thenAnswer(
-                invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed()
+                invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceedSync()
         );
         testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)));
         //noinspection unchecked
@@ -687,8 +687,8 @@ class DisruptorCommandBusTest {
         testSubject.dispatch(testMessage, callback);
 
         assertTrue(callback.awaitCompletion(2, TimeUnit.SECONDS), "Expected command to complete");
-        verify(initialHandler, never()).handle(testMessage);
-        verify(duplicateHandler).handle(testMessage);
+        verify(initialHandler, never()).handleSync(testMessage);
+        verify(duplicateHandler).handleSync(testMessage);
     }
 
     @Test
@@ -711,10 +711,10 @@ class DisruptorCommandBusTest {
 
         CommandMessage<String> testCommand = asCommandMessage("some-command");
         //noinspection unchecked
-        MessageHandler<CommandMessage<?>> testHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> testHandler = mock(MessageHandler.class);
         when(testHandler.canHandle(any())).thenReturn(true);
-        when(testHandler.handle(testCommand)).thenThrow(AggregateStateCorruptedException.class)
-                                             .thenReturn("happy-now");
+        when(testHandler.handleSync(testCommand)).thenThrow(AggregateStateCorruptedException.class)
+                                                 .thenReturn("happy-now");
 
         testSubject = DisruptorCommandBus.builder()
                                          .rescheduleCommandsOnCorruptState(true)
@@ -737,10 +737,10 @@ class DisruptorCommandBusTest {
 
         CommandMessage<String> testCommand = asCommandMessage("some-command");
         //noinspection unchecked
-        MessageHandler<CommandMessage<?>> testHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> testHandler = mock(MessageHandler.class);
         when(testHandler.canHandle(any())).thenReturn(true);
-        when(testHandler.handle(testCommand)).thenThrow(AggregateStateCorruptedException.class)
-                                             .thenReturn("happy-now");
+        when(testHandler.handleSync(testCommand)).thenThrow(AggregateStateCorruptedException.class)
+                                                 .thenReturn("happy-now");
 
         testSubject = DisruptorCommandBus.builder()
                                          .rescheduleCommandsOnCorruptState(false)
@@ -763,15 +763,15 @@ class DisruptorCommandBusTest {
 
         CommandMessage<ExceptionCommand> testCommand = asCommandMessage("some-command");
         //noinspection unchecked
-        MessageHandler<CommandMessage<?>> testHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> testHandler = mock(MessageHandler.class);
         when(testHandler.canHandle(any())).thenReturn(true);
-        when(testHandler.handle(testCommand)).thenReturn("handled");
+        when(testHandler.handleSync(testCommand)).thenReturn("handled");
 
         testSubject = DisruptorCommandBus.builder()
                                          .publisherInterceptors(Collections.singletonList(
                                                  (unitOfWork, interceptorChain) -> {
                                                      invocationCounter.incrementAndGet();
-                                                     return interceptorChain.proceed();
+                                                     return interceptorChain.proceedSync();
                                                  }
                                          ))
                                          .build();
@@ -949,7 +949,7 @@ class DisruptorCommandBusTest {
         }
     }
 
-    private static class StubHandler implements MessageHandler<CommandMessage<?>> {
+    private static class StubHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         private Repository<StubAggregate> repository;
 
@@ -957,7 +957,7 @@ class DisruptorCommandBusTest {
         }
 
         @Override
-        public Object handle(CommandMessage<?> command) throws Exception {
+        public Object handleSync(CommandMessage<?> command) throws Exception {
             StubCommand payload = (StubCommand) command.getPayload();
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();

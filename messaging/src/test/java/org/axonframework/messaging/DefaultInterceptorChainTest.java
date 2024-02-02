@@ -18,11 +18,10 @@ package org.axonframework.messaging;
 
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -32,14 +31,14 @@ import static org.mockito.Mockito.*;
 class DefaultInterceptorChainTest {
 
     private UnitOfWork<Message<?>> unitOfWork;
-    private MessageHandler<Message<?>> mockHandler;
+    private MessageHandler<Message<?>, Object> mockHandler;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() throws Exception {
         unitOfWork = new DefaultUnitOfWork<>(null);
         mockHandler = mock(MessageHandler.class);
-        when(mockHandler.handle(isA(Message.class))).thenReturn("Result");
+        when(mockHandler.handleSync(isA(Message.class))).thenReturn("Result");
     }
 
     @Test
@@ -47,9 +46,9 @@ class DefaultInterceptorChainTest {
     void chainWithDifferentProceedCalls() throws Exception {
         MessageHandlerInterceptor interceptor1 = (unitOfWork, interceptorChain) -> {
             unitOfWork.transformMessage(m -> new GenericMessage<>("testing"));
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         };
-        MessageHandlerInterceptor interceptor2 = (unitOfWork, interceptorChain) -> interceptorChain.proceed();
+        MessageHandlerInterceptor interceptor2 = (unitOfWork, interceptorChain) -> interceptorChain.proceedSync();
 
 
         unitOfWork.transformMessage(m -> new GenericMessage<>("original"));
@@ -57,9 +56,9 @@ class DefaultInterceptorChainTest {
                 unitOfWork, asList(interceptor1, interceptor2), mockHandler
         );
 
-        String actual = (String) testSubject.proceed();
+        String actual = (String) testSubject.proceedSync();
 
         assertSame("Result", actual);
-        verify(mockHandler).handle(argThat(x -> (x != null) && x.getPayload().equals("testing")));
+        verify(mockHandler).handleSync(argThat(x -> (x != null) && x.getPayload().equals("testing")));
     }
 }

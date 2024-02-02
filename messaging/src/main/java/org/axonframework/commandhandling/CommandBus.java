@@ -77,5 +77,5 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
      * @param handler     The handler instance that handles the given type of command
      * @return a handle to unsubscribe the {@code handler}. When unsubscribed it will no longer receive commands.
      */
-    Registration subscribe(@Nonnull String commandName, @Nonnull MessageHandler<? super CommandMessage<?>> handler);
+    Registration subscribe(@Nonnull String commandName, @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler);
 }

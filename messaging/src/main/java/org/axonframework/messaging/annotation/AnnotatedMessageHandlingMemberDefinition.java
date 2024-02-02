@@ -17,9 +17,11 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 
-import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
@@ -45,13 +47,16 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
-                                                                @Nonnull Executable executable,
-                                                                @Nonnull ParameterResolverFactory parameterResolverFactory) {
-        return findAnnotationAttributes(executable, MessageHandler.class)
-                .map(attr -> new AnnotatedMessageHandlingMember<>(
-                        executable,
+                                                                @Nonnull Method method,
+                                                                @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                                                Function<Object, MessageStream<?>> returnTypeConverter) {
+        return findAnnotationAttributes(method, MessageHandler.class)
+                .map(attr -> new MethodInvokingMessageHandlingMember<>(
+                        method,
                         (Class<? extends Message<?>>) attr.getOrDefault("messageType", Message.class),
                         (Class<? extends Message<?>>) attr.getOrDefault("payloadType", Object.class),
-                        parameterResolverFactory));
+                        parameterResolverFactory,
+                        returnTypeConverter
+                ));
     }
 }

@@ -67,19 +67,19 @@ class MultiParameterResolverFactoryTest {
     void resolversQueriedInOrderProvided() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
         ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
-        assertFalse(factory.matches(null));
+        assertFalse(factory.matches(null, null));
 
         InOrder inOrder = inOrder(mockFactory1, mockFactory2, mockResolver1, mockResolver2);
         inOrder.verify(mockFactory1).createInstance(ArgumentMatchers.any(Executable.class),
                                                     ArgumentMatchers.any(),
                                                     ArgumentMatchers.anyInt());
-        inOrder.verify(mockResolver1).matches(any());
+        inOrder.verify(mockResolver1).matches(any(), null);
 
         verify(mockFactory2, never()).createInstance(ArgumentMatchers.any(Executable.class),
                                                      ArgumentMatchers.any(),
                                                      ArgumentMatchers.anyInt());
 
-        verify(mockResolver2, never()).matches(any(Message.class));
+        verify(mockResolver2, never()).matches(any(Message.class), null);
     }
 
     @Test
@@ -90,14 +90,14 @@ class MultiParameterResolverFactoryTest {
                                          ArgumentMatchers.any(),
                                          ArgumentMatchers.anyInt()))
                 .thenReturn(null);
-        when(mockResolver2.matches(message)).thenReturn(true);
-        when(mockResolver2.resolveParameterValue(message)).thenReturn("Resolved");
+        when(mockResolver2.matches(message, null)).thenReturn(true);
+        when(mockResolver2.resolveParameterValue(message, null)).thenReturn("Resolved");
 
         ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
-        assertTrue(factory.matches(message));
-        assertEquals("Resolved", factory.resolveParameterValue(message));
+        assertTrue(factory.matches(message, null));
+        assertEquals("Resolved", factory.resolveParameterValue(message, null));
 
-        verify(mockResolver1, never()).resolveParameterValue(any(Message.class));
+        verify(mockResolver1, never()).resolveParameterValue(any(Message.class), null);
     }
 
     @Test

@@ -19,6 +19,7 @@ package org.axonframework.test.utils;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -43,7 +44,7 @@ import static org.axonframework.commandhandling.GenericCommandResultMessage.asCo
  */
 public class RecordingCommandBus implements CommandBus {
 
-    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> subscriptions = new ConcurrentHashMap<>();
     private final List<CommandMessage<?>> dispatchedCommands = new ArrayList<>();
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
@@ -68,7 +69,7 @@ public class RecordingCommandBus implements CommandBus {
 
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
         subscriptions.putIfAbsent(commandName, handler);
         return () -> subscriptions.remove(commandName, handler);
     }
@@ -93,7 +94,7 @@ public class RecordingCommandBus implements CommandBus {
      * @param commandHandler The command handler to verify the subscription for
      * @return {@code true} if the handler is subscribed, otherwise {@code false}.
      */
-    public boolean isSubscribed(MessageHandler<? super CommandMessage<?>> commandHandler) {
+    public boolean isSubscribed(MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> commandHandler) {
         return subscriptions.containsValue(commandHandler);
     }
 
@@ -106,7 +107,7 @@ public class RecordingCommandBus implements CommandBus {
      * @param <C>            The type of command to verify the subscription for
      * @return {@code true} if the handler is subscribed, otherwise {@code false}.
      */
-    public <C> boolean isSubscribed(String commandName, MessageHandler<? super CommandMessage<?>> commandHandler) {
+    public <C> boolean isSubscribed(String commandName, MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> commandHandler) {
         return subscriptions.containsKey(commandName) && subscriptions.get(commandName).equals(commandHandler);
     }
 
@@ -115,7 +116,7 @@ public class RecordingCommandBus implements CommandBus {
      *
      * @return a Map will all Command Names and their Command Handler
      */
-    public Map<String, MessageHandler<? super CommandMessage<?>>> getSubscriptions() {
+    public Map<String, MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> getSubscriptions() {
         return subscriptions;
     }
 

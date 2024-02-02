@@ -258,17 +258,17 @@ class SimpleCommandBusTest {
     void interceptorChainCommandHandledSuccessfully() throws Exception {
         MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
-        final MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
+        final MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler = mock(MessageHandler.class);
         when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> mockInterceptor2.handle(
                         (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0],
                         (InterceptorChain) invocation.getArguments()[1]));
         when(mockInterceptor2.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> commandHandler
-                        .handle(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage()));
+                        .handleSync(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage()));
         testSubject.registerHandlerInterceptor(mockInterceptor1);
         testSubject.registerHandlerInterceptor(mockInterceptor2);
-        when(commandHandler.handle(isA(CommandMessage.class))).thenReturn("Hi there!");
+        when(commandHandler.handleSync(isA(CommandMessage.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class.getName(), commandHandler);
 
         testSubject.dispatch(asCommandMessage("Hi there!"),
@@ -285,7 +285,7 @@ class SimpleCommandBusTest {
                 isA(UnitOfWork.class), isA(InterceptorChain.class));
         inOrder.verify(mockInterceptor2).handle(
                 isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(commandHandler).handle(isA(GenericCommandMessage.class));
+        inOrder.verify(commandHandler).handleSync(isA(GenericCommandMessage.class));
     }
 
     @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
@@ -293,18 +293,18 @@ class SimpleCommandBusTest {
     void interceptorChainCommandHandlerThrowsException() throws Exception {
         MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
-        final MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
+        final MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler = mock(MessageHandler.class);
         when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> mockInterceptor2.handle(
                         (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0],
                         (InterceptorChain) invocation.getArguments()[1]));
         when(mockInterceptor2.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> commandHandler
-                        .handle(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage()));
+                        .handleSync(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage()));
 
         testSubject.registerHandlerInterceptor(mockInterceptor1);
         testSubject.registerHandlerInterceptor(mockInterceptor2);
-        when(commandHandler.handle(isA(CommandMessage.class)))
+        when(commandHandler.handleSync(isA(CommandMessage.class)))
                 .thenThrow(new RuntimeException("Faking failed command handling"));
         testSubject.subscribe(String.class.getName(), commandHandler);
 
@@ -323,7 +323,7 @@ class SimpleCommandBusTest {
                 isA(UnitOfWork.class), isA(InterceptorChain.class));
         inOrder.verify(mockInterceptor2).handle(
                 isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(commandHandler).handle(isA(GenericCommandMessage.class));
+        inOrder.verify(commandHandler).handleSync(isA(GenericCommandMessage.class));
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown", "unchecked"})
@@ -333,11 +333,11 @@ class SimpleCommandBusTest {
                 mock(MessageHandlerInterceptor.class, "stubName");
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
         when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed());
+                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceedSync());
         testSubject.registerHandlerInterceptor(mockInterceptor1);
         testSubject.registerHandlerInterceptor(mockInterceptor2);
-        MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
-        when(commandHandler.handle(isA(CommandMessage.class))).thenReturn("Hi there!");
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler = mock(MessageHandler.class);
+        when(commandHandler.handleSync(isA(CommandMessage.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class.getName(), commandHandler);
         RuntimeException someException = new RuntimeException("Mocking");
         doThrow(someException).when(mockInterceptor2).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
@@ -355,7 +355,7 @@ class SimpleCommandBusTest {
                 isA(UnitOfWork.class), isA(InterceptorChain.class));
         inOrder.verify(mockInterceptor2).handle(
                 isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(commandHandler, never()).handle(isA(CommandMessage.class));
+        inOrder.verify(commandHandler, never()).handleSync(isA(CommandMessage.class));
     }
 
     @Test
@@ -393,14 +393,14 @@ class SimpleCommandBusTest {
         // And after dispatching a test command, it should be handled by the initial handler
         testSubject.dispatch(testMessage);
 
-        verify(duplicateHandler).handle(testMessage);
-        verify(initialHandler, never()).handle(testMessage);
+        verify(duplicateHandler).handleSync(testMessage);
+        verify(initialHandler, never()).handleSync(testMessage);
     }
 
-    private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>> {
+    private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         @Override
-        public Object handle(CommandMessage<?> message) {
+        public Object handleSync(CommandMessage<?> message) {
             return message;
         }
     }

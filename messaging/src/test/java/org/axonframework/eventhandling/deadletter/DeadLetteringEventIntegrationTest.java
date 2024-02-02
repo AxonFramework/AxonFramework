@@ -868,7 +868,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         return (unitOfWork, chain) -> {
             invoked.set(true);
             try {
-                chain.proceed();
+                chain.proceedSync();
             } catch (RuntimeException e) {
                 return unitOfWork;
             }

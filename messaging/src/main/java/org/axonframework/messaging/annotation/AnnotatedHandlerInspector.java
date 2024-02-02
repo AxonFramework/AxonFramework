@@ -17,8 +17,9 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -33,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -121,8 +123,9 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     /**
-     * Create an inspector for given {@code handlerType} and its {@code declaredSubtypes} that uses given {@code
-     * parameterResolverFactory} to resolve method parameters and given {@code handlerDefinition} to create handlers.
+     * Create an inspector for given {@code handlerType} and its {@code declaredSubtypes} that uses given
+     * {@code parameterResolverFactory} to resolve method parameters and given {@code handlerDefinition} to create
+     * handlers.
      *
      * @param handlerType              the target handler type
      * @param parameterResolverFactory the resolver factory to use during detection
@@ -189,13 +192,21 @@ public class AnnotatedHandlerInspector<T> {
                                                                  emptySet()))
                                 .collect(Collectors.toList());
         AnnotatedHandlerInspector<T> inspector = new AnnotatedHandlerInspector<>(inspectedType,
-                                                                                  parents,
-                                                                                  parameterResolverFactory,
-                                                                                  handlerDefinition,
-                                                                                  registry,
-                                                                                  children);
+                                                                                 parents,
+                                                                                 parameterResolverFactory,
+                                                                                 handlerDefinition,
+                                                                                 registry,
+                                                                                 children);
         inspector.initializeMessageHandlers(parameterResolverFactory, handlerDefinition);
         return inspector;
+    }
+
+    // TODO This local static function should be replaced with a dedicated interface that converts types.
+    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
+    private static MessageStream<?> returnTypeConverter(Object result) {
+        return result instanceof CompletableFuture<?>
+                ? MessageStream.fromFuture((CompletableFuture<Object>) result)
+                : MessageStream.just(result);
     }
 
     @SuppressWarnings("unchecked")
@@ -203,22 +214,27 @@ public class AnnotatedHandlerInspector<T> {
                                            HandlerDefinition handlerDefinition) {
         handlers.put(inspectedType, new TreeSet<>(HandlerComparator.instance()));
         for (Method method : inspectedType.getDeclaredMethods()) {
-            handlerDefinition.createHandler(inspectedType, method, parameterResolverFactory)
+            handlerDefinition.createHandler(inspectedType,
+                                            method,
+                                            parameterResolverFactory,
+                                            AnnotatedHandlerInspector::returnTypeConverter)
                              .ifPresent(h -> registerHandler(inspectedType, h));
         }
-        for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
-            handlerDefinition.createHandler(inspectedType, constructor, parameterResolverFactory)
-                             .ifPresent(h -> registerHandler(inspectedType, h));
-        }
+        // TODO constructor support is already removed in this branch, so that's why this code is commneted.
+//        for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
+//            handlerDefinition.createHandler(inspectedType, constructor, parameterResolverFactory, )
+//                             .ifPresent(h -> registerHandler(inspectedType, h));
+//        }
 
         // we need to consider handlers from parent/subclasses as well
         subClassInspectors.forEach(sci -> sci.getAllHandlers()
-                                             .forEach((key, value) -> value.forEach(h -> registerHandler(key, (MessageHandlingMember<T>) h))));
+                                             .forEach((key, value) -> value.forEach(h -> registerHandler(key,
+                                                                                                         (MessageHandlingMember<T>) h))));
         superClassInspectors.forEach(sci -> sci.getAllHandlers()
                                                .forEach((key, value) -> value.forEach(h -> {
                                                    boolean isAbstract = h.unwrap(Executable.class)
-                                                                       .map(e -> Modifier.isAbstract(e.getModifiers()))
-                                                                       .orElse(false);
+                                                                         .map(e -> Modifier.isAbstract(e.getModifiers()))
+                                                                         .orElse(false);
                                                    if (!isAbstract) {
                                                        registerHandler(key, h);
                                                    }
@@ -227,7 +243,8 @@ public class AnnotatedHandlerInspector<T> {
 
         // we need to consider interceptors from parent/subclasses as well
         subClassInspectors.forEach(sci -> sci.getAllInterceptors()
-                                             .forEach((key, value) -> value.forEach(h -> registerHandler(key, (MessageHandlingMember<T>) h))));
+                                             .forEach((key, value) -> value.forEach(h -> registerHandler(key,
+                                                                                                         (MessageHandlingMember<T>) h))));
         superClassInspectors.forEach(sci -> sci.getAllInterceptors()
                                                .forEach((key, value) -> value.forEach(h -> {
                                                    registerHandler(key, h);
@@ -239,7 +256,6 @@ public class AnnotatedHandlerInspector<T> {
         if (handler.unwrap(MessageInterceptingMember.class).isPresent()) {
             interceptors.computeIfAbsent(type, t -> new TreeSet<>(HandlerComparator.instance()))
                         .add(handler);
-
         } else {
             handlers.computeIfAbsent(type, t -> new TreeSet<>(HandlerComparator.instance()))
                     .add(handler);
@@ -247,12 +263,11 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     /**
-     * Inspect another handler type and register the result to the inspector registry of this inspector. This is used
-     * by Axon to inspect child entities of an aggregate.
+     * Inspect another handler type and register the result to the inspector registry of this inspector. This is used by
+     * Axon to inspect child entities of an aggregate.
      *
      * @param entityType the type of the handler to inspect
      * @param <C>        the handler's type
-     *
      * @return a new inspector for the given type
      */
     public <C> AnnotatedHandlerInspector<C> inspect(Class<? extends C> entityType) {
@@ -267,7 +282,6 @@ public class AnnotatedHandlerInspector<T> {
      * Returns a list of detected members of given {@code type} that are capable of handling certain messages.
      *
      * @param type a type of inspected entity
-     *
      * @return a stream of detected message handlers for given {@code type}
      */
     public Stream<MessageHandlingMember<? super T>> getHandlers(Class<?> type) {
@@ -276,12 +290,10 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     /**
-     * Returns an Interceptor Chain of annotated interceptor methods defined on the given
-     * {@code type}. The given chain will invoke all relevant interceptors in an order defined
-     * by the handler definition.
+     * Returns an Interceptor Chain of annotated interceptor methods defined on the given {@code type}. The given chain
+     * will invoke all relevant interceptors in an order defined by the handler definition.
      *
      * @param type The type containing the handler definitions
-     *
      * @return an interceptor chain that invokes the interceptor handlers defined on the inspected type
      */
     public MessageHandlerInterceptorMemberChain<T> chainedInterceptor(Class<?> type) {
@@ -304,9 +316,9 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     /**
-     * Returns a Map of all registered interceptor methods per inspected type. Each entry
-     * contains the inspected type as key, and a SortedSet of interceptor methods defined
-     * on that type, in the order they are considered for invocation.
+     * Returns a Map of all registered interceptor methods per inspected type. Each entry contains the inspected type as
+     * key, and a SortedSet of interceptor methods defined on that type, in the order they are considered for
+     * invocation.
      *
      * @return a map of interceptors per type
      */
@@ -332,10 +344,12 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     private static class ChainedMessageHandlerInterceptorMember<T> implements MessageHandlerInterceptorMemberChain<T> {
+
         private final MessageHandlingMember<? super T> delegate;
         private final MessageHandlerInterceptorMemberChain<T> next;
 
-        private ChainedMessageHandlerInterceptorMember(Class<?> targetType, Iterator<MessageHandlingMember<? super T>> iterator) {
+        private ChainedMessageHandlerInterceptorMember(Class<?> targetType,
+                                                       Iterator<MessageHandlingMember<? super T>> iterator) {
             this.delegate = iterator.next();
             if (iterator.hasNext()) {
                 this.next = new ChainedMessageHandlerInterceptorMember<>(targetType, iterator);
@@ -345,21 +359,44 @@ public class AnnotatedHandlerInspector<T> {
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nonnull T target,
-                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
-            return InterceptorChainParameterResolverFactory.callWithInterceptorChain(() -> next.handle(message,
-                                                                                                       target,
-                                                                                                       handler),
-                                                                                     () -> doHandle(message,
-                                                                                                    target,
-                                                                                                    handler));
+        public Object handleSync(@Nonnull Message<?> message, @Nonnull T target,
+                                 @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
+            return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(() -> next.handleSync(message,
+                                                                                                               target,
+                                                                                                               handler),
+                                                                                         () -> doHandleSync(message,
+                                                                                                            target,
+                                                                                                            handler));
         }
 
-        private Object doHandle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception {
-            if (delegate.canHandle(message)) {
-                return delegate.handle(message, target);
+        @Override
+        public MessageStream<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
+                                       @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
+            return InterceptorChainParameterResolverFactory.callWithInterceptorChain(processingContext,
+                                                                                     () -> next.handle(message,
+                                                                                                       processingContext,
+                                                                                                       target,
+                                                                                                       handler),
+                                                                                     (pc) -> doHandle(message,
+                                                                                                      pc,
+                                                                                                      target,
+                                                                                                      handler));
+        }
+
+        private Object doHandleSync(Message<?> message, T target, MessageHandlingMember<? super T> handler)
+                throws Exception {
+            if (delegate.canHandle(message, null)) {
+                return delegate.handleSync(message, target);
             }
-            return next.handle(message, target, handler);
+            return next.handleSync(message, target, handler);
+        }
+
+        private MessageStream<?> doHandle(Message<?> message, ProcessingContext processingContext, T target,
+                                          MessageHandlingMember<? super T> handler) {
+            if (delegate.canHandle(message, processingContext)) {
+                return delegate.handle(message, processingContext, target);
+            }
+            return next.handle(message, processingContext, target, handler);
         }
     }
 }

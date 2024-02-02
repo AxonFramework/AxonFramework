@@ -20,12 +20,15 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.ResultHandler;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -85,26 +88,56 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message) {
-            return ResultParameterResolverFactory.ignoringResultParameters(() -> super.canHandle(message));
+        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
+            return ResultParameterResolverFactory.ignoringResultParameters(processingContext,
+                                                                           pc -> super.canHandle(message, pc));
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception {
+        public Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception {
             InterceptorChain chain = InterceptorChainParameterResolverFactory.currentInterceptorChain();
             try {
-                return chain.proceed();
+                return chain.proceedSync();
             } catch (Exception e) {
                 if (!expectedResultType.isInstance(e)) {
                     throw e;
                 }
                 return ResultParameterResolverFactory.callWithResult(e, () -> {
-                    if (super.canHandle(message)) {
-                        return super.handle(message, target);
+                    if (super.canHandle(message, null)) {
+                        return super.handleSync(message, target);
                     }
                     throw e;
                 });
             }
+        }
+
+        @Override
+        public MessageStream<?> handle(@Nonnull Message<?> message,
+                                       @Nonnull ProcessingContext processingContext,
+                                       @Nullable T target) {
+            InterceptorChain<Message<?>, ?> chain = InterceptorChainParameterResolverFactory.currentInterceptorChain(
+                    processingContext);
+            // TODO - Provide implementation that handles exceptions in streams with more than one item
+            return MessageStream.fromFuture(
+                    chain.proceed(message, processingContext)
+                         .map(r -> (Object) r)
+                         .asCompletableFuture()
+                         .exceptionallyCompose(error -> {
+                             if (expectedResultType.isInstance(error)) {
+                                 return CompletableFuture.failedFuture(error);
+                             }
+                             return ResultParameterResolverFactory.callWithResult(
+                                     error,
+                                     processingContext,
+                                     pc -> {
+                                         if (super.canHandle(message, pc)) {
+                                             return super.handle(message, pc, target)
+                                                         .map(r -> (Object) r)
+                                                         .asCompletableFuture();
+                                         }
+                                         return CompletableFuture.failedFuture(error);
+                                     });
+                         }));
         }
     }
 
@@ -131,10 +164,10 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception {
-            Object result = super.handle(message, target);
+        public Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception {
+            Object result = super.handleSync(message, target);
             if (shouldInvokeInterceptorChain) {
-                return InterceptorChainParameterResolverFactory.currentInterceptorChain().proceed();
+                return InterceptorChainParameterResolverFactory.currentInterceptorChain().proceedSync();
             }
             return result;
         }

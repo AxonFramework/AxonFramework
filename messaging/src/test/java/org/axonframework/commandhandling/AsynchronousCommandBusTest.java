@@ -40,7 +40,7 @@ class AsynchronousCommandBusTest {
 
     private MessageHandlerInterceptor<CommandMessage<?>> handlerInterceptor;
     private MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor;
-    private MessageHandler<CommandMessage<?>> commandHandler;
+    private MessageHandler<CommandMessage<?>, ? extends CommandResultMessage<?>> commandHandler;
     private ExecutorService executorService;
     private AsynchronousCommandBus testSubject;
     private TestSpanFactory spanFactory;
@@ -65,7 +65,7 @@ class AsynchronousCommandBusTest {
         when(dispatchInterceptor.handle(isA(CommandMessage.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
         when(handlerInterceptor.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed());
+                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceedSync());
     }
 
     @SuppressWarnings("unchecked")
@@ -90,7 +90,7 @@ class AsynchronousCommandBusTest {
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
         inOrder.verify(executorService).execute(isA(Runnable.class));
         inOrder.verify(handlerInterceptor).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(commandHandler).handle(isA(CommandMessage.class));
+        inOrder.verify(commandHandler).handleSync(isA(CommandMessage.class));
         ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
         ArgumentCaptor<CommandResultMessage<Object>> responseCaptor = ArgumentCaptor
                 .forClass(CommandResultMessage.class);
@@ -102,7 +102,7 @@ class AsynchronousCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test
     void dispatchWithoutCallback() throws Exception {
-        MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler = mock(MessageHandler.class);
         testSubject.subscribe(Object.class.getName(), commandHandler);
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, NoOpCallback.INSTANCE);
@@ -117,7 +117,7 @@ class AsynchronousCommandBusTest {
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
         inOrder.verify(executorService).execute(isA(Runnable.class));
         inOrder.verify(handlerInterceptor).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(commandHandler).handle(isA(CommandMessage.class));
+        inOrder.verify(commandHandler).handleSync(isA(CommandMessage.class));
     }
 
     @Test

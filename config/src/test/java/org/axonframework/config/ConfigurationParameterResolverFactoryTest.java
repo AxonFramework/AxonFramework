@@ -58,7 +58,7 @@ class ConfigurationParameterResolverFactoryTest {
     void configurationContainsRequestedParameter() {
         ParameterResolver<?> actual = testSubject.createInstance(method, parameters, 1);
         assertNotNull(actual);
-        assertSame(commandBus, actual.resolveParameterValue(new GenericMessage<>("test")));
+        assertSame(commandBus, actual.resolveParameterValue(new GenericMessage<>("test"), null));
 
         verify(configuration).getComponent(CommandBus.class);
     }

@@ -20,6 +20,7 @@ import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -54,13 +55,13 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
         }
 
         @Override
-        public Object resolveParameterValue(Message message) {
+        public Object resolveParameterValue(Message message, ProcessingContext processingContext) {
             throw new FixtureExecutionException("No resource of type [" + parameterType.getName()
                                                         + "] has been registered. It is required for one of the handlers being executed.");
         }
 
         @Override
-        public boolean matches(Message message) {
+        public boolean matches(Message message, ProcessingContext processingContext) {
             return true;
         }
     }

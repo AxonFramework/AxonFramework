@@ -26,6 +26,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -53,8 +54,8 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     /**
-     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus. The given {@code
-     * parameterResolverFactory} is used to resolve parameter values for handler methods.
+     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus. The given
+     * {@code parameterResolverFactory} is used to resolve parameter values for handler methods.
      *
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
@@ -67,9 +68,9 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     /**
-     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus. The given {@code
-     * parameterResolverFactory} is used to resolve parameter values for handler methods. Handler definition is used to
-     * create concrete handlers.
+     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus. The given
+     * {@code parameterResolverFactory} is used to resolve parameter values for handler methods. Handler definition is
+     * used to create concrete handlers.
      *
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
@@ -90,14 +91,14 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public Object handle(EventMessage<?> event) throws Exception {
+    public Object handleSync(EventMessage<?> event) throws Exception {
         Optional<MessageHandlingMember<? super Object>> handler =
                 inspector.getHandlers(listenerType)
-                         .filter(h -> h.canHandle(event))
+                         .filter(h -> h.canHandle(event, null))
                          .findFirst();
         if (handler.isPresent()) {
             MessageHandlerInterceptorMemberChain<Object> interceptor = inspector.chainedInterceptor(listenerType);
-            return interceptor.handle(event, annotatedEventListener, handler.get());
+            return interceptor.handleSync(event, annotatedEventListener, handler.get());
         }
         return null;
     }
@@ -105,7 +106,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     @Override
     public boolean canHandle(EventMessage<?> event) {
         return inspector.getHandlers(listenerType)
-                        .anyMatch(h -> h.canHandle(event));
+                        .anyMatch(h -> h.canHandle(event, null));
     }
 
     @Override
@@ -121,21 +122,22 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public void prepareReset() {
-        prepareReset(null);
+    public void prepareReset(ProcessingContext processingContext) {
+        prepareReset(null, null);
     }
 
     @Override
-    public <R> void prepareReset(R resetContext) {
+    public <R> void prepareReset(R resetContext, ProcessingContext processingContext) {
         try {
             ResetContext<?> resetMessage = GenericResetContext.asResetContext(resetContext);
-            Optional<MessageHandlingMember<? super Object>> handler =
-                    inspector.getHandlers(listenerType)
-                             .filter(h -> h.canHandle(resetMessage))
-                             .findFirst();
-            if (handler.isPresent()) {
-                handler.get().handle(resetMessage, annotatedEventListener);
-            }
+            inspector.getHandlers(listenerType)
+                     .filter(h -> h.canHandle(resetMessage, processingContext))
+                     .findFirst()
+                     .ifPresent(messageHandlingMember -> messageHandlingMember.handle(resetMessage,
+                                                                                      processingContext,
+                                                                                      annotatedEventListener)
+                                                                              .asCompletableFuture()
+                                                                              .join());
         } catch (Exception e) {
             throw new ResetNotSupportedException("An Error occurred while notifying handlers of the reset", e);
         }

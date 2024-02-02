@@ -42,7 +42,6 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,7 +118,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>A {@link ScheduledExecutorService} for coordination.</li>
      *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
-     * If any of these is not present or does no comply to the requirements an {@link AxonConfigurationException} is thrown.
+     * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
      *
      * @param builder the {@link Builder} used to instantiate a {@link PooledStreamingEventProcessor} instance
      */
@@ -319,6 +318,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
         Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 
+        // TODO - Use a ProcessingContext instead of a direct transaction
         transactionManager.executeInTransaction(() -> {
             // Find all segments and fetch all tokens
             int[] segments = tokenStore.fetchSegments(getName());
@@ -327,7 +327,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                            .mapToObj(segment -> tokenStore.fetchToken(getName(), segment))
                                            .toArray(TrackingToken[]::new);
             // Perform the reset on the EventHandlerInvoker
-            eventHandlerInvoker().performReset(resetContext);
+            eventHandlerInvoker().performReset(resetContext, null);
             // Update all tokens towards ReplayTokens
             IntStream.range(0, tokens.length)
                      .forEach(i -> tokenStore.storeToken(
@@ -534,7 +534,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * Specifies the {@link ScheduledExecutorService} used by the coordinator of this {@link
          * PooledStreamingEventProcessor}.
          *
-         * @param coordinatorExecutor the {@link ScheduledExecutorService} to be used by the the coordinator of this
+         * @param coordinatorExecutor the {@link ScheduledExecutorService} to be used by the coordinator of this
          *                            {@link PooledStreamingEventProcessor}
          *
          * @return the current Builder instance, for fluent interfacing
@@ -593,7 +593,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         /**
-         * Sets the initial segment count used to create segments on start up. Only used whenever there are not segments
+         * Sets the initial segment count used to create segments on start up. Only used whenever there are no segments
          * stored in the configured {@link TokenStore} upon start up of this {@link StreamingEventProcessor}. The given
          * value should at least be {@code 1}. Defaults to {@code 16}.
          *

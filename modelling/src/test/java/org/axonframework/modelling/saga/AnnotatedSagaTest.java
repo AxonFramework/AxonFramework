@@ -60,9 +60,9 @@ class AnnotatedSagaTest {
     @Test
     void invokeSaga() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
-        testSubject.handle(new GenericEventMessage<>(new RegularEvent("wrongId")));
-        testSubject.handle(new GenericEventMessage<>(new Object()));
+        testSubject.handleSync(new GenericEventMessage<>(new RegularEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(new RegularEvent("wrongId")));
+        testSubject.handleSync(new GenericEventMessage<>(new Object()));
 
         assertEquals(1, testSaga.invocationCount);
     }
@@ -87,8 +87,8 @@ class AnnotatedSagaTest {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("propertyName", "id");
-        testSubject.handle(new GenericEventMessage<>(new EventWithoutProperties(), new MetaData(metaData)));
-        testSubject.handle(new GenericEventMessage<>(new EventWithoutProperties()));
+        testSubject.handleSync(new GenericEventMessage<>(new EventWithoutProperties(), new MetaData(metaData)));
+        testSubject.handleSync(new GenericEventMessage<>(new EventWithoutProperties()));
 
         assertEquals(1, testSaga.invocationCount);
     }
@@ -104,9 +104,9 @@ class AnnotatedSagaTest {
     @Test
     void endedAfterInvocationBeanProperty() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
-        testSubject.handle(new GenericEventMessage<>(new Object()));
-        testSubject.handle(new GenericEventMessage<>(new SagaEndEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(new RegularEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(new Object()));
+        testSubject.handleSync(new GenericEventMessage<>(new SagaEndEvent("id")));
 
         assertEquals(2, testSaga.invocationCount);
         assertFalse(testSubject.isActive());
@@ -122,9 +122,9 @@ class AnnotatedSagaTest {
         );
 
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
-        testSubject.handle(new GenericEventMessage<>(new Object()));
-        testSubject.handle(new GenericEventMessage<>(new SagaEndEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(new RegularEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(new Object()));
+        testSubject.handleSync(new GenericEventMessage<>(new SagaEndEvent("id")));
 
         assertEquals(2, testSaga.invocationCount);
         assertFalse(testSubject.isActive());
@@ -133,9 +133,9 @@ class AnnotatedSagaTest {
     @Test
     void endedAfterInvocationUniformAccessPrinciple() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handle(new GenericEventMessage<>(new UniformAccessEvent("id")));
-        testSubject.handle(new GenericEventMessage<>(new Object()));
-        testSubject.handle(new GenericEventMessage<>(new SagaEndEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(new UniformAccessEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(new Object()));
+        testSubject.handleSync(new GenericEventMessage<>(new SagaEndEvent("id")));
 
         assertEquals(2, testSaga.invocationCount);
         assertFalse(testSubject.isActive());
@@ -145,14 +145,14 @@ class AnnotatedSagaTest {
     void prepareResetThrowsResetNotSupportedException() {
         AnnotatedSaga<StubAnnotatedSaga> spiedTestSubject = spy(testSubject);
 
-        assertThrows(ResetNotSupportedException.class, spiedTestSubject::prepareReset);
+        assertThrows(ResetNotSupportedException.class, () -> spiedTestSubject.prepareReset(null));
 
-        verify(spiedTestSubject).prepareReset(null);
+        verify(spiedTestSubject).prepareReset(null, null);
     }
 
     @Test
     void prepareResetWithResetContextThrowsResetNotSupportedException() {
-        assertThrows(ResetNotSupportedException.class, () -> testSubject.prepareReset("some-reset-context"));
+        assertThrows(ResetNotSupportedException.class, () -> testSubject.prepareReset("some-reset-context", null));
     }
 
     @Test

@@ -286,7 +286,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
 
         @SuppressWarnings("rawtypes")
         @Override
-        public Object handle(EventMessage event) {
+        public Object handleSync(EventMessage event) {
             GenericDomainEventMessage e = (GenericDomainEventMessage) event;
             String str = String.format("%d - %s(%s) ID %s %s", //
                                        e.getSequenceNumber(), //
@@ -381,7 +381,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         }
 
         @Override
-        public Object handle(EventMessage<?> event) {
+        public Object handleSync(EventMessage<?> event) {
             Object payload = event.getPayload();
 
             if (previousToken == null && payload instanceof AggregateCreatedEvent) {

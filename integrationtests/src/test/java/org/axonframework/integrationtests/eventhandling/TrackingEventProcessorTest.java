@@ -296,7 +296,7 @@ class TrackingEventProcessorTest {
             countDownLatch.countDown();
             assertTrue(cnt <= expectedEventCount);
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         testSubject.start();
 
@@ -318,7 +318,7 @@ class TrackingEventProcessorTest {
         doAnswer(invocation -> {
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
         testSubject.start();
         // Give it a bit of time to start
         Thread.sleep(200);
@@ -339,7 +339,7 @@ class TrackingEventProcessorTest {
             spanFactory.verifySpanActive("StreamingEventProcessor.process", message);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
         testSubject.start();
         // Give it a bit of time to start
         Thread.sleep(200);
@@ -383,7 +383,7 @@ class TrackingEventProcessorTest {
                 throw new MockException("Simulating issues");
             }
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
         int segmentId = 0;
 
         testSubject.start();
@@ -421,7 +421,7 @@ class TrackingEventProcessorTest {
             counterAtHandle.set(counter.get());
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
         testSubject.start();
         // Give it a bit of time to start
         Thread.sleep(200);
@@ -451,7 +451,7 @@ class TrackingEventProcessorTest {
         doAnswer(invocation -> {
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         doThrow(new RuntimeException("Faking a recoverable issue"))
                 .doCallRealMethod()
@@ -473,7 +473,7 @@ class TrackingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         eventBus.publish(createEvent());
         testSubject.start();
@@ -513,7 +513,7 @@ class TrackingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         testSubject.start();
         eventBus.publish(createEvents(2));
@@ -557,7 +557,7 @@ class TrackingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         testSubject.start();
         eventBus.publish(createEvents(2));
@@ -601,7 +601,7 @@ class TrackingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         testSubject.start();
         eventBus.publish(createEvents(2));
@@ -637,7 +637,7 @@ class TrackingEventProcessorTest {
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             Thread.sleep(50);
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         testSubject.start();
 
@@ -662,12 +662,12 @@ class TrackingEventProcessorTest {
             unitOfWork.onCommit(uow -> {
                 throw new MockException();
             });
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         testSubject.start();
 
@@ -697,7 +697,7 @@ class TrackingEventProcessorTest {
             acknowledgedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -722,7 +722,7 @@ class TrackingEventProcessorTest {
             acknowledgedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
         testSubject.start();
 
         eventBus.publish(createEvents(2));
@@ -742,7 +742,7 @@ class TrackingEventProcessorTest {
             acknowledgedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch2.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         eventBus.publish(createEvents(2));
 
@@ -769,7 +769,7 @@ class TrackingEventProcessorTest {
             acknowledgedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -808,7 +808,7 @@ class TrackingEventProcessorTest {
             acknowledgedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -845,12 +845,12 @@ class TrackingEventProcessorTest {
                     throw new MockException();
                 }
             });
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         testSubject.start();
         // Give it a bit of time to start
@@ -887,7 +887,7 @@ class TrackingEventProcessorTest {
                     throw new MockException();
                 }
             });
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
 
         CountDownLatch countDownLatch = new CountDownLatch(2);
@@ -895,7 +895,7 @@ class TrackingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
 
         testSubject.start();
@@ -924,7 +924,7 @@ class TrackingEventProcessorTest {
             }
             handled.add(message.getIdentifier());
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         testSubject.start();
         awaitProcessorStarted();
@@ -977,8 +977,8 @@ class TrackingEventProcessorTest {
                 testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
         ));
 
-        verify(eventHandlerInvoker, times(1)).performReset(one);
-        verify(eventHandlerInvoker, times(1)).performReset(two);
+        verify(eventHandlerInvoker, times(1)).performReset(one, null);
+        verify(eventHandlerInvoker, times(1)).performReset(two, null);
     }
 
     @Test
@@ -993,7 +993,7 @@ class TrackingEventProcessorTest {
             EventMessage<?> message = i.getArgument(0);
             handled.add(message.getIdentifier());
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         eventBus.publish(createEvents(4));
         testSubject.start();
@@ -1003,7 +1003,7 @@ class TrackingEventProcessorTest {
         testSubject.resetTokens(resetContext);
         testSubject.start();
 
-        verify(eventHandlerInvoker).performReset(resetContext);
+        verify(eventHandlerInvoker).performReset(resetContext, null);
     }
 
     @Test
@@ -1021,7 +1021,7 @@ class TrackingEventProcessorTest {
             }
             handled.add(message.getIdentifier());
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         testSubject.start();
         awaitProcessorStarted();
@@ -1063,7 +1063,7 @@ class TrackingEventProcessorTest {
                 testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
         ));
 
-        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD, null);
     }
 
     @Test
@@ -1107,7 +1107,7 @@ class TrackingEventProcessorTest {
             }
             handled.add(message.getIdentifier());
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         eventBus.publish(createEvents(4));
         testSubject.start();
@@ -1138,7 +1138,7 @@ class TrackingEventProcessorTest {
                 testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
         ));
 
-        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD, null);
     }
 
     @Test
@@ -1155,7 +1155,7 @@ class TrackingEventProcessorTest {
             }
             handled.add(message.getIdentifier());
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         testSubject.resetTokens();
         testSubject.start();
@@ -1177,7 +1177,7 @@ class TrackingEventProcessorTest {
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent());
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > 0);
 
-        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD, null);
     }
 
     private void awaitProcessorStarted() {
@@ -1207,7 +1207,7 @@ class TrackingEventProcessorTest {
         doAnswer(i -> {
             firstRun.add(i.<TrackedEventMessage<?>>getArgument(0).trackingToken());
             return null;
-        }).when(eventHandlerInvoker).handle(any(), any());
+        }).when(eventHandlerInvoker).handle(any(), any(), any());
 
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, firstRun.size()));
@@ -1216,7 +1216,7 @@ class TrackingEventProcessorTest {
         doAnswer(i -> {
             replayRun.add(i.<TrackedEventMessage<?>>getArgument(0).trackingToken());
             return null;
-        }).when(eventHandlerInvoker).handle(any(), any());
+        }).when(eventHandlerInvoker).handle(any(), any(), any());
 
         testSubject.resetTokens();
         testSubject.start();
@@ -1227,7 +1227,7 @@ class TrackingEventProcessorTest {
         assertTrue(replayRun.get(5) instanceof ReplayToken);
         assertEquals(GapAwareTrackingToken.newInstance(6, emptySortedSet()), replayRun.get(6));
 
-        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD, null);
     }
 
     @Test
@@ -1270,7 +1270,7 @@ class TrackingEventProcessorTest {
         doAnswer(i -> {
             count.incrementAndGet();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         eventBus.publish(createEvents(4));
         testSubject.start();
@@ -1400,7 +1400,7 @@ class TrackingEventProcessorTest {
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         int segmentId = 0;
 
-        when(mockHandler.handle(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
+        when(mockHandler.handleSync(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
 
         publishEvents(10);
 
@@ -1447,7 +1447,7 @@ class TrackingEventProcessorTest {
         for (int i = 0; i < 10; i++) {
             events.add(createEvent(UUID.randomUUID().toString(), 0));
         }
-        when(mockHandler.handle(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
+        when(mockHandler.handleSync(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
         eventBus.publish(events);
         testSubject.start();
         waitForActiveThreads(2);
@@ -1477,7 +1477,7 @@ class TrackingEventProcessorTest {
         tokenStore.initializeTokenSegments(testSubject.getName(), 1);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         int segmentId = 0;
-        when(mockHandler.handle(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
+        when(mockHandler.handleSync(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
 
         publishEvents(10);
 
@@ -1535,7 +1535,7 @@ class TrackingEventProcessorTest {
         );
 
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
-        when(mockHandler.handle(any())).thenAnswer(i -> {
+        when(mockHandler.handleSync(any())).thenAnswer(i -> {
             TrackedEventMessage<?> message = i.getArgument(0);
             return handledEvents.add(message);
         });
@@ -1584,7 +1584,7 @@ class TrackingEventProcessorTest {
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         List<EventMessage<?>> replayedEvents = new CopyOnWriteArrayList<>();
         int segmentId = 0;
-        when(mockHandler.handle(any())).thenAnswer(i -> {
+        when(mockHandler.handleSync(any())).thenAnswer(i -> {
             TrackedEventMessage<?> message = i.getArgument(0);
             if (ReplayToken.isReplay(message)) {
                 replayedEvents.add(message);
@@ -1640,7 +1640,7 @@ class TrackingEventProcessorTest {
 
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
-        when(mockHandler.handle(any())).thenAnswer(i -> {
+        when(mockHandler.handleSync(any())).thenAnswer(i -> {
             TrackedEventMessage<?> message = i.getArgument(0);
             if (ReplayToken.isReplay(message)) {
                 // Ignore replays
@@ -1826,7 +1826,7 @@ class TrackingEventProcessorTest {
         doAnswer(invocation -> {
             eventHandlingLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         CountDownLatch statusChangeLatch = new CountDownLatch(2);
         AtomicInteger addedStatusCounter = new AtomicInteger(0);
@@ -1881,7 +1881,7 @@ class TrackingEventProcessorTest {
         doAnswer(invocation -> {
             eventHandlingLatch.countDown();
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         CountDownLatch statusChangeLatch = new CountDownLatch(4);
         AtomicInteger addedStatusCounter = new AtomicInteger(0);
@@ -2045,7 +2045,7 @@ class TrackingEventProcessorTest {
             cdl.countDown();
             Thread.sleep(100);
             return i.callRealMethod();
-        }).when(eventHandlerInvoker).handle(any(), any());
+        }).when(eventHandlerInvoker).handle(any(), any(), any());
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
 
@@ -2077,7 +2077,7 @@ class TrackingEventProcessorTest {
             handled.add(message.getIdentifier());
             Thread.sleep(delay.get());
             return null;
-        }).when(mockHandler).handle(any());
+        }).when(mockHandler).handleSync(any());
 
         testSubject.start();
         awaitProcessorStarted();
@@ -2180,7 +2180,7 @@ class TrackingEventProcessorTest {
         //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         eventBus.publish(createEvent(0));
         eventBus.publish(createEvent(1));
@@ -2201,7 +2201,7 @@ class TrackingEventProcessorTest {
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> started.countDown());
             unitOfWork.onCleanup(uow -> finished.countDown());
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }));
         eventBus.publish(createEvent(0));
 

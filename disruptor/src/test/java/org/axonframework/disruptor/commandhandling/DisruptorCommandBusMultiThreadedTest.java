@@ -292,7 +292,7 @@ class DisruptorCommandBusMultiThreadedTest {
         }
     }
 
-    private static class StubHandler implements MessageHandler<CommandMessage<?>> {
+    private static class StubHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         private Repository<StubAggregate> repository;
 
@@ -300,7 +300,7 @@ class DisruptorCommandBusMultiThreadedTest {
         }
 
         @Override
-        public Object handle(CommandMessage<?> command) throws Exception {
+        public Object handleSync(CommandMessage<?> command) throws Exception {
             StubCommand payload = (StubCommand) command.getPayload();
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();

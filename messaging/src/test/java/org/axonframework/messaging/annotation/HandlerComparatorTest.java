@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -148,7 +149,7 @@ class HandlerComparatorTest {
             implements MessageHandlingMember<Object> {
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message) {
+        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
@@ -159,7 +160,7 @@ class HandlerComparatorTest {
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, Object target) {
+        public Object handleSync(@Nonnull Message<?> message, Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
@@ -186,7 +187,7 @@ class HandlerComparatorTest {
             implements MessageHandlingMember<Object> {
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message) {
+        public boolean canHandle(@Nonnull Message<?> message, ProcessingContext processingContext) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
@@ -197,7 +198,7 @@ class HandlerComparatorTest {
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, Object target) {
+        public Object handleSync(@Nonnull Message<?> message, Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
