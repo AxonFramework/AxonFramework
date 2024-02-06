@@ -23,17 +23,7 @@ package org.axonframework.common;
  * @since 3.0
  */
 @FunctionalInterface
-public interface Registration extends AutoCloseable {
-
-    /**
-     * Cancels this Registration. By default this simply calls {@link #cancel()}.
-     * <p/>
-     * {@inheritDoc}
-     */
-    @Override
-    default void close() {
-        cancel();
-    }
+public interface Registration {
 
     /**
      * Cancels this Registration. If the Registration was already cancelled, no action is taken.

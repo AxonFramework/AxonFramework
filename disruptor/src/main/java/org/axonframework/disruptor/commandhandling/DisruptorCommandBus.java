@@ -275,13 +275,13 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public <C, R> CompletableFuture<CommandResultMessage<R>> dispatch(@Nonnull CommandMessage<C> command,
-                                                                      @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         Assert.state(started, () -> "CommandBus has been shut down. It is not accepting any Commands");
-        CommandMessage<? extends C> commandToDispatch = command;
-        CompletableFuture<CommandResultMessage<R>> result = new CompletableFuture<>();
+        CommandMessage<?> commandToDispatch = command;
+        CompletableFuture<CommandResultMessage<?>> result = new CompletableFuture<>();
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
-            commandToDispatch = (CommandMessage<? extends C>) interceptor.handle(commandToDispatch);
+            commandToDispatch = (CommandMessage<?>) interceptor.handle(commandToDispatch);
         }
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(commandToDispatch);
 

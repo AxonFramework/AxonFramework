@@ -49,8 +49,8 @@ public class RecordingCommandBus implements CommandBus {
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override
-    public <C, R> CompletableFuture<CommandResultMessage<R>> dispatch(@Nonnull CommandMessage<C> command,
-                                                                      @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         dispatchedCommands.add(command);
         CompletableFuture<Object> result = new CompletableFuture<>();
         try {
@@ -98,10 +98,9 @@ public class RecordingCommandBus implements CommandBus {
      *
      * @param commandName    The name of the command to verify the subscription for
      * @param commandHandler The command handler to verify the subscription for
-     * @param <C>            The type of command to verify the subscription for
      * @return {@code true} if the handler is subscribed, otherwise {@code false}.
      */
-    public <C> boolean isSubscribed(String commandName, MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> commandHandler) {
+    public boolean isSubscribed(String commandName, MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> commandHandler) {
         return subscriptions.containsKey(commandName) && subscriptions.get(commandName).equals(commandHandler);
     }
 

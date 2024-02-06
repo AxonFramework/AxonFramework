@@ -107,15 +107,12 @@ class SimpleQueryBusTest {
 
         MessageHandlerInterceptor<QueryMessage<?, ?>> correlationDataInterceptor =
                 new CorrelationDataInterceptor<>(new MessageOriginProvider(CORRELATION_ID, TRACE_ID));
-        //noinspection resource
         testSubject.registerHandlerInterceptor(correlationDataInterceptor);
     }
 
     @Test
     public void handlerInterceptorThrowsException() throws ExecutionException, InterruptedException {
-        //noinspection resource
         testSubject.subscribe("test", String.class, q -> q.getPayload().toString());
-        //noinspection resource
         testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             throw new RuntimeException("Faking");
         });
@@ -130,19 +127,16 @@ class SimpleQueryBusTest {
 
     @Test
     void subscribe() {
-        //noinspection resource
         testSubject.subscribe("test", String.class, Message::getPayload);
 
         assertEquals(1, testSubject.getSubscriptions().size());
         assertEquals(1, testSubject.getSubscriptions().values().iterator().next().size());
 
-        //noinspection resource
         testSubject.subscribe("test", String.class, (q) -> "aa" + q.getPayload());
 
         assertEquals(1, testSubject.getSubscriptions().size());
         assertEquals(2, testSubject.getSubscriptions().values().iterator().next().size());
 
-        //noinspection resource
         testSubject.subscribe("test2", String.class, (q) -> "aa" + q.getPayload());
 
         assertEquals(2, testSubject.getSubscriptions().size());
@@ -155,9 +149,7 @@ class SimpleQueryBusTest {
             invocationCount.incrementAndGet();
             return "reply";
         };
-        //noinspection resource
         Registration subscription = testSubject.subscribe("test", String.class, handler);
-        //noinspection resource
         testSubject.subscribe("test", String.class, handler);
 
         QueryMessage<String, String> testQueryMessage =
@@ -181,9 +173,7 @@ class SimpleQueryBusTest {
                                     .build();
         MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>> handlerOne = message -> "reply";
         MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>> handlerTwo = message -> "reply";
-        //noinspection resource
         testSubject.subscribe("test", String.class, handlerOne);
-        //noinspection resource
         assertThrows(DuplicateQueryHandlerSubscriptionException.class,
                      () -> testSubject.subscribe("test", String.class, handlerTwo));
     }
@@ -194,7 +184,6 @@ class SimpleQueryBusTest {
      */
     @Test
     void queryResultContainsCorrelationData() throws Exception {
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse)
@@ -211,7 +200,6 @@ class SimpleQueryBusTest {
 
     @Test
     void nullResponseProperlyReturned() throws ExecutionException, InterruptedException {
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, p -> null);
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse)
                 .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
@@ -235,7 +223,6 @@ class SimpleQueryBusTest {
                                     .transactionManager(mockTxManager)
                                     .build();
 
-        //noinspection resource
         testSubject.subscribe(String.class.getName(),
                               methodOf(this.getClass(), "stringListQueryHandler").getGenericReturnType(),
                               q -> asList(q.getPayload() + "1234", q.getPayload() + "567"));
@@ -267,7 +254,6 @@ class SimpleQueryBusTest {
                                     .transactionManager(mockTxManager)
                                     .build();
 
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
@@ -282,7 +268,6 @@ class SimpleQueryBusTest {
     @Test
     void querySingleIsTraced() throws ExecutionException, InterruptedException {
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
             spanFactory.verifySpanActive("QueryBus.query", testQueryMessage);
             return q.getPayload() + "1234";
@@ -298,13 +283,11 @@ class SimpleQueryBusTest {
         QueryMessage<String, List<String>> testQueryMessage =
                 new GenericQueryMessage<>("hello", multipleStringResponse);
 
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
             spanFactory.verifySpanActive("QueryBus.scatterGatherQuery", testQueryMessage);
             spanFactory.verifySpanActive("QueryBus.scatterGatherQuery-0");
             return q.getPayload() + "1234";
         });
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
             spanFactory.verifySpanActive("QueryBus.scatterGatherQuery", testQueryMessage);
             spanFactory.verifySpanActive("QueryBus.scatterGatherQuery-1");
@@ -322,7 +305,6 @@ class SimpleQueryBusTest {
 
     @Test
     void queryListWithSingleHandlerReturnsSingleAsList() throws Exception {
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
 
         QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello",
@@ -337,9 +319,7 @@ class SimpleQueryBusTest {
 
     @Test
     void queryListWithBothSingleHandlerAndListHandlerReturnsListResult() throws Exception {
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String[].class, (q) -> Arrays.asList(
                 q.getPayload() + "1234", q.getPayload() + "5678"
         ));
@@ -365,11 +345,9 @@ class SimpleQueryBusTest {
             invocationCount.incrementAndGet();
             return "reply";
         };
-        //noinspection resource
         testSubject.subscribe("query", String.class, failingHandler);
-        //noinspection FunctionalExpressionCanBeFolded,Convert2MethodRef,Convert2MethodRef,resource
+        //noinspection FunctionalExpressionCanBeFolded,Convert2MethodRef,Convert2MethodRef
         testSubject.subscribe("query", String.class, message -> failingHandler.handleSync(message));
-        //noinspection resource
         testSubject.subscribe("query", String.class, passingHandler);
 
         QueryMessage<String, String> testQueryMessage =
@@ -384,7 +362,6 @@ class SimpleQueryBusTest {
 
     @Test
     void queryWithOnlyUnsuitableResultsInException() throws Exception {
-        //noinspection resource
         testSubject.subscribe("query", String.class, message -> {
             throw new NoHandlerForQueryException("Mock");
         });
@@ -404,7 +381,6 @@ class SimpleQueryBusTest {
     void queryReturnsResponseMessageFromHandlerAsIs() throws Exception {
         GenericQueryResponseMessage<String> soleResult =
                 new GenericQueryResponseMessage<>("soleResult");
-        //noinspection resource
         testSubject.subscribe("query", String.class, message -> soleResult);
 
         QueryMessage<String, String> testQueryMessage =
@@ -433,7 +409,6 @@ class SimpleQueryBusTest {
         MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>> failingHandler = message -> {
             throw new MockException("Mock");
         };
-        //noinspection resource
         testSubject.subscribe("query", String.class, failingHandler);
 
         QueryMessage<String, String> testQueryMessage =
@@ -449,18 +424,15 @@ class SimpleQueryBusTest {
 
     @Test
     void queryWithInterceptors() throws Exception {
-        //noinspection resource
         testSubject.registerDispatchInterceptor(
                 messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value"))
         );
-        //noinspection resource
         testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
                 return "fakeReply";
             }
             return interceptorChain.proceedSync();
         });
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
@@ -472,9 +444,8 @@ class SimpleQueryBusTest {
 
     @Test
     void queryDoesNotArriveAtUnsubscribedHandler() throws Exception {
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> "1234");
-        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + " is not here!").close();
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + " is not here!").cancel();
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
         CompletableFuture<String> result = testSubject.query(testQueryMessage)
@@ -486,7 +457,6 @@ class SimpleQueryBusTest {
     @Test
     void queryReturnsException() throws Exception {
         MockException mockException = new MockException();
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
             throw mockException;
         });
@@ -517,8 +487,8 @@ class SimpleQueryBusTest {
 
     @Test
     void queryUnsubscribedHandlers() throws Exception {
-        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + " is not here!").close();
-        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + " is not here!").close();
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + " is not here!").cancel();
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + " is not here!").cancel();
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
         CompletableFuture<?> result = testSubject.query(testQueryMessage);
@@ -537,11 +507,8 @@ class SimpleQueryBusTest {
     void scatterGather() {
         int expectedResults = 3;
 
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, q -> q.getPayload() + "1234");
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, q -> q.getPayload() + "5678");
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, q -> q.getPayload() + "90");
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("Hello, World", singleStringResponse);
@@ -560,15 +527,12 @@ class SimpleQueryBusTest {
         int expectedQueryResponses = 3;
         int expectedResults = 6;
 
-        //noinspection resource
         testSubject.subscribe(String.class.getName(),
                               methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
                               q -> new String[]{q.getPayload() + "12", q.getPayload() + "34"});
-        //noinspection resource
         testSubject.subscribe(String.class.getName(),
                               methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
                               q -> new String[]{q.getPayload() + "56", q.getPayload() + "78"});
-        //noinspection resource
         testSubject.subscribe(String.class.getName(),
                               methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
                               q -> new String[]{q.getPayload() + "9", q.getPayload() + "0"});
@@ -606,9 +570,7 @@ class SimpleQueryBusTest {
                                     .duplicateQueryHandlerResolver(silentlyAdd())
                                     .build();
 
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("Hello, World", singleStringResponse);
@@ -633,9 +595,7 @@ class SimpleQueryBusTest {
                                     .duplicateQueryHandlerResolver(silentlyAdd())
                                     .build();
 
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
             throw new MockException();
         });
@@ -664,9 +624,7 @@ class SimpleQueryBusTest {
                                     .duplicateQueryHandlerResolver(silentlyAdd())
                                     .build();
 
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("Hello, World", singleStringResponse);
@@ -682,20 +640,16 @@ class SimpleQueryBusTest {
 
     @Test
     void scatterGatherWithInterceptors() {
-        //noinspection resource
         testSubject.registerDispatchInterceptor(
                 messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value"))
         );
-        //noinspection resource
         testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
                 return "fakeReply";
             }
             return interceptorChain.proceedSync();
         });
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("Hello, World", singleStringResponse);
@@ -721,9 +675,7 @@ class SimpleQueryBusTest {
 
     @Test
     void scatterGatherReportsExceptionsWithErrorHandler() {
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
             throw new MockException();
         });
@@ -740,9 +692,7 @@ class SimpleQueryBusTest {
 
     @Test
     void queryResponseMessageCorrelationData() throws ExecutionException, InterruptedException {
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
-        //noinspection resource
         testSubject.registerHandlerInterceptor(new CorrelationDataInterceptor<>(new MessageOriginProvider()));
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("Hello, World", singleStringResponse);
         QueryResponseMessage<String> queryResponseMessage = testSubject.query(testQueryMessage).get();
@@ -753,12 +703,10 @@ class SimpleQueryBusTest {
 
     @Test
     void subscriptionQueryReportsExceptionInInitialResult() {
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, q -> {
             throw new MockException();
         });
 
-        //noinspection resource
         SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> result = testSubject
                 .subscriptionQuery(new GenericSubscriptionQueryMessage<>("test",
                                                                          ResponseTypes.instanceOf(String.class),
@@ -777,7 +725,6 @@ class SimpleQueryBusTest {
         CountDownLatch hundred = new CountDownLatch(1);
         CountDownLatch thousand = new CountDownLatch(1);
         final AtomicLong value = new AtomicLong();
-        //noinspection resource
         testSubject.subscribe("queryName", Long.class, q -> value.get());
         QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
         Disposable disposable = Flux.interval(Duration.ofMillis(0), Duration.ofMillis(3))
@@ -798,7 +745,6 @@ class SimpleQueryBusTest {
                                     .subscribe();
 
 
-        //noinspection resource
         SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result = testSubject
                 .subscriptionQuery(new GenericSubscriptionQueryMessage<>("test",
                                                                          "queryName",
@@ -820,7 +766,6 @@ class SimpleQueryBusTest {
     void subscriptionQueryIsTraced() throws InterruptedException {
         CountDownLatch updatedLatch = new CountDownLatch(2);
         final AtomicLong value = new AtomicLong();
-        //noinspection resource
         testSubject.subscribe("queryName", Long.class, q -> value.get());
         QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
         Disposable disposable = Flux.interval(Duration.ofMillis(0), Duration.ofMillis(20))
@@ -833,7 +778,6 @@ class SimpleQueryBusTest {
 
 
         try {
-            //noinspection resource
             SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result = testSubject
                     .subscriptionQuery(new GenericSubscriptionQueryMessage<>("test",
                                                                              "queryName",
@@ -852,7 +796,6 @@ class SimpleQueryBusTest {
 
     @Test
     void queryReportsExceptionInResponseMessage() throws ExecutionException, InterruptedException {
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, q -> {
             throw new MockException();
         });
@@ -868,7 +811,6 @@ class SimpleQueryBusTest {
     @Test
     void queryHandlerDeclaresFutureResponseType() throws Exception {
         Type responseType = ReflectionUtils.methodOf(getClass(), "futureMethod").getGenericReturnType();
-        //noinspection resource
         testSubject.subscribe(String.class.getName(),
                               responseType,
                               (q) -> CompletableFuture.completedFuture(q.getPayload() + "1234"));
@@ -883,7 +825,6 @@ class SimpleQueryBusTest {
     @Test
     void queryHandlerDeclaresCompletableFutureResponseType() throws Exception {
         Type responseType = ReflectionUtils.methodOf(getClass(), "completableFutureMethod").getGenericReturnType();
-        //noinspection resource
         testSubject.subscribe(String.class.getName(),
                               responseType,
                               (q) -> CompletableFuture.completedFuture(q.getPayload() + "1234"));
@@ -897,14 +838,12 @@ class SimpleQueryBusTest {
 
     @Test
     void onSubscriptionQueryCancelTheActiveSubscriptionIsRemovedFromTheEmitterIfFluxIsNotSubscribed() {
-        //noinspection resource
         testSubject.subscribe(String.class.getName(), String.class, q -> q.getPayload() + "1234");
 
         SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 "test", ResponseTypes.instanceOf(String.class), ResponseTypes.instanceOf(String.class)
         );
 
-        //noinspection resource
         SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> result =
                 testSubject.subscriptionQuery(testQuery);
 

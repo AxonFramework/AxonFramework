@@ -101,11 +101,11 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public <C, R> CompletableFuture<CommandResultMessage<R>> dispatch(@Nonnull CommandMessage<C> command,
-                                                                      @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<? extends CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                                         @Nullable ProcessingContext processingContext) {
         Span span = spanFactory.createDispatchCommandSpan(command, false);
         return span.runSupplierAsync(
-                () -> this.<C, R>doDispatch(intercept(command))
+                () -> this.doDispatch(intercept(command))
                           .whenComplete((r, e) -> {
                               if (e != null) {
                                   span.recordException(e);
@@ -135,16 +135,14 @@ public class SimpleCommandBus implements CommandBus {
      * Performs the actual dispatching logic. The dispatch interceptors must have been invoked at this point.
      *
      * @param command The actual command to dispatch to the handler
-     * @param <C>     The type of payload of the command
-     * @param <R>     The type of result expected from the command handler
      */
-    protected <C, R> CompletableFuture<CommandResultMessage<R>> doDispatch(CommandMessage<C> command) {
+    protected CompletableFuture<? extends CommandResultMessage<?>> doDispatch(CommandMessage<?> command) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
 
         Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> optionalHandler = findCommandHandlerFor(
                 command);
         if (optionalHandler.isPresent()) {
-            CommandMessage<C> commandWithContext = spanFactory.propagateContext(command);
+            CommandMessage<?> commandWithContext = spanFactory.propagateContext(command);
             return handle(commandWithContext, optionalHandler.get());
         } else {
             NoHandlerForCommandException exception = new NoHandlerForCommandException(format(
@@ -165,11 +163,9 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param command The actual command to handle
      * @param handler The handler that must be invoked for this command
-     * @param <C>     The type of payload of the command
-     * @param <R>     The type of result expected from the command handler
      */
-    protected <C, R> CompletableFuture<CommandResultMessage<R>> handle(CommandMessage<C> command,
-                                                                       MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+    protected CompletableFuture<? extends CommandResultMessage<?>> handle(CommandMessage<?> command,
+                                                                          MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
         return spanFactory.createHandleCommandSpan(command, false)
                           .runSupplierAsync(() -> {
                               if (logger.isDebugEnabled()) {

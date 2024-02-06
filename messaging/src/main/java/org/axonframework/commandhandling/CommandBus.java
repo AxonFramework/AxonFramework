@@ -17,8 +17,10 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -40,16 +42,12 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
     /**
      * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.
      *
-     * @param <C>               The payload type of the command to dispatch
-     * @param command           The Command to dispatch
-     * @param processingContext The processing context which processing cause this message to be dispatched
-     * @return the result of CommandHandling. The CompletableFuture may complete exceptionally if an exception occurred
-     * during dispatching of the command.
+     * @param command The Command to dispatch
      * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}'s name.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
-    <C, R> CompletableFuture<CommandResultMessage<R>> dispatch(@Nonnull CommandMessage<C> command,
-                                                               @Nullable ProcessingContext processingContext);
+    CompletableFuture<? extends CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                                  @Nullable ProcessingContext processingContext);
 
     /**
      * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name. When the
@@ -72,10 +70,10 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
     @Deprecated
     default <C, R> void dispatch(@Nonnull CommandMessage<C> command,
                                  @Nonnull CommandCallback<? super C, ? super R> callback) {
-        this.<C, R>dispatch(command, ProcessingContext.NONE)
+        this.dispatch(command, ProcessingContext.NONE)
             .whenComplete((r, e) -> {
                 if (e == null) {
-                    callback.onResult(command, r);
+                    callback.onResult(command, (CommandResultMessage<R>) r);
                 } else {
                     callback.onResult(command, GenericCommandResultMessage.asCommandResultMessage(e));
                 }
@@ -93,5 +91,20 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
      * @param handler     The handler instance that handles the given type of command
      * @return a handle to unsubscribe the {@code handler}. When unsubscribed it will no longer receive commands.
      */
-    Registration subscribe(@Nonnull String commandName, @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler);
+    Registration subscribe(@Nonnull String commandName,
+                           @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler);
+
+    @Deprecated
+    @Override
+    default Registration registerDispatchInterceptor(
+            @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+        return () -> true;
+    }
+
+    @Deprecated
+    @Override
+    default Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        return () -> true;
+    }
 }

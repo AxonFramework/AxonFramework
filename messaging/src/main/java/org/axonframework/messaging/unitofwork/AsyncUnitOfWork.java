@@ -311,11 +311,18 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         private CompletableFuture<Void> executeAllPhaseHandlers() {
             if (phaseHandlers.isEmpty()) {
                 // we're done
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             }
-            // execute the next phase and run a new check once that phase is completed
-            return runPhase(phaseHandlers.firstKey())
-                    .thenCompose(r -> executeAllPhaseHandlers());
+            CompletableFuture<Void> nextPhaseResult = runNextPhase().toCompletableFuture();
+            // Avoid stack overflow due to recursion when executed in single thread
+            while (!phaseHandlers.isEmpty() && nextPhaseResult.isDone()) {
+                if (nextPhaseResult.isCompletedExceptionally()) {
+                    return nextPhaseResult;
+                } else {
+                    nextPhaseResult = runNextPhase().toCompletableFuture();
+                }
+            }
+            return nextPhaseResult.thenCompose(r -> executeAllPhaseHandlers());
         }
 
         private void runCompletionHandlers() {
@@ -340,7 +347,11 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
             return CompletableFuture.failedFuture(e);
         }
 
-        private CompletableFuture<Void> runPhase(Phase phase) {
+        private CompletableFuture<Void> runNextPhase() {
+            if (phaseHandlers.isEmpty()) {
+                return FutureUtils.emptyCompletedFuture();
+            }
+            Phase phase = phaseHandlers.firstKey();
             currentPhase.set(phase);
 
             Queue<Function<ProcessingContext, CompletableFuture<?>>> handlers = phaseHandlers.remove(phase);
@@ -351,7 +362,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
             logger.debug("Calling {} handlers in phase {} (seq {}).", handlers.size(), phase, phase.order());
 
             return handlers.stream()
-                           .map(handler -> CompletableFuture.completedFuture(null)
+                           .map(handler -> FutureUtils.emptyCompletedFuture()
                                                             .thenComposeAsync(r -> handler.apply(this), workScheduler)
                                                             .thenAccept(FutureUtils::ignoreResult))
                            .reduce(CompletableFuture::allOf)

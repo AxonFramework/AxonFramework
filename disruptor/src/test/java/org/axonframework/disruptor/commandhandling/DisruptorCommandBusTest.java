@@ -559,8 +559,7 @@ class DisruptorCommandBusTest {
         );
 
         testSubject.stop();
-        assertThrows(IllegalStateException.class, () -> testSubject.dispatch(asCommandMessage(new Object()),
-                                                                             ProcessingContext.NONE));
+        assertThrows(IllegalStateException.class, () -> testSubject.dispatch(asCommandMessage(new Object()), ProcessingContext.NONE));
     }
 
     @Test

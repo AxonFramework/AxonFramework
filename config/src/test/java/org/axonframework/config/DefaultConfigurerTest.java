@@ -124,9 +124,8 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
         config.start();
 
-        CompletableFuture<CommandResultMessage<Object>> result = config.commandBus()
-                                                                       .dispatch(GenericCommandMessage.asCommandMessage(
-                                                                               "test"), ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(EventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
@@ -307,8 +306,8 @@ class DefaultConfigurerTest {
         ).buildConfiguration();
 
         config.start();
-        CompletableFuture<CommandResultMessage<String>> result =
-                config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
@@ -335,9 +334,8 @@ class DefaultConfigurerTest {
                                  .buildConfiguration();
 
         config.start();
-        CompletableFuture<CommandResultMessage<Object>> result = config.commandBus()
-                                                                       .dispatch(GenericCommandMessage.asCommandMessage(
-                                                                               "test"), ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertTrue(config.getModules().stream().anyMatch(m -> m instanceof AggregateConfiguration));
@@ -390,9 +388,8 @@ class DefaultConfigurerTest {
         ).buildConfiguration();
 
         config.start();
-        CompletableFuture<CommandResultMessage<String>> result = config.commandBus()
-                                                                       .dispatch(GenericCommandMessage.asCommandMessage(
-                                                                               "test"), ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
@@ -416,9 +413,8 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
         config.start();
 
-        CompletableFuture<CommandResultMessage<Object>> result = config.commandBus()
-                                                                       .dispatch(GenericCommandMessage.asCommandMessage(
-                                                                               "test"), ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertEquals(1, defaultMonitor.getMessages().size());
         assertEquals(1, commandBusMonitor.getMessages().size());
@@ -461,9 +457,8 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
         config.start();
 
-        CompletableFuture<CommandResultMessage<Object>> result = config.commandBus()
-                                                                       .dispatch(GenericCommandMessage.asCommandMessage(
-                                                                               "test"), ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(CachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
@@ -560,7 +555,7 @@ class DefaultConfigurerTest {
         DomainEventMessage<String> testDomainEvent =
                 new GenericDomainEventMessage<>("StubAggregate", "some-aggregate-id", 0, "some-payload");
         DomainEventData<byte[]> snapshotData =
-                new AbstractSnapshotEventEntry<byte[]>(testDomainEvent, serializer, byte[].class) {
+                new AbstractSnapshotEventEntry<>(testDomainEvent, serializer, byte[].class) {
                 };
         DomainEventData<byte[]> domainEventData = new DomainEventEntry(testDomainEvent, serializer);
         // Firstly snapshot data will be retrieved (and filtered), secondly event data.

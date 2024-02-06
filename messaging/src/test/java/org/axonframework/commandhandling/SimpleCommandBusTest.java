@@ -124,11 +124,10 @@ class SimpleCommandBusTest {
                 return MessageStream.just(GenericCommandResultMessage.asCommandResultMessage(message));
             }
         });
-        CompletableFuture<CommandResultMessage<Object>> actual = testSubject.dispatch(asCommandMessage("Say hi!"),
-                                                                                      ProcessingContext.NONE);
+        var actual = testSubject.dispatch(asCommandMessage("Say hi!"), ProcessingContext.NONE);
         assertTrue(actual.isDone());
         assertFalse(actual.isCompletedExceptionally());
-        CommandResultMessage<Object> actualResult = actual.join();
+        CommandResultMessage<?> actualResult = actual.join();
         assertEquals("Say hi!", actualResult.getPayload());
 
         assertFalse(unitOfWork.get().isError());
@@ -139,15 +138,15 @@ class SimpleCommandBusTest {
     @Test
     void dispatchCommandImplicitUnitOfWorkIsRolledBackOnException() {
         final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
-        testSubject.subscribe(String.class.getName(), new MessageHandler<CommandMessage<?>, CommandResultMessage<?>>() {
+        testSubject.subscribe(String.class.getName(), new MessageHandler<>() {
             @Override
-            public Object handleSync(CommandMessage<?> command) throws Exception {
+            public Object handleSync(CommandMessage<?> command) {
                 throw new RuntimeException();
             }
 
             @Override
             public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                     ProcessingContext processingContext) {
+                                                                 ProcessingContext processingContext) {
                 unitOfWork.set(processingContext);
                 throw new RuntimeException();
             }
@@ -197,7 +196,7 @@ class SimpleCommandBusTest {
     @Test
     void dispatchCommandNoHandlerSubscribed() {
         CommandMessage<Object> command = asCommandMessage("test");
-        CompletableFuture<CommandResultMessage<Object>> result = testSubject.dispatch(command, ProcessingContext.NONE);
+        var result = testSubject.dispatch(command, ProcessingContext.NONE);
 
         assertTrue(result.isCompletedExceptionally());
         CompletionException actualException = assertThrows(CompletionException.class, result::join);
@@ -215,10 +214,9 @@ class SimpleCommandBusTest {
     void dispatchCommandHandlerUnsubscribed() {
         MyStringCommandHandler commandHandler = new MyStringCommandHandler();
         Registration subscription = testSubject.subscribe(String.class.getName(), commandHandler);
-        subscription.close();
+        subscription.cancel();
         CommandMessage<Object> command = asCommandMessage("Say hi!");
-        CompletableFuture<CommandResultMessage<Object>> actual = testSubject.dispatch(command,
-                                                                                      ProcessingContext.NONE);
+        var actual = testSubject.dispatch(command, ProcessingContext.NONE);
 
         assertTrue(actual.isCompletedExceptionally());
         CompletionException actualException = assertThrows(CompletionException.class, actual::get);
@@ -478,7 +476,7 @@ class SimpleCommandBusTest {
 
         @Override
         public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                 ProcessingContext processingContext) {
+                                                             ProcessingContext processingContext) {
             return MessageStream.fromFuture(result.thenApply(GenericCommandResultMessage::asCommandResultMessage));
         }
     }

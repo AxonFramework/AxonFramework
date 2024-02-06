@@ -155,10 +155,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     }
 
     @Override
-    public <C, R> CompletableFuture<CommandResultMessage<R>> dispatch(@Nonnull CommandMessage<C> commandMessage,
-                                                                      @Nullable ProcessingContext processingContext) {
-        CompletableFuture<CommandResultMessage<R>> result = new CompletableFuture<>();
-        doDispatch(dispatchInterceptors.intercept(commandMessage), (c, r) -> result.complete((CommandResultMessage<R>) r));
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> commandMessage,
+                                                               @Nullable ProcessingContext processingContext) {
+        CompletableFuture<CommandResultMessage<?>> result = new CompletableFuture<>();
+        doDispatch(dispatchInterceptors.intercept(commandMessage), (c, r) -> result.complete(r));
         return result;
     }
 

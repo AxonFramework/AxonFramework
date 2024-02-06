@@ -17,6 +17,7 @@
 package org.axonframework.common;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 
 /**
  * TODO Add/enhance documentation as described in #2966.
@@ -45,5 +46,15 @@ public abstract class FutureUtils {
 
     public static <T> CompletableFuture<T> emptyCompletedFuture() {
         return CompletableFuture.completedFuture(null);
+    }
+
+    public static <T> BiConsumer<T, Throwable> alsoComplete(CompletableFuture<T> future) {
+        return (r, e) -> {
+            if (e == null) {
+                future.complete(r);
+            } else {
+                future.completeExceptionally(e);
+            }
+        };
     }
 }

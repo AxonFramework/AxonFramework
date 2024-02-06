@@ -5,6 +5,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -64,5 +65,38 @@ class AsyncUnitOfWorkTest extends ProcessingLifecycleTest<AsyncUnitOfWork> {
         CompletionException actualException = assertThrows(CompletionException.class, actual::join);
         assertInstanceOf(MockException.class, actualException.getCause());
         assertEquals("CompletionResult", actualException.getCause().getMessage());
+    }
+
+    @Test
+    void executeWithExtremeNumberOfPhaseHandlers() {
+        AsyncUnitOfWork testSubject = createTestSubject();
+        AtomicInteger phaseNr = new AtomicInteger(-10000);
+        testSubject.runOn(new CustomPhase(phaseNr.getAndIncrement()), p -> registerNextPhase(p, phaseNr));
+
+        CompletableFuture<Void> execute = testSubject.execute();
+        assertTrue(execute.isDone());
+        execute.join();
+        assertFalse(execute.isCompletedExceptionally());
+    }
+
+    private void registerNextPhase(ProcessingContext processingContext, AtomicInteger phase) {
+        int next = phase.getAndIncrement();
+        if (next < 10000) {
+            processingContext.runOn(new CustomPhase(next), p -> registerNextPhase(p, phase));
+        }
+    }
+
+    private class CustomPhase implements ProcessingLifecycle.Phase {
+
+        private final int order;
+
+        public CustomPhase(int order) {
+            this.order = order;
+        }
+
+        @Override
+        public int order() {
+            return order;
+        }
     }
 }

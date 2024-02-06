@@ -32,10 +32,10 @@ public class AxonServerRegistration implements Registration {
 
     /**
      * Instantiate an {@link AxonServerRegistration}, which wraps the given {@code wrappedRegistration} and runs the
-     * provided {@code closeCallback} on a {@link #close()} and {@link #cancel()} call
+     * provided {@code closeCallback} on {@link #cancel()} call
      *
      * @param wrappedRegistration the {@link Registration} wrapped by this Axon Server specific registration
-     * @param closeCallback       a {@link Runnable} executed on a {@link #close()} and {@link #cancel()} call
+     * @param closeCallback       a {@link Runnable} executed on a {@link #cancel()} call
      */
     public AxonServerRegistration(Registration wrappedRegistration, Runnable closeCallback) {
         this.wrappedRegistration = wrappedRegistration;

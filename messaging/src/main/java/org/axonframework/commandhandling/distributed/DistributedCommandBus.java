@@ -145,15 +145,15 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     }
 
     @Override
-    public <C, R> CompletableFuture<CommandResultMessage<R>> dispatch(@Nonnull CommandMessage<C> command,
-                                                                      @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         logger.debug("Dispatch command [{}] with callback", command.getCommandName());
 
-        CommandMessage<? extends C> interceptedCommand = intercept(command);
+        CommandMessage<?> interceptedCommand = intercept(command);
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
         Optional<Member> optionalDestination = commandRouter.findDestination(interceptedCommand);
         Span span = spanFactory.createDispatchCommandSpan(command, true).start();
-        CompletableFuture<CommandResultMessage<R>> result = new CompletableFuture<CommandResultMessage<R>>()
+        CompletableFuture<CommandResultMessage<?>> result = new CompletableFuture<CommandResultMessage<?>>()
                 .whenComplete((r, e) -> {
                     if (e == null) {
                         messageMonitorCallback.reportSuccess();
@@ -183,11 +183,10 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
         return result;
     }
 
-    @SuppressWarnings("unchecked")
-    private <C> CommandMessage<? extends C> intercept(CommandMessage<C> command) {
-        CommandMessage<? extends C> interceptedCommand = command;
+    private CommandMessage<?> intercept(CommandMessage<?> command) {
+        CommandMessage<?> interceptedCommand = command;
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
-            interceptedCommand = (CommandMessage<? extends C>) interceptor.handle(interceptedCommand);
+            interceptedCommand = (CommandMessage<?>) interceptor.handle(interceptedCommand);
         }
         return interceptedCommand;
     }
@@ -200,7 +199,9 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     @Override
     public Registration subscribe(@Nonnull String commandName,
                                   @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
-        logger.debug("Subscribing command with name [{}] to this distributed CommandBus. Expect similar logging on the local segment.", commandName);
+        logger.debug(
+                "Subscribing command with name [{}] to this distributed CommandBus. Expect similar logging on the local segment.",
+                commandName);
         Registration reg = connector.subscribe(commandName, handler);
         updateFilter(commandFilter.get().or(new CommandNameFilter(commandName)));
 
@@ -323,8 +324,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
 
         /**
          * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
-         * {@link CommandBus#dispatch(CommandMessage, ProcessingContext)}. Defaults to using a logging callback, which requests the connectors to use
-         * a fire-and-forget strategy for dispatching event.
+         * {@link CommandBus#dispatch(CommandMessage, ProcessingContext)}. Defaults to using a logging callback, which
+         * requests the connectors to use a fire-and-forget strategy for dispatching event.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
          * @return the current Builder instance, for fluent interfacing
