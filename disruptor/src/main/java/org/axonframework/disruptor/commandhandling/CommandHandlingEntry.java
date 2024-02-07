@@ -232,7 +232,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     private class RepeatingCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         @Override
-        public Object handleSync(CommandMessage<?> message) throws Exception {
+        public Object handleSync(CommandMessage<?> message) {
             return result;
         }
     }

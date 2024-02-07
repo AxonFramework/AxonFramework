@@ -16,21 +16,25 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
+import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.tracing.TestSpanFactory;
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -91,7 +95,7 @@ class SimpleCommandBusTest {
 
     @Test
     void dispatchIsCorrectlyTracedDuringException() {
-        testSubject.setRollbackConfiguration(RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
+//        testSubject.setRollbackConfiguration(RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
         testSubject.subscribe(String.class.getName(), command -> {
             throw new RuntimeException("Some exception");
         });
@@ -106,49 +110,46 @@ class SimpleCommandBusTest {
 
     @Test
     void dispatchCommandImplicitUnitOfWorkIsCommittedOnReturnValue() {
-        final AtomicReference<UnitOfWork<?>> unitOfWork = new AtomicReference<>();
-        testSubject.subscribe(String.class.getName(), command -> {
-            unitOfWork.set(CurrentUnitOfWork.get());
-            assertTrue(CurrentUnitOfWork.isStarted());
-            assertNotNull(CurrentUnitOfWork.get());
-            return command;
+        final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
+        testSubject.subscribe(String.class.getName(), new MessageHandler<CommandMessage<?>, CommandResultMessage<?>>() {
+            @Override
+            public Object handleSync(CommandMessage<?> command) throws Exception {
+                return command;
+            }
+
+            @Override
+            public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                                 ProcessingContext processingContext) {
+                unitOfWork.set(processingContext);
+                return MessageStream.just(GenericCommandResultMessage.asCommandResultMessage(message));
+            }
         });
-        testSubject.dispatch(asCommandMessage("Say hi!"),
-                             (CommandCallback<String, CommandMessage<String>>) (commandMessage, commandResultMessage) -> {
-                                 if (commandResultMessage.isExceptional()) {
-                                     commandResultMessage.optionalExceptionResult()
-                                                         .ifPresent(Throwable::printStackTrace);
-                                     fail("Did not expect exception");
-                                 }
-                                 assertEquals("Say hi!", commandResultMessage.getPayload().getPayload());
-                             });
-        assertFalse(CurrentUnitOfWork.isStarted());
-        assertFalse(unitOfWork.get().isRolledBack());
-        assertFalse(unitOfWork.get().isActive());
-    }
+        var actual = testSubject.dispatch(asCommandMessage("Say hi!"), ProcessingContext.NONE);
+        assertTrue(actual.isDone());
+        assertFalse(actual.isCompletedExceptionally());
+        CommandResultMessage<?> actualResult = actual.join();
+        assertEquals("Say hi!", actualResult.getPayload());
 
-    @Test
-    void fireAndForgetUsesDefaultCallback() {
-        CommandCallback<Object, Object> mockCallback = createCallbackMock();
-        testSubject = SimpleCommandBus.builder()
-                                      .defaultCommandCallback(mockCallback).build();
-
-        CommandMessage<Object> command = asCommandMessage("test");
-        testSubject.dispatch(command, NoOpCallback.INSTANCE);
-        verify(mockCallback, never()).onResult(any(), any());
-
-        testSubject.dispatch(command);
-        verify(mockCallback).onResult(eq(command), any());
+        assertFalse(unitOfWork.get().isError());
+        assertTrue(unitOfWork.get().isCommitted());
+        assertTrue(unitOfWork.get().isCompleted());
     }
 
     @Test
     void dispatchCommandImplicitUnitOfWorkIsRolledBackOnException() {
-        final AtomicReference<UnitOfWork<?>> unitOfWork = new AtomicReference<>();
-        testSubject.subscribe(String.class.getName(), command -> {
-            unitOfWork.set(CurrentUnitOfWork.get());
-            assertTrue(CurrentUnitOfWork.isStarted());
-            assertNotNull(CurrentUnitOfWork.get());
-            throw new RuntimeException();
+        final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
+        testSubject.subscribe(String.class.getName(), new MessageHandler<>() {
+            @Override
+            public Object handleSync(CommandMessage<?> command) {
+                throw new RuntimeException();
+            }
+
+            @Override
+            public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                                 ProcessingContext processingContext) {
+                unitOfWork.set(processingContext);
+                throw new RuntimeException();
+            }
         });
         testSubject.dispatch(asCommandMessage("Say hi!"), (commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
@@ -158,18 +159,27 @@ class SimpleCommandBusTest {
                 fail("Expected exception");
             }
         });
-        assertFalse(CurrentUnitOfWork.isStarted());
-        assertTrue(unitOfWork.get().isRolledBack());
+        assertTrue(unitOfWork.get().isError());
     }
 
     @Test
+        // TODO - Remove this test. Annotated Handler adapters should be responsible to convers checked exceptions to a "regular" result if UoW is to be committed
     void dispatchCommandUnitOfWorkIsCommittedOnCheckedException() {
-        final AtomicReference<UnitOfWork<?>> unitOfWork = new AtomicReference<>();
-        testSubject.subscribe(String.class.getName(), command -> {
-            unitOfWork.set(CurrentUnitOfWork.get());
-            throw new Exception();
+        final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
+        testSubject.subscribe(String.class.getName(), new MessageHandler<>() {
+            @Override
+            public Object handleSync(CommandMessage<?> command) throws Exception {
+                throw new Exception();
+            }
+
+            @Override
+            public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                                     ProcessingContext processingContext) {
+                unitOfWork.set(processingContext);
+                return MessageStream.failed(new MockException("Simulating failure"));
+            }
         });
-        testSubject.setRollbackConfiguration(RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
+//        testSubject.setRollbackConfiguration(RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
 
         testSubject.dispatch(asCommandMessage("Say hi!"), (commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
@@ -179,23 +189,18 @@ class SimpleCommandBusTest {
                 fail("Expected exception");
             }
         });
-        assertTrue(!unitOfWork.get().isActive());
-        assertTrue(!unitOfWork.get().isRolledBack());
+        assertTrue(unitOfWork.get().isError());
+        assertTrue(!unitOfWork.get().isCommitted());
     }
 
-
-    @SuppressWarnings("unchecked")
     @Test
     void dispatchCommandNoHandlerSubscribed() {
         CommandMessage<Object> command = asCommandMessage("test");
-        CommandCallback callback = createCallbackMock();
-        testSubject.dispatch(command, callback);
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
-                ArgumentCaptor.forClass(CommandResultMessage.class);
-        verify(callback).onResult(eq(command), commandResultMessageCaptor.capture());
-        assertTrue(commandResultMessageCaptor.getValue().isExceptional());
-        assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
+        var result = testSubject.dispatch(command, ProcessingContext.NONE);
+
+        assertTrue(result.isCompletedExceptionally());
+        CompletionException actualException = assertThrows(CompletionException.class, result::join);
+        assertInstanceOf(NoHandlerForCommandException.class, actualException.getCause());
     }
 
     private CommandCallback createCallbackMock() {
@@ -209,16 +214,14 @@ class SimpleCommandBusTest {
     void dispatchCommandHandlerUnsubscribed() {
         MyStringCommandHandler commandHandler = new MyStringCommandHandler();
         Registration subscription = testSubject.subscribe(String.class.getName(), commandHandler);
-        subscription.close();
+        subscription.cancel();
         CommandMessage<Object> command = asCommandMessage("Say hi!");
-        CommandCallback callback = createCallbackMock();
-        testSubject.dispatch(command, callback);
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
-                ArgumentCaptor.forClass(CommandResultMessage.class);
-        verify(callback).onResult(eq(command), commandResultMessageCaptor.capture());
-        assertTrue(commandResultMessageCaptor.getValue().isExceptional());
-        assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
+        var actual = testSubject.dispatch(command, ProcessingContext.NONE);
+
+        assertTrue(actual.isCompletedExceptionally());
+        CompletionException actualException = assertThrows(CompletionException.class, actual::get);
+        assertInstanceOf(NoHandlerForCommandException.class,
+                         actualException.getCause());
     }
 
     @SuppressWarnings("unchecked")
@@ -391,10 +394,61 @@ class SimpleCommandBusTest {
         testSubject.subscribe(String.class.getName(), duplicateHandler);
 
         // And after dispatching a test command, it should be handled by the initial handler
-        testSubject.dispatch(testMessage);
+        testSubject.dispatch(testMessage, ProcessingContext.NONE);
 
         verify(duplicateHandler).handleSync(testMessage);
         verify(initialHandler, never()).handleSync(testMessage);
+    }
+
+    @Test
+    void asyncHandlerInvocation() {
+        var ourFutureIsBright = new CompletableFuture<>();
+        testSubject.subscribe(String.class.getName(), new MyStringAsyncCommandHandler(ourFutureIsBright));
+
+        FutureCallback<String, String> callback = new FutureCallback<>();
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("some-string"), callback);
+
+        assertFalse(callback.isDone());
+        ourFutureIsBright.complete("42");
+        assertTrue(callback.isDone());
+        assertEquals("42", callback.getResult().getPayload());
+    }
+
+    @Test
+    void asyncHandlerCompletion() throws Exception {
+        var ourFutureIsBright = new CompletableFuture<>();
+        testSubject.subscribe(String.class.getName(), new MyStringAsyncCommandHandler(ourFutureIsBright));
+
+        FutureCallback<String, String> callback = new FutureCallback<>();
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("some-string"), callback);
+
+        assertFalse(callback.isDone());
+        CompletableFuture<String> stringCompletableFuture = callback.thenApply(crm -> Thread.currentThread().getName());
+
+        Thread t = new Thread(() -> ourFutureIsBright.complete("42"));
+        t.start();
+        t.join();
+
+        assertTrue(stringCompletableFuture.isDone());
+        assertEquals(t.getName(), stringCompletableFuture.get());
+    }
+
+    @Test
+    void asyncHandlerVirtual() throws Exception {
+        var ourFutureIsBright = new CompletableFuture<>();
+        testSubject.subscribe(String.class.getName(), new MyStringAsyncCommandHandler(ourFutureIsBright));
+
+        FutureCallback<String, String> callback = new FutureCallback<>();
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("some-string"), callback);
+
+        assertFalse(callback.isDone());
+        CompletableFuture<String> stringCompletableFuture = callback.thenApply(crm -> Thread.currentThread().getName());
+
+        Thread t = Thread.startVirtualThread(() -> ourFutureIsBright.complete("42"));
+        t.join();
+
+        assertTrue(stringCompletableFuture.isDone());
+        assertEquals(t.getName(), stringCompletableFuture.get());
     }
 
     private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
@@ -402,6 +456,28 @@ class SimpleCommandBusTest {
         @Override
         public Object handleSync(CommandMessage<?> message) {
             return message;
+        }
+    }
+
+    private static class MyStringAsyncCommandHandler
+            implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+
+        private final CompletableFuture<?> result;
+
+
+        private MyStringAsyncCommandHandler(CompletableFuture<?> result) {
+            this.result = result;
+        }
+
+        @Override
+        public Object handleSync(CommandMessage<?> message) throws Exception {
+            return null;
+        }
+
+        @Override
+        public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                             ProcessingContext processingContext) {
+            return MessageStream.fromFuture(result.thenApply(GenericCommandResultMessage::asCommandResultMessage));
         }
     }
 }

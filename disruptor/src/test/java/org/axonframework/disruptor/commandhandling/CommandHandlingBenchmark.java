@@ -26,6 +26,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AbstractRepository;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.Repository;
@@ -78,10 +79,10 @@ public class CommandHandlingBenchmark {
         cb.subscribe(String.class.getName(), new MyCommandHandler(repository));
 
         long COMMAND_COUNT = 5 * 1000 * 1000;
-        cb.dispatch(GenericCommandMessage.asCommandMessage("ready,"));
+        cb.dispatch(GenericCommandMessage.asCommandMessage("ready,"), ProcessingContext.NONE);
         long t1 = System.currentTimeMillis();
         for (int t = 0; t < COMMAND_COUNT; t++) {
-            cb.dispatch(GenericCommandMessage.asCommandMessage("go!"));
+            cb.dispatch(GenericCommandMessage.asCommandMessage("go!"), ProcessingContext.NONE);
         }
         long t2 = System.currentTimeMillis();
         System.out.printf("Just did %d commands per second%n", ((COMMAND_COUNT * 1000) / (t2 - t1)));

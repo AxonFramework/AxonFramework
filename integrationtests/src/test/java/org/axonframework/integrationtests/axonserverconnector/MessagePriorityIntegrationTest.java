@@ -29,6 +29,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -40,7 +41,6 @@ import org.junit.jupiter.api.*;
 import org.testcontainers.images.PullPolicy;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 import java.util.Objects;
@@ -158,7 +158,8 @@ class MessagePriorityIntegrationTest {
         commandBus.subscribe("priority", command -> "priority");
 
         Thread dispatcher = new Thread(() -> {
-            commandBus.dispatch(new GenericCommandMessage<>(asCommandMessage("start"), "processGate"));
+            commandBus.dispatch(new GenericCommandMessage<>(asCommandMessage("start"), "processGate"),
+                                ProcessingContext.NONE);
             for (int i = 0; i < numberOfCommands; i++) {
                 GenericCommandMessage<Object> command;
                 if (i % 5 == 0) {
@@ -168,7 +169,7 @@ class MessagePriorityIntegrationTest {
                     command = new GenericCommandMessage<>(asCommandMessage(new RegularMessage(Integer.toString(i))),
                                                           "regular");
                 }
-                commandBus.dispatch(command, (c, r) -> {
+                commandBus.dispatch(command, ProcessingContext.NONE).thenAccept(r -> {
                     if (r.getPayload().equals("regular")) {
                         handlingOrder.add(Handled.regular());
                     } else {

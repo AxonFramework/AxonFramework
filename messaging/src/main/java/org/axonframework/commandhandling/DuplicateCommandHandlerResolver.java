@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 4.2
  */
+@Deprecated // duplicate registrations should always lead to errors
 @FunctionalInterface
 public interface DuplicateCommandHandlerResolver {
 
@@ -36,9 +37,10 @@ public interface DuplicateCommandHandlerResolver {
      *
      * @param commandName       The name of the Command for which the duplicate was detected
      * @param registeredHandler the {@link MessageHandler} previously registered with the Command Bus
-     * @param candidateHandler  the {@link MessageHandler} that is newly registered and conflicts with the existing registration
-     * @return the resolved {@link MessageHandler}. Could be the {@code registeredHandler}, the {@code candidateHandler} or
-     * another handler entirely
+     * @param candidateHandler  the {@link MessageHandler} that is newly registered and conflicts with the existing
+     *                          registration
+     * @return the resolved {@link MessageHandler}. Could be the {@code registeredHandler}, the {@code candidateHandler}
+     * or another handler entirely
      * @throws RuntimeException when registration should fail
      */
     MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> resolve(@Nonnull String commandName,

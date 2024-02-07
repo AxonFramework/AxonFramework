@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -84,7 +85,8 @@ public abstract class AbstractCommandGateway {
      */
     protected void sendAndForget(Object command) {
         if (retryScheduler == null) {
-            commandBus.dispatch(processInterceptors(asCommandMessage(command)));
+            commandBus.dispatch(processInterceptors(asCommandMessage(command)),
+                                ProcessingContext.NONE);
         } else {
             CommandMessage<?> commandMessage = asCommandMessage(command);
             send(commandMessage, LoggingCallback.INSTANCE);

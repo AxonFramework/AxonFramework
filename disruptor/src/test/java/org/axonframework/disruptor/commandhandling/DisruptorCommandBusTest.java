@@ -54,6 +54,7 @@ import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -201,7 +202,7 @@ class DisruptorCommandBusTest {
                                          .publisherThreadCount(3)
                                          .defaultCommandCallback(callback)
                                          .build();
-        testSubject.dispatch(asCommandMessage("Test"));
+        testSubject.dispatch(asCommandMessage("Test"), ProcessingContext.NONE);
         customExecutor.shutdownNow();
         //noinspection unchecked
         ArgumentCaptor<CommandResultMessage<?>> commandResultMessageCaptor =
@@ -238,7 +239,7 @@ class DisruptorCommandBusTest {
         //noinspection unchecked
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         testSubject.dispatch(command, mockCallback);
-        testSubject.dispatch(command);
+        testSubject.dispatch(command, ProcessingContext.NONE);
 
         testSubject.stop();
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
@@ -360,7 +361,7 @@ class DisruptorCommandBusTest {
         when(mockInterceptor.handle(any(UnitOfWork.class), any(InterceptorChain.class))).thenAnswer(
                 invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceedSync()
         );
-        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)));
+        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)), ProcessingContext.NONE);
         //noinspection unchecked
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         for (int t = 0; t < 1000; t++) {
@@ -394,7 +395,7 @@ class DisruptorCommandBusTest {
                 testSubject.createRepository(eventStore, new GenericAggregateFactory<>(StubAggregate.class))
         );
 
-        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)));
+        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)), ProcessingContext.NONE);
 
         testSubject.stop();
 
@@ -422,8 +423,8 @@ class DisruptorCommandBusTest {
                 testSubject.createRepository(eventStore, new GenericAggregateFactory<>(StubAggregate.class))
         );
 
-        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)));
-        testSubject.dispatch(asCommandMessage(new CreateOrUpdateCommand(aggregateIdentifier)));
+        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)), ProcessingContext.NONE);
+        testSubject.dispatch(asCommandMessage(new CreateOrUpdateCommand(aggregateIdentifier)), ProcessingContext.NONE);
 
         testSubject.stop();
 
@@ -451,7 +452,7 @@ class DisruptorCommandBusTest {
                 testSubject.createRepository(eventStore, new GenericAggregateFactory<>(StubAggregate.class))
         );
 
-        testSubject.dispatch(asCommandMessage(new CreateOrUpdateCommand(aggregateIdentifier)));
+        testSubject.dispatch(asCommandMessage(new CreateOrUpdateCommand(aggregateIdentifier)), ProcessingContext.NONE);
 
         testSubject.stop();
 
@@ -519,17 +520,17 @@ class DisruptorCommandBusTest {
         );
 
         String aggregateIdentifier2 = UUID.randomUUID().toString();
-        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)));
-        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier)));
-        testSubject.dispatch(asCommandMessage(new ErrorCommand(aggregateIdentifier)));
-        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier)));
-        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier)));
+        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)), ProcessingContext.NONE);
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier)), ProcessingContext.NONE);
+        testSubject.dispatch(asCommandMessage(new ErrorCommand(aggregateIdentifier)), ProcessingContext.NONE);
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier)), ProcessingContext.NONE);
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier)), ProcessingContext.NONE);
 
-        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier2)));
-        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)));
-        testSubject.dispatch(asCommandMessage(new ErrorCommand(aggregateIdentifier2)));
-        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)));
-        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)));
+        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier2)), ProcessingContext.NONE);
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)), ProcessingContext.NONE);
+        testSubject.dispatch(asCommandMessage(new ErrorCommand(aggregateIdentifier2)), ProcessingContext.NONE);
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)), ProcessingContext.NONE);
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)), ProcessingContext.NONE);
 
         //noinspection unchecked
         CommandCallback<Object, Object> callback = mock(CommandCallback.class);
@@ -558,7 +559,7 @@ class DisruptorCommandBusTest {
         );
 
         testSubject.stop();
-        assertThrows(IllegalStateException.class, () -> testSubject.dispatch(asCommandMessage(new Object())));
+        assertThrows(IllegalStateException.class, () -> testSubject.dispatch(asCommandMessage(new Object()), ProcessingContext.NONE));
     }
 
     @Test
@@ -572,7 +573,7 @@ class DisruptorCommandBusTest {
 
         for (int i = 0; i < COMMAND_COUNT; i++) {
             CommandMessage<StubCommand> command = asCommandMessage(new StubCommand(aggregateIdentifier));
-            testSubject.dispatch(command);
+            testSubject.dispatch(command, ProcessingContext.NONE);
         }
 
         //noinspection ResultOfMethodCallIgnored
@@ -777,7 +778,7 @@ class DisruptorCommandBusTest {
                                          .build();
         testSubject.subscribe(String.class.getName(), testHandler);
 
-        testSubject.dispatch(testCommand);
+        testSubject.dispatch(testCommand, ProcessingContext.NONE);
         assertWithin(50, TimeUnit.MILLISECONDS,
                      () -> assertEquals(expectedNumberOfInvocations, invocationCounter.get()));
     }

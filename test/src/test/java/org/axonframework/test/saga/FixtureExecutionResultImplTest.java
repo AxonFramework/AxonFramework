@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.AxonAssertionError;
@@ -99,7 +100,7 @@ class FixtureExecutionResultImplTest {
                 sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, StubSaga.class,
                 AllFieldsFilter.instance(), errorHandler);
 
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
         GenericEventMessage<TriggerSagaStartEvent> firstEventMessage =
                 new GenericEventMessage<>(new TriggerSagaStartEvent(identifier));
         eventBus.publish(firstEventMessage);
@@ -112,7 +113,7 @@ class FixtureExecutionResultImplTest {
         GenericEventMessage<TriggerSagaEndEvent> endEventMessage =
                 new GenericEventMessage<>(new TriggerSagaEndEvent(identifier));
         eventBus.publish(endEventMessage);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"), ProcessingContext.NONE);
         IllegalArgumentException secondException = new IllegalArgumentException("Second");
         errorHandler.onError(secondException, endEventMessage, eventMessageHandler);
 
@@ -138,7 +139,7 @@ class FixtureExecutionResultImplTest {
         testSubject.startRecording();
         GenericEventMessage<TriggerSagaEndEvent> eventMessage = new GenericEventMessage<>(new TriggerSagaEndEvent(identifier));
         eventBus.publish(eventMessage);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Command"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Command"), ProcessingContext.NONE);
         errorHandler.onError(new IllegalArgumentException("First"), eventMessage, eventMessageHandler);
 
         testSubject.startRecording();
@@ -180,42 +181,42 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectDispatchedCommands_FailedCount() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Third"));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Fourth"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"), ProcessingContext.NONE);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Third"), ProcessingContext.NONE);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Fourth"), ProcessingContext.NONE);
 
         assertThrows(AxonAssertionError.class, () -> testSubject.expectDispatchedCommands("First", "Second", "Third"));
     }
 
     @Test
     void expectDispatchedCommands_FailedType() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"), ProcessingContext.NONE);
 
         assertThrows(AxonAssertionError.class, () -> testSubject.expectDispatchedCommands("First", "Third"));
     }
 
     @Test
     void expectDispatchedCommands() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"), ProcessingContext.NONE);
 
         testSubject.expectDispatchedCommands("First", "Second");
     }
 
     @Test
     void expectDispatchedCommands_ObjectsNotImplementingEquals() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")), ProcessingContext.NONE);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")), ProcessingContext.NONE);
 
         testSubject.expectDispatchedCommands(new SimpleCommand("First"), new SimpleCommand("Second"));
     }
 
     @Test
     void expectDispatchedCommands_ObjectsNotImplementingEquals_FailedField() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")), ProcessingContext.NONE);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")), ProcessingContext.NONE);
 
         AxonAssertionError e = assertThrows(
                 AxonAssertionError.class,
@@ -226,8 +227,8 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectDispatchedCommands_ObjectsNotImplementingEquals_WrongType() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")), ProcessingContext.NONE);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")), ProcessingContext.NONE);
 
         AxonAssertionError e = assertThrows(
                 AxonAssertionError.class,
@@ -238,7 +239,7 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectNoDispatchedCommands_Failed() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
         assertThrows(AxonAssertionError.class, testSubject::expectNoDispatchedCommands);
     }
 

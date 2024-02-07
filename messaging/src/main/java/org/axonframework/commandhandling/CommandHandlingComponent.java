@@ -21,13 +21,13 @@ import org.axonframework.messaging.MessageHandler;
 import java.util.Set;
 
 /**
- * MessageHandler specialization for handlers of Command Messages. Besides handling a message, CommandMessageHandlers
+ * MessageHandler specialization for handlers of Command Messages. Besides handling a message, CommandHandlingComponent
  * also specify which command names they support.
  */
-public interface CommandMessageHandler extends MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+public interface CommandHandlingComponent extends MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
     /**
-     * Returns the set of command names this handler supports.
+     * Returns the set of command names this handling component supports.
      *
      * @return the set of supported command names
      */

@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -40,7 +41,7 @@ class RecordingCommandBusTest {
 
     @Test
     void publishCommand() {
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"),
                              (commandMessage, commandResultMessage) -> {
                                  if (commandResultMessage.isExceptional()) {
@@ -58,7 +59,7 @@ class RecordingCommandBusTest {
     @Test
     void publishCommandWithCallbackBehavior() {
         testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"),
                              (commandMessage, commandResultMessage) -> {
                                  if (commandResultMessage.isExceptional()) {

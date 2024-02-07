@@ -21,11 +21,10 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,7 +54,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     /**
      * Instantiate a {@link AsynchronousCommandBus} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link TransactionManager}, {@link MessageMonitor}, {@link RollbackConfiguration} and
+     * Will assert that the {@link TransactionManager}, {@link MessageMonitor} and
      * {@link Executor} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of them is
      * {@code null}.
      *
@@ -70,8 +69,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
      * Instantiate a Builder to be able to create a {@link AsynchronousCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor}, {@link RollbackConfiguration} defaults to a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, the {@link DuplicateCommandHandlerResolver} defaults to
+     * defaulted to a {@link NoOpMessageMonitor}, the {@link DuplicateCommandHandlerResolver} defaults to
      * {@link DuplicateCommandHandlerResolution#logAndOverride()}, the {@link Executor} defaults to a
      * {@link Executors#newCachedThreadPool} and the {@link CommandBusSpanFactory} defaults to a
      * {@link DefaultCommandBusSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}. The
@@ -86,15 +84,22 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     }
 
     @Override
-    protected <C, R> void handle(CommandMessage<C> command,
-                                 MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler,
-                                 CommandCallback<? super C, ? super R> callback) {
-        executor.execute(() -> super.handle(command, handler, callback));
+    protected CompletableFuture<CommandResultMessage<?>> handle(CommandMessage<?> command,
+                                                                MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+        CompletableFuture<CommandResultMessage<?>> result = new CompletableFuture<>();
+        executor.execute(() -> super.handle(command, handler).whenComplete((r, e) -> {
+            if (e == null) {
+                result.complete(r);
+            } else {
+                result.completeExceptionally(e);
+            }
+        }));
+        return result;
     }
 
     /**
-     * Shuts down the Executor used to asynchronously dispatch incoming commands. If the {@code Executor} provided
-     * in the constructor does not implement {@code ExecutorService}, this method does nothing.
+     * Shuts down the Executor used to asynchronously dispatch incoming commands. If the {@code Executor} provided in
+     * the constructor does not implement {@code ExecutorService}, this method does nothing.
      */
     public void shutdown() {
         if (executor instanceof ExecutorService) {
@@ -111,11 +116,10 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     /**
      * Builder class to instantiate a {@link AsynchronousCommandBus}.
      * <p>
-     * The {@link TransactionManager}, {@link MessageMonitor}, {@link RollbackConfiguration},
+     * The {@link TransactionManager}, {@link MessageMonitor},
      * {@link DuplicateCommandHandlerResolver}, {@link CommandBusSpanFactory} to a {@link DefaultCommandBusSpanFactory}
      * backed by a {@link org.axonframework.tracing.NoOpSpanFactory}, and {@link Executor} are respectively defaulted to
      * a {@link NoTransactionManager}, a {@link NoOpMessageMonitor}, a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, a
      * {@link DuplicateCommandHandlerResolution#logAndOverride()}, {@link org.axonframework.tracing.NoOpSpanFactory} and
      * a {@link Executors#newCachedThreadPool}. The default {@code executor} uses an {@link AxonThreadFactory} to create
      * threads with a sensible naming scheme. The TransactionManager, MessageMonitor, RollbackConfiguration and Executor
@@ -137,18 +141,6 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super CommandMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
-            return this;
-        }
-
-        @Override
-        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
-            super.rollbackConfiguration(rollbackConfiguration);
-            return this;
-        }
-
-        @Override
-        public Builder defaultCommandCallback(@Nonnull CommandCallback<Object, Object> defaultCommandCallback) {
-            super.defaultCommandCallback(defaultCommandCallback);
             return this;
         }
 

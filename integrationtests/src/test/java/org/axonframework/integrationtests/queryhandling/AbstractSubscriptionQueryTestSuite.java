@@ -611,7 +611,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                 queryBus.subscriptionQuery(queryMessage);
 
         chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
-        result.close();
+        result.cancel();
         chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update2");
 
         StepVerifier.create(result.updates().map(Message::getPayload))
@@ -668,7 +668,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                 queryBus.subscriptionQuery(queryMessage);
 
         chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
-        result.close();
+        result.cancel();
 
         // then
         StepVerifier.create(result.updates())

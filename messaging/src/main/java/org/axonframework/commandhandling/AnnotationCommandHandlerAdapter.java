@@ -44,7 +44,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @see CommandHandler
  * @since 0.5
  */
-public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler {
+public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingComponent {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;

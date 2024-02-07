@@ -26,6 +26,7 @@ package org.axonframework.messaging.unitofwork;
  * @author Martin Tilma
  * @since 1.1
  */
+@Deprecated // exceptions need to be handled by an interceptor, or otherwise they are always considered an error
 public interface RollbackConfiguration {
 
     /**

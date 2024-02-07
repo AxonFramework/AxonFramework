@@ -16,6 +16,8 @@
 
 package org.axonframework.common.transaction;
 
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
+
 /**
  * TransactionManager implementation that does nothing. It's a placeholder implementation for the cases where no
  * special transaction management is required.
@@ -39,9 +41,16 @@ public enum NoTransactionManager implements TransactionManager {
         return INSTANCE;
     }
 
+
+
     @Override
     public Transaction startTransaction() {
         return TRANSACTION;
+    }
+
+    @Override
+    public void attachToProcessingLifecycle(ProcessingLifecycle processingLifecycle) {
+        // no-op
     }
 
     private static final Transaction TRANSACTION = new Transaction() {

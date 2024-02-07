@@ -60,12 +60,12 @@ class SimpleEventBusTest {
         Registration subscription2 = testSubject.subscribe(listener2);
         Registration subscription3 = testSubject.subscribe(listener3);
         testSubject.publish(newEvent());
-        subscription1.close();
+        subscription1.cancel();
         testSubject.publish(newEvent());
-        subscription2.close();
-        subscription3.close();
+        subscription2.cancel();
+        subscription3.cancel();
         // unsubscribe a non-subscribed listener should not fail
-        subscription3.close();
+        subscription3.cancel();
         testSubject.publish(newEvent());
 
         verify(listener1, times(2)).accept(anyList());

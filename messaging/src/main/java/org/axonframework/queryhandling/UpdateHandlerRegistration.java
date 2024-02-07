@@ -73,6 +73,6 @@ public class UpdateHandlerRegistration<U> {
         completeHandler.run();
         // In case a user didn't subscribe to the flux, the remove handler is never invoked.
         // Hence, invoke removeHandler potentially twice to ensure the registration is removed from the emitter.
-        getRegistration().close();
+        getRegistration().cancel();
     }
 }

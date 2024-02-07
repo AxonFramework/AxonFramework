@@ -49,7 +49,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     public static <T> CommandResultMessage<T> asCommandResultMessage(@Nonnull Object commandResult) {
         if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage<T>) commandResult;
-        } else if (commandResult instanceof Message) {
+        } else if (commandResult instanceof Message  ) {
             Message<T> commandResultMessage = (Message<T>) commandResult;
             return new GenericCommandResultMessage<>(commandResultMessage);
         }

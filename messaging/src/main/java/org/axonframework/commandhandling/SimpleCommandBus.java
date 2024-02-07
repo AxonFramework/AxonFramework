@@ -16,21 +16,15 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.callbacks.LoggingCallback;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -40,15 +34,15 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.lang.String.format;
-import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's name.
@@ -72,20 +66,17 @@ public class SimpleCommandBus implements CommandBus {
             new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
-    private final CommandCallback<Object, Object> defaultCommandCallback;
-    private RollbackConfiguration rollbackConfiguration;
     private final CommandBusSpanFactory spanFactory;
 
     /**
      * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, the {@link DuplicateCommandHandlerResolver} defaults to
+     * defaulted to a {@link NoOpMessageMonitor}, the {@link DuplicateCommandHandlerResolver} defaults to
      * {@link DuplicateCommandHandlerResolution#logAndOverride()} and the {@link CommandBusSpanFactory} defaults to a
      * {@link DefaultCommandBusSpanFactory} with a {@link NoOpSpanFactory}. The {@link TransactionManager},
-     * {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard requirements</b>. Thus setting them to
-     * {@code null} will result in an {@link AxonConfigurationException}.
+     * {@link MessageMonitor} is a <b>hard requirement</b>. Thus setting them to {@code null} will result in an
+     * {@link AxonConfigurationException}.
      *
      * @return a Builder to be able to create a {@link SimpleCommandBus}
      */
@@ -96,8 +87,8 @@ public class SimpleCommandBus implements CommandBus {
     /**
      * Instantiate a {@link SimpleCommandBus} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are not
-     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the {@link TransactionManager} and {@link MessageMonitor} are not {@code null}, and will throw
+     * an {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link SimpleCommandBus} instance
      */
@@ -105,30 +96,24 @@ public class SimpleCommandBus implements CommandBus {
         builder.validate();
         this.transactionManager = builder.transactionManager;
         this.messageMonitor = builder.messageMonitor;
-        this.rollbackConfiguration = builder.rollbackConfiguration;
         this.duplicateCommandHandlerResolver = builder.duplicateCommandHandlerResolver;
-        this.defaultCommandCallback = builder.defaultCommandCallback;
         this.spanFactory = builder.builderSpanFactory;
     }
 
     @Override
-    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
-        dispatch(command, defaultCommandCallback);
+    public CompletableFuture<? extends CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                                         @Nullable ProcessingContext processingContext) {
+        Span span = spanFactory.createDispatchCommandSpan(command, false);
+        return span.runSupplierAsync(
+                () -> this.doDispatch(intercept(command))
+                          .whenComplete((r, e) -> {
+                              if (e != null) {
+                                  span.recordException(e);
+                              }
+                          })
+        );
     }
 
-    @Override
-    public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
-                                @Nonnull final CommandCallback<? super C, ? super R> callback) {
-        Span span = spanFactory.createDispatchCommandSpan(command, false);
-        span.run(() -> {
-            CommandCallback<? super C, ? super R> spanAwareCallback = callback.wrap((commandMessage, commandResultMessage) -> {
-                if (commandResultMessage.isExceptional()) {
-                    span.recordException(commandResultMessage.exceptionResult());
-                }
-            });
-            doDispatch(intercept(command), spanAwareCallback);
-        });
-    }
 
     /**
      * Invokes all the dispatch interceptors.
@@ -149,56 +134,57 @@ public class SimpleCommandBus implements CommandBus {
     /**
      * Performs the actual dispatching logic. The dispatch interceptors must have been invoked at this point.
      *
-     * @param command  The actual command to dispatch to the handler
-     * @param callback The callback to notify of the result
-     * @param <C>      The type of payload of the command
-     * @param <R>      The type of result expected from the command handler
+     * @param command The actual command to dispatch to the handler
      */
-    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
+    protected CompletableFuture<? extends CommandResultMessage<?>> doDispatch(CommandMessage<?> command) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
 
-        Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> optionalHandler = findCommandHandlerFor(command);
+        Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> optionalHandler = findCommandHandlerFor(
+                command);
         if (optionalHandler.isPresent()) {
-            CommandMessage<C> commandWithContext = spanFactory.propagateContext(command);
-            handle(commandWithContext, optionalHandler.get(), new MonitorAwareCallback<>(callback, monitorCallback));
+            CommandMessage<?> commandWithContext = spanFactory.propagateContext(command);
+            return handle(commandWithContext, optionalHandler.get());
         } else {
             NoHandlerForCommandException exception = new NoHandlerForCommandException(format(
                     "No handler was subscribed for command [%s].", command.getCommandName()
             ));
             monitorCallback.reportFailure(exception);
-            callback.onResult(command, asCommandResultMessage(exception));
+            return CompletableFuture.failedFuture(exception);
         }
     }
 
-    private Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> findCommandHandlerFor(CommandMessage<?> command) {
+    private Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> findCommandHandlerFor(
+            CommandMessage<?> command) {
         return Optional.ofNullable(subscriptions.get(command.getCommandName()));
     }
 
     /**
      * Performs the actual handling logic.
      *
-     * @param command  The actual command to handle
-     * @param handler  The handler that must be invoked for this command
-     * @param callback The callback to notify of the result
-     * @param <C>      The type of payload of the command
-     * @param <R>      The type of result expected from the command handler
+     * @param command The actual command to handle
+     * @param handler The handler that must be invoked for this command
      */
-    protected <C, R> void handle(CommandMessage<C> command,
-                                 MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler,
-                                 CommandCallback<? super C, ? super R> callback) {
-        CommandResultMessage<R> resultMessage = spanFactory.createHandleCommandSpan(command, false).runSupplier(() -> {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Handling command [{}]", command.getCommandName());
-            }
+    protected CompletableFuture<? extends CommandResultMessage<?>> handle(CommandMessage<?> command,
+                                                                          MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+        return spanFactory.createHandleCommandSpan(command, false)
+                          .runSupplierAsync(() -> {
+                              if (logger.isDebugEnabled()) {
+                                  logger.debug("Handling command [{}]",
+                                               command.getCommandName());
+                              }
 
-            UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
-            unitOfWork.attachTransaction(transactionManager);
-            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
+                              AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork();
+                              transactionManager.attachToProcessingLifecycle(unitOfWork);
 
-            return asCommandResultMessage(unitOfWork.executeWithResult(chain::proceedSync,
-                                                                       rollbackConfiguration));
-        });
-        callback.onResult(command, resultMessage);
+                              // TODO simple, yet massive, todo on changing the interceptor logic...T_T
+//            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
+                              return unitOfWork.executeWithResult(c -> handler.handle(command, c)
+                                                                              .asCompletableFuture());
+//            return asCommandResultMessage(unitOfWork.executeWithResult(
+//                    chain::proceedSync, rollbackConfiguration
+//            ));
+                          })
+                          .thenApply(GenericCommandResultMessage::asCommandResultMessage);
     }
 
     /**
@@ -252,37 +238,22 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Sets the {@link RollbackConfiguration} that allows you to change when the {@link UnitOfWork} is rolled back. If
-     * not set the, {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} will be used, which triggers a rollback on
-     * all unchecked exceptions.
-     *
-     * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
-     *                              rolled back
-     */
-    public void setRollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
-        this.rollbackConfiguration = rollbackConfiguration;
-    }
-
-    /**
      * Builder class to instantiate a {@link SimpleCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, the {@link DuplicateCommandHandlerResolver} defaults to
+     * defaulted to a {@link NoOpMessageMonitor}, the {@link DuplicateCommandHandlerResolver} defaults to
      * {@link DuplicateCommandHandlerResolution#logAndOverride()} and the {@link CommandBusSpanFactory} defaults to a
      * {@link DefaultCommandBusSpanFactory} with a {@link NoOpSpanFactory}.
      * <p>
-     * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
-     * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
+     * The {@link TransactionManager} and {@link MessageMonitor} are <b>hard requirements</b>. Thus setting them to
+     * {@code null} will result in an {@link AxonConfigurationException}.
      */
     public static class Builder {
 
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
         private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver =
                 DuplicateCommandHandlerResolution.logAndOverride();
-        private CommandCallback<Object, Object> defaultCommandCallback = LoggingCallback.INSTANCE;
         private CommandBusSpanFactory builderSpanFactory = DefaultCommandBusSpanFactory
                 .builder().spanFactory(NoOpSpanFactory.INSTANCE).build();
 
@@ -312,21 +283,6 @@ public class SimpleCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the {@link RollbackConfiguration} which allows you to specify when a {@link UnitOfWork} should be rolled
-         * back. Defaults to a {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, which triggers a rollback on all
-         * unchecked exceptions.
-         *
-         * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
-         *                              rolled back
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
-            assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
-            this.rollbackConfiguration = rollbackConfiguration;
-            return this;
-        }
-
-        /**
          * Sets the {@link DuplicateCommandHandlerResolver} used to resolves the road to take when a duplicate command
          * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#logAndOverride()}.
          *
@@ -338,19 +294,6 @@ public class SimpleCommandBus implements CommandBus {
                 @Nonnull DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
             assertNonNull(duplicateCommandHandlerResolver, "DuplicateCommandHandlerResolver may not be null");
             this.duplicateCommandHandlerResolver = duplicateCommandHandlerResolver;
-            return this;
-        }
-
-        /**
-         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link
-         * #dispatch(CommandMessage)}. Defaults to a {@link LoggingCallback}. Passing {@code null} will result in a
-         * {@link NoOpCallback} being used.
-         *
-         * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder defaultCommandCallback(@Nonnull CommandCallback<Object, Object> defaultCommandCallback) {
-            this.defaultCommandCallback = getOrDefault(defaultCommandCallback, NoOpCallback.INSTANCE);
             return this;
         }
 

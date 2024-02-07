@@ -304,7 +304,7 @@ class AxonServerQueryBusTest {
         assertNotNull(result);
         verify(mockQueryChannel).registerQueryHandler(any(), eq(new QueryDefinition(TEST_QUERY, String.class)));
 
-        result.close();
+        result.cancel();
         verify(registration).cancel();
     }
 
@@ -495,7 +495,7 @@ class AxonServerQueryBusTest {
                 ));
         Mono<QueryResponseMessage<String>> initialResult = queryResult.initialResult();
         Flux<SubscriptionQueryUpdateMessage<String>> updates = queryResult.updates();
-        queryResult.close();
+        queryResult.cancel();
 
         StepVerifier.create(initialResult)
                     .expectNextMatches(r -> r.getPayload().equals("Hello world"))
@@ -517,7 +517,7 @@ class AxonServerQueryBusTest {
                 ));
         Mono<QueryResponseMessage<String>> initialResult = queryResult.initialResult();
         Flux<SubscriptionQueryUpdateMessage<String>> updates = queryResult.updates();
-        queryResult.close();
+        queryResult.cancel();
 
         StepVerifier.create(initialResult.map(Message::getPayload))
                     .verifyError();

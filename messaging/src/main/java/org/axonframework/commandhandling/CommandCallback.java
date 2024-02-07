@@ -25,7 +25,9 @@ import javax.annotation.Nonnull;
  * @param <C> the type of payload of the command
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated remove this guy altogether, in favor of using completable futures throughout
  */
+@Deprecated
 @FunctionalInterface
 public interface CommandCallback<C, R> {
 

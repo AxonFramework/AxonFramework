@@ -16,6 +16,8 @@
 
 package org.axonframework.tracing;
 
+import org.axonframework.common.FutureUtils;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -173,20 +175,15 @@ public interface Span {
     default <T> CompletableFuture<T> runSupplierAsync(Supplier<CompletableFuture<T>> supplier) {
         this.start();
         CompletableFuture<T> future = new CompletableFuture<>();
-        try (SpanScope unused = this.makeCurrent()) {
-            supplier.get()
-                    .whenComplete((r, e) -> {
-                        if (e == null) {
-                            future.complete(r);
-                        } else {
-                            future.completeExceptionally(e);
-                        }
-                    });
+        try (SpanScope ignored = this.makeCurrent()) {
+            supplier.get().whenComplete(FutureUtils.alsoComplete(future));
         } catch (Exception e) {
-            this.recordException(e);
             future.completeExceptionally(e);
         } finally {
-            future.whenComplete((r, e) -> {
+            future = future.whenComplete((r, e) -> {
+                if (e != null) {
+                    this.recordException(e);
+                }
                 this.end();
             });
         }

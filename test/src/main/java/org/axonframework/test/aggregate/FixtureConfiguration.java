@@ -108,7 +108,7 @@ public interface FixtureConfiguration<T> {
 
     /**
      * Configures the fixture for state stored aggregates.
-     * This will register an in-memory {@link org.axonframework.commandhandling.model.Repository} with this fixture.
+     * This will register an in-memory {@link org.axonframework.modelling.command.Repository} with this fixture.
      * Should be used before calling {@link FixtureConfiguration#givenState(Supplier)} or {@link FixtureConfiguration#givenCommands(List)} (Supplier)}.
      *
      * @return the current FixtureConfiguration, for fluent interfacing

@@ -25,8 +25,8 @@ import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
@@ -60,6 +60,7 @@ import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
@@ -79,6 +80,7 @@ import org.quartz.SchedulerException;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -122,9 +124,9 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
         config.start();
 
-        FutureCallback<Object, Object> callback = new FutureCallback<>();
-        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get().getPayload());
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
+        assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(EventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
         assertEquals(2, config.getModules().size());
@@ -304,9 +306,9 @@ class DefaultConfigurerTest {
         ).buildConfiguration();
 
         config.start();
-        FutureCallback<Object, Object> callback = new FutureCallback<>();
-        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get().getPayload());
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
+        assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config, AggregateConfiguration.class, AxonIQConsoleModule.class);
@@ -332,9 +334,9 @@ class DefaultConfigurerTest {
                                  .buildConfiguration();
 
         config.start();
-        FutureCallback<Object, Object> callback = new FutureCallback<>();
-        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get().getPayload());
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
+        assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertTrue(config.getModules().stream().anyMatch(m -> m instanceof AggregateConfiguration));
 
@@ -386,9 +388,9 @@ class DefaultConfigurerTest {
         ).buildConfiguration();
 
         config.start();
-        FutureCallback<Object, Object> callback = new FutureCallback<>();
-        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get().getPayload());
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
+        assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config, AggregateConfiguration.class, AxonIQConsoleModule.class);
@@ -411,9 +413,9 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
         config.start();
 
-        FutureCallback<Object, Object> callback = new FutureCallback<>();
-        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get().getPayload());
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
+        assertEquals("test", result.get().getPayload());
         assertEquals(1, defaultMonitor.getMessages().size());
         assertEquals(1, commandBusMonitor.getMessages().size());
     }
@@ -455,9 +457,9 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
         config.start();
 
-        FutureCallback<Object, Object> callback = new FutureCallback<>();
-        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get().getPayload());
+        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+                                                  ProcessingContext.NONE);
+        assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(CachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
     }
@@ -553,7 +555,7 @@ class DefaultConfigurerTest {
         DomainEventMessage<String> testDomainEvent =
                 new GenericDomainEventMessage<>("StubAggregate", "some-aggregate-id", 0, "some-payload");
         DomainEventData<byte[]> snapshotData =
-                new AbstractSnapshotEventEntry<byte[]>(testDomainEvent, serializer, byte[].class) {
+                new AbstractSnapshotEventEntry<>(testDomainEvent, serializer, byte[].class) {
                 };
         DomainEventData<byte[]> domainEventData = new DomainEventEntry(testDomainEvent, serializer);
         // Firstly snapshot data will be retrieved (and filtered), secondly event data.
@@ -730,6 +732,12 @@ class DefaultConfigurerTest {
         @CommandHandler
         public StubAggregate(String command, CommandBus commandBus) {
             apply(command);
+        }
+
+        @CommandHandler
+        public static StubAggregate create(String command, CommandBus commandBus) {
+
+            return new StubAggregate(command, commandBus);
         }
 
         @CommandHandler(commandName = "update")

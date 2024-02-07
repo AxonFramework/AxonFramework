@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**

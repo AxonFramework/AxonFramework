@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.lifecycle.Lifecycle;
@@ -29,7 +28,6 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.SpanFactory;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -98,8 +96,8 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
     /**
      * Start this processor. This will register the processor with the {@link EventBus}.
      * <p>
-     * Upon start up of an application, this method will be invoked in the {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS}
-     * phase.
+     * Upon start up of an application, this method will be invoked in the
+     * {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS} phase.
      */
     @Override
     public void start() {
@@ -144,12 +142,14 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
     /**
      * Shut down this processor. This will deregister the processor with the {@link EventBus}.
      * <p>
-     * Upon shutdown of an application, this method will be invoked in the {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS}
-     * phase.
+     * Upon shutdown of an application, this method will be invoked in the
+     * {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS} phase.
      */
     @Override
     public void shutDown() {
-        IOUtils.closeQuietly(eventBusRegistration);
+        if (eventBusRegistration != null) {
+            eventBusRegistration.cancel();
+        }
         eventBusRegistration = null;
     }
 
@@ -243,7 +243,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
          *
          * @param processingStrategy the {@link EventProcessingStrategy} determining whether events are processed
          *                           directly or asynchronously
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder processingStrategy(@Nonnull EventProcessingStrategy processingStrategy) {
@@ -256,7 +255,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
          * Sets the {@link TransactionManager} used when processing {@link EventMessage}s.
          *
          * @param transactionManager the {@link TransactionManager} used when processing {@link EventMessage}s
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(@Nonnull TransactionManager transactionManager) {

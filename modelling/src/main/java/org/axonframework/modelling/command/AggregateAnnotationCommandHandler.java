@@ -19,19 +19,22 @@ package org.axonframework.modelling.command;
 import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandMessageHandler;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.CreationPolicyMember;
@@ -58,18 +61,19 @@ import static org.axonframework.modelling.command.AggregateCreationPolicy.NEVER;
  * annotations may appear on methods, in which case a specific aggregate instance needs to be targeted by the command,
  * or on the constructor. The latter will create a new Aggregate instance, which is then stored in the repository.
  * <p>
- * Despite being an {@link CommandMessageHandler} it does not actually handle the commands. During registration to the
- * {@link CommandBus} it registers the {@link CommandMessageHandler}s directly instead of itself so duplicate command
+ * Despite being an {@link CommandHandlingComponent} it does not actually handle the commands. During registration to the
+ * {@link CommandBus} it registers the {@link CommandHandlingComponent}s directly instead of itself so duplicate command
  * handlers can be detected and handled correctly.
  *
  * @param <T> the type of aggregate this handler handles commands for
  * @author Allard Buijze
  * @since 1.2
  */
-public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandler {
+public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComponent {
 
     private final Repository<T> repository;
     private final CommandTargetResolver commandTargetResolver;
+    // TODO replace these MessageHandlers for MessageHandlingMembers, as the latter dictate the use of annotations
     private final List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlers;
     private final Set<String> supportedCommandNames;
     private final Map<String, Set<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>>> supportedCommandsByName;
@@ -147,7 +151,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
      * Initializes all the handlers. Handlers are deduplicated based on their signature. The signature includes the name
      * of the method and all parameter types. This is an effective override in the hierarchy.
      */
-    private List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
+    private List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> initializeHandlers(
+            AggregateModel<T> aggregateModel) {
         List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlersFound = new ArrayList<>();
 
         aggregateModel.allCommandHandlers()
@@ -215,6 +220,17 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(commandMessage))
                        .handleSync(commandMessage);
+    }
+
+    @Override
+    public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                         ProcessingContext processingContext) {
+        return handlers.stream()
+                       .filter(ch -> ch.canHandle(message))
+                       .findFirst()
+                       .orElseThrow(() -> new NoHandlerForCommandException(message))
+                       .handle(message, processingContext)
+                       .map(GenericCommandResultMessage::asCommandResultMessage);
     }
 
     @Override
@@ -424,7 +440,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
     }
 
-    private class AggregateConstructorCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+    private class AggregateConstructorCommandHandler
+            implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         private final MessageHandlingMember<?> handler;
 
@@ -445,7 +462,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
     }
 
-    private class AlwaysCreateAggregateCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+    private class AlwaysCreateAggregateCommandHandler
+            implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         private final MessageHandlingMember<? super T> handler;
         private final CreationPolicyAggregateFactory<T> factoryMethod;
@@ -467,7 +485,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
     }
 
-    private class AggregateCreateOrUpdateCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+    private class AggregateCreateOrUpdateCommandHandler
+            implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
 
         private final MessageHandlingMember<? super T> handler;
         private final CreationPolicyAggregateFactory<T> factoryMethod;

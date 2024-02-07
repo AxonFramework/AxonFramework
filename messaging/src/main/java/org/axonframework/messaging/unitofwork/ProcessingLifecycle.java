@@ -1,5 +1,7 @@
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.FutureUtils;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -29,7 +31,7 @@ public interface ProcessingLifecycle {
     default ProcessingLifecycle runOn(Phase phase, Consumer<ProcessingContext> action) {
         return on(phase, c -> {
             action.accept(c);
-            return CompletableFuture.completedFuture(null);
+            return FutureUtils.emptyCompletedFuture();
         });
     }
 

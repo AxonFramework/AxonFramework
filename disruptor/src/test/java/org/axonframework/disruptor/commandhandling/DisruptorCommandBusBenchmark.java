@@ -31,6 +31,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.Repository;
@@ -69,7 +70,7 @@ public class DisruptorCommandBusBenchmark {
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {
             CommandMessage<StubCommand> command = asCommandMessage(new StubCommand(aggregateIdentifier));
-            commandBus.dispatch(command);
+            commandBus.dispatch(command, ProcessingContext.NONE);
         }
         System.out.println("Finished dispatching!");
 

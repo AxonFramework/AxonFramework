@@ -26,6 +26,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -120,7 +121,7 @@ class CommandGatewayFactoryTest {
                 x -> x.getMetaData().get("test") == metaTest
                         && "otherVal".equals(x.getMetaData().get("otherKey"))
                         && "value".equals(x.getMetaData().get("key"))
-        ));
+        ), any(ProcessingContext.class));
     }
 
     @Test

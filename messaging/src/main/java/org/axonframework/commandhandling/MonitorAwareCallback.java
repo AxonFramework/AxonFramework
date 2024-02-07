@@ -27,6 +27,7 @@ import javax.annotation.Nullable;
  * @param <R> the type of result of the command handling
  * @param <C> the type of payload of the command
  */
+@Deprecated
 public class MonitorAwareCallback<C, R> implements CommandCallback<C, R> {
 
     private final CommandCallback<C, R> delegate;
