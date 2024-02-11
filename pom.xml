@@ -80,7 +80,7 @@
         <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.4.3.Final</hibernate-core.6.version>
+        <hibernate-core.6.version>6.4.4.Final</hibernate-core.6.version>
         <mysql-connector-java.version>8.3.0</mysql-connector-java.version>
         <postgresql.version>42.7.1</postgresql.version>
         <!-- Jakarta -->
@@ -102,7 +102,7 @@
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <!-- Logging -->
         <log4j.version>2.22.1</log4j.version>
-        <slf4j.version>2.0.11</slf4j.version>
+        <slf4j.version>2.0.12</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.25</dropwizard.metrics.version>
         <micrometer.version>1.12.2</micrometer.version>
@@ -133,7 +133,7 @@
         <awaitility.version>4.2.0</awaitility.version>
         <hamcrest.version>2.2</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.10.1</junit.jupiter.version>
+        <junit.jupiter.version>5.10.2</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.3</testcontainers.version>
         <!-- Validation -->
