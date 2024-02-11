@@ -60,7 +60,7 @@
         <jackson-kotlin.version>2.16.0</jackson-kotlin.version>
         <!-- Logging -->
         <kotlin-logging.version>3.0.5</kotlin-logging.version>
-        <slf4j.version>2.0.11</slf4j.version>
+        <slf4j.version>2.0.12</slf4j.version>
         <log4j.version>2.13.3</log4j.version>
         <!-- Testing -->
         <junit.jupiter.version>5.10.1</junit.jupiter.version>
