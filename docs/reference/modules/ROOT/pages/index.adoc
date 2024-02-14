@@ -8,7 +8,7 @@ Axon Framework helps software developers build solutions according to specific s
 
 Axon Framework alone significantly simplifies the software development process of JVM-based applications following the above principles. However, it adds even more value when used in combination with other products of the Axon family. To understand the bigger picture, please refer to "xref:understanding-axon::index.adoc[Understanding Axon]". It explains how individual products complement each other and work together towards a common goal.
 
-The reference documentation is a valuable source during the development process. It assumes the reader is familiar with the underlying software design principles, deployment architectures, etc. To learn more about those, please refer to the relevant xref:home::explanations.adoc[]. For step-by-step instructions and examples of how to build Axon-based applications, use the xref:home::tutorials.adoc[]. For solving known challenges and completing typical tasks, there are xref:home::howtos.adoc[].
+The reference documentation is a valuable source during the development process. It assumes the reader is familiar with the underlying software design principles, deployment architectures, etc. To learn more about those, please refer to the relevant xref:home::explanations.adoc[]. For step-by-step instructions and examples of how to build Axon-based applications, use the xref:home::tutorials.adoc[].
 
 == Reference documentation structure
 
