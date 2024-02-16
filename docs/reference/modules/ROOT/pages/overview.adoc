@@ -19,9 +19,9 @@ TIP: If you want to build _(or merely explore)_ a simple example of such an appl
 Note the following aspects in the <<axon-arch-diagram>> above:
 
  - Distinct parts communicate with each other via messages. Thus the communication pattern is the same regardless of whether components reside in the same deployment unit or multiple distributed ones.
- - There is clear separation between the command and the query sides (models) as described by xref:concepts::cqrs.adoc[CQRS]. Each side can scale and evolve independently.
- - Since the command model is independent, developers and domain experts can establish a ubiquitous language and design it following the xref:concepts::ddd.adoc[Domain-Driven Design] principles.
- - As the repository of the command model is independent, and all state changes result in events, the solution can benefit from xref:concepts::es.adoc[Event Sourcing] and store all changes instead of limiting itself to the latest state.
+ - There is clear separation between the command and the query sides (models). Each side can scale and evolve independently.
+ - Since the command model is independent, developers and domain experts can establish a ubiquitous language and design it following the Domain-Driven Design principles.
+ - As the repository of the command model is independent, and all state changes result in events, the solution can benefit from Event Sourcing and store all changes instead of limiting itself to the latest state.
 
 Constructing applications in such a way makes it possible to
 
