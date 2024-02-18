@@ -147,7 +147,7 @@
         <dependency>
             <groupId>com.mchange</groupId>
             <artifactId>c3p0</artifactId>
-            <version>0.9.5.5</version>
+            <version>0.10.0-pre2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
