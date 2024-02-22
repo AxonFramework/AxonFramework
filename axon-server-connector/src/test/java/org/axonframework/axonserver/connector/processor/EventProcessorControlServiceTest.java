@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.axoniq.axonserver.connector.admin.AdminChannel;
 import io.axoniq.axonserver.connector.control.ControlChannel;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -30,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 import static org.mockito.Mockito.*;
 
@@ -113,6 +115,10 @@ class EventProcessorControlServiceTest {
         TokenStore tokenStore = mock(TokenStore.class);
         when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.of(TOKEN_STORE_IDENTIFIER));
         when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
+        TransactionManager transactionManager = mock(TransactionManager.class);
+        when(transactionManager.fetchInTransaction(any()))
+                .thenAnswer(invocation -> ((Supplier<?>) invocation.getArgument(0)).get());
+        when(processingConfiguration.transactionManager(anyString())).thenReturn(transactionManager);
 
         AxonServerConfiguration.Eventhandling.ProcessorSettings testSetting =
                 new AxonServerConfiguration.Eventhandling.ProcessorSettings();
@@ -146,6 +152,10 @@ class EventProcessorControlServiceTest {
         TokenStore tokenStore = mock(TokenStore.class);
         when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.of(TOKEN_STORE_IDENTIFIER));
         when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
+        TransactionManager transactionManager = mock(TransactionManager.class);
+        when(transactionManager.fetchInTransaction(any()))
+                .thenAnswer(invocation -> ((Supplier<?>) invocation.getArgument(0)).get());
+        when(processingConfiguration.transactionManager(anyString())).thenReturn(transactionManager);
 
         AxonServerConfiguration.Eventhandling.ProcessorSettings testSetting =
                 new AxonServerConfiguration.Eventhandling.ProcessorSettings();
@@ -186,6 +196,10 @@ class EventProcessorControlServiceTest {
         TokenStore tokenStore = mock(TokenStore.class);
         when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.empty());
         when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
+        TransactionManager transactionManager = mock(TransactionManager.class);
+        when(transactionManager.fetchInTransaction(any()))
+                .thenAnswer(invocation -> ((Supplier<?>) invocation.getArgument(0)).get());
+        when(processingConfiguration.transactionManager(anyString())).thenReturn(transactionManager);
 
         AxonServerConfiguration.Eventhandling.ProcessorSettings testSetting =
                 new AxonServerConfiguration.Eventhandling.ProcessorSettings();
