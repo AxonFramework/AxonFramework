@@ -1,0 +1,304 @@
+= Modules
+
+Axon Framework consists of a number of modules that provide specific capabilities.
+Depending on the exact needs of your project, you will need to include one or more of these modules.
+
+There are currently two ways of obtaining the module binaries: either download the binaries from our website or preferably configure a repository for your build system (http://maven.apache.org/[Maven], https://gradle.org/[Gradle]).
+
+To not be bothered with version compatibility issues between <<Main modules,framework>> and the <<Extension modules,extensions>>, it is recommended to use the <<Axon Bill of Materials,BOM>>.
+
+Axon modules are available on https://search.maven.org/search?q=axonframework[Maven Central].
+
+== Main modules
+
+Axon 'Main Modules' are the modules that have been thoroughly tested and are robust enough to use in demanding production environments.
+The maven `groupId` of all these modules is `org.axonframework`.
+Visit https://search.maven.org/search?q=g:org.axonframework[Maven Central Repository] to copy coordinates for the version you need.
+
+____
+
+*Quick start an Axon Application*
+
+The <<Axon Spring Boot Starter>> module is the quickest start in to an Axon project as it will retrieve all the required modules/dependencies transitively.
+Alternatively, you can manually select individual modules for a customized configuration.
+
+____
+
+[cols="<,<,<,^"]
+|===
+|Module |Artifact Id |Group Id |Maven Central
+
+|<<Axon Messaging>> |axon-messaging |org.axonframework |https://search.maven.org/search?q=a:axon-messaging[available]
+|<<Axon Modeling>> |axon-modelling |org.axonframework |https://search.maven.org/search?q=a:axon-modelling[available]
+|<<Axon Event Sourcing>> |axon-eventsourcing |org.axonframework |https://search.maven.org/search?q=a:axon-eventsourcing[available]
+|<<Axon Configuration>> |axon-configuration |org.axonframework |https://search.maven.org/search?q=a:axon-configuration[available]
+|<<Axon Test>> |axon-test |org.axonframework |https://search.maven.org/search?q=a:axon-test[available]
+|<<Axon Server Connector>> |axon-server-connector |org.axonframework |https://search.maven.org/search?q=a:axon-server-connector[available]
+|<<Axon Spring>> |axon-spring |org.axonframework |https://search.maven.org/search?q=a:axon-spring[available]
+|<<Axon Spring Boot Starter>> |axon-spring-boot-starter |org.axonframework |https://search.maven.org/search?q=a:axon-spring-boot-starter[available]
+|<<Axon Disruptor>> |axon-disruptor |org.axonframework |https://search.maven.org/search?q=a:axon-disruptor[available]
+|<<Axon Metrics>> |axon-metrics |org.axonframework |https://search.maven.org/search?q=a:axon-metrics[available]
+|<<Axon Micrometer>> |axon-micrometer |org.axonframework |https://search.maven.org/search?q=a:axon-micrometer[available]
+|<<Axon Legacy>> |axon-legacy |org.axonframework |https://search.maven.org/search?q=a:axon-legacy[available]
+|<<Axon Tracing OpenTelemetry>> |axon-tracing-opentelemetry |org.axonframework |https://search.maven.org/search?q=a:axon-tracing-opentelemetry[available]
+|===
+
+=== Axon Messaging
+
+This module contains all necessary components and building blocks to support command, event and query messaging.
+
+=== Axon Modeling
+
+This module contains the necessary components to create domain models, like Aggregates and Sagas.
+
+=== Axon Event Sourcing
+
+This module contains all necessary infrastructure components to support Event Sourcing, Command and Query Models.
+
+=== Axon Test
+
+This module contains test fixtures that you can use to test Axon based components, such as your Command Handlers, Aggregates and Sagas.
+You typically do not need this module at runtime and will only need to be added to the classpath for running tests.
+
+=== Axon Configuration
+
+This module contains all the necessary components to configure an Axon application.
+
+=== Axon Server Connector
+
+This module provides infrastructure components that connect to Axon Server.
+
+=== Axon Spring
+
+This module allows Axon Framework components to be configured in the Spring Application context.
+It also provides a number of building block implementations specific to Spring Framework, such as an adapter for publishing and retrieving Axon Events on a Spring Messaging Channel.
+
+=== Axon Spring Boot Starter
+
+This module provides Spring Boot auto-configuration for your project.
+It is by far the easiest option to get started as it automatically configures all Axon components.
+It is explained in more details link:spring-boot-integration.adoc[here].
+
+=== Axon Disruptor
+
+This module contains a specific CommandBus and Command Handling solution based on the Disruptor paradigm.
+
+=== Axon Metrics
+
+This module provides basic implementations based on Coda Hale to collect the monitoring information.
+
+=== Axon Micrometer
+
+This module provides basic implementations based on Micrometer to collect the monitoring information. https://micrometer.io/[Micrometer] is a dimensional-first metrics collection facade whose aim is to allow you to time, count, and gauge your code with a vendor neutral API.
+
+=== Axon Legacy
+
+This module contains components that enable migration of older Axon projects to use the latest Axon version.
+
+=== Axon Tracing OpenTelemetry
+
+This module contains the components needed to link:monitoring/tracing.adoc[enable tracing] with OpenTelemetry.
+
+== Extension modules
+
+Besides main modules, there are several extension modules which complement Axon Framework.
+They address distribution concerns of Axon Framework towards non-Axon Server solutions.
+The maven `groupId` of these extensions starts with `org.axonframework.extensions.*`.
+Visit https://search.maven.org/search?q=axonframework%20extensions[Maven Central Repository] to copy coordinates for the version you need.
+
+[cols="<,<,<,<,^"]
+|===
+|Module |Artifact Id |Group Id |Maven Central |GitHub
+
+| <<Axon AMQP>> |axon-amqp |org.axonframework.extensions.amqp |https://search.maven.org/search?q=a:axon-amqp[available] |https://github.com/AxonFramework/extension-amqp[available]
+| <<Axon AMQP Spring Boot Starter>> |axon-amqp-spring-boot-starter |org.axonframework.extensions.amqp |https://search.maven.org/search?q=a:axon-amqp-spring-boot-starter[available] |https://github.com/AxonFramework/extension-amqp[available]
+| <<Axon CDI>> |axon-cdi |org.axonframework.extensions.cdi |https://search.maven.org/search?q=a:axon-cdi[available] |https://github.com/AxonFramework/extension-cdi[available]
+| <<Axon JGroups>> |axon-jgroups |org.axonframework.extensions.jgroups |https://search.maven.org/search?q=a:axon-jgroups[available] |https://github.com/AxonFramework/extension-jgroups[available]
+| <<Axon JGroups Spring Boot Starter>> |axon-jgroups-spring-boot-starter |org.axonframework.extensions.jgroups |https://search.maven.org/search?q=a:axon-jgroups-spring-boot-starter[available] |https://github.com/AxonFramework/extension-jgroups[available]
+| <<Axon JobRunr Pro>> |axon-jobrunrpro |org.axonframework.extensions.jobrunrpro |https://search.maven.org/search?q=a:axon-jobrunrpro[available] |https://github.com/AxonFramework/extension-jobrunrpro[available]
+| <<Axon JobRunr Pro Spring Boot Starter>> |axon-jobrunrpro-spring-boot-starter |org.axonframework.extensions.jobrunrpro |https://search.maven.org/search?q=a:axon-jobrunrpro-spring-boot-starter[available] |https://github.com/AxonFramework/extension-jobrunrpro[available]
+| <<Axon Kafka>> |axon-kafka |org.axonframework.extensions.kafka |https://search.maven.org/search?q=a:axon-kafka[available] |https://github.com/AxonFramework/extension-kafka[available]
+| <<Axon Kafka Spring Boot Starter>> |axon-kafka-spring-boot-starter |org.axonframework.extensions.kafka |https://search.maven.org/search?q=a:axon-kafka-spring-boot-starter[available] |https://github.com/AxonFramework/extension-kafka[available]
+| <<Axon Kotlin>> |axon-kotlin |org.axonframework.extensions.kotlin |https://search.maven.org/search?q=a:axon-kotlin[available] |https://github.com/AxonFramework/extension-kotlin[available]
+| <<Axon Kotlin Test>> |axon-kotlin-test |org.axonframework.extensions.kotlin |https://search.maven.org/search?q=a:axon-kotlin-test[available] |https://github.com/AxonFramework/extension-kotlin[available]
+| <<Axon Mongo>> |axon-mongo |org.axonframework.extensions.mongo |https://search.maven.org/search?q=a:axon-mongo[available] |https://github.com/AxonFramework/extension-mongo[available]
+| <<Axon Mongo Spring Boot Starter>> |axon-mongo-spring-boot-starter |org.axonframework.extensions.mongo |https://search.maven.org/search?q=a:axon-mongo-spring-boot-starter[available] |https://github.com/AxonFramework/extension-mongo[available]
+| <<Axon Multi Tenancy>> |axon-multitenancy |org.axonframework.extensions.multitenancy |https://search.maven.org/search?q=a:axon-multitenancy[available] |https://github.com/AxonFramework/extension-multitenancy[available]
+| <<Axon Multi Tenancy Spring Boot Starter>> |axon-multitenancy-spring-boot-starter |org.axonframework.extensions.multitenancy |https://search.maven.org/search?q=a:axon-multitenancy-spring-boot-starter[available] |https://github.com/AxonFramework/extension-multitenancy[available]
+| <<Axon Reactor>> |axon-reactor |org.axonframework.extensions.reactor |https://search.maven.org/search?q=a:axon-reactor[available] |https://github.com/AxonFramework/extension-reactor[available]
+| <<Axon Reactor Spring Boot Starter>> |axon-reactor-spring-boot-starter |org.axonframework.extensions.reactor |https://search.maven.org/search?q=a:axon-reactor-spring-boot-starter[available] |https://github.com/AxonFramework/extension-reactor[available]
+| <<Axon Spring Ahead of Time>> |axon-spring-aot |org.axonframework.extensions.spring-aot |https://search.maven.org/search?q=a:axon-spring-aot[available] |https://github.com/AxonFramework/extension-spring-aot[available]
+| <<Axon Spring Cloud>> |axon-springcloud |org.axonframework.extensions.springcloud |https://search.maven.org/search?q=a:axon-springcloud[available] |https://github.com/AxonFramework/extension-springcloud[available]
+| <<Axon Spring Cloud Spring Boot Starter>> |axon-springcloud-spring-boot-starter |org.axonframework.extensions.springcloud |https://search.maven.org/search?q=a:axon-springcloud-spring-boot-starter[available] |https://github.com/AxonFramework/extension-springcloud[available]
+| <<Axon Tracing>> |axon-tracing |org.axonframework.extensions.tracing |https://search.maven.org/search?q=a:axon-tracing[available] |https://github.com/AxonFramework/extension-tracing[available]
+| <<Axon Tracing Spring Boot Starter>> |axon-tracing-spring-boot-starter |org.axonframework.extensions.tracing |https://search.maven.org/search?q=a:axon-tracing-spring-boot-starter[available] |https://github.com/AxonFramework/extension-tracing[available]
+|===
+
+=== Axon AMQP
+
+This module provides components that allow you leverage an AMQP-based message broker as an Event Message distribution mechanism.
+This allows for guaranteed-delivery, even when the Event Handler node is temporarily unavailable.
+
+=== Axon AMQP Spring Boot Starter
+
+This module provides Spring auto-configuration on top of the `axon-amqp` module.
+
+=== Axon CDI
+
+This module provides support for Contexts and Dependency Injection (CDI) for the Java EE platform.
+
+=== Axon JGroups
+
+This module provides integration with JGroups for command distribution. http://www.jgroups.org/[JGroups] should be regarded as a reliable messaging toolkit.
+
+=== Axon JGroups Spring Boot Starter
+
+This module provides Spring auto-configuration on top of the `axon-jgroups` module
+
+=== Axon JobRunr Pro
+
+This module provides integration with https://www.jobrunr.io/en/documentation/pro/[JobRunr Pro].
+
+=== Axon JobRunr Pro Spring Boot Starter
+
+This module provides Spring auto-configuration on top of the `axon-jobrunrpro` module
+
+=== Axon Kafka
+
+This module provides integration with Kafka for event distribution.
+As such it plays a similar role as the <<Axon AMQP>> extension and thus is *not* a replacement Event Storage mechanism. https://kafka.apache.org/[Kafka] is a distributed message streaming platform.
+
+=== Axon Kafka Spring Boot Starter
+
+This module provides Spring auto-configuration on top of the `axon-kafka` module.
+
+=== Axon Kotlin
+
+This module provides a set of reified operations, among others, to allow a cleaner https://kotlinlang.org/[Kotlin] coding experience when using Axon.
+
+=== Axon Kotlin Test
+
+This module provides a set of reified operations, among others, to allow a cleaner https://kotlinlang.org/[Kotlin] coding experience when testing Axon applications.
+
+=== Axon Mongo
+
+This module provides event and saga store implementations that store event streams and sagas in a MongoDB database. https://www.mongodb.com/[MongoDB] is a document based NoSQL database.
+
+=== Axon Mongo Spring Boot Starter
+
+This module provides Spring auto-configuration on top of the `axon-mongo` module.
+
+=== Axon Multi Tenancy
+
+This module provides distinct wrappers for Axon Framework's infrastructure components to support multi tenancy within a single application.
+Use of this extension is most easily achieved with Axon Server, through using its multi-context feature, albeit not limited to this.
+
+=== Axon Multi Tenancy Spring Boot Starter
+
+This module provides Spring auto-configuration on top of the `axon-multitenancy` module.
+Note that this assumes an active Axon Server connection be present.
+
+=== Axon Reactor
+
+This module provides integration with https://projectreactor.io/[Project Reactor].
+
+=== Axon Reactor Spring Boot Starter
+
+This module provides Spring auto-configuration on top of the `axon-reactor` module.
+
+=== Axon Spring Ahead of Time
+
+This module provides integration with Spring Ahead of Time. https://docs.spring.io/spring-boot/docs/current/reference/html/native-image.html#native-image.introducing-graalvm-native-images.understanding-aot-processing[Spring AOT processing] is part of creating a native image from a Spring (Boot) application.
+
+=== Axon Spring Cloud
+
+This module provides integration with Spring Cloud for command distribution. https://spring.io/projects/spring-cloud[Spring Cloud] provides an API for common distributed system patterns.
+
+=== Axon Spring Cloud Spring Boot Starter
+
+This module provides Spring auto-configuration on top of the `axon-springcloud` module
+
+=== Axon Tracing
+
+This module provides support for distributed tracing of Axon applications.
+The https://opentracing.io/[Open Tracing] standard is used to provide the tracing capabilities.
+If you're looking for Open Telemetry support, please check our documentation for that over link:monitoring/tracing.adoc[here].
+
+=== Axon Tracing Spring Boot Starter
+
+This module provides Spring auto-configuration on top of the `axon-tracing` module
+
+== Axon Bill of Materials
+
+In addition to the main framework modules and the extensions, Axon also has a https://en.wikipedia.org/wiki/Software_bill_of_materials[Bill of Materials], or BOM.
+The BOM is provided to ensure the use of compatible framework and extension dependencies inside an Axon application.
+As such, it is the recommended approach towards defining the overall Axon version used inside of an application.
+
+[cols="<,<,<,<,^"]
+|===
+|Module |Artifact Id |Group Id |Maven Central |GitHub
+
+|<<Axon Bill of Materials>> |axon-bom |org.axonframework |https://search.maven.org/search?q=a:axon-bom[available] |https://github.com/AxonFramework/axon-bom[available]
+|===
+
+For using the BOM, you would add the `axon-bom` dependency to your dependency management system:
+
+===== Maven
+
+[source,xml]
+----
+<!--...-->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-bom</artifactId>
+            <version>${version.axon}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
+        ...
+
+    </dependencies>
+</dependencyManagement>
+<!--...-->
+----
+
+===== Gradle
+
+For usage with *Gradle Version 4.x* and below, apply the dependency-management-plugin like so:
+
+[source,groovy]
+----
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath "io.spring.gradle:dependency-management-plugin:0.5.1.RELEASE"
+  }
+}
+
+apply plugin: "io.spring.dependency-management"
+----
+
+After this, import the Axon BOM:
+
+[source,groovy]
+----
+dependencyManagement {
+  imports {
+    mavenBom 'org.axonframework:axon-bom:<VERSION>'
+  }
+}
+----
+
+Beginning with *https://docs.gradle.org/5.0/userguide/managing_transitive_dependencies.html#sec:bom_import[Gradle version 5.0]*, you can also omit the dependency-management plugin and instead use the `platform` dependency dsl to import maven boms:
+
+`implementation(platform("org.axonframework:axon-bom:<VERSION>"))`
+
+'''
+
+After that is in place, you can add any of the mentioned dependencies from <<Main modules,framework>> and the <<Extension modules,extensions>> without specifying versions.
+Furthermore, you will be guaranteed that the provided versions in the BOM are compatible with one another.

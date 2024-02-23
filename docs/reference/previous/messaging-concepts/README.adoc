@@ -1,0 +1,79 @@
+= Messaging Concepts
+
+One of the core concepts in Axon is messaging. All communication between components is done using message objects. This gives these components the location transparency needed to be able to scale and distribute these components when necessary.‌
+
+Although all these messages implement the `Message` interface, there is a clear distinction between the different types of messages and how they are treated.‌
+
+All messages contain a payload, meta data and unique identifier. The payload of the message is the functional description of what the message means. The combination of the class name of this object and the data it carries, describe the application's meaning of the message. The metadata allows you to describe the context in which a message is being sent. You can, for example, store tracing information, to allow the origin or cause of messages to be tracked. You can also store information to describe the security context under which a command is being executed.‌
+
+​https://youtu.be/vnCxjWZrrk0[Axon Coding Tutorial #2: - The Core API]​
+
+____
+
+*Note*
+
+Note that all messages are immutable. Storing data in a message actually means creating a new message based on the previous one, with extra information added to it. This guarantees that messages are safe to use in a multi-threaded and distributed environment.
+
+____
+
+‌
+
+== Commands <a id="commands"></a>
+
+‌
+
+Commands describe an intent to change the application's state. They are implemented as (preferably read-only) POJOs that are wrapped using one of the `CommandMessage` implementations.‌
+
+Commands always have exactly one destination. While the sender does not care which component handles the command or where that component resides, it may be interesting knowing the outcome of it. That is why command messages sent over the command bus allow for a result to be returned.‌
+
+== Events <a id="events"></a>
+
+‌
+
+Events are objects that describe something that has occurred in the application. A typical source of events is the aggregate. When something important has occurred within the aggregate, it will raise an event. In Axon Framework, events can be any object. You are highly encouraged to make sure all events are serializable.‌
+
+When Events are dispatched, Axon wraps them in an `EventMessage`. The actual type of Message used depends on the origin of the event. When an event is raised by an aggregate, it is wrapped in a `DomainEventMessage` (which extends `EventMessage`). All other events are wrapped in an `EventMessage` . Aside from common `Message` attributes like the unique Identifier an `EventMessage` also contains a timestamp. The `DomainEventMessage` additionally contains the type and identifier of the aggregate that raised the event. It also contains the sequence number of the event in the aggregate's event stream, which allows the order of events to be reproduced.
+
+____
+
+*Note*
+
+Even though the `DomainEventMessage` contains a reference to the Aggregate Identifier, you should always include the identifier in the actual Event itself as well. The identifier in the DomainEventMessage is used by the `EventStore` to store events and may not always provide a reliable value for other purposes.
+
+____
+
+‌
+
+The original event object is stored as the payload of an `EventMessage`. Next to the payload, you can store information in the metadata of an event message. The intent of the metadata is to store additional information about an event that is not primarily intended as business information. Auditing information is a typical example. It allows you to see under which circumstances an Event was raised. Such as the user account that triggered the processing, or the name of the machine that processed the event.
+
+____
+
+*Note*
+
+In general, you should not base business decisions on information in the metadata of event messages. If that is the case, you might have information attached that should really be part of the event itself instead. Metadata is typically used for reporting, auditing and tracing.
+
+____
+
+‌
+
+Although not enforced, it is good practice to make domain events immutable, preferably by making all fields final and by initializing the event within the constructor. Consider using a Builder pattern if event construction is too cumbersome.
+
+____
+
+*Note*
+
+Although domain events technically indicate a state change, you should try to capture the intention of the state in the event, too. A good practice is to use an abstract implementation of a domain event to capture the fact that certain state has changed, and use a concrete sub-implementation of that abstract class that indicates the intention of the change. For example, you could have an abstract `AddressChangedEvent`, and two implementations `ContactMovedEvent` and `AddressCorrectedEvent` that capture the intent of the state change. Some listeners don't care about the intent (e.g. database updating event listeners). These will listen to the abstract type. Other listeners do care about the intent and these will listen to the concrete subtypes (e.g. to send an address change confirmation email to the customer).
+
+​​image:https://github.com/domaincomponents/axon-reference-guide-dev/tree/a35820ab094a48b706169ac15cff41e83ef81622/configuring-infrastructure-components/.gitbook/assets/state-change-intent.png[ &quot;Adding intent to events]​
+
+____
+
+‌
+
+When dispatching an Event on the Event Bus, you will need to wrap it in an Event Message. The `GenericEventMessage` is an implementation that allows you to wrap your Event in a Message. You can use the constructor, or the static `asEventMessage()` method. The latter checks whether the given parameter doesn't already implement the `Message` interface. If so, it is either returned directly (if it implements `EventMessage`,) or it returns a new `GenericEventMessage` using the given `Message`'s payload and Meta Data. If an Event is applied (published) by an Aggregate Axon will automatically wrap the Event in a `DomainEventMessage` containing the Aggregate's Identifier, Type and Sequence Number.‌
+
+== Queries <a id="queries"></a>
+
+‌
+
+Queries describe a request for information or state. A query can have multiple handlers. When dispatching queries, the client indicates whether he wants a result from one or from all available query handlers.

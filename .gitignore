@@ -17,8 +17,6 @@ axon.iws
 .factorypath
 /.metadata/
 
-events/
-
 # MacOS makes this one
 .DS_Store
 

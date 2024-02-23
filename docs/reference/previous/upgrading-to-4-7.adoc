@@ -1,0 +1,167 @@
+= Upgrading to Axon Framework 4.7
+
+Unfortunately, but necessarily, Axon Framework 4.7.0 introduces a few breaking changes.
+If you migrate from 4.6.x (or earlier) versions, you may need to make some adjustments to your code.
+If you start a greenfield Axon Framework project, there is nothing to worry about.
+You may safely skip the following information.
+
+The breaking changes are related to the migration from `javax` to `jakarta` packages both in Axon Framework and other frameworks often used together with Axon.
+Depending on what you were using with 4.6.x version, there are three possible migration paths:
+
+. <<Steps to upgrade from `javax` to `javax`,From `javax` to `javax`>>:
+This is what you may want if you don’t want Spring 6 and Spring Boot 3 support and expect things to stay the same.
+. <<Steps to upgrade from `javax` to `jakarta`,From `javax` to `jakarta`>>:
+This is what you will want if you also upgrade to Spring 6, Spring Boot 3, or another framework that depends on `jakarta` packages.
+. <<Steps to upgrade from `jakarta` to `jakarta`,From `jakarta` to `jakarta`>>:
+This is what you will want if you have already moved to the optional `[module-name]-jakarta` modules in Axon Framework 4.6.x.
+
+Next to the full scenario descriptions, you are also able to use https://github.com/openrewrite[OpenRewrite] migration recipes provided by the Framework.
+Please go to the <<Migration Automation>> section for more details.
+
+____
+
+*From `jakarta` to `javax`*
+
+While technically possible, the `jakarta` to `javax` migration is not something you should do.
+If you have already made an effort to switch to the new packages, it makes no sense to go back.
+
+____
+
+== Steps to upgrade from `javax` to `javax`
+
+____
+
+*Zero Axon Configuration*
+
+If you don't have _any_ manual configuration and use the framework's `axon-spring-boot-starter`, than the upgrade to 4.7 is seamless.
+
+____
+
+=== Step 1
+
+Adjust packages in `import` statements and FQCNs according to the new locations mentioned below:
+
+|===
+|Axon 4.6.x |Axon 4.7.x
+
+|org.axonframework.common.jpa.EntityManagerProvider |org.axonframework.common.legacyjpa.EntityManagerProvider
+|org.axonframework.common.jpa.PagingJpaQueryIterable |org.axonframework.common.legacyjpa.PagingJpaQueryIterable
+|org.axonframework.common.jpa.SimpleEntityManagerProvider |org.axonframework.common.legacyjpa.SimpleEntityManagerProvider
+|org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter |org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterJpaConverter
+|org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter |org.axonframework.eventhandling.deadletter.legacyjpa.EventMessageDeadLetterJpaConverter
+|org.axonframework.eventhandling.deadletter.jpa.JpaDeadLetter |org.axonframework.eventhandling.deadletter.legacyjpa.JpaDeadLetter
+|org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue |org.axonframework.eventhandling.deadletter.legacyjpa.JpaSequencedDeadLetterQueue
+|org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore |org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore
+|org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine |org.axonframework.eventsourcing.eventstore.legacyjpa.JpaEventStorageEngine
+|org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver |org.axonframework.eventsourcing.eventstore.legacyjpa.SQLErrorCodesResolver
+|org.axonframework.messaging.interceptors.BeanValidationInterceptor |org.axonframework.messaging.interceptors.legacyvalidation.BeanValidationInterceptor
+|org.axonframework.messaging.interceptors.JSR303ViolationException |org.axonframework.messaging.interceptors.legacyvalidation.JSR303ViolationException
+|org.axonframework.modelling.command.GenericJpaRepository |org.axonframework.modelling.command.legacyjpa.GenericJpaRepository
+|org.axonframework.modelling.saga.repository.jpa.JpaSagaStore |org.axonframework.modelling.saga.repository.legacyjpa.JpaSagaStore
+|org.axonframework.springboot.autoconfig.JpaAutoConfiguration |org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration
+|org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration |org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxEventStoreAutoConfiguration
+|org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider |org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider
+|===
+
+=== Step 2
+
+If you have customized the `TokenEntry` or `AbstractTokenEntry`, rebase your changes on the current `TokenEntry`.
+This is required since the `AbstractTokenEntry` has been deprecated in favor of the `TokenEntry`.
+
+=== Step 3
+
+If you have customized the `SagaEntry` or `AbstractSagaEntry`, rebase your changes on the current `SagaEntry`.
+This is required since the `AbstractSagaEntry` has been deprecated in favor of the `SagaEntry`.
+
+== Steps to upgrade from `javax` to `jakarta`
+
+=== Step 1
+
+Remove most mentions of `javax` in your codebase and replace them with respective `jakarta` ones.
+Note that not every reference of `javax` is deprecated as part of the Javax-to-Jakarta switch, such as some `javax.annotation` and `javax.cache` mentions.
+You can find an https://github.com/jakartaee/jakartaee-platform/blob/master/namespace/unaffected-packages.adoc[exhaustive list of unaffected packages here].
+
+=== Step 2
+
+If you are using any other frameworks together with Axon Framework (such as Spring, Hibernate, etc.) make sure to upgrade those to the respective versions supporting `jakarta` namespace.
+
+=== Step 3
+
+If you migrate to Hibernate 6 and did *not* customize the sequence generator of the Framework's `domain_event_entry`
+and `association_value_entry`, you need to deal with Hibernates adjusted default sequence generator.
+In this case, your environment uses a so-called `hibernate_sequence` that is used for *all* your tables.
+However, Hibernate 6 will construct dedicated sequences per table using a sequence generator.
+
+Although we strongly recommend that you use a dedicated sequence generator per table, the easiest way forward to switch back this new default of Hibernate:
+
+===== `persistence.xml` Configuration
+
+[source,xml]
+----
+<persistence>
+    <persistence-unit name="my-persistence-unit">
+        <!-- omitting other configuration for simplicity... -->
+        <properties>
+            <!-- ensure backward compatibility -->
+            <property name="hibernate.id.db_structure_naming_strategy" value="legacy"/>
+            <!-- omitting other properties for simplicity... -->
+        </properties>
+    </persistence-unit>
+</persistence>
+----
+
+===== Spring Boot - Properties file
+
+[source,text]
+----
+spring.jpa.properties.hibernate.id.db_structure_naming_strategy=legacy
+#omitting other properties for simplicity...
+----
+
+== Steps to upgrade from `jakarta` to `jakarta`
+
+In your dependency configuration (Maven, Gradle, etc.) replace the `jakarta`-specific Axon Framework modules with the default ones:
+
+|===
+|Axon 4.6.x |Axon 4.7.x
+
+|axon-configuration-jakarta |axon-configuration
+|axon-eventsourcing-jakarta |axon-eventsourcing
+|axon-messaging-jakarta |axon-messaging
+|axon-modelling-jakarta |axon-modelling
+|===
+
+== Migration Automation
+
+The steps above explain in detail what you need to do to upgrade to Axon Framework 4.7 or higher.
+If you want to automate some of these steps, there are two https://github.com/openrewrite[OpenRewrite] migration recipes you can use:
+
+. https://github.com/AxonFramework/AxonFramework/blob/master/migration/src/main/resources/META-INF/rewrite/axon-jakarta-4.yml[*Upgrade to Axon Framework 4.7+ Jakarta*] - A recipe to upgrade from an Axon Framework Javax-specific project to Jakarta.
+. https://github.com/AxonFramework/AxonFramework/blob/master/migration/src/main/resources/META-INF/rewrite/axon-javax-4.yml[*Upgrade to Axon Framework 4.7+ Javax*] - A recipe to upgrade an Axon Framework Javax-specific project and remain on Javax.
+
+For example, if you want to upgrade to 4.7 and stick with Javax, you can run the following command:
+
+[source,text]
+----
+mvn -U org.openrewrite.maven:rewrite-maven-plugin:4.40.0:run \
+  -Drewrite.recipeArtifactCoordinates=org.axonframework:axon-migration:LATEST \
+  -DactiveRecipes=org.axonframework.migration.UpgradeAxonFramework_4_7_Javax
+----
+
+If you prefer https://gradle.org/[Gradle] over https://maven.apache.org/[Maven], refer to the OpenRewrite https://docs.openrewrite.org/running-recipes/running-rewrite-on-a-gradle-project-without-modifying-the-build[documentation] to resolve this.
+
+____
+
+*Can I combine recipes?*
+
+The mentioned recipes above only allow you to upgrade Axon Framework-specific code.
+However, you can combine recipes into a single command to, for example, upgrade to Spring Boot 3 and Axon Framework 4.7 in one go:
+
+[source,text]
+----
+mvn -U org.openrewrite.maven:rewrite-maven-plugin:4.40.0:run \
+ -Drewrite.recipeArtifactCoordinates=org.openrewrite.recipe:rewrite-spring:4.33.0,org.axonframework:axon-migration:LATEST \  
+ -DactiveRecipes=org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_0,org.axonframework.migration.UpgradeAxonFramework_4_7_Jakarta
+----
+
+____

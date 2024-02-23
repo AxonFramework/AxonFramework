@@ -1,0 +1,16 @@
+= Events
+
+The second type of "Messages" that an Axon application is associated with are _*Event Messages (or simply Events).*_ This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help facilitate Event Message Development.
+
+A summary of the various sub-sections is given below.
+
+[cols="<,<"]
+|===
+|Sub-Section |Purpose 
+
+|link:event-dispatchers.md[Event Dispatchers] / link:event-handlers.md[Event Handlers] |Functional development for Event Messages using the Axon Framework 
+|link:event-processors/README.md[Event Processors] / link:event-bus-and-event-store.md[Event Bus &amp; Event Store] |Non-Functional development for Event Messages using the Axon Framework 
+|link:event-versioning.md[Event Versioning] |Details on Event versioning capabilities provided by the Axon Framework 
+|===
+
+This guide is complemented by a video tutorial which gives a practical demonstration of the concepts explained in this section. The tutorial is available at -&gt; https://www.youtube.com/watch?v=jS1vfc5EohM&feature=youtu.be[Axon Coding Tutorial - Event Messages]

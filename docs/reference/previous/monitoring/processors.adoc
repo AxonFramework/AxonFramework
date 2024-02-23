@@ -1,0 +1,52 @@
+= Event Processor monitoring
+
+link:../events/event-processors/README.md[Event processors] should be kept an eye on
+when determining the health and status of your application.
+You can achieve this by checking the Event Tracker Status, or monitoring the event processors through metrics.
+
+== Event Tracker Status <a id="event-tracker-status"></a>
+
+Since link:../events/event-processors/streaming.md#token-store[Tracking Tokens] "track" the progress of a given Streaming Event Processor, they provide a sensible monitoring hook in any Axon application.
+Such a hook proves its usefulness when we want to rebuild our view model and we want to check when the processor has caught up with all the events.
+
+To that end the `StreamingEventProcessor` exposes the `processingStatus()` method.
+It returns a map where the key is the segment identifier and the value is an "Event Tracker Status".
+
+The Event Tracker Status exposes a couple of metrics:
+
+* The `Segment` it reflects the status of.
+* A boolean through `isCaughtUp()` specifying whether it is caught up with the Event Stream.
+* A boolean through `isReplaying()` specifying whether the given Segment is link:../events/event-processors/streaming.md#replaying-events[replaying].
+* A boolean through `isMerging()` specifying whether the given Segment is link:../events/event-processors/streaming.md#splitting-and-merging-segments[merging].
+* The `TrackingToken` of the given Segment.
+* A boolean through `isErrorState()` specifying whether the Segment is in an error state.
+* An optional `Throwable` if the Event Tracker reached an error state.
+* An optional `Long` through `getCurrentPosition` defining the current position of the `TrackingToken`.
+* An optional `Long` through `getResetPosition` defining the position at reset of the `TrackingToken`.
+ This field will be `null` in case the `isReplaying()` returns `false`.
+ It is possible to derive an estimated duration of replaying by comparing the current position with this field.
+* An optional `Long` through `mergeCompletedPosition()` defining the position on the `TrackingToken` when merging will be completed.
+ This field will be `null` in case the `isMerging()` returns `false`.
+ It is possible to derive an estimated duration of merging by comparing the current position with this field.
+
+Only segments that are currently being actively processed or reached an error state during previous processing will be contained in the `processingStatus()`.
+For a complete overview, you should retrieve the status from each instance of your application.
+
+== Metrics <a id="event-processor-metric"></a>
+
+Besides querying the event processors for their status directly,
+the link:metrics.md[metric modules] provides a way to monitor event processors as well.
+The modules contain a `MessageMonitor` that exposes metrics about the processed messages of each processor,
+including capacity, latency, processing time and counters.
+
+The exposed metrics can be scraped by the tool of your choice (for example, https://prometheus.io/[Prometheus])
+and alerting can be put in place for several useful metrics.
+Examples of useful monitoring:
+
+* The *latency* becomes too high, indicating a long time between the moment an event was published
+ and handled by the processor.
+* The *capacity* reaches high value (for example, 0.8 when using 1 thread, indicating it is busy 80% of the time).
+ This indicates a performance problem, or that the segment should be split to parallelize processing.
+* The *counter* metrics can be used to calculate an average number of events processed per minute.
+ If this drops or increases
+ outside the normal operating parameters of your application, this warrants investigation.

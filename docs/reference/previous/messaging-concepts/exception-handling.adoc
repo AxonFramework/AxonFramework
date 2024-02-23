@@ -1,0 +1,27 @@
+= Exception Handling
+
+Exception handling is a well-known concept when developing software.
+Dealing with exceptions in a distributed application landscape is a little more challenging than we are typically used to.
+Especially when it comes to failures when handling a command or a query, messages that are intended to have a return value, we should be conscious about how we throw exceptions.
+
+== Handler Execution Exception
+
+The `HandlerExecutionException` marks an exception which originates from a message handling member.
+Since an link:../events[Event] message is unidirectional, handling an event does not include any return values.
+As such, the `HandlerExecutionException` should only be returned as an exceptional result from handling a command.
+Axon provides a more concrete implementation of this exception for failed command and query handling, respectively the `CommandExecutionException` and `QueryExecutionException`.
+
+The usefulness of a dedicated handler execution exception becomes clearer in a distributed application environment where, for example, there is a dedicated application for dealing with commands and another application tasked with the query side.
+Due to the application division, you loose any certainty that both applications can access the same classes, which thus holds for any exception classes.
+To support and encourage this decoupling, Axon will generify any exception which is a result of Command or Query Handling.
+
+To maintain support for conditional logic dependent on the type of exception thrown in a distributed scenario, it is possible to provide details in a `HandlerExecutionException`.
+It is thus recommended to throw a `CommandExecutionException` / `QueryExecutionException`with the required details, when command/query handling fails.
+This behaviour could be supported generically by implementing link:message-intercepting.md[interceptors] which perform exception wrapping for you.
+
+== @ExceptionHandler annotated methods
+
+Axon Framework allows the use of methods annotated with `@ExceptionHandler` to provide more fine-grained control on how to react to exceptions.
+More specifically, this is a type of link:message-intercepting.md[message handler interceptor] dedicated to reacting to exceptional results.
+Note that such an `@ExceptionHandler` will only handle exceptions thrown from message handling functions in the same class.
+For more specifics on how to use this annotation, check out link:message-intercepting.md#exceptionhandler[this] section.

@@ -1,0 +1,14 @@
+= Sagas
+
+The Axon Framework provides first-class support for long running business transactions or _*Sagas.*_ This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help facilitate Saga development‌.
+
+A summary of the various sub-sections is given below.
+
+[cols="<,<"]
+|===
+|Sub-Section |Purpose 
+
+|link:implementation.md[​Implementation​] |Implementing Sagas using the Axon Framework 
+|link:associations.md[​Associations​] |Managing Saga associations using the Axon Framework 
+|link:infrastructure.md[​Infrastructure​] |Non-Functional Development concerns for Sagas using the Axon Framework 
+|===
