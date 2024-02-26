@@ -1,6 +1,8 @@
 = Deadline Managers
 
-Deadlines can be scheduled from sagas and aggregates. The `DeadlineManager` component is responsible for scheduling deadlines and invoking `@DeadlineHandler`when the deadline is met. The `DeadlineManager` can be injected as a resource. It has four flavors: `SimpleDeadlineManager`, `JobRunrDeadlineManager`, `QuartzDeadlineManager` and `DbSchedulerDeadlineManager`.
+Deadlines can be scheduled from sagas and aggregates.
+The `DeadlineManager` component is responsible for scheduling deadlines and invoking `@DeadlineHandler`when the deadline is met. The `DeadlineManager` can be injected as a resource.
+It has four flavors: `SimpleDeadlineManager`, `JobRunrDeadlineManager`, `QuartzDeadlineManager` and `DbSchedulerDeadlineManager`.
 
 == Scheduling a Deadline
 
@@ -10,7 +12,8 @@ ____
 
 *Scheduled Events or Scheduled Deadlines*
 
-Unlike link:event-schedulers.md[Event Scheduling], when a deadline is triggered there will be no storing of the published message. Scheduling/Triggering a deadline does not involve an `EventBus` (or `EventStore`), hence the message *is not* stored.
+Unlike link:event-schedulers.adoc[Event Scheduling], when a deadline is triggered there will be no storing of the published message.
+Scheduling/Triggering a deadline does not involve an `EventBus` (or `EventStore`), hence the message *is not* stored.
 
 ____
 
@@ -26,7 +29,9 @@ class DeadlineSchedulingComponent {
 
 ----
 
-As a result we receive a `deadlineId` which can be used to cancel the deadline. In most cases, storing this `deadlineId` as a field within your Aggregate/Saga is the most convenient. Cancelling a deadline could come in handy when a certain event means that the previously scheduled deadline has become obsolete (e.g. there is a deadline for paying the invoice, but the client paid the amount which means that the deadline is obsolete and can be canceled).
+As a result we receive a `deadlineId` which can be used to cancel the deadline.
+In most cases, storing this `deadlineId` as a field within your Aggregate/Saga is the most convenient.
+Cancelling a deadline could come in handy when a certain event means that the previously scheduled deadline has become obsolete (e.g. there is a deadline for paying the invoice, but the client paid the amount which means that the deadline is obsolete and can be canceled).
 
 [source,java]
 ----
@@ -40,24 +45,13 @@ class DeadlineCancelingComponent {
 
 Note that there are more options to cancel a deadline next to the previously mentioned:
 
-* `cancelAll(String deadlineName)`
-
-Cancels _every_ scheduled deadline matching the given `deadlineName`.
-
+* `cancelAll(String deadlineName)` - Cancels _every_ scheduled deadline matching the given `deadlineName`.
 Note that this thus also cancels deadlines from other aggregate and/or saga instances matching the name.
 
-* `cancelAllWithinScope(String deadlineName)`
+* `cancelAllWithinScope(String deadlineName)` - Cancels a scheduled deadline matching the given `deadlineName`, _within_ the `Scope` the method is invoked in.
+For example, if this operation is performed from within "aggregate instance X", the `ScopeDescriptor` from "aggregate instance X" will be used to cancel.
 
-Cancels a scheduled deadline matching the given `deadlineName`, _within_ the `Scope` the method is invoked in.
-
-For example, if this operation is performed from within "aggregate instance X",
-
-the `ScopeDescriptor` from "aggregate instance X" will be used to cancel.
-
-* `cancelAllWithinScope(String deadlineName, ScopeDescriptor scope)`
-
-Cancels a scheduled deadline matching the given `deadlineName` _and_ `ScopeDescriptor`.
-
+* `cancelAllWithinScope(String deadlineName, ScopeDescriptor scope)` - Cancels a scheduled deadline matching the given `deadlineName` _and_ `ScopeDescriptor`.
 This allows canceling a deadline by name from differing scopes then the one it's executed in.
 
 ____
@@ -69,7 +63,9 @@ The link:../../../extensions/jobrunrpro.md[JobRunr Pro extension] does support t
 
 *Caveats for the DbScheduler implementation.*
 
-Db-scheduler has no way to filter out tasks. This means that the `cancelAll` implementation will need to serialize all the task data, looping over it. If you have many active deadlines, this might take noticeable time and resources.
+Db-scheduler has no way to filter out tasks.
+This means that the `cancelAll` implementation will need to serialize all the task data, looping over it.
+If you have many active deadlines, this might take noticeable time and resources.
 
 ____
 
@@ -90,17 +86,22 @@ class DeadlineSchedulingWithPayloadComponent {
 
 == Handling a Deadline
 
-We have now seen how to schedule a deadline. When the scheduled time is met, the corresponding `@DeadlineHandler` is invoked. A `@DeadlineHandler` is a message handler like any other in Axon - it is possible to inject parameters for which `ParameterResolver`s exist.
+We have now seen how to schedule a deadline.
+When the scheduled time is met, the corresponding `@DeadlineHandler` is invoked.
+A `@DeadlineHandler` is a message handler like any other in Axon - it is possible to inject parameters for which `ParameterResolver`s exist.
 
 ____
 
 *The Scope of a Deadline*
 
-When scheduling a deadline, the context from where it was scheduled is taken into account. This means a scheduled deadline will only be triggered in its originating context. Thus, any `@DeadlineHandler` annotated function you wish to be called on a met deadline, must be in the same Aggregate/Saga from which it was scheduled.
+When scheduling a deadline, the context from where it was scheduled is taken into account.
+This means a scheduled deadline will only be triggered in its originating context.
+Thus, any `@DeadlineHandler` annotated function you wish to be called on a met deadline, must be in the same Aggregate/Saga from which it was scheduled.
 
-Axon calls this context a `Scope`. If necessary, implementing and providing your own `Scope` will allow you to schedule deadlines in your custom, 'scoped' components.
+Axon calls this context a `Scope`.
+If necessary, implementing and providing your own `Scope` will allow you to schedule deadlines in your custom, 'scoped' components.
 
-A Saga can end its lifecycle when `@EndSaga` is added on a deadline handler. 
+A Saga can end its lifecycle when `@EndSaga` is added on a deadline handler.
 
 ____
 
@@ -136,7 +137,8 @@ public void on() {
 
 == Using Time In Your Application
 
-In cases where applications need to access the clock, they can take advantage of the clock used in the EventMessage, by accessing `GenericEventMessage.clock`. This clock is set to Clock.systemUTC at runtime, and manipulated to simulate time during link:../testing/[testing].
+In cases where applications need to access the clock, they can take advantage of the clock used in the EventMessage, by accessing `GenericEventMessage.clock`.
+This clock is set to Clock.systemUTC at runtime, and manipulated to simulate time during link:../testing/README.adoc[testing].
 
 [source,java]
 ----
@@ -145,13 +147,15 @@ public void handle(PublishTime cmd) {
 }
 ----
 
-Note that the current timestamp is automatically added to the EventMessage. If handlers only need to rely on the timestamp the event was published, they can access that timestamp directly, as described in link:../events/event-handlers.md[Handling Events].
+Note that the current timestamp is automatically added to the EventMessage.
+If handlers only need to rely on the timestamp the event was published, they can access that timestamp directly, as described in link:../events/event-handlers.adoc[Handling Events].
 
 == Configuration
 
-Spring Boot users will need to define a `DeadlineManager` bean using one of the available implementations. 
+Spring Boot users will need to define a `DeadlineManager` bean using one of the available implementations.
 
-Spring Boot users who want to use the JobRunr deadline manager can add https://mvnrepository.com/artifact/org.jobrunr/jobrunr-spring-boot-starter[`jobrunr-spring-boot-starter`] as a dependency. Doing so will make a `JobScheduler` bean available, which the auto-configuration can use to create a `JobRunrDeadlineManager`.
+Spring Boot users who want to use the JobRunr deadline manager can add https://mvnrepository.com/artifact/org.jobrunr/jobrunr-spring-boot-starter[`jobrunr-spring-boot-starter`] as a dependency.
+Doing so will make a `JobScheduler` bean available, which the auto-configuration can use to create a `JobRunrDeadlineManager`.
 Alternatively. the bean can be configured like this:
 
 [source,java]
@@ -174,7 +178,8 @@ public DeadlineManager deadlineManager(
 }
 ----
 
-Spring Boot users who want to use the db-scheduler deadline manager can add https://mvnrepository.com/artifact/com.github.kagkarlsson/db-scheduler-spring-boot-starter[`db-scheduler-spring-boot-starter`] as a dependency. This will make a `Scheduler` bean available, which the auto-configuration can use to create a `DbSchedulerDeadlineManager`.
+Spring Boot users who want to use the db-scheduler deadline manager can add https://mvnrepository.com/artifact/com.github.kagkarlsson/db-scheduler-spring-boot-starter[`db-scheduler-spring-boot-starter`] as a dependency.
+This will make a `Scheduler` bean available, which the auto-configuration can use to create a `DbSchedulerDeadlineManager`.
 Alternatively, the bean can be configured like this:
 
 [source,java]
