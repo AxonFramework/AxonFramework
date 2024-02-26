@@ -5,9 +5,9 @@ There are several ways to track messages in your system.
 You can correlate messages to each other with a Correlation Data Provider
 or log the messages being handled and dispatched.
 
-== Correlation Data <a id="correlation-data"></a>
+== Correlation Data
 
-The framework provides the `CorrelationDataProvider`, as described link:../messaging-concepts/message-correlation.md[here].
+The framework provides the `CorrelationDataProvider`, as described link:../messaging-concepts/message-correlation.adoc[here].
 This interface and its implementations provide you the means to populate the meta-data of a message based on the message
 that is currently being handled.
 For instance, you could use this to store the command that triggered the event in the metadata of the event itself,
@@ -20,21 +20,19 @@ while `correlation-id` contains the message identifier of the previous message.
 We can see the effect of this in the following table.
 
 |===
-|Message identifier |Type |`trace-id` |`correlation-id` 
-
-|===
-
+|Message identifier |Type |`trace-id` |`correlation-id`
 | 1 | Command | - | - |
 | 2 | Event | 8231323 | 1 |
 | 3 | Command | 8231323 | 2 |
 | 4 | Event | 8231323 | 3 |
+|===
 
-Check out the link:../messaging-concepts/message-correlation.md[message correlation page]
+Check out the link:../messaging-concepts/message-correlation.adoc[message correlation page]
 to find out more about the `MessageOriginProvider`.
 
-== Interceptor Logging <a id="interceptor-logging"></a>
+== Interceptor Logging
 
 You can also track the flow of messages through your application using logging.
-You can leverage link:../messaging-concepts/message-intercepting.md[Hander- and DispatchInterceptors] to achieve this.
-The `LoggingInterceptor` is rovided out-of-the-box solution to log any type of message to SLF4J,
+You can leverage link:../messaging-concepts/message-intercepting.adoc[Handler- and DispatchInterceptors] to achieve this.
+The `LoggingInterceptor` is provided out-of-the-box solution to log any type of message to SLF4J,
 but also provides a simple overridable template to set up your own desired logging format.

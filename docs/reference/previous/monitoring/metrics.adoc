@@ -1,24 +1,29 @@
 = Metrics
 
-Interesting metrics in a message centric system come in several forms and flavors, like count, capacity and latency for example. Axon Framework allows you to retrieve such measurements through the use of the `axon-metrics` or `axon-micrometer` module. With these modules you can register a number of `MessageMonitor` implementations to your messaging components, like the link:axon-framework-commands/command-dispatchers.md#the-command-bus[`CommandBus`], link:events/event-bus-and-event-store.md#event-bus[`EventBus`], link:queries/query-dispatchers.md#the-query-bus-and-query-gateway[`QueryBus`] and link:events/event-processors/README.md[`EventProcessors`].
+Interesting metrics in a message centric system come in several forms and flavors, like count, capacity and latency for example.
+Axon Framework allows you to retrieve such measurements through the use of the `axon-metrics` or `axon-micrometer` module.
+With these modules you can register a number of `MessageMonitor` implementations to your messaging components, like the link:../axon-framework-commands/command-dispatchers.adoc#the[`CommandBus`], link:../events/event-bus-and-event-store.adoc#event-bus[`EventBus`], link:../queries/query-dispatchers.adoc#the-query-bus-and-query-gateway[`QueryBus`] and link:../events/event-processors/README.adoc[`EventProcessors`].
 
-`axon-metrics` module uses https://metrics.dropwizard.io/[Dropwizard Metrics] for registering the measurements correctly. That means that `MessageMonitors` are registered against the Dropwizard `MetricRegistry`.
+`axon-metrics` module uses https://metrics.dropwizard.io/[Dropwizard Metrics] for registering the measurements correctly.
+That means that `MessageMonitors` are registered against the Dropwizard `MetricRegistry`.
 
-`axon-micrometer` module uses https://micrometer.io/[Micrometer] which is a dimensional-first metrics collection facade whose aim is to allow you to time, count, and gauge your code with a vendor neutral API. That means that `MessageMonitors` are registered against the Micrometer `MeterRegistry`.‌
+`axon-micrometer` module uses https://micrometer.io/[Micrometer] which is a dimensional-first metrics collection facade whose aim is to allow you to time, count, and gauge your code with a vendor neutral API.
+That means that `MessageMonitors` are registered against the Micrometer `MeterRegistry`.‌
 
 The following monitor implementations are currently provided:
 
-. `CapacityMonitor` - Measures message capacity
- by keeping track of the total time spent on message handling compared to total time it is active.
- This returns a number between 0 and n number of threads.
- Thus, if there are 4 threads working, the maximum capacity is 4 if every thread is active 100% of the time.
-. `EventProcessorLatencyMonitor` - Measures the difference between an event's timestamp and the current time, showing how far behind an link:../events/event-processors/README.md[event processor] is.
- Note that link:../events/event-processors/streaming.md#replaying-events[triggering a reset] will impact this metric!
+. `CapacityMonitor` - Measures message capacity by keeping track of the total time spent on message handling compared to total time it is active.
+This returns a number between 0 and n number of threads.
+Thus, if there are 4 threads working, the maximum capacity is 4 if every thread is active 100% of the time.
+. `EventProcessorLatencyMonitor` - Measures the difference between an event's timestamp and the current time, showing how far behind an link:../events/event-processors/README.adoc[event processor] is.
+Note that link:../events/event-processors/streaming.adoc#replaying-events[triggering a reset] will impact this metric!
 . `MessageCountingMonitor` - Counts the number of ingested, successful, failed, ignored and processed messages.
 . `MessageTimerMonitor` - Keeps a timer for all successful, failed and ignored messages, as well as an overall timer for all three combined.
 . `PayloadTypeMessageMonitorWrapper` - A special `MessageMonitor` implementation which allows setting a monitor per message type instead of per message publishing/handling component.
 
-You are free to configure any combination of `MessageMonitors` through constructors on your messaging components, simply by using the Configuration API. The `GlobalMetricRegistry` contained in the `axon-metrics` and `axon-micrometer` modules provides a set of sensible defaults per type of messaging component. The following example shows you how to configure default metrics for your message handling components:‌
+You are free to configure any combination of `MessageMonitors` through constructors on your messaging components, simply by using the Configuration API.
+The `GlobalMetricRegistry` contained in the `axon-metrics` and `axon-micrometer` modules provides a set of sensible defaults per type of messaging component.
+The following example shows you how to configure default metrics for your message handling components:
 
 == Dropwizard
 
@@ -41,9 +46,7 @@ public class MetricsConfiguration {
 }
 ----
 
-{% endtab %}
-
-{% tab title="Spring Boot AutoConfiguration" %}
+==== Spring Boot Auto Configuration
 
 [source,text]
 ----
@@ -53,8 +56,7 @@ axon.metrics.auto-configuration.enabled=true
 
 == Micrometer
 
-{% tabs %}
-{% tab title="Axon Configuration API - Without Tags" %}
+==== Axon Configuration API - without Tags
 
 [source,java]
 ----
@@ -72,9 +74,7 @@ public class MetricsConfiguration {
 }
 ----
 
-{% endtab %}
-
-{% tab title="Axon Configuration API - With Tags" %}
+==== Axon Configuration API - with Tags
 
 [source,java]
 ----
@@ -92,9 +92,7 @@ public class MetricsConfiguration {
 }
 ----
 
-{% endtab %}
-
-{% tab title="Spring Boot AutoConfiguration - Without Tags" %}
+==== Spring Boot Auto Configuration - without Tags
 
 [source,text]
 ----
@@ -111,8 +109,7 @@ management.metrics.export.prometheus.enabled=true
 management.endpoint.prometheus.enabled=true
 ----
 
-{% endtab %}
-{% tab title="Spring Boot AutoConfiguration - With Tags" %}
+==== Spring Boot Auto Configuration - with Tags
 
 [source,text]
 ----
@@ -134,6 +131,8 @@ management.endpoint.metrics.enabled=true
 management.metrics.export.prometheus.enabled=true
 management.endpoint.prometheus.enabled=true
 ----
+
+'''
 
 The scenario might occur that more fine-grained control over which `MessageMonitor` instance are defined is necessary.
 The following snippet provides as sample if you want to have more specific metrics on any of the message handling components:

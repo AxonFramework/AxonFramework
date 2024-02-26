@@ -7,11 +7,11 @@ A summary of the various subsections is given below.
 
 [cols="<,<"]
 |===
-|Subsection |Purpose 
+|Subsection |Purpose
 
-|link:tracing.md[Tracing] |Tracing support for Axon Framework 
-|link:metrics.md[Metrics] |How to configure and use metrics provided by Axon Framework 
-|link:health.md[Health Indicators] |Spring Boot actuator health indicators provided by Axon Framework 
-|link:processors.md[Event Tracker Status] |Tracking the status of your event processors 
-|link:message-tracking.md[Message Tracking] |Tracking the origin of messages throughout your application 
+|link:tracing.adoc[Tracing] |Tracing support for Axon Framework
+|link:metrics.adoc[Metrics] |How to configure and use metrics provided by Axon Framework
+|link:health.adoc[Health Indicators] |Spring Boot actuator health indicators provided by Axon Framework
+|link:processors.adoc[Event Tracker Status] |Tracking the status of your event processors
+|link:message-tracking.adoc[Message Tracking] |Tracking the origin of messages throughout your application
 |===
