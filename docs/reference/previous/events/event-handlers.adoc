@@ -11,7 +11,7 @@ Arguably the most important parameter of an event handler is the first parameter
 If the event handler does not need access to the payload of the message, you can specify the expected payload type on the `@EventHandler` annotation.
 
 Do not configure the payload type on the annotation if you want the payload to be passed as a parameter.
-For a complete list of all parameters, we refer to link:../messaging-concepts/supported-parameters-annotated-handlers.md#supported-parameters-for-event-handlers[this] section.
+For a complete list of all parameters, we refer to link:../messaging-concepts/supported-parameters-annotated-handlers.adoc#_supported_parameters_for_event_handlers[this] section.
 
 In all circumstances, at most one event handler method is invoked per listener instance.
 Axon will search for the most specific method to invoke, using the following rules:
@@ -21,7 +21,7 @@ Axon will search for the most specific method to invoke, using the following rul
 . If the framework finds no methods on this level of the class hierarchy, the supertype is evaluated the same way.
 . When it reaches the top level of the hierarchy and no suitable event handler is found, the event is ignored.
 
-Consider the following Event Handling Component sample to explain the event handler invocation rules further: 
+Consider the following Event Handling Component sample to explain the event handler invocation rules further:
 
 [source,java]
 ----
@@ -84,9 +84,8 @@ public class AxonConfig {
 }
 ----
 
-{% endtab %}
+==== Spring Boot Autoconfiguration
 
-{% tab title="Spring Boot Autoconfiguration" %}
 In a Spring Boot environment, simply adding the Event Handling Components to the Application Context is sufficient:
 
 [source,java]

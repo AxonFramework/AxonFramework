@@ -1,20 +1,28 @@
-= Event Bus &amp; Event Store
+= Event Bus & Event Store
 
 == Event Bus
 
-The `EventBus` is the mechanism that dispatches events to the subscribed event handlers. Axon provides three implementations of the Event Bus: `AxonServerEventStore`, `EmbeddedEventStore` and `SimpleEventBus`. All three implementations support subscribing and tracking processors (see link:event-processors/README.md[Events Processors]). However, the `AxonServerEventStore` and `EmbeddedEventStore` persist events (see link:event-bus-and-event-store.md[Event Store]), which allows you to replay them at a later stage. The `SimpleEventBus` has a volatile storage and 'forgets' events as soon as they have been published to subscribed components.
+The `EventBus` is the mechanism that dispatches events to the subscribed event handlers.
+Axon provides three implementations of the Event Bus: `AxonServerEventStore`, `EmbeddedEventStore` and `SimpleEventBus`.
+All three implementations support subscribing and tracking processors (see link:event-processors/README.adoc[Events Processors]).
+However, the `AxonServerEventStore` and `EmbeddedEventStore` persist events (see <<Event Store,Event Store>>), which allows you to replay them at a later stage.
+The `SimpleEventBus` has a volatile storage and 'forgets' events as soon as they have been published to subscribed components.
 
 An `AxonServerEventStore` event bus/store is configured by default.
 
 == Event Store
 
-Event sourcing repositories need an event store to store and load events from aggregates. An event store offers the functionality of an event bus. Additionally, it persists published events and is able to retrieve previous events based on a given aggregate identifier.
+Event sourcing repositories need an event store to store and load events from aggregates.
+An event store offers the functionality of an event bus.
+Additionally, it persists published events and is able to retrieve previous events based on a given aggregate identifier.
 
 === Axon Server as an event store
 
-Axon provides an event store out of the box, the `AxonServerEventStore`. It connects to thelink:../../axon-server-introduction.md[ AxonIQ AxonServer Server ]to store and retrieve Events.
+Axon provides an event store out of the box, the `AxonServerEventStore`.
+It connects to thelink:../../axon-server-introduction.md[ AxonIQ AxonServer Server ]to store and retrieve Events.
 
 ==== Axon Configuration API
+
 Declare dependencies:
 
 [source,text]
@@ -43,9 +51,8 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
 ----
 
-{% endtab %}
+==== Spring Boot Auto Configuration
 
-{% tab title="Spring Boot AutoConfiguration" %}
 By simply declaring a dependency on `axon-spring-boot-starter`, Axon will automatically configure the event bus/event store:
 
 [source,text]
@@ -62,19 +69,27 @@ ____
 
 *Excluding the Axon Server Connector*
 
-If you exclude the `axon-server-connector` dependency from `axon-spring-boot-starter` the `EmbeddedEventStore` will be auto-configured for you, if a concrete implementation of `EventStorageEngine` is available. If JPA or JDBC is detected on the classpath, a `JpaEventStorageEngine` or `JdbcEventStorageEngine` will respectively be auto-configured as the `EventStorageEngine`. In absence of either, the auto configuration falls back to the `SimpleEventBus`.
+If you exclude the `axon-server-connector` dependency from `axon-spring-boot-starter` the `EmbeddedEventStore` will be auto-configured for you, if a concrete implementation of `EventStorageEngine` is available.
+If JPA or JDBC is detected on the classpath, a `JpaEventStorageEngine` or `JdbcEventStorageEngine` will respectively be auto-configured as the `EventStorageEngine`.
+In absence of either, the auto configuration falls back to the `SimpleEventBus`.
 
 ____
 
-=== Embedded event store
+=== Embedded Event Store
 
-Alternatively, Axon provides a non-axon-server option, the `EmbeddedEventStore`. It delegates the actual storage and retrieval of events to an `EventStorageEngine`.
+Alternatively, Axon provides a non-axon-server option, the `EmbeddedEventStore`.
+It delegates the actual storage and retrieval of events to an `EventStorageEngine`.
 
 There are multiple `EventStorageEngine` implementations available:
 
 ==== JpaEventStorageEngine
 
-The `JpaEventStorageEngine` stores events in a JPA-compatible data source. The JPA event store stores events in entries. These entries contain the serialized form of an event, as well as some fields where metadata is stored for fast lookup of these entries. To use the `JpaEventStorageEngine`, you must have the JPA (`jakarta.persistence`) annotations on your classpath. The old, javax JPA (`javax.persistence`) annotations are also still supported. This will use an instance of the `JpaEventStorageEngine` using the `legacyjpa` namespace.
+The `JpaEventStorageEngine` stores events in a JPA-compatible data source.
+The JPA event store stores events in entries.
+These entries contain the serialized form of an event, as well as some fields where metadata is stored for fast lookup of these entries.
+To use the `JpaEventStorageEngine`, you must have the JPA (`jakarta.persistence`) annotations on your classpath.
+The old, javax JPA (`javax.persistence`) annotations are also still supported.
+This will use an instance of the `JpaEventStorageEngine` using the `legacyjpa` namespace.
 
 By default, the event store needs you to configure your persistence context (e.g. as defined in the `META-INF/persistence.xml` file) to contain the classes `DomainEventEntry` and `SnapshotEventEntry` (both of these classes are located in the `org.axonframework.eventsourcing.eventstore.jpa` package).
 
@@ -91,7 +106,6 @@ Below is an example configuration of a persistence context configuration:
 ----
 
 . In this example, there is a specific persistence unit for the event store.
-
 You may, however, choose to add the third line to any other persistence unit configuration.
 
 . This line registers the `DomainEventEntry` (the class used by the `JpaEventStorageEngine`) with the persistence context.
@@ -100,27 +114,40 @@ ____
 
 *Unique Key Constraint Consideration*
 
-Axon uses locking to prevent two threads from accessing the same aggregate. However, if you have multiple JVMs using the same database, this won't help you. In that case, you'd have to rely on the database to detect conflicts. Concurrent access to the event store will result in a Key Constraint Violation, as the table only allows a single event for a given aggregate and sequence number. Therefore, inserting a second event for an existing aggregate with an existing sequence number will result in an error.
+Axon uses locking to prevent two threads from accessing the same aggregate.
+However, if you have multiple JVMs using the same database, this won't help you.
+In that case, you'd have to rely on the database to detect conflicts.
+Concurrent access to the event store will result in a Key Constraint Violation, as the table only allows a single event for a given aggregate and sequence number.
+Therefore, inserting a second event for an existing aggregate with an existing sequence number will result in an error.
 
-The `JpaEventStorageEngine` can detect this error and translate it to a `ConcurrencyException`. However, each database system reports this violation differently. If you register your `DataSource` with the `JpaEventStorageEngine`, it will try to detect the type of database and figure out which error codes represent a Key Constraint Violation. Alternatively, you may provide a `PersistenceExceptionResolver` instance, which can tell if a given exception represents a key constraint violation.
+The `JpaEventStorageEngine` can detect this error and translate it to a `ConcurrencyException`.
+However, each database system reports this violation differently.
+If you register your `DataSource` with the `JpaEventStorageEngine`, it will try to detect the type of database and figure out which error codes represent a Key Constraint Violation.
+Alternatively, you may provide a `PersistenceExceptionResolver` instance, which can tell if a given exception represents a key constraint violation.
 
 If no `DataSource` or `PersistenceExceptionTranslator` is provided, exceptions from the database driver are thrown as-is.
 
 ____
 
-By default, the `JpaEventStorageEngine` requires an `EntityManagerProvider` implementation that returns the `EntityManager` instance for the `EventStorageEngine` to use. This also allows application managed persistence contexts to be used. It is the `EntityManagerProvider`'s responsibility to provide a correct instance of the `EntityManager`.
+By default, the `JpaEventStorageEngine` requires an `EntityManagerProvider` implementation that returns the `EntityManager` instance for the `EventStorageEngine` to use.
+This also allows application managed persistence contexts to be used.
+It is the `EntityManagerProvider`'s responsibility to provide a correct instance of the `EntityManager`.
 
-There are a few implementations of the `EntityManagerProvider` available, each for different needs. The `SimpleEntityManagerProvider` simply returns the `EntityManager` instance which is given to it at construction time. This makes the implementation a simple option for container managed contexts. Alternatively, there is the `ContainerManagedEntityManagerProvider`, which returns the default persistence context, and is used by default by the JPA event store.
+There are a few implementations of the `EntityManagerProvider` available, each for different needs.
+The `SimpleEntityManagerProvider` simply returns the `EntityManager` instance which is given to it at construction time.
+This makes the implementation a simple option for container managed contexts.
+Alternatively, there is the `ContainerManagedEntityManagerProvider`, which returns the default persistence context, and is used by default by the JPA event store.
 
 ____
 
 *Move from javax.persistence to jakarta.persistence*
 
-Since 4.6.0 we moved to using jakarta by default. This means some classes like the `JpaTokenStore` are duplicated to accommodate for the `javax` to `jakarta` namespace change.
+Since 4.6.0 we moved to using jakarta by default.
+This means some classes like the `JpaTokenStore` are duplicated to accommodate for the `javax` to `jakarta` namespace change.
 
 ____
 
-If you have a persistence unit called `&quot;myPersistenceUnit&quot;` which you wish to use in the `JpaEventStorageEngine`, the `EntityManagerProvider` implementation could look like this:
+If you have a persistence unit called `"myPersistenceUnit"` which you wish to use in the `JpaEventStorageEngine`, the `EntityManagerProvider` implementation could look like this:
 
 [source,java]
 ----
@@ -139,21 +166,30 @@ public class MyEntityManagerProvider implements EntityManagerProvider {
     }
 ----
 
-By default, the JPA event store stores entries in `DomainEventEntry` and `SnapshotEventEntry` entities. While this will suffice in many cases, you might encounter a situation where the metadata provided by these entities is not enough. It is also possible that you might want to store events for different aggregate types in different tables.
+By default, the JPA event store stores entries in `DomainEventEntry` and `SnapshotEventEntry` entities.
+While this will suffice in many cases, you might encounter a situation where the metadata provided by these entities is not enough.
+It is also possible that you might want to store events for different aggregate types in different tables.
 
-If that is the case, you can extend the `JpaEventStorageEngine`. It contains a number of protected methods that you can override to tweak its behavior.
+If that is the case, you can extend the `JpaEventStorageEngine`.
+It contains a number of protected methods that you can override to tweak its behavior.
 
 ____
 
 *Warning*
 
-Note that persistence providers, such as Hibernate, use a first-level cache in their `EntityManager` implementation. Typically, this means that all entities used or returned in queries are attached to the `EntityManager`. They are only cleared when the surrounding transaction is committed or an explicit "clear" is performed inside the transaction. This is especially the case when the queries are executed in the context of a transaction.
+Note that persistence providers, such as Hibernate, use a first-level cache in their `EntityManager` implementation.
+Typically, this means that all entities used or returned in queries are attached to the `EntityManager`.
+They are only cleared when the surrounding transaction is committed or an explicit "clear" is performed inside the transaction.
+This is especially the case when the queries are executed in the context of a transaction.
 
-To work around this issue, make sure to exclusively query for non-entity objects. You can use JPA's `&quot;SELECT new SomeClass(parameters) FROM ...&quot;` style queries to work around this issue. Alternatively, call `EntityManager.flush()` and `EntityManager.clear()` after fetching a batch of events. Failure to do so might result in `OutOfMemoryException`s when loading large streams of events.
+To work around this issue, make sure to exclusively query for non-entity objects.
+You can use JPA's `"SELECT new SomeClass(parameters) FROM ..."` style queries to work around this issue.
+Alternatively, call `EntityManager.flush()` and `EntityManager.clear()` after fetching a batch of events.
+Failure to do so might result in `OutOfMemoryException`s when loading large streams of events.
 
 ____
 
-==== Axon Configuration API
+===== Axon Configuration API
 
 [source,java]
 ----
@@ -166,9 +202,7 @@ public class AxonConfig {
 }
 ----
 
-{% endtab %}
-
-{% tab title="Spring Boot AutoConfiguration" %}
+===== Spring Boot Auto Configuration
 
 [source,java]
 ----
@@ -207,14 +241,6 @@ public class AxonConfig {
 }
 ----
 
-____
-
-*Excluding the Axon Server Connector*
-
-If you exclude the `axon-server-connector` dependency from `axon-spring-boot-starter` the `EmbeddedEventStore` will be auto-configured for you, if a concrete implementation of `EventStorageEngine` is available. If JPA or JDBC is detected on the classpath, a `JpaEventStorageEngine` or `JdbcEventStorageEngine` will respectively be auto-configured as the `EventStorageEngine`. In absence of either, the auto configuration falls back to the `SimpleEventBus`. For the `JpaEventStorageEngine` either the `jakarta` or `javax` version will be auto-configured, depending on the available `EntityManagerFactory`.
-
-____
-
 ==== JdbcEventStorageEngine
 
 The JDBC event storage engine uses a JDBC Connection to store events in a JDBC compatible data storage.
@@ -230,7 +256,7 @@ Typically, the engine can obtain these connections directly from a `DataSource`.
 However, Axon will bind these connections to a `UnitOfWork` to use a single connection within a unit of work.
 This approach ensures that the framework uses a single transaction to store all events, even when multiple units of work are nested in the same thread.
 
-==== Axon Configuration API
+===== Axon Configuration API
 
 [source,java]
 ----
@@ -258,10 +284,10 @@ public class AxonConfig {
 }
 ----
 
-{% endtab %}
+===== Spring Boot Auto Configuration
 
-{% tab title="Spring Boot AutoConfiguration" %}
 By having JDBC on the classpath, Axon's `JdbcAutoConfiguration` will automatically generate the `JdbcEventStorageEngine` for you.
+
 All that might be left is the creation of the schema.
 Axon can help you here with the `createSchema` operation:
 
@@ -312,7 +338,6 @@ We recommend that Spring users use the `SpringDataSourceConnectionProvider` to a
 
 ____
 
-
 ____
 
 *SQL Statement Customizability*
@@ -328,17 +353,29 @@ ____
 
 ==== MongoEventStorageEngine
 
-https://www.mongodb.com/[MongoDB] is a document based NoSQL store. Its scalability characteristics make it suitable for use as an event store. Axon provides the `MongoEventStorageEngine`, which uses MongoDB as a backing database. It is contained in the Axon Mongo module (Maven artifactId `axon-mongo`).
+https://www.mongodb.com/[MongoDB] is a document based NoSQL store.
+Its scalability characteristics make it suitable for use as an event store.
+Axon provides the `MongoEventStorageEngine`, which uses MongoDB as a backing database.
+It is contained in the Axon Mongo module (Maven artifactId `axon-mongo`).
 
 Events are stored in two separate collections: one for the event streams and one for snapshots.
 
-By default, the `MongoEventStorageEngine` stores each event in a separate document. It is, however, possible to change the `StorageStrategy` used. The alternative provided by Axon is the `DocumentPerCommitStorageStrategy`, which creates a single document for all events that have been stored in a single commit (i.e. in the same `DomainEventStream`).
+By default, the `MongoEventStorageEngine` stores each event in a separate document.
+It is, however, possible to change the `StorageStrategy` used.
+The alternative provided by Axon is the `DocumentPerCommitStorageStrategy`, which creates a single document for all events that have been stored in a single commit (i.e. in the same `DomainEventStream`).
 
-The advantage of storing an entire commit in a single document is that commit is stored atomically. Furthermore, it requires only a single roundtrip for any number of events. The disadvantage is that it becomes harder to query events directly in the database. For example, when refactoring the domain model it is harder to "transfer" events from one aggregate to another if they are included in a "commit document".
+The advantage of storing an entire commit in a single document is that commit is stored atomically.
+Furthermore, it requires only a single roundtrip for any number of events.
+The disadvantage is that it becomes harder to query events directly in the database.
+For example, when refactoring the domain model it is harder to "transfer" events from one aggregate to another if they are included in a "commit document".
 
-The `MongoEventStorageEngine` does not require a lot of configuration. All it needs is a reference to the collections to store the events in, and you're set to go. For production environments, you may want to double check the indexes on your collections. If you want transactions to be handled correctly, it's important to set a `TransactionManager`. Please note that there are several other optional configuration properties, like the serializers and an (optional) upcaster chain.
+The `MongoEventStorageEngine` does not require a lot of configuration.
+All it needs is a reference to the collections to store the events in, and you're set to go.
+For production environments, you may want to double check the indexes on your collections.
+If you want transactions to be handled correctly, it's important to set a `TransactionManager`.
+Please note that there are several other optional configuration properties, like the serializers and an (optional) upcaster chain.
 
-==== Axon Configuration API
+===== Axon Configuration API
 
 [source,java]
 ----
@@ -355,9 +392,7 @@ public class AxonConfig {
 }
 ----
 
-{% endtab %}
-
-{% tab title="Spring Boot AutoConfiguration" %}
+===== Spring Boot Auto Configuration
 
 [source,java]
 ----
@@ -390,23 +425,17 @@ public class AxonConfig {
 }
 ----
 
-____
-
-*Excluding the Axon Server Connector*
-
-If you exclude the `axon-server-connector` dependency from `axon-spring-boot-starter` the `EmbeddedEventStore` will be auto-configured for you, if a concrete implementation of `EventStorageEngine` is available. When it is desired to use Mongo as the Event Storage approach, this means providing a `MongoEventStorageEngine` bean. Alternatively you can use the `axon-mongo-spring-boot-starter` together with setting the property `axon.mongo.event-store.enabled` to true, to have the `EventStorageEngine` auto-configured.
-
-____
-
 === Event store utilities
 
 Axon provides a number of Event Storage Engines that may be useful in certain circumstances.
 
 ==== In-Memory Event Storage
 
-The `InMemoryEventStorageEngine` keeps stored events in memory. While it probably outperforms any other event store out there, it is not really meant for long-term production use. However, it is very useful in short-lived tools or tests that require an event store.
+The `InMemoryEventStorageEngine` keeps stored events in memory.
+While it probably outperforms any other event store out there, it is not really meant for long-term production use.
+However, it is very useful in short-lived tools or tests that require an event store.
 
-==== Axon Configuration API
+===== Axon Configuration API
 
 [source,java]
 ----
@@ -418,9 +447,7 @@ public class AxonConfig {
 }
 ----
 
-{% endtab %}
-
-{% tab title="Spring Boot AutoConfiguration" %}
+===== Spring Boot Auto Configuration
 
 [source,java]
 ----
@@ -448,29 +475,35 @@ public class AxonConfig {
 }
 ----
 
-____
-
-*Excluding the Axon Server Connector*
-
-If you exclude the `axon-server-connector` dependency from `axon-spring-boot-starter` the `EmbeddedEventStore` will be auto-configured for you, if a concrete implementation of `EventStorageEngine` is available. When it is desired to use an in-memory Event Storage approach, this means providing an `InMemoryEventStorageEngine` Bean.
-
-____
-
 ==== Combining multiple event stores into one
 
-The `SequenceEventStorageEngine` is a wrapper around two other event storage engines. When reading, it returns the events from both event storage engines. Appended events are only appended to the second event storage engine. This is useful in cases where two different implementations of event storage are used for performance reasons, for example. The first would be a larger, but slower event store, while the second is optimized for quick reading and writing.
+The `SequenceEventStorageEngine` is a wrapper around two other event storage engines.
+When reading, it returns the events from both event storage engines.
+Appended events are only appended to the second event storage engine.
+This is useful in cases where two different implementations of event storage are used for performance reasons, for example.
+The first would be a larger, but slower event store, while the second is optimized for quick reading and writing.
 
 ==== Filtering Stored Events
 
-The `FilteringEventStorageEngine` allows events to be filtered based on a predicate. Only events that match the given predicate will be stored. Note that event processors that use the event store as a source of events may not receive these events because they are not being stored.
+The `FilteringEventStorageEngine` allows events to be filtered based on a predicate.
+Only events that match the given predicate will be stored.
+Note that event processors that use the event store as a source of events may not receive these events because they are not being stored.
 
 === Influencing the serialization process
 
-Event stores need a way to serialize the event to prepare it for storage. By default, Axon uses the `XStreamSerializer`, which uses http://x-stream.github.io/[XStream] to serialize events into XML. XStream is reasonably fast and is more flexible than Java Serialization. Furthermore, the result of XStream serialization is human readable. This makes it quite useful for logging and debugging purposes.
+Event stores need a way to serialize the event to prepare it for storage.
+By default, Axon uses the `XStreamSerializer`, which uses http://x-stream.github.io/[XStream] to serialize events into XML.
+XStream is reasonably fast and is more flexible than Java Serialization.
+Furthermore, the result of XStream serialization is human readable.
+This makes it quite useful for logging and debugging purposes.
 
-The `XStreamSerializer` can be configured. You can define aliases it should use for certain packages, classes or even fields. Besides being a nice way to shorten potentially long names, aliases can also be used when class definitions of events change. For more information about aliases, visit the http://x-stream.github.io/[XStream website].
+The `XStreamSerializer` can be configured.
+You can define aliases it should use for certain packages, classes or even fields.
+Besides being a nice way to shorten potentially long names, aliases can also be used when class definitions of events change.
+For more information about aliases, visit the http://x-stream.github.io/[XStream website].
 
-Alternatively, Axon also provides the `JacksonSerializer`, which uses https://github.com/FasterXML/jackson[Jackson] to serialize events into JSON. While it produces a more compact serialized form, it does require that classes stick to the conventions (or configuration) required by Jackson.
+Alternatively, Axon also provides the `JacksonSerializer`, which uses https://github.com/FasterXML/jackson[Jackson] to serialize events into JSON.
+While it produces a more compact serialized form, it does require that classes stick to the conventions (or configuration) required by Jackson.
 
 You may also implement your own serializer, simply by creating a class that implements `Serializer`, and configuring the event store to use that implementation instead of the default.
 
@@ -484,16 +517,16 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration()
       .configureEventSerializer(c -> JacksonSerializer.builder().build());
 ----
 
-{% endtab %}
+==== Spring Boot Auto Configuration
 
-{% tab title="Spring Boot AutoConfiguration" %}
 You can specify a serializer in your `application.properties`:
 
-[source,text]
+[source,properties]
 ----
 # somewhere in your `application.properties`
 
-axon.serializer.events=jackson # posible values: java, xstream, jackson
+axon.serializer.events=jackson
+# possible values: java, xstream, jackson
 ----
 
 Alternatively, you can explicitly define your Serializer in the Spring context:
@@ -508,22 +541,22 @@ public Serializer eventSerializer() {
 }
 ----
 
-
 ==== Serializing events vs 'the rest'
 
-It is possible to use a different serializer for the storage of events, than all other objects that Axon needs to serialize (such as commands, snapshots, sagas, etc). While the `XStreamSerializer`'s capability to serialize virtually anything makes it a very decent default, its output is not always a form that makes it nice to share with other applications. The `JacksonSerializer` creates much nicer output, but requires a certain structure in the objects to serialize. This structure is typically present in events, making it a very suitable event serializer.
+It is possible to use a different serializer for the storage of events, than all other objects that Axon needs to serialize (such as commands, snapshots, sagas, etc).
+While the `XStreamSerializer`'s capability to serialize virtually anything makes it a very decent default, its output is not always a form that makes it nice to share with other applications. The `JacksonSerializer` creates much nicer output, but requires a certain structure in the objects to serialize.
+This structure is typically present in events, making it a very suitable event serializer.
 
 If no explicit `eventSerializer` is configured, events are serialized using the main serializer that has been configured (which defaults to the `XStreamSerializer`).
 
 == Distributing Events
 
 To distribute events between applications, it is important to know whether the applications belong to the same link:../../architecture-overview/ddd-cqrs-concepts.md#bounded-context[bounded context].
-Applications within the same context "speak the same language."
-In other words, they communicate using the same set of messages and thus events.
+Applications within the same context "speak the same language." In other words, they communicate using the same set of messages and thus events.
 
-As such, we can share the `EventStore`'s data source between these applications.
+As such, we can share the `EventStore's` data source between these applications.
 We may thus achieve distribution by utilizing the source itself.
-You can use both the <<embedded-event-store,`EmbeddedEventStore`>> and link:../../axon-server-introduction.md[Axon Server] for this.
+You can use both the <<Embedded Event Store,`EmbeddedEventStore`>> and link:../../axon-server-introduction.md[Axon Server] for this.
 The former would require the applications to point to the same data source, whereas the latter would require the applications to partake in the same context.
 
 However, sharing the entire event API is not recommended whenever the applications do not belong to the same context.
@@ -533,7 +566,7 @@ Since accessing the same source isn't an option, we require a different solution
 To distribute events between bounded contexts, you can use Axon Server's link:../../axon-server/administration/multi-context.md[multi-context] solution, for example.
 The multi-context support requires application registration to specific contexts.
 Then, you can open a stream to another context through the `AxonServerEventStore#createStreamableMessageSourceForContext(String)` operation.
-With this source in hand, you can configure a link:event-processors/streaming.md[Streaming Processor] to start reading from it.
+With this source in hand, you can configure a link:event-processors/streaming.adoc[Streaming Processor] to start reading from it.
 
 Alternatively, you can use a message broker to distribute events between contexts.
 Axon provides a couple of these as link:../../extensions[extension modules], for example link:../../extensions/spring-amqp.md[Spring AMQP] or link:../../extensions/kafka.md[Kafka].
