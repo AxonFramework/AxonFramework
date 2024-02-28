@@ -104,7 +104,7 @@ public class ThrowableCause extends AxonException implements Cause {
     public static ThrowableCause truncated(Throwable throwable, int messageSize) {
         return new ThrowableCause(
                 throwable.getClass().getName(),
-                throwable.getMessage().substring(0, Math.min(throwable.getMessage().length(), messageSize))
+                throwable.getMessage() == null ? null : throwable.getMessage().substring(0, Math.min(throwable.getMessage().length(), messageSize))
         );
     }
 
