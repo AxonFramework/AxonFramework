@@ -11,7 +11,7 @@ Here is a somewhat simplified structure of a typical Axon-based application.
 include::attachment$axonframework_overview.gv[]
 ....
 
-TIP: If you want to build _(or merely explore)_ a simple example of such an application, the xref:giftcard::index.adoc[] tutorial walks you through the process.
+TIP: If you want to build _(or merely explore)_ a simple example of such an application, the xref:bikerental-demo::index.adoc[] tutorial walks you through the process.
 
 
 === The benefits
