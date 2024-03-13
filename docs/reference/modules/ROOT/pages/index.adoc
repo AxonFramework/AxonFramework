@@ -4,8 +4,6 @@ Welcome to the Axon Framework's documentation. It provides information about the
 
 Axon Framework alone significantly simplifies the software development process of JVM-based applications. However, it adds even more value when used in combination with other products of the Axon family.
 
-The  documentation is a valuable source of reference during the development process. For step-by-step instructions and examples of how to build Axon-based applications, use the xref:home::tutorials.adoc[].
-
 == Documentation structure
 
 The documentation contains the specifics of the framework's functionality, objects, interfaces, etc. It's a convenient, quick-access reference answering questions like "What's X?", "What's X used for?", "How's X implemented?" etc. Thus it closely follows the structure of Axon Framework's source code. Such an approach makes it easier to quickly navigate to any specific element.
