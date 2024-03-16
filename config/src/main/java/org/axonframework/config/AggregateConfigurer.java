@@ -87,6 +87,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<AggregateModel<A>> metaModel;
     private final Component<Predicate<? super DomainEventMessage<?>>> eventStreamFilter;
     private final Component<Boolean> filterEventsByType;
+    private final Component<Boolean> idempotent;
     private final Set<Class<? extends A>> subtypes = new HashSet<>();
     private final List<Registration> registrations = new ArrayList<>();
 
@@ -216,6 +217,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         cache = new Component<>(() -> parent, name("aggregateCache"), c -> null);
         eventStreamFilter = new Component<>(() -> parent, name("eventStreamFilter"), c -> null);
         filterEventsByType = new Component<>(() -> parent, name("filterByAggregateType"), c -> false);
+        idempotent = new Component<>(() -> parent, name("idempotent"), c -> false);
         repository = new Component<>(
                 () -> parent, name("Repository"),
                 c -> {
@@ -238,6 +240,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                     EventSourcingRepository.Builder<A> builder =
                             EventSourcingRepository.builder(aggregate)
                                                    .aggregateModel(metaModel.get())
+                                                   .idempotent(idempotent.get())
                                                    .lockFactory(lockFactory.get())
                                                    .eventStore(c.eventStore())
                                                    .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
@@ -443,6 +446,12 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public AggregateConfigurer<A> configureFilterEventsByType(
             Function<Configuration, Boolean> filterConfigurationPredicate) {
         this.filterEventsByType.update(filterConfigurationPredicate);
+        return this;
+    }
+
+    public AggregateConfigurer<A> configureIdempotent(
+            Function<Configuration, Boolean> idempotentPredicate) {
+        this.idempotent.update(idempotentPredicate);
         return this;
     }
 
