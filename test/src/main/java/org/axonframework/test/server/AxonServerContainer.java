@@ -115,7 +115,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
     protected void doStart() {
         super.doStart();
         try {
-            AxonServerContainerUtils.initCluster(getHost(), getHttpPort());
+            AxonServerContainerUtils.initCluster(getHost(), getHttpPort(), isShouldBeReused());
         } catch (IOException e) {
             throw new ContainerLaunchException("Axon Server cluster initialization failed.", e);
         }
