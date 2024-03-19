@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -26,7 +25,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @author Rene de Waele
  * @since 3.0
  */
-public interface MessageHandler<T extends Message<?>, R> {
+public interface MessageHandler<T extends Message<?>, R extends Message<?>> {
 
     /**
      * Handles the given {@code message}.
@@ -41,7 +40,7 @@ public interface MessageHandler<T extends Message<?>, R> {
 
     default MessageStream<? extends R> handle(T message, ProcessingContext processingContext) {
         try {
-            return MessageStream.just((R) handleSync(message));
+            return MessageStream.just((R) GenericResultMessage.asResultMessage(handleSync(message)));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

@@ -16,22 +16,16 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
-
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Specialization of the SimpleCommandBus that processed Commands asynchronously from the calling thread. By default,
@@ -40,47 +34,25 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * down after 60 seconds of inactivity.
  * <p/>
  * Each Command is dispatched in a separate task, which is processed by the Executor.
- * <p/>
- * Note that you should call {@link #shutdown()} to stop any threads waiting for new tasks. Failure to do so may cause
- * the JVM to hang for up to 60 seconds on JVM shutdown.
  *
  * @author Allard Buijze
  * @since 1.3.4
  */
 public class AsynchronousCommandBus extends SimpleCommandBus {
 
+    private static final Logger logger = LoggerFactory.getLogger(AsynchronousCommandBus.class);
     private final Executor executor;
 
-    /**
-     * Instantiate a {@link AsynchronousCommandBus} based on the fields contained in the {@link Builder}.
-     * <p>
-     * Will assert that the {@link TransactionManager}, {@link MessageMonitor} and
-     * {@link Executor} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of them is
-     * {@code null}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link AsynchronousCommandBus} instance
-     */
-    protected AsynchronousCommandBus(Builder builder) {
-        super(builder);
-        this.executor = builder.executor;
+    public AsynchronousCommandBus(Executor executor,
+                                  ProcessingLifecycleHandlerRegistrar... processingLifecycleHandlerRegistrars) {
+        super(processingLifecycleHandlerRegistrars);
+        this.executor = executor;
     }
 
-    /**
-     * Instantiate a Builder to be able to create a {@link AsynchronousCommandBus}.
-     * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor}, the {@link DuplicateCommandHandlerResolver} defaults to
-     * {@link DuplicateCommandHandlerResolution#logAndOverride()}, the {@link Executor} defaults to a
-     * {@link Executors#newCachedThreadPool} and the {@link CommandBusSpanFactory} defaults to a
-     * {@link DefaultCommandBusSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}. The
-     * default{@code executor} uses an {@link AxonThreadFactory} to create threads with a sensible naming scheme. The
-     * TransactionManager, MessageMonitor, RollbackConfiguration and Executor are <b>hard requirements</b>. Thus setting
-     * them to {@code null} will result in an {@link AxonConfigurationException}.
-     *
-     * @return a Builder to be able to create a {@link AsynchronousCommandBus}
-     */
-    public static Builder builder() {
-        return new Builder();
+    public AsynchronousCommandBus(Executor executor,
+                                  Collection<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars) {
+        super(processingLifecycleHandlerRegistrars);
+        this.executor = executor;
     }
 
     @Override
@@ -97,95 +69,9 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         return result;
     }
 
-    /**
-     * Shuts down the Executor used to asynchronously dispatch incoming commands. If the {@code Executor} provided in
-     * the constructor does not implement {@code ExecutorService}, this method does nothing.
-     */
-    public void shutdown() {
-        if (executor instanceof ExecutorService) {
-            ((ExecutorService) executor).shutdown();
-            try {
-                ((ExecutorService) executor).awaitTermination(5, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                // we've been interrupted. Reset the interruption flag and continue
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    /**
-     * Builder class to instantiate a {@link AsynchronousCommandBus}.
-     * <p>
-     * The {@link TransactionManager}, {@link MessageMonitor},
-     * {@link DuplicateCommandHandlerResolver}, {@link CommandBusSpanFactory} to a {@link DefaultCommandBusSpanFactory}
-     * backed by a {@link org.axonframework.tracing.NoOpSpanFactory}, and {@link Executor} are respectively defaulted to
-     * a {@link NoTransactionManager}, a {@link NoOpMessageMonitor}, a
-     * {@link DuplicateCommandHandlerResolution#logAndOverride()}, {@link org.axonframework.tracing.NoOpSpanFactory} and
-     * a {@link Executors#newCachedThreadPool}. The default {@code executor} uses an {@link AxonThreadFactory} to create
-     * threads with a sensible naming scheme. The TransactionManager, MessageMonitor, RollbackConfiguration and Executor
-     * are <b>hard requirements</b>. Thus setting them to {@code null} will result in an
-     * {@link AxonConfigurationException}.
-     */
-    public static class Builder extends SimpleCommandBus.Builder {
-
-        private Executor executor = Executors.newCachedThreadPool(
-                new AxonThreadFactory(AsynchronousCommandBus.class.getSimpleName())
-        );
-
-        @Override
-        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
-            super.transactionManager(transactionManager);
-            return this;
-        }
-
-        @Override
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-            super.messageMonitor(messageMonitor);
-            return this;
-        }
-
-        @Override
-        public Builder duplicateCommandHandlerResolver(
-                @Nonnull DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
-            super.duplicateCommandHandlerResolver(duplicateCommandHandlerResolver);
-            return this;
-        }
-
-        @Override
-        public Builder spanFactory(@Nonnull CommandBusSpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
-        /**
-         * Sets the {@link Executor} which processes the Command dispatching threads.
-         *
-         * @param executor a {@link Executor} to processes the Command dispatching threads
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder executor(Executor executor) {
-            assertNonNull(executor, "Executor may not be null");
-            this.executor = executor;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link AsynchronousCommandBus} as specified through this Builder.
-         *
-         * @return a {@link AsynchronousCommandBus} as specified through this Builder
-         */
-        public AsynchronousCommandBus build() {
-            return new AsynchronousCommandBus(this);
-        }
-
-        /**
-         * Validate whether the fields contained in this Builder as set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws AxonConfigurationException {
-            super.validate();
-        }
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("executor", executor);
+        super.describeTo(descriptor);
     }
 }

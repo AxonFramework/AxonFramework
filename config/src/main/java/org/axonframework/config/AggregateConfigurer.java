@@ -16,7 +16,6 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -26,7 +25,6 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -37,7 +35,6 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.Distributed;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
@@ -91,6 +88,90 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final List<Registration> registrations = new ArrayList<>();
 
     private Configuration parent;
+
+    /**
+     * Creates a default configuration as described in {@link #defaultConfiguration(Class)}. This constructor is
+     * available for subclasses that provide additional configuration possibilities.
+     *
+     * @param aggregate The type of aggregate to configure
+     */
+    protected AggregateConfigurer(Class<A> aggregate) {
+        this.aggregate = aggregate;
+
+        metaModel = new Component<>(() -> parent, name("aggregateMetaModel"),
+                                    c -> c.getComponent(
+                                            AggregateMetaModelFactory.class,
+                                            () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
+                                                                                         c.handlerDefinition(aggregate))
+                                    ).createModel(aggregate, subtypes));
+        commandTargetResolver = new Component<>(
+                () -> parent, name("commandTargetResolver"),
+                c -> c.getComponent(
+                        CommandTargetResolver.class,
+                        () -> AnnotationCommandTargetResolver.builder().build()
+                )
+        );
+        lockFactory = new Component<>(() -> parent, name("lockFactory"), c -> PessimisticLockFactory.usingDefaults());
+        snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
+                                                    c -> NoSnapshotTriggerDefinition.INSTANCE);
+        snapshotFilter = new Component<>(() -> parent, name("snapshotFilter"), c -> {
+            final String revisionValue =
+                    (String) AnnotationUtils.findAnnotationAttribute(aggregate, Revision.class, "revision")
+                                            .orElse(null);
+            final String declaredAggregateType =
+                    metaModel.get()
+                             .declaredType(aggregate)
+                             .orElseThrow(() -> new AxonConfigurationException(
+                                     "No declared type found for Aggregate [" + aggregate + "]"
+                             ));
+            return RevisionSnapshotFilter.builder()
+                                         .type(declaredAggregateType)
+                                         .revision(revisionValue)
+                                         .build();
+        });
+        aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
+                                           c -> new GenericAggregateFactory<>(metaModel.get()));
+        cache = new Component<>(() -> parent, name("aggregateCache"), c -> null);
+        eventStreamFilter = new Component<>(() -> parent, name("eventStreamFilter"), c -> null);
+        filterEventsByType = new Component<>(() -> parent, name("filterByAggregateType"), c -> false);
+        repository = new Component<>(
+                () -> parent, name("Repository"),
+                c -> {
+                    state(c.eventBus() instanceof EventStore,
+                          () -> "Default configuration requires the use of event sourcing. Either configure an Event " +
+                                  "Store to use, or configure a specific repository implementation for " +
+                                  aggregate.toString());
+
+                    EventSourcingRepository.Builder<A> builder =
+                            EventSourcingRepository.builder(aggregate)
+                                                   .aggregateModel(metaModel.get())
+                                                   .lockFactory(lockFactory.get())
+                                                   .eventStore(c.eventStore())
+                                                   .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
+                                                   .aggregateFactory(aggregateFactory.get())
+                                                   .repositoryProvider(c::repository)
+                                                   .spanFactory(c.getComponent(RepositorySpanFactory.class))
+                                                   .cache(cache.get());
+                    if (eventStreamFilter.get() != null) {
+                        builder = builder.eventStreamFilter(eventStreamFilter.get());
+                    } else if (filterEventsByType.get()) {
+                        builder = builder.filterByAggregateType();
+                    }
+                    return builder.build();
+                });
+        creationPolicyAggregateFactory = new Component<>(
+                () -> parent, name("creationPolicyAggregateFactory"),
+                c -> new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType()));
+        commandHandler = new Component<>(
+                () -> parent, name("aggregateCommandHandler"),
+                c -> AggregateAnnotationCommandHandler.<A>builder()
+                                                      .repository(repository.get())
+                                                      .commandTargetResolver(commandTargetResolver.get())
+                                                      .aggregateModel(metaModel.get())
+                                                      .creationPolicyAggregateFactory(creationPolicyAggregateFactory.get())
+                                                      .build()
+        );
+    }
 
     /**
      * Creates a default Configuration for an aggregate of the given {@code aggregateType}. This required either a
@@ -169,118 +250,6 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                          .spanFactory(c.getComponent(RepositorySpanFactory.class))
                                          .build()
         );
-    }
-
-    /**
-     * Creates a default configuration as described in {@link #defaultConfiguration(Class)}. This constructor is
-     * available for subclasses that provide additional configuration possibilities.
-     *
-     * @param aggregate The type of aggregate to configure
-     */
-    protected AggregateConfigurer(Class<A> aggregate) {
-        this.aggregate = aggregate;
-
-        metaModel = new Component<>(() -> parent, name("aggregateMetaModel"),
-                                    c -> c.getComponent(
-                                            AggregateMetaModelFactory.class,
-                                            () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
-                                                                                         c.handlerDefinition(aggregate))
-                                    ).createModel(aggregate, subtypes));
-        commandTargetResolver = new Component<>(
-                () -> parent, name("commandTargetResolver"),
-                c -> c.getComponent(
-                        CommandTargetResolver.class,
-                        () -> AnnotationCommandTargetResolver.builder().build()
-                )
-        );
-        lockFactory = new Component<>(() -> parent, name("lockFactory"), c -> PessimisticLockFactory.usingDefaults());
-        snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
-                                                    c -> NoSnapshotTriggerDefinition.INSTANCE);
-        snapshotFilter = new Component<>(() -> parent, name("snapshotFilter"), c -> {
-            final String revisionValue =
-                    (String) AnnotationUtils.findAnnotationAttribute(aggregate, Revision.class, "revision")
-                                            .orElse(null);
-            final String declaredAggregateType =
-                    metaModel.get()
-                             .declaredType(aggregate)
-                             .orElseThrow(() -> new AxonConfigurationException(
-                                     "No declared type found for Aggregate [" + aggregate + "]"
-                             ));
-            return RevisionSnapshotFilter.builder()
-                                         .type(declaredAggregateType)
-                                         .revision(revisionValue)
-                                         .build();
-        });
-        aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
-                                           c -> new GenericAggregateFactory<>(metaModel.get()));
-        cache = new Component<>(() -> parent, name("aggregateCache"), c -> null);
-        eventStreamFilter = new Component<>(() -> parent, name("eventStreamFilter"), c -> null);
-        filterEventsByType = new Component<>(() -> parent, name("filterByAggregateType"), c -> false);
-        repository = new Component<>(
-                () -> parent, name("Repository"),
-                c -> {
-                    state(c.eventBus() instanceof EventStore,
-                          () -> "Default configuration requires the use of event sourcing. Either configure an Event " +
-                                  "Store to use, or configure a specific repository implementation for " +
-                                  aggregate.toString());
-
-                    CommandBus commandBus = c.commandBus();
-                    if (commandBus instanceof DisruptorCommandBus) {
-                        return buildDisruptorRepository((DisruptorCommandBus) commandBus, c, aggregate);
-                    } else if (commandBusHasDisruptorLocalSegment(commandBus)) {
-                        //noinspection unchecked
-                        Distributed<CommandBus> distributedCommandBus = (Distributed<CommandBus>) commandBus;
-                        return buildDisruptorRepository(
-                                (DisruptorCommandBus) distributedCommandBus.localSegment(), c, aggregate
-                        );
-                    }
-
-                    EventSourcingRepository.Builder<A> builder =
-                            EventSourcingRepository.builder(aggregate)
-                                                   .aggregateModel(metaModel.get())
-                                                   .lockFactory(lockFactory.get())
-                                                   .eventStore(c.eventStore())
-                                                   .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
-                                                   .aggregateFactory(aggregateFactory.get())
-                                                   .repositoryProvider(c::repository)
-                                                   .spanFactory(c.getComponent(RepositorySpanFactory.class))
-                                                   .cache(cache.get());
-                    if (eventStreamFilter.get() != null) {
-                        builder = builder.eventStreamFilter(eventStreamFilter.get());
-                    } else if (filterEventsByType.get()) {
-                        builder = builder.filterByAggregateType();
-                    }
-                    return builder.build();
-                });
-        creationPolicyAggregateFactory = new Component<>(
-                () -> parent, name("creationPolicyAggregateFactory"),
-                c -> new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType()));
-        commandHandler = new Component<>(
-                () -> parent, name("aggregateCommandHandler"),
-                c -> AggregateAnnotationCommandHandler.<A>builder()
-                                                      .repository(repository.get())
-                                                      .commandTargetResolver(commandTargetResolver.get())
-                                                      .aggregateModel(metaModel.get())
-                                                      .creationPolicyAggregateFactory(creationPolicyAggregateFactory.get())
-                                                      .build()
-        );
-    }
-
-    private boolean commandBusHasDisruptorLocalSegment(CommandBus commandBus) {
-        //noinspection unchecked
-        return commandBus instanceof Distributed
-                && ((Distributed<CommandBus>) commandBus).localSegment() instanceof DisruptorCommandBus;
-    }
-
-    private Repository<A> buildDisruptorRepository(DisruptorCommandBus commandBus,
-                                                   Configuration parentConfiguration,
-                                                   Class<A> aggregate) {
-        return commandBus.createRepository(parentConfiguration.eventStore(),
-                                           aggregateFactory.get(),
-                                           snapshotTriggerDefinition.get(),
-                                           parentConfiguration.parameterResolverFactory(),
-                                           parentConfiguration.handlerDefinition(aggregate),
-                                           parentConfiguration::repository);
     }
 
     private String name(String prefix) {

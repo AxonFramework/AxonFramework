@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -109,7 +110,7 @@ public interface MessageHandlingMember<T> {
                                     @Nullable T target) {
         try {
             // TODO: 24-11-2023 proper impl
-            return MessageStream.just(handleSync(message, target));
+            return MessageStream.just(GenericMessage.asMessage(handleSync(message, target)));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

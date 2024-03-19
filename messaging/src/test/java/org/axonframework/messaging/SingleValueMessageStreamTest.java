@@ -22,16 +22,16 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
-class SingleValueMessageStreamTest extends MessageStreamTest<SingleValueMessageStream<String>, String> {
+class SingleValueMessageStreamTest extends MessageStreamTest<SingleValueMessageStream<Message<String>>, String> {
 
     @Override
-    SingleValueMessageStream<String> createTestSubject(List<String> values) {
+    SingleValueMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
         Assumptions.assumeTrue(values.size() == 1, "SingleValueMessageStream only supports a single value");
         return new SingleValueMessageStream<>(values.getFirst());
     }
 
     @Override
-    SingleValueMessageStream<String> createTestSubject(List<String> values, Exception failure) {
+    SingleValueMessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
         Assumptions.assumeTrue(values.isEmpty(),
                                "SingleValueMessageStream only supports failures without regular values");
         return new SingleValueMessageStream<>(CompletableFuture.failedFuture(failure));

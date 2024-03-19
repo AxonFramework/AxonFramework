@@ -20,7 +20,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
 
-class CompletionCallbackMessageStream<T> implements MessageStream<T> {
+class CompletionCallbackMessageStream<T extends Message<?>> implements MessageStream<T> {
 
     private final MessageStream<T> delegate;
     private final Runnable completeHandler;

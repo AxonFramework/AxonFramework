@@ -22,29 +22,29 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public interface MessageStream<T> {
+public interface MessageStream<T extends Message<?>> {
 
-    static <T> MessageStream<T> fromIterable(Iterable<T> instance) {
+    static <T extends Message<?>> MessageStream<T> fromIterable(Iterable<T> instance) {
         return new IterableMessageStream<>(instance);
     }
 
-    static <T> MessageStream<T> fromFuture(CompletableFuture<T> instance) {
+    static <T extends Message<?>> MessageStream<T> fromFuture(CompletableFuture<T> instance) {
         return new SingleValueMessageStream<>(instance);
     }
 
-    static <T> MessageStream<T> fromStream(Stream<T> stream) {
+    static <T extends Message<?>> MessageStream<T> fromStream(Stream<T> stream) {
         return new StreamMessageStream<>(stream);
     }
 
-    static <T> MessageStream<T> just(T instance) {
+    static <T extends Message<?>> MessageStream<T> just(T instance) {
         return new SingleValueMessageStream<>(instance);
     }
 
-    static <T> MessageStream<T> failed(Throwable error) {
+    static <T extends Message<?>> MessageStream<T> failed(Throwable error) {
         return new FailedMessageStream<>(error);
     }
 
-    static MessageStream<Void> empty() {
+    static MessageStream<Message<Void>> empty() {
         return EmptyMessageStream.instance();
     }
 
@@ -52,7 +52,7 @@ public interface MessageStream<T> {
 
     Flux<T> asFlux();
 
-    default <R> MessageStream<R> map(Function<T, R> mapper) {
+    default <R extends Message<?>> MessageStream<R> map(Function<T, R> mapper) {
         return new MappedMessageStream<>(this, mapper);
     }
 

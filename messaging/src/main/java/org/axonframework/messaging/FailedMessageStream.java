@@ -21,7 +21,7 @@ import reactor.core.publisher.Flux;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-class FailedMessageStream<T> implements MessageStream<T> {
+class FailedMessageStream<T extends Message<?>> implements MessageStream<T> {
 
     private final Throwable error;
 
@@ -40,7 +40,7 @@ class FailedMessageStream<T> implements MessageStream<T> {
     }
 
     @Override
-    public <R> MessageStream<R> map(Function<T, R> mapper) {
+    public <R extends Message<?>> MessageStream<R> map(Function<T, R> mapper) {
         //noinspection unchecked
         return (FailedMessageStream<R>) this;
     }

@@ -29,7 +29,7 @@ import java.util.function.Supplier;
  * @author Mitchell Herrijgers
  * @author Sara Pellegrini
  * @author Steven van Beelen
- *
+ * <p>
  * TODO rename class once old UnitOfWork is removed
  */
 public class AsyncUnitOfWork implements ProcessingLifecycle {

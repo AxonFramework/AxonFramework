@@ -16,10 +16,9 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
+import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -28,6 +27,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -47,7 +47,7 @@ class EventPublicationOrderTest {
 
     @BeforeEach
     void setUp() {
-        this.commandBus = SimpleCommandBus.builder().build();
+        this.commandBus = new SimpleCommandBus();
         eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         EventSourcingRepository<StubAggregate> repository = EventSourcingRepository.builder(StubAggregate.class)
                                                                                    .eventStore(eventStore)
@@ -66,7 +66,7 @@ class EventPublicationOrderTest {
         when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(event));
         doAnswer(invocation -> Void.class).when(eventStore).publish(isA(EventMessage.class));
         commandBus.dispatch(
-                asCommandMessage(new UpdateStubAggregateWithExtraEventCommand(aggregateId)), NoOpCallback.INSTANCE
+                asCommandMessage(new UpdateStubAggregateWithExtraEventCommand(aggregateId)), ProcessingContext.NONE
         );
         InOrder inOrder = inOrder(eventStore, eventStore, eventStore);
         inOrder.verify(eventStore).publish(isA(DomainEventMessage.class));

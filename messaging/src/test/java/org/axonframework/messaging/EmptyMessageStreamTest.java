@@ -23,13 +23,13 @@ import java.util.List;
 class EmptyMessageStreamTest extends MessageStreamTest<EmptyMessageStream, Void> {
 
     @Override
-    EmptyMessageStream createTestSubject(List<Void> values) {
+    EmptyMessageStream createTestSubject(List<Message<Void>> values) {
         Assumptions.assumeTrue(values.isEmpty(), "EmptyMessageStream doesn't support content");
         return EmptyMessageStream.instance();
     }
 
     @Override
-    EmptyMessageStream createTestSubject(List<Void> values, Exception failure) {
+    EmptyMessageStream createTestSubject(List<Message<Void>> values, Exception failure) {
         Assumptions.abort("EmptyMessageStream doesn't support failed streams");
         return EmptyMessageStream.instance();
     }

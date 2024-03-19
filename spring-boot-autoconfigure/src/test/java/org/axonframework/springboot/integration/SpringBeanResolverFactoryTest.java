@@ -342,7 +342,7 @@ class SpringBeanResolverFactoryTest {
 
         @Bean
         public CommandBus commandBus() {
-            return SimpleCommandBus.builder().build();
+            return new SimpleCommandBus();
         }
 
         @Bean

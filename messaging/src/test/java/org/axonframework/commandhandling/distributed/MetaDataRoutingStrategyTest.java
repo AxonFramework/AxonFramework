@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
@@ -42,10 +41,7 @@ class MetaDataRoutingStrategyTest {
 
     @BeforeEach
     void setUp() {
-        testSubject = MetaDataRoutingStrategy.builder()
-                                             .metaDataKey(META_DATA_KEY)
-                                             .fallbackRoutingStrategy(fallbackRoutingStrategy)
-                                             .build();
+        testSubject = new MetaDataRoutingStrategy(META_DATA_KEY);
     }
 
     @Test
@@ -60,31 +56,9 @@ class MetaDataRoutingStrategyTest {
     }
 
     @Test
-    void resolvesRoutingKeyFromFallbackStrategy() {
-        String expectedRoutingKey = "some-routing-key";
-        when(fallbackRoutingStrategy.getRoutingKey(any())).thenReturn(expectedRoutingKey);
-
+    void returnsNullOnUnresolvedMetadataKey() {
         CommandMessage<String> testCommand = new GenericCommandMessage<>("some-payload", MetaData.emptyInstance());
 
-        assertEquals(expectedRoutingKey, testSubject.getRoutingKey(testCommand));
-        verify(fallbackRoutingStrategy).getRoutingKey(testCommand);
-    }
-
-    @Test
-    void buildMetaDataRoutingStrategyFailsForNullFallbackRoutingStrategy() {
-        MetaDataRoutingStrategy.Builder builderTestSubject = MetaDataRoutingStrategy.builder();
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.fallbackRoutingStrategy(null));
-    }
-
-    @Test
-    void buildMetaDataRoutingStrategyFailsForNullMetaDataKey() {
-        MetaDataRoutingStrategy.Builder builderTestSubject = MetaDataRoutingStrategy.builder();
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.metaDataKey(null));
-    }
-
-    @Test
-    void buildMetaDataRoutingStrategyFailsForEmptyMetaDataKey() {
-        MetaDataRoutingStrategy.Builder builderTestSubject = MetaDataRoutingStrategy.builder();
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.metaDataKey(""));
+        assertNull(testSubject.getRoutingKey(testCommand));
     }
 }

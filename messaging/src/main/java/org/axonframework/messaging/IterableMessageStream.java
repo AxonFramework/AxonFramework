@@ -22,7 +22,7 @@ import reactor.core.publisher.Flux;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 
-public class IterableMessageStream<T> implements MessageStream<T> {
+public class IterableMessageStream<T extends Message<?>> implements MessageStream<T> {
 
     private final Iterable<T> source;
 

@@ -21,12 +21,12 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.TargetContextResolver;
-import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
-import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.distributed.PriorityResolver;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
@@ -142,19 +142,13 @@ public class AxonServerAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public RoutingStrategy routingStrategy() {
-        return AnnotationRoutingStrategy.defaultStrategy();
+        return new AnnotationRoutingStrategy();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public CommandPriorityCalculator commandPriorityCalculator() {
-        return CommandPriorityCalculator.defaultCommandPriorityCalculator();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public CommandLoadFactorProvider commandLoadFactorProvider(AxonServerConfiguration configuration) {
-        return command -> configuration.getCommandLoadFactor();
+    public PriorityResolver<CommandMessage<?>> commandPriorityCalculator() {
+        return message -> 0;
     }
 
     @Bean

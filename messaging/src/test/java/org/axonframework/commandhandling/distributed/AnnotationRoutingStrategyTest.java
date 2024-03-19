@@ -18,12 +18,10 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.RoutingKey;
-import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.commandhandling.annotation.RoutingKey;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AnnotationRoutingStrategy}.
@@ -36,7 +34,7 @@ class AnnotationRoutingStrategyTest {
 
     @BeforeEach
     void setUp() {
-        testSubject = AnnotationRoutingStrategy.defaultStrategy();
+        testSubject = new AnnotationRoutingStrategy();
     }
 
     @Test
@@ -61,75 +59,25 @@ class AnnotationRoutingStrategyTest {
     }
 
     @Test
-    void nullRoutingKeyOnFieldThrowsCommandDispatchException() {
-        AnnotationRoutingStrategy errorFallbackRoutingStrategy =
-                AnnotationRoutingStrategy.builder()
-                                         .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.ERROR)
-                                         .build();
-
-        CommandMessage<SomeNullMethodAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(new SomeNullMethodAnnotatedCommand());
-
-        assertThrows(CommandDispatchException.class, () -> errorFallbackRoutingStrategy.getRoutingKey(testCommand));
-    }
-
-    @Test
-    void nullRoutingKeyOnMethodThrowsCommandDispatchException() {
-        AnnotationRoutingStrategy errorFallbackRoutingStrategy =
-                AnnotationRoutingStrategy.builder()
-                                         .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.ERROR)
-                                         .build();
-
-        CommandMessage<SomeNullMethodAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(new SomeNullMethodAnnotatedCommand());
-
-        assertThrows(CommandDispatchException.class, () -> errorFallbackRoutingStrategy.getRoutingKey(testCommand));
-    }
-
-    @Test
     void resolvesRoutingKeyFromAnnotationDoesNotInvokeFallbackStrategy() {
-        RoutingStrategy fallbackRoutingStrategy = mock(RoutingStrategy.class);
-
         AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
-                AnnotationRoutingStrategy.builder()
-                                         .fallbackRoutingStrategy(fallbackRoutingStrategy)
-                                         .build();
+                new AnnotationRoutingStrategy();
 
         CommandMessage<SomeFieldAnnotatedCommand> testCommand =
                 new GenericCommandMessage<>(new SomeFieldAnnotatedCommand());
 
         assertEquals("Target", testSubjectWithMockedFallbackStrategy.getRoutingKey(testCommand));
-        verifyNoInteractions(fallbackRoutingStrategy);
     }
 
     @Test
     void resolvesRoutingKeyFromFallbackStrategy() {
-        String expectedRoutingKey = "some-routing-key";
-        RoutingStrategy fallbackRoutingStrategy = mock(RoutingStrategy.class);
-        when(fallbackRoutingStrategy.getRoutingKey(any())).thenReturn(expectedRoutingKey);
-
         AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
-                AnnotationRoutingStrategy.builder()
-                                         .fallbackRoutingStrategy(fallbackRoutingStrategy)
-                                         .build();
+                new AnnotationRoutingStrategy();
 
         CommandMessage<SomeCommandWithoutTheRoutingAnnotation> testCommand =
                 new GenericCommandMessage<>(new SomeCommandWithoutTheRoutingAnnotation("target"));
 
-        assertEquals(expectedRoutingKey, testSubjectWithMockedFallbackStrategy.getRoutingKey(testCommand));
-        verify(fallbackRoutingStrategy).getRoutingKey(testCommand);
-    }
-
-    @Test
-    void buildAnnotationRoutingStrategyFailsForNullFallbackRoutingStrategy() {
-        AnnotationRoutingStrategy.Builder builderTestSubject = AnnotationRoutingStrategy.builder();
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.fallbackRoutingStrategy(null));
-    }
-
-    @Test
-    void buildAnnotationRoutingStrategyFailsForNullAnnotationType() {
-        AnnotationRoutingStrategy.Builder builderTestSubject = AnnotationRoutingStrategy.builder();
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.annotationType(null));
+        assertNull(testSubjectWithMockedFallbackStrategy.getRoutingKey(testCommand));
     }
 
     public static class SomeFieldAnnotatedCommand {

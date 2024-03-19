@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.config.MessageHandlerLookup;
@@ -200,7 +201,7 @@ class InfraConfigurationTest {
             assertThat(handlerInvoked).isFalse();
             assertThat(enhancerInvoked).isTrue();
 
-            context.getBean("commandGateway", CommandGateway.class).send(new Object());
+            context.getBean("commandGateway", CommandGateway.class).send(new Object(), ProcessingContext.NONE);
             assertThat(handlerInvoked).isTrue();
             assertThat(enhancerInvoked).isTrue();
         });

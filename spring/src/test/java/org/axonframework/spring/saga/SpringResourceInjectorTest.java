@@ -108,7 +108,7 @@ public class SpringResourceInjectorTest {
 
         @Bean
         public CommandBus commandBus() {
-            return SimpleCommandBus.builder().build();
+            return new SimpleCommandBus();
         }
     }
 }

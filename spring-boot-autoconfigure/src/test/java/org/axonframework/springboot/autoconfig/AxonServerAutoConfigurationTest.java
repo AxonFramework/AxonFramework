@@ -19,13 +19,11 @@ package org.axonframework.springboot.autoconfig;
 import io.grpc.ManagedChannelBuilder;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.TargetContextResolver;
-import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.Message;
@@ -36,7 +34,6 @@ import org.axonframework.spring.saga.SpringResourceInjector;
 import org.axonframework.springboot.utils.GrpcServerStub;
 import org.axonframework.springboot.utils.TcpUtils;
 import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -91,7 +88,8 @@ class AxonServerAutoConfigurationTest {
             Map<String, CommandBus> commandBusses = context.getBeansOfType(CommandBus.class);
 
             assertThat(commandBusses).containsKey("axonServerCommandBus");
-            assertThat(commandBusses.get("axonServerCommandBus")).isInstanceOf(AxonServerCommandBus.class);
+            // TODO - find a way to validate that the CommandBus is configured with a connector
+            assertThat(commandBusses.get("axonServerCommandBus")).isInstanceOf(CommandBus.class);
 
             assertThat(commandBusses).containsKey("commandBus");
             assertThat(commandBusses.get("commandBus")).isInstanceOf(SimpleCommandBus.class);
@@ -114,8 +112,9 @@ class AxonServerAutoConfigurationTest {
                    .run(context -> {
                        assertThat(context).getBeanNames(CommandBus.class)
                                           .hasSize(2);
+                       // TODO - find a way to validate that the CommandBus is configured with a connector
                        assertThat(context).getBean("axonServerCommandBus")
-                                          .isExactlyInstanceOf(AxonServerCommandBus.class);
+                                          .isExactlyInstanceOf(CommandBus.class);
                        assertThat(context).getBean("commandBus")
                                           .isExactlyInstanceOf(SimpleCommandBus.class);
                    });
@@ -141,47 +140,11 @@ class AxonServerAutoConfigurationTest {
                        QueryBus queryBus = context.getBean(QueryBus.class);
                        assertThat(queryBus).isNotNull();
                        assertThat(queryBus).isInstanceOf(AxonServerQueryBus.class);
+                       // TODO - find a way to validate that the CommandBus is configured with a connector
                        assertThat(context).getBean("axonServerCommandBus")
-                                          .isExactlyInstanceOf(AxonServerCommandBus.class);
+                                          .isExactlyInstanceOf(CommandBus.class);
                        assertThat(context).doesNotHaveBean("eventScheduler");
                        assertThat(context).doesNotHaveBean("eventStore");
-                   });
-    }
-
-    @Test
-    void axonServerUserDefinedCommandBusConfiguration() {
-        testContext.withUserConfiguration(ExplicitUserCommandBusConfiguration.class)
-                   .run(context -> {
-                       assertThat(context).getBeanNames(CommandBus.class)
-                                          .hasSize(1);
-                       assertThat(context).getBean(CommandBus.class)
-                                          .isExactlyInstanceOf(DisruptorCommandBus.class);
-                   });
-    }
-
-    @Test
-    void axonServerUserDefinedLocalSegmentConfiguration() {
-        testContext.withUserConfiguration(ExplicitUserLocalSegmentConfiguration.class)
-                   .run(context -> {
-                       assertThat(context).getBeanNames(CommandBus.class)
-                                          .hasSize(2);
-                       assertThat(context).getBean("axonServerCommandBus")
-                                          .isExactlyInstanceOf(AxonServerCommandBus.class);
-                       assertThat(context).getBean("commandBus")
-                                          .isExactlyInstanceOf(DisruptorCommandBus.class);
-                   });
-    }
-
-    @Test
-    void axonServerWrongUserDefinedLocalSegmentConfiguration() {
-        testContext.withUserConfiguration(
-                           ExplicitWrongUserLocalSegmentConfiguration.class
-                   )
-                   .run(context -> {
-                       assertThat(context).getBeanNames(CommandBus.class)
-                                          .hasSize(1);
-                       assertThat(context).getBean(CommandBus.class)
-                                          .isExactlyInstanceOf(DisruptorCommandBus.class);
                    });
     }
 
@@ -247,7 +210,7 @@ class AxonServerAutoConfigurationTest {
     @Test
     void axonServerEventStoreFactoryBeanIsNotConfiguredWhenEventStoreIsDisabled() {
         testContext.withUserConfiguration(TestContext.class)
-                .withPropertyValues("axon.axonserver.event-store.enabled=false")
+                   .withPropertyValues("axon.axonserver.event-store.enabled=false")
                    .run(context -> assertThat(context).getBean(AxonServerEventStoreFactory.class).isNull());
     }
 
@@ -258,32 +221,6 @@ class AxonServerAutoConfigurationTest {
         @Bean(initMethod = "start", destroyMethod = "shutdown")
         public GrpcServerStub grpcServerStub(@Value("${axon.axonserver.servers}") String servers) {
             return new GrpcServerStub(Integer.parseInt(servers.split(":")[1]));
-        }
-    }
-
-    private static class ExplicitUserCommandBusConfiguration {
-
-        @Bean
-        public DisruptorCommandBus commandBus() {
-            return DisruptorCommandBus.builder().build();
-        }
-    }
-
-    private static class ExplicitUserLocalSegmentConfiguration {
-
-        @Bean
-        @Qualifier("localSegment")
-        public DisruptorCommandBus commandBus() {
-            return DisruptorCommandBus.builder().build();
-        }
-    }
-
-    private static class ExplicitWrongUserLocalSegmentConfiguration {
-
-        @Bean
-        @Qualifier("wrongSegment")
-        public DisruptorCommandBus commandBus() {
-            return DisruptorCommandBus.builder().build();
         }
     }
 

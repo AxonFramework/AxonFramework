@@ -44,12 +44,6 @@
             <optional>true</optional>
         </dependency>
 
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>axon-disruptor</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- Test Dependencies -->
         <dependency>
             <groupId>jakarta.inject</groupId>

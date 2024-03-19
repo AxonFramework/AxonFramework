@@ -16,14 +16,14 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.common.Assert;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -59,6 +59,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
@@ -96,6 +97,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -145,7 +147,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      */
     public AggregateTestFixture(Class<T> aggregateType) {
         deadlineManager = new StubDeadlineManager();
-        commandBus = SimpleCommandBus.builder().build();
+        commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
         resources.add(commandBus);
         resources.add(eventStore);
@@ -214,7 +216,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         AnnotationCommandHandlerAdapter<?> adapter = new AnnotationCommandHandlerAdapter<>(
                 annotatedCommandHandler, getParameterResolverFactory(), getHandlerDefinition()
         );
-        //noinspection resource
         adapter.subscribe(commandBus);
         return this;
     }
@@ -230,7 +231,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                           MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        //noinspection resource
         commandBus.subscribe(commandName, commandHandler);
         return this;
     }
@@ -265,24 +265,23 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public FixtureConfiguration<T> registerCommandDispatchInterceptor(
             MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor
     ) {
-        //noinspection resource
-        this.commandBus.registerDispatchInterceptor(commandDispatchInterceptor);
-        return this;
+        throw new UnsupportedOperationException("Not implemented yet");
+//        this.commandBus.registerDispatchInterceptor(commandDispatchInterceptor);
+//        return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
             MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor
     ) {
-        //noinspection resource
-        this.commandBus.registerHandlerInterceptor(commandHandlerInterceptor);
-        return this;
+        throw new UnsupportedOperationException("Not implemented yet");
+//        this.commandBus.registerHandlerInterceptor(commandHandlerInterceptor);
+//        return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
             MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor) {
-        //noinspection resource
         this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
         return this;
     }
@@ -290,7 +289,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
             MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor) {
-        //noinspection resource
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }
@@ -434,10 +432,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public TestExecutor<T> andGivenCommands(List<?> commands) {
         finalizeConfiguration();
         for (Object command : commands) {
-            ExecutionExceptionAwareCallback callback = new ExecutionExceptionAwareCallback();
+            CompletableFuture<CommandResultMessage<?>> result = new CompletableFuture<>();
             CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command);
-            executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, callback));
-            callback.assertSuccessful();
+            executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, ProcessingContext.NONE)
+                                                   .whenComplete(FutureUtils.alsoComplete(result)));
+            result.join();
             givenEvents.addAll(storedEvents);
             storedEvents.clear();
         }
@@ -496,7 +495,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         return when(resultValidator -> {
             CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command)
                                                                          .andMetaData(metaData);
-            commandBus.dispatch(commandMessage, resultValidator);
+            commandBus.dispatch(commandMessage, ProcessingContext.NONE)
+                      .whenComplete((r, e) -> {
+                          if (e == null) {
+                              resultValidator.recordResult(commandMessage, r);
+                          } else {
+                              resultValidator.recordException(e);
+                          }
+                      });
         });
     }
 
@@ -579,17 +585,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         ensureRepositoryConfiguration();
         if (!explicitCommandHandlersSet) {
             AggregateAnnotationCommandHandler.Builder<T> builder = AggregateAnnotationCommandHandler.<T>builder()
-                    .aggregateType(aggregateType)
-                    .aggregateModel(aggregateModel())
-                    .parameterResolverFactory(getParameterResolverFactory())
-                    .repository(this.repository);
+                                                                                                    .aggregateType(
+                                                                                                            aggregateType)
+                                                                                                    .aggregateModel(
+                                                                                                            aggregateModel())
+                                                                                                    .parameterResolverFactory(
+                                                                                                            getParameterResolverFactory())
+                                                                                                    .repository(this.repository);
 
             if (commandTargetResolver != null) {
                 builder.commandTargetResolver(commandTargetResolver);
             }
 
             AggregateAnnotationCommandHandler<T> handler = builder.build();
-            //noinspection resource
             handler.subscribe(commandBus);
         }
     }
@@ -695,7 +703,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                           fieldFilter);
     }
 
-    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     private void ensureValuesEqual(Object workingValue,
                                    Object eventSourcedValue,
                                    String propertyPath,
@@ -1059,30 +1066,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         Registration registerDispatchInterceptor(
                 @Nonnull MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
             return () -> true;
-        }
-    }
-
-    private static class ExecutionExceptionAwareCallback implements CommandCallback<Object, Object> {
-
-        private FixtureExecutionException exception;
-
-        @Override
-        public void onResult(@Nonnull CommandMessage<?> commandMessage,
-                             @Nonnull CommandResultMessage<?> commandResultMessage) {
-            if (commandResultMessage.isExceptional()) {
-                Throwable cause = commandResultMessage.exceptionResult();
-                if (cause instanceof FixtureExecutionException) {
-                    this.exception = (FixtureExecutionException) cause;
-                } else {
-                    this.exception = new FixtureExecutionException("Failed to execute givenCommands", cause);
-                }
-            }
-        }
-
-        public void assertSuccessful() {
-            if (exception != null) {
-                throw exception;
-            }
         }
     }
 

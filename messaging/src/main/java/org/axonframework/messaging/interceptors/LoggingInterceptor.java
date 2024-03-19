@@ -69,7 +69,7 @@ public class LoggingInterceptor<T extends Message<?>>
     }
 
     @Override
-    public <M extends T, R> MessageStream<? extends R> interceptOnDispatch(@Nonnull M message,
+    public <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnDispatch(@Nonnull M message,
                                                                            @Nullable ProcessingContext context,
                                                                            @Nonnull InterceptorChain<M, R> interceptorChain) {
         logger.info("Dispatched message: [{}]", message.getPayloadType().getSimpleName());
@@ -77,7 +77,7 @@ public class LoggingInterceptor<T extends Message<?>>
     }
 
     @Override
-    public <M extends T, R> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
+    public <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
                                                                          @Nonnull ProcessingContext context,
                                                                          @Nonnull InterceptorChain<M, R> interceptorChain) {
         logger.info("Incoming message: [{}]", message.getPayloadType().getSimpleName());

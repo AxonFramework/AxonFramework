@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.RoutingKey;
+import org.axonframework.commandhandling.annotation.RoutingKey;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
