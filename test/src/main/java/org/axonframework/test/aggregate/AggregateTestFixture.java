@@ -432,7 +432,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public TestExecutor<T> andGivenCommands(List<?> commands) {
         finalizeConfiguration();
         for (Object command : commands) {
-            CompletableFuture<CommandResultMessage<?>> result = new CompletableFuture<>();
+            CompletableFuture<Message<?>> result = new CompletableFuture<>();
             CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command);
             executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, ProcessingContext.NONE)
                                                    .whenComplete(FutureUtils.alsoComplete(result)));

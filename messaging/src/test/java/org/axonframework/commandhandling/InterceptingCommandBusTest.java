@@ -69,7 +69,7 @@ class InterceptingCommandBusTest {
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
                 GenericCommandResultMessage.asCommandResultMessage("ok")));
 
-        CompletableFuture<? extends CommandResultMessage<?>> result = testSubject.dispatch(
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(
                 GenericCommandMessage.asCommandMessage("test"), ProcessingContext.NONE);
 
         ArgumentCaptor<CommandMessage<?>> dispatchedMessage = ArgumentCaptor.forClass(CommandMessage.class);
@@ -93,7 +93,7 @@ class InterceptingCommandBusTest {
                                                                                                          any(),
                                                                                                          any());
 
-        CompletableFuture<? extends CommandResultMessage<?>> result = testSubject.dispatch(
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(
                 GenericCommandMessage.asCommandMessage("test"), ProcessingContext.NONE);
 
         assertTrue(result.isCompletedExceptionally());
@@ -113,7 +113,7 @@ class InterceptingCommandBusTest {
             return i.callRealMethod();
         }).when(dispatchInterceptor1).interceptOnDispatch(any(), any(), any());
 
-        CompletableFuture<? extends CommandResultMessage<?>> result = testSubject.dispatch(
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(
                 GenericCommandMessage.asCommandMessage("test"), ProcessingContext.NONE);
 
         assertTrue(result.isDone());
@@ -130,7 +130,7 @@ class InterceptingCommandBusTest {
         doThrow(new MockException("Simulating failure in interceptor"))
                 .when(dispatchInterceptor2).interceptOnDispatch(any(), any(), any());
 
-        CompletableFuture<? extends CommandResultMessage<?>> result = testSubject.dispatch(
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(
                 GenericCommandMessage.asCommandMessage("test"), ProcessingContext.NONE);
 
         assertTrue(result.isCompletedExceptionally());
@@ -264,8 +264,8 @@ class InterceptingCommandBusTest {
         @SuppressWarnings("unchecked")
         @Override
         public <M1 extends M, R extends Message<?>> MessageStream<? extends R> interceptOnDispatch(@Nonnull M1 message,
-                                                                                @Nullable ProcessingContext context,
-                                                                                @Nonnull InterceptorChain<M1, R> interceptorChain) {
+                                                                                                   @Nullable ProcessingContext context,
+                                                                                                   @Nonnull InterceptorChain<M1, R> interceptorChain) {
             return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
                                    .map(m -> (R) ((Message<?>) m)
                                            .andMetaData(Map.of(key, buildValue(((Message<?>) m)))));
@@ -274,8 +274,8 @@ class InterceptingCommandBusTest {
         @SuppressWarnings("unchecked")
         @Override
         public <M1 extends M, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(@Nonnull M1 message,
-                                                                              @Nonnull ProcessingContext context,
-                                                                              @Nonnull InterceptorChain<M1, R> interceptorChain) {
+                                                                                                 @Nonnull ProcessingContext context,
+                                                                                                 @Nonnull InterceptorChain<M1, R> interceptorChain) {
             return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
                                    .map(m -> (R) m.andMetaData(Map.of(key, buildValue(m))));
         }

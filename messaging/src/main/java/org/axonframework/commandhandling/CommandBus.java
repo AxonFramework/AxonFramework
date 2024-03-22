@@ -18,6 +18,7 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -44,7 +45,7 @@ public interface CommandBus extends DescribableComponent {
      * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}'s name.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
-    CompletableFuture<? extends CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+    CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                                   @Nullable ProcessingContext processingContext);
 
     /**
@@ -59,6 +60,6 @@ public interface CommandBus extends DescribableComponent {
      * @return a handle to unsubscribe the {@code handler}. When unsubscribed it will no longer receive commands.
      */
     Registration subscribe(@Nonnull String commandName,
-                           @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler);
+                           @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler);
 
 }

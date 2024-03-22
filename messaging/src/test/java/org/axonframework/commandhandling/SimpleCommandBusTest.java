@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -53,8 +54,8 @@ class SimpleCommandBusTest {
     @Test
     void dispatchCommandHandlerSubscribed() throws Exception {
         testSubject.subscribe(String.class.getName(), new MyStringCommandHandler());
-        CompletableFuture<? extends CommandResultMessage<?>> actual = testSubject.dispatch(asCommandMessage("Say hi!"),
-                                                                                           ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(asCommandMessage("Say hi!"),
+                                                                              ProcessingContext.NONE);
         assertEquals("Say hi!",
                      actual.get().getPayload());
     }
@@ -79,7 +80,7 @@ class SimpleCommandBusTest {
         var actual = testSubject.dispatch(asCommandMessage("Say hi!"), ProcessingContext.NONE);
         assertTrue(actual.isDone());
         assertFalse(actual.isCompletedExceptionally());
-        CommandResultMessage<?> actualResult = actual.join();
+        Message<?> actualResult = actual.join();
         assertEquals("Say hi!", actualResult.getPayload());
         assertNotNull(unitOfWork.get());
     }

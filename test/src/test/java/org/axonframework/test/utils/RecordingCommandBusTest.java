@@ -19,6 +19,7 @@ package org.axonframework.test.utils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
@@ -43,8 +44,8 @@ class RecordingCommandBusTest {
     void publishCommand() throws Exception {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
         var result = testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), ProcessingContext.NONE);
-        CommandResultMessage<?> commandResultMessage = result.get();
-        if (commandResultMessage.isExceptional()) {
+        Message<?> commandResultMessage = result.get();
+        if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
             fail("Didn't expect handling to fail");
         }
         assertNull(commandResultMessage.getPayload(),
@@ -62,7 +63,7 @@ class RecordingCommandBusTest {
         var commandResultMessage = testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"),
                                                         ProcessingContext.NONE)
                                               .get();
-        if (commandResultMessage.isExceptional()) {
+        if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
             fail("Didn't expect handling to fail");
         }
         assertEquals("callbackResult", commandResultMessage.getPayload());

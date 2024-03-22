@@ -18,9 +18,9 @@ package org.axonframework.commandhandling.retry;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -40,26 +40,26 @@ public class RetryingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<? extends CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                                         @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                            @Nullable ProcessingContext processingContext) {
 
         return delegate.dispatch(command, processingContext)
-                       .<CommandResultMessage<?>>thenApply(Function.identity())
+                       .<Message<?>>thenApply(Function.identity())
                        .exceptionallyCompose(e -> performRetry(command,
                                                                processingContext,
                                                                e));
     }
 
-    private CompletableFuture<CommandResultMessage<?>> performRetry(CommandMessage<?> command,
-                                                                    ProcessingContext processingContext,
-                                                                    Throwable e) {
+    private CompletableFuture<Message<?>> performRetry(CommandMessage<?> command,
+                                                       ProcessingContext processingContext,
+                                                       Throwable e) {
         return retryScheduler.scheduleRetry(command, processingContext, e, delegate::dispatch)
                              .thenApply(Function.identity());
     }
 
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
         return subscribe(commandName, handler);
     }
 

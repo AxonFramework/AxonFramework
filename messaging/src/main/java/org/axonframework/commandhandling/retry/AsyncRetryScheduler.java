@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.retry;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class AsyncRetryScheduler implements RetryScheduler {
     }
 
     @Override
-    public CompletableFuture<? extends CommandResultMessage<?>> scheduleRetry(
+    public CompletableFuture<? extends Message<?>> scheduleRetry(
             @Nonnull CommandMessage<?> commandMessage, @Nullable ProcessingContext processingContext,
             @Nonnull Throwable cause, @Nonnull Dispatcher dispatcher) {
 
@@ -67,15 +67,15 @@ public class AsyncRetryScheduler implements RetryScheduler {
 
     private class RetryTask implements Runnable {
 
-        private final CompletableFuture<CommandResultMessage<?>> finalResult = new CompletableFuture<>();
+        private final CompletableFuture<Message<?>> finalResult = new CompletableFuture<>();
         private final List<Class<? extends Throwable>[]> history = new ArrayList<>();
         private final CommandMessage<?> commandMessage;
         private final RetryPolicy retryPolicy;
-        private final Supplier<CompletableFuture<? extends CommandResultMessage<?>>> dispatcher;
+        private final Supplier<CompletableFuture<? extends Message<?>>> dispatcher;
 
         public RetryTask(CommandMessage<?> commandMessage, RetryPolicy retryPolicy,
                          Throwable initialFailure,
-                         Supplier<CompletableFuture<? extends CommandResultMessage<?>>> dispatcher) {
+                         Supplier<CompletableFuture<? extends Message<?>>> dispatcher) {
             this.commandMessage = commandMessage;
             this.retryPolicy = retryPolicy;
             this.dispatcher = dispatcher;
@@ -101,8 +101,8 @@ public class AsyncRetryScheduler implements RetryScheduler {
                           if (decision.shouldReschedule()) {
                               history.add(simplify(failure));
                               executor.schedule(this,
-                              decision.rescheduleInterval(),
-                              decision.rescheduleIntervalTimeUnit());
+                                                decision.rescheduleInterval(),
+                                                decision.rescheduleIntervalTimeUnit());
                           } else {
                               finalResult.completeExceptionally(failure);
                           }

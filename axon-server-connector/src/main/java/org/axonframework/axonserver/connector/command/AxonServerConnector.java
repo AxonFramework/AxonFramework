@@ -35,6 +35,8 @@ import org.axonframework.commandhandling.distributed.Connector;
 import org.axonframework.commandhandling.distributed.PriorityResolver;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -168,7 +170,7 @@ public class AxonServerConnector implements Connector {
         BiConsumer<CommandMessage<?>, ResultCallback> handler = incomingHandler.get();
         handler.accept(convertToCommandMessage(command), new ResultCallback() {
             @Override
-            public void success(CommandResultMessage<?> resultMessage) {
+            public void success(Message<?> resultMessage) {
                 result.complete(createResult(command, resultMessage));
             }
 
@@ -188,17 +190,17 @@ public class AxonServerConnector implements Connector {
                                            command.getName());
     }
 
-    private CommandResponse createResult(Command command, CommandResultMessage<?> commandResultMessage) {
+    private CommandResponse createResult(Command command, Message<?> result) {
         CommandResponse.Builder responseBuilder =
                 CommandResponse.newBuilder()
                                .setMessageIdentifier(
-                                       getOrDefault(commandResultMessage.getIdentifier(), UUID.randomUUID().toString())
+                                       getOrDefault(result.getIdentifier(), UUID.randomUUID().toString())
                                )
-                               .putAllMetaData(convertMap(commandResultMessage.getMetaData(),
+                               .putAllMetaData(convertMap(result.getMetaData(),
                                                           this::convertToMetaDataValue))
                                .setRequestIdentifier(command.getMessageIdentifier());
 
-        if (commandResultMessage.isExceptional()) {
+        if (result instanceof ResultMessage commandResultMessage && commandResultMessage.isExceptional()) {
             Throwable throwable = commandResultMessage.exceptionResult();
             responseBuilder.setErrorCode(ErrorCode.getCommandExecutionErrorCode(throwable).errorCode());
             responseBuilder.setErrorMessage(ExceptionSerializer.serialize("", throwable));
@@ -212,9 +214,9 @@ public class AxonServerConnector implements Connector {
                 logger.info(
                         "To share exceptional information with the recipient it is recommended to wrap the exception in a CommandExecutionException with provided details.");
             }
-        } else if (commandResultMessage.getPayload() != null) {
+        } else if (result.getPayload() != null) {
             responseBuilder.setPayload(SerializedObject.newBuilder()
-                                                       .setData(ByteString.copyFrom((byte[]) commandResultMessage.getPayload())));
+                                                       .setData(ByteString.copyFrom((byte[]) result.getPayload())));
         }
 
         return responseBuilder.build();

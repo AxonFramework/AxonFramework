@@ -18,9 +18,9 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -49,14 +49,14 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<? extends CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                            @Nullable ProcessingContext processingContext) {
         return connector.dispatch(command, processingContext);
     }
 
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
         Registration delegateSubscription = delegate.subscribe(commandName, handler);
         connector.subscribe(commandName, 100);
         return () -> delegateSubscription.cancel() && connector.unsubscribe(commandName);

@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.slf4j.Logger;
@@ -57,7 +58,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
 
     @Override
     protected CompletableFuture<CommandResultMessage<?>> handle(CommandMessage<?> command,
-                                                                MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+                                                                MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
         CompletableFuture<CommandResultMessage<?>> result = new CompletableFuture<>();
         executor.execute(() -> super.handle(command, handler).whenComplete((r, e) -> {
             if (e == null) {

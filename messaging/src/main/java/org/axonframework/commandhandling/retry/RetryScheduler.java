@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.retry;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -49,7 +49,7 @@ public interface RetryScheduler {
      * @param dispatcher        The function to execute individual retries
      * @return a CompletableFuture providing the result of the last retry
      */
-    CompletableFuture<? extends CommandResultMessage<?>> scheduleRetry(
+    CompletableFuture<? extends Message<?>> scheduleRetry(
             @Nonnull CommandMessage<?> commandMessage,
             @Nullable ProcessingContext processingContext,
             @Nonnull Throwable cause,
@@ -57,7 +57,7 @@ public interface RetryScheduler {
 
     interface Dispatcher {
 
-        CompletableFuture<? extends CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> message,
-                                                                      @Nullable ProcessingContext processingContext);
+        CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> message,
+                                                         @Nullable ProcessingContext processingContext);
     }
 }

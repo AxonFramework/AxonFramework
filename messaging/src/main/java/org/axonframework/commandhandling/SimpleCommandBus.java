@@ -18,6 +18,7 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -54,7 +55,7 @@ public class SimpleCommandBus implements CommandBus {
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
     private final List<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars;
-    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> subscriptions = new ConcurrentHashMap<>();
 
     public SimpleCommandBus(ProcessingLifecycleHandlerRegistrar... processingLifecycleHandlerRegistrars) {
         this(Arrays.asList(processingLifecycleHandlerRegistrars));
@@ -67,9 +68,9 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<? extends CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                                         @Nullable ProcessingContext processingContext) {
-        Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> optionalHandler = findCommandHandlerFor(
+    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                            @Nullable ProcessingContext processingContext) {
+        Optional<MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> optionalHandler = findCommandHandlerFor(
                 command);
         if (optionalHandler.isPresent()) {
             return handle(command, optionalHandler.get());
@@ -80,7 +81,7 @@ public class SimpleCommandBus implements CommandBus {
         }
     }
 
-    private Optional<MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>>> findCommandHandlerFor(
+    private Optional<MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> findCommandHandlerFor(
             CommandMessage<?> command) {
         return Optional.ofNullable(subscriptions.get(command.getCommandName()));
     }
@@ -93,7 +94,7 @@ public class SimpleCommandBus implements CommandBus {
      */
     protected CompletableFuture<? extends CommandResultMessage<?>> handle(
             CommandMessage<?> command,
-            MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+            MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{}]", command.getCommandName());
         }
@@ -114,7 +115,7 @@ public class SimpleCommandBus implements CommandBus {
      */
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
         assertNonNull(handler, "handler may not be null");
         logger.debug("Subscribing command with name [{}]", commandName);
         var existingHandler = subscriptions.putIfAbsent(commandName, handler);

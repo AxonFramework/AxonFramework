@@ -18,10 +18,10 @@ package org.axonframework.commandhandling.tracing;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -42,15 +42,15 @@ public class TracingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<? extends CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                                         @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                            @Nullable ProcessingContext processingContext) {
         Span span = spanFactory.createDispatchCommandSpan(command, false);
         return span.runSupplierAsync(() -> delegate.dispatch(command, processingContext));
     }
 
     @Override
     public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
         return delegate.subscribe(commandName, new TracingHandler(handler));
     }
 
@@ -60,17 +60,17 @@ public class TracingCommandBus implements CommandBus {
         descriptor.describeProperty("spanFactory", spanFactory);
     }
 
-    private class TracingHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+    private class TracingHandler implements MessageHandler<CommandMessage<?>, Message<?>> {
 
-        private final MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler;
+        private final MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler;
 
-        public TracingHandler(MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+        public TracingHandler(MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
             this.handler = handler;
         }
 
         @Override
-        public MessageStream<? extends CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                       ProcessingContext processingContext) {
+        public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
+                                                          ProcessingContext processingContext) {
             return spanFactory.createHandleCommandSpan(message, false)
                               .runSupplier(() -> handler.handle(message, processingContext));
         }

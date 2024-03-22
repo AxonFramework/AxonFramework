@@ -22,6 +22,7 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.test.FixtureExecutionException;
@@ -63,7 +64,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     private final FieldFilter fieldFilter;
     private final Supplier<Aggregate<T>> state;
     private final DeadlineManagerValidator deadlineManagerValidator;
-    private CommandResultMessage<?> actualReturnValue;
+    private Message<?> actualReturnValue;
     private Throwable actualException;
 
     /**
@@ -479,11 +480,11 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     }
 
     public void recordResult(@Nonnull CommandMessage<?> commandMessage,
-                             @Nonnull CommandResultMessage<?> commandResultMessage) {
-        if (commandResultMessage.isExceptional()) {
+                             @Nonnull Message<?> result) {
+        if (result instanceof ResultMessage commandResultMessage && commandResultMessage.isExceptional()) {
             recordException(commandResultMessage.exceptionResult());
         } else {
-            actualReturnValue = commandResultMessage;
+            actualReturnValue = result;
         }
     }
 

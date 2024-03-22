@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Serializer;
 
@@ -68,7 +69,7 @@ public class SerializingConnector<T> implements Connector {
         }
 
         @Override
-        public void success(CommandResultMessage<?> resultMessage) {
+        public void success(Message<?> resultMessage) {
             callback.success(resultMessage.withConvertedPayload(p -> serializer.convert(p, representation)));
         }
 

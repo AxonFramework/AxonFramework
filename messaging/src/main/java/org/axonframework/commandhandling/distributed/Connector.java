@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -46,7 +47,7 @@ public interface Connector {
     // would always happen before any object is returned from the onIncomingCommand function
     interface ResultCallback {
 
-        void success(CommandResultMessage<?> resultMessage);
+        void success(Message<?> resultMessage);
 
         void error(Throwable cause);
     }

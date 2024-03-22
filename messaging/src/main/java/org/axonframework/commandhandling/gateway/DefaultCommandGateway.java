@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.retry.RetryScheduler;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,11 +54,11 @@ public class DefaultCommandGateway implements CommandGateway {
         return new SimpleCommandResult(commandBus.dispatch(GenericCommandMessage.asCommandMessage(command),
                                                            processingContext)
                                                  .thenCompose(msg -> {
-                                                     if (msg.isExceptional()) {
-                                                         return CompletableFuture.failedFuture(msg.exceptionResult());
-                                                     } else {
-                                                         return CompletableFuture.completedFuture(msg);
+                                                     if (msg instanceof ResultMessage resultMessage
+                                                             && resultMessage.isExceptional()) {
+                                                         return CompletableFuture.failedFuture(resultMessage.exceptionResult());
                                                      }
+                                                     return CompletableFuture.completedFuture(msg);
                                                  }));
     }
 }
