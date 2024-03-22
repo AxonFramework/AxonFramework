@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Serializer;
@@ -38,8 +37,8 @@ public class SerializingConnector<T> implements Connector {
     }
 
     @Override
-    public CompletableFuture<? extends CommandResultMessage<?>> dispatch(CommandMessage<?> command,
-                                                                         ProcessingContext processingContext) {
+    public CompletableFuture<? extends Message<?>> dispatch(CommandMessage<?> command,
+                                                            ProcessingContext processingContext) {
         CommandMessage<T> serializedCommand = command.withConvertedPayload(p -> serializer.convert(p, representation));
         return delegate.dispatch(serializedCommand, processingContext);
     }

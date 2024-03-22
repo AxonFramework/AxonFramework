@@ -28,9 +28,7 @@ import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.distributed.Connector;
 import org.axonframework.commandhandling.distributed.PriorityResolver;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -65,21 +63,25 @@ public class AxonServerConnector implements Connector {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<byte[]>> dispatch(CommandMessage<?> command,
-                                                                    ProcessingContext processingContext) {
+    public CompletableFuture<Message<byte[]>> dispatch(CommandMessage<?> command,
+                                                       ProcessingContext processingContext) {
         return commandChannel.sendCommand(buildCommand(command, processingContext))
-                             .thenApply(this::buildResultMessage);
+                             .thenCompose(this::buildResultMessage);
     }
 
-    private CommandResultMessage<byte[]> buildResultMessage(CommandResponse commandResponse) {
+    private CompletableFuture<Message<byte[]>> buildResultMessage(CommandResponse commandResponse) {
         if (commandResponse.hasErrorMessage()) {
-            return new GenericCommandResultMessage<>(
-                    ErrorCode.getFromCode(commandResponse.getErrorCode())
-                             .convert(commandResponse.getErrorMessage()),
-                    convertMap(commandResponse.getMetaDataMap(), this::convertToMetaDataValue));
+            return CompletableFuture.failedFuture(ErrorCode.getFromCode(commandResponse.getErrorCode())
+                                                           .convert(commandResponse.getErrorMessage(),
+                                                                    () -> commandResponse.getPayload().getData()
+                                                                                         .isEmpty()
+                                                                            ? null
+                                                                            : commandResponse.getPayload()
+                                                                                             .getData()
+                                                                                             .toByteArray()));
         }
 
-        return new GenericCommandResultMessage<>(new GenericMessage<>(
+        return CompletableFuture.completedFuture(new GenericMessage<>(
                 commandResponse.getMessageIdentifier(),
                 commandResponse.getPayload().getData().toByteArray(),
                 convertMap(commandResponse.getMetaDataMap(), this::convertToMetaDataValue)
