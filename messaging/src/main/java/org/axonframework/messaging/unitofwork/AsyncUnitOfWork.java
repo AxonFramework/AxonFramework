@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -114,14 +115,16 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
      */
     public <R> CompletableFuture<R> executeWithResult(Function<ProcessingContext, CompletableFuture<R>> invocation) {
         CompletableFuture<R> result = new CompletableFuture<>();
-        onInvocation(p -> invocation.apply(p).whenComplete((r, e) -> {
-            if (e == null) {
-                result.complete(r);
-            } else {
-                result.completeExceptionally(e);
-            }
-        }));
+        onInvocation(p -> safe(() -> invocation.apply(p)).whenComplete(FutureUtils.alsoComplete(result)));
         return execute().thenCombine(result, (executeResult, invocationResult) -> invocationResult);
+    }
+
+    private <R> CompletableFuture<R> safe(Callable<CompletableFuture<R>> apply) {
+        try {
+            return apply.call();
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     private static class UnitOfWorkProcessingContext implements ProcessingContext {
@@ -363,8 +366,8 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
 
             return handlers.stream()
                            .map(handler -> FutureUtils.emptyCompletedFuture()
-                                                            .thenComposeAsync(r -> handler.apply(this), workScheduler)
-                                                            .thenAccept(FutureUtils::ignoreResult))
+                                                      .thenComposeAsync(r -> handler.apply(this), workScheduler)
+                                                      .thenAccept(FutureUtils::ignoreResult))
                            .reduce(CompletableFuture::allOf)
                            .orElseGet(FutureUtils::emptyCompletedFuture);
         }
