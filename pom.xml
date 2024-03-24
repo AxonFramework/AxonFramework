@@ -128,7 +128,7 @@
         <!-- Spring -->
         <spring.version>5.3.33</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
-        <spring-security.version>5.8.10</spring-security.version>
+        <spring-security.version>5.8.11</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.2.1</awaitility.version>
         <hamcrest.version>2.2</hamcrest.version>
@@ -143,13 +143,13 @@
         <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>5.1.9</felix.maven-bundle-plugin.version>
         <jacoco-maven.version>0.8.11</jacoco-maven.version>
-        <maven-assembly.version>3.7.0</maven-assembly.version>
+        <maven-assembly.version>3.7.1</maven-assembly.version>
         <maven-clean.version>3.3.2</maven-clean.version>
-        <maven-compiler.version>3.12.1</maven-compiler.version>
+        <maven-compiler.version>3.13.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
         <maven-failsafe.version>3.2.5</maven-failsafe.version>
-        <maven-gpg.version>3.2.0</maven-gpg.version>
+        <maven-gpg.version>3.2.1</maven-gpg.version>
         <maven-install.version>3.1.1</maven-install.version>
         <maven-jar.version>3.3.0</maven-jar.version>
         <maven-javadoc.version>3.6.3</maven-javadoc.version>
