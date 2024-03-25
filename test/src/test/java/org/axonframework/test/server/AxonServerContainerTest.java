@@ -91,4 +91,11 @@ class AxonServerContainerTest {
             assertTrue(testSubject.isRunning());
         }
     }
+
+    @Test
+    void properlyConfiguredDefaultContainerLabel() {
+        try (AxonServerContainer testSubject = new AxonServerContainer()) {
+            assertEquals("axoniq/axonserver:latest", testSubject.getDockerImageName());
+        }
+    }
 }
