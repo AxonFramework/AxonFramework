@@ -15,8 +15,7 @@ import java.util.function.Supplier;
  */
 public interface ProcessingContext extends ProcessingLifecycle {
 
-    // TODO - Find a way to create a non-null "special case" instance to indicate no ProcessingContext is available
-    ProcessingContext NONE = null;
+    ProcessingContext NONE = NoProcessingContext.INSTANCE;
 
     /**
      * Indicates whether a resource has been registered with the given {@code key} in this processing context

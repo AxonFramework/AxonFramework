@@ -22,16 +22,16 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-class FluxMessageStreamTest extends MessageStreamTest<FluxMessageStream<String>, String> {
+class FluxMessageStreamTest extends MessageStreamTest<FluxMessageStream<Message<String>>, String> {
 
     @Override
-    FluxMessageStream<String> createTestSubject(List<String> values) {
+    FluxMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
         return new FluxMessageStream<>(Flux.fromIterable(values));
     }
 
     @Override
-    FluxMessageStream<String> createTestSubject(List<String> values, Exception failure) {
-        Flux<String> stringFlux = Flux.fromIterable(values).concatWith(Mono.error(failure));
+    FluxMessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
+        Flux<Message<String>> stringFlux = Flux.fromIterable(values).concatWith(Mono.error(failure));
         return new FluxMessageStream<>(stringFlux);
     }
 

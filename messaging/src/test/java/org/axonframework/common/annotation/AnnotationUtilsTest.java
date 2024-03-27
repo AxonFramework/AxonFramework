@@ -16,7 +16,7 @@
 
 package org.axonframework.common.annotation;
 
-import org.axonframework.commandhandling.RoutingKey;
+import org.axonframework.commandhandling.annotation.RoutingKey;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Annotation;

@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 

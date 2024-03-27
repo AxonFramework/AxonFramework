@@ -214,30 +214,6 @@ class AnnotatedSagaTest {
 
 
     @Test
-    void fixtureApi_WhenTimeElapses_UsingMockGateway() {
-        String identifier = UUID.randomUUID().toString();
-        String identifier2 = UUID.randomUUID().toString();
-        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-        final StubGateway gateway = mock(StubGateway.class);
-        fixture.registerCommandGateway(StubGateway.class, gateway);
-        when(gateway.send(eq("Say hi!"))).thenReturn("Hi again!");
-
-        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
-               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
-               .whenTimeElapses(Duration.ofMinutes(35))
-               .expectActiveSagas(1)
-               .expectAssociationWith("identifier", identifier)
-               .expectNoAssociationWith("identifier", identifier2)
-               .expectNoScheduledEvents()
-               .expectNoScheduledDeadlines()
-               .expectDispatchedCommands("Say hi!", "Hi again!")
-               .expectPublishedEventsMatching(noEvents());
-
-        verify(gateway).send("Say hi!");
-        verify(gateway).send("Hi again!");
-    }
-
-    @Test
     void fixtureApi_givenCurrentTime() {
         String identifier = UUID.randomUUID().toString();
         Instant fourDaysAgo = Instant.now().minus(4, ChronoUnit.DAYS);
@@ -255,7 +231,6 @@ class AnnotatedSagaTest {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-        fixture.registerCommandGateway(StubGateway.class);
 
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
                .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
@@ -278,7 +253,6 @@ class AnnotatedSagaTest {
         CallbackBehavior commandHandler = mock(CallbackBehavior.class);
         when(commandHandler.handle(eq("Say hi!"), isA(MetaData.class))).thenReturn("Hi again!");
         fixture.setCallbackBehavior(commandHandler);
-        fixture.registerCommandGateway(StubGateway.class);
 
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
                .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
@@ -299,7 +273,6 @@ class AnnotatedSagaTest {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-        fixture.registerCommandGateway(StubGateway.class);
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
                .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
 
@@ -311,28 +284,6 @@ class AnnotatedSagaTest {
                .expectNoScheduledEvents()
                .expectNoScheduledDeadlines()
                .expectDispatchedCommands("Say hi!");
-    }
-
-    @Test
-    void lastResourceEvaluatedFirst() {
-        String identifier = UUID.randomUUID().toString();
-        String identifier2 = UUID.randomUUID().toString();
-        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-        fixture.registerCommandGateway(StubGateway.class);
-        StubGateway mock = mock(StubGateway.class);
-        fixture.registerCommandGateway(StubGateway.class, mock);
-        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
-               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
-
-               .whenTimeAdvancesTo(Instant.now().plus(Duration.ofDays(1)))
-
-               .expectActiveSagas(1)
-               .expectAssociationWith("identifier", identifier)
-               .expectNoAssociationWith("identifier", identifier2)
-               .expectNoScheduledEvents()
-               .expectNoScheduledDeadlines()
-               .expectDispatchedCommands("Say hi!");
-        verify(mock).send(anyString());
     }
 
     @Test

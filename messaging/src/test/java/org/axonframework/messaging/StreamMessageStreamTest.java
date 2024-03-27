@@ -20,17 +20,16 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Stream;
 
-class StreamMessageStreamTest extends MessageStreamTest<StreamMessageStream<String>, String> {
+class StreamMessageStreamTest extends MessageStreamTest<StreamMessageStream<Message<String>>, String> {
 
     @Override
-    StreamMessageStream<String> createTestSubject(List<String> values) {
-        return new StreamMessageStream<>(Stream.of(values.toArray(new String[0])));
+    StreamMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
+        return new StreamMessageStream<>(values.stream());
     }
 
     @Override
-    StreamMessageStream<String> createTestSubject(List<String> values, Exception failure) {
+    StreamMessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
         Assumptions.abort("StreamMessageStream doesn't support failures");
         return null;
     }

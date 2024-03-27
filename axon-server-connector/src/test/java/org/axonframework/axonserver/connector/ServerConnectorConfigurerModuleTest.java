@@ -16,15 +16,11 @@
 
 package org.axonframework.axonserver.connector;
 
-import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
-import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -59,7 +55,7 @@ class ServerConnectorConfigurerModuleTest {
                            .anyMatch(moduleConfig -> moduleConfig.isType(EventProcessorInfoConfiguration.class))
         );
         assertTrue(testSubject.eventStore() instanceof AxonServerEventStore);
-        assertTrue(testSubject.commandBus() instanceof AxonServerCommandBus);
+//        assertTrue(testSubject.commandBus() instanceof AxonServerCommandBus);
         assertTrue(testSubject.queryBus() instanceof AxonServerQueryBus);
         assertNotNull(testSubject.getComponent(AxonServerEventStoreFactory.class));
 
@@ -84,19 +80,7 @@ class ServerConnectorConfigurerModuleTest {
     }
 
     @Test
-    void customCommandLoadFactorProvider() throws NoSuchFieldException {
-        CommandLoadFactorProvider expected = command -> 5000;
-        Configuration config =
-                DefaultConfigurer.defaultConfiguration()
-                                 .configureSerializer(c -> TestSerializer.xStreamSerializer())
-                                 .registerComponent(CommandLoadFactorProvider.class, c -> expected)
-                                 .buildConfiguration();
-
-        CommandBus commandBus = config.commandBus();
-        assertTrue(commandBus instanceof AxonServerCommandBus);
-        CommandLoadFactorProvider result = ReflectionUtils.getFieldValue(
-                AxonServerCommandBus.class.getDeclaredField("loadFactorProvider"), commandBus
-        );
-        assertEquals(expected, result);
+    void customCommandLoadFactorProvider() {
+        fail("Not implemented yet");
     }
 }

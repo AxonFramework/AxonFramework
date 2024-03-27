@@ -16,10 +16,12 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 
 import java.util.Map;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -36,9 +38,9 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
 
     /**
      * Returns the given {@code commandResult} as a {@link CommandResultMessage} instance. If {@code commandResult}
-     * already implements {@link CommandResultMessage}, it is returned as-is. If {@code commandResult} implements {@link
-     * Message}, payload and meta data will be used to construct new {@link GenericCommandResultMessage}. Otherwise, the
-     * given {@code commandResult} is wrapped into a {@link GenericCommandResultMessage} as its payload.
+     * already implements {@link CommandResultMessage}, it is returned as-is. If {@code commandResult} implements
+     * {@link Message}, payload and meta data will be used to construct new {@link GenericCommandResultMessage}.
+     * Otherwise, the given {@code commandResult} is wrapped into a {@link GenericCommandResultMessage} as its payload.
      *
      * @param commandResult the command result to be wrapped as {@link CommandResultMessage}
      * @param <T>           The type of the payload contained in returned Message
@@ -49,7 +51,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     public static <T> CommandResultMessage<T> asCommandResultMessage(@Nonnull Object commandResult) {
         if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage<T>) commandResult;
-        } else if (commandResult instanceof Message  ) {
+        } else if (commandResult instanceof Message) {
             Message<T> commandResultMessage = (Message<T>) commandResult;
             return new GenericCommandResultMessage<>(commandResultMessage);
         }
@@ -135,6 +137,17 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     public GenericCommandResultMessage<R> andMetaData(@Nonnull Map<String, ?> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
         return new GenericCommandResultMessage<>(getDelegate().andMetaData(metaData), exception);
+    }
+
+    @Override
+    public <T> CommandResultMessage<T> withConvertedPayload(Function<R, T> conversion) {
+        // TODO - Once Message declares a convert method, use that
+        Throwable exception = optionalExceptionResult().orElse(null);
+        Message<R> delegate = getDelegate();
+        Message<T> transformed = new GenericMessage<>(delegate.getIdentifier(),
+                                                      conversion.apply(delegate.getPayload()),
+                                                      delegate.getMetaData());
+        return new GenericCommandResultMessage<>(transformed, exception);
     }
 
     @Override

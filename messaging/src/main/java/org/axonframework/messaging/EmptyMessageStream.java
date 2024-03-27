@@ -16,13 +16,12 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.common.FutureUtils;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-class EmptyMessageStream implements MessageStream<Void> {
+class EmptyMessageStream implements MessageStream<Message<Void>> {
 
     public static final EmptyMessageStream INSTANCE = new EmptyMessageStream();
 
@@ -34,23 +33,23 @@ class EmptyMessageStream implements MessageStream<Void> {
     }
 
     @Override
-    public CompletableFuture<Void> asCompletableFuture() {
-        return FutureUtils.emptyCompletedFuture();
+    public CompletableFuture<Message<Void>> asCompletableFuture() {
+        return CompletableFuture.completedFuture(GenericMessage.emptyMessage());
     }
 
     @Override
-    public Flux<Void> asFlux() {
+    public Flux<Message<Void>> asFlux() {
         return Flux.empty();
     }
 
     @Override
-    public <R> MessageStream<R> map(Function<Void, R> mapper) {
+    public <R extends Message<?>> MessageStream<R> map(Function<Message<Void>, R> mapper) {
         //noinspection unchecked
         return (MessageStream<R>) this;
     }
 
     @Override
-    public MessageStream<Void> whenComplete(Runnable completeHandler) {
+    public MessageStream<Message<Void>> whenComplete(Runnable completeHandler) {
         try {
             completeHandler.run();
             return this;
@@ -60,7 +59,7 @@ class EmptyMessageStream implements MessageStream<Void> {
     }
 
     @Override
-    public MessageStream<Void> onErrorContinue(Function<Throwable, MessageStream<Void>> onError) {
+    public MessageStream<Message<Void>> onErrorContinue(Function<Throwable, MessageStream<Message<Void>>> onError) {
         return this;
     }
 }

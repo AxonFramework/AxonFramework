@@ -18,12 +18,12 @@ package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.junit.jupiter.api.*;
@@ -51,7 +51,7 @@ class AggregateCreationFromCommandsTest {
 
     @BeforeEach
     void setUp() {
-        this.commandBus = SimpleCommandBus.builder().build();
+        this.commandBus = new SimpleCommandBus();
         eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         repository = EventSourcingRepository.builder(StubAggregateForCreation.class)
                                             .eventStore(eventStore)
@@ -64,7 +64,7 @@ class AggregateCreationFromCommandsTest {
         createAndRegisterDefaultCommandHandler();
         String aggregateId = UUID.randomUUID().toString();
         commandBus.dispatch(
-                asCommandMessage(new StubAggregateForCreation.ConstructorCommand(aggregateId)), NoOpCallback.INSTANCE
+                asCommandMessage(new StubAggregateForCreation.ConstructorCommand(aggregateId)), ProcessingContext.NONE
         );
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -78,7 +78,7 @@ class AggregateCreationFromCommandsTest {
         createAndRegisterDefaultCommandHandler();
         String aggregateId = UUID.randomUUID().toString();
         commandBus.dispatch(
-                asCommandMessage(new StubAggregateForCreation.CreateAlwaysCommand(aggregateId)), NoOpCallback.INSTANCE
+                asCommandMessage(new StubAggregateForCreation.CreateAlwaysCommand(aggregateId)), ProcessingContext.NONE
         );
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -93,7 +93,7 @@ class AggregateCreationFromCommandsTest {
         String aggregateId = UUID.randomUUID().toString();
         commandBus.dispatch(
                 asCommandMessage(new StubAggregateForCreation.CreateIfMissingCommand(aggregateId)),
-                NoOpCallback.INSTANCE
+                ProcessingContext.NONE
         );
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -107,7 +107,7 @@ class AggregateCreationFromCommandsTest {
         createAndRegisterCommandHandlerWithFactory();
         String aggregateId = UUID.randomUUID().toString();
         commandBus.dispatch(
-                asCommandMessage(new StubAggregateForCreation.ConstructorCommand(aggregateId)), NoOpCallback.INSTANCE
+                asCommandMessage(new StubAggregateForCreation.ConstructorCommand(aggregateId)), ProcessingContext.NONE
         );
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -122,7 +122,7 @@ class AggregateCreationFromCommandsTest {
         createAndRegisterCommandHandlerWithFactory();
         String aggregateId = UUID.randomUUID().toString();
         commandBus.dispatch(
-                asCommandMessage(new StubAggregateForCreation.CreateAlwaysCommand(aggregateId)), NoOpCallback.INSTANCE
+                asCommandMessage(new StubAggregateForCreation.CreateAlwaysCommand(aggregateId)), ProcessingContext.NONE
         );
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -138,7 +138,7 @@ class AggregateCreationFromCommandsTest {
         String aggregateId = UUID.randomUUID().toString();
         commandBus.dispatch(
                 asCommandMessage(new StubAggregateForCreation.CreateIfMissingCommand(aggregateId)),
-                NoOpCallback.INSTANCE
+                ProcessingContext.NONE
         );
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()

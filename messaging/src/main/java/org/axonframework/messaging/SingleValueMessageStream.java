@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
-public class SingleValueMessageStream<T> implements MessageStream<T> {
+public class SingleValueMessageStream<T extends Message<?>> implements MessageStream<T> {
 
     private final CompletableFuture<T> value;
 

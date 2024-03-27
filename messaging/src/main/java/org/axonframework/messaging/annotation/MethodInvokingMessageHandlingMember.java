@@ -153,7 +153,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
         // FIXME - null processingContext should not be allowed here
         //noinspection DataFlowIssue
         try {
-            return handle(message, null, target).asCompletableFuture().get();
+            return handle(message, null, target).asCompletableFuture().get().getPayload();
         } catch (ExecutionException e) {
             if (e.getCause() instanceof Exception ex) {
                 throw ex;

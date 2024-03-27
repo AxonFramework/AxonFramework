@@ -16,15 +16,14 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandBusSpanFactory;
-import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
-import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
-import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.config.CommandBusBuilder;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
+import org.axonframework.commandhandling.tracing.DefaultCommandBusSpanFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
@@ -353,7 +352,7 @@ public class DefaultConfigurer implements Configurer {
      */
     protected CommandGateway defaultCommandGateway(Configuration config) {
         return defaultComponent(CommandGateway.class, config)
-                .orElseGet(() -> DefaultCommandGateway.builder().commandBus(config.commandBus()).build());
+                .orElseGet(() -> new DefaultCommandGateway(config.commandBus()));
     }
 
     /**
@@ -460,22 +459,20 @@ public class DefaultConfigurer implements Configurer {
     protected CommandBus defaultCommandBus(Configuration config) {
         return defaultComponent(CommandBus.class, config)
                 .orElseGet(() -> {
-                    CommandBus commandBus =
-                            SimpleCommandBus.builder()
-                                            .transactionManager(config.getComponent(
-                                                    TransactionManager.class, () -> NoTransactionManager.INSTANCE
-                                            ))
-                                            .duplicateCommandHandlerResolver(config.getComponent(
-                                                    DuplicateCommandHandlerResolver.class,
-                                                    LoggingDuplicateCommandHandlerResolver::instance
-                                            ))
-                                            .spanFactory(config.getComponent(CommandBusSpanFactory.class))
-                                            .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
-                                            .build();
-                    commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
-                    return commandBus;
+                    CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
+                    TransactionManager txManager = config.getComponent(TransactionManager.class);
+                    if (txManager != null) {
+                        commandBusBuilder.withTransactions(txManager);
+                    }
+                    if (!config.correlationDataProviders().isEmpty()) {
+                        CorrelationDataInterceptor<Message<?>> interceptor = new CorrelationDataInterceptor<>(config.correlationDataProviders());
+                        commandBusBuilder.withHandlerInterceptor(interceptor);
+                        //TODO - commandBusBuilder.withDispatchInterceptor(interceptor);
+                    }
+                    return commandBusBuilder.build();
                 });
     }
+
 
     /**
      * Returns a {@link ConfigurationResourceInjector} that injects resources defined in the given
@@ -630,8 +627,8 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns the default {@link DeadlineManagerSpanFactory}, or a
-     * {@link DefaultDeadlineManagerSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     * Returns the default {@link DeadlineManagerSpanFactory}, or a {@link DefaultDeadlineManagerSpanFactory} backed by
+     * the configured {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
      * @return The default {@link DeadlineManagerSpanFactory}.
@@ -645,8 +642,8 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns the default {@link RepositorySpanFactory}, or a
-     * {@link DefaultRepositorySpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     * Returns the default {@link RepositorySpanFactory}, or a {@link DefaultRepositorySpanFactory} backed by the
+     * configured {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
      * @return The default {@link RepositorySpanFactory}.
@@ -660,8 +657,8 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns the default {@link EventProcessorSpanFactory}, or a
-     * {@link DefaultEventProcessorSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     * Returns the default {@link EventProcessorSpanFactory}, or a {@link DefaultEventProcessorSpanFactory} backed by
+     * the configured {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
      * @return The default {@link EventProcessorSpanFactory}.
@@ -675,8 +672,8 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns the default {@link SagaManagerSpanFactory}, or a
-     * {@link DefaultSagaManagerSpanFactory} backed by the configured {@link SpanFactory} if none it set.
+     * Returns the default {@link SagaManagerSpanFactory}, or a {@link DefaultSagaManagerSpanFactory} backed by the
+     * configured {@link SpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
      * @return The default {@link SagaManagerSpanFactory}.

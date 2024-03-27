@@ -49,11 +49,11 @@ public class GenericMessage<T> extends AbstractMessage<T> {
      * @param payloadOrMessage The payload to wrap or message to return
      * @return a Message with the given payload or the message
      */
-    public static Message<?> asMessage(Object payloadOrMessage) {
+    public static <R> Message<R> asMessage(Object payloadOrMessage) {
         if (payloadOrMessage instanceof Message) {
-            return (Message<?>) payloadOrMessage;
+            return (Message<R>) payloadOrMessage;
         } else {
-            return new GenericMessage<>(payloadOrMessage);
+            return new GenericMessage<>((R) payloadOrMessage);
         }
     }
 
@@ -69,8 +69,8 @@ public class GenericMessage<T> extends AbstractMessage<T> {
 
     /**
      * Constructs a Message for the given {@code payload} and {@code meta data}. The given {@code metaData} is merged
-     * with the MetaData from the correlation data of the current unit of work, if present. In case the {@code payload
-     * == null}, {@link Void} will be used as the {@code payloadType}.
+     * with the MetaData from the correlation data of the current unit of work, if present. In case the
+     * {@code payload == null}, {@link Void} will be used as the {@code payloadType}.
      *
      * @param payload  The payload for the message as a generic {@code T}
      * @param metaData The meta data {@link Map} for the message
@@ -94,8 +94,8 @@ public class GenericMessage<T> extends AbstractMessage<T> {
 
     /**
      * Constructor to reconstruct a Message using existing data. Note that no correlation data from a UnitOfWork is
-     * attached when using this constructor. If you're constructing a new Message, use {@link #GenericMessage(Object,
-     * Map)} instead.
+     * attached when using this constructor. If you're constructing a new Message, use
+     * {@link #GenericMessage(Object, Map)} instead.
      *
      * @param identifier The identifier of the Message
      * @param payload    The payload of the message
@@ -108,8 +108,8 @@ public class GenericMessage<T> extends AbstractMessage<T> {
 
     /**
      * Constructor to reconstruct a Message using existing data. Note that no correlation data from a UnitOfWork is
-     * attached when using this constructor. If you're constructing a new Message, use {@link #GenericMessage(Object,
-     * Map)} instead
+     * attached when using this constructor. If you're constructing a new Message, use
+     * {@link #GenericMessage(Object, Map)} instead
      *
      * @param identifier          The identifier of the Message
      * @param declaredPayloadType The declared type of message payload
@@ -140,6 +140,15 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     @SuppressWarnings("unchecked")
     private static <T> Class<T> getDeclaredPayloadType(T payload) {
         return payload != null ? (Class<T>) payload.getClass() : (Class<T>) Void.class;
+    }
+
+    /**
+     * An empty message.
+     *
+     * @return a message with {@code null} payload and no metadata
+     */
+    public static Message<Void> emptyMessage() {
+        return new GenericMessage<>(null);
     }
 
     @Override

@@ -17,7 +17,6 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.gateway.CommandGatewayFactory;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.deadline.DeadlineMessage;
@@ -33,6 +32,8 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -64,7 +65,6 @@ import org.axonframework.test.utils.CallbackBehavior;
 import org.axonframework.test.utils.RecordingCommandBus;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.Instant;
@@ -73,9 +73,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.StreamSupport;
 
@@ -138,10 +135,17 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
         registeredResources.add(deadlineManager);
-        registeredResources.add(DefaultCommandGateway.builder().commandBus(commandBus).build());
+        registeredResources.add(new DefaultCommandGateway(commandBus));
 
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(
-                sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, sagaType, fieldFilters, recordingListenerInvocationErrorHandler);
+                sagaStore,
+                eventScheduler,
+                deadlineManager,
+                eventBus,
+                commandBus,
+                sagaType,
+                fieldFilters,
+                recordingListenerInvocationErrorHandler);
     }
 
     /**
@@ -157,9 +161,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> new DefaultInterceptorChain<>(
                 unitOfWork,
                 eventHandlerInterceptors,
-                (MessageHandler<EventMessage<?>, Void>) message -> {
+                (MessageHandler<EventMessage<?>, Message<Void>>) message -> {
                     sagaManager.handle(message, null, Segment.ROOT_SEGMENT);
-                    return null;
+                    return GenericMessage.emptyMessage();
                 }).proceedSync()
         );
 
@@ -197,19 +201,20 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     protected void ensureSagaResourcesInitialized() {
         if (!resourcesInitialized) {
             SagaRepository<T> sagaRepository = AnnotatedSagaRepository.<T>builder()
-                    .sagaType(sagaType)
-                    .parameterResolverFactory(getParameterResolverFactory())
-                    .handlerDefinition(getHandlerDefinition())
-                    .sagaStore(sagaStore)
-                    .resourceInjector(getResourceInjector())
-                    .build();
+                                                                      .sagaType(sagaType)
+                                                                      .parameterResolverFactory(
+                                                                              getParameterResolverFactory())
+                                                                      .handlerDefinition(getHandlerDefinition())
+                                                                      .sagaStore(sagaStore)
+                                                                      .resourceInjector(getResourceInjector())
+                                                                      .build();
             sagaManager = AnnotatedSagaManager.<T>builder()
-                    .sagaRepository(sagaRepository)
-                    .sagaType(sagaType)
-                    .parameterResolverFactory(getParameterResolverFactory())
-                    .handlerDefinition(getHandlerDefinition())
-                    .listenerInvocationErrorHandler(recordingListenerInvocationErrorHandler)
-                    .build();
+                                              .sagaRepository(sagaRepository)
+                                              .sagaType(sagaType)
+                                              .parameterResolverFactory(getParameterResolverFactory())
+                                              .handlerDefinition(getHandlerDefinition())
+                                              .listenerInvocationErrorHandler(recordingListenerInvocationErrorHandler)
+                                              .build();
             resourcesInitialized = true;
         }
     }
@@ -370,22 +375,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public <I> I registerCommandGateway(Class<I> gatewayInterface) {
-        return registerCommandGateway(gatewayInterface, null);
-    }
-
-    @Override
-    public <I> I registerCommandGateway(Class<I> gatewayInterface, final I stubImplementation) {
-        CommandGatewayFactory factory = StubAwareCommandGatewayFactory.builder()
-                                                                      .commandBus(SagaTestFixture.this.commandBus)
-                                                                      .stubImplementation(stubImplementation)
-                                                                      .build();
-        final I gateway = factory.createGateway(gatewayInterface);
-        registerResource(gateway);
-        return gateway;
-    }
-
-    @Override
     public FixtureConfiguration registerFieldFilter(FieldFilter fieldFilter) {
         this.fieldFilters.add(fieldFilter);
         return this;
@@ -470,94 +459,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     public RecordingCommandBus getCommandBus() {
         return commandBus;
-    }
-
-    /**
-     * CommandGatewayFactory that is aware of a stub implementation that defines the behavior for the callback.
-     */
-    private static class StubAwareCommandGatewayFactory extends CommandGatewayFactory {
-
-        private final Object stubImplementation;
-
-        protected StubAwareCommandGatewayFactory(Builder builder) {
-            super(builder);
-            this.stubImplementation = builder.stubImplementation;
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        @Override
-        protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<CompletableFuture<R>> delegate) {
-            return new ReturnResultFromStub<>(delegate, stubImplementation);
-        }
-
-        @Override
-        protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(
-                InvocationHandler<CompletableFuture<R>> delegate,
-                long timeout, TimeUnit timeUnit) {
-            return new ReturnResultFromStub<>(delegate, stubImplementation);
-        }
-
-        @Override
-        protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
-                InvocationHandler<CompletableFuture<R>> delegate,
-                int timeoutIndex, int timeUnitIndex) {
-            return new ReturnResultFromStub<>(delegate, stubImplementation);
-        }
-
-        public static class Builder extends CommandGatewayFactory.Builder {
-
-            private Object stubImplementation;
-
-            @Override
-            public Builder commandBus(CommandBus commandBus) {
-                super.commandBus(commandBus);
-                return this;
-            }
-
-            private Builder stubImplementation(Object stubImplementation) {
-                this.stubImplementation = stubImplementation;
-                return this;
-            }
-
-            public StubAwareCommandGatewayFactory build() {
-                return new StubAwareCommandGatewayFactory(this);
-            }
-        }
-    }
-
-    /**
-     * Invocation handler that uses a stub implementation (of not {@code null}) to define the value to return from a
-     * handler invocation. If none is provided, the returned future is checked for a value. If that future is not "done"
-     * (for example because no callback behavior was provided), it returns {@code null}.
-     *
-     * @param <R> The return type of the method invocation
-     */
-    private static class ReturnResultFromStub<R> implements CommandGatewayFactory.InvocationHandler<R> {
-
-        private final CommandGatewayFactory.InvocationHandler<CompletableFuture<R>> dispatcher;
-        private final Object stubGateway;
-
-        public ReturnResultFromStub(CommandGatewayFactory.InvocationHandler<CompletableFuture<R>> dispatcher,
-                                    Object stubGateway) {
-            this.dispatcher = dispatcher;
-            this.stubGateway = stubGateway;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
-            Future<R> future = dispatcher.invoke(proxy, invokedMethod, args);
-            if (stubGateway != null) {
-                return (R) invokedMethod.invoke(stubGateway, args);
-            }
-            if (future.isDone()) {
-                return future.get();
-            }
-            return null;
-        }
     }
 
     private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
@@ -659,10 +560,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     /**
      * Wrapping {@link ResourceInjector} instance. Will first call the {@link TransienceValidatingResourceInjector}, to
      * ensure the fixture's approach of injecting the default classes (like the {@link EventBus} and {@link CommandBus}
-     * for example) is maintained. Afterward, the custom {@code ResourceInjector} provided through the {@link
-     * #registerResourceInjector(ResourceInjector)} is called. This will (depending on the implementation) inject more
-     * resources, as well as potentially override resources already injected by the {@code
-     * TransienceValidatingResourceInjector}.
+     * for example) is maintained. Afterward, the custom {@code ResourceInjector} provided through the
+     * {@link #registerResourceInjector(ResourceInjector)} is called. This will (depending on the implementation) inject
+     * more resources, as well as potentially override resources already injected by the
+     * {@code TransienceValidatingResourceInjector}.
      */
     private static class WrappingResourceInjector implements ResourceInjector {
 

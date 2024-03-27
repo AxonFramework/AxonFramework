@@ -19,6 +19,7 @@ package org.axonframework.commandhandling;
 import org.axonframework.messaging.Message;
 
 import java.util.Map;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 /**
@@ -42,9 +43,9 @@ public interface CommandMessage<T> extends Message<T> {
     /**
      * Returns a copy of this CommandMessage with the given {@code metaData}. The payload remains unchanged.
      * <p/>
-     * While the implementation returned may be different than the implementation of {@code this}, implementations
-     * must take special care in returning the same type of Message (e.g. EventMessage, DomainEventMessage) to prevent
-     * errors further downstream.
+     * While the implementation returned may be different than the implementation of {@code this}, implementations must
+     * take special care in returning the same type of Message (e.g. EventMessage, DomainEventMessage) to prevent errors
+     * further downstream.
      *
      * @param metaData The new MetaData for the Message
      * @return a copy of this message with the given MetaData
@@ -61,4 +62,7 @@ public interface CommandMessage<T> extends Message<T> {
      */
     @Override
     CommandMessage<T> andMetaData(@Nonnull Map<String, ?> metaData);
+
+    @Override
+    <C> CommandMessage<C> withConvertedPayload(@Nonnull Function<T, C> conversion);
 }

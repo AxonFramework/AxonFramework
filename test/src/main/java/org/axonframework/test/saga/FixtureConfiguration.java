@@ -86,39 +86,6 @@ public interface FixtureConfiguration {
     FixtureConfiguration registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory);
 
     /**
-     * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The gateway
-     * will dispatch commands on the Command Bus contained in this Fixture, so that you can validate commands using
-     * {@link FixtureExecutionResult#expectDispatchedCommands(Object...)} and {@link
-     * FixtureExecutionResult#expectDispatchedCommandsMatching(org.hamcrest.Matcher)}.
-     * <p/>
-     * Note that you need to use {@link #setCallbackBehavior(org.axonframework.test.utils.CallbackBehavior)} to defined
-     * the behavior of commands when expecting return values. Alternatively, you can use {@link
-     * #registerCommandGateway(Class, Object)} to define behavior using a stub implementation.
-     *
-     * @param gatewayInterface The interface describing the gateway
-     * @param <T>              The gateway type
-     * @return the gateway implementation being registered as a resource.
-     */
-    <T> T registerCommandGateway(Class<T> gatewayInterface);
-
-    /**
-     * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The gateway
-     * will dispatch commands on the Command Bus contained in this Fixture, so that you can validate commands using
-     * {@link FixtureExecutionResult#expectDispatchedCommands(Object...)} and {@link
-     * FixtureExecutionResult#expectDispatchedCommandsMatching(org.hamcrest.Matcher)}.
-     * <p/>
-     * The behavior of the created gateway is defined by the given {@code stubImplementation}, if not null. Dispatched
-     * Commands are still recorded for verification. Note that only commands executed in the "when" phase are recorded,
-     * while the stub implementation may record activity during the "given" phase as well.
-     *
-     * @param gatewayInterface   The interface describing the gateway
-     * @param stubImplementation The stub or mock implementation defining behavior of the gateway
-     * @param <T>                The gateway type
-     * @return the gateway implementation being registered as a resource.
-     */
-    <T> T registerCommandGateway(Class<T> gatewayInterface, T stubImplementation);
-
-    /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing objects.
      * The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectResultMessage(CommandResultMessage)},
      * for example, use this filter.

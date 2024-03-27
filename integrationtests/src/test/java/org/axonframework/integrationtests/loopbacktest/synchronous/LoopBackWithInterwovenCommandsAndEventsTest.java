@@ -93,7 +93,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
 
     @Test
     void orderInCommandHandlerAggregate() {
-        MyAggregate commandHandlerAggregate = configuration.commandGateway().sendAndWait(command);
+        MyAggregate commandHandlerAggregate = configuration.commandGateway().sendAndWait(command, MyAggregate.class);
 
         assertEquals(expectedDescriptions(command), commandHandlerAggregate.getHandledCommands());
     }

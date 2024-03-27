@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-class StreamMessageStream<T> implements MessageStream<T> {
+class StreamMessageStream<T extends Message<?>> implements MessageStream<T> {
 
     private final Stream<T> source;
 
@@ -41,7 +41,7 @@ class StreamMessageStream<T> implements MessageStream<T> {
     }
 
     @Override
-    public <R> MessageStream<R> map(Function<T, R> mapper) {
+    public <R extends Message<?>> MessageStream<R> map(Function<T, R> mapper) {
         return new StreamMessageStream<>(source.map(mapper));
     }
 }

@@ -16,10 +16,12 @@
 
 package org.axonframework.monitoring;
 
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.Message;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -35,6 +37,7 @@ import javax.annotation.Nonnull;
  * @author Nakul Mishra
  * @since 3.0
  */
+@Deprecated
 public interface MessageMonitor<T extends Message<?>> {
 
     /**
@@ -77,5 +80,15 @@ public interface MessageMonitor<T extends Message<?>> {
          * Notify the monitor that the message was ignored
          */
         void reportIgnored();
+
+        default BiConsumer<? super CommandResultMessage<?>,? super Throwable> complete() {
+            return (r, e) -> {
+                if (e == null) {
+                    reportSuccess();
+                } else {
+                    reportFailure(e);
+                }
+            };
+        }
     }
 }

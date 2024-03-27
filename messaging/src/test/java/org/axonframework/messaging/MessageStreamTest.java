@@ -25,28 +25,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class MessageStreamTest<T extends MessageStream<V>, V> {
+public abstract class MessageStreamTest<T extends MessageStream<Message<V>>, V> {
 
-    abstract T createTestSubject(List<V> values);
+    abstract T createTestSubject(List<Message<V>> values);
 
-    abstract T createTestSubject(List<V> values, Exception failure);
+    abstract T createTestSubject(List<Message<V>> values, Exception failure);
 
     abstract V createRandomValidStreamEntry();
 
+    @SuppressWarnings("unchecked")
     @Test
     void shouldMapSingleValue_Future() {
-        V in = createRandomValidStreamEntry();
-        V out = createRandomValidStreamEntry();
+        Message<V> in = (Message<V>) GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> out = (Message<V>) GenericMessage.asMessage(createRandomValidStreamEntry());
 
         T testSubject = createTestSubject(List.of(in));
-        V actual = testSubject.map(input -> out).asCompletableFuture().join();
+        var actual = testSubject.map(input -> out).asCompletableFuture().join();
         assertSame(out, actual);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void shouldMapSingleValue_Flux() {
-        V in = createRandomValidStreamEntry();
-        V out = createRandomValidStreamEntry();
+        Message<V> in = (Message<V>) GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> out = (Message<V>) GenericMessage.asMessage(createRandomValidStreamEntry());
 
         T testSubject = createTestSubject(List.of(in));
         StepVerifier.create(testSubject.map(input -> out).asFlux())
@@ -54,12 +56,13 @@ public abstract class MessageStreamTest<T extends MessageStream<V>, V> {
                     .verifyComplete();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void shouldMapMultipleValues_Flux() {
-        V in1 = createRandomValidStreamEntry();
-        V out1 = createRandomValidStreamEntry();
-        V in2 = createRandomValidStreamEntry();
-        V out2 = createRandomValidStreamEntry();
+        Message<V> in1 = (Message<V>) GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> out1 = (Message<V>) GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> in2 = (Message<V>) GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> out2 = (Message<V>) GenericMessage.asMessage(createRandomValidStreamEntry());
 
         T testSubject = createTestSubject(List.of(in1, in2));
         StepVerifier.create(testSubject.map(input -> input == in1 ? out1 : out2).asFlux())
@@ -67,12 +70,13 @@ public abstract class MessageStreamTest<T extends MessageStream<V>, V> {
                     .verifyComplete();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void shouldMapValuesUntilFailure_Flux() {
-        V in = createRandomValidStreamEntry();
-        V out = createRandomValidStreamEntry();
+        Message<V> in = (Message<V>) GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> out = (Message<V>) GenericMessage.asMessage(createRandomValidStreamEntry());
 
-        MessageStream<V> testSubject = createTestSubject(List.of(in), new MockException())
+        MessageStream<Message<V>> testSubject = createTestSubject(List.of(in), new MockException())
                 .map(input -> out)
                 .onErrorContinue(MessageStream::failed);
 

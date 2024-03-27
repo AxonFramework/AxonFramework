@@ -18,6 +18,7 @@ package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.InterceptorChainParameterResolverFactory;
@@ -63,9 +64,10 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
     }
 
     @Override
-    public <M extends CommandMessage<?>, R> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
-                                                                                         @Nonnull ProcessingContext context,
-                                                                                         @Nonnull InterceptorChain<M, R> interceptorChain) {
+    public <M extends CommandMessage<?>, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(
+            @Nonnull M message,
+            @Nonnull ProcessingContext context,
+            @Nonnull InterceptorChain<M, R> interceptorChain) {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                 context,
                 interceptorChain,

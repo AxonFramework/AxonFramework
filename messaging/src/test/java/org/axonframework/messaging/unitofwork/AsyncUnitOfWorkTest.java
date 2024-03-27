@@ -79,6 +79,17 @@ class AsyncUnitOfWorkTest extends ProcessingLifecycleTest<AsyncUnitOfWork> {
         assertFalse(execute.isCompletedExceptionally());
     }
 
+    @Test
+    void exceptionsThrownInInvocationAreReturnedInFuture() {
+        AsyncUnitOfWork testSubject = createTestSubject();
+        CompletableFuture<Object> actual = testSubject.executeWithResult(c -> {
+            throw new MockException("Simulating bad behavior");
+        });
+
+        assertTrue(actual.isCompletedExceptionally());
+        assertInstanceOf(MockException.class, actual.exceptionNow());
+    }
+
     private void registerNextPhase(ProcessingContext processingContext, AtomicInteger phase) {
         int next = phase.getAndIncrement();
         if (next < 10000) {

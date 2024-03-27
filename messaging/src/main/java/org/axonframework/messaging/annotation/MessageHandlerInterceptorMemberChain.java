@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -51,7 +52,7 @@ public interface MessageHandlerInterceptorMemberChain<T> {
     default MessageStream<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
                                     @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
         try {
-            return MessageStream.just(handleSync(message, target, handler));
+            return MessageStream.just(GenericMessage.asMessage(handleSync(message, target, handler)));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

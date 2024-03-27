@@ -76,9 +76,10 @@ public class InterceptorChainParameterResolverFactory
      * @param action           The action to invoke
      * @return The response from the invocation of given {@code action}
      */
-    public static <M extends Message<?>, T> MessageStream<? extends T> callWithInterceptorChain(ProcessingContext processingContext,
-                                                                       InterceptorChain<M, T> interceptorChain,
-                                                                       Function<ProcessingContext, MessageStream<? extends T>> action) {
+    public static <M extends Message<?>, T extends Message<?>> MessageStream<? extends T> callWithInterceptorChain(
+            ProcessingContext processingContext,
+            InterceptorChain<M, T> interceptorChain,
+            Function<ProcessingContext, MessageStream<? extends T>> action) {
         ProcessingContext newProcessingContext = new ResourceOverridingProcessingContext<>(processingContext,
                                                                                            INTERCEPTOR_CHAIN_KEY,
                                                                                            interceptorChain);
@@ -96,14 +97,15 @@ public class InterceptorChainParameterResolverFactory
         return CURRENT.get();
     }
 
-    public static <M extends Message<?>, R> InterceptorChain<M, R> currentInterceptorChain(ProcessingContext processingContext) {
+    public static <M extends Message<?>, R extends Message<?>> InterceptorChain<M, R> currentInterceptorChain(
+            ProcessingContext processingContext) {
         //noinspection unchecked
         return (InterceptorChain<M, R>) processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
     }
 
     @Override
     public InterceptorChain resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
-        InterceptorChain interceptorChain = processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
+        InterceptorChain interceptorChain = processingContext == null ? null : processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
         if (interceptorChain == null) {
             interceptorChain = CURRENT.get();
         }

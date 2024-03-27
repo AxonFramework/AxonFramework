@@ -26,11 +26,23 @@ import java.util.concurrent.Executor;
  */
 public final class DirectExecutor implements Executor {
 
+    private DirectExecutor() {
+    }
+
     /**
      * Returns a singleton instance of the DirectExecutor. Using this constant prevents the creation of unnecessary
      * DirectExecutor instances.
      */
     public static final DirectExecutor INSTANCE = new DirectExecutor();
+
+    /**
+     * Returns the (singleton) instance of the DirectExecutor
+     *
+     * @return the one and only DirectExecutor
+     */
+    public static DirectExecutor instance() {
+        return INSTANCE;
+    }
 
     /**
      * Executes the given {@code command} immediately in the current thread.

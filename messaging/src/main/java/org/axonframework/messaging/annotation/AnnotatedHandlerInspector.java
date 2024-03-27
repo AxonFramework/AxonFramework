@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -205,8 +206,8 @@ public class AnnotatedHandlerInspector<T> {
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
     private static MessageStream<?> returnTypeConverter(Object result) {
         return result instanceof CompletableFuture<?>
-                ? MessageStream.fromFuture((CompletableFuture<Object>) result)
-                : MessageStream.just(result);
+                ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
+                : MessageStream.just(GenericMessage.asMessage(result));
     }
 
     @SuppressWarnings("unchecked")

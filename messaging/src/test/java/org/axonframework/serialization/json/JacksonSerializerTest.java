@@ -18,6 +18,8 @@ package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -38,7 +40,6 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -254,8 +255,8 @@ class JacksonSerializerTest {
 
     /**
      * Test case corresponding with a {@link org.axonframework.queryhandling.QueryHandler} annotated method which
-     * returns a {@link List} of {@link ComplexObject}. Upon deserialization, the type info is required by the {@link
-     * ObjectMapper} to <b>not</b> defer to an {@link ArrayList} of {@link java.util.LinkedHashMap}s. This can be
+     * returns a {@link List} of {@link ComplexObject}. Upon deserialization, the type info is required by the
+     * {@link ObjectMapper} to <b>not</b> defer to an {@link ArrayList} of {@link java.util.LinkedHashMap}s. This can be
      * enabled through {@link JacksonSerializer.Builder#defaultTyping()} or by providing an {@link ObjectMapper} which
      * is configured with {@link ObjectMapper#enableDefaultTyping(ObjectMapper.DefaultTyping)}.
      */
@@ -306,9 +307,9 @@ class JacksonSerializerTest {
         ComplexObject actual = testSubject.deserialize(
                 new SimpleSerializedObject<>(arrayNode, JsonNode.class, serialized.getType())
         );
-        assertEquals("one", actual.getValue1());
-        assertEquals("two", actual.getValue2());
-        assertEquals(3, actual.getValue3());
+        assertEquals("one", actual.value1());
+        assertEquals("two", actual.value2());
+        assertEquals(3, actual.value3());
     }
 
     @Test
@@ -338,51 +339,79 @@ class JacksonSerializerTest {
         assertEquals(expectedRevision, result.revisionOf(String.class));
     }
 
-    public static class ComplexObject {
 
-        private final String value1;
-        private final String value2;
-        private final int value3;
+    @Test
+    void testConvertByteArrayToComplexObject() throws JsonProcessingException {
+        ComplexObject object = new ComplexObject("value1", "value2", 3);
+        byte[] source = objectMapper.writeValueAsBytes(object);
+        ComplexObject actual = testSubject.convert(source, ComplexObject.class);
 
-        @JsonCreator
-        public ComplexObject(@JsonProperty("value1") String value1,
-                             @JsonProperty("value2") String value2,
-                             @JsonProperty("value3") int value3) {
-            this.value1 = value1;
-            this.value2 = value2;
-            this.value3 = value3;
-        }
+        assertEquals(object, actual);
+    }
 
-        public String getValue1() {
-            return value1;
-        }
+    @Test
+    void testConvertByteArrayToString() throws JsonProcessingException {
+        ComplexObject object = new ComplexObject("value1", "value2", 3);
+        byte[] source = objectMapper.writeValueAsBytes(object);
+        String actual = testSubject.convert(source, String.class);
 
-        public String getValue2() {
-            return value2;
-        }
+        assertEquals("{\"value1\":\"value1\",\"value2\":\"value2\",\"value3\":3}", actual);
+    }
 
-        public int getValue3() {
-            return value3;
-        }
+    @Test
+    void testConvertStringToComplexObject() {
+        ComplexObject object = new ComplexObject("value1", "value2", 3);
+        String source = "{\"value1\":\"value1\",\"value2\":\"value2\",\"value3\":3}";
+        ComplexObject actual = testSubject.convert(source, ComplexObject.class);
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
+        assertEquals(object, actual);
+    }
+
+    @Test
+    void testConvertStringToListOfComplexObject() {
+        testSubject = JacksonSerializer.builder()
+                                       .lenientDeserialization()
+                                       .build();
+        ComplexObject object = new ComplexObject("value1", "value2", 3);
+        String source = "{\"value1\":\"value1\",\"value2\":\"value2\",\"value3\":3,\"IgnoredValue\":42}";
+        var typeReference = new TypeReference<List<ComplexObject>>() {
+        };
+        List<ComplexObject> actual = testSubject.convert("[" + source + ", " + source + "]", typeReference.getType());
+
+        assertEquals(List.of(object, object), actual);
+    }
+
+    @Test
+    void testConvertComplexObjectToAnotherTypeOfComplexObject() {
+        testSubject = JacksonSerializer.builder()
+                                       .lenientDeserialization()
+                                       .build();
+        ComplexObject object = new ComplexObject("value1", "value2", 3);
+        AnotherComplexObject actual = testSubject.convert(object, AnotherComplexObject.class);
+
+        assertEquals(new AnotherComplexObject("value1", "value2"), actual);
+    }
+
+    public record AnotherComplexObject(String value1, String value2) {
+
+            public AnotherComplexObject(@JsonProperty("value1") String value1,
+                                        @JsonProperty("value2") String value2) {
+
+                this.value1 = value1;
+                this.value2 = value2;
             }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            ComplexObject that = (ComplexObject) o;
-            return value3 == that.value3 &&
-                    Objects.equals(value1, that.value1) &&
-                    Objects.equals(value2, that.value2);
-        }
+    }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(value1, value2, value3);
-        }
+    public record ComplexObject(String value1, String value2, int value3) {
+
+            @JsonCreator
+            public ComplexObject(@JsonProperty("value1") String value1,
+                                 @JsonProperty("value2") String value2,
+                                 @JsonProperty("value3") int value3) {
+                this.value1 = value1;
+                this.value2 = value2;
+                this.value3 = value3;
+            }
     }
 
     public static class SimpleSerializableType {

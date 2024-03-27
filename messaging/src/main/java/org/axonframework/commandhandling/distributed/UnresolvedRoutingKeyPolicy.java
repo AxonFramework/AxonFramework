@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.retry.RetryScheduler;
 
 import java.util.function.Function;
 import javax.annotation.Nonnull;
@@ -41,7 +42,7 @@ public enum UnresolvedRoutingKeyPolicy implements RoutingStrategy {
      * should extend from {@link org.axonframework.common.AxonNonTransientException} to indicate that retries do not
      * have a chance to succeed.
      *
-     * @see org.axonframework.commandhandling.gateway.RetryScheduler
+     * @see RetryScheduler
      */
     ERROR(command -> {
         throw new CommandDispatchException(format(

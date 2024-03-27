@@ -227,8 +227,9 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
          * Sets the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
          * implementation will subscribe itself to receive {@link EventMessage}s.
          *
-         * @param messageSource the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link
-         *                      EventProcessor} implementation will subscribe itself to receive {@link EventMessage}s
+         * @param messageSource the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this
+         *                      {@link EventProcessor} implementation will subscribe itself to receive
+         *                      {@link EventMessage}s
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageSource(@Nonnull SubscribableMessageSource<? extends EventMessage<?>> messageSource) {

@@ -28,6 +28,7 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
@@ -76,8 +77,8 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
             assertNotNull(context.getBean(JpaEventStorageEngine.class));
 
             CommandGateway commandGateway = context.getBean(CommandGateway.class);
-            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID));
-            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID));
+            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), ProcessingContext.NONE);
+            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), ProcessingContext.NONE);
 
             verify(snapshotTriggerDefinition, atLeastOnce()).prepareTrigger(TestContext.TestAggregate.class);
             verify(snapshotter, atLeastOnce()).scheduleSnapshot(TestContext.TestAggregate.class, AGGREGATE_ID);
@@ -92,8 +93,8 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
             assertNotNull(context.getBean(JpaEventStorageEngine.class));
 
             CommandGateway commandGateway = context.getBean(CommandGateway.class);
-            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID));
-            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID));
+            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), ProcessingContext.NONE);
+            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), ProcessingContext.NONE);
 
             EventStore eventStore = context.getBean(EventStore.class);
             eventStore.readEvents(AGGREGATE_ID);

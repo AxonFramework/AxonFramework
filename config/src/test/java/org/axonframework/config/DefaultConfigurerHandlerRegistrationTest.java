@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryHandler;
 import org.junit.jupiter.api.*;
 
@@ -61,7 +62,7 @@ class DefaultConfigurerHandlerRegistrationTest {
         Configuration config = baseConfigurer.registerCommandHandler(c -> new CommandHandlingComponent(handled))
                                              .start();
 
-        CompletableFuture<String> result = config.commandGateway().send(new SomeCommand());
+        CompletableFuture<String> result = config.commandGateway().send(new SomeCommand(), ProcessingContext.NONE, String.class);
 
         assertEquals(COMMAND_HANDLING_RESPONSE, result.join());
         assertTrue(handled.get());
@@ -90,7 +91,7 @@ class DefaultConfigurerHandlerRegistrationTest {
                 c -> new MessageHandlingComponent(commandHandled, eventHandled, queryHandled)
         ).start();
 
-        CompletableFuture<String> commandHandlingResult = config.commandGateway().send(new SomeCommand());
+        CompletableFuture<String> commandHandlingResult = config.commandGateway().send(new SomeCommand(), ProcessingContext.NONE, String.class);
         config.eventGateway().publish(new SomeEvent());
         CompletableFuture<String> queryHandling = config.queryGateway().query(new SomeQuery(), String.class);
 
@@ -130,7 +131,7 @@ class DefaultConfigurerHandlerRegistrationTest {
                                              })
                                              .start();
 
-        CompletableFuture<String> result = config.commandGateway().send(new SomeCommand());
+        CompletableFuture<String> result = config.commandGateway().send(new SomeCommand(), ProcessingContext.NONE, String.class);
 
         assertEquals(COMMAND_HANDLING_RESPONSE, result.join());
         assertTrue(handled.get());

@@ -74,7 +74,7 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     }
 
     @Override
-    public <M extends T, R> MessageStream<? extends R> interceptOnHandle(M message, ProcessingContext context,
+    public <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(M message, ProcessingContext context,
                                                                          InterceptorChain<M, R> interceptorChain) {
         Map<String, Object> map = new ConcurrentHashMap<>();
         correlationDataProviders.forEach(c -> map.putAll(c.correlationDataFor(message)));

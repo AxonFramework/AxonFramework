@@ -16,13 +16,10 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Priority;
@@ -43,7 +40,6 @@ import org.axonframework.modelling.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
-import org.mockito.internal.verification.*;
 import org.mockito.junit.jupiter.*;
 import org.mockito.quality.*;
 
@@ -59,9 +55,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
-import static org.axonframework.commandhandling.DuplicateCommandHandlerResolution.rejectDuplicates;
-import static org.axonframework.commandhandling.DuplicateCommandHandlerResolution.silentOverride;
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -86,9 +79,7 @@ class AggregateAnnotationCommandHandlerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        commandBus = SimpleCommandBus.builder()
-                                     .duplicateCommandHandlerResolver(silentOverride())
-                                     .build();
+        commandBus = new SimpleCommandBus();
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
         newInstanceCallableFactoryCaptor = ArgumentCaptor.forClass(Callable.class);
@@ -129,30 +120,32 @@ class AggregateAnnotationCommandHandlerTest {
 
     @Test
     void aggregateConstructorThrowsException() {
-        commandBus.dispatch(asCommandMessage(new FailingCreateCommand("id", "parameter")),
-                            (CommandCallback<FailingCreateCommand, Object>) (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    assertEquals("parameter", commandResultMessage.exceptionResult().getMessage());
-                                } else {
-                                    fail("Expected exception");
-                                }
-                            });
+        fail("Not implemented");
+//        commandBus.dispatch(asCommandMessage(new FailingCreateCommand("id", "parameter")),
+//                            (CommandCallback<FailingCreateCommand, Object>) (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    assertEquals("parameter", commandResultMessage.exceptionResult().getMessage());
+//                                } else {
+//                                    fail("Expected exception");
+//                                }
+//                            });
     }
 
     @Test
     void aggregateCommandHandlerThrowsException() {
-        String aggregateIdentifier = "abc123";
-        when(mockRepository.load(eq(aggregateIdentifier), any()))
-                .thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(new FailingUpdateCommand(aggregateIdentifier, "parameter")),
-                            (CommandCallback<FailingUpdateCommand, Object>) (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    assertEquals("parameter", commandResultMessage.exceptionResult().getMessage());
-                                } else {
-                                    fail("Expected exception");
-                                }
-                            }
-        );
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        when(mockRepository.load(eq(aggregateIdentifier), any()))
+//                .thenAnswer(i -> createAggregate(aggregateIdentifier));
+//        commandBus.dispatch(asCommandMessage(new FailingUpdateCommand(aggregateIdentifier, "parameter")),
+//                            (CommandCallback<FailingUpdateCommand, Object>) (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    assertEquals("parameter", commandResultMessage.exceptionResult().getMessage());
+//                                } else {
+//                                    fail("Expected exception");
+//                                }
+//                            }
+//        );
     }
 
     @Test
@@ -194,166 +187,175 @@ class AggregateAnnotationCommandHandlerTest {
 
     @Test
     void commandHandlerCreatesAggregateInstance() throws Exception {
-        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-        final CommandMessage<Object> message = asCommandMessage(new CreateCommand("id", "Hi"));
-        commandBus.dispatch(message, callback);
-        verify(mockRepository).newInstance(any());
-        // make sure the identifier was invoked in the callback
-        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
-        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
-                .forClass(CommandResultMessage.class);
-        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
-        assertEquals(message, commandCaptor.getValue());
-        assertEquals("id", responseCaptor.getValue().getPayload());
+        fail("Not implemented");
+//        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+//        final CommandMessage<Object> message = asCommandMessage(new CreateCommand("id", "Hi"));
+//        commandBus.dispatch(message, callback);
+//        verify(mockRepository).newInstance(any());
+//        // make sure the identifier was invoked in the callback
+//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+//                .forClass(CommandResultMessage.class);
+//        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+//        assertEquals(message, commandCaptor.getValue());
+//        assertEquals("id", responseCaptor.getValue().getPayload());
     }
 
     @Test
     void commandHandlerCreatesAlwaysAggregateInstance() throws Exception {
-        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "parameter"));
-        commandBus.dispatch(message, callback);
-        verify(mockRepository).newInstance(any(), any());
-        // make sure the identifier was invoked in the callback
-        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
-        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
-                ArgumentCaptor.forClass(CommandResultMessage.class);
-        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
-        assertEquals(message, commandCaptor.getValue());
-        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
-        verify(creationPolicyFactory).create("id");
-        newInstanceCallableFactoryCaptor.getValue().call();
-        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create("id");
+        fail("Not implemented");
+//        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+//        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "parameter"));
+//        commandBus.dispatch(message, callback);
+//        verify(mockRepository).newInstance(any(), any());
+//        // make sure the identifier was invoked in the callback
+//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
+//                ArgumentCaptor.forClass(CommandResultMessage.class);
+//        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+//        assertEquals(message, commandCaptor.getValue());
+//        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
+//        verify(creationPolicyFactory).create("id");
+//        newInstanceCallableFactoryCaptor.getValue().call();
+//        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create("id");
     }
 
     @Test
     void commandHandlerCreatesAlwaysAggregateInstanceWithNullId() throws Exception {
-        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand(null, "parameter"));
-        commandBus.dispatch(message, callback);
-        verify(mockRepository).newInstance(any(), any());
-        // make sure the identifier was invoked in the callback
-        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
-        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
-                ArgumentCaptor.forClass(CommandResultMessage.class);
-        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
-        assertEquals(message, commandCaptor.getValue());
-        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
-        verify(creationPolicyFactory).create(null);
-        newInstanceCallableFactoryCaptor.getValue().call();
-        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(null);
+        fail("Not implemented");
+//        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+//        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand(null, "parameter"));
+//        commandBus.dispatch(message, callback);
+//        verify(mockRepository).newInstance(any(), any());
+//        // make sure the identifier was invoked in the callback
+//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
+//                ArgumentCaptor.forClass(CommandResultMessage.class);
+//        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+//        assertEquals(message, commandCaptor.getValue());
+//        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
+//        verify(creationPolicyFactory).create(null);
+//        newInstanceCallableFactoryCaptor.getValue().call();
+//        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(null);
     }
 
     @Test
     void commandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
-        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-        final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
-
-        AnnotatedAggregate<StubCommandAnnotatedAggregate> spyAggregate = spy(createAggregate(new StubCommandAnnotatedAggregate()));
-        ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> factoryCaptor = ArgumentCaptor.forClass(Callable.class);
-        when(mockRepository.loadOrCreate(anyString(), factoryCaptor.capture()))
-                .thenReturn(spyAggregate);
-
-        commandBus.dispatch(message, callback);
-        verify(mockRepository).loadOrCreate(anyString(), any());
-        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
-        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
-                .forClass(CommandResultMessage.class);
-        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
-        verify(spyAggregate).handle(message);
-        assertEquals(message, commandCaptor.getValue());
-        assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
-        verifyNoInteractions(creationPolicyFactory);
-        factoryCaptor.getValue().call();
-        verify(creationPolicyFactory).create("id");
+        fail("Not implemented");
+//        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+//        final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
+//
+//        AnnotatedAggregate<StubCommandAnnotatedAggregate> spyAggregate = spy(createAggregate(new StubCommandAnnotatedAggregate()));
+//        ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> factoryCaptor = ArgumentCaptor.forClass(Callable.class);
+//        when(mockRepository.loadOrCreate(anyString(), factoryCaptor.capture()))
+//                .thenReturn(spyAggregate);
+//
+//        commandBus.dispatch(message, callback);
+//        verify(mockRepository).loadOrCreate(anyString(), any());
+//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+//                .forClass(CommandResultMessage.class);
+//        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+//        verify(spyAggregate).handle(message);
+//        assertEquals(message, commandCaptor.getValue());
+//        assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
+//        verifyNoInteractions(creationPolicyFactory);
+//        factoryCaptor.getValue().call();
+//        verify(creationPolicyFactory).create("id");
     }
 
     @Test
     void commandHandlerCreatesOrUpdatesAggregateInstanceSupportsNullId() throws Exception {
-        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-        final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand(null, "Hi"));
-
-        ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> loadOrCreateFactoryCaptor =
-                ArgumentCaptor.forClass(Callable.class);
-        when(mockRepository.loadOrCreate(anyString(), loadOrCreateFactoryCaptor.capture()))
-                .thenThrow(new IllegalArgumentException("This is not supposed to be invoked"));
-        commandBus.dispatch(message, callback);
-        verify(mockRepository).newInstance(any(), any());
-        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
-        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
-                .forClass(CommandResultMessage.class);
-        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
-        assertEquals(message, commandCaptor.getValue());
-        assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
-
-        verify(creationPolicyFactory).create(null);
-        newInstanceCallableFactoryCaptor.getValue().call();
-        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(null);
+        fail("Not implemented");
+//        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+//        final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand(null, "Hi"));
+//
+//        ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> loadOrCreateFactoryCaptor =
+//                ArgumentCaptor.forClass(Callable.class);
+//        when(mockRepository.loadOrCreate(anyString(), loadOrCreateFactoryCaptor.capture()))
+//                .thenThrow(new IllegalArgumentException("This is not supposed to be invoked"));
+//        commandBus.dispatch(message, callback);
+//        verify(mockRepository).newInstance(any(), any());
+//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+//                .forClass(CommandResultMessage.class);
+//        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+//        assertEquals(message, commandCaptor.getValue());
+//        assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
+//
+//        verify(creationPolicyFactory).create(null);
+//        newInstanceCallableFactoryCaptor.getValue().call();
+//        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(null);
     }
 
     @Test
     public void commandHandlerAlwaysCreatesAggregateInstance() throws Exception {
-        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "Hi"));
-
-        commandBus.dispatch(message, callback);
-        verify(mockRepository).newInstance(any(), any());
-        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
-        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
-                ArgumentCaptor.forClass(CommandResultMessage.class);
-        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
-        assertEquals(message, commandCaptor.getValue());
-        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
+        fail("Not implemented");
+//        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+//        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "Hi"));
+//
+//        commandBus.dispatch(message, callback);
+//        verify(mockRepository).newInstance(any(), any());
+//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
+//                ArgumentCaptor.forClass(CommandResultMessage.class);
+//        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+//        assertEquals(message, commandCaptor.getValue());
+//        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
     }
 
     @Test
     void commandHandlerCreatesAggregateInstanceWithFactoryMethod() throws Exception {
-        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-        final CommandMessage<Object> message = asCommandMessage(new CreateFactoryMethodCommand("id", "Hi"));
-        commandBus.dispatch(message, callback);
-        verify(mockRepository).newInstance(any());
-        // make sure the identifier was invoked in the callback
-        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
-        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
-                .forClass(CommandResultMessage.class);
-        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
-        assertEquals(message, commandCaptor.getValue());
-        assertEquals("id", responseCaptor.getValue().getPayload());
+        fail("Not implemented");
+//        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+//        final CommandMessage<Object> message = asCommandMessage(new CreateFactoryMethodCommand("id", "Hi"));
+//        commandBus.dispatch(message, callback);
+//        verify(mockRepository).newInstance(any());
+//        // make sure the identifier was invoked in the callback
+//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+//                .forClass(CommandResultMessage.class);
+//        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+//        assertEquals(message, commandCaptor.getValue());
+//        assertEquals("id", responseCaptor.getValue().getPayload());
     }
 
     @Test
     void commandHandlerUpdatesAggregateInstanceAnnotatedMethod() {
-        String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethod("abc123")),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.optionalExceptionResult()
-                                                        .ifPresent(Throwable::printStackTrace);
-                                    fail("Did not expect exception");
-                                }
-                                assertEquals("Method works fine", commandResultMessage.getPayload());
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+//        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethod("abc123")),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    commandResultMessage.optionalExceptionResult()
+//                                                        .ifPresent(Throwable::printStackTrace);
+//                                    fail("Did not expect exception");
+//                                }
+//                                assertEquals("Method works fine", commandResultMessage.getPayload());
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedMethod() {
-        String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.optionalExceptionResult()
-                                                        .ifPresent(Throwable::printStackTrace);
-                                    fail("Did not expect exception");
-                                }
-                                assertEquals("Method with version works fine", commandResultMessage.getPayload());
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, 12L);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+//        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    commandResultMessage.optionalExceptionResult()
+//                                                        .ifPresent(Throwable::printStackTrace);
+//                                    fail("Did not expect exception");
+//                                }
+//                                assertEquals("Method with version works fine", commandResultMessage.getPayload());
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, 12L);
     }
 
     AnnotatedAggregate<StubCommandAnnotatedAggregate> createAggregate(String aggregateIdentifier) {
@@ -367,200 +369,210 @@ class AggregateAnnotationCommandHandlerTest {
 
     @Test
     void commandHandlerUpdatesAggregateInstanceWithNullVersionAnnotatedMethod() {
-        String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.optionalExceptionResult()
-                                                        .ifPresent(Throwable::printStackTrace);
-                                    fail("Did not expect exception");
-                                }
-                                assertEquals("Method with version works fine", commandResultMessage.getPayload());
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+//        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    commandResultMessage.optionalExceptionResult()
+//                                                        .ifPresent(Throwable::printStackTrace);
+//                                    fail("Did not expect exception");
+//                                }
+//                                assertEquals("Method with version works fine", commandResultMessage.getPayload());
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandlerUpdatesAggregateInstanceAnnotatedField() {
-        String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedField("abc123")),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.optionalExceptionResult()
-                                                        .ifPresent(Throwable::printStackTrace);
-                                    fail("Did not expect exception");
-                                }
-                                assertEquals("Field works fine", commandResultMessage.getPayload());
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+//        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedField("abc123")),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    commandResultMessage.optionalExceptionResult()
+//                                                        .ifPresent(Throwable::printStackTrace);
+//                                    fail("Did not expect exception");
+//                                }
+//                                assertEquals("Field works fine", commandResultMessage.getPayload());
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedField() {
-        String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.optionalExceptionResult()
-                                                        .ifPresent(Throwable::printStackTrace);
-                                    fail("Did not expect exception");
-                                }
-                                assertEquals("Field with version works fine", commandResultMessage.getPayload());
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, 321L);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+//        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    commandResultMessage.optionalExceptionResult()
+//                                                        .ifPresent(Throwable::printStackTrace);
+//                                    fail("Did not expect exception");
+//                                }
+//                                assertEquals("Field with version works fine", commandResultMessage.getPayload());
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, 321L);
     }
 
     @Test
     void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedIntegerField() {
-        String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.optionalExceptionResult()
-                                                        .ifPresent(Throwable::printStackTrace);
-                                    fail("Did not expect exception");
-                                }
-                                assertEquals("Field with integer version works fine",
-                                             commandResultMessage.getPayload());
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, 321L);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+//        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    commandResultMessage.optionalExceptionResult()
+//                                                        .ifPresent(Throwable::printStackTrace);
+//                                    fail("Did not expect exception");
+//                                }
+//                                assertEquals("Field with integer version works fine",
+//                                             commandResultMessage.getPayload());
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, 321L);
     }
 
     @Test
     void commandForEntityRejectedWhenNoInstanceIsAvailable() {
-        String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(new UpdateEntityStateCommand("abc123")),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.exceptionResult();
-                                    if (!cause.getMessage().contains("entity")) {
-                                        fail("Got an exception, but not the right one.");
-                                    }
-                                } else {
-                                    fail("Expected an exception, as the entity was not initialized");
-                                }
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+//        commandBus.dispatch(asCommandMessage(new UpdateEntityStateCommand("abc123")),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    Throwable cause = commandResultMessage.exceptionResult();
+//                                    if (!cause.getMessage().contains("entity")) {
+//                                        fail("Got an exception, but not the right one.");
+//                                    }
+//                                } else {
+//                                    fail("Expected an exception, as the entity was not initialized");
+//                                }
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandledByEntity() {
-        String aggregateIdentifier = "abc123";
-        final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
-        aggregate.initializeEntity("1");
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregate));
-        commandBus.dispatch(asCommandMessage(new UpdateEntityStateCommand("abc123")),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.optionalExceptionResult()
-                                                        .ifPresent(Throwable::printStackTrace);
-                                    fail("Did not expect exception");
-                                }
-                                assertEquals("entity command handled just fine",
-                                             commandResultMessage.getPayload());
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+//        aggregate.initializeEntity("1");
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregate));
+//        commandBus.dispatch(asCommandMessage(new UpdateEntityStateCommand("abc123")),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    commandResultMessage.optionalExceptionResult()
+//                                                        .ifPresent(Throwable::printStackTrace);
+//                                    fail("Did not expect exception");
+//                                }
+//                                assertEquals("entity command handled just fine",
+//                                             commandResultMessage.getPayload());
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandledByEntityFromCollection() {
-        String aggregateIdentifier = "abc123";
-        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
-        root.initializeEntity("1");
-        root.initializeEntity("2");
-        root.initializeEntity("3");
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(new UpdateEntityFromCollectionStateCommand("abc123", "2")),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.optionalExceptionResult()
-                                                        .ifPresent(Throwable::printStackTrace);
-                                    fail("Did not expect exception");
-                                }
-                                assertEquals("handled by 2", commandResultMessage.getPayload());
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+//        root.initializeEntity("1");
+//        root.initializeEntity("2");
+//        root.initializeEntity("3");
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
+//        commandBus.dispatch(asCommandMessage(new UpdateEntityFromCollectionStateCommand("abc123", "2")),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    commandResultMessage.optionalExceptionResult()
+//                                                        .ifPresent(Throwable::printStackTrace);
+//                                    fail("Did not expect exception");
+//                                }
+//                                assertEquals("handled by 2", commandResultMessage.getPayload());
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandledByEntityFromCollectionNoEntityAvailable() {
-        String aggregateIdentifier = "abc123";
-        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
-        root.initializeEntity("1");
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(new UpdateEntityFromCollectionStateCommand("abc123", "2")),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.exceptionResult();
-                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
-                                } else {
-                                    fail("Expected exception");
-                                }
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+//        root.initializeEntity("1");
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
+//        commandBus.dispatch(asCommandMessage(new UpdateEntityFromCollectionStateCommand("abc123", "2")),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    Throwable cause = commandResultMessage.exceptionResult();
+//                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
+//                                } else {
+//                                    fail("Expected exception");
+//                                }
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandledByEntityFromCollectionNullIdInCommand() {
-        String aggregateIdentifier = "abc123";
-        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
-        root.initializeEntity("1");
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(new UpdateEntityFromCollectionStateCommand("abc123", null)),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.exceptionResult();
-                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
-                                } else {
-                                    fail("Expected exception");
-                                }
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+//        root.initializeEntity("1");
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
+//        commandBus.dispatch(asCommandMessage(new UpdateEntityFromCollectionStateCommand("abc123", null)),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    Throwable cause = commandResultMessage.exceptionResult();
+//                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
+//                                } else {
+//                                    fail("Expected exception");
+//                                }
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandledByNestedEntity() {
-        String aggregateIdentifier = "abc123";
-        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
-        root.initializeEntity("1");
-        root.initializeEntity("2");
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(new UpdateNestedEntityStateCommand("abc123")),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.optionalExceptionResult()
-                                                        .ifPresent(Throwable::printStackTrace);
-                                    fail("Did not expect exception");
-                                }
-                                assertEquals("nested entity command handled just fine",
-                                             commandResultMessage.getPayload());
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+//        root.initializeEntity("1");
+//        root.initializeEntity("2");
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
+//        commandBus.dispatch(asCommandMessage(new UpdateNestedEntityStateCommand("abc123")),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    commandResultMessage.optionalExceptionResult()
+//                                                        .ifPresent(Throwable::printStackTrace);
+//                                    fail("Did not expect exception");
+//                                }
+//                                assertEquals("nested entity command handled just fine",
+//                                             commandResultMessage.getPayload());
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
@@ -577,71 +589,72 @@ class AggregateAnnotationCommandHandlerTest {
 
     @Test
     void commandHandledByEntityFromMap() {
-        String aggregateIdentifier = "abc123";
-        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
-        root.initializeEntity("1");
-        root.initializeEntity("2");
-        root.initializeEntity("3");
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", "2")),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.optionalExceptionResult()
-                                                        .ifPresent(Throwable::printStackTrace);
-                                    fail("Did not expect exception");
-                                }
-                                assertEquals("handled by 2", commandResultMessage.getPayload());
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+//        root.initializeEntity("1");
+//        root.initializeEntity("2");
+//        root.initializeEntity("3");
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
+//        commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", "2")),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    commandResultMessage.optionalExceptionResult()
+//                                                        .ifPresent(Throwable::printStackTrace);
+//                                    fail("Did not expect exception");
+//                                }
+//                                assertEquals("handled by 2", commandResultMessage.getPayload());
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandledByEntityFromMapNoEntityAvailable() {
-        String aggregateIdentifier = "abc123";
-        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
-        root.initializeEntity("1");
-        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", "2")),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.exceptionResult();
-                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
-                                } else {
-                                    fail("Expected exception");
-                                }
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+//        root.initializeEntity("1");
+//        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
+//        commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", "2")),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    Throwable cause = commandResultMessage.exceptionResult();
+//                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
+//                                } else {
+//                                    fail("Expected exception");
+//                                }
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandledByEntityFromMapNullIdInCommand() {
-        String aggregateIdentifier = "abc123";
-        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
-        root.initializeEntity("1");
-        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", null)),
-                            (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.exceptionResult();
-                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
-                                } else {
-                                    fail("Expected exception");
-                                }
-                            }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+//        root.initializeEntity("1");
+//        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
+//        commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", null)),
+//                            (commandMessage, commandResultMessage) -> {
+//                                if (commandResultMessage.isExceptional()) {
+//                                    Throwable cause = commandResultMessage.exceptionResult();
+//                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
+//                                } else {
+//                                    fail("Expected exception");
+//                                }
+//                            }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
-    void usesDuplicateCommandHandlerResolver() {
-        commandBus = SimpleCommandBus.builder()
-                                     .duplicateCommandHandlerResolver(rejectDuplicates())
-                                     .build();
+    void rejectsDuplicateRegistrations() {
+        commandBus = new SimpleCommandBus();
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
 
@@ -656,49 +669,49 @@ class AggregateAnnotationCommandHandlerTest {
 
     @Test
     void commandHandlerByAbstractEntityWithTheSameCommandType() {
-        String aggregateIdentifier = "abc123";
-        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
-        root.initializeEntity("1");
-        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(
-                asCommandMessage(new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_b")),
-                (commandMessage, commandResultMessage) -> {
-                    if (commandResultMessage.isExceptional()) {
-                        commandResultMessage.optionalExceptionResult()
-                                            .ifPresent(Throwable::printStackTrace);
-                        fail("Did not expect exception");
-                    }
-                    assertEquals("handled by 1_b", commandResultMessage.getPayload());
-                }
-        );
-
-        verify(mockRepository).load(aggregateIdentifier, null);
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+//        root.initializeEntity("1");
+//        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
+//        commandBus.dispatch(
+//                asCommandMessage(new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_b")),
+//                (commandMessage, commandResultMessage) -> {
+//                    if (commandResultMessage.isExceptional()) {
+//                        commandResultMessage.optionalExceptionResult()
+//                                            .ifPresent(Throwable::printStackTrace);
+//                        fail("Did not expect exception");
+//                    }
+//                    assertEquals("handled by 1_b", commandResultMessage.getPayload());
+//                }
+//        );
+//
+//        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     @Test
     void commandHandlerByAbstractEntityWithNoAvailableEntity() {
-        String aggregateIdentifier = "abc123";
-        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
-        root.initializeEntity("1");
-        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(
-                asCommandMessage(new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_c")),
-                (commandMessage, commandResultMessage) -> {
-                    if (commandResultMessage.isExceptional()) {
-                        Throwable cause = commandResultMessage.exceptionResult();
-                        assertTrue(cause instanceof AggregateEntityNotFoundException);
-                    } else {
-                        fail("Expected exception");
-                    }
-                }
-        );
+        fail("Not implemented");
+//        String aggregateIdentifier = "abc123";
+//        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+//        root.initializeEntity("1");
+//        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
+//        commandBus.dispatch(
+//                asCommandMessage(new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_c")),
+//                (commandMessage, commandResultMessage) -> {
+//                    if (commandResultMessage.isExceptional()) {
+//                        Throwable cause = commandResultMessage.exceptionResult();
+//                        assertTrue(cause instanceof AggregateEntityNotFoundException);
+//                    } else {
+//                        fail("Expected exception");
+//                    }
+//                }
+//        );
     }
 
     @Test
     void duplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
-        commandBus = SimpleCommandBus.builder()
-                                     .duplicateCommandHandlerResolver(rejectDuplicates())
-                                     .build();
+        commandBus = new SimpleCommandBus();
 
         Repository<RootAggregate> repository = mock(Repository.class);
 

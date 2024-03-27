@@ -18,6 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.axonframework.modelling.saga.StartSaga;
@@ -82,7 +83,7 @@ class FixtureTest_ScopeDescriptor {
         @StartSaga
         @SagaEventHandler(associationProperty = "identifier")
         public void on(SagaStartEvent event, ScopeDescriptor scopeDescriptor, CommandGateway commandGateway) {
-            commandGateway.send(new ScopeDescriptorCommand(scopeDescriptor));
+            commandGateway.send(new ScopeDescriptorCommand(scopeDescriptor), ProcessingContext.NONE);
         }
     }
 }

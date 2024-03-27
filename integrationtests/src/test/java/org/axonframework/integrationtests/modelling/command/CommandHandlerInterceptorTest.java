@@ -62,13 +62,13 @@ class CommandHandlerInterceptorTest {
         Repository<MyAggregate> myAggregateRepository = EventSourcingRepository.builder(MyAggregate.class)
                                                                                .eventStore(eventStore)
                                                                                .build();
-        CommandBus commandBus = SimpleCommandBus.builder().build();
-        commandGateway = DefaultCommandGateway.builder().commandBus(commandBus).build();
+        CommandBus commandBus = new SimpleCommandBus();
+        commandGateway = new DefaultCommandGateway(commandBus);
         AggregateAnnotationCommandHandler<MyAggregate> myAggregateCommandHandler =
                 AggregateAnnotationCommandHandler.<MyAggregate>builder()
-                        .aggregateType(MyAggregate.class)
-                        .repository(myAggregateRepository)
-                        .build();
+                                                 .aggregateType(MyAggregate.class)
+                                                 .repository(myAggregateRepository)
+                                                 .build();
 
         myAggregateCommandHandler.subscribe(commandBus);
     }
@@ -78,7 +78,7 @@ class CommandHandlerInterceptorTest {
     void interceptor() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         String result = commandGateway
-                .sendAndWait(asCommandMessage(new UpdateMyAggregateStateCommand("id", "state")));
+                .sendAndWait(asCommandMessage(new UpdateMyAggregateStateCommand("id", "state")), String.class);
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
 
@@ -159,7 +159,7 @@ class CommandHandlerInterceptorTest {
     void interceptorWithNonVoidReturnType() {
         EventSourcingRepository.Builder<MyAggregateWithInterceptorReturningNonVoid> builder =
                 EventSourcingRepository.builder(MyAggregateWithInterceptorReturningNonVoid.class)
-                        .eventStore(eventStore);
+                                       .eventStore(eventStore);
 
         assertThrows(AxonConfigurationException.class, builder::build);
     }
@@ -167,8 +167,8 @@ class CommandHandlerInterceptorTest {
     @Test
     void interceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
         EventSourcingRepository.builder(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class)
-                .eventStore(eventStore)
-                .build();
+                               .eventStore(eventStore)
+                               .build();
     }
 
     @SuppressWarnings("unchecked")

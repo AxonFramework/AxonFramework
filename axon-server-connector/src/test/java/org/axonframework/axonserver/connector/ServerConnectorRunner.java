@@ -21,6 +21,7 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.slf4j.Logger;
@@ -38,14 +39,21 @@ public class ServerConnectorRunner {
 
     public static void main(String[] args) {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .registerComponent(AxonServerConfiguration.class, c -> AxonServerConfiguration.builder().servers("localhost").build())
+                                                       .registerComponent(AxonServerConfiguration.class,
+                                                                          c -> AxonServerConfiguration.builder()
+                                                                                                      .servers(
+                                                                                                              "localhost")
+                                                                                                      .build())
                                                        .configureAggregate(MyAggregate.class)
                                                        .eventProcessing(ep -> ep.registerEventHandler(c -> new MyEventHandler()))
                                                        .start();
 
         try {
             logger.info("Sending command");
-            CompletableFuture<Object> result = configuration.commandGateway().send(new CreateMyAggregateCommand(UUID.randomUUID().toString()));
+            CompletableFuture<Object> result = configuration.commandGateway()
+                                                            .send(new CreateMyAggregateCommand(UUID.randomUUID().toString()),
+                                                                  ProcessingContext.NONE,
+                                                                  Object.class);
             logger.info("Command sent, awaiting response...");
             result.join();
             logger.info("Result received. Press enter to shut down");

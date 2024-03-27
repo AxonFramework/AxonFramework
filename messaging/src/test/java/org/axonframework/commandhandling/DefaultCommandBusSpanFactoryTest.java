@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.tracing.DefaultCommandBusSpanFactory;
 import org.axonframework.tracing.IntermediateSpanFactoryTest;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;

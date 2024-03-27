@@ -21,7 +21,7 @@ import reactor.core.publisher.Flux;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-class MappedMessageStream<T, M> implements MessageStream<M> {
+class MappedMessageStream<T extends Message<?>, M extends Message<?>> implements MessageStream<M> {
 
     private final MessageStream<T> delegate;
     private final Function<T, M> mapper;

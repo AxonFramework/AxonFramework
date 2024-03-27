@@ -17,6 +17,7 @@
 package org.axonframework.common.transaction;
 
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 
 import java.util.function.Supplier;
 
@@ -28,7 +29,7 @@ import java.util.function.Supplier;
  * @author Allard Buijze
  * @since 2.0
  */
-public interface TransactionManager {
+public interface TransactionManager extends ProcessingLifecycleHandlerRegistrar {
 
     /**
      * Starts a transaction. The return value is the started transaction that can be committed or rolled back.
@@ -55,6 +56,15 @@ public interface TransactionManager {
     }
 
     default void attachToProcessingLifecycle(ProcessingLifecycle processingLifecycle) {
+        processingLifecycle.runOnPreInvocation(pc -> {
+            Transaction transaction = startTransaction();
+            pc.runOnCommit(p -> transaction.commit());
+            pc.onError((p, phase, e) -> transaction.rollback());
+        });
+    }
+
+    @Override
+    default void registerHandlers(ProcessingLifecycle processingLifecycle) {
         processingLifecycle.runOnPreInvocation(pc -> {
             Transaction transaction = startTransaction();
             pc.runOnCommit(p -> transaction.commit());

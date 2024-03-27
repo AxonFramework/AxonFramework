@@ -42,7 +42,7 @@ class SpringConfigurerTest {
     void springComponentLoadedWhenNoComponentConfigured() {
         when(context.getBeanNamesForType(CommandBus.class)).thenReturn(new String[]{"commandBus"});
 
-        SimpleCommandBus commandBus = SimpleCommandBus.builder().build();
+        SimpleCommandBus commandBus = new SimpleCommandBus();
         when(context.getBean("commandBus", CommandBus.class)).thenReturn(commandBus);
 
         SpringConfigurer configurer = new SpringConfigurer(context);
@@ -57,7 +57,7 @@ class SpringConfigurerTest {
         GenericBeanDefinition primary = new GenericBeanDefinition();
         primary.setPrimary(true);
         when(context.getMergedBeanDefinition("commandBus")).thenReturn(primary);
-        SimpleCommandBus commandBus = SimpleCommandBus.builder().build();
+        SimpleCommandBus commandBus = new SimpleCommandBus();
         when(context.getBean("commandBus", CommandBus.class)).thenReturn(commandBus);
 
         SpringConfigurer configurer = new SpringConfigurer(context);
@@ -74,7 +74,7 @@ class SpringConfigurerTest {
         GenericBeanDefinition primary = new GenericBeanDefinition();
         primary.setPrimary(true);
         when(context.getMergedBeanDefinition(any())).thenReturn(primary);
-        SimpleCommandBus commandBus = SimpleCommandBus.builder().build();
+        SimpleCommandBus commandBus = new SimpleCommandBus();
         when(context.getBean("commandBus", CommandBus.class)).thenReturn(commandBus);
 
         SpringConfigurer configurer = new SpringConfigurer(context);
@@ -91,7 +91,7 @@ class SpringConfigurerTest {
         when(context.getBeanNamesForType(CommandBus.class)).thenReturn(new String[]{"commandBus", "alternative"});
         GenericBeanDefinition nonPrimary = new GenericBeanDefinition();
         when(context.getMergedBeanDefinition(any())).thenReturn(nonPrimary);
-        SimpleCommandBus commandBus = SimpleCommandBus.builder().build();
+        SimpleCommandBus commandBus = new SimpleCommandBus();
         when(context.getBean("commandBus", CommandBus.class)).thenReturn(commandBus);
 
         SpringConfigurer configurer = new SpringConfigurer(context);

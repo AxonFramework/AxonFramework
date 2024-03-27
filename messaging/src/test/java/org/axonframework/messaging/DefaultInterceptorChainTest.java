@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 class DefaultInterceptorChainTest {
 
     private UnitOfWork<Message<?>> unitOfWork;
-    private MessageHandler<Message<?>, Object> mockHandler;
+    private MessageHandler<Message<?>, Message<Object>> mockHandler;
 
     @BeforeEach
     @SuppressWarnings("unchecked")

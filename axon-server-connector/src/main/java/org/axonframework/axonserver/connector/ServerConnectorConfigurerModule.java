@@ -16,21 +16,11 @@
 
 package org.axonframework.axonserver.connector;
 
-import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
-import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
-import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandBusSpanFactory;
-import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
-import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
@@ -67,7 +57,8 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
         configurer.registerComponent(AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
         configurer.registerComponent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity());
         configurer.configureEventStore(this::buildEventStore);
-        configurer.configureCommandBus(this::buildCommandBus);
+        //        TODO - Auto-register AxonServer Connector - subject to Configuration API changes
+        //        configurer.configureCommandBus(this::buildCommandBus);
         configurer.configureQueryBus(this::buildQueryBus);
         configurer.registerModule(new EventProcessorInfoConfiguration());
         configurer.registerComponent(TokenStore.class, c -> {
@@ -98,41 +89,6 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                    .snapshotFilter(c.snapshotFilter())
                                    .upcasterChain(c.upcasterChain())
                                    .spanFactory(c.getComponent(EventBusSpanFactory.class))
-                                   .build();
-    }
-
-    private AxonServerCommandBus buildCommandBus(Configuration c) {
-        SimpleCommandBus localSegment =
-                SimpleCommandBus.builder()
-                                .duplicateCommandHandlerResolver(c.getComponent(
-                                        DuplicateCommandHandlerResolver.class,
-                                        LoggingDuplicateCommandHandlerResolver::instance
-                                ))
-                                .messageMonitor(c.messageMonitor(CommandBus.class, "localCommandBus"))
-                                .transactionManager(c.getComponent(
-                                        TransactionManager.class, NoTransactionManager::instance
-                                ))
-                                .spanFactory(c.getComponent(CommandBusSpanFactory.class))
-                                .build();
-        //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
-        return AxonServerCommandBus.builder()
-                                   .axonServerConnectionManager(c.getComponent(AxonServerConnectionManager.class))
-                                   .configuration(c.getComponent(AxonServerConfiguration.class))
-                                   .localSegment(localSegment)
-                                   .serializer(c.messageSerializer())
-                                   .routingStrategy(c.getComponent(
-                                           RoutingStrategy.class, AnnotationRoutingStrategy::defaultStrategy
-                                   ))
-                                   .priorityCalculator(c.getComponent(
-                                           CommandPriorityCalculator.class,
-                                           CommandPriorityCalculator::defaultCommandPriorityCalculator
-                                   ))
-                                   .loadFactorProvider(c.getComponent(
-                                           CommandLoadFactorProvider.class,
-                                           () -> command -> CommandLoadFactorProvider.DEFAULT_VALUE
-                                   ))
-                                   .targetContextResolver(c.getComponent(TargetContextResolver.class))
-                                   .spanFactory(c.getComponent(CommandBusSpanFactory.class))
                                    .build();
     }
 

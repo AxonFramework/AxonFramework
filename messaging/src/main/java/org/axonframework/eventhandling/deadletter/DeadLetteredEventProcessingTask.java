@@ -21,6 +21,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
@@ -108,7 +109,7 @@ class DeadLetteredEventProcessingTask
     private Object handleWithInterceptors(
             UnitOfWork<? extends EventMessage<?>> unitOfWork
     ) throws Exception {
-        new DefaultInterceptorChain<EventMessage<?>, Void>(
+        new DefaultInterceptorChain<EventMessage<?>, Message<Void>>(
                 unitOfWork,
                 interceptors,
                 m -> {

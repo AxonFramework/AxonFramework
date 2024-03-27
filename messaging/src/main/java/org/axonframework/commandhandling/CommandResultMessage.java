@@ -19,6 +19,7 @@ package org.axonframework.commandhandling;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 /**
@@ -35,4 +36,7 @@ public interface CommandResultMessage<R> extends ResultMessage<R> {
 
     @Override
     CommandResultMessage<R> andMetaData(@Nonnull Map<String, ?> metaData);
+
+    // TODO - @Override from ResultMessage and Message
+    <T> CommandResultMessage<T> withConvertedPayload(Function<R, T> conversion);
 }
