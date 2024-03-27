@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
@@ -34,6 +35,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -42,9 +44,8 @@ import static java.util.Collections.emptyList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's name.
- * Interceptors may be configured to add processing to commands regardless of their type or name, for example logging,
- * security (authorization), sla monitoring, etc.
+ * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's
+ * name.
  *
  * @author Allard Buijze
  * @author Martin Tilma
@@ -56,12 +57,21 @@ public class SimpleCommandBus implements CommandBus {
 
     private final List<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars;
     private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> subscriptions = new ConcurrentHashMap<>();
+    // TODO - Instead of using an Executor, we should use a WorkerFactory to allow more flexible creation (and disposal) of workers
+    private final Executor worker;
 
     public SimpleCommandBus(ProcessingLifecycleHandlerRegistrar... processingLifecycleHandlerRegistrars) {
-        this(Arrays.asList(processingLifecycleHandlerRegistrars));
+        this(DirectExecutor.instance(), processingLifecycleHandlerRegistrars);
     }
 
-    public SimpleCommandBus(Collection<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars) {
+    public SimpleCommandBus(Executor workerSupplier,
+                            ProcessingLifecycleHandlerRegistrar... processingLifecycleHandlerRegistrars) {
+        this(workerSupplier, Arrays.asList(processingLifecycleHandlerRegistrars));
+    }
+
+    public SimpleCommandBus(Executor workerSupplier,
+                            Collection<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars) {
+        this.worker = workerSupplier;
         this.processingLifecycleHandlerRegistrars = processingLifecycleHandlerRegistrars.isEmpty()
                 ? emptyList()
                 : new ArrayList<>(processingLifecycleHandlerRegistrars);
@@ -70,15 +80,10 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                             @Nullable ProcessingContext processingContext) {
-        Optional<MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> optionalHandler = findCommandHandlerFor(
-                command);
-        if (optionalHandler.isPresent()) {
-            return handle(command, optionalHandler.get());
-        } else {
-            return CompletableFuture.failedFuture(new NoHandlerForCommandException(format(
-                    "No handler was subscribed for command [%s].",
-                    command.getCommandName())));
-        }
+        return findCommandHandlerFor(command)
+                .map(handler -> handle(command, handler))
+                .orElseGet(() -> CompletableFuture.failedFuture(new NoHandlerForCommandException(format(
+                        "No handler was subscribed for command [%s].", command.getCommandName()))));
     }
 
     private Optional<MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> findCommandHandlerFor(
@@ -92,18 +97,32 @@ public class SimpleCommandBus implements CommandBus {
      * @param command The actual command to handle
      * @param handler The handler that must be invoked for this command
      */
-    protected CompletableFuture<? extends CommandResultMessage<?>> handle(
+    protected CompletableFuture<? extends Message<?>> handle(
             CommandMessage<?> command,
             MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Handling command [{}]", command.getCommandName());
+            logger.debug("Handling command [{} ({})]", command.getIdentifier(), command.getCommandName());
         }
 
-        AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork();
+        AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork(command.getIdentifier(), worker);
         processingLifecycleHandlerRegistrars.forEach(it -> it.registerHandlers(unitOfWork));
 
-        return unitOfWork.executeWithResult(c -> handler.handle(command, c).asCompletableFuture())
-                         .thenApply(GenericCommandResultMessage::asCommandResultMessage);
+        var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).asCompletableFuture());
+        if (logger.isDebugEnabled()) {
+            result = result.whenComplete((r, e) -> {
+                if (e == null) {
+                    logger.debug("Command [{} ({})] completed successfully",
+                                 command.getIdentifier(),
+                                 command.getCommandName());
+                } else {
+                    logger.debug("Command [{} ({})] completed exceptionally",
+                                 command.getIdentifier(),
+                                 command.getCommandName(),
+                                 e);
+                }
+            });
+        }
+        return result;
     }
 
     /**
@@ -129,6 +148,7 @@ public class SimpleCommandBus implements CommandBus {
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("worker", worker);
         descriptor.describeProperty("subscriptions", subscriptions);
         descriptor.describeProperty("lifecycleRegistrars", processingLifecycleHandlerRegistrars);
     }

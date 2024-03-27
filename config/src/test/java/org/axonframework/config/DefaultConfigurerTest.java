@@ -22,11 +22,11 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Id;
 import jakarta.persistence.Persistence;
-import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
@@ -121,7 +121,7 @@ class DefaultConfigurerTest {
     void defaultConfigurationWithEventSourcing() throws Exception {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                .configureCommandBus(c -> new AsynchronousCommandBus(c.getComponent(
+                                                .configureCommandBus(c -> new SimpleCommandBus(c.getComponent(
                                                         Executor.class,
                                                         Executors::newSingleThreadExecutor))).configureAggregate(
                         StubAggregate.class).buildConfiguration();
@@ -269,7 +269,7 @@ class DefaultConfigurerTest {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
                                                 .configureCommandBus(c -> {
-                                                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus(
+                                                    SimpleCommandBus commandBus = new SimpleCommandBus(
                                                             Runnable::run);
                                                     return new InterceptingCommandBus(commandBus,
                                                                                       List.of(new TransactionManagingInterceptor<>(
@@ -303,7 +303,7 @@ class DefaultConfigurerTest {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
                                                 .configureSerializer(c -> TestSerializer.xStreamSerializer())
-                                                .configureCommandBus(c -> new InterceptingCommandBus(new AsynchronousCommandBus(
+                                                .configureCommandBus(c -> new InterceptingCommandBus(new SimpleCommandBus(
                                                         Runnable::run),
                                                                                                      List.of(new TransactionManagingInterceptor<>(
                                                                                                              c.getComponent(
@@ -325,7 +325,7 @@ class DefaultConfigurerTest {
     @Test
     void missingEntityManagerProviderIsReported() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
-                                                .configureCommandBus(c -> new InterceptingCommandBus(new AsynchronousCommandBus(
+                                                .configureCommandBus(c -> new InterceptingCommandBus(new SimpleCommandBus(
                                                         Runnable::run),
                                                                                                      List.of(new TransactionManagingInterceptor<>(
                                                                                                              c.getComponent(
@@ -344,7 +344,7 @@ class DefaultConfigurerTest {
                                                         TransactionManager.class,
                                                         c -> transactionManager)
                                                 .configureCommandBus(c -> new InterceptingCommandBus(
-                                                        new AsynchronousCommandBus(Runnable::run),
+                                                        new SimpleCommandBus(Runnable::run),
                                                         List.of(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class))),
                                                         Collections.emptyList()))
                                                 .configureAggregate(defaultConfiguration(StubAggregate.class).configureRepository(
@@ -419,7 +419,7 @@ class DefaultConfigurerTest {
     void defaultConfigurationWithCache() throws Exception {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                .configureCommandBus(c -> new AsynchronousCommandBus(Runnable::run))
+                                                .configureCommandBus(c -> new SimpleCommandBus(Runnable::run))
                                                 .configureAggregate(defaultConfiguration(StubAggregate.class).configureCache(
                                                         c -> new WeakReferenceCache())).buildConfiguration();
         config.start();

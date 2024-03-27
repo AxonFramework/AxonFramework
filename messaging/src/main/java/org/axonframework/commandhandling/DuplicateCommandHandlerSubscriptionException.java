@@ -42,11 +42,11 @@ public class DuplicateCommandHandlerSubscriptionException extends AxonNonTransie
     public DuplicateCommandHandlerSubscriptionException(String commandName,
                                                         MessageHandler<? super CommandMessage<?>, ? extends Message<?>> initialHandler,
                                                         MessageHandler<? super CommandMessage<?>, ? extends Message<?>> duplicateHandler) {
-        this(String.format("A duplicate Command Handler for command [%s] has been subscribed residing in class [%s]"
-                                   + " that would override an identical handler in class [%s].",
+        this(String.format("Duplicate subscription for command [%s] detected. Registration of handler [%s] "
+                                   + " conflicts with previously registered handler [%s].",
                            commandName,
-                           duplicateHandler.getTargetType().getName(),
-                           initialHandler.getTargetType().getName()
+                           duplicateHandler,
+                           initialHandler
         ));
     }
 

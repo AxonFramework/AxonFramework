@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.config;
 
-import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
@@ -51,17 +50,17 @@ public class CommandBusBuilder /* implements ConfigurerModule or better Componen
     }
 
     public static CommandBusBuilder forSimpleCommandBus() {
-        return new CommandBusBuilder(builder -> new SimpleCommandBus(builder.processingLifecycleHandlerRegistrars));
-    }
-
-    public static CommandBusBuilder forAsynchronousCommandBus() {
-        return new CommandBusBuilder(builder -> new AsynchronousCommandBus(builder.executor,
-                                                                           builder.processingLifecycleHandlerRegistrars));
+        return new CommandBusBuilder(builder -> new SimpleCommandBus(builder.executor, builder.processingLifecycleHandlerRegistrars));
     }
 
     // TODO - Parameter should be `Function<Configuration, CommandBus> builder`
     public static CommandBusBuilder forCustomCommandBus(Supplier<CommandBus> builder) {
         return new CommandBusBuilder(it -> builder.get());
+    }
+
+    public CommandBusBuilder withWorker(Executor worker) {
+        this.executor = executor;
+        return this;
     }
 
     public CommandBusBuilder withDispatchInterceptor(
