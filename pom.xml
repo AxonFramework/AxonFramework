@@ -107,8 +107,8 @@
         <dropwizard.metrics.version>4.2.25</dropwizard.metrics.version>
         <micrometer.version>1.12.4</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.14.12</byte-buddy.version>
-        <commons-io.version>2.15.1</commons-io.version>
+        <byte-buddy.version>1.14.13</byte-buddy.version>
+        <commons-io.version>2.16.0</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
@@ -149,7 +149,7 @@
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
         <maven-failsafe.version>3.2.5</maven-failsafe.version>
-        <maven-gpg.version>3.2.1</maven-gpg.version>
+        <maven-gpg.version>3.2.2</maven-gpg.version>
         <maven-install.version>3.1.1</maven-install.version>
         <maven-jar.version>3.3.0</maven-jar.version>
         <maven-javadoc.version>3.6.3</maven-javadoc.version>
