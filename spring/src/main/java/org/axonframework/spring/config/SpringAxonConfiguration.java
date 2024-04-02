@@ -95,4 +95,15 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
+
+    @Override
+    public int getPhase() {
+        // Run this with a safely lower phase value than what is set in the spring WebServer start/stop Lifecycle.
+        // This to make sure:
+        // - Axon is ready when the web server starts
+        // - The web server is stopped before tearing down Axon
+        int webServerGracefulShutdownLifecyclePhase = SmartLifecycle.DEFAULT_PHASE - 1024;
+        int webServerDefaultLifecyclePhase = webServerGracefulShutdownLifecyclePhase - 1024;
+        return webServerDefaultLifecyclePhase - 1024;
+    }
 }
