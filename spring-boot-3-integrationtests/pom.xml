@@ -39,7 +39,7 @@
         <mysql-connector-java.version>8.3.0</mysql-connector-java.version>
         <spring-boot-3.version>3.2.4</spring-boot-3.version>
         <!-- Build / Plugin -->
-        <jacoco-maven.version>0.8.11</jacoco-maven.version>
+        <jacoco-maven.version>0.8.12</jacoco-maven.version>
         <maven-compiler.version>3.13.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-surefire.version>3.2.5</maven-surefire.version>
