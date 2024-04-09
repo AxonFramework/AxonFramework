@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2023. Axon Framework
+  ~ Copyright (c) 2010-2024. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
         <hibernate-core.6.version>6.4.4.Final</hibernate-core.6.version>
         <mysql-connector-java.version>8.3.0</mysql-connector-java.version>
-        <postgresql.version>42.7.2</postgresql.version>
+        <postgresql.version>42.7.3</postgresql.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
         <jakarta.el.version>4.0.0</jakarta.el.version>
@@ -101,36 +101,36 @@
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <!-- Logging -->
-        <log4j.version>2.22.1</log4j.version>
+        <log4j.version>2.23.1</log4j.version>
         <slf4j.version>2.0.12</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.25</dropwizard.metrics.version>
-        <micrometer.version>1.12.3</micrometer.version>
+        <micrometer.version>1.12.4</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.14.12</byte-buddy.version>
-        <commons-io.version>2.15.1</commons-io.version>
+        <byte-buddy.version>1.14.13</byte-buddy.version>
+        <commons-io.version>2.16.0</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.6.2</projectreactor.version>
+        <projectreactor.version>3.6.4</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.10.1</gson.version>
-        <jackson.version>2.16.1</jackson.version>
+        <jackson.version>2.17.0</jackson.version>
         <xstream.version>1.4.20</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version>
-        <jobrunr.version>6.3.4</jobrunr.version>
+        <jobrunr.version>6.3.5</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
-        <spring.version>5.3.32</spring.version>
+        <spring.version>5.3.33</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
-        <spring-security.version>5.8.10</spring-security.version>
+        <spring-security.version>5.8.11</spring-security.version>
         <!-- Testing -->
-        <awaitility.version>4.2.0</awaitility.version>
+        <awaitility.version>4.2.1</awaitility.version>
         <hamcrest.version>2.2</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
@@ -142,19 +142,19 @@
         <!-- Build / Plugin -->
         <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>5.1.9</felix.maven-bundle-plugin.version>
-        <jacoco-maven.version>0.8.11</jacoco-maven.version>
-        <maven-assembly.version>3.6.0</maven-assembly.version>
+        <jacoco-maven.version>0.8.12</jacoco-maven.version>
+        <maven-assembly.version>3.7.1</maven-assembly.version>
         <maven-clean.version>3.3.2</maven-clean.version>
-        <maven-compiler.version>3.12.1</maven-compiler.version>
+        <maven-compiler.version>3.13.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
         <maven-failsafe.version>3.2.5</maven-failsafe.version>
-        <maven-gpg.version>3.1.0</maven-gpg.version>
+        <maven-gpg.version>3.2.2</maven-gpg.version>
         <maven-install.version>3.1.1</maven-install.version>
         <maven-jar.version>3.3.0</maven-jar.version>
         <maven-javadoc.version>3.6.3</maven-javadoc.version>
         <maven-release.version>3.0.1</maven-release.version>
-        <maven-source.version>3.3.0</maven-source.version>
+        <maven-source.version>3.3.1</maven-source.version>
         <maven-surefire.version>3.2.5</maven-surefire.version>
         <maven-resources.version>3.3.1</maven-resources.version>
     </properties>

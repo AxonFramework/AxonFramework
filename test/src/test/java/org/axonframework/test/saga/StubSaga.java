@@ -130,6 +130,11 @@ public class StubSaga {
                                    new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
+    @SagaEventHandler(associationProperty = "identifier", associationResolver = AssociationResolverStub.class)
+    public void handleTriggerAssociationResolverSagaEvent(TriggerAssociationResolverSagaEvent event) {
+        handledEvents.add(event);
+    }
+
     public EventScheduler getScheduler() {
         return scheduler;
     }

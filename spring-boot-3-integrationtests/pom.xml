@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.2</version>
+        <version>3.2.4</version>
         <relativePath/>
     </parent>
 
@@ -35,12 +35,12 @@
     </description>
 
     <properties>
-        <jobrunr.version>6.3.4</jobrunr.version>
+        <jobrunr.version>6.3.5</jobrunr.version>
         <mysql-connector-java.version>8.3.0</mysql-connector-java.version>
-        <spring-boot-3.version>3.2.2</spring-boot-3.version>
+        <spring-boot-3.version>3.2.4</spring-boot-3.version>
         <!-- Build / Plugin -->
-        <jacoco-maven.version>0.8.11</jacoco-maven.version>
-        <maven-compiler.version>3.12.1</maven-compiler.version>
+        <jacoco-maven.version>0.8.12</jacoco-maven.version>
+        <maven-compiler.version>3.13.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-surefire.version>3.2.5</maven-surefire.version>
         <axon.version>${project.version}</axon.version>
@@ -147,7 +147,7 @@
         <dependency>
             <groupId>com.mchange</groupId>
             <artifactId>c3p0</artifactId>
-            <version>0.10.0-pre2</version>
+            <version>0.10.0-pre7</version>
             <scope>test</scope>
         </dependency>
         <dependency>
