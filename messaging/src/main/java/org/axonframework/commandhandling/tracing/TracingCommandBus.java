@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.tracing;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
@@ -31,11 +30,22 @@ import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * A CommandBus wrapper that adds tracing for outgoing and incoming commands. It creates a span for Dispatching the
+ * command as well as a separate span for handling it.
+ */
 public class TracingCommandBus implements CommandBus {
 
     private final CommandBus delegate;
     private final CommandBusSpanFactory spanFactory;
 
+    /**
+     * Initialize the TracingCommandBus to wrap the given {@code delegate} by recording traces on the given
+     * {@code spanFactory}
+     *
+     * @param delegate    The Command Bus to delegate calls to
+     * @param spanFactory The Span Factory to create spans with
+     */
     public TracingCommandBus(CommandBus delegate, CommandBusSpanFactory spanFactory) {
         this.delegate = delegate;
         this.spanFactory = spanFactory;
@@ -45,7 +55,7 @@ public class TracingCommandBus implements CommandBus {
     public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                             @Nullable ProcessingContext processingContext) {
         Span span = spanFactory.createDispatchCommandSpan(command, false);
-        return span.runSupplierAsync(() -> delegate.dispatch(command, processingContext));
+        return span.runSupplierAsync(() -> delegate.dispatch(spanFactory.propagateContext(command), processingContext));
     }
 
     @Override
@@ -71,13 +81,15 @@ public class TracingCommandBus implements CommandBus {
         @Override
         public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
                                                           ProcessingContext processingContext) {
-            return spanFactory.createHandleCommandSpan(message, false)
-                              .runSupplier(() -> handler.handle(message, processingContext));
+            return MessageStream.fromFuture(spanFactory.createHandleCommandSpan(message, false)
+                                                       .runSupplierAsync(() -> handler.handle(message,
+                                                                                              processingContext)
+                                                                                      .asCompletableFuture()));
         }
 
         @Override
         public Object handleSync(CommandMessage<?> message) throws Exception {
-            return spanFactory.createHandleCommandSpan(message, delegate instanceof DistributedCommandBus)
+            return spanFactory.createHandleCommandSpan(message, false)
                               .runCallable(() -> handler.handleSync(message));
         }
     }

@@ -18,10 +18,18 @@ package org.axonframework.commandhandling.tracing;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -34,14 +42,16 @@ class TracingCommandBusTest {
     private TracingCommandBus testSubject;
     private TestSpanFactory spanFactory;
     private CommandBus delegate;
+    private DefaultCommandBusSpanFactory commandBusSpanFactory;
 
     @BeforeEach
     void setUp() {
         delegate = mock(CommandBus.class);
         spanFactory = new TestSpanFactory();
-        testSubject = new TracingCommandBus(delegate, DefaultCommandBusSpanFactory.builder()
-                                                                                  .spanFactory(spanFactory)
-                                                                                  .build());
+        commandBusSpanFactory = DefaultCommandBusSpanFactory.builder()
+                                                            .spanFactory(spanFactory)
+                                                            .build();
+        testSubject = new TracingCommandBus(delegate, commandBusSpanFactory);
     }
 
     @Test
@@ -49,8 +59,8 @@ class TracingCommandBusTest {
         when(delegate.dispatch(any(), any())).thenAnswer(
                 i -> {
                     spanFactory.verifySpanActive("CommandBus.dispatchCommand");
-                    spanFactory.verifySpanPropagated("CommandBus.dispatchCommand", i.getArgument(0, CommandMessage.class));
-                    spanFactory.verifySpanCompleted("CommandBus.handleCommand");
+                    spanFactory.verifySpanPropagated("CommandBus.dispatchCommand",
+                                                     i.getArgument(0, CommandMessage.class));
                     return FutureUtils.emptyCompletedFuture();
                 }
         );
@@ -63,14 +73,14 @@ class TracingCommandBusTest {
     void dispatchIsCorrectlyTracedDuringException() {
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> {
-                    spanFactory.verifySpanPropagated("CommandBus.dispatchCommand", i.getArgument(0, CommandMessage.class));
-                    spanFactory.verifySpanCompleted("CommandBus.handleCommand");
+                    spanFactory.verifySpanPropagated("CommandBus.dispatchCommand",
+                                                     i.getArgument(0, CommandMessage.class));
                     return CompletableFuture.failedFuture(new RuntimeException("Some exception"));
                 });
         testSubject.subscribe(String.class.getName(), command -> {
             throw new RuntimeException("Some exception");
         });
-        var actual = testSubject.dispatch(asCommandMessage("Say hi!"),ProcessingContext.NONE);
+        var actual = testSubject.dispatch(asCommandMessage("Say hi!"), ProcessingContext.NONE);
 
         assertTrue(actual.isCompletedExceptionally());
 
@@ -78,4 +88,62 @@ class TracingCommandBusTest {
         spanFactory.verifySpanHasException("CommandBus.dispatchCommand", RuntimeException.class);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Test
+    void verifyHandlerSpansAreCreatedOnHandlerInvocation() {
+        ArgumentCaptor<MessageHandler> captor = ArgumentCaptor.forClass(MessageHandler.class);
+        when(delegate.subscribe(anyString(), captor.capture())).thenReturn(null);
+
+        testSubject.subscribe("test", new MessageHandler<>() {
+            @Override
+            public Object handleSync(CommandMessage<?> message) {
+                return null;
+            }
+
+            @Override
+            public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
+                                                              ProcessingContext processingContext) {
+                spanFactory.verifySpanActive("CommandBus.handleCommand");
+
+                return MessageStream.just(new GenericMessage<>("ok"));
+            }
+        });
+
+        captor.getValue().handle(GenericCommandMessage.asCommandMessage("Test"), ProcessingContext.NONE);
+        spanFactory.verifySpanCompleted("CommandBus.handleCommand");
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Test
+    void verifyHandlerSpansAreCompletedOnExceptionInHandlerInvocation() {
+        ArgumentCaptor<MessageHandler> captor = ArgumentCaptor.forClass(MessageHandler.class);
+        when(delegate.subscribe(anyString(), captor.capture())).thenReturn(null);
+
+        testSubject.subscribe("test", new MessageHandler<>() {
+            @Override
+            public Object handleSync(CommandMessage<?> message) {
+                return null;
+            }
+
+            @Override
+            public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
+                                                              ProcessingContext processingContext) {
+                spanFactory.verifySpanActive("CommandBus.handleCommand");
+                return MessageStream.failed(new MockException("Simulating failure"));
+            }
+        });
+
+        captor.getValue().handle(GenericCommandMessage.asCommandMessage("Test"), ProcessingContext.NONE);
+
+        spanFactory.verifySpanCompleted("CommandBus.handleCommand");
+        spanFactory.verifySpanHasException("CommandBus.handleCommand", MockException.class);
+    }
+
+    @Test
+    void verifyDescriptionContainsComponents() {
+        ComponentDescriptor componentDescriptor = mock(ComponentDescriptor.class);
+        testSubject.describeTo(componentDescriptor);
+        verify(componentDescriptor).describeWrapperOf(delegate);
+        verify(componentDescriptor).describeProperty("spanFactory", commandBusSpanFactory);
+    }
 }
