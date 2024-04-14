@@ -60,7 +60,7 @@
         <jackson-kotlin.version>2.16.0</jackson-kotlin.version>
         <!-- Logging -->
         <kotlin-logging.version>3.0.5</kotlin-logging.version>
-        <slf4j.version>2.0.12</slf4j.version>
+        <slf4j.version>2.0.13</slf4j.version>
         <log4j.version>2.13.3</log4j.version>
         <!-- Testing -->
         <junit.jupiter.version>5.10.1</junit.jupiter.version>
@@ -73,9 +73,9 @@
         <maven-compiler.version>3.13.0</maven-compiler.version>
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
-        <maven-gpg.version>3.2.2</maven-gpg.version>
+        <maven-gpg.version>3.2.3</maven-gpg.version>
         <maven-install.version>3.1.1</maven-install.version>
-        <maven-jar.version>3.3.0</maven-jar.version>
+        <maven-jar.version>3.4.0</maven-jar.version>
         <maven-javadoc.version>3.5.0</maven-javadoc.version>
         <maven-release.version>3.0.1</maven-release.version>
         <maven-source.version>3.3.1</maven-source.version>
