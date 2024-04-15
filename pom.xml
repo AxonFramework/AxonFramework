@@ -84,7 +84,7 @@
         <mysql-connector-java.version>8.3.0</mysql-connector-java.version>
         <postgresql.version>42.7.3</postgresql.version>
         <!-- Jakarta -->
-        <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
+        <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
         <jakarta.el.version>4.0.0</jakarta.el.version>
         <jakarta.el-impl.version>4.0.2</jakarta.el-impl.version>
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
@@ -102,19 +102,19 @@
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <!-- Logging -->
         <log4j.version>2.23.1</log4j.version>
-        <slf4j.version>2.0.12</slf4j.version>
+        <slf4j.version>2.0.13</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.25</dropwizard.metrics.version>
-        <micrometer.version>1.12.4</micrometer.version>
+        <micrometer.version>1.12.5</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.14.13</byte-buddy.version>
-        <commons-io.version>2.16.0</commons-io.version>
+        <commons-io.version>2.16.1</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.6.4</projectreactor.version>
+        <projectreactor.version>3.6.5</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <dom4j.version>2.1.4</dom4j.version>
@@ -126,7 +126,7 @@
         <jobrunr.version>6.3.5</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
-        <spring.version>5.3.33</spring.version>
+        <spring.version>5.3.34</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
         <spring-security.version>5.8.11</spring-security.version>
         <!-- Testing -->
@@ -149,9 +149,9 @@
         <maven-deploy.version>3.1.1</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
         <maven-failsafe.version>3.2.5</maven-failsafe.version>
-        <maven-gpg.version>3.2.2</maven-gpg.version>
+        <maven-gpg.version>3.2.3</maven-gpg.version>
         <maven-install.version>3.1.1</maven-install.version>
-        <maven-jar.version>3.3.0</maven-jar.version>
+        <maven-jar.version>3.4.0</maven-jar.version>
         <maven-javadoc.version>3.6.3</maven-javadoc.version>
         <maven-release.version>3.0.1</maven-release.version>
         <maven-source.version>3.3.1</maven-source.version>
