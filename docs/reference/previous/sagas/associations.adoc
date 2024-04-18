@@ -14,9 +14,7 @@ ____
 
 Imagine a saga that has been created for a transaction around an Order. The saga is automatically associated with the Order, as the method is annotated with `@StartSaga`. The saga is responsible for creating an Invoice for that Order, and tell Shipping to create a Shipment for it. Once both the Shipment has arrived and the Invoice has been paid, the transaction is completed and the saga is closed.
 
-Here is the code for such a Saga:
-{% tabs %}
-{% tab title="Spring Boot AutoConfiguration" %}
+Here is the code for such a Saga if you use the Spring Boot AutoConfiguration:
 
 [source,java]
 ----
@@ -57,9 +55,7 @@ public class OrderManagementSaga {
     // ...
 }
 ----
-
-{% endtab %}
-{% tab title="Axon Configuration API" %}
+And here is the same code for when you use the Axon Configuration API:
 
 [source,java]
 ----

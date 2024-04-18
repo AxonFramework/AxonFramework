@@ -8,7 +8,7 @@ A summary of the various sub-sections is given below.
 |===
 |Sub-Section |Purpose 
 
-|​link:event-snapshots.md[Event Snapshots​] |Axon Framework provided capabilities to create event snapshots for optimizing Aggregate loading 
-|link:event-processing.md[Event Processing] |Axon Framework provided capabilities for tuning batching and parallel processing of events 
-|link:command-processing.md[Command Processing] |Axon Framework provided capabilities for Command message processing 
+|​xref:event-snapshots.adoc[Event Snapshots​] |Axon Framework provided capabilities to create event snapshots for optimizing Aggregate loading
+|xref:event-processing.adoc[Event Processing] |Axon Framework provided capabilities for tuning batching and parallel processing of events
+|xref:command-processing.adoc[Command Processing] |Axon Framework provided capabilities for Command message processing
 |===

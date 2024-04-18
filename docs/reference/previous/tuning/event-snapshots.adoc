@@ -73,9 +73,7 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration()
                                          .configureAggregate(giftCardConfigurer);
 ----
 
-{% endtab %}
-
-{% tab title="Spring Boot AutoConfiguration" %}
+==== Spring Boot AutoConfiguration
 It is possible to define a custom `SnapshotTriggerDefinition` for an aggregate as a Spring bean.
 In order to tie the `SnapshotTriggerDefinition` bean to an aggregate, use the `snapshotTriggerDefinition` attribute on `@Aggregate` annotation.
 Listing below shows how to define a custom `EventCountSnapshotTriggerDefinition` which will take a snapshot every 500 events.
@@ -141,9 +139,7 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration()
                                          .configureAggregate(giftCardConfigurer);
 ----
 
-{% endtab %}
-
-{% tab title="Spring Boot AutoConfiguration" %}
+==== Spring Boot AutoConfiguration
 It is possible to define a custom `SnapshotFilter` for an aggregate as a Spring bean.
 In order to tie the `SnapshotFilter` bean to an aggregate, use the `snapshotFilter` attribute on `@Aggregate` annotation. 
 
@@ -269,9 +265,7 @@ public class AxonConfig {
 }
 ----
 
-{% endtab %}
-
-{% tab title="Spring Boot AutoConfiguration" %}
+==== Spring Boot AutoConfiguration
 The `Aggregate` annotation allows specification of the cache bean:
 
 [source,java]

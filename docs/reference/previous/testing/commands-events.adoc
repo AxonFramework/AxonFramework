@@ -26,7 +26,7 @@ Since the unit of testing here is the aggregate, `AggregateTestFixture` is meant
 
 ____
 
-The following example shows the usage of the "given-when-then" test fixture with JUnit 4 on the `GiftCard` aggregate (as defined link:../axon-framework-commands/modeling/aggregate.md#basic-aggregate-structure[earlier]):
+The following example shows the usage of the "given-when-then" test fixture with JUnit 4 on the `GiftCard` aggregate (as defined xref:../axon-framework-commands/modeling/aggregate.adoc#basic-aggregate-structure[earlier]):
 
 [source,java]
 ----
@@ -104,25 +104,26 @@ To make optimal use of the migration between these stages, it is best to use the
 
 ____
 
+[[test-setup]]
 === Test Setup
 
 During the configuration phase (i.e. before the first "given" is provided), you provide the building blocks required to execute the test. Specialized versions of the event bus, command bus and event store are provided as part of the fixture by default. There are accessor methods in place to obtain references to them. Any command handlers not registered directly on the aggregate need to be explicitly configured using the `registerAnnotatedCommandHandler` method. Besides an Annotated Command Handler, you can register a wide variety of components and settings that define how the infrastructure around the Aggregate's test should be set up, consisting out of the following:
 
 * `registerRepository`:
 
-Registers a custom Aggregate link:commands-events.md[`Repository`].
+Registers a custom Aggregate `Repository`.
 
 * `registerRepositoryProvider`:
 
-Registers a `RepositoryProvider` used to link:../axon-framework-commands/modeling/aggregate-creation-from-another-aggregate.md[spawn new Aggregates].
+Registers a `RepositoryProvider` used to xref:../axon-framework-commands/modeling/aggregate-creation-from-another-aggregate.adoc[spawn new Aggregates].
 
 * `registerAggregateFactory`:
 
-Registers a custom link:commands-events.md[`AggregateFactory`].
+Registers a custom `AggregateFactory`.
 
 * `registerAnnotatedCommandHandler`:
 
-Registers a link:../axon-framework-commands/command-handlers.md#external-command-handlers[Annotated Command Handler object] that interacts with the aggregate.
+Registers a xref:../axon-framework-commands/command-handlers.adoc#external-command-handlers[Annotated Command Handler object] that interacts with the aggregate.
  Use this method to register components containing `@CommandHandler` annotated methods that invoke the `Repository` to execute operation on an aggregate.
  You may end up in such a scenario when you prefer that command handlers and/or command messages are not contained inside the domain model (i.e. the aggregate).
 
@@ -136,25 +137,25 @@ Registers a resource which can be injected in to message handling members.
 
 * `registerParameterResolverFactory`:
 
-Registers a link:commands-events.md[`ParameterResolverFactory`] to the test fixture.
+Registers a `ParameterResolverFactory` to the test fixture.
 
 This method is used to complement the default `ParameterResolvers` with custom `ParameterResolver`.
 
 * `registerCommandDispatchInterceptor`:
 
-Registers a command link:commands-events.md[`MessageDispatchInterceptor`].
+Registers a command `MessageDispatchInterceptor`.
 
 * `registerCommandHandlerInterceptor`:
 
-Registers a command link:commands-events.md[`MessageHandlerInterceptor`].
+Registers a command `MessageHandlerInterceptor`.
 
 * `registerDeadlineDispatchInterceptor`:
 
-Registers a link:commands-events.md[`DeadlineMessage`] `MessageDispatchInterceptor`.
+Registers a `DeadlineMessage` `MessageDispatchInterceptor`.
 
 * `registerDeadlineHandlerInterceptor`:
 
-Registers a link:commands-events.md[`DeadlineMessage`] `MessageHandlerInterceptor`.
+Registers a `DeadlineMessage` `MessageHandlerInterceptor`.
 
 * `registerFieldFilter`:
 
@@ -166,11 +167,11 @@ Registers a field that should be ignored for a given class when state equality i
 
 * `registerHandlerDefinition`:
 
-Registers a custom link:../../appendices/message-handler-tuning/handler-enhancers.md[`HandlerDefinition`] to the test fixture.
+Registers a custom `HandlerDefinition` to the test fixture.
 
 * `registerHandlerEnhancerDefinition`:
 
-Registers a custom link:../../appendices/message-handler-tuning/handler-enhancers.md[`HandlerEnhancerDefinition`] to the test fixture.
+Registers a custom `HandlerEnhancerDefinition` to the test fixture.
 
 This method is used to complement the default `HandlerEnhancerDefinition` with a custom `HandlerEnhancerDefinition`.
 
@@ -178,6 +179,7 @@ This method is used to complement the default `HandlerEnhancerDefinition` with a
 
 Registers a `CommandTargetResolver` to the test fixture.
 
+[[given-phase]]
 === Given Phase
 
 Once you have configured the fixture, you can start the given phase.
@@ -201,14 +203,15 @@ Below is a list of all the operations of the given phase:
 * `givenCurrentTime(Instant)`:
  Use `givenCurrenTime` to simulate the current time the test fixture initiates testing.
  The fixture uses the given `Instant` as the timestamp for generated events in the <<test-execution-phase,when-phase>>.
- Additionally, the fixtures will use the given current time to validate when to trigger link:../deadlines/deadline-managers.md[deadlines] within the aggregate.
+ Additionally, the fixtures will use the given current time to validate when to trigger xref:../deadlines/deadline-managers.adoc[deadlines] within the aggregate.
 * `givenState(Supplier&lt;T&gt;)`:
- Use the `givenState` method to provide the aggregate instance in its entirety when testing a link:../axon-framework-commands/modeling/state-stored-aggregates.md[State-Stored Aggregate].
+ Use the `givenState` method to provide the aggregate instance in its entirety when testing a xref:../axon-framework-commands/modeling/state-stored-aggregates.adoc[State-Stored Aggregate].
  Note that it is _not_ recommended to use this operation when you are testing an event-sourced aggregate.
 
+[[test-execution-phase]]
 === Test Execution Phase
 
-The execution phase, or "when phase," allows you several entry points towards the link:commands-events.md#validation-phase[validation phase].
+The execution phase, or "when phase," allows you several entry points towards the <<validation-phase,validation phase>>.
 Note that the test fixture only monitors activities that occur during the test _execution_ phase.
 The fixture does not consider any events or side effects generated during the <<given-phase,given phase>> in the validation phase.
 
@@ -242,10 +245,10 @@ Below is a list of all the operations you can use in the execution phase:
  When the given command implements `Message`, the fixture will combine the command's metadata with the additional metadata provided separately.
 * `whenTimeElapses(Duration)`:
  Use `whenTimeElapses` to simulate time moving on based on the given `Duration`.
- You should use this method to <<validating-deadlines,validate>> the behavior around link:../deadlines/deadline-managers.md[deadlines].
+ You should use this method to <<validating-deadlines,validate>> the behavior around xref:../deadlines/deadline-managers.adoc[deadlines].
 * `whenTimeAdvancesTo(Instant)`:
  Use `whenTimeAdvancesTo` to simulate time moving towards the given `Instant`.
- You should use this method to <<validating-deadlines,validate>> the behavior around link:../deadlines/deadline-managers.md[deadlines].
+ You should use this method to <<validating-deadlines,validate>> the behavior around xref:../deadlines/deadline-managers.adoc[deadlines].
 * `whenConstructing(Callable&lt;T&gt;)`:
  This test execution phase operation allows you to invoke the constructor of the aggregate under test.
  Use this method whenever you (1) do not have `@CommandHandler` annotations inside the command model and (2) have not <<test-setup,registered an external command handler>> with the fixture.
@@ -255,6 +258,7 @@ Below is a list of all the operations you can use in the execution phase:
  The fixture expects you to provide an aggregate identifier matching the given phase's aggregate identifier. Otherwise, the fixture throws an `AssertionError`.
  Use this method whenever you (1) do not have `@CommandHandler` annotations inside the command model and (2) have not <<test-setup,registered an external command handler>> with the fixture.
 
+[[validation-phase]]
 === Validation Phase
 
 The last phase is the validation phase, which allows you to check on the activities of the aggregate.
@@ -438,9 +442,9 @@ class MyCommandModelTest {
 
 ==== Validating Aggregate State
 
-In certain circumstances, it may be desirable to validate the state in which an Aggregate was left after a test. This is especially the case in given-when-then scenario's where the _given_ represents an initial state as well, as is regular when using a link:../axon-framework-commands/modeling/state-stored-aggregates.md[State-Stored Aggregate].
+In certain circumstances, it may be desirable to validate the state in which an Aggregate was left after a test. This is especially the case in given-when-then scenario's where the _given_ represents an initial state as well, as is regular when using a xref:../axon-framework-commands/modeling/state-stored-aggregates.adoc[State-Stored Aggregate].
 
-The fixture provides a method that allows verification of the state of the aggregate, as it is left after the link:commands-events.md#test-execution-phase[Execution Phase] (e.g. the _when_ state), to be validated.
+The fixture provides a method that allows verification of the state of the aggregate, as it is left after the <<test-execution-phase,Execution Phase>> (e.g. the _when_ state), to be validated.
 
 [source,java]
 ----
@@ -461,9 +465,10 @@ State validation for testing Event Sourced Aggregates is considered bad practice
 
 ____
 
+[[validating-deadlines]]
 ==== Validating Deadlines
 
-The validation phase also provides the option to verify scheduled and met link:../deadlines/[deadlines] for a given Aggregate instance. You can expect scheduled deadlines both through a `Duration` or an `Instant`, using explicit equals, a `Matcher` or just a deadline type to verify the deadline message. +
+The validation phase also provides the option to verify scheduled and met xref:../deadlines/deadline-managers.adoc for a given Aggregate instance. You can expect scheduled deadlines both through a `Duration` or an `Instant`, using explicit equals, a `Matcher` or just a deadline type to verify the deadline message. +
 The following methods are available for validating Deadlines:
 
 * `expectScheduledDeadline(Duration, Object)`:

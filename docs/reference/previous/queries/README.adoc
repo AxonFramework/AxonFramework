@@ -8,10 +8,10 @@ A summary of the various sub-sections is given below.
 |===
 |Sub-Section |Purpose 
 
-|link:query-processing.md[Query Processing] |Short introduction to the Query Processing capabilities provided by the Axon Framework 
-|link:query-dispatchers.md[Query Dispatchers] / link:query-handlers.md[Query Handlers] |Functional Development concerns for Query Messages using the Axon Framework 
-|link:implementations.md[Implementations] |Non-Functional Development concerns for Query Messages using the Axon Framework 
-|link:configuration.md[Configuration] |Configuration concerns for Query Messages using the Axon Framework 
+|xref:query-processing.adoc[Query Processing] |Short introduction to the Query Processing capabilities provided by the Axon Framework
+|xref:query-dispatchers.adoc[Query Dispatchers] / xref:query-handlers.adoc[Query Handlers] |Functional Development concerns for Query Messages using the Axon Framework
+|xref:implementations.adoc[Implementations] |Non-Functional Development concerns for Query Messages using the Axon Framework
+|xref:configuration.adoc[Configuration] |Configuration concerns for Query Messages using the Axon Framework
 |===
 
-This guide is complemented by a video tutorial which gives a practical demonstration of the concepts explained in this section. The tutorial is available at -&gt; https://www.youtube.com/watch?v=jS1vfc5EohM&feature=youtu.be[Axon Coding Tutorial - Query Messages]
+This guide is complemented by a video tutorial which gives a practical demonstration of the concepts explained in this section. The tutorial is available at -&gt; link:https://www.youtube.com/watch?v=jS1vfc5EohM&feature=youtu.be[Axon Coding Tutorial - Query Messages]

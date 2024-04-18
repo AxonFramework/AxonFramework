@@ -37,11 +37,12 @@ public class GiftCard {
 }
 ----
 
+[[registering-a-command-handler]]
 == Registering a Command Handler
 
 Often times the command handler functions are placed directly on the link:modeling/aggregate.adoc[aggregate]. When this approach is taken, simply registering the Aggregate as described above is sufficient for all its command handler methods to be registered too.
 
-link:command-handlers.adoc#_external_command_handlers[External Command Handlers] however do require direct registration as being a command handler, which is shown in the following sample:
+link:command-handlers.adoc#external_command_handlers[External Command Handlers] however do require direct registration as being a command handler, which is shown in the following sample:
 
 ==== Axon Configuration API
 
@@ -112,9 +113,9 @@ ____
 
 The repository is the mechanism that provides access to aggregates. The repository acts as a gateway to the actual storage mechanism used to persist the data. In CQRS, repositories only need to be able to find aggregates based on their unique identifier. Any other types of queries should be performed against the query database.
 
-In Axon Framework, all repositories must implement the `Repository` interface. This interface prescribes three methods: `load(identifier, version)`, `load(identifier)` and `newInstance(factoryMethod)`. The `load` methods allows you to load aggregates from the repository. The optional `version` parameter is used to detect concurrent modifications (see link:modeling/conflict-resolution.adoc[Conflict resolution]). `newInstance` is used to register newly created aggregates in the repository.
+In Axon Framework, all repositories must implement the `Repository` interface. This interface prescribes three methods: `load(identifier, version)`, `load(identifier)` and `newInstance(factoryMethod)`. The `load` methods allows you to load aggregates from the repository. The optional `version` parameter is used to detect concurrent modifications (see xref:modeling/conflict-resolution.adoc[Conflict resolution]). `newInstance` is used to register newly created aggregates in the repository.
 
-Depending on your underlying persistence storage and auditing needs, there are a number of base implementations that provide basic functionality needed by most repositories. Axon Framework makes a distinction between repositories that save the current state of the aggregate (see link:configuration.adoc#_standard_repositories[Standard repositories]), and those that store the events of an aggregate (see link:configuration.adoc#_event_sourcing_repositories[Event Sourcing repositories]).
+Depending on your underlying persistence storage and auditing needs, there are a number of base implementations that provide basic functionality needed by most repositories. Axon Framework makes a distinction between repositories that save the current state of the aggregate (see <<standard-repositories, Standard repositories>>), and those that store the events of an aggregate (see <<event-sourcing-repositories, Event Sourcing repositories>>).
 
 Note that the Repository interface does not prescribe a `delete(identifier)` method. Deleting aggregates is done by invoking the `AggregateLifecycle.markDeleted()` method from within an aggregate. Deleting an aggregate is a state migration like any other, with the only difference that it is irreversible in many cases. You should create your own meaningful method on your aggregate which sets the aggregate's state to "deleted". This also allows you to register any events that you would like to have published.
 
@@ -148,6 +149,7 @@ public class GiftCard { /*...*/ }
 
 Note that this requires full configuration of the Repository, including any `SnapshotTriggerDefinition` or `AggregateFactory` that may otherwise have been configured automatically.
 
+[[standard-repositories]]
 === Standard Repositories
 
 Standard repositories store the actual state of an aggregate. Upon each change, the new state will overwrite the old. This makes it possible for the query components of the application to use the same information the command component also uses. This could, depending on the type of application you are creating, be the simplest solution. If that is the case, Axon provides some building blocks that help you implement such a repository.
@@ -156,6 +158,7 @@ Axon provides one out-of-the-box implementation for a standard Repository: the `
 
 You can also easily implement your own repository. In that case, it is best to extend from the abstract `LockingRepository`. As aggregate wrapper type, it is recommended to use the `AnnotatedAggregate`. See the sources of `GenericJpaRepository` for an example.
 
+[[event-sourcing-repositories]]
 === Event Sourcing Repositories
 
 Aggregate roots that are able to reconstruct their state based on events may also be configured to be loaded by an event sourcing repository.

@@ -1,6 +1,6 @@
 = Implementations
 
-When it comes to dispatching queries, as explained in the link:query-dispatchers.md[Dispatching Queries] section, there are a couple of implementations when it comes to actually sending the query message in question. The next sections provide an overview of the possible implementations, as well as pointing out how to set up query dispatching infrastructure with Axon.
+When it comes to dispatching queries, as explained in the link:query-dispatchers.adoc[Dispatching Queries] section, there are a couple of implementations when it comes to actually sending the query message in question. The next sections provide an overview of the possible implementations, as well as pointing out how to set up query dispatching infrastructure with Axon.
 
 == Query Gateway
 
@@ -14,9 +14,9 @@ The query bus is the mechanism that dispatches queries to query handlers. Querie
 
 === AxonServerQueryBus
 
-Axon provides a query bus out of the box, the `AxonServerQueryBus`. It connects to the link:../../axon-server-introduction.md[AxonIQ AxonServer Server] to send and receive Queries.
+Axon provides a query bus out of the box, the `AxonServerQueryBus`. It connects to the AxonServer to send and receive Queries.
 
-`AxonServerQueryBus` is a 'distributed query bus'. It uses a link:implementations.md[`SimpleQueryBus`] to handle incoming queries on different JVM's by default.
+`AxonServerQueryBus` is a 'distributed query bus'. It uses a `SimpleQueryBus` to handle incoming queries on different JVM's by default.
 
 ==== Axon Configuration API
 
@@ -67,7 +67,7 @@ ____
 
 *Excluding the Axon Server Connector*
 
-If you exclude the `axon-server-connector` dependency you will fallback to 'non-axon-server' query bus option, the `SimpleQueryBus` (see link:implementations.md[below])
+If you exclude the `axon-server-connector` dependency you will fallback to 'non-axon-server' query bus option, the `SimpleQueryBus` (see below).
 
 ____
 

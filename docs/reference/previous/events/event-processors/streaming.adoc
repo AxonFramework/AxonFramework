@@ -57,7 +57,7 @@ They diverge on their threading approach and work separation, as discussed in mo
 
 == Configuring
 
-The Streaming Processors have several additional components that you can configure, next to the link:README.adoc#_general_processor_configuration[base options].
+The Streaming Processors have several additional components that you can configure, next to the link:README.adoc#general_processor_configuration[base options].
 For other streaming processor features that are configurable, we refer to their respective sections for more details.
 This chapter will cover how to configure a <<Configuring a Tracking Processor,Tracking>> or <<Configuring a Pooled Streaming Processor,Pooled Streaming>> Processor respectively.
 
@@ -1371,6 +1371,7 @@ class StreamingProcessorService {
 }
 ----
 
+[[splitting-and-merging-segments]]
 === Splitting and Merging Segments
 
 The Streaming Event Processor provides scalability by supporting <<Parallel Processing,parallel processing>>.

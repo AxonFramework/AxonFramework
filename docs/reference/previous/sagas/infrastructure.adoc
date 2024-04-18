@@ -25,9 +25,7 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration();
 configurer.registerComponent(SagaStore.class, c -> new JpaSagaStore(...));
 ----
 
-{% endtab %}
-
-{% tab title="Spring Boot AutoConfiguration" %}
+=== Spring Boot AutoConfiguration
 
 [source,java]
 ----
@@ -55,7 +53,7 @@ In some cases, applications benefit from caching saga instances. In that case, t
 
 === JpaSagaStore
 
-The `JpaSagaStore` uses JPA to store the state and association values of sagas. Sagas themselves do not need any JPA annotations; Axon will serialize the sagas using a `Serializer` (similar to event serialization, you can choose between an `XStreamSerializer` or `JacksonSerializer`, which can be set by configuring the default `Serializer` in your application. For more details, see link:../serialization.md[Serializers].
+The `JpaSagaStore` uses JPA to store the state and association values of sagas. Sagas themselves do not need any JPA annotations; Axon will serialize the sagas using a `Serializer` (similar to event serialization, you can choose between an `XStreamSerializer` or `JacksonSerializer`, which can be set by configuring the default `Serializer` in your application. For more details, see xref:../serialization.adoc[Serializers].
 
 The `JpaSagaStore` is configured with an `EntityManagerProvider`, which provides access to an `EntityManager` instance to use. This abstraction allows for the use of both application managed and container managed `EntityManager`s. Optionally, you can define the serializer to serialize the Saga instances with. Axon defaults to the `XStreamSerializer`.
 

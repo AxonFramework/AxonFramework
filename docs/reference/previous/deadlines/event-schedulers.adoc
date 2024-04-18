@@ -25,7 +25,7 @@ Axon provides four `EventScheduler` implementations:
 . <<Axon Server Event Scheduler,Axon Server>>
 . <<Quartz Event Scheduler,Quartz>>
 
-It is important to note that the `JubRunrEventScheduler`, `QuartzEventScheduler`, `AxonServerEventScheduler` and `DbSchedulerEventSerializer` all should use the link:../serialization.adoc#_different_serializer_for_events[event `Serializer`] to serialize and deserialize the scheduled event.
+It is important to note that the `JubRunrEventScheduler`, `QuartzEventScheduler`, `AxonServerEventScheduler` and `DbSchedulerEventSerializer` all should use the xref:../serialization.adoc#different_serializer_for_events[event Serializer] to serialize and deserialize the scheduled event.
 If the `Serializer` used by the scheduler does not align with the `Seralizer` used by the event store, exceptional scenarios should be expected.
 The Quartz implementation's `Serializer` can be set by defining a different `EventJobDataBinder`, whereas the JobRunr, Axon Server and db-scheduler implementations allows defining the used `Serializer` directly through the builder.
 

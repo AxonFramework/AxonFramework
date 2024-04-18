@@ -1,14 +1,14 @@
 = Event Processing
 
-Typically, application components contain one or morelink:../events/event-processors/README.md[ Event Processors] which are responsible for processing incoming events. Tracking Event Processors have configuration aspects that can be changed at runtime to accommodate for changes in the system topology.
+Typically, application components contain one or more xref:../events/event-processors/README.adoc[ Event Processors] which are responsible for processing incoming events. Tracking Event Processors have configuration aspects that can be changed at runtime to accommodate for changes in the system topology.
 
-== Increasing and decreasing segment counts <a id="increasing-and-decreasing-segment-counts"></a>
+== Increasing and decreasing segment counts
 
 Tracking Event Processors that handle events in multiple threads use segments to separate the events in the stream across these threads in a reliable way. However, especially when these threads are spread across multiple instances of a component, and the number of instances changes, it may be useful to scale the number of segments accordingly.
 
-To this end, Axon Framework provides a link:../events/event-processors/streaming.md#splitting-and-merging-segments[split and merge API]. This API can be utilized directly via a client configuration or through Axon Server, where the latter takes required coordination into account.
+To this end, Axon Framework provides a xref:../events/event-processors/streaming.adoc#splitting-and-merging-segments[split and merge API]. This API can be utilized directly via a client configuration or through Axon Server, where the latter takes required coordination into account.
 
-=== Segment tuning through Axon Framework <a id="segment-tuning-through-axon-framework"></a>
+=== Segment tuning through Axon Framework
 
 The Tracking Event Processors in Axon Framework provide methods to increase or decrease the number of segments for that particular instance. When using this API, one must provide the ID of the segment to increase/decrease. Additionally, the instance on which the method is invoked, must be actively processing that segment.
 
@@ -55,8 +55,7 @@ Note that, especially, in such a setup you would need to delegate said split or 
 
 ____
 
-== Blacklisting Events <a id="blacklisting-events"></a>
-
+== Blacklisting Events
 In a heterogeneously distributed application landscape your event handling components might receive events they do not have actual event handling members for. That this occurs is completely fine; the chances of a single application handling the entirety of all existing events is very small. This fact however does open up the possibility for optimization by _blacklisting_ events.‌
 
 To this end Axon has to option to automatically blacklist events it cannot handle. The Tracking Event Processor takes the lead in actual blacklisting, which it does by signaling the utilized event stream when none of its handlers can handle the event in question. The event stream provided by the Axon Server connection in turn implements the functionality to notify an Axon Server node that certain events cannot be handled by it.‌
@@ -75,9 +74,7 @@ Configurer configurer =
         .registerComponent(AxonServerConfiguration.class, c -> axonServerConfig);
 ----
 
-{% endtab %}
-
-{% tab title="Spring Boot AutoConfiguration" %}
+==== Spring Boot AutoConfiguration
 
 [source,text]
 ----
