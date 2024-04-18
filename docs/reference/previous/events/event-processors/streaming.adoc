@@ -376,6 +376,7 @@ public class AxonConfig {
 }
 ----
 
+[[error-mode]]
 == Error Mode
 
 The error mode differs between the Tracking- and Pooled Streaming Event Processor.
@@ -732,6 +733,7 @@ In this case, the only consequence is wasted processor cycles.
 In this case, the only consequence is wasted processor cycles.
 3. When the task cannot be rolled back nor performed in an idempotent fashion, compensating actions may be the way out.
 
+[[token-store]]
 === Token Store
 
 The `TokenStore` provides the CRUD operations for the `StreamingEventProcessor` to interact with `TrackingTokens`.
@@ -858,6 +860,7 @@ StreamingEventProcessor eventProcessor = /*…*/;
 String tokenStoreId = eventProcessor.getTokenStoreIdentifier();
 ----
 
+[[parallel-processing]]
 == Parallel Processing
 
 Streaming processors can use <<Thread Configuration,multiple threads>> to process an event stream.
@@ -998,6 +1001,7 @@ The number of segments that a single thread can claim differ between the Trackin
 A tracking processor can only claim a single segment per thread, whereas the pooled streaming processor can claim any amount of segments per thread.
 These approaches provide different pros and cons for each implementation, which <<Differences between Tracking and Pooled Streaming,this>> section explains further.
 
+[[sequential-processing]]
 === Sequential Processing
 
 Even though events are processed asynchronously from their publisher, it is often desirable to process certain events in their publishing order.
@@ -1447,6 +1451,7 @@ When using the Axon Framework API directly, the developer should deduce the segm
 
 ____
 
+[[replaying-events]]
 == Replaying Events
 
 A benefit of streaming events is that we can reopen the stream at any point in time.

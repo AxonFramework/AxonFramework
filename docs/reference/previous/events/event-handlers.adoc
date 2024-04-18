@@ -55,6 +55,7 @@ In the example above, Axon will invoke the handler methods of `SubListener` for 
 In other words, the handler methods of `TopListener` will not receive any invocations for `EventC` at all.
 Since `EventA` is not assignable to `EventB` (it is its superclass), the `TopListener&#39;s` handler method will process them.
 
+[[registering-event-handlers]]
 == Registering event handlers
 
 Event handling Components are defined using an `EventProcessingConfigurer`, which can be accessed from the global Axon `Configurer`.

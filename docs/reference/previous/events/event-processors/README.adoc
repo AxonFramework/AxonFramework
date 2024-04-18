@@ -12,7 +12,7 @@ image:../../../.gitbook/assets/event-processors.png[Organization of Event Proces
 Axon has a layered approach towards organizing event handlers.
 First, an event handler is positioned in a _Processing Group_.
 Each event handler, or "Event Handling Component," will only ever belong to a single Processing Group.
-The Processing Group provides a level of configurable non-functional requirements, like <<Processing Group - Listener Invocation Error Handler,error handling>> and the link:streaming.adoc#_sequential_processing[sequencing policy].
+The Processing Group provides a level of configurable non-functional requirements, like <<Processing Group - Listener Invocation Error Handler,error handling>> and the link:streaming.adoc#sequential-processing[sequencing policy].
 
 The Event Processors, in turn, is in charge of the Processing Group.
 An Event Processor will control 1 to N Processing Groups, although there will be a one-to-one mapping in most cases.
@@ -36,10 +36,10 @@ Two processors with the same name are considered as two instances of the same pr
 
 All event handlers are attached to a processor whose name by default is the package name of the event handler's class.
 Furthermore, the default processor implementation used by Axon is the link:streaming.adoc[Tracking Event Processor].
-The (default) event processor used can be adjusted, as is shown in the link:subscribing.adoc#_configuring[subscribing] and link:streaming.adoc#_configuring[streaming] sections.
+The (default) event processor used can be adjusted, as is shown in the link:subscribing.adoc#configuring[subscribing] and link:streaming.adoc#configuring[streaming] sections.
 
 Event handlers, or Event Handling Components, come in roughly two flavors: "regular" (singleton, stateless) event handlers and link:../../sagas/README.adoc[sagas].
-link:../event-handlers.adoc#_registering_event_handlers[This] section describes the process to register an event handler, whereas link:../../sagas/implementation.adoc#_configuring_a_saga[this] page describes the saga registration process.
+link:../event-handlers.adoc#registering-event-handlers[This] section describes the process to register an event handler, whereas link:../../sagas/implementation.adoc#configuring-a-saga[this] page describes the saga registration process.
 
 Now let us consider that the following event handlers have been registered:
 
@@ -121,7 +121,7 @@ If an instance matches several criteria, the outcome is _undefined_.
 
 === Ordering Event Handlers within a processor
 
-To order event handlers within an Event Processor, the order in which event handlers are registered (as described in the link:../event-handlers.adoc#_registering_event_handlers[Registering Event Handlers] section) is guiding.
+To order event handlers within an Event Processor, the order in which event handlers are registered (as described in the xref:../event-handlers.adoc#registering-event-handlers[Registering Event Handlers] section) is guiding.
 Thus, the ordering in which an Event Processor will call event handlers for event handling is the same as their insertion ordering in the Configuration API.
 
 If we use Spring as the mechanism for wiring everything, we can explicitly specify the event handler component ordering by adding the `@Order` annotation.
@@ -151,10 +151,10 @@ Errors are inevitable in any application.
 Depending on where they happen, you may want to respond differently.
 
 By default, exceptions raised by event handlers are caught in the <<Processing Group - Listener Invocation Error Handler,Processing Group layer>>, logged, and processing continues with the following events.
-When an exception is thrown when a processor is trying to commit a transaction, update a link:streaming.adoc#_token_store[token], or in any other part of the process, the exception will be propagated.
+When an exception is thrown when a processor is trying to commit a transaction, update a link:streaming.adoc#token-store[token], or in any other part of the process, the exception will be propagated.
 
-In the case of a link:streaming.adoc#_error_mode[Streaming Event Processor], this means the processor will go into error mode, releasing any tokens and retrying at an incremental interval (starting at 1 second, up to max 60 seconds).
-A link:subscribing.adoc#_error_mode[Subscribing Event Processor] will report a publication error to the component that provided the event.
+In the case of a link:streaming.adoc#error-mode[Streaming Event Processor], this means the processor will go into error mode, releasing any tokens and retrying at an incremental interval (starting at 1 second, up to max 60 seconds).
+A link:subscribing.adoc#error-mode[Subscribing Event Processor] will report a publication error to the component that provided the event.
 
 To change this behavior, both the Processing Group and Event Processor level allow customization on how to deal with exceptions:
 
@@ -229,7 +229,7 @@ Exceptions occurring outside an event handler's scope, or have bubbled up from t
 The default error handler is the `PropagatingErrorHandler`, which will rethrow any exceptions it catches.
 
 How the Event Processor deals with a rethrown exception differ per implementation.
-The behaviour for the Subscribing- and the Streaming Event Processor can respectively be found link:subscribing.adoc#_error_mode[here] and link:streaming.adoc#_error_mode[here].
+The behaviour for the Subscribing- and the Streaming Event Processor can respectively be found xref:subscribing.adoc#error-mode[here] and link:streaming.adoc#error-mode[here].
 
 We can configure a default `ErrorHandler` for all Event Processors or an `ErrorHandler` for specific processors:
 
@@ -283,19 +283,20 @@ public interface ErrorHandler {
 
 Based on the provided `ErrorContext` object, you can decide to ignore the error, schedule retries, perform dead-letter-queue delivery, or rethrow the exception.
 
+[[dead-letter-qeue]]
 === Dead-Letter Queue
 
 Although configuring a <<Processing Group - Listener Invocation Error Handler,Listener Invocation Error Handler>>
 and <<Event Processor - Error Handler,Error Handler>>
 helps you to deal with exceptions when processing events, you still end up in an event handling stop.
-When you only log the error and allow processing to proceed, you will most likely end up with missing data until you fix the predicament and link:streaming.adoc#_replaying_events[replay]
+When you only log the error and allow processing to proceed, you will most likely end up with missing data until you fix the predicament and link:streaming.adoc#replaying-events[replay]
 past events.
 If you instead propagate the exception so the event processor keeps retrying, the event processor will stall entirely when the cause is consistent.
 
 Although this behavior is sufficient on many occasions, sometimes it is beneficial if we can unblock event handling by parking the problematic event.
 To that end, you can configure a dead-letter queue for a <<Event Processors,processing group>>.
 
-An essential concept of Axon Frameworks event processors is the maintenance of event ordering, even when you configure link:streaming.adoc#_parallel_processing[parallel processing].
+An essential concept of Axon Frameworks event processors is the maintenance of event ordering, even when you configure xref:streaming.adoc#parallel-processing[parallel processing].
 A perfect example when this is a requirement is the need to handle events of the same aggregate in their publishing order.
 Simply dead lettering one failed event would cause subsequent events in the sequence to be applied to inconsistent state.
 
@@ -303,13 +304,13 @@ It is thus of utmost importance that a dead-letter queue for events enqueues an 
 To that end, the supported dead-letter queue is a so-called `SequencedDeadLetterQueue`.
 
 Integral to its design is to allow for queueing failed events and events that belong to a faulty sequence.
-It does so by maintaining a sequence identifier for each event, determined by the link:streaming.adoc#_sequential_processing[sequencing policy].
+It does so by maintaining a sequence identifier for each event, determined by the xref:streaming.adoc#sequential-processing[sequencing policy].
 
 ____
 
 *Is there support for Sagas?*
 
-Currently, there is _no_ support for using a dead-letter queue for link:../../sagas/README.adoc[sagas].
+Currently, there is _no_ support for using a dead-letter queue for xref:../../sagas/README.adoc[sagas].
 We've taken this decision as we cannot support a sequenced dead lettering approach as we do for regular event handling.
 
 Furthermore, we cannot do this, as a saga's associations can vary widely between events.
@@ -727,7 +728,7 @@ The `EventProcessingConfigurer` provides two methods to configure an `EventProce
 
 Since the Event Processor is the invoker of event handling methods, it is a spot to configure link:../../messaging-concepts/message-intercepting.adoc[Message Handler Interceptors] too.
 Since Event Processors are dedicated to event handling, the `MessageHandlerInterceptor` is required to deal with an `EventMessage`.
-Differently put, an link:../../messaging-concepts/message-intercepting.adoc#_event_handler_interceptors[EventHandlerInterceptor] can be registered to Event Processors.
+Differently put, an link:../../messaging-concepts/message-intercepting.adoc#event-handler-interceptors[EventHandlerInterceptor] can be registered to Event Processors.
 
 The `EventProcessingConfigurer` provides two methods to configure `MessageHandlerInterceptor` instances:
 

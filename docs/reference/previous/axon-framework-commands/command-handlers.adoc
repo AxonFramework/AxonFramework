@@ -21,7 +21,7 @@ ____
 Regardless of the type of command, as soon as you start distributing your application (through Axon Server, for example), it is recommended to specify a routing key on the command.
 This is the job of the `@TargetAggregateIdentifier`, but in absence of a field worthy of the annotation, the `@RoutingKey` annotation should be added to ensure the command can be routed.
 
-If neither annotation works for your use case, a different `RoutingStrategy` can be configured, as is explained in the link:infrastructure.adoc#_routing_strategy[Routing Strategy] section.
+If neither annotation works for your use case, a different `RoutingStrategy` can be configured, as is explained in the xref:infrastructure.adoc#routing-strategy[Routing Strategy] section.
 
 ____
 

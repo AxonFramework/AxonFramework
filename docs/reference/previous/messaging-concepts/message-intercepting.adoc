@@ -77,6 +77,7 @@ ____
 
 The `BeanValidationInterceptor` also implements `MessageHandlerInterceptor`, allowing you to configure it as a handler interceptor as well.
 
+[[command-handler-interceptors]]
 === Command Handler Interceptors
 
 Message handler interceptors can take action both before and after command processing.
@@ -131,6 +132,7 @@ public class CommandBusConfiguration {
 }
 ----
 
+[[command-handler-interceptor-annotation]]
 ==== `@CommandHandlerInterceptor` Annotation
 
 The framework has the ability to add a Handler Interceptor as a `@CommandHandlerInterceptor` annotated method on the Aggregate/Entity.
@@ -213,6 +215,7 @@ public class EventBusConfiguration {
 }
 ----
 
+[[event-handler-interceptors]]
 === Event Handler Interceptors
 
 Message handler interceptors can take action both before and after event processing.

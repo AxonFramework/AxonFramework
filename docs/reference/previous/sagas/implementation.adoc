@@ -108,6 +108,7 @@ To configure caching, simply wrap any `SagaStore` in a `CachingSagaStore`. The c
 
 The latter two arguments may refer to the same cache, or to different ones. This depends on the eviction requirements of your specific application.
 
+[[configuring-a-saga]]
 == Configuring a Saga
 
 Although a Saga requires a <<saga-manager,manager>>, <<saga-repository-and-saga-store,repository / store>> and wiring to the right message busses, configuring a Saga is straightforward.

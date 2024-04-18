@@ -16,8 +16,8 @@ The Event Tracker Status exposes a couple of metrics:
 
 * The `Segment` it reflects the status of.
 * A boolean through `isCaughtUp()` specifying whether it is caught up with the Event Stream.
-* A boolean through `isReplaying()` specifying whether the given Segment is link:../events/event-processors/streaming.adoc#_replaying_events[replaying].
-* A boolean through `isMerging()` specifying whether the given Segment is link:../events/event-processors/streaming.adoc#_splitting_and_merging_segments[merging].
+* A boolean through `isReplaying()` specifying whether the given Segment is xref:../events/event-processors/streaming.adoc#replaying-events[replaying].
+* A boolean through `isMerging()` specifying whether the given Segment is xref:../events/event-processors/streaming.adoc#splitting-and-merging-segments[merging].
 * The `TrackingToken` of the given Segment.
 * A boolean through `isErrorState()` specifying whether the Segment is in an error state.
 * An optional `Throwable` if the Event Tracker reached an error state.
