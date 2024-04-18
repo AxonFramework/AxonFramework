@@ -148,7 +148,7 @@ public class AxonConfig {
 == The Command Bus - Local
 
 The local command bus is the mechanism that dispatches commands to their respective command handlers within an Axon application.
-Suggestions on how to use the `CommandBus` can be found link:command-dispatchers.adoc#_the_command_bus[here].
+Suggestions on how to use the `CommandBus` can be found link:command-dispatchers.adoc#the-command-bus[here].
 Several flavors of the command bus, with differing characteristics, exist within the framework.
 
 === SimpleCommandBus

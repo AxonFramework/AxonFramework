@@ -10,6 +10,7 @@ Axon provides two interfaces you can use to send the commands to your command ha
 This page will show how and when to use the command gateway and bus.
 How to configure and specifics on the command gateway and bus implementations are discussed in the link:infrastructure.adoc[infrastructure] section.
 
+[[the-command-bus]]
 == The Command Bus
 
 The 'Command Bus' is the mechanism that dispatches commands to their respective command handlers.
