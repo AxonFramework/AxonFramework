@@ -56,7 +56,7 @@ By default, `@EventHandler` annotated methods allow the following parameter type
 |Spring Bean |If the application runs in a Spring environment, any Spring Bean can be resolved. The parameter can be the annotation with `@Qualifier` if a specific version of the bean should be wired. 
 |===
 
-[[supported parameters-for-query-handlers]]
+[[supported-parameters-for-query-handlers]]
 == Supported Parameters for Query Handlers
 
 By default, `@QueryHandler` annotated methods allow the following parameter types.

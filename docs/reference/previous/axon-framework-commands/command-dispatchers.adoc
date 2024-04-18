@@ -56,7 +56,7 @@ Typed identifier objects are also possible, as long as the object implements a s
 
 . The `GenericCommandMessage#asCommandMessage(Object)` method is used to create a `CommandMessage`.
 To be able to dispatch a command on the `CommandBus`, you are required to wrap your own command object (e.g. the 'command message payload') in a `CommandMessage`.
-The `CommandMessage` also allows the addition of link:../messaging-concepts/anatomy-message.adoc#_meta_data[MetaData] to the Command Message.
+The `CommandMessage` also allows the addition of xref:../messaging-concepts/anatomy-message.adoc#meta-data[MetaData] to the Command Message.
 
 . The `CommandBus#dispatch(CommandMessage)` function will dispatch the provided `CommandMessage` on the bus, for delivery to a command handler.
 If an application isn't directly interested in the outcome of a command, this method can be used.

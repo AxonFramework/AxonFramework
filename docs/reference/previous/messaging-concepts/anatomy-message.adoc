@@ -11,6 +11,7 @@ That means that, to add a Meta Data element, you effectively create a new Messag
 To still be able to consider two Java-instances of a message as representing the same conceptual Message, each message has an identifier.
 Changing the Meta Data of a message will not change this identifier.
 
+[[meta-data]]
 == Meta Data
 
 Meta Data of messages typically describe the context in which a Message was generated.
