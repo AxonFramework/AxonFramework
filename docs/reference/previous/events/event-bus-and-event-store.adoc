@@ -10,6 +10,7 @@ The `SimpleEventBus` has a volatile storage and 'forgets' events as soon as they
 
 An `AxonServerEventStore` event bus/store is configured by default.
 
+[[event-store]]
 == Event Store
 
 Event sourcing repositories need an event store to store and load events from aggregates.
@@ -75,6 +76,7 @@ In absence of either, the auto configuration falls back to the `SimpleEventBus`.
 
 ____
 
+[[embedded-event-store]]
 === Embedded Event Store
 
 Alternatively, Axon provides a non-axon-server option, the `EmbeddedEventStore`.

@@ -1,12 +1,12 @@
 = Streaming Event Processor
 
-The `StreamingEventProcessor`, or Streaming Processor for short, is a type of link:README.adoc[Event Processor].
+The `StreamingEventProcessor`, or Streaming Processor for short, is a type of xref:README.adoc[Event Processor].
 As any Event Processor, it serves as the technical aspect to handle events by invoking the event handlers written in an Axon application.
 
 The Streaming Processor defines itself by receiving the events from a `StreamableMessageSource`.
 The `StreamableMessageSource` is an infrastructure component through which we can open a stream of events.
 The source can also specify positions on the event stream, so-called <<Tracking Tokens,Tracking Tokens>>, used as start positions when opening an event stream.
-An example of a `StreamableMessageSource` is the link:../event-bus-and-event-store.adoc#_event_store[`EventStore`], like for example link:../../../axon-server-introduction.md[Axon Server] or an link:../event-bus-and-event-store.adoc#_embedded_event_store[RDBMS].
+An example of a `StreamableMessageSource` is the xref:../event-bus-and-event-store.adoc#event-store[`EventStore`], like for example Axon Server or an xref:../event-bus-and-event-store.adoc#embedded-event-store[RDBMS].
 
 Furthermore, Streaming Processors use separate threads to process the events retrieved from the `StreamableMessageSource`.
 Using separate threads decouples the `StreamingEventProcessor` from other operations (e.g., event publication or command handling), allowing for cleaner separation within any application. +
@@ -380,7 +380,7 @@ public class AxonConfig {
 
 The error mode differs between the Tracking- and Pooled Streaming Event Processor.
 
-Whenever the link:README.adoc#_event_processor__error_handler[error handler] rethrows an exception, a `TrackingEventProcessor` will retry processing the event using an incremental back-off period.
+Whenever the xref:README.adoc#event-processor--error-handler[error handler] rethrows an exception, a `TrackingEventProcessor` will retry processing the event using an incremental back-off period.
 It will start at 1 second and double after each attempt until it reaches the maximum wait time of 60 seconds per attempt.
 This back-off time ensures that in a distributed environment, when another node is able to process events, it will have the opportunity to claim the <<Tracking Tokens,token>> required to process the event.
 
@@ -389,6 +389,7 @@ The Pooled Streaming Processor can deal with this since the <<Pooled Streaming P
 As such, the chance is high the failed process will be picked up quickly by another thread within the same JVM.
 This chance increases further whenever the PSEP instance is distributed over several application instances.
 
+[[tracking-tokens]]
 == Tracking Tokens
 
 A vital attribute of the Streaming Event Processor is its capability to keep and maintain the processing progress.
@@ -427,7 +428,7 @@ ____
 
 When processing an event it may be beneficial to retrieve the token belonging to that event.
 First and foremost, this can be achieved by adding a parameter of type `TrackingToken` to the event handler.
-This support is mentioned in the link:../../messaging-concepts/supported-parameters-annotated-handlers.adoc#_supported_parameters_for_event_handlers[Supported Parameters for Event Handlers] section.
+This support is mentioned in the link:../../messaging-concepts/supported-parameters-annotated-handlers.adoc#supported_parameters_for_event_handlers[Supported Parameters for Event Handlers] section.
 
 Additionally, you can retrieve the token from the resources collection of the link:../../messaging-concepts/unit-of-work.adoc[Unit of Work].
 Both the Tracking and Pooled Streaming Event Processor add the current `TrackingToken` under the key `"Processor[{processor-name}]/Token"`.
@@ -1427,7 +1428,7 @@ Thus, either the streaming processor already has a claim on the segment(s) or ca
 Without the claims, the processor will simply fail the split or merge operation.
 
 It is advised to check which segments a streaming processor has a claim on.
-For that, link:../../monitoring/processors.adoc#_event_tracker_status[status of the processor] is used.
+For that, link:../../monitoring/processors.adoc#event_tracker_status[status of the processor] is used.
 The status information shows which segments a processor instance owns.
 This guides which processor to invoke the split or merge on.
 

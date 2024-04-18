@@ -34,6 +34,7 @@ In combination with Axon's link:../../../extensions/spring-amqp.md[AMQP] or link
 
 ____
 
+[[configuring]]
 == Configuring
 
 Other than configuring that an app uses a Subscribing Event Processor, everything is covered link:README.adoc#_general_processor_configuration[here].

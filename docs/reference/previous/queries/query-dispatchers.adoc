@@ -16,7 +16,7 @@ The `QueryGateway` is a convenient interface towards the query dispatching mecha
 Regardless whether you choose to use the `QueryBus` or the `QueryGateway`, both provide several types of queries. Axon Framework makes a distinction between four types, being:
 
 . <<point-to-point-queries>>,
-. <<scatter-Gather-queries>>,
+. <<scatter-gather-queries>>,
 . <<subscription-queries>>,
 . <<streaming-queries>>.
 

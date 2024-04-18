@@ -144,6 +144,7 @@ In all, you are free to use an ordering, but we recommend using it sparingly.
 
 ____
 
+[[error-handling]]
 == Error Handling
 
 Errors are inevitable in any application.
@@ -221,6 +222,7 @@ public interface ListenerInvocationErrorHandler {
 You can choose to retry, ignore or rethrow the exception.
 The exception will bubble up to the <<Event Processor - Error Handler,Event Processor level>> when rethrown.
 
+[[event-processor--error-handler]]
 === Event Processor - Error Handler
 
 Exceptions occurring outside an event handler's scope, or have bubbled up from there, are handled by the `ErrorHandler`.
@@ -688,10 +690,11 @@ public class AxonConfig {
 }
 ----
 
+[[general_processor_configuration]]
 == General processor configuration
 
 Alongside <<Assigning handlers to processors,handler assignment>> and <<Error Handling,error handling>>, Event Processors allow configuration for other components too.
-For link:subscribing.adoc#_configuring[Subscribing] and link:streaming.adoc#_configuring[Streaming] Event Processor specific options, their respective sections should be checked.
+For link:subscribing.adoc#configuring[Subscribing] and link:streaming.adoc#configuring[Streaming] Event Processor specific options, their respective sections should be checked.
 The remainder of this page will cover the generic configuration options for each Event Processor.
 
 === Event Processor Builders

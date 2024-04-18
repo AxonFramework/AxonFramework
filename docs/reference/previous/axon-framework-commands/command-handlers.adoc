@@ -212,6 +212,7 @@ This policy should be regarded as a create or update approach of an aggregate.
 * `NEVER` - A creation policy of "never" will be handled on an existing aggregate instance.
 This effectively works like any regular command handler annotated method.
 
+[[external_command_handlers]]
 == External Command Handlers
 
 Command handling functions are most often directly placed on the Aggregate (as described in more detail <<Aggregate Command Handlers,here>>).

@@ -5,6 +5,7 @@ As events are stored indefinitely the application should be able to cope with se
 This chapter will discuss what to keep in mind when creating your events, for backwards (and forwards) compatibility.
 It will also explain the upcasting process.
 
+[[event-upcasting]]
 == Event Upcasting
 
 Due to the ever-changing nature of software applications it is likely that event definitions will also change over time.

@@ -10,7 +10,7 @@ ____
 
 *Query Types*
 
-Axon Framework makes a distinction between three types of queries, namely (1) xref:query-dispatchers.adoc#point-to-point[Point-to-Point queries], (2) xref:query-dispatchers.adoc#scatter-gather[Scatter-Gather queries], and (3) xref:query-dispatchers.adoc#subscription-queries[Subscription queries].
+Axon Framework makes a distinction between three types of queries, namely (1) xref:query-dispatchers.adoc#point-to-point-queries[Point-to-Point queries], (2) xref:query-dispatchers.adoc#scatter-gather-queries[Scatter-Gather queries], and (3) xref:query-dispatchers.adoc#subscription-queries[Subscription queries].
 
 Click the links for specifics on how to implement each type of query.
 
