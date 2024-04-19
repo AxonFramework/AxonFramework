@@ -23,9 +23,9 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
@@ -141,7 +141,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(DefaultCommandGateway.builder().commandBus(commandBus).build());
 
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(
-                sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, sagaType, fieldFilters, recordingListenerInvocationErrorHandler);
+                sagaStore,
+                eventScheduler,
+                deadlineManager,
+                eventBus,
+                commandBus,
+                sagaType,
+                fieldFilters,
+                recordingListenerInvocationErrorHandler);
     }
 
     /**
@@ -173,9 +180,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     private TrackedEventMessage<?> asTrackedEventMessage(EventMessage<?> event) {
-        return new GenericTrackedEventMessage<>(
-                new GlobalSequenceTrackingToken(globalSequence.getAndIncrement()), event
-        );
+        return EventUtils.asTrackedEventMessage(
+                event, new GlobalSequenceTrackingToken(globalSequence.getAndIncrement()));
     }
 
     /**
@@ -197,19 +203,20 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     protected void ensureSagaResourcesInitialized() {
         if (!resourcesInitialized) {
             SagaRepository<T> sagaRepository = AnnotatedSagaRepository.<T>builder()
-                    .sagaType(sagaType)
-                    .parameterResolverFactory(getParameterResolverFactory())
-                    .handlerDefinition(getHandlerDefinition())
-                    .sagaStore(sagaStore)
-                    .resourceInjector(getResourceInjector())
-                    .build();
+                                                                      .sagaType(sagaType)
+                                                                      .parameterResolverFactory(
+                                                                              getParameterResolverFactory())
+                                                                      .handlerDefinition(getHandlerDefinition())
+                                                                      .sagaStore(sagaStore)
+                                                                      .resourceInjector(getResourceInjector())
+                                                                      .build();
             sagaManager = AnnotatedSagaManager.<T>builder()
-                    .sagaRepository(sagaRepository)
-                    .sagaType(sagaType)
-                    .parameterResolverFactory(getParameterResolverFactory())
-                    .handlerDefinition(getHandlerDefinition())
-                    .listenerInvocationErrorHandler(recordingListenerInvocationErrorHandler)
-                    .build();
+                                              .sagaRepository(sagaRepository)
+                                              .sagaType(sagaType)
+                                              .parameterResolverFactory(getParameterResolverFactory())
+                                              .handlerDefinition(getHandlerDefinition())
+                                              .listenerInvocationErrorHandler(recordingListenerInvocationErrorHandler)
+                                              .build();
             resourcesInitialized = true;
         }
     }
@@ -659,10 +666,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     /**
      * Wrapping {@link ResourceInjector} instance. Will first call the {@link TransienceValidatingResourceInjector}, to
      * ensure the fixture's approach of injecting the default classes (like the {@link EventBus} and {@link CommandBus}
-     * for example) is maintained. Afterward, the custom {@code ResourceInjector} provided through the {@link
-     * #registerResourceInjector(ResourceInjector)} is called. This will (depending on the implementation) inject more
-     * resources, as well as potentially override resources already injected by the {@code
-     * TransienceValidatingResourceInjector}.
+     * for example) is maintained. Afterward, the custom {@code ResourceInjector} provided through the
+     * {@link #registerResourceInjector(ResourceInjector)} is called. This will (depending on the implementation) inject
+     * more resources, as well as potentially override resources already injected by the
+     * {@code TransienceValidatingResourceInjector}.
      */
     private static class WrappingResourceInjector implements ResourceInjector {
 
