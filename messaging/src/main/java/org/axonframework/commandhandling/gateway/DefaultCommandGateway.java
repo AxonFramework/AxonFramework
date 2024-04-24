@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.retry.RetryScheduler;
+import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -51,7 +51,7 @@ public class DefaultCommandGateway implements CommandGateway {
 
     @Override
     public CommandResult send(@Nonnull Object command, @Nullable ProcessingContext processingContext) {
-        return new SimpleCommandResult(commandBus.dispatch(GenericCommandMessage.asCommandMessage(command),
+        return new FutureCommandResult(commandBus.dispatch(GenericCommandMessage.asCommandMessage(command),
                                                            processingContext)
                                                  .thenCompose(msg -> {
                                                      if (msg instanceof ResultMessage resultMessage

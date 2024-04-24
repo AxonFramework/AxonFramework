@@ -17,26 +17,30 @@
 package org.axonframework.messaging;
 
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
-class FluxMessageStreamTest extends MessageStreamTest<String> {
+class OnItemMessageStream<T extends Message<?>> implements MessageStream<T> {
 
-    @Override
-    MessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
-        return new FluxMessageStream<>(Flux.fromIterable(values));
+    private final MessageStream<T> delegate;
+    private final Consumer<T> handler;
+
+    public OnItemMessageStream(MessageStream<T> delegate, Consumer<T> handler) {
+        this.delegate = delegate;
+        this.handler = handler;
     }
 
     @Override
-    MessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
-        Flux<Message<String>> stringFlux = Flux.fromIterable(values).concatWith(Mono.error(failure));
-        return new FluxMessageStream<>(stringFlux);
+    public CompletableFuture<T> asCompletableFuture() {
+        return delegate.asCompletableFuture().thenApply(i -> {
+            handler.accept(i);
+            return i;
+        });
     }
 
     @Override
-    String createRandomValidStreamEntry() {
-        return "RandomValue" + ThreadLocalRandom.current().nextInt(10000);
+    public Flux<T> asFlux() {
+        return delegate.asFlux().doOnNext(handler);
     }
 }

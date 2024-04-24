@@ -14,29 +14,38 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.retry;
+package org.axonframework.messaging.retry;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.Message;
 
 import java.util.List;
 import javax.annotation.Nonnull;
 
+/**
+ * A retry policy that caps another policy to maximum number of retries
+ */
 public class MaxAttemptsPolicy implements RetryPolicy {
 
     private final RetryPolicy delegate;
     private final int maxAttempts;
 
+    /**
+     * Wraps the given {@code delegate}, enforcing the given maximum number of {@code retries}
+     *
+     * @param delegate The policy to use until the maximum number of retries is achieved
+     * @param retries  The maximum number of retries to allow
+     */
     public MaxAttemptsPolicy(RetryPolicy delegate, int retries) {
         this.delegate = delegate;
         this.maxAttempts = retries;
     }
 
     @Override
-    public Outcome defineFor(CommandMessage<?> commandMessage, Throwable cause,
-                             List<Class<? extends Throwable>[]> previousFailures) {
+    public Outcome defineFor(@Nonnull Message<?> message, @Nonnull Throwable cause,
+                             @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
         if (previousFailures.size() < maxAttempts) {
-            return delegate.defineFor(commandMessage, cause, previousFailures);
+            return delegate.defineFor(message, cause, previousFailures);
         } else {
             return Outcome.doNotReschedule();
         }

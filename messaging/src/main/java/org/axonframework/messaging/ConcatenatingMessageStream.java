@@ -16,30 +16,33 @@
 
 package org.axonframework.messaging;
 
+import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
-class SingleValueMessageStream<T extends Message<?>> implements MessageStream<T> {
+class ConcatenatingMessageStream<T extends Message<?>> implements MessageStream<T> {
 
-    private final CompletableFuture<T> value;
+    private final MessageStream<T> first;
+    private final MessageStream<T> second;
 
-    public SingleValueMessageStream(T value) {
-        this.value = CompletableFuture.completedFuture(value);
-    }
-
-    public SingleValueMessageStream(CompletableFuture<T> value) {
-        this.value = value;
+    public ConcatenatingMessageStream(@NotNull MessageStream<T> first, @NotNull MessageStream<T> second) {
+        this.first = first;
+        this.second = second;
     }
 
     @Override
     public CompletableFuture<T> asCompletableFuture() {
-        return value;
+        return first.asCompletableFuture().thenCompose(i -> {
+            if (i == null) {
+                return second.asCompletableFuture();
+            }
+            return CompletableFuture.completedFuture(i);
+        });
     }
 
     @Override
     public Flux<T> asFlux() {
-        return Flux.from(Mono.fromFuture(value));
+        return first.asFlux().concatWith(second.asFlux());
     }
 }

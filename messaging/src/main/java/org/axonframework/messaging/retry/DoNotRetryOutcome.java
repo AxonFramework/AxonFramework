@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.gateway;
+package org.axonframework.messaging.retry;
 
-import org.axonframework.commandhandling.retry.ExponentialBackOffRetryPolicy;
-import org.junit.jupiter.api.*;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+final class DoNotRetryOutcome implements RetryPolicy.Outcome {
 
-class ExponentialBackOffIntervalRetrySchedulerTest {
-
-    private ExponentialBackOffRetryPolicy testSubject;
-
-    @BeforeEach
-    void setup() {
-        testSubject = new ExponentialBackOffRetryPolicy(10);
+    @Override
+    public boolean shouldReschedule() {
+        return false;
     }
 
-    @Test
-    void scheduleRetry() {
-        fail("Not implemented yet");
+    @Override
+    public long rescheduleInterval() {
+        return 0;
+    }
+
+    @Override
+    public TimeUnit rescheduleIntervalTimeUnit() {
+        return null;
     }
 }

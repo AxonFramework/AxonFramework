@@ -14,32 +14,32 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.messaging.retry;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import java.util.concurrent.TimeUnit;
 
-import java.util.concurrent.CompletableFuture;
+final class RetryOutcome implements RetryPolicy.Outcome {
 
-class SingleValueMessageStream<T extends Message<?>> implements MessageStream<T> {
+    private final long interval;
+    private final TimeUnit timeUnit;
 
-    private final CompletableFuture<T> value;
-
-    public SingleValueMessageStream(T value) {
-        this.value = CompletableFuture.completedFuture(value);
-    }
-
-    public SingleValueMessageStream(CompletableFuture<T> value) {
-        this.value = value;
+    public RetryOutcome(long interval, TimeUnit timeUnit) {
+        this.interval = interval;
+        this.timeUnit = timeUnit;
     }
 
     @Override
-    public CompletableFuture<T> asCompletableFuture() {
-        return value;
+    public boolean shouldReschedule() {
+        return true;
     }
 
     @Override
-    public Flux<T> asFlux() {
-        return Flux.from(Mono.fromFuture(value));
+    public long rescheduleInterval() {
+        return interval;
+    }
+
+    @Override
+    public TimeUnit rescheduleIntervalTimeUnit() {
+        return timeUnit;
     }
 }

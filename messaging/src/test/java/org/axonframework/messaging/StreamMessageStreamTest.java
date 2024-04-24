@@ -21,7 +21,7 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-class StreamMessageStreamTest extends MessageStreamTest<StreamMessageStream<Message<String>>, String> {
+class StreamMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
     StreamMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {

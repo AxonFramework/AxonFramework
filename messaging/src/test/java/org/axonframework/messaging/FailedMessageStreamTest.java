@@ -20,7 +20,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 
-class FailedMessageStreamTest extends MessageStreamTest<FailedMessageStream<Message<Void>>, Void> {
+class FailedMessageStreamTest extends MessageStreamTest<Void> {
 
     @Override
     FailedMessageStream<Message<Void>> createTestSubject(List<Message<Void>> values) {

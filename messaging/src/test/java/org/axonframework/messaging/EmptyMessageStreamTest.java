@@ -20,16 +20,16 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 
-class EmptyMessageStreamTest extends MessageStreamTest<EmptyMessageStream, Void> {
+class EmptyMessageStreamTest extends MessageStreamTest<Void> {
 
     @Override
-    EmptyMessageStream createTestSubject(List<Message<Void>> values) {
+    EmptyMessageStream<Message<Void>> createTestSubject(List<Message<Void>> values) {
         Assumptions.assumeTrue(values.isEmpty(), "EmptyMessageStream doesn't support content");
         return EmptyMessageStream.instance();
     }
 
     @Override
-    EmptyMessageStream createTestSubject(List<Message<Void>> values, Exception failure) {
+    EmptyMessageStream<Message<Void>> createTestSubject(List<Message<Void>> values, Exception failure) {
         Assumptions.abort("EmptyMessageStream doesn't support failed streams");
         return EmptyMessageStream.instance();
     }

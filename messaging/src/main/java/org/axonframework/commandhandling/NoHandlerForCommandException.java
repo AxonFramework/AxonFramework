@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.retry.RetryScheduler;
+import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.common.AxonTransientException;
 
 import static java.lang.String.format;

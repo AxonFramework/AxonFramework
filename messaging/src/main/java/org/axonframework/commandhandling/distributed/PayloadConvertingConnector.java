@@ -19,27 +19,54 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.PayloadConverter;
 
+import java.lang.reflect.Type;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
-public class SerializingConnector<T> implements Connector {
+/**
+ * Connector implementation that converts the payload of outgoing messages into the expected format. This is generally a
+ * {@code byte[]} or another serialized form.
+ *
+ * @param <T> The type to convert the message's payload into.
+ */
+public class PayloadConvertingConnector<T> implements Connector {
 
     private final Connector delegate;
-    private final Serializer serializer;
-    private final Class<T> representation;
+    private final PayloadConverter converter;
+    private final Type representation;
 
-    public SerializingConnector(Connector delegate, Serializer serializer, Class<T> representation) {
+    /**
+     * Initialize the PayloadConvertingConnector to use given {@code converter} to convert each Message's payload into
+     * {@code representation} before passing it to given {@code delegate}.
+     *
+     * @param delegate       The delegate to pass converted messages to
+     * @param converter      The converter to use to convert each Message's payload
+     * @param representation The desired representation of forwarded Message's payload
+     */
+    public PayloadConvertingConnector(Connector delegate, PayloadConverter converter, Class<T> representation) {
+        this(delegate, converter, (Type) representation);
+    }
+
+    /**
+     * Initialize the PayloadConvertingConnector to use given {@code converter} to convert each Message's payload into
+     * {@code representation} before passing it to given {@code delegate}.
+     *
+     * @param delegate       The delegate to pass converted messages to
+     * @param converter      The converter to use to convert each Message's payload
+     * @param representation The desired representation of forwarded Message's payload
+     */
+    public PayloadConvertingConnector(Connector delegate, PayloadConverter converter, Type representation) {
         this.delegate = delegate;
-        this.serializer = serializer;
+        this.converter = converter;
         this.representation = representation;
     }
 
     @Override
     public CompletableFuture<? extends Message<?>> dispatch(CommandMessage<?> command,
                                                             ProcessingContext processingContext) {
-        CommandMessage<T> serializedCommand = command.withConvertedPayload(p -> serializer.convert(p, representation));
+        CommandMessage<T> serializedCommand = converter.convertPayload(command, representation);
         return delegate.dispatch(serializedCommand, processingContext);
     }
 
@@ -69,7 +96,7 @@ public class SerializingConnector<T> implements Connector {
 
         @Override
         public void success(Message<?> resultMessage) {
-            callback.success(resultMessage.withConvertedPayload(p -> serializer.convert(p, representation)));
+            callback.success(converter.convertPayload(resultMessage, representation));
         }
 
         @Override

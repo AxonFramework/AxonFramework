@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.retry;
+package org.axonframework.messaging.retry;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +25,8 @@ import java.util.function.Predicate;
  * <p/>
  * Comparison checks if any of configured classes is assignable from a tested failure instance.
  * <p/>
- * This predicate is intended to be used for configuring {@link RetryScheduler} implementations like in the following example:
+ * This predicate is intended to be used for configuring {@link RetryScheduler} implementations like in the following
+ * example:
  * <pre>
  * AsyncRetryScheduler myRetryScheduler = AsyncRetryScheduler
  *      .builder()
@@ -43,6 +44,7 @@ import java.util.function.Predicate;
  * @since 4.6.0
  */
 public class NonTransientExceptionClassesPredicate implements Predicate<Throwable> {
+
     private final List<Class<? extends Throwable>> nonTransientFailures;
 
     /**
@@ -51,7 +53,7 @@ public class NonTransientExceptionClassesPredicate implements Predicate<Throwabl
      * @param nonTransientFailures vararg list of non-transient class(es)
      */
     @SafeVarargs
-    public NonTransientExceptionClassesPredicate(Class<? extends Throwable> ...nonTransientFailures) {
+    public NonTransientExceptionClassesPredicate(Class<? extends Throwable>... nonTransientFailures) {
         this.nonTransientFailures = Arrays.asList(nonTransientFailures);
     }
 

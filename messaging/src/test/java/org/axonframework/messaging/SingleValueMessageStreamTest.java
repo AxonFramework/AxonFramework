@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
-class SingleValueMessageStreamTest extends MessageStreamTest<SingleValueMessageStream<Message<String>>, String> {
+class SingleValueMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
     SingleValueMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {

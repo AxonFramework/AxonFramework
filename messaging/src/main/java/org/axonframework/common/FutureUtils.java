@@ -17,6 +17,8 @@
 package org.axonframework.common;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
 /**
@@ -56,5 +58,20 @@ public abstract class FutureUtils {
                 future.completeExceptionally(e);
             }
         };
+    }
+
+    /**
+     * Unwrap given {@code exception} from wrappers added by CompletableFuture. More specifically, if the given
+     * {@code exception} is a {@link CompletionException} or {@link ExecutionException}, it returns the cause.
+     * Otherwise, it will return the exception as-is.
+     *
+     * @param exception The exception to unwrap
+     * @return the unwrapped exception
+     */
+    public static Throwable unwrap(Throwable exception) {
+        if (exception instanceof CompletionException || exception instanceof ExecutionException) {
+            return exception.getCause();
+        }
+        return exception;
     }
 }

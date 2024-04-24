@@ -23,12 +23,27 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
+/**
+ * A connector that resolves the priority of each Message and forwards it to a delegate. Downstream connectors may use
+ * this priority in their communication to Messaging platforms.
+ */
 public class PriorityResolvingConnector implements Connector {
 
     private final Connector delegate;
     private final PriorityResolver<? super CommandMessage<?>> priorityResolver;
 
-    public PriorityResolvingConnector(Connector delegate, PriorityResolver<? super CommandMessage<?>> priorityResolver) {
+    /**
+     * Initialize the PriortyResolvingConnector to resolve the priority using given {@code priorityResolver} before
+     * forwarding it to given {@code delegate}.
+     * <p>
+     * The priority of each Message is attached to the {@link ProcessingContext} using the
+     * {@link PriorityResolver#PRIORITY_KEY} key.
+     *
+     * @param delegate         The connector to forward Messages
+     * @param priorityResolver The function to resolve the Priority of each Message
+     */
+    public PriorityResolvingConnector(Connector delegate,
+                                      PriorityResolver<? super CommandMessage<?>> priorityResolver) {
         this.delegate = delegate;
         this.priorityResolver = priorityResolver;
     }
@@ -36,6 +51,7 @@ public class PriorityResolvingConnector implements Connector {
     @Override
     public CompletableFuture<? extends Message<?>> dispatch(CommandMessage<?> command,
                                                             ProcessingContext processingContext) {
+        priorityResolver.priorityFor(command);
         return delegate.dispatch(command, processingContext);
     }
 

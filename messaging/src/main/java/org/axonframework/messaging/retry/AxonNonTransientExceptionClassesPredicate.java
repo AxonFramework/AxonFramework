@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.retry;
+package org.axonframework.messaging.retry;
 
 import org.axonframework.common.AxonNonTransientException;
 

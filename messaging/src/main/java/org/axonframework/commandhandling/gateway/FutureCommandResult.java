@@ -20,12 +20,21 @@ import org.axonframework.messaging.Message;
 
 import java.util.concurrent.CompletableFuture;
 
-public class SimpleCommandResult implements CommandResult {
+/**
+ * CommandResult that wraps a completable future providing the Message that represents the result
+ */
+public class FutureCommandResult implements CommandResult {
 
     private final CompletableFuture<? extends Message<?>> completableFuture;
 
-    public SimpleCommandResult(CompletableFuture<? extends Message<?>> completableFuture) {
-        this.completableFuture = completableFuture;
+    /**
+     * Initializes the CommandResult based on the given {@code result} the completes when the result {@link Message}
+     * becomes available
+     *
+     * @param result The completable future that provides the result message when available
+     */
+    public FutureCommandResult(CompletableFuture<? extends Message<?>> result) {
+        this.completableFuture = result;
     }
 
     @Override

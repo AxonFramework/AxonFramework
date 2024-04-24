@@ -16,27 +16,28 @@
 
 package org.axonframework.messaging;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
-class FluxMessageStreamTest extends MessageStreamTest<String> {
+class ConcatenatingMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
-    MessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
-        return new FluxMessageStream<>(Flux.fromIterable(values));
+    ConcatenatingMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
+        if (values.isEmpty()) {
+            return new ConcatenatingMessageStream<>(MessageStream.empty(), MessageStream.empty());
+        } else if (values.size() == 1) {
+            return new ConcatenatingMessageStream<>(MessageStream.just(values.getFirst()), MessageStream.empty());
+        }
+        return new ConcatenatingMessageStream<>(MessageStream.just(values.getFirst()),
+                                                MessageStream.fromIterable(values.subList(1, values.size())));
     }
 
     @Override
     MessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
-        Flux<Message<String>> stringFlux = Flux.fromIterable(values).concatWith(Mono.error(failure));
-        return new FluxMessageStream<>(stringFlux);
+        return createTestSubject(values).concatWith(MessageStream.failed(failure));
     }
 
     @Override
     String createRandomValidStreamEntry() {
-        return "RandomValue" + ThreadLocalRandom.current().nextInt(10000);
+        return null;
     }
 }
