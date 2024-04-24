@@ -86,7 +86,7 @@ public interface MessageStream<T extends Message<?>> {
      *
      * @param failure The error to propagate to consumers of the stream
      * @param <T>     The declared type of Message in this stream
-     * @return
+     * @return a MessageStream that is completed exceptionally
      */
     static <T extends Message<?>> MessageStream<T> failed(Throwable failure) {
         return new FailedMessageStream<>(failure);

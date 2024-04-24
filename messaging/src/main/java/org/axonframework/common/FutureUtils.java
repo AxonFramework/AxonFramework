@@ -46,10 +46,24 @@ public abstract class FutureUtils {
         return null;
     }
 
+    /**
+     * Creates a CompletableFuture that was completed with the {@code null} value.
+     *
+     * @param <T> The declared type to return in the CompletableFuture
+     * @return a CompletableFuture that is completed with a {@code null} value
+     */
     public static <T> CompletableFuture<T> emptyCompletedFuture() {
         return CompletableFuture.completedFuture(null);
     }
 
+    /**
+     * Creates a function that can be passed to a CompletableFuture to complete given {@code future} with the same
+     * result as the CompletableFuture that this function is passed to
+     *
+     * @param future The future to complete
+     * @param <T>    The declared type of result from the CompletableFuture
+     * @return a function that completes another future with the same results
+     */
     public static <T> BiConsumer<T, Throwable> alsoComplete(CompletableFuture<T> future) {
         return (r, e) -> {
             if (e == null) {

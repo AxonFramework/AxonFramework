@@ -79,6 +79,7 @@ class MaxAttemptsPolicyTest {
     private List<Class<? extends Throwable>[]> failureCount(int count) {
         List<Class<? extends Throwable>[]> list = new ArrayList<>();
         for (int i = 0; i < count; i++) {
+            //noinspection unchecked
             list.add(new Class[]{Throwable.class});
         }
         return list;

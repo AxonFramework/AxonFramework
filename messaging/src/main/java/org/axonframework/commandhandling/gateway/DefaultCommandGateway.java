@@ -18,12 +18,10 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
@@ -41,10 +39,13 @@ import javax.annotation.Nullable;
  */
 public class DefaultCommandGateway implements CommandGateway {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultCommandGateway.class);
-
     private final CommandBus commandBus;
 
+    /**
+     * Initialize the CommandGateway to send commands to given {@code commandBus}.
+     *
+     * @param commandBus The command bus to send commands on
+     */
     public DefaultCommandGateway(CommandBus commandBus) {
         this.commandBus = commandBus;
     }
@@ -54,7 +55,7 @@ public class DefaultCommandGateway implements CommandGateway {
         return new FutureCommandResult(commandBus.dispatch(GenericCommandMessage.asCommandMessage(command),
                                                            processingContext)
                                                  .thenCompose(msg -> {
-                                                     if (msg instanceof ResultMessage resultMessage
+                                                     if (msg instanceof ResultMessage<?> resultMessage
                                                              && resultMessage.isExceptional()) {
                                                          return CompletableFuture.failedFuture(resultMessage.exceptionResult());
                                                      }

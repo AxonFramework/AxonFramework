@@ -87,7 +87,6 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldReturnedFailureIfRetrySchedulerReturnsFailure() {
-        Message<Object> successResult = GenericMessage.asMessage("OK");
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException("Simulating failure")));
         when(retryScheduler.scheduleRetry(any(), any(), any(), any())).thenAnswer(i -> MessageStream.failed(new MockException("Simulating failure")));
