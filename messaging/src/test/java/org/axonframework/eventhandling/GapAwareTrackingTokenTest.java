@@ -18,7 +18,10 @@ package org.axonframework.eventhandling;
 
 import org.junit.jupiter.api.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
@@ -66,6 +70,17 @@ class GapAwareTrackingTokenTest {
         assertTrue(counter.get() > 0, "The test did not seem to have generated any tokens");
         assertEquals(counter.get() - 1, currentToken.get().getIndex());
         assertEquals(emptySortedSet(), currentToken.get().getGaps());
+    }
+
+    @Test
+    void whenAdvancingToPositionGapsAheadOfThatPositionAreNeverCleanedUp() {
+        List<Long> gaps = asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L);
+        GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(100, gaps);
+
+        GapAwareTrackingToken actual = token.advanceTo(2L, 0);
+        assertTrue(actual.hasGaps());
+        assertIterableEquals(Arrays.asList(3L, 4L, 5L, 6L, 7L, 8L, 9L), actual.getGaps());
+        assertEquals(100, actual.getIndex());
     }
 
     @Test

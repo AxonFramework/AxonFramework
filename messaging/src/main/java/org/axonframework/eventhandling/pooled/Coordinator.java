@@ -898,7 +898,7 @@ class Coordinator {
                 lastScheduledToken = NoToken.INSTANCE;
             }
 
-            if (eventStream == null && !workPackages.isEmpty()) {
+            if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
                 eventStream = messageSource.openStream(trackingToken);
                 logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
                 availabilityCallbackSupported =
