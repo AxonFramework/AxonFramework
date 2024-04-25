@@ -20,6 +20,8 @@ package org.axonframework.spring.authorization;
  * Exception indicating that a command has been rejected due to a lack of authorization.
  *
  * @author Roald Bankras
+ *
+ * @since 4.10.0
  */
 public class UnauthorizedCommandException extends RuntimeException {
 

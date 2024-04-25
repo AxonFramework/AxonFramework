@@ -36,6 +36,8 @@ import java.util.Set;
  * Message interceptor that verifies authorization based on {@code @PreAuthorize} annotations on commands
  *
  * @author Roald Bankras
+ *
+ * @since 4.10.0
  */
 public class CommandAuthorizationInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
