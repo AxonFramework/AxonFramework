@@ -13,9 +13,10 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
- * Message dispatch interceptor that adds the {$code username} and {$code authorities} from the authorized principle
+ * Message dispatch interceptor that adds the {$code username} and {$code authorities} from the authorized principle.
  *
  * @author Roald Bankras
+ * @since 4.10.0
  */
 public class AuthorizationMessageDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
 
