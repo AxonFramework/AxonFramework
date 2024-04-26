@@ -16,8 +16,9 @@
 
 package org.axonframework.spring.authorization;
 
-import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import javax.annotation.Nonnull;
 
 
 /**
@@ -39,28 +41,31 @@ import java.util.Set;
  *
  * @since 4.10.0
  */
-public class CommandAuthorizationInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
+public class MessageAuthorizationInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
 
-    private static final Logger log = LoggerFactory.getLogger(CommandAuthorizationInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(MessageAuthorizationInterceptor.class);
 
     @Override
-    public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork,
-                         @javax.annotation.Nonnull InterceptorChain interceptorChain) throws Exception {
-        CommandMessage<?> command = unitOfWork.getMessage();
-        PreAuthorize annotation = command.getPayloadType().getAnnotation(PreAuthorize.class);
-        Set<GrantedAuthority> userId = Optional.ofNullable(command.getMetaData().get("authorities"))
+    public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
+        throws Exception {
+        T message = unitOfWork.getMessage();
+        if(! AnnotationUtils.isAnnotationPresent(message.getPayloadType(), PreAuthorize.class)) {
+            return interceptorChain.proceed();
+        }
+        PreAuthorize annotation = message.getPayloadType().getAnnotation(PreAuthorize.class);
+        Set<GrantedAuthority> userId = Optional.ofNullable(message.getMetaData().get("authorities"))
                                                .map(uId -> {
                                                    log.debug("Found authorities: {}", uId);
                                                    return new HashSet<>((List<GrantedAuthority>) uId);
                                                })
-                                               .orElseThrow(() -> new UnauthorizedCommandException(
+                                               .orElseThrow(() -> new UnauthorizedMessageException(
                                                        "No authorities found"));
 
-        log.debug("Authorizing for {} and {}", command.getCommandName(), annotation.value());
+        log.debug("Authorizing for {} and {}", message.getPayloadType().getName(), annotation.value());
         if (userId.contains(new SimpleGrantedAuthority(annotation.value()))) {
             return interceptorChain.proceed();
         }
-        throw new UnauthorizedCommandException("Unauthorized command");
+        throw new UnauthorizedMessageException("Unauthorized message " + message.getIdentifier());
     }
 }
 

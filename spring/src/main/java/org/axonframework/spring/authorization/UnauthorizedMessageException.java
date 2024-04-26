@@ -16,21 +16,23 @@
 
 package org.axonframework.spring.authorization;
 
+import org.axonframework.common.AxonNonTransientException;
+
 /**
- * Exception indicating that a command has been rejected due to a lack of authorization.
+ * Exception indicating that a message has been rejected due to a lack of authorization.
  *
  * @author Roald Bankras
  *
  * @since 4.10.0
  */
-public class UnauthorizedCommandException extends RuntimeException {
+public class UnauthorizedMessageException extends AxonNonTransientException {
 
     /**
      * Construct the exception with the given {$code message}
      *
-     * @param message the message describing the cause
+     * @param message The message describing the cause
      */
-    public UnauthorizedCommandException(String message) {
+    public UnauthorizedMessageException(String message) {
         super(message);
     }
 }

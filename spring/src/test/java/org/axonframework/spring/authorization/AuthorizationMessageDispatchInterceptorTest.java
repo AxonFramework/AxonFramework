@@ -31,8 +31,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.UUID;
 
+import static org.hamcrest.core.StringStartsWith.startsWith;
+
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {AuthorizationMessageDispatchInterceptor.class, CommandAuthorizationInterceptor.class})
+@ContextConfiguration(classes = {AuthorizationMessageDispatchInterceptor.class, MessageAuthorizationInterceptor.class})
 class AuthorizationMessageDispatchInterceptorTest {
 
     private FixtureConfiguration<TestAggregate> fixture;
@@ -46,8 +48,8 @@ class AuthorizationMessageDispatchInterceptorTest {
     @WithMockUser(username = "admin", authorities = {"aggregate.create"})
     public void shouldAuthorizeAndPropagateUsername() {
         UUID aggregateId = UUID.randomUUID();
-        fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor())
-               .registerCommandHandlerInterceptor(new CommandAuthorizationInterceptor())
+        fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor<>())
+               .registerCommandHandlerInterceptor(new MessageAuthorizationInterceptor<>())
                .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
                        "username")))
                .given()
@@ -59,15 +61,28 @@ class AuthorizationMessageDispatchInterceptorTest {
     }
 
     @Test
-    @WithMockUser(username = "user", roles = {""})
-    public void shouldNotAuthorize() {
+    public void shouldNotAuthorizeOnNoAuthentication() {
         UUID aggregateId = UUID.randomUUID();
-        fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor())
-               .registerCommandHandlerInterceptor(new CommandAuthorizationInterceptor())
+        fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor<>())
+               .registerCommandHandlerInterceptor(new MessageAuthorizationInterceptor<>())
                .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
                        "username")))
                .given()
                .when(new CreateAggregateCommand(aggregateId))
-               .expectExceptionMessage("Unauthorized command");
+               .expectExceptionMessage("No authorities found");
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {""})
+    public void shouldNotAuthorizeWhenRolesMismatch() {
+        UUID aggregateId = UUID.randomUUID();
+        fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor<>())
+               .registerCommandHandlerInterceptor(new MessageAuthorizationInterceptor<>())
+               .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
+                       "username")))
+               .given()
+               .when(new CreateAggregateCommand(aggregateId))
+               .expectException(UnauthorizedMessageException.class)
+               .expectExceptionMessage(startsWith("Unauthorized message "));
     }
 }
