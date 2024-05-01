@@ -21,15 +21,15 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-class IterableMessageStreamTest extends MessageStreamTest<IterableMessageStream<String>, String> {
+class IterableMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
-    IterableMessageStream<String> createTestSubject(List<String> values) {
+    IterableMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
         return new IterableMessageStream<>(values);
     }
 
     @Override
-    IterableMessageStream<String> createTestSubject(List<String> values, Exception failure) {
+    IterableMessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
         Assumptions.abort("IterableMessageStream doesn't support failures");
         return null;
     }

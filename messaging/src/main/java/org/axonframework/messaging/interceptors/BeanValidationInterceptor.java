@@ -67,20 +67,20 @@ public class BeanValidationInterceptor<T extends Message<?>>
     }
 
     @Override
-    public <M extends T, R> MessageStream<? extends R> interceptOnDispatch(@Nonnull M message,
+    public <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnDispatch(@Nonnull M message,
                                                                            @Nullable ProcessingContext context,
                                                                            @Nonnull InterceptorChain<M, R> interceptorChain) {
         return intercept(message, context, interceptorChain);
     }
 
     @Override
-    public <M extends T, R> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
+    public <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
                                                                          @Nonnull ProcessingContext context,
                                                                          @Nonnull InterceptorChain<M, R> interceptorChain) {
         return intercept(message, context, interceptorChain);
     }
 
-    private <M extends T, R> MessageStream<? extends R> intercept(M message, @Nullable ProcessingContext context,
+    private <M extends T, R extends Message<?>> MessageStream<? extends R> intercept(M message, @Nullable ProcessingContext context,
                                                                   InterceptorChain<M, R> interceptorChain) {
         Set<ConstraintViolation<Object>> violations = validate(message);
         if (!violations.isEmpty()) {

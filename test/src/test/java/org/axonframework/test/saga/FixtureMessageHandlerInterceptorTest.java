@@ -22,6 +22,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
@@ -141,7 +142,7 @@ class FixtureMessageHandlerInterceptorTest {
         public void on(SagaStartEvent event,
                        @MetaDataValue(META_DATA_KEY) String value,
                        CommandGateway commandGateway) {
-            commandGateway.send(new StartProcessCommand(event.getIdentifier(), value));
+            commandGateway.send(new StartProcessCommand(event.getIdentifier(), value), ProcessingContext.NONE);
         }
     }
 }

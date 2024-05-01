@@ -44,7 +44,6 @@ class FixtureTest_ScheduledEvents {
     @BeforeEach
     void setUp() {
         testSubject = new SagaTestFixture<>(EventSchedulingSaga.class);
-        testSubject.registerCommandGateway(StubGateway.class);
     }
 
     @Test

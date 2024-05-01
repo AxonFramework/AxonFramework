@@ -39,7 +39,7 @@ class ConfigurationParameterResolverFactoryTest {
     @BeforeEach
     void setUp() throws Exception {
         configuration = mock(Configuration.class);
-        commandBus = SimpleCommandBus.builder().build();
+        commandBus = new SimpleCommandBus();
         when(configuration.getComponent(CommandBus.class)).thenReturn(commandBus);
         testSubject = new ConfigurationParameterResolverFactory(configuration);
 

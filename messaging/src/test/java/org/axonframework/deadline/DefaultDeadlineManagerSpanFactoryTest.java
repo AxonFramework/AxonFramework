@@ -16,9 +16,6 @@
 
 package org.axonframework.deadline;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
-import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.tracing.IntermediateSpanFactoryTest;
 import org.axonframework.tracing.SpanFactory;

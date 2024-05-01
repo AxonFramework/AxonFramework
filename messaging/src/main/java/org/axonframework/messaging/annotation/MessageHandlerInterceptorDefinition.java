@@ -112,15 +112,15 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public MessageStream<?> handle(@Nonnull Message<?> message,
-                                       @Nonnull ProcessingContext processingContext,
-                                       @Nullable T target) {
+        public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
+                                                          @Nonnull ProcessingContext processingContext,
+                                                          @Nullable T target) {
             InterceptorChain<Message<?>, ?> chain = InterceptorChainParameterResolverFactory.currentInterceptorChain(
                     processingContext);
             // TODO - Provide implementation that handles exceptions in streams with more than one item
             return MessageStream.fromFuture(
                     chain.proceed(message, processingContext)
-                         .map(r -> (Object) r)
+                         .map(r -> (Message<Object>) r)
                          .asCompletableFuture()
                          .exceptionallyCompose(error -> {
                              if (expectedResultType.isInstance(error)) {
@@ -132,7 +132,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                                      pc -> {
                                          if (super.canHandle(message, pc)) {
                                              return super.handle(message, pc, target)
-                                                         .map(r -> (Object) r)
+                                                         .map(r -> (Message<Object>) r)
                                                          .asCompletableFuture();
                                          }
                                          return CompletableFuture.failedFuture(error);

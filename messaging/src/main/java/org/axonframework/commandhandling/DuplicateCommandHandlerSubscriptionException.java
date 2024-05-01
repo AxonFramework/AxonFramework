@@ -17,10 +17,12 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 
 /**
- * Exception indicating a duplicate Command Handler was subscribed whilst this behavior is purposefully guarded against.
+ * Exception indicating a duplicate Command Handler was subscribed whilst this behavior is purposefully guarded
+ * against.
  *
  * @author Steven van Beelen
  * @since 4.2
@@ -30,21 +32,21 @@ public class DuplicateCommandHandlerSubscriptionException extends AxonNonTransie
     private static final long serialVersionUID = 7168111526309151296L;
 
     /**
-     * Initialize a duplicate command handler subscription exception using the given {@code initialHandler} and {@code
-     * duplicateHandler} to form a specific message.
+     * Initialize a duplicate command handler subscription exception using the given {@code initialHandler} and
+     * {@code duplicateHandler} to form a specific message.
      *
      * @param commandName      The name of the command for which the duplicate was detected
      * @param initialHandler   the initial {@link MessageHandler} for which a duplicate was encountered
      * @param duplicateHandler the duplicated {@link MessageHandler}
      */
     public DuplicateCommandHandlerSubscriptionException(String commandName,
-                                                        MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> initialHandler,
-                                                        MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> duplicateHandler) {
-        this(String.format("A duplicate Command Handler for command [%s] has been subscribed residing in class [%s]"
-                                   + " that would override an identical handler in class [%s].",
+                                                        MessageHandler<? super CommandMessage<?>, ? extends Message<?>> initialHandler,
+                                                        MessageHandler<? super CommandMessage<?>, ? extends Message<?>> duplicateHandler) {
+        this(String.format("Duplicate subscription for command [%s] detected. Registration of handler [%s] "
+                                   + " conflicts with previously registered handler [%s].",
                            commandName,
-                           duplicateHandler.getTargetType().getName(),
-                           initialHandler.getTargetType().getName()
+                           duplicateHandler,
+                           initialHandler
         ));
     }
 
@@ -56,5 +58,4 @@ public class DuplicateCommandHandlerSubscriptionException extends AxonNonTransie
     public DuplicateCommandHandlerSubscriptionException(String message) {
         super(message);
     }
-
 }

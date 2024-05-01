@@ -20,35 +20,37 @@ import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class MessageStreamTest<T extends MessageStream<V>, V> {
+public abstract class MessageStreamTest<V> {
 
-    abstract T createTestSubject(List<V> values);
+    abstract MessageStream<Message<V>> createTestSubject(List<Message<V>> values);
 
-    abstract T createTestSubject(List<V> values, Exception failure);
+    abstract MessageStream<Message<V>> createTestSubject(List<Message<V>> values, Exception failure);
 
     abstract V createRandomValidStreamEntry();
 
     @Test
     void shouldMapSingleValue_Future() {
-        V in = createRandomValidStreamEntry();
-        V out = createRandomValidStreamEntry();
+        Message<V> in = GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> out = GenericMessage.asMessage(createRandomValidStreamEntry());
 
-        T testSubject = createTestSubject(List.of(in));
-        V actual = testSubject.map(input -> out).asCompletableFuture().join();
+        MessageStream<Message<V>> testSubject = createTestSubject(List.of(in));
+        var actual = testSubject.map(input -> out).asCompletableFuture().join();
         assertSame(out, actual);
     }
 
     @Test
     void shouldMapSingleValue_Flux() {
-        V in = createRandomValidStreamEntry();
-        V out = createRandomValidStreamEntry();
+        Message<V> in = GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> out = GenericMessage.asMessage(createRandomValidStreamEntry());
 
-        T testSubject = createTestSubject(List.of(in));
+        MessageStream<Message<V>> testSubject = createTestSubject(List.of(in));
         StepVerifier.create(testSubject.map(input -> out).asFlux())
                     .expectNext(out)
                     .verifyComplete();
@@ -56,12 +58,12 @@ public abstract class MessageStreamTest<T extends MessageStream<V>, V> {
 
     @Test
     void shouldMapMultipleValues_Flux() {
-        V in1 = createRandomValidStreamEntry();
-        V out1 = createRandomValidStreamEntry();
-        V in2 = createRandomValidStreamEntry();
-        V out2 = createRandomValidStreamEntry();
+        Message<V> in1 = GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> out1 = GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> in2 = GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> out2 = GenericMessage.asMessage(createRandomValidStreamEntry());
 
-        T testSubject = createTestSubject(List.of(in1, in2));
+        MessageStream<Message<V>> testSubject = createTestSubject(List.of(in1, in2));
         StepVerifier.create(testSubject.map(input -> input == in1 ? out1 : out2).asFlux())
                     .expectNext(out1, out2)
                     .verifyComplete();
@@ -69,10 +71,10 @@ public abstract class MessageStreamTest<T extends MessageStream<V>, V> {
 
     @Test
     void shouldMapValuesUntilFailure_Flux() {
-        V in = createRandomValidStreamEntry();
-        V out = createRandomValidStreamEntry();
+        Message<V> in = GenericMessage.asMessage(createRandomValidStreamEntry());
+        Message<V> out = GenericMessage.asMessage(createRandomValidStreamEntry());
 
-        MessageStream<V> testSubject = createTestSubject(List.of(in), new MockException())
+        MessageStream<Message<V>> testSubject = createTestSubject(List.of(in), new MockException())
                 .map(input -> out)
                 .onErrorContinue(MessageStream::failed);
 
@@ -93,6 +95,14 @@ public abstract class MessageStreamTest<T extends MessageStream<V>, V> {
         Object actual = testSubject.asCompletableFuture().join();
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
         assertNull(actual, "Expected null value from empty stream");
+    }
+
+    @Test
+    void shouldCompleteWithNullOnEmptyList() {
+        MessageStream<Message<V>> testSubject = createTestSubject(Collections.emptyList());
+        CompletableFuture<Message<V>> actual = testSubject.asCompletableFuture();
+
+        assertNull(actual.resultNow());
     }
 
     @Test
@@ -121,9 +131,11 @@ public abstract class MessageStreamTest<T extends MessageStream<V>, V> {
     }
 
     @Test
-    void shouldEmitFailure() {
+    void shouldEmitOriginalExceptionAsFailure() {
         MessageStream<?> testSubject = createTestSubject(List.of(), new MockException());
 
-        assertTrue(testSubject.asCompletableFuture().isCompletedExceptionally());
+        CompletableFuture<?> actual = testSubject.asCompletableFuture();
+        assertTrue(actual.isCompletedExceptionally());
+        assertInstanceOf(MockException.class, actual.exceptionNow());
     }
 }

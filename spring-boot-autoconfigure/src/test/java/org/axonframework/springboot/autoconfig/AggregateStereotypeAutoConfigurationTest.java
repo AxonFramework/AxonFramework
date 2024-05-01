@@ -88,7 +88,7 @@ class AggregateStereotypeAutoConfigurationTest {
         testApplicationContext.run(context -> {
             // Publish the first command to create the TestAggregate
             CommandGateway commandGateway = context.getBean(DefaultCommandGateway.class);
-            String aggregateId = commandGateway.sendAndWait(new CreateTestAggregate());
+            String aggregateId = commandGateway.sendAndWait(new CreateTestAggregate(), String.class);
 
             SnapshotTriggerDefinition snapshotTriggerDefinition =
                     context.getBean("testSnapshotTriggerDefinition", SnapshotTriggerDefinition.class);
@@ -121,7 +121,7 @@ class AggregateStereotypeAutoConfigurationTest {
         testApplicationContext.run(context -> {
             // Publish the first command to create the TestAggregate
             CommandGateway commandGateway = context.getBean(DefaultCommandGateway.class);
-            String aggregateId = commandGateway.sendAndWait(new CreateCustomRepoTestAggregate());
+            String aggregateId = commandGateway.sendAndWait(new CreateCustomRepoTestAggregate(), String.class);
 
             //noinspection unchecked
             Repository<TestContext.CustomRepoTestAggregate> testRepository =

@@ -26,11 +26,11 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.modelling.saga.StartSaga;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -50,8 +50,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class StubSaga {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
-    @Autowired
-    private transient StubGateway stubGateway;
     @Inject
     private transient EventScheduler scheduler;
     @Inject
@@ -98,7 +96,7 @@ public class StubSaga {
         handledEvents.add(event);
         assertFalse(assertion.get());
         assertion.set(true);
-        commandGateway.send(new ResolveParameterCommand(event.getIdentifier(), assertion));
+        commandGateway.send(new ResolveParameterCommand(event.getIdentifier(), assertion), ProcessingContext.NONE);
     }
 
     @EndSaga
@@ -116,9 +114,9 @@ public class StubSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleTriggerEvent(TimerTriggeredEvent event) {
         handledEvents.add(event);
-        String result = stubGateway.send("Say hi!");
+        String result = commandGateway.send("Say hi!", ProcessingContext.NONE, String.class).join();
         if (result != null) {
-            stubGateway.send(result);
+            commandGateway.send(result, ProcessingContext.NONE);
         }
     }
 

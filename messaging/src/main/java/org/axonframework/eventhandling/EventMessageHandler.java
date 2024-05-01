@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.FutureUtils;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -32,7 +32,7 @@ import java.util.Objects;
  * @see EventHandler
  * @since 0.1
  */
-public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Void> {
+public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Message<Void>> {
 
     /**
      * Process the given event. The implementation may decide to process or skip the given event. It is highly
@@ -44,7 +44,7 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Voi
      */
     Object handleSync(EventMessage<?> event) throws Exception;
 
-    default MessageStream<Void> handle(EventMessage<?> event, ProcessingContext processingContext) {
+    default MessageStream<Message<Void>> handle(EventMessage<?> event, ProcessingContext processingContext) {
         try {
             handleSync(event);
             return MessageStream.empty();

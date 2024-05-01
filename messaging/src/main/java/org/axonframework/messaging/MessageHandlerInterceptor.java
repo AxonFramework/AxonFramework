@@ -52,7 +52,7 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
     Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception;
 
-    default <M extends T, R> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
+    default <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
                                                                           @Nonnull ProcessingContext context,
                                                                           @Nonnull InterceptorChain<M, R> interceptorChain) {
         throw new UnsupportedOperationException("Not implemented yet");

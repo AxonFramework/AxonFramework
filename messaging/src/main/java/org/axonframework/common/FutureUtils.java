@@ -17,6 +17,8 @@
 package org.axonframework.common;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
 /**
@@ -44,10 +46,24 @@ public abstract class FutureUtils {
         return null;
     }
 
+    /**
+     * Creates a CompletableFuture that was completed with the {@code null} value.
+     *
+     * @param <T> The declared type to return in the CompletableFuture
+     * @return a CompletableFuture that is completed with a {@code null} value
+     */
     public static <T> CompletableFuture<T> emptyCompletedFuture() {
         return CompletableFuture.completedFuture(null);
     }
 
+    /**
+     * Creates a function that can be passed to a CompletableFuture to complete given {@code future} with the same
+     * result as the CompletableFuture that this function is passed to
+     *
+     * @param future The future to complete
+     * @param <T>    The declared type of result from the CompletableFuture
+     * @return a function that completes another future with the same results
+     */
     public static <T> BiConsumer<T, Throwable> alsoComplete(CompletableFuture<T> future) {
         return (r, e) -> {
             if (e == null) {
@@ -56,5 +72,20 @@ public abstract class FutureUtils {
                 future.completeExceptionally(e);
             }
         };
+    }
+
+    /**
+     * Unwrap given {@code exception} from wrappers added by CompletableFuture. More specifically, if the given
+     * {@code exception} is a {@link CompletionException} or {@link ExecutionException}, it returns the cause.
+     * Otherwise, it will return the exception as-is.
+     *
+     * @param exception The exception to unwrap
+     * @return the unwrapped exception
+     */
+    public static Throwable unwrap(Throwable exception) {
+        if (exception instanceof CompletionException || exception instanceof ExecutionException) {
+            return exception.getCause();
+        }
+        return exception;
     }
 }

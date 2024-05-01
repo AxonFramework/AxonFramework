@@ -28,7 +28,8 @@ import java.util.Iterator;
  * @author Allard Buijze
  * @since 0.5
  */
-public class DefaultInterceptorChain<T extends Message<?>, R> implements InterceptorChain<T, R> {
+@Deprecated
+public class DefaultInterceptorChain<T extends Message<?>, R extends Message<?>> implements InterceptorChain<T, R> {
 
     private final MessageHandler<? super T, R> handler;
     private final Iterator<? extends MessageHandlerInterceptor<? super T>> chain;

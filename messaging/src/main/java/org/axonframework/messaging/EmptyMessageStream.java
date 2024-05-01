@@ -16,41 +16,48 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.common.FutureUtils;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
-class EmptyMessageStream implements MessageStream<Void> {
+class EmptyMessageStream<T extends Message<?>> implements MessageStream<T> {
 
-    public static final EmptyMessageStream INSTANCE = new EmptyMessageStream();
-
-    public static EmptyMessageStream instance() {
-        return INSTANCE;
-    }
+    @SuppressWarnings("rawtypes")
+    private static final EmptyMessageStream INSTANCE = new EmptyMessageStream();
 
     private EmptyMessageStream() {
     }
 
-    @Override
-    public CompletableFuture<Void> asCompletableFuture() {
-        return FutureUtils.emptyCompletedFuture();
+    public static <T extends Message<?>> EmptyMessageStream<T> instance() {
+        //noinspection unchecked
+        return INSTANCE;
     }
 
     @Override
-    public Flux<Void> asFlux() {
+    public CompletableFuture<T> asCompletableFuture() {
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public Flux<T> asFlux() {
         return Flux.empty();
     }
 
     @Override
-    public <R> MessageStream<R> map(Function<Void, R> mapper) {
+    public <R extends Message<?>> MessageStream<R> map(Function<T, R> mapper) {
         //noinspection unchecked
         return (MessageStream<R>) this;
     }
 
     @Override
-    public MessageStream<Void> whenComplete(Runnable completeHandler) {
+    public MessageStream<T> onNextItem(Consumer<T> handler) {
+        return this;
+    }
+
+    @Override
+    public MessageStream<T> whenComplete(Runnable completeHandler) {
         try {
             completeHandler.run();
             return this;
@@ -60,7 +67,7 @@ class EmptyMessageStream implements MessageStream<Void> {
     }
 
     @Override
-    public MessageStream<Void> onErrorContinue(Function<Throwable, MessageStream<Void>> onError) {
+    public MessageStream<T> onErrorContinue(Function<Throwable, MessageStream<T>> onError) {
         return this;
     }
 }

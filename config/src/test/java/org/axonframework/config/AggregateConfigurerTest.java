@@ -19,20 +19,17 @@ package org.axonframework.config;
 import com.thoughtworks.xstream.XStream;
 import jakarta.persistence.EntityManager;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
@@ -40,11 +37,11 @@ import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -102,52 +99,6 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void configuredDisruptorCommandBusCreatesTheRepository() {
-        //noinspection unchecked
-        Repository<Object> expectedRepository = mock(Repository.class);
-
-        DisruptorCommandBus disruptorCommandBus = mock(DisruptorCommandBus.class);
-        when(disruptorCommandBus.createRepository(any(), any(), any(), any(), any(), any()))
-                .thenReturn(expectedRepository);
-        when(mockConfiguration.commandBus()).thenReturn(disruptorCommandBus);
-
-        testSubject.initialize(mockConfiguration);
-
-        Repository<TestAggregate> resultRepository = testSubject.repository();
-
-        assertEquals(expectedRepository, resultRepository);
-        //noinspection unchecked
-        verify(disruptorCommandBus).createRepository(
-                eq(testEventStore), isA(GenericAggregateFactory.class), eq(NoSnapshotTriggerDefinition.INSTANCE),
-                eq(testParameterResolverFactory), any(), any()
-        );
-    }
-
-    @Test
-    void configuredDisruptorCommandBusAsLocalSegmentCreatesTheRepository() {
-        //noinspection unchecked
-        Repository<Object> expectedRepository = mock(Repository.class);
-
-        DisruptorCommandBus disruptorCommandBus = mock(DisruptorCommandBus.class);
-        when(disruptorCommandBus.createRepository(any(), any(), any(), any(), any(), any()))
-                .thenReturn(expectedRepository);
-        DistributedCommandBus distributedCommandBusImplementation = mock(DistributedCommandBus.class);
-        when(distributedCommandBusImplementation.localSegment()).thenReturn(disruptorCommandBus);
-        when(mockConfiguration.commandBus()).thenReturn(distributedCommandBusImplementation);
-
-        testSubject.initialize(mockConfiguration);
-
-        Repository<TestAggregate> resultRepository = testSubject.repository();
-
-        assertEquals(expectedRepository, resultRepository);
-        //noinspection unchecked
-        verify(disruptorCommandBus).createRepository(
-                eq(testEventStore), isA(GenericAggregateFactory.class), eq(NoSnapshotTriggerDefinition.INSTANCE),
-                eq(testParameterResolverFactory), any(), any()
-        );
-    }
-
-    @Test
     void polymorphicConfig() {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
                                                                         .withSubtypes(B.class);
@@ -159,11 +110,11 @@ public class AggregateConfigurerTest {
         configuration.start();
 
         CommandGateway commandGateway = configuration.commandGateway();
-        String aggregateAId = commandGateway.sendAndWait(new CreateACommand("123"));
-        String aggregateBId = commandGateway.sendAndWait(new CreateBCommand("456"));
-        String result1 = commandGateway.sendAndWait(new DoSomethingCommand(aggregateAId));
-        String result2 = commandGateway.sendAndWait(new DoSomethingCommand(aggregateBId));
-        String result3 = commandGateway.sendAndWait(new BSpecificCommand(aggregateBId));
+        String aggregateAId = commandGateway.send(new CreateACommand("123"), ProcessingContext.NONE, String.class).join();
+        String aggregateBId = commandGateway.send(new CreateBCommand("456"), ProcessingContext.NONE, String.class).join();
+        String result1 = commandGateway.send(new DoSomethingCommand(aggregateAId), ProcessingContext.NONE, String.class).join();
+        String result2 = commandGateway.send(new DoSomethingCommand(aggregateBId), ProcessingContext.NONE, String.class).join();
+        String result3 = commandGateway.send(new BSpecificCommand(aggregateBId), ProcessingContext.NONE, String.class).join();
         assertEquals("A123", result1);
         assertEquals("B456", result2);
         assertEquals("bSpecific456", result3);
@@ -238,7 +189,7 @@ public class AggregateConfigurerTest {
 
         CommandGateway commandGateway = config.commandGateway();
         String testAggregateIdentifier = "123";
-        commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
+        commandGateway.send(new CreateACommand(testAggregateIdentifier), ProcessingContext.NONE).getResultMessage().join();
         verify(lockFactory).obtainLock(testAggregateIdentifier);
 
         config.shutdown();

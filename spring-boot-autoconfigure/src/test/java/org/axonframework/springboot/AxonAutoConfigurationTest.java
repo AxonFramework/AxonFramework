@@ -127,8 +127,8 @@ class AxonAutoConfigurationTest {
     void ambiguousComponentsThrowExceptionWhenRequestedFromConfiguration() {
         ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
-                .withBean("gatewayOne", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build())
-                .withBean("gatewayTwo", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build())
+                .withBean("gatewayOne", CommandGateway.class, () -> new DefaultCommandGateway(new SimpleCommandBus()))
+                .withBean("gatewayTwo", CommandGateway.class, () -> new DefaultCommandGateway(new SimpleCommandBus()))
                 .withPropertyValues("axon.axonserver.enabled=false");
 
         AxonConfigurationException actual = assertThrows(AxonConfigurationException.class, () -> {
@@ -138,7 +138,6 @@ class AxonAutoConfigurationTest {
         assertTrue(actual.getMessage().contains("CommandGateway"));
         assertTrue(actual.getMessage().contains("gatewayOne"));
         assertTrue(actual.getMessage().contains("gatewayTwo"));
-
     }
 
     @Test
@@ -174,11 +173,11 @@ class AxonAutoConfigurationTest {
                 .withUserConfiguration(Context.class)
                 .withBean("gatewayOne",
                           CommandGateway.class,
-                          () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build(),
+                          () -> new DefaultCommandGateway(new SimpleCommandBus()),
                           beanDefinition -> beanDefinition.setPrimary(true))
                 .withBean("gatewayTwo",
                           CommandGateway.class,
-                          () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build(),
+                          () -> new DefaultCommandGateway(new SimpleCommandBus()),
                           beanDefinition -> beanDefinition.setPrimary(true))
                 .withPropertyValues("axon.axonserver.enabled=false");
 
@@ -195,15 +194,18 @@ class AxonAutoConfigurationTest {
     void ambiguousBeanDependenciesThrowException() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
-                .withBean("gatewayOne", CommandBus.class, () -> SimpleCommandBus.builder().build())
-                .withBean("gatewayTwo", CommandBus.class, () -> SimpleCommandBus.builder().build())
+                .withBean("gatewayOne", CommandBus.class, SimpleCommandBus::new)
+                .withBean("gatewayTwo", CommandBus.class, SimpleCommandBus::new)
                 .withPropertyValues("axon.axonserver.enabled=false")
                 .run(ctx -> {
                     Throwable startupFailure = ctx.getStartupFailure();
                     assertTrue(startupFailure instanceof UnsatisfiedDependencyException);
-                    assertTrue(startupFailure.getMessage().contains("CommandBus"), "Expected mention of 'CommandBus' in: " + startupFailure.getMessage());
-                    assertTrue(startupFailure.getMessage().contains("gatewayOne"), "Expected mention of 'gatewayOne' in: " + startupFailure.getMessage());
-                    assertTrue(startupFailure.getMessage().contains("gatewayTwo"), "Expected mention of 'gatewayTwo' in: " + startupFailure.getMessage());
+                    assertTrue(startupFailure.getMessage().contains("CommandBus"),
+                               "Expected mention of 'CommandBus' in: " + startupFailure.getMessage());
+                    assertTrue(startupFailure.getMessage().contains("gatewayOne"),
+                               "Expected mention of 'gatewayOne' in: " + startupFailure.getMessage());
+                    assertTrue(startupFailure.getMessage().contains("gatewayTwo"),
+                               "Expected mention of 'gatewayTwo' in: " + startupFailure.getMessage());
                 });
     }
 
@@ -323,6 +325,7 @@ class AxonAutoConfigurationTest {
     }
 
     private class CustomLifecycleBean implements Lifecycle {
+
         private boolean invoked;
 
         @Override

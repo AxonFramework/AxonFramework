@@ -21,7 +21,7 @@ import reactor.core.publisher.Flux;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-public class OnErrorContinueMessageStream<T> implements MessageStream<T> {
+public class OnErrorContinueMessageStream<T extends Message<?>> implements MessageStream<T> {
 
     private final MessageStream<T> delegate;
     private final Function<Throwable, MessageStream<T>> onError;

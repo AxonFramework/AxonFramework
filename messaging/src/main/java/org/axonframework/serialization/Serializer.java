@@ -16,6 +16,7 @@
 
 package org.axonframework.serialization;
 
+import java.lang.reflect.Type;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -29,45 +30,53 @@ import javax.annotation.Nullable;
 public interface Serializer {
 
     /**
-     * Serialize the given {@code object} into a Serialized Object containing the given
-     * {@code expectedRepresentation}.
+     * Serialize the given {@code object} into a Serialized Object containing the given {@code expectedRepresentation}.
      * <p/>
-     * Use {@link #canSerializeTo(Class)} to detect whether the {@code expectedRepresentation} is supported by
-     * this serializer.
+     * Use {@link #canSerializeTo(Class)} to detect whether the {@code expectedRepresentation} is supported by this
+     * serializer.
      *
      * @param object                 The object to serialize
      * @param expectedRepresentation The expected data type representing the serialized object
      * @param <T>                    The expected data type representing the serialized object
      * @return the instance representing the serialized object.
      */
+    @Deprecated
     <T> SerializedObject<T> serialize(@Nullable Object object, @Nonnull Class<T> expectedRepresentation);
+
+    default <T> T convert(@Nullable Object source, @Nonnull Class<T> targetRepresentation) {
+        return convert(source, (Type) targetRepresentation);
+    }
+
+    default <T> T convert(@Nullable Object source, @Nonnull Type targetRepresentation) {
+        throw new UnsupportedOperationException("Not supported by this serializer");
+    }
 
     /**
      * Indicates whether this Serializer is capable of serializing to the given {@code expectedRepresentation}.
      * <p/>
-     * When {@code true}, this does *not* guarantee that the serialization and (optional) conversion will also
-     * succeed when executed. For example, when a serializer produces a {@code byte[]} containing JSON, trying to
-     * convert to a Dom4J Document will fail, even though this serializer has a converter to convert
-     * {@code byte[]}
-     * to Dom4J instances.
+     * When {@code true}, this does *not* guarantee that the serialization and (optional) conversion will also succeed
+     * when executed. For example, when a serializer produces a {@code byte[]} containing JSON, trying to convert to a
+     * Dom4J Document will fail, even though this serializer has a converter to convert {@code byte[]} to Dom4J
+     * instances.
      *
      * @param expectedRepresentation The type of data a Serialized Object should contain
      * @param <T>                    The type of data a Serialized Object should contain
      * @return {@code true} if the {@code expectedRepresentation} is supported, otherwise {@code false}.
      */
+    @Deprecated
     <T> boolean canSerializeTo(@Nonnull Class<T> expectedRepresentation);
 
     /**
-     * Deserializes the first object read from the given {@code bytes}. The {@code bytes} are not consumed
-     * from the array or modified in any way. The resulting object instance is cast to the expected type.
+     * Deserializes the first object read from the given {@code bytes}. The {@code bytes} are not consumed from the
+     * array or modified in any way. The resulting object instance is cast to the expected type.
      *
      * @param serializedObject the instance describing the type of object and the bytes providing the serialized data
      * @param <S>              The data type of the serialized object
      * @param <T>              The expected deserialized type
      * @return the serialized object, cast to the expected type
-     *
      * @throws ClassCastException if the first object in the stream is not an instance of &lt;T&gt;.
      */
+    @Deprecated
     <S, T> T deserialize(@Nonnull SerializedObject<S> serializedObject);
 
     /**
@@ -80,6 +89,7 @@ public interface Serializer {
      * @param type The type identifier of the object
      * @return the Class representing the type of the serialized Object
      */
+    @Deprecated
     Class classForType(@Nonnull SerializedType type);
 
     /**
@@ -89,6 +99,7 @@ public interface Serializer {
      * @param type Class representing the type of the serializable Object.
      * @return The type identifier of the object
      */
+    @Deprecated
     SerializedType typeForClass(@Nullable Class type);
 
     /**
@@ -97,5 +108,6 @@ public interface Serializer {
      *
      * @return the converter used by this Serializer
      */
+    @Deprecated
     Converter getConverter();
 }

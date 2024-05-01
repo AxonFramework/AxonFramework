@@ -20,9 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandBusSpanFactory;
-import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
-import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -89,6 +87,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -249,7 +249,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean
     @Bean
     public CommandGateway commandGateway(CommandBus commandBus) {
-        return DefaultCommandGateway.builder().commandBus(commandBus).build();
+        return new DefaultCommandGateway(commandBus);
     }
 
     @ConditionalOnMissingBean
@@ -378,12 +378,6 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return sequencingPolicy;
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    public DuplicateCommandHandlerResolver duplicateCommandHandlerResolver() {
-        return LoggingDuplicateCommandHandlerResolver.instance();
-    }
-
     @ConditionalOnMissingBean(
             ignoredType = {
                     "org.axonframework.commandhandling.distributed.DistributedCommandBus",
@@ -392,21 +386,15 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             },
             value = CommandBus.class
     )
+
     @Qualifier("localSegment")
     @Bean
-    public SimpleCommandBus commandBus(TransactionManager txManager, Configuration axonConfiguration,
-                                       DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
+    public CommandBus commandBus(TransactionManager txManager, Configuration axonConfiguration) {
         SimpleCommandBus commandBus =
-                SimpleCommandBus.builder()
-                                .transactionManager(txManager)
-                                .duplicateCommandHandlerResolver(duplicateCommandHandlerResolver)
-                                .spanFactory(axonConfiguration.getComponent(CommandBusSpanFactory.class))
-                                .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
-                                .build();
-        commandBus.registerHandlerInterceptor(
-                new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
-        );
-        return commandBus;
+                new SimpleCommandBus(txManager);
+        return new InterceptingCommandBus(commandBus,
+                                          List.of(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())),
+                                          Collections.emptyList());
     }
 
     @ConditionalOnMissingBean(value = QueryBus.class)

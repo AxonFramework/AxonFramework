@@ -59,9 +59,9 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
     BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages);
 
 
-    default <M extends T, R> MessageStream<? extends R> interceptOnDispatch(@Nonnull M message,
-                                                                            @Nullable ProcessingContext context,
-                                                                            @Nonnull InterceptorChain<M, R> interceptorChain) {
+    default <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnDispatch(@Nonnull M message,
+                                                                                               @Nullable ProcessingContext context,
+                                                                                               @Nonnull InterceptorChain<M, R> interceptorChain) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 }

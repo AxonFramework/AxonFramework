@@ -70,12 +70,8 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
 
         transactionManager = new EntityManagerTransactionManager(entityManager);
 
-        commandBus = SimpleCommandBus.builder()
-                                     .transactionManager(transactionManager)
-                                     .build();
-        commandGateway = DefaultCommandGateway.builder()
-                                              .commandBus(commandBus)
-                                              .build();
+        commandBus = new SimpleCommandBus(transactionManager);
+        commandGateway = new DefaultCommandGateway(commandBus);
 
         Set<Class<? extends ParentAggregate>> subtypes =
                 new HashSet<>(asList(Child1Aggregate.class, Child2Aggregate.class));
@@ -115,49 +111,49 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
 
     @Test
     void createChild1() {
-        String id = commandGateway.sendAndWait(new CreateChild1Command("123"));
-        String result = commandGateway.sendAndWait(new CommonCommand(id));
+        String id = commandGateway.sendAndWait(new CreateChild1Command("123"), String.class);
+        String result = commandGateway.sendAndWait(new CommonCommand(id), String.class);
         assertEquals("Child1Aggregate123", result);
     }
 
     @Test
     void createChild2() {
-        String id = commandGateway.sendAndWait(new CreateChild2Command("123"));
-        String result = commandGateway.sendAndWait(new CommonCommand(id));
+        String id = commandGateway.sendAndWait(new CreateChild2Command("123"), String.class);
+        String result = commandGateway.sendAndWait(new CommonCommand(id), String.class);
         assertEquals("Child2Aggregate123", result);
     }
 
     @Test
     void factoryCreate() {
-        String id = commandGateway.sendAndWait(new CreateChildFactoryCommand("123", 1));
-        String result = commandGateway.sendAndWait(new CommonCommand(id));
+        String id = commandGateway.sendAndWait(new CreateChildFactoryCommand("123", 1), String.class);
+        String result = commandGateway.sendAndWait(new CommonCommand(id), String.class);
         assertEquals("Child1Aggregate123", result);
 
-        id = commandGateway.sendAndWait(new CreateChildFactoryCommand("456", 2));
-        result = commandGateway.sendAndWait(new CommonCommand(id));
+        id = commandGateway.sendAndWait(new CreateChildFactoryCommand("456", 2), String.class);
+        result = commandGateway.sendAndWait(new CommonCommand(id), String.class);
         assertEquals("Child2Aggregate456", result);
     }
 
     @Test
     void child1OnlyCommandOnAggregate2() {
-        String c1Id = commandGateway.sendAndWait(new CreateChild1Command("123"));
-        String c2Id = commandGateway.sendAndWait(new CreateChild2Command("456"));
-        String result = commandGateway.sendAndWait(new Child1OnlyCommand(c1Id));
+        String c1Id = commandGateway.sendAndWait(new CreateChild1Command("123"), String.class);
+        String c2Id = commandGateway.sendAndWait(new CreateChild2Command("456"), String.class);
+        String result = commandGateway.sendAndWait(new Child1OnlyCommand(c1Id), String.class);
         assertEquals("Child1Aggregate123", result);
         assertThrows(NoHandlerForCommandException.class, () -> commandGateway.sendAndWait(new Child1OnlyCommand(c2Id)));
     }
 
     @Test
     void parentEventAppliedFromChild() {
-        String id = commandGateway.sendAndWait(new CreateChild1Command("123"));
+        String id = commandGateway.sendAndWait(new CreateChild1Command("123"), String.class);
         commandGateway.sendAndWait(new FireParentEventCommand(id));
         assertAggregateState(id, "parent123");
     }
 
     @Test
     void childEventAppliedFromParent() {
-        String c1Id = commandGateway.sendAndWait(new CreateChild1Command("123"));
-        String c2Id = commandGateway.sendAndWait(new CreateChild2Command("456"));
+        String c1Id = commandGateway.sendAndWait(new CreateChild1Command("123"), String.class);
+        String c2Id = commandGateway.sendAndWait(new CreateChild2Command("456"), String.class);
         commandGateway.sendAndWait(new FireChildEventCommand(c1Id));
         commandGateway.sendAndWait(new FireChildEventCommand(c2Id));
         assertAggregateState(c1Id, "child1123");
@@ -166,30 +162,30 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
 
     @Test
     void commandInterceptedByParentHandledByChild() {
-        String c1Id = commandGateway.sendAndWait(new CreateChild1Command("123"));
-        String c2Id = commandGateway.sendAndWait(new CreateChild2Command("456"));
-        String child1Result = commandGateway.sendAndWait(new InterceptedByParentCommand(c1Id, "state"));
-        String child2Result = commandGateway.sendAndWait(new InterceptedByParentCommand(c2Id, "state"));
+        String c1Id = commandGateway.sendAndWait(new CreateChild1Command("123"), String.class);
+        String c2Id = commandGateway.sendAndWait(new CreateChild2Command("456"), String.class);
+        String child1Result = commandGateway.sendAndWait(new InterceptedByParentCommand(c1Id, "state"), String.class);
+        String child2Result = commandGateway.sendAndWait(new InterceptedByParentCommand(c2Id, "state"), String.class);
         assertEquals("stateInterceptedByParentHandledByChild1", child1Result);
         assertEquals("stateInterceptedByParentHandledByChild2", child2Result);
     }
 
     @Test
     void commandInterceptedByChildHandledByParent() {
-        String c1Id = commandGateway.sendAndWait(new CreateChild1Command("123"));
-        String c2Id = commandGateway.sendAndWait(new CreateChild2Command("456"));
-        String child1Result = commandGateway.sendAndWait(new InterceptedByChildCommand(c1Id, "state"));
-        String child2Result = commandGateway.sendAndWait(new InterceptedByChildCommand(c2Id, "state"));
+        String c1Id = commandGateway.sendAndWait(new CreateChild1Command("123"), String.class);
+        String c2Id = commandGateway.sendAndWait(new CreateChild2Command("456"), String.class);
+        String child1Result = commandGateway.sendAndWait(new InterceptedByChildCommand(c1Id, "state"), String.class);
+        String child2Result = commandGateway.sendAndWait(new InterceptedByChildCommand(c2Id, "state"), String.class);
         assertEquals("stateInterceptedByChild1HandledByParent", child1Result);
         assertEquals("stateInterceptedByChild2HandledByParent", child2Result);
     }
 
     @Test
     void abstractCommandHandler() {
-        String c1Id = commandGateway.sendAndWait(new CreateChild1Command("123"));
-        String c2Id = commandGateway.sendAndWait(new CreateChild2Command("456"));
-        String child1Result = commandGateway.sendAndWait(new AbstractCommandHandlerCommand(c1Id));
-        String child2Result = commandGateway.sendAndWait(new AbstractCommandHandlerCommand(c2Id));
+        String c1Id = commandGateway.sendAndWait(new CreateChild1Command("123"), String.class);
+        String c2Id = commandGateway.sendAndWait(new CreateChild2Command("456"), String.class);
+        String child1Result = commandGateway.sendAndWait(new AbstractCommandHandlerCommand(c1Id), String.class);
+        String child2Result = commandGateway.sendAndWait(new AbstractCommandHandlerCommand(c2Id), String.class);
         assertEquals("handledByChild1", child1Result);
         assertEquals("handledByChild2", child2Result);
     }
@@ -228,7 +224,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
         String simpleAggregateId = "id";
         String child1AggregateId = "child1" + simpleAggregateId;
         commandGateway.sendAndWait(new CreateSimpleAggregateCommand(simpleAggregateId));
-        String result = commandGateway.sendAndWait(new CommonCommand(child1AggregateId));
+        String result = commandGateway.sendAndWait(new CommonCommand(child1AggregateId), String.class);
         assertEquals("Child1Aggregate" + child1AggregateId, result);
     }
 

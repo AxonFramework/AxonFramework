@@ -16,8 +16,8 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.commandhandling.CommandBusSpanFactory;
-import org.axonframework.commandhandling.DefaultCommandBusSpanFactory;
+import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
+import org.axonframework.commandhandling.tracing.DefaultCommandBusSpanFactory;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;

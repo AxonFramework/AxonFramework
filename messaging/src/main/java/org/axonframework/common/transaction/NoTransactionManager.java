@@ -49,7 +49,7 @@ public enum NoTransactionManager implements TransactionManager {
     }
 
     @Override
-    public void attachToProcessingLifecycle(ProcessingLifecycle processingLifecycle) {
+    public void registerHandlers(ProcessingLifecycle processingLifecycle) {
         // no-op
     }
 

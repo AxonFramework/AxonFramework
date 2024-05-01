@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.common.AxonTransientException;
 
 import static java.lang.String.format;
@@ -24,7 +25,7 @@ import static java.lang.String.format;
  * Exception indicating that no suitable command handler could be found for the given command.
  * <p>
  * As of 4.2, this exception has been moved to {@link AxonTransientException}, since (especially in a MicroServices
- * Architecture context) the handler may return. {@link org.axonframework.commandhandling.gateway.RetryScheduler}s will
+ * Architecture context) the handler may return. {@link RetryScheduler}s will
  * now see this exception as retryable.
  *
  * @author Allard Buijze

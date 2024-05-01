@@ -16,13 +16,13 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.test.FixtureExecutionException;
@@ -57,14 +57,14 @@ import static org.hamcrest.CoreMatchers.*;
  * @author Allard Buijze
  * @since 0.7
  */
-public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallback<Object, Object> {
+public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     private final List<EventMessage<?>> publishedEvents;
     private final Reporter reporter = new Reporter();
     private final FieldFilter fieldFilter;
     private final Supplier<Aggregate<T>> state;
     private final DeadlineManagerValidator deadlineManagerValidator;
-    private CommandResultMessage<?> actualReturnValue;
+    private Message<?> actualReturnValue;
     private Throwable actualException;
 
     /**
@@ -479,13 +479,12 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         return this;
     }
 
-    @Override
-    public void onResult(@Nonnull CommandMessage<?> commandMessage,
-                         @Nonnull CommandResultMessage<?> commandResultMessage) {
-        if (commandResultMessage.isExceptional()) {
+    public void recordResult(@Nonnull CommandMessage<?> commandMessage,
+                             @Nonnull Message<?> result) {
+        if (result instanceof ResultMessage commandResultMessage && commandResultMessage.isExceptional()) {
             recordException(commandResultMessage.exceptionResult());
         } else {
-            actualReturnValue = commandResultMessage;
+            actualReturnValue = result;
         }
     }
 

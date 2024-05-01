@@ -22,7 +22,6 @@
     <version>5.0.0-SNAPSHOT</version>
     <modules>
         <module>axon-server-connector</module>
-        <module>disruptor</module>
         <module>config</module>
         <module>eventsourcing</module>
         <module>integrationtests</module>
