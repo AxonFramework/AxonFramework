@@ -24,6 +24,7 @@ import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -1448,6 +1449,9 @@ public class AxonServerConfiguration {
          */
         private final Map<String, ProcessorSettings> processors = new HashMap<>();
 
+        private final Map<String, PersistentStreamProcessorSettings> persistentStreamProcessors = new HashMap<>();
+
+
         /**
          * Returns the settings for each of the configured processors, by name.
          *
@@ -1455,6 +1459,10 @@ public class AxonServerConfiguration {
          */
         public Map<String, ProcessorSettings> getProcessors() {
             return processors;
+        }
+
+        public Map<String, PersistentStreamProcessorSettings> getPersistentStreamProcessors() {
+            return persistentStreamProcessors;
         }
 
         public static class ProcessorSettings {
@@ -1686,6 +1694,72 @@ public class AxonServerConfiguration {
         public Builder connectTimeout(long timeout) {
             instance.setConnectTimeout(timeout);
             return this;
+        }
+    }
+
+    public static class PersistentStreamProcessorSettings {
+        private int initialSegmentCount = 1;
+        private String sequencingPolicy = "AggregateIdentifier";
+        private List<String> sequencingPolicyParameters = new LinkedList<>();
+        private String filter;
+        private String name;
+        private int batchSize = 1;
+        private int initial  = 0;
+
+        public int getInitialSegmentCount() {
+            return initialSegmentCount;
+        }
+
+        public void setInitialSegmentCount(int initialSegmentCount) {
+            this.initialSegmentCount = initialSegmentCount;
+        }
+
+        public String getSequencingPolicy() {
+            return sequencingPolicy;
+        }
+
+        public void setSequencingPolicy(String sequencingPolicy) {
+            this.sequencingPolicy = sequencingPolicy;
+        }
+
+        public List<String> getSequencingPolicyParameters() {
+            return sequencingPolicyParameters;
+        }
+
+        public void setSequencingPolicyParameters(List<String> sequencingPolicyParameters) {
+            this.sequencingPolicyParameters = sequencingPolicyParameters;
+        }
+
+        public String getFilter() {
+            return filter;
+        }
+
+        public void setFilter(String filter) {
+            this.filter = filter;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getBatchSize() {
+            return batchSize;
+        }
+
+        public void setBatchSize(int batchSize) {
+            this.batchSize = batchSize;
+        }
+
+        public int getInitial() {
+            return initial;
+        }
+
+        public void setInitial(int initial) {
+            this.initial = initial;
         }
     }
 }
