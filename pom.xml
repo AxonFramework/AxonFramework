@@ -80,12 +80,12 @@
         <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.4.4.Final</hibernate-core.6.version>
-        <mysql-connector-java.version>8.3.0</mysql-connector-java.version>
+        <hibernate-core.6.version>6.5.0.Final</hibernate-core.6.version>
+        <mysql-connector-java.version>8.4.0</mysql-connector-java.version>
         <postgresql.version>42.7.3</postgresql.version>
         <!-- Jakarta -->
-        <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
-        <jakarta.el.version>4.0.0</jakarta.el.version>
+        <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
+        <jakarta.el.version>6.0.0</jakarta.el.version>
         <jakarta.el-impl.version>4.0.2</jakarta.el-impl.version>
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version><!-- Don't upgrade due to JDK8 -->
@@ -107,7 +107,7 @@
         <dropwizard.metrics.version>4.2.25</dropwizard.metrics.version>
         <micrometer.version>1.12.5</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.14.13</byte-buddy.version>
+        <byte-buddy.version>1.14.14</byte-buddy.version>
         <commons-io.version>2.16.1</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
@@ -119,11 +119,11 @@
         <!-- Serialization -->
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.10.1</gson.version>
-        <jackson.version>2.17.0</jackson.version>
+        <jackson.version>2.17.1</jackson.version>
         <xstream.version>1.4.20</xstream.version>
         <!-- Scheduling -->
-        <db-scheduler.version>13.0.0</db-scheduler.version>
-        <jobrunr.version>6.3.5</jobrunr.version>
+        <db-scheduler.version>14.0.0</db-scheduler.version>
+        <jobrunr.version>7.1.0</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
         <spring.version>5.3.34</spring.version>
@@ -146,11 +146,11 @@
         <maven-assembly.version>3.7.1</maven-assembly.version>
         <maven-clean.version>3.3.2</maven-clean.version>
         <maven-compiler.version>3.13.0</maven-compiler.version>
-        <maven-deploy.version>3.1.1</maven-deploy.version>
+        <maven-deploy.version>3.1.2</maven-deploy.version>
         <maven-enforcer.version>3.4.1</maven-enforcer.version>
         <maven-failsafe.version>3.2.5</maven-failsafe.version>
         <maven-gpg.version>3.2.4</maven-gpg.version>
-        <maven-install.version>3.1.1</maven-install.version>
+        <maven-install.version>3.1.2</maven-install.version>
         <maven-jar.version>3.4.1</maven-jar.version>
         <maven-javadoc.version>3.6.3</maven-javadoc.version>
         <maven-release.version>3.0.1</maven-release.version>
