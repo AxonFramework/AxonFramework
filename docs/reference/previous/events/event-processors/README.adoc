@@ -7,7 +7,7 @@ However, they also ensure that link:../../messaging-concepts/message-correlation
 
 The image below depicts a representation of the organization of Event Processors and Event Handlers:
 
-image:../../../.gitbook/assets/event-processors.png[Organization of Event Processors and Event Handlers]
+image::../../../../assets/event-processors.png[Organization of Event Processors and Event Handlers]
 
 Axon has a layered approach towards organizing event handlers.
 First, an event handler is positioned in a _Processing Group_.
