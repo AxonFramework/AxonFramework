@@ -154,7 +154,7 @@ If handlers only need to rely on the timestamp the event was published, they can
 
 Spring Boot users will need to define a `DeadlineManager` bean using one of the available implementations.
 
-Spring Boot users who want to use the JobRunr deadline manager can add https://mvnrepository.com/artifact/org.jobrunr/jobrunr-spring-boot-starter[`jobrunr-spring-boot-starter`] as a dependency.
+Spring Boot users who want to use the JobRunr deadline manager can add either https://mvnrepository.com/artifact/org.jobrunr/jobrunr-spring-boot-2-starter[`jobrunr-spring-boot-2-starter`] or https://mvnrepository.com/artifact/org.jobrunr/jobrunr-spring-boot-3-starter[`jobrunr-spring-boot-3-starter`] as a dependency. Depending on which version of Spring Boot is used.
 Doing so will make a `JobScheduler` bean available, which the auto-configuration can use to create a `JobRunrDeadlineManager`.
 Alternatively. the bean can be configured like this:
 
