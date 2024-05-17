@@ -8,6 +8,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
@@ -15,9 +16,9 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
     private final PersistentStreamConnection persistentStreamConnection;
 
     public PersistentStreamMessageSource(String name, Configuration configuration, PersistentStreamProperties
-            persistentStreamProperties, int batchSize) {
+            persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize) {
         persistentStreamConnection = new PersistentStreamConnection(name, configuration,
-                                        persistentStreamProperties, batchSize);
+                                        persistentStreamProperties, scheduler, batchSize);
     }
 
     @Override

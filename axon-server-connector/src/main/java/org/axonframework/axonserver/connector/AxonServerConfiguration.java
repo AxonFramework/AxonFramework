@@ -16,8 +16,15 @@
 
 package org.axonframework.axonserver.connector;
 
+import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
+import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.util.EventCipher;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
@@ -229,7 +236,7 @@ public class AxonServerConfiguration {
      * Flag that allows block-listing of event types to be enabled.
      * <p>
      * Disabling this may have serious performance impact, as it requires all
-     * {@link org.axonframework.eventhandling.EventMessage events} from Axon Server to be sent to clients, even if a
+     * {@link EventMessage events} from Axon Server to be sent to clients, even if a
      * client is unable to process the event. Default is to have block-listing enabled.
      */
     private boolean eventBlockListingEnabled = true;
@@ -292,7 +299,7 @@ public class AxonServerConfiguration {
 
     /**
      * Defines the number of threads that should be used for connection management activities by the
-     * {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used by the
+     * {@link AxonServerConnectionFactory} used by the
      * {@link AxonServerConnectionManager}.
      * <p>
      * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
@@ -309,15 +316,16 @@ public class AxonServerConfiguration {
     private HeartbeatConfiguration heartbeat = new HeartbeatConfiguration();
 
     /**
-     * Properties describing the settings for {@link org.axonframework.eventhandling.EventProcessor EventProcessors}.
+     * Properties describing the settings for {@link EventProcessor EventProcessors}.
      */
-    private Eventhandling eventHandling = new Eventhandling();
+    private Eventhandling eventhandling = new Eventhandling();
 
     /**
      * Properties describing the settings for the
-     * {@link org.axonframework.axonserver.connector.event.axon.AxonServerEventStore EventStore}.
+     * {@link AxonServerEventStore EventStore}.
      */
     private EventStoreConfiguration eventStoreConfiguration = new EventStoreConfiguration();
+    private int persistentStreamThreads =  10;
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -931,7 +939,7 @@ public class AxonServerConfiguration {
      * Flag that allows block-listing of event types to be enabled.
      * <p>
      * Disabling this may have serious performance impact, as it requires all
-     * {@link org.axonframework.eventhandling.EventMessage events} from Axon Server to be sent to clients, even if a
+     * {@link EventMessage events} from Axon Server to be sent to clients, even if a
      * client is unable to process the event. Default is to have block-listing enabled.
      *
      * @return Flag that allows block-listing of event types to be enabled.
@@ -944,7 +952,7 @@ public class AxonServerConfiguration {
      * Sets flag that allows block-listing of event types to be enabled.
      * <p>
      * Disabling this may have serious performance impact, as it requires all
-     * {@link org.axonframework.eventhandling.EventMessage events} from Axon Server to be sent to clients, even if a
+     * {@link EventMessage events} from Axon Server to be sent to clients, even if a
      * client is unable to process the event. Default is to have block-listing enabled.
      *
      * @param eventBlockListingEnabled Flag that allows block-listing of event types to be enabled.
@@ -1113,7 +1121,7 @@ public class AxonServerConfiguration {
 
     /**
      * The number of threads that should be used for connection management activities by the
-     * {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used by the
+     * {@link AxonServerConnectionFactory} used by the
      * {@link AxonServerConnectionManager}.
      * <p>
      * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
@@ -1122,7 +1130,7 @@ public class AxonServerConfiguration {
      * Defaults to a pool size of {@code 2} threads.
      *
      * @return The number of threads that should be used for connection management activities by the
-     * {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used by the
+     * {@link AxonServerConnectionFactory} used by the
      * {@link AxonServerConnectionManager}.
      */
     public int getConnectionManagementThreadPoolSize() {
@@ -1131,7 +1139,7 @@ public class AxonServerConfiguration {
 
     /**
      * Define the number of threads that should be used for connection management activities by the
-     * {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used by the
+     * {@link AxonServerConnectionFactory} used by the
      * {@link AxonServerConnectionManager}.
      * <p>
      * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
@@ -1141,7 +1149,7 @@ public class AxonServerConfiguration {
      *
      * @param connectionManagementThreadPoolSize The number of threads that should be used for connection management
      *                                           activities by the
-     *                                           {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used
+     *                                           {@link AxonServerConnectionFactory} used
      *                                           by the {@link AxonServerConnectionManager}.
      */
     public void setConnectionManagementThreadPoolSize(int connectionManagementThreadPoolSize) {
@@ -1176,16 +1184,16 @@ public class AxonServerConfiguration {
      * @return The configured {@link Eventhandling} of this application for Axon Server.
      */
     public Eventhandling getEventhandling() {
-        return eventHandling;
+        return eventhandling;
     }
 
     /**
      * Set the {@link Eventhandling} of this application for Axon Server
      *
-     * @param eventHandling The {@link Eventhandling} to set for this application.
+     * @param eventhandling The {@link Eventhandling} to set for this application.
      */
-    public void setEventHandling(Eventhandling eventHandling) {
-        this.eventHandling = eventHandling;
+    public void setEventhandling(Eventhandling eventhandling) {
+        this.eventhandling = eventhandling;
     }
 
     /**
@@ -1205,6 +1213,14 @@ public class AxonServerConfiguration {
      */
     public void setEventStoreConfiguration(EventStoreConfiguration eventStoreConfiguration) {
         this.eventStoreConfiguration = eventStoreConfiguration;
+    }
+
+    public int getPersistentStreamThreads() {
+        return persistentStreamThreads;
+    }
+
+    public void setPersistentStreamThreads(int persistentStreamThreads) {
+        this.persistentStreamThreads = persistentStreamThreads;
     }
 
     /**
@@ -1473,7 +1489,7 @@ public class AxonServerConfiguration {
              * The load balancing strategy tells Axon Server how to share the event handling load among all available
              * application instances running this event processor, by moving segments from one instance to another. Note
              * that load balancing is <b>only</b> supported for
-             * {@link org.axonframework.eventhandling.StreamingEventProcessor StreamingEventProcessors}, as only
+             * {@link StreamingEventProcessor StreamingEventProcessors}, as only
              * {@code StreamingEventProcessors} are capable of splitting the event handling load in segments.
              * <p>
              * As the strategies names may change per Axon Server version it is recommended to check the documentation
@@ -1657,6 +1673,11 @@ public class AxonServerConfiguration {
             return this;
         }
 
+        public Builder persistentStreamThreads(int persistentStreamThreads) {
+            instance.persistentStreamThreads = persistentStreamThreads;
+            return this;
+        }
+
         /**
          * Initializes a {@link AxonServerConfiguration} as specified through this Builder.
          *
@@ -1698,13 +1719,16 @@ public class AxonServerConfiguration {
     }
 
     public static class PersistentStreamProcessorSettings {
+        public static final String DEFAULT_SEQUENCING_POLICY = "SequentialPerAggregatePolicy";
+
         private int initialSegmentCount = 1;
-        private String sequencingPolicy = "AggregateIdentifier";
+        private String sequencingPolicy = DEFAULT_SEQUENCING_POLICY;
         private List<String> sequencingPolicyParameters = new LinkedList<>();
         private String filter;
         private String name;
         private int batchSize = 1;
         private int initial  = 0;
+        private Dlq dlq;
 
         public int getInitialSegmentCount() {
             return initialSegmentCount;
@@ -1761,5 +1785,120 @@ public class AxonServerConfiguration {
         public void setInitial(int initial) {
             this.initial = initial;
         }
+
+        public Dlq getDlq() {
+            return dlq;
+        }
+
+        public void setDlq(Dlq dlq) {
+            this.dlq = dlq;
+        }
     }
+
+    public static class Dlq {
+
+        /**
+         * Enables creation and configuring a {@link SequencedDeadLetterQueue}.
+         * Will be used to configure the {@code registerDeadLetterQueueProvider} such that only groups set to enabled
+         * will have a sequenced dead letter queue. Defaults to "false".
+         */
+        private boolean enabled = false;
+
+        /**
+         * The {@link DlqCache} settings that will be used for this dlq.
+         */
+        private DlqCache cache = new DlqCache();
+
+        /**
+         * Indicates whether creating and configuring a
+         * {@link SequencedDeadLetterQueue} is enabled.
+         *
+         * @return true if creating the queue is enabled, false if otherwise
+         */
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        /**
+         * Enables (if {@code true}, default) or disables (if {@code false}) creating a
+         * {@link SequencedDeadLetterQueue}.
+         *
+         * @param enabled whether to enable token store creation.
+         */
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        /**
+         * Retrieves the AutoConfiguration settings for the cache of the sequenced dead letter queue.
+         *
+         * @return the AutoConfiguration settings for the cache of the sequenced dead letter queue.
+         */
+        public DlqCache getCache() {
+            return cache;
+        }
+
+        /**
+         * Defines the AutoConfiguration settings for the cache of the sequenced dead letter queue.
+         *
+         * @param cache the cache settings for the sequenced dead letter.
+         */
+        public void setCache(DlqCache cache) {
+            this.cache = cache;
+        }
+    }
+
+    public static class DlqCache {
+
+        /**
+         * Enables caching the sequence identifiers on the
+         * {@link DeadLetteringEventHandlerInvoker}. This can prevent calls
+         * to the database to check whether a sequence is already present. Defaults to {@code false}.
+         */
+        private boolean enabled = false;
+
+        /**
+         * The amount of sequence identifiers to keep in memory. This setting is used per segment, and only when the
+         * {@link SequencedDeadLetterQueue} is not empty. Defaults to
+         * {@code 1024}.
+         */
+        private int size = 1024;
+
+        /**
+         * Indicates whether using a cache is enabled.
+         *
+         * @return true if using a cache is enabled, false if otherwise.
+         */
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        /**
+         * Enables (if {@code true}, default) or disables (if {@code false}) using a cache.
+         *
+         * @param enabled whether to enable using a cache.
+         */
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        /**
+         * Returns the size of the sequence identifiers to keep in memory, per segment.
+         *
+         * @return the amount of sequence identifiers to keep in memory.
+         */
+        public int getSize() {
+            return size;
+        }
+
+        /**
+         * Set the amount of sequence identifiers to keep in memory, per segment.
+         *
+         * @param size the maximum size of the sequence identifiers which are not present.
+         */
+        public void setSize(int size) {
+            this.size = size;
+        }
+    }
+
 }
