@@ -55,18 +55,18 @@
         </sonar.coverage.jacoco.xmlReportPaths>
         <!-- Main -->
         <axon.version>4.9.0</axon.version>
-        <kotlin.version>1.7.21</kotlin.version>
+        <kotlin.version>1.9.24</kotlin.version>
         <!-- Serialization -->
-        <jackson-kotlin.version>2.16.0</jackson-kotlin.version>
+        <jackson-kotlin.version>2.17.1</jackson-kotlin.version>
+        <kotlin-serialization.version>1.6.3</kotlin-serialization.version>
         <!-- Logging -->
-        <kotlin-logging.version>3.0.5</kotlin-logging.version>
         <slf4j.version>2.0.13</slf4j.version>
         <log4j.version>2.13.3</log4j.version>
         <!-- Testing -->
         <junit.jupiter.version>5.10.1</junit.jupiter.version>
         <mockk.version>1.12.4</mockk.version>
         <!-- Build -->
-        <dokka.version>1.7.20</dokka.version>
+        <dokka.version>1.9.20</dokka.version>
         <jacoco-maven.version>0.8.11</jacoco-maven.version>
         <maven-assembly.version>3.7.1</maven-assembly.version>
         <maven-clean.version>3.3.2</maven-clean.version>
@@ -99,11 +99,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>io.github.microutils</groupId>
-                <artifactId>kotlin-logging-jvm</artifactId>
-                <version>${kotlin-logging.version}</version>
-            </dependency>
             <!-- Axon -->
             <dependency>
                 <groupId>org.axonframework</groupId>
@@ -120,6 +115,11 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-kotlin</artifactId>
                 <version>${jackson-kotlin.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>org.jetbrains.kotlinx</groupId>
+              <artifactId>kotlinx-serialization-json</artifactId>
+              <version>${kotlin-serialization.version}</version>
             </dependency>
             <!-- Testing -->
             <dependency>
@@ -162,6 +162,10 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-kotlin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-json</artifactId>
         </dependency>
         <!-- Testing -->
         <dependency>
@@ -238,6 +242,7 @@
                     <compilerPlugins>
                         <plugin>no-arg</plugin>
                         <plugin>all-open</plugin>
+                        <plugin>kotlinx-serialization</plugin>
                     </compilerPlugins>
                     <pluginOptions>
                         <!-- Axon specific classes -->
@@ -280,6 +285,11 @@
                         <groupId>org.jetbrains.kotlin</groupId>
                         <artifactId>kotlin-maven-noarg</artifactId>
                         <version>${kotlin.version}</version>
+                    </dependency>
+                    <dependency>
+                      <groupId>org.jetbrains.kotlin</groupId>
+                      <artifactId>kotlin-maven-serialization</artifactId>
+                      <version>${kotlin.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>

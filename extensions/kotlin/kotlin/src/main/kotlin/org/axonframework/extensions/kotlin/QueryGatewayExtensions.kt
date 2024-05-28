@@ -41,7 +41,7 @@ import java.util.stream.Stream
  * @see ResponseTypes
  * @since 0.1.0
  */
-inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> {
+inline fun <reified R, reified Q: Any> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> {
     return this.query(query, ResponseTypes.multipleInstancesOf(R::class.java))
 }
 
@@ -57,7 +57,7 @@ inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableF
  * @see ResponseTypes
  * @since 0.1.0
  */
-inline fun <reified R, reified Q> QueryGateway.queryMany(queryName: String, query: Q): CompletableFuture<List<R>> {
+inline fun <reified R, reified Q: Any> QueryGateway.queryMany(queryName: String, query: Q): CompletableFuture<List<R>> {
     return this.query(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java))
 }
 
@@ -72,7 +72,7 @@ inline fun <reified R, reified Q> QueryGateway.queryMany(queryName: String, quer
  * @see ResponseTypes
  * @since 0.1.0
  */
-inline fun <reified R, reified Q> QueryGateway.query(query: Q): CompletableFuture<R> {
+inline fun <reified R, reified Q: Any> QueryGateway.query(query: Q): CompletableFuture<R> {
     return this.query(query, ResponseTypes.instanceOf(R::class.java))
 }
 
@@ -88,7 +88,7 @@ inline fun <reified R, reified Q> QueryGateway.query(query: Q): CompletableFutur
  * @see ResponseTypes
  * @since 0.1.0
  */
-inline fun <reified R, reified Q> QueryGateway.query(queryName: String, query: Q): CompletableFuture<R> {
+inline fun <reified R, reified Q: Any> QueryGateway.query(queryName: String, query: Q): CompletableFuture<R> {
     return this.query(queryName, query, ResponseTypes.instanceOf(R::class.java))
 }
 
@@ -103,7 +103,7 @@ inline fun <reified R, reified Q> QueryGateway.query(queryName: String, query: Q
  * @see ResponseTypes
  * @since 0.1.0
  */
-inline fun <reified R, reified Q> QueryGateway.queryOptional(query: Q): CompletableFuture<Optional<R>> {
+inline fun <reified R, reified Q: Any> QueryGateway.queryOptional(query: Q): CompletableFuture<Optional<R>> {
     return this.query(query, ResponseTypes.optionalInstanceOf(R::class.java))
 }
 
@@ -119,7 +119,7 @@ inline fun <reified R, reified Q> QueryGateway.queryOptional(query: Q): Completa
  * @see ResponseTypes
  * @since 0.1.0
  */
-inline fun <reified R, reified Q> QueryGateway.queryOptional(queryName: String, query: Q): CompletableFuture<Optional<R>> {
+inline fun <reified R, reified Q: Any> QueryGateway.queryOptional(queryName: String, query: Q): CompletableFuture<Optional<R>> {
     return this.query(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java))
 }
 
@@ -136,7 +136,7 @@ inline fun <reified R, reified Q> QueryGateway.queryOptional(queryName: String, 
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGather(query: Q, timeout: Long,
+inline fun <reified R, reified Q: Any> QueryGateway.scatterGather(query: Q, timeout: Long,
                                                              timeUnit: TimeUnit): Stream<R> {
     return this.scatterGather(query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
 }
@@ -155,7 +155,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGather(query: Q, timeout: 
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGather(queryName: String, query: Q, timeout: Long,
+inline fun <reified R, reified Q: Any> QueryGateway.scatterGather(queryName: String, query: Q, timeout: Long,
                                                              timeUnit: TimeUnit): Stream<R> {
     return this.scatterGather(queryName, query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
 }
@@ -173,7 +173,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGather(queryName: String, 
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(query: Q, timeout: Long,
+inline fun <reified R, reified Q: Any> QueryGateway.scatterGatherMany(query: Q, timeout: Long,
                                                                  timeUnit: TimeUnit): Stream<List<R>> {
     return this.scatterGather(query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
 }
@@ -192,7 +192,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(query: Q, timeo
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(queryName: String, query: Q, timeout: Long,
+inline fun <reified R, reified Q: Any> QueryGateway.scatterGatherMany(queryName: String, query: Q, timeout: Long,
                                                                  timeUnit: TimeUnit): Stream<List<R>> {
     return this.scatterGather(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
 }
@@ -210,7 +210,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(queryName: Stri
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(query: Q, timeout: Long,
+inline fun <reified R, reified Q: Any> QueryGateway.scatterGatherOptional(query: Q, timeout: Long,
                                                                      timeUnit: TimeUnit): Stream<Optional<R>> {
     return this.scatterGather(query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
@@ -229,7 +229,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(query: Q, t
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(queryName: String, query: Q, timeout: Long,
+inline fun <reified R, reified Q: Any> QueryGateway.scatterGatherOptional(queryName: String, query: Q, timeout: Long,
                                                                      timeUnit: TimeUnit): Stream<Optional<R>> {
     return this.scatterGather(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
@@ -246,7 +246,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(queryName: 
  * @see ResponseTypes
  * @since 0.3.0
  */
-inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(query: Q): SubscriptionQueryResult<I, U> =
+inline fun <reified Q: Any, reified I, reified U> QueryGateway.subscriptionQuery(query: Q): SubscriptionQueryResult<I, U> =
         this.subscriptionQuery(query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
 
 /**
@@ -262,5 +262,5 @@ inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(quer
  * @see ResponseTypes
  * @since 0.3.0
  */
-inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(queryName: String, query: Q): SubscriptionQueryResult<I, U> =
+inline fun <reified Q: Any, reified I, reified U> QueryGateway.subscriptionQuery(queryName: String, query: Q): SubscriptionQueryResult<I, U> =
         this.subscriptionQuery(queryName, query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
