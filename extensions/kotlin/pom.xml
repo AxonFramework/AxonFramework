@@ -118,7 +118,7 @@
             </dependency>
             <dependency>
               <groupId>org.jetbrains.kotlinx</groupId>
-              <artifactId>kotlinx-serialization-json</artifactId>
+              <artifactId>kotlinx-serialization-core</artifactId>
               <version>${kotlin-serialization.version}</version>
             </dependency>
             <!-- Testing -->
@@ -145,6 +145,24 @@
                 <version>${slf4j.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+              <groupId>org.jetbrains.kotlinx</groupId>
+              <artifactId>kotlinx-serialization-json</artifactId>
+              <version>${kotlin-serialization.version}</version>
+              <scope>test</scope>
+            </dependency>
+            <dependency>
+              <groupId>org.jetbrains.kotlinx</groupId>
+              <artifactId>kotlinx-serialization-cbor</artifactId>
+              <version>${kotlin-serialization.version}</version>
+              <scope>test</scope>
+            </dependency>
+            <dependency>
+              <groupId>org.jetbrains.kotlinx</groupId>
+              <artifactId>kotlinx-serialization-protobuf</artifactId>
+              <version>${kotlin-serialization.version}</version>
+              <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -165,7 +183,7 @@
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
-            <artifactId>kotlinx-serialization-json</artifactId>
+            <artifactId>kotlinx-serialization-core</artifactId>
         </dependency>
         <!-- Testing -->
         <dependency>
@@ -187,6 +205,21 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jetbrains.kotlinx</groupId>
+          <artifactId>kotlinx-serialization-json</artifactId>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jetbrains.kotlinx</groupId>
+          <artifactId>kotlinx-serialization-cbor</artifactId>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jetbrains.kotlinx</groupId>
+          <artifactId>kotlinx-serialization-protobuf</artifactId>
+          <scope>test</scope>
         </dependency>
         <dependency>
             <!-- Not part of Java 8 by default. Adding it as a dependency makes it compatible with Java 8 -->
