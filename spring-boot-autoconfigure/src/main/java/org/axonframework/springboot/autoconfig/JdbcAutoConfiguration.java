@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
@@ -159,6 +160,7 @@ public class JdbcAutoConfiguration {
     @ConditionalOnMissingBean
     public DeadLetterQueueProviderConfigurerModule deadLetterQueueProviderConfigurerModule(
             EventProcessorProperties eventProcessorProperties,
+            AxonServerConfiguration axonServerConfiguration,
             ConnectionProvider connectionProvider,
             TransactionManager transactionManager,
             DeadLetterSchema schema,
@@ -167,6 +169,7 @@ public class JdbcAutoConfiguration {
     ) {
         return new DeadLetterQueueProviderConfigurerModule(
                 eventProcessorProperties,
+                axonServerConfiguration,
                 processingGroup -> config -> JdbcSequencedDeadLetterQueue.builder()
                                                                          .processingGroup(processingGroup)
                                                                          .connectionProvider(connectionProvider)

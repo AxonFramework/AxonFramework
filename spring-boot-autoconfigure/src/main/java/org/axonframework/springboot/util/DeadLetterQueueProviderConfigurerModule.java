@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.util;
 
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
@@ -44,6 +45,7 @@ import javax.annotation.Nonnull;
 public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule {
 
     private final EventProcessorProperties eventProcessorProperties;
+    private final AxonServerConfiguration axonServerConfiguration;
     private final Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider;
 
     /**
@@ -59,7 +61,16 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
             EventProcessorProperties eventProcessorProperties,
             Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider
     ) {
+        this(eventProcessorProperties, null, deadLetterQueueProvider);
+    }
+
+    public DeadLetterQueueProviderConfigurerModule(
+            EventProcessorProperties eventProcessorProperties,
+            AxonServerConfiguration axonServerConfiguration,
+            Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider
+    ) {
         this.eventProcessorProperties = eventProcessorProperties;
+        this.axonServerConfiguration = axonServerConfiguration;
         this.deadLetterQueueProvider = deadLetterQueueProvider;
     }
 
@@ -68,8 +79,25 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
         configurer.eventProcessing().registerDeadLetterQueueProvider(
                 processingGroup -> dlqEnabled(eventProcessorProperties.getProcessors(), processingGroup)
                         ? deadLetterQueueProvider.apply(processingGroup)
-                        : null
+                        : axonServerProcessorDlqProvider(processingGroup)
         );
+
+    }
+
+    private Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> axonServerProcessorDlqProvider(String processingGroup) {
+        return asDlqEnabled(processingGroup) ? deadLetterQueueProvider.apply(processingGroup) : null;
+    }
+
+    private boolean asDlqEnabled(String processingGroup) {
+        if (axonServerConfiguration == null || axonServerConfiguration.getEventhandling() == null || axonServerConfiguration.getEventhandling().getPersistentStreamProcessors() == null) {
+            return false;
+        }
+
+        return Optional.ofNullable (axonServerConfiguration.getEventhandling()
+                                                           .getPersistentStreamProcessors().get(processingGroup))
+                .map(AxonServerConfiguration.PersistentStreamProcessorSettings::getDlq)
+                .map(AxonServerConfiguration.Dlq::isEnabled)
+                .orElse(false);
     }
 
     private boolean dlqEnabled(Map<String, EventProcessorProperties.ProcessorSettings> processorSettings,

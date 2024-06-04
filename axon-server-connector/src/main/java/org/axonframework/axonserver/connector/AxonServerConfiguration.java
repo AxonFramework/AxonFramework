@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import org.axonframework.axonserver.connector.event.util.EventCipher;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.StreamingEventProcessor;
-import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
@@ -1465,6 +1463,10 @@ public class AxonServerConfiguration {
          */
         private final Map<String, ProcessorSettings> processors = new HashMap<>();
 
+        /**
+         * The configuration of each of the persistent stream processors. The key is the name of the processor, the value represents the
+         * settings to use for the processor with that name.
+         */
         private final Map<String, PersistentStreamProcessorSettings> persistentStreamProcessors = new HashMap<>();
 
 
@@ -1477,6 +1479,11 @@ public class AxonServerConfiguration {
             return processors;
         }
 
+        /**
+         * Returns the settings for each of the configured persistent stream processors, by name.
+         *
+         * @return the settings for each of the configured persistent stream processors, by name.
+         */
         public Map<String, PersistentStreamProcessorSettings> getPersistentStreamProcessors() {
             return persistentStreamProcessors;
         }
@@ -1728,120 +1735,188 @@ public class AxonServerConfiguration {
         private String name;
         private int batchSize = 1;
         private int initial  = 0;
-        private Dlq dlq;
+        private Dlq dlq = new Dlq();
 
+        /**
+         * The number of segments for the persistent stream if it needs to be created.
+         * @return the number of segments for the persistent stream if it needs to be created
+         */
         public int getInitialSegmentCount() {
             return initialSegmentCount;
         }
 
+        /**
+         * Sets the number of segments for the persistent stream if it needs to be created.
+         * @param initialSegmentCount the number of segments
+         */
         public void setInitialSegmentCount(int initialSegmentCount) {
             this.initialSegmentCount = initialSegmentCount;
         }
 
+        /**
+         * The sequencing policy to use for the persistent stream.
+         * @return the sequencing policy name
+         */
         public String getSequencingPolicy() {
             return sequencingPolicy;
         }
 
+        /**
+         * Sets the sequencing policy to use for the persistent stream.
+         * <p>
+         * Supported sequencing policies are:
+         * <ul>
+         *     <li>SequentialPerAggregatePolicy (default)</li>
+         *     <li>FullConcurrencyPolicy</li>
+         *     <li>SequentialPolicy</li>
+         *     <li>PropertySequencingPolicy</li>
+         *     <li>MetaDataSequencingPolicy</li>
+         * </ul>
+         * </p>
+         * <p>This value is only used for creating the persistent stream.</p>
+         * @param sequencingPolicy the sequencing policy name
+         */
         public void setSequencingPolicy(String sequencingPolicy) {
             this.sequencingPolicy = sequencingPolicy;
         }
 
+        /**
+         * Parameters specified for the sequencing policy.
+         * @return a list of parameters specified for the sequencing policy
+         */
         public List<String> getSequencingPolicyParameters() {
             return sequencingPolicyParameters;
         }
 
+        /**
+         * Sets the parameters specified for the sequencing policy.
+         * <p>
+         *     The <em>PropertySequencingPolicy</em> and <em>MetaDataSequencingPolicy</em> require parameters.
+         * </p>
+         * <p>This value is only used for creating the persistent stream.</p>
+         * @param sequencingPolicyParameters a list of parameters specified for the sequencing policy
+         */
         public void setSequencingPolicyParameters(List<String> sequencingPolicyParameters) {
             this.sequencingPolicyParameters = sequencingPolicyParameters;
         }
 
+        /**
+         * Expression to filter out events in a persistent stream.
+         * @return the filter
+         */
         public String getFilter() {
             return filter;
         }
 
+        /**
+         * Sets the expression to filter out events in a persistent stream.
+         * <p>This value is only used for creating the persistent stream.</p>
+         * @param filter  the filter
+         */
         public void setFilter(String filter) {
             this.filter = filter;
         }
 
+        /**
+         * A logical name for the persistent stream.
+         * @return the given name for a persistent stream
+         */
         public String getName() {
             return name;
         }
 
+        /**
+         * Assigns a logical name for the persistent stream.
+         * <p>This value is only used for creating the persistent stream.</p>
+         * @param name  the given name for a persistent stream
+         */
         public void setName(String name) {
             this.name = name;
         }
 
+        /**
+         * The maximum number of events to process in a single transaction when reading a persistent stream.
+         * @return the batch size
+         */
         public int getBatchSize() {
             return batchSize;
         }
 
+        /**
+         * Sets the maximum number of events to process in a single transaction when reading a persistent stream. The default
+         * value is 1.
+         * @param batchSize the batch size
+         */
         public void setBatchSize(int batchSize) {
             this.batchSize = batchSize;
         }
 
+        /**
+         * The initial token for the persistent stream.
+         * @return the initial token
+         */
         public int getInitial() {
             return initial;
         }
 
+        /**
+         * Sets the initial token for the persistent stream. The default value is 0, starting the persistent stream from
+         * the first event in the event store.
+         * <p>This value is only used for creating the persistent stream.</p>
+         * @param initial the initial token
+         */
         public void setInitial(int initial) {
             this.initial = initial;
         }
 
+        /**
+         * The dead letter queue configuration.
+         * @return dead letter queue configuration
+         */
         public Dlq getDlq() {
             return dlq;
         }
 
+        /**
+         * Sets the dead letter queue configuration.
+         * @param dlq dead letter queue configuration
+         */
         public void setDlq(Dlq dlq) {
             this.dlq = dlq;
         }
     }
 
     public static class Dlq {
+        private boolean enabled;
+        private DlqCache cache;
 
         /**
-         * Enables creation and configuring a {@link SequencedDeadLetterQueue}.
-         * Will be used to configure the {@code registerDeadLetterQueueProvider} such that only groups set to enabled
-         * will have a sequenced dead letter queue. Defaults to "false".
-         */
-        private boolean enabled = false;
-
-        /**
-         * The {@link DlqCache} settings that will be used for this dlq.
-         */
-        private DlqCache cache = new DlqCache();
-
-        /**
-         * Indicates whether creating and configuring a
-         * {@link SequencedDeadLetterQueue} is enabled.
-         *
-         * @return true if creating the queue is enabled, false if otherwise
+         * Indicates whether the dead letter queue is enabled for this persistent stream.
+         * @return whether the dead letter queue is enabled.
          */
         public boolean isEnabled() {
             return enabled;
         }
 
         /**
-         * Enables (if {@code true}, default) or disables (if {@code false}) creating a
-         * {@link SequencedDeadLetterQueue}.
-         *
-         * @param enabled whether to enable token store creation.
+         * Sets whether the dead letter queue is enabled for this persistent stream.
+         * @param enabled enabled indicator.
          */
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
         }
 
         /**
-         * Retrieves the AutoConfiguration settings for the cache of the sequenced dead letter queue.
-         *
-         * @return the AutoConfiguration settings for the cache of the sequenced dead letter queue.
+         * Cache configuration for the dead letter queue.
+         * @return the cache configuration
          */
         public DlqCache getCache() {
             return cache;
         }
 
         /**
-         * Defines the AutoConfiguration settings for the cache of the sequenced dead letter queue.
-         *
-         * @param cache the cache settings for the sequenced dead letter.
+         * Configures the cache for the dead letter queue.
+         * @param cache the cache configuration
          */
         public void setCache(DlqCache cache) {
             this.cache = cache;
@@ -1849,56 +1924,39 @@ public class AxonServerConfiguration {
     }
 
     public static class DlqCache {
-
-        /**
-         * Enables caching the sequence identifiers on the
-         * {@link DeadLetteringEventHandlerInvoker}. This can prevent calls
-         * to the database to check whether a sequence is already present. Defaults to {@code false}.
-         */
-        private boolean enabled = false;
-
-        /**
-         * The amount of sequence identifiers to keep in memory. This setting is used per segment, and only when the
-         * {@link SequencedDeadLetterQueue} is not empty. Defaults to
-         * {@code 1024}.
-         */
+        private boolean enabled;
         private int size = 1024;
 
         /**
-         * Indicates whether using a cache is enabled.
-         *
-         * @return true if using a cache is enabled, false if otherwise.
+         * Indicates whether caching is enabled for the dead letter queue.
+         * @return whether caching is enabled
          */
         public boolean isEnabled() {
             return enabled;
         }
 
         /**
-         * Enables (if {@code true}, default) or disables (if {@code false}) using a cache.
-         *
-         * @param enabled whether to enable using a cache.
+         * Sets whether caching is enabled for the dead letter queue.
+         * @param enabled enabled indicator.
          */
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
         }
 
         /**
-         * Returns the size of the sequence identifiers to keep in memory, per segment.
-         *
-         * @return the amount of sequence identifiers to keep in memory.
+         * The size of the dead letter queue key cache.
+         * @return the size of the dead letter queue key cache
          */
         public int getSize() {
             return size;
         }
 
         /**
-         * Set the amount of sequence identifiers to keep in memory, per segment.
-         *
-         * @param size the maximum size of the sequence identifiers which are not present.
+         * Sets the size of the dead letter queue key cache.
+         * @param size  the size of the dead letter queue key cache
          */
         public void setSize(int size) {
             this.size = size;
         }
     }
-
 }
