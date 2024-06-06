@@ -98,7 +98,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
     private final Coordinator coordinator;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final long tokenClaimInterval;
-    private final int maxClaimedSegments;
+    private final MaxSegmentProvider maxSegmentProvider;
     private final long claimExtensionThreshold;
     private final int batchSize;
     private final Clock clock;
@@ -132,7 +132,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         this.workerExecutor = builder.workerExecutorBuilder.apply(name);
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
-        this.maxClaimedSegments = builder.maxClaimedSegments;
+        this.maxSegmentProvider = builder.maxSegmentProvider;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.batchSize = builder.batchSize;
         this.clock = builder.clock;
@@ -150,7 +150,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .tokenClaimInterval(tokenClaimInterval)
                                       .claimExtensionThreshold(claimExtensionThreshold)
                                       .clock(clock)
-                                      .maxClaimedSegments(maxClaimedSegments)
+                                      .maxSegmentProvider(maxSegmentProvider)
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .coordinatorClaimExtension(builder.coordinatorExtendsClaims)
@@ -347,7 +347,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      */
     @Override
     public int maxCapacity() {
-        return maxClaimedSegments;
+        return maxSegmentProvider.getMaxSegments(name);
     }
 
     @Override
@@ -442,7 +442,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 ms -> ReplayToken.createReplayToken(ms.createHeadToken());
         private long tokenClaimInterval = 5000;
-        private int maxClaimedSegments = Short.MAX_VALUE;
+        private MaxSegmentProvider maxSegmentProvider;
         private long claimExtensionThreshold = 5000;
         private int batchSize = 1;
         private Clock clock = GenericEventMessage.clock;
@@ -672,13 +672,13 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * Defines the maximum number of segment this {@link StreamingEventProcessor} may claim. Defaults to {@value
          * Short#MAX_VALUE}.
          *
-         * @param maxClaimedSegments the maximum number fo claimed segments for this {@link StreamingEventProcessor}
+         * @param maxSegmentProvider the maximum number fo claimed segments for this {@link StreamingEventProcessor}
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder maxClaimedSegments(int maxClaimedSegments) {
-            assertStrictPositive(maxClaimedSegments, "Max claimed segments should be a higher valuer than zero");
-            this.maxClaimedSegments = maxClaimedSegments;
+        public Builder maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
+            assertStrictPositive(maxSegmentProvider.getMaxSegments(name), "Max claimed segments should be a higher valuer than zero");
+            this.maxSegmentProvider = maxSegmentProvider;
             return this;
         }
 

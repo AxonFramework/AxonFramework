@@ -86,7 +86,7 @@ class CoordinatorTest {
                                  .workPackageFactory((segment, trackingToken) -> workPackage)
                                  .initialToken(es -> ReplayToken.createReplayToken(es.createHeadToken()))
                                  .eventFilter(eventMessage -> true)
-                                 .maxClaimedSegments(SEGMENT_IDS.length)
+                                 .maxSegmentProvider(e -> SEGMENT_IDS.length)
                                  .build();
     }
 

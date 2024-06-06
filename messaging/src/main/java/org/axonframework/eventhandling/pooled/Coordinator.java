@@ -90,7 +90,7 @@ class Coordinator {
     private final long tokenClaimInterval;
     private final long claimExtensionThreshold;
     private final Clock clock;
-    private final int maxClaimedSegments;
+    private final MaxSegmentProvider maxSegmentProvider;
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final boolean coordinatorExtendsClaims;
@@ -126,7 +126,7 @@ class Coordinator {
         this.tokenClaimInterval = builder.tokenClaimInterval;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.clock = builder.clock;
-        this.maxClaimedSegments = builder.maxClaimedSegments;
+        this.maxSegmentProvider = builder.maxSegmentProvider;
         this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
@@ -400,7 +400,7 @@ class Coordinator {
         private long tokenClaimInterval = 5000;
         private long claimExtensionThreshold = 5000;
         private Clock clock = GenericEventMessage.clock;
-        private int maxClaimedSegments;
+        private MaxSegmentProvider  maxSegmentProvider;
         private int initialSegmentCount = 16;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
         private Runnable shutdownAction = () -> {
@@ -555,11 +555,11 @@ class Coordinator {
         /**
          * Sets the maximum number of segments this instance may claim.
          *
-         * @param maxClaimedSegments the maximum number of segments this instance may claim
+         * @param maxSegmentProvider the maximum number of segments this instance may claim
          * @return the current Builder instance, for fluent interfacing
          */
-        Builder maxClaimedSegments(int maxClaimedSegments) {
-            this.maxClaimedSegments = maxClaimedSegments;
+        Builder maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
+            this.maxSegmentProvider = maxSegmentProvider;
             return this;
         }
 
@@ -853,7 +853,17 @@ class Coordinator {
                                                       .filter(segment -> !workPackages.containsKey(segment.getSegmentId()))
                                                       .collect(Collectors.toList());
 
-            int maxSegmentsToClaim = maxClaimedSegments - workPackages.size();
+            int maxSegmentsPerNode = maxSegmentProvider.apply(name);
+
+            if(segments.size() > maxSegmentsPerNode) {
+                logger.info("Total segments {} for processor {} is above maxSegmentsPerNode = {} releasing additional segments",
+                        segments.size(), name, maxSegmentsPerNode);
+                segments.stream().limit(segments.size() - maxSegmentsPerNode)
+                        .forEach(segment -> releaseUntil(segment.getSegmentId(),
+                                GenericEventMessage.clock.instant().plusMillis(tokenClaimInterval * 2)));
+            }
+
+            int maxSegmentsToClaim = maxSegmentsPerNode - workPackages.size();
 
             for (Segment segment : unClaimedSegments) {
                 int segmentId = segment.getSegmentId();
