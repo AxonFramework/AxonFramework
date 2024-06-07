@@ -15,14 +15,12 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
-import io.axoniq.axonserver.connector.control.ProcessorInstructionHandler;
 import io.axoniq.axonserver.connector.event.EventChannel;
 import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamCallbacks;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import io.axoniq.axonserver.connector.event.PersistentStreamSegment;
 import io.axoniq.axonserver.connector.impl.StreamClosedException;
-import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
@@ -39,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +44,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static io.axoniq.axonserver.connector.event.PersistentStreamSegment.PENDING_WORK_DONE_MARKER;
 
 /**
  * Receives the events for a persistent stream and passes batches of events to the event consumer.
@@ -58,17 +57,19 @@ public class PersistentStreamConnection {
     private static final int MAX_MESSAGES_PER_RUN = 10_000;
     private final Logger logger = LoggerFactory.getLogger(PersistentStreamConnection.class);
 
-    private final String name;
+    private final String streamId;
     private final Configuration configuration;
     private final PersistentStreamProperties persistentStreamProperties;
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
 
-    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer = new AtomicReference<>(events -> {});
+    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer = new AtomicReference<>(events -> {
+    });
     private final ScheduledExecutorService scheduler;
     private final int batchSize;
 
     private final Map<PersistentStreamSegment, AtomicBoolean> processGate = new ConcurrentHashMap<>();
+    private final Map<PersistentStreamSegment, AtomicBoolean> doneConfirmed = new ConcurrentHashMap<>();
 
     /**
      * Instantiates a connection for a persistent stream.
@@ -83,7 +84,7 @@ public class PersistentStreamConnection {
                                       PersistentStreamProperties persistentStreamProperties,
                                       ScheduledExecutorService scheduler,
                                       int batchSize) {
-        this.name = streamId;
+        this.streamId = streamId;
         this.configuration = configuration;
         this.persistentStreamProperties = persistentStreamProperties;
         this.scheduler = scheduler;
@@ -110,92 +111,34 @@ public class PersistentStreamConnection {
                                                                             this::streamClosed);
         EventChannel eventChannel = axonServerConnectionManager.getConnection(
                 axonServerConfiguration.getContext()).eventChannel();
-        PersistentStream persistentStream = eventChannel.openPersistentStream(name,
+        PersistentStream persistentStream = eventChannel.openPersistentStream(streamId,
                                                                               axonServerConfiguration.getEventFlowControl()
                                                                                                      .getPermits(),
                                                                               axonServerConfiguration.getEventFlowControl()
                                                                                                      .getNrOfNewPermits(),
                                                                               callbacks,
                                                                               persistentStreamProperties);
-
-
-        registerEventProcessor(axonServerConnectionManager, axonServerConfiguration.getContext());
         persistentStreamHolder.set(persistentStream);
     }
 
 
-    private void registerEventProcessor(AxonServerConnectionManager axonServerConnectionManager, String context) {
-        axonServerConnectionManager.getConnection(context)
-                                   .controlChannel()
-                                   .registerEventProcessor(name,
-                                                           () -> EventProcessorInfo.newBuilder()
-                                                                                   .setProcessorName(name)
-                                                                                   .setMode("PersistentStream")
-                                                                                   .setTokenStoreIdentifier("AxonServer")
-                                                                                   .setActiveThreads(0)
-                                                                                   .build(),
-                                                           new ProcessorInstructionHandler() {
-                                                               @Override
-                                                               public CompletableFuture<Boolean> releaseSegment(
-                                                                       int segmentId) {
-                                                                   CompletableFuture<Boolean> failed = new CompletableFuture<>();
-                                                                   failed.completeExceptionally(new RuntimeException(
-                                                                           "Release not supported"));
-                                                                   return failed;
-                                                               }
-
-                                                               @Override
-                                                               public CompletableFuture<Boolean> splitSegment(
-                                                                       int segmentId) {
-                                                                   CompletableFuture<Boolean> failed = new CompletableFuture<>();
-                                                                   failed.completeExceptionally(new RuntimeException(
-                                                                           "Split not supported"));
-                                                                   return failed;
-                                                               }
-
-                                                               @Override
-                                                               public CompletableFuture<Boolean> mergeSegment(
-                                                                       int segmentId) {
-                                                                   CompletableFuture<Boolean> failed = new CompletableFuture<>();
-                                                                   failed.completeExceptionally(new RuntimeException(
-                                                                           "Merge not supported"));
-                                                                   return failed;
-                                                               }
-
-                                                               @Override
-                                                               public CompletableFuture<Void> pauseProcessor() {
-                                                                   CompletableFuture<Void> failed = new CompletableFuture<>();
-                                                                   failed.completeExceptionally(new RuntimeException(
-                                                                           "Pause not supported"));
-                                                                   return failed;
-                                                               }
-
-                                                               @Override
-                                                               public CompletableFuture<Void> startProcessor() {
-                                                                   CompletableFuture<Void> failed = new CompletableFuture<>();
-                                                                   failed.completeExceptionally(new RuntimeException(
-                                                                           "Start not supported"));
-                                                                   return failed;
-                                                               }
-                                                           });
-    }
-
     private void streamClosed(Throwable throwable) {
         persistentStreamHolder.set(null);
         if (throwable != null) {
-            logger.info("{}: Rescheduling persistent stream", name, throwable);
+            logger.info("{}: Rescheduling persistent stream", streamId, throwable);
             scheduler.schedule(this::start, 1, TimeUnit.SECONDS);
         }
     }
 
     private void segmentClosed(PersistentStreamSegment persistentStreamSegment) {
         processGate.remove(persistentStreamSegment);
-        logger.info("{}: Segment closed: {}", name, persistentStreamSegment);
+        logger.info("{}: Segment closed: {}", streamId, persistentStreamSegment);
     }
 
     private void segmentOpened(PersistentStreamSegment persistentStreamSegment) {
-        logger.info("{}: Segment opened: {}", name, persistentStreamSegment);
+        logger.info("{}: Segment opened: {}", streamId, persistentStreamSegment);
         processGate.put(persistentStreamSegment, new AtomicBoolean());
+        doneConfirmed.put(persistentStreamSegment, new AtomicBoolean());
     }
 
     private void messageAvailable(PersistentStreamSegment persistentStreamSegment) {
@@ -210,39 +153,42 @@ public class PersistentStreamConnection {
             return;
         }
 
+        logger.debug("{}[{}] readMessagesFromSegment - closed: {}",
+                     streamId, persistentStreamSegment.segment(), persistentStreamSegment.isClosed());
         boolean reschedule = true;
         try {
             int remaining = Math.max(MAX_MESSAGES_PER_RUN, batchSize);
             GrpcMetaDataAwareSerializer serializer = new GrpcMetaDataAwareSerializer(configuration.eventSerializer());
-            while (remaining > 0 && !persistentStreamSegment.isClosed() ) {
-                EventWithToken event = persistentStreamSegment.nextIfAvailable();
-                if (event == null) {
+            while (remaining > 0 && !persistentStreamSegment.isClosed()) {
+                List<EventWithToken> batch = readBatch(persistentStreamSegment);
+                if (batch.isEmpty()) {
                     break;
-                }
-                List<EventWithToken> batch = new LinkedList<>();
-                batch.add(event);
-
-                while (batch.size() < batchSize && (event = persistentStreamSegment.nextIfAvailable()) != null) {
-                    batch.add(event);
                 }
 
                 List<TrackedEventMessage<?>> eventMessages = upcastAndDeserialize(batch, serializer);
-
-                if (!persistentStreamSegment.isClosed()) {
-                    consumer.get().accept(eventMessages);
-                    long token = batch.get(batch.size() - 1).getToken();
-                    persistentStreamSegment.acknowledge(token);
-                    remaining -= batch.size();
-                }
+                consumer.get().accept(eventMessages);
+                logger.debug("{}/{} processed {} entries",
+                             streamId,
+                             persistentStreamSegment.segment(),
+                             eventMessages.size());
+                long token = batch.get(batch.size() - 1).getToken();
+                persistentStreamSegment.acknowledge(token);
+                remaining -= batch.size();
             }
+
+            acknowledgeDoneWhenClosed(persistentStreamSegment);
         } catch (StreamClosedException e) {
-            logger.debug("{}: Stream closed for segment {}", name, persistentStreamSegment);
+            logger.debug("{}: Stream closed for segment {}", streamId, persistentStreamSegment.segment());
             processGate.remove(persistentStreamSegment);
             reschedule = false;
             // stop loop
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             persistentStreamSegment.error(e.getMessage());
-            logger.warn("{}: Exception while processing events for segment {}", name, persistentStreamSegment, e);
+            logger.warn("{}: Exception while processing events for segment {}",
+                        streamId, persistentStreamSegment.segment(), e);
             processGate.remove(persistentStreamSegment);
             reschedule = false;
         } finally {
@@ -251,6 +197,30 @@ public class PersistentStreamConnection {
                 scheduler.submit(() -> readMessagesFromSegment(persistentStreamSegment));
             }
         }
+    }
+
+    private void acknowledgeDoneWhenClosed(PersistentStreamSegment persistentStreamSegment) {
+        if (persistentStreamSegment.isClosed() &&
+                doneConfirmed.getOrDefault(persistentStreamSegment, SEGMENT_MISSING).compareAndSet(false, true)) {
+            persistentStreamSegment.acknowledge(PENDING_WORK_DONE_MARKER);
+        }
+    }
+
+    private List<EventWithToken> readBatch(PersistentStreamSegment persistentStreamSegment)
+            throws InterruptedException {
+        List<EventWithToken> batch = new LinkedList<>();
+        // read first one without waiting
+        EventWithToken event = persistentStreamSegment.nextIfAvailable();
+        if (event == null) {
+            return batch;
+        }
+        batch.add(event);
+        // allow next event to arrive within a small amount of time
+        while (batch.size() < batchSize && (event = persistentStreamSegment.nextIfAvailable(1, TimeUnit.MILLISECONDS))
+                != null) {
+            batch.add(event);
+        }
+        return batch;
     }
 
     private List<TrackedEventMessage<?>> upcastAndDeserialize(List<EventWithToken> batch,
