@@ -1,0 +1,7 @@
+* xref::introduction.adoc[]]
+* xref::upgrading-to-4-7.adoc[]
+
+* xref::serialization.adoc[]
+
+* xref::spring-boot-integration.adoc[]
+* xref::modules.adoc[]
