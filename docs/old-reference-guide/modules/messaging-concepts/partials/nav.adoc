@@ -1,4 +1,5 @@
-** xref:messaging-concepts:README.adoc[]
+
+* xref:messaging-concepts:README.adoc[]
 ** xref:messaging-concepts:anatomy-message.adoc[]
 ** xref:messaging-concepts:message-correlation.adoc[]
 ** xref:messaging-concepts:message-intercepting.adoc[]
