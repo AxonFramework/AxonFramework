@@ -1,6 +1,6 @@
 = Command Handlers
 
-== Aggregate Command Handlers
+== Aggregate command handlers
 
 Although Command Handlers can be placed in regular components, it is recommended to define the Command Handlers directly on the Aggregate that contains the state to process this command.
 
@@ -12,7 +12,7 @@ Command Messages can also be link:command-dispatchers.adoc[dispatched] with diff
 To be able to handle those correctly, the `String commandName` value can be specified in the `@CommandHandler` annotation.
 
 In order for Axon to know which instance of an Aggregate type should handle the Command Message, the property carrying the Aggregate Identifier in the command object *must* be annotated with `@TargetAggregateIdentifier`.
-The annotation may be placed on either the field or an accessor method (e.g. a getter) in the Command object.
+The annotation may be placed on either the field or an accessor method (for example, a getter) in the Command object.
 
 ____
 
@@ -114,7 +114,7 @@ Furthermore, a custom `CommandTargetResolver` will not be invoked for these comm
 
 ____
 
-=== Business Logic and State Changes
+=== Business logic and state changes
 
 Within an Aggregate there is a specific location to perform business logic validation and Aggregate state changes.
 The Command Handlers should _decide_ whether the Aggregate is in the correct state.
@@ -137,7 +137,7 @@ Handling an Event published by the Aggregate is thus only required if the state 
 
 ____
 
-=== Applying Events from Event Sourcing Handlers
+=== Applying events from event-sourcing handlers
 
 In some cases, especially when the Aggregate structure grows beyond just a couple of Entities, it is cleaner to react on events being published in other Entities of the same Aggregate (multi Entity Aggregates are explained in more detail link:modeling/multi-entity-aggregates.adoc[here]).
 However, since the Event Handling methods are also invoked when reconstructing Aggregate state, special precautions must be taken.
@@ -159,7 +159,7 @@ To make an Aggregate react on events from other Aggregate instances, link:../sag
 
 ____
 
-=== Aggregate Command Handler Creation Policy
+=== Aggregate command handler creation policy
 
 Up until now, we have depicted the `GiftCard` aggregate with roughly two types of command handlers:
 
@@ -213,9 +213,9 @@ This policy should be regarded as a create or update approach of an aggregate.
 This effectively works like any regular command handler annotated method.
 
 [[external_command_handlers]]
-== External Command Handlers
+== External command handlers
 
-Command handling functions are most often directly placed on the Aggregate (as described in more detail <<Aggregate Command Handlers,here>>).
+Command handling functions are most often directly placed on the Aggregate (as described in more detail <<Aggregate command handlers,here>>).
 There are situations however where it is not possible nor desired to route a command directly to an Aggregate instance.
 Message handling functions, like Command Handlers, can however be placed on any object.
 It is thus possible to instantiate a 'Command Handling Object'.

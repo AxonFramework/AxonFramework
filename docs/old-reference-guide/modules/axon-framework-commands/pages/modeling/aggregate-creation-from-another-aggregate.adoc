@@ -10,7 +10,7 @@ The most suitable scenario to create a "child" Aggregate from a "parent" Aggrega
 
 ____
 
-== How to create an Aggregate from another Aggregate
+== How to create an aggregate from another aggregate
 
 Let us assume we have a `ParentAggregate`, that upon handling a certain command will decide to create an `ChildAggregate`. To achieve this, `ParentAggregate` would look something like this:
 

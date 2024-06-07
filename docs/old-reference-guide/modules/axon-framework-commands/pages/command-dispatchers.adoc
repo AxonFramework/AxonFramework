@@ -11,7 +11,7 @@ This page will show how and when to use the command gateway and bus.
 How to configure and specifics on the command gateway and bus implementations are discussed in the link:infrastructure.adoc[infrastructure] section.
 
 [[the-command-bus]]
-== The Command Bus
+== The `CommandBus`
 
 The 'Command Bus' is the mechanism that dispatches commands to their respective command handlers.
 As such it is the infrastructure component that is aware which component can handle which command.
@@ -55,7 +55,7 @@ The `CommandDispatcher` described above exemplifies a couple of important aspect
 Typed identifier objects are also possible, as long as the object implements a sensible `toString()` function.
 
 . The `GenericCommandMessage#asCommandMessage(Object)` method is used to create a `CommandMessage`.
-To be able to dispatch a command on the `CommandBus`, you are required to wrap your own command object (e.g. the 'command message payload') in a `CommandMessage`.
+To be able to dispatch a command on the `CommandBus`, you are required to wrap your own command object (for example, the 'command message payload') in a `CommandMessage`.
 The `CommandMessage` also allows the addition of xref:../messaging-concepts/anatomy-message.adoc#meta-data[MetaData] to the Command Message.
 
 . The `CommandBus#dispatch(CommandMessage)` function will dispatch the provided `CommandMessage` on the bus, for delivery to a command handler.
@@ -84,7 +84,7 @@ Alternatively, consider using a `CommandGateway`.
 
 ____
 
-== The Command Gateway
+== The `CommandGateway`
 
 The 'Command Gateway' is a convenience approach towards dispatching commands.
 It does so by abstracting certain aspects for you when dispatching a command on the `CommandBus`.
@@ -153,7 +153,7 @@ Doing so will ensure that the command dispatching thread will not wait longer th
 If command dispatching/handling was interrupted or the timeout was reached whilst using this approach, the command result will be `null`.
 In all other scenarios, the result follows the <<Command Dispatching Results,referenced>> approach.
 
-== Command Dispatching Results
+== Command dispatching results
 
 Dispatching commands will, generally speaking, have two possible outcomes:
 

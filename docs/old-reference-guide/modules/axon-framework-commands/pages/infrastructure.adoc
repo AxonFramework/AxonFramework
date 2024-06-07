@@ -8,16 +8,16 @@ Command handling also makes it easy to expose your command processing components
 Testing also becomes a lot easier.
 You could define test scripts by just defining the starting situation (given), command to execute (when) and expected results (then) by listing a number of events and commands (see link:../testing/commands-events.adoc[Testing] for more on this).
 
-The last major advantage is that it is very easy to switch between synchronous and asynchronous, as well as local versus distributed command processing.
+The last major advantage is that it is really easy to switch between synchronous and asynchronous, as well as local versus distributed command processing.
 
 This does not mean command dispatching using explicit command objects is the only way to do it. The goal of Axon is not to prescribe a specific way of working, but to support you doing it your way, while providing best practices as the default behavior. It is still possible to use a service layer that you can invoke to execute commands. The method will just need to start a unit of work (see link:../messaging-concepts/unit-of-work.adoc[Unit of Work]) and perform a commit or rollback on it when the method is finished.
 
 The next sections provide an overview of the tasks related to setting up a command dispatching infrastructure with the Axon Framework.
 The API-friendlier <<The Command Gateway,`CommandGateway`>> is mentioned, as well as the `CommandBus` in both a <<The Command Bus - Local,local>> and <<The Command Bus - Distributed,distributed>> environment.
 
-== The Command Gateway
+== The `CommandGateway`
 
-The Command Gateway is a convenient interface towards the command dispatching mechanism.
+The `CommandGateway` is a convenient interface towards the command dispatching mechanism.
 While you are not required to use a gateway to dispatch commands, it is generally the easiest option to do so.
 
 There are two ways to use a Command Gateway. The first is to use the `CommandGateway` interface and the `DefaultCommandGateway` implementation provided by Axon.
@@ -28,12 +28,12 @@ You can turn almost any interface into a command gateway using the `CommandGatew
 This allows you to define your application's interface using strong typing and declaring your own (checked) business exceptions.
 Axon will automatically generate an implementation for that interface at runtime.
 
-=== Configuring the Command Gateway
+=== Configuring the `CommandGateway`
 
 Both your custom Command Gateway and the one provided by Axon need to at least be configured with a Command Bus.
 In addition, the Command Gateway can be configured with a `RetryScheduler`, `CommandDispatchInterceptor`s, and `CommandCallback`s.
 
-==== RetryScheduler
+==== `RetryScheduler`
 
 The `RetryScheduler` is capable of scheduling retries when command execution has failed.
 When a command fails due to an exception that is explicitly non-transient, no retries are done at all.
@@ -48,18 +48,18 @@ Currently, two implementations exist:
 . The `ExponentialBackOffIntervalRetryScheduler` retries failed commands with an exponential back-off interval until
  it succeeds, or a maximum number of retries has taken place.
 
-==== CommandDispatchInterceptor
+==== `CommandDispatchInterceptor`
 
 `CommandDispatchInterceptor`s allow modification of `CommandMessage`s prior to dispatching them to the Command Bus.
 In contrast to `CommandDispatchInterceptor`s configured on the Command Bus, these interceptors are only invoked when messages are sent through this Gateway.
 For example, these interceptors could be used to attach metadata to a command or perform validation.
 
-==== CommandCallback
+==== `CommandCallback`
 
 A `CommandCallback` can be provided to the Command Gateway upon a regular `send`, specifying what to do with the command handling result.
 It works with the `CommandMessage` and `CommandResultMessage` classes, thus allowing for some generic behavior for all Commands sent through this gateway regardless of their type.
 
-=== Creating a custom Command Gateway - CommandGatewayFactory
+=== Creating a custom command gateway - `CommandGatewayFactory`
 
 Axon allows a custom interface to be used as a `CommandGateway`.
 The behavior of each method declared in the interface is based on the parameter types, return type and declared exception.
@@ -145,17 +145,18 @@ public class AxonConfig {
 
 ----
 
-== The Command Bus - Local
+== The command bus - local
 
 The local command bus is the mechanism that dispatches commands to their respective command handlers within an Axon application.
 Suggestions on how to use the `CommandBus` can be found link:command-dispatchers.adoc#the-command-bus[here].
 Several flavors of the command bus, with differing characteristics, exist within the framework.
 
-=== SimpleCommandBus
+[[SimpleCommandBus]]
+=== `SimpleCommandBus`
 
 The `SimpleCommandBus` is, as the name suggests, the simplest implementation.
 It does straightforward processing of commands in the thread that dispatches them.
-After a command is processed, the modified aggregate(s) are saved and generated events are published in that same thread.
+After a command is processed, the modified aggregates are saved and generated events are published in that same thread.
 In most scenarios, such as web applications, this implementation will suit your needs.
 
 Like most `CommandBus` implementations, the `SimpleCommandBus` allows interceptors to be configured.
@@ -193,7 +194,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration
+==== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -223,7 +224,8 @@ public class AxonConfig {
 }
 ----
 
-=== AsynchronousCommandBus
+[[AsynchronousCommandBus]]
+=== `AsynchronousCommandBus`
 
 As the name suggest, the `AsynchronousCommandBus` implementation executes commands asynchronously from the thread that dispatches them.
 It uses an `Executor` to perform the actual handling logic on a different Thread.
@@ -267,7 +269,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration
+==== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -297,7 +299,8 @@ public class AxonConfig {
 }
 ----
 
-=== DisruptorCommandBus
+[[DisruptorCommandBus]]
+=== `DisruptorCommandBus`
 
 The `SimpleCommandBus` has reasonable performance characteristics.
 The fact that the `SimpleCommandBus` needs locking to prevent multiple threads from concurrently accessing the same aggregate causes processing overhead and lock contention.
@@ -352,7 +355,7 @@ Optionally, you can provide a `DisruptorConfiguration` instance, which allows yo
  This is the process that stores and publishes the generated events.
 * `RollbackConfiguration` - defines on which Exceptions a Unit of Work should be rolled back.
  Defaults to a configuration that rolls back on unchecked exceptions.
-* `RescheduleCommandsOnCorruptState` - indicates whether Commands that have been executed against an Aggregate that has been corrupted (e.g. because a Unit of Work was rolled back) should be rescheduled.
+* `RescheduleCommandsOnCorruptState` - indicates whether Commands that have been executed against an Aggregate that has been corrupted (for example, because a Unit of Work was rolled back) should be rescheduled.
  If `false` the callback's `onFailure()` method will be invoked.
  If `true` (the default), the command will be rescheduled instead.
 * `CoolingDownPeriod` - sets the number of seconds to wait to make sure all commands are processed.
@@ -394,7 +397,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration
+==== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -423,7 +426,7 @@ public class AxonConfig {
 }
 ----
 
-== The Command Bus - Distributed
+== The command bus - distributed
 
 Oftentimes you would want multiple instances of command buses in different JVMs to act as one.
 Commands dispatched on one JVM's command bus should be seamlessly transported to a command handler in another JVM while sending back any results.
@@ -431,16 +434,16 @@ That is where the concept of 'distributing the command bus' comes in.
 
 There are a couple of concepts that are configurable, regardless of the type of distributed command bus that is being used:
 
-=== Local Segment
+=== Local segment
 
-Unlike the <<The Command Bus - Local,local>> `CommandBus` implementations, the distributed command buses do not invoke any handlers at all.
+Unlike the <<The command bus - local,local>> `CommandBus` implementations, the distributed command buses do not invoke any handlers at all.
 All they do is form a "bridge" between command bus implementations on different JVMs, delegating any received commands to the so-called _local segment_.
 
 By default, this local segment is the <<SimpleCommandBus,`SimpleCommandBus`>>.
 You can configure the local segment to be any of the other local command buses too, like the <<AsynchronousCommandBus,`AsynchronousCommandBus`>> and <<DisruptorCommandBus,`DisruptorCommandBus`>>.
 The details of how to configure the local segment are shown in the implementation sections.
 
-=== Load Factor
+=== Load factor
 
 The load factor defines the amount of load an Axon application would carry compared to other instances.
 For example, if you have a two machine set up, each with a load factor of 100, they will both carry an equal amount of load.
@@ -453,7 +456,7 @@ The default load factor set for the distributed `CommandBus` implementations is 
 The configuration changes slightly per distributed implementation and as such will be covered in those sections.
 
 [[routing-strategy]]
-=== Routing Strategy
+=== Routing strategy
 
 Commands should be xref:../../architecture-overview/README.adoc#explicit-messaging[routed consistently] to the same application, especially those targeted towards a specific Aggregate.
 This ensures a single instance is in charge of the targeted aggregate, resolving the concurrent access issue and allowing for optimization like caching to work as designed.
@@ -478,6 +481,7 @@ The `AnnotationRoutingStrategy` and `MetaDataRoutingStrategy` are considered the
 The `ERROR`, `RANDOM_KEY` and `STATIC_KEY` are _fallback routing strategies_ that should be configured on the annotation or meta-data implementations.
 To get a grasp how these are constructed, consider the following sample:
 
+[[AnnotationRoutingStrategy]]
 ==== `AnnotationRoutingStrategy`
 
 [source,java]
@@ -497,6 +501,7 @@ public class AxonConfig {
 }
 ----
 
+[[MetaDataRoutingStrategy]]
 ==== `MetaDataRoutingStrategy`
 
 [source,java]
@@ -527,7 +532,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration
+==== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -541,7 +546,8 @@ public class AxonConfig {
 }
 ----
 
-=== AxonServerCommandBus
+[[AxonServerCommandBus]]
+=== `AxonServerCommandBus`
 
 The `AxonServerCommandBus` is the _default_ distributed `CommandBus` implementation that is set by the framework.
 It connects to link:../../axon-server-introduction.adoc[AxonServer], with which it can send and receive commands.
@@ -597,7 +603,7 @@ public class AxonConfig {
 
 ----
 
-==== Spring Boot Auto Configuration
+==== Spring Boot auto configuration
 
 By simply including the `axon-spring-boot-starter` dependency, Axon will automatically configure the `AxonServerCommandBus`:
 
@@ -624,13 +630,13 @@ When doing any of these, Axon will fall back to the *un*distributed <<SimpleComm
 
 ____
 
-==== Local Segment and Load Factor Configuration
+==== Local segment and load factor configuration
 
-The <<Load Factor,load factor>> for the `AxonServerCommandBus` is defined through the `CommandLoadFactorProvider`.
+The <<Load factor,load factor>> for the `AxonServerCommandBus` is defined through the `CommandLoadFactorProvider`.
 This interface allows us to distinguish between commands to, for example, use a different load factor per command message.
 This might be useful if some commands are routed more often towards one instance in favour of the other.
 
-The following should be done to configure a custom <<Local Segment,local segment>> and/or load factor:
+The following should be done to configure a custom <<Local segment,local segment>> and/or load factor:
 
 ==== Axon Configuration API
 
@@ -649,7 +655,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration
+==== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -670,7 +676,8 @@ public class AxonConfig {
 }
 ----
 
-=== DistributedCommandBus
+[[DistributedCommandBus]]
+=== `DistributedCommandBus`
 
 The alternative to the <<AxonServerCommandBus,`AxonServerCommandBus`>> is the `DistributedCommandBus`.
 Each instance of the `DistributedCommandBus` on each JVM is referred to as a "Segment".

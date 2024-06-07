@@ -1,6 +1,8 @@
 * xref::introduction.adoc[]]
 * xref::upgrading-to-4-7.adoc[]
 
+include::axon-framework-commands:partial$nav.adoc[]
+
 * xref::serialization.adoc[]
 
 * xref::spring-boot-integration.adoc[]

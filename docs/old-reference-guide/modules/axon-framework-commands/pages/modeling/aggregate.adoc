@@ -3,7 +3,7 @@
 This chapter will cover the basics on how to implement an 'link:../../../architecture-overview/ddd-cqrs-concepts.md#aggregates[Aggregate]'.
 For more details on what an Aggregate is read the link:../../../architecture-overview/ddd-cqrs-concepts.md[DDD and CQRS concepts] page.
 
-== Basic Aggregate Structure
+== Basic aggregate structure
 
 An Aggregate is a regular object, which contains state and methods to alter that state.
 When creating the Aggregate object, you are effectively creating the 'Aggregate Root', typically carrying the name of the entire Aggregate.
@@ -57,7 +57,7 @@ Upon calling this function the provided `Object`s will be published as `EventMes
 
 . Using the `@EventSourcingHandler` is what tells the framework that the annotated function should be called when the Aggregate is 'sourced from its events'.
 As all the Event Sourcing Handlers combined will form the Aggregate, this is where all the _state changes_ happen.
-Note that the Aggregate Identifier *must* be set in the `@EventSourcingHandler` of the very first Event published by the aggregate.
+Note that the Aggregate Identifier *must* be set in the `@EventSourcingHandler` of the  first Event published by the aggregate.
 This is usually the creation event.
 Lastly, `@EventSourcingHandler` annotated functions are resolved using specific rules.
 These rules are the same for the `@EventHandler` annotated methods, and are thoroughly explained in link:../../events/event-handlers.adoc[Annotated Event Handler.]
@@ -78,7 +78,7 @@ Alternatively, you can add an `@SuppressWarnings("UnusedDeclaration")` annotatio
 
 ____
 
-== Aggregate Lifecycle Operations
+== Aggregate lifecycle operations
 
 There are a couple of operations which are desirable to be performed whilst in the life cycle of an Aggregate.
 To that end, the `AggregateLifecycle` class in Axon provides a couple of static functions:

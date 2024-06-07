@@ -73,13 +73,13 @@ ____
 
 *Defining the Entity type*
 
-The field declaration for both the `Collection` or `Map` should contain proper generics to allow Axon to identify the type of Entity contained in the collection or map. If it is not possible to add the generics in the declaration (e.g. because you're using a custom implementation which already defines generic types), you must specify the entity type by specifying the `type` field in the `@AggregateMember` annotation:
+The field declaration for both the `Collection` or `Map` should contain proper generics to allow Axon to identify the type of Entity contained in the collection or map. If it is not possible to add the generics in the declaration (for example, because you're using a custom implementation which already defines generic types), you must specify the entity type by specifying the `type` field in the `@AggregateMember` annotation:
 
 `@AggregateMember(type = GiftCardTransaction.class)`
 
 ____
 
-== Command Handling in Entities
+== Command handling in entities
 
 `@CommandHandler` annotations are not limited to the aggregate root. Placing all command handlers in the root will sometimes lead to a large number of methods on the aggregate root, while many of them simply forward the invocation to one of the underlying entities. If that is the case, you may place the `@CommandHandler` annotation on one of the underlying entities' methods. For Axon to find these annotated methods, the field declaring the entity in the aggregate root must be marked with `@AggregateMember`:
 
@@ -143,7 +143,7 @@ The runtime type of the field does not have to be exactly the declared type. How
 
 ____
 
-== Event Sourcing Handlers in Entities
+== Event Sourcing handlers in entities
 
 When using event sourcing as the mechanism to store the aggregates, not only the aggregate root needs to use events to trigger state transitions, but so does each of the entities within that aggregate. Axon provides support for event sourcing complex aggregate structures like these out of the box.
 
