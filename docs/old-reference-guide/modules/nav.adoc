@@ -5,6 +5,8 @@ include::messaging-concepts:partial$nav.adoc[]
 
 include::axon-framework-commands:partial$nav.adoc[]
 
+include::events:partial$nav.adoc[]
+
 * xref::serialization.adoc[]
 
 * xref::spring-boot-integration.adoc[]

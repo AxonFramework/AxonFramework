@@ -6,7 +6,7 @@ As any Event Processor, it serves as the technical aspect to handle events by in
 The Streaming Processor defines itself by receiving the events from a `StreamableMessageSource`.
 The `StreamableMessageSource` is an infrastructure component through which we can open a stream of events.
 The source can also specify positions on the event stream, so-called <<Tracking Tokens,Tracking Tokens>>, used as start positions when opening an event stream.
-An example of a `StreamableMessageSource` is the xref:../event-bus-and-event-store.adoc#event-store[`EventStore`], like for example Axon Server or an xref:../event-bus-and-event-store.adoc#embedded-event-store[RDBMS].
+An example of a `StreamableMessageSource` is the xref:event-bus-and-event-store.adoc#event-store[`EventStore`], like for example Axon Server or an xref:event-bus-and-event-store.adoc#embedded-event-store[RDBMS].
 
 Furthermore, Streaming Processors use separate threads to process the events retrieved from the `StreamableMessageSource`.
 Using separate threads decouples the `StreamingEventProcessor` from other operations (e.g., event publication or command handling), allowing for cleaner separation within any application. +

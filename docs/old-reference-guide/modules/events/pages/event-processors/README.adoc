@@ -1,6 +1,6 @@
 = Event Processors
 
-link:../event-handlers.adoc[Event handlers] define the business logic to be performed when an event is received.
+link:event-handlers.adoc[Event handlers] define the business logic to be performed when an event is received.
 _Event Processors_ are the components that take care of the technical aspects of that processing.
 They start a link:../../messaging-concepts/unit-of-work.adoc[unit of work] and possibly a transaction.
 However, they also ensure that link:../../messaging-concepts/message-correlation.adoc[correlation data] can be correctly attached to all messages created during event processing, among other non-functional requirements.
@@ -39,7 +39,7 @@ Furthermore, the default processor implementation used by Axon is the link:strea
 The (default) event processor used can be adjusted, as is shown in the link:subscribing.adoc#configuring[subscribing] and link:streaming.adoc#configuring[streaming] sections.
 
 Event handlers, or Event Handling Components, come in roughly two flavors: "regular" (singleton, stateless) event handlers and link:../../sagas/README.adoc[sagas].
-link:../event-handlers.adoc#registering-event-handlers[This] section describes the process to register an event handler, whereas link:../../sagas/implementation.adoc#configuring-a-saga[this] page describes the saga registration process.
+link:event-handlers.adoc#registering-event-handlers[This] section describes the process to register an event handler, whereas link:../../sagas/implementation.adoc#configuring-a-saga[this] page describes the saga registration process.
 
 Now let us consider that the following event handlers have been registered:
 
@@ -121,7 +121,7 @@ If an instance matches several criteria, the outcome is _undefined_.
 
 === Ordering Event Handlers within a processor
 
-To order event handlers within an Event Processor, the order in which event handlers are registered (as described in the xref:../event-handlers.adoc#registering-event-handlers[Registering Event Handlers] section) is guiding.
+To order event handlers within an Event Processor, the order in which event handlers are registered (as described in the xref:event-handlers.adoc#registering-event-handlers[Registering Event Handlers] section) is guiding.
 Thus, the ordering in which an Event Processor will call event handlers for event handling is the same as their insertion ordering in the Configuration API.
 
 If we use Spring as the mechanism for wiring everything, we can explicitly specify the event handler component ordering by adding the `@Order` annotation.
