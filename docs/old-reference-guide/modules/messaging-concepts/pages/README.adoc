@@ -83,9 +83,9 @@ ____
 Although domain events technically indicate a state change, you should try to capture the intention of the state in the event, too.
 A good practice is to use an abstract implementation of a domain event to capture the fact that certain state has changed, and use a concrete sub-implementation of that abstract class that indicates the intention of the change.
 For example, you could have an abstract `AddressChangedEvent`, and two implementations `ContactMovedEvent` and `AddressCorrectedEvent` that capture the intent of the state change.
-Some listeners don't care about the intent (e.g. database updating event listeners).
+Some listeners don't care about the intent (for example, database updating event listeners).
 These will listen to the abstract type.
-Other listeners do care about the intent and these will listen to the concrete subtypes (e.g. to send an address change confirmation email to the customer).
+Other listeners do care about the intent and these will listen to the concrete subtypes (for example, to send an address change confirmation email to the customer).
 
 image::../../../assets/state-change-intent.png[Adding intent to events]
 

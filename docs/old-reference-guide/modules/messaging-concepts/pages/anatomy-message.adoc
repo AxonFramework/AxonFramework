@@ -12,10 +12,10 @@ To still be able to consider two Java-instances of a message as representing the
 Changing the Meta Data of a message will not change this identifier.
 
 [[meta-data]]
-== Meta Data
+== Meta data
 
 Meta Data of messages typically describe the context in which a Message was generated.
-For example, Meta Data might contain information about the message that caused this Message to be generated (e.g. Command handlers generate Events based on an incoming Command).
+For example, Meta Data might contain information about the message that caused this Message to be generated (for example, Command handlers generate Events based on an incoming Command).
 
 In Axon, Meta Data is represented as a Map of String to Object.
 While you are free to add any type of object as the Meta Data value, we strongly recommend sticking to primitives and Strings (or at most simple objects).

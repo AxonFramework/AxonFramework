@@ -14,7 +14,7 @@ For more specifics on configuring custom `ParameterResolver`s we suggest
 reading link:../../appendices/message-handler-tuning/parameter-resolvers.adoc[this] section.
 
 [[supported-parameters-for-command-handlers]]
-== Supported Parameters for Command Handlers
+== Supported parameters for command handlers
 
 By default, `@CommandHandler` annotated methods allow the following parameter types.
 
@@ -34,7 +34,7 @@ By default, `@CommandHandler` annotated methods allow the following parameter ty
 |===
 
 [[supported-parameters-for-event-handlers]]
-== Supported Parameters for Event Handlers
+== Supported parameters for event handlers
 
 By default, `@EventHandler` annotated methods allow the following parameter types.
 
@@ -57,7 +57,7 @@ By default, `@EventHandler` annotated methods allow the following parameter type
 |===
 
 [[supported-parameters-for-query-handlers]]
-== Supported Parameters for Query Handlers
+== Supported parameters for query handlers
 
 By default, `@QueryHandler` annotated methods allow the following parameter types.
 

@@ -5,13 +5,13 @@ Dispatch interceptors are invoked before a message is dispatched to a message ha
 At that point, it may not even be known that a handler exists for that message.
 Handler interceptors are invoked just before the message handler is invoked.
 
-== Command Interceptors
+== Command interceptors
 
 One of the advantages of using a command bus is the ability to undertake action based on all incoming commands.
 Examples are logging or authentication, which you might want to do regardless of the type of command.
 This is done using Interceptors.
 
-=== Command Dispatch Interceptors
+=== Command dispatch interceptors
 
 Message dispatch interceptors are invoked when a command is dispatched on a command bus.
 They have the ability to alter the command message by adding metadata.
@@ -70,7 +70,7 @@ ____
 *Interceptor Ordering Tip*
 
 You want to spend as few resources on an invalid command as possible.
-Therefore, this interceptor is generally placed at the very front of the interceptor chain.
+Therefore, this interceptor is generally placed at the front of the interceptor chain.
 In some cases, a `LoggingInterceptor` or `AuditingInterceptor` might need to be placed first, with the validating interceptor immediately following it.
 
 ____
@@ -78,7 +78,7 @@ ____
 The `BeanValidationInterceptor` also implements `MessageHandlerInterceptor`, allowing you to configure it as a handler interceptor as well.
 
 [[command-handler-interceptors]]
-=== Command Handler Interceptors
+=== Command handler interceptors
 
 Message handler interceptors can take action both before and after command processing.
 Interceptors can even block command processing altogether, for example for security reasons.
@@ -133,7 +133,7 @@ public class CommandBusConfiguration {
 ----
 
 [[command-handler-interceptor-annotation]]
-==== `@CommandHandlerInterceptor` Annotation
+==== `@CommandHandlerInterceptor` annotation
 
 The framework has the ability to add a Handler Interceptor as a `@CommandHandlerInterceptor` annotated method on the Aggregate/Entity.
 The difference between a method on an Aggregate and a "<<Command Handler Interceptors,regular>>" Command Handler Interceptor, is that with the annotation approach you can make decisions based on the current state of the given Aggregate.
@@ -165,12 +165,13 @@ public class GiftCard {
 
 Note that the `@CommandHandlerInterceptor` is essentially a more specific implementation of the `@MessageHandlerInterceptor` described <<Annotated MessageHandlerInterceptor,here>>.
 
-== Event Interceptors
+== Event interceptors
 
 Similar to command messages, event messages can also be intercepted prior to publishing and handling to perform additional actions on all events.
-This boils down to the same two types of interceptors for messages: the dispatch interceptor and the handler interceptor.
 
-=== Event Dispatch Interceptors
+This is simplfied to the same two types of interceptors for messages: the dispatch interceptor and the handler interceptor.
+
+=== Event dispatch interceptors
 
 Any message dispatch interceptors registered to an event bus will be invoked when an event is published.
 They have the ability to alter the event message by adding metadata.
@@ -216,7 +217,7 @@ public class EventBusConfiguration {
 ----
 
 [[event-handler-interceptors]]
-=== Event Handler Interceptors
+=== Event handler interceptors
 
 Message handler interceptors can take action both before and after event processing.
 Interceptors can even block event processing altogether, for example for security reasons.
@@ -280,13 +281,13 @@ This is because the sole purpose of the `EventBus` is event publishing/dispatchi
 
 ____
 
-== Query Interceptors
+== Query interceptors
 
 One of the advantages of using a query bus is the ability to undertake action based on all incoming queries.
 Examples are logging or authentication, which you might want to do regardless of the type of query.
 This is done using interceptors.
 
-=== Query Dispatch Interceptors
+=== Query dispatch interceptors
 
 Message dispatch interceptors are invoked when a query is dispatched on a query bus or when a subscription update to a query message is dispatched on a query update emitter.
 They have the ability to alter the message by adding metadata.
@@ -311,14 +312,14 @@ ____
 *Interceptor Ordering Tip*
 
 You want to spend as few resources on an invalid queries as possible.
-Therefore, this interceptor is generally placed at the very front of the interceptor chain.
+Therefore, this interceptor is generally placed at the front of the interceptor chain.
 In some cases, a logging or auditing interceptor might need to be placed first, with the validating interceptor immediately following it.
 
 ____
 
 The `BeanValidationInterceptor` also implements `MessageHandlerInterceptor`, allowing you to configure it as a handler interceptor as well.
 
-=== Query Handler Interceptors
+=== Query handler interceptors
 
 Message handler interceptors can take action both before and after query processing.
 Interceptors can even block query processing altogether, for example for security reasons.
@@ -332,9 +333,10 @@ Unlike dispatch interceptors, handler interceptors are invoked in the context of
 That means they can attach correlation data based on the message being handled to the unit of work, for example.
 This correlation data will then be attached to messages being created in the context of that unit of work.
 
-== Annotated MessageHandlerInterceptor
+[[annotated-MessageHandlerInterceptor]]
+== Annotated `MessageHandlerInterceptor`
 
-Alongside defining overall `MessageHandlerInterceptor` instances on the component handling a message (e.g. a command, query or event), it is also possible to define a handler interceptor for a specific component containing the handlers.
+Alongside defining overall `MessageHandlerInterceptor` instances on the component handling a message (for example, a command, query or event), it is also possible to define a handler interceptor for a specific component containing the handlers.
 This can be achieved by adding a method handling the message, combined with the `@MessageHandlerInterceptor` annotation.
 Adding such a method allows you more fine-grained control over which message handling components should react and how these should react.
 
@@ -420,7 +422,8 @@ Next to the message, payload and `InterceptorChain`, a `@MessageHandlerIntercept
 Which parameters the framework can resolve on such a function, is based on the type of `Message` being handled by the interceptor.
 For more specifics on which parameters are resolvable for the `Message` being handled, take a look at link:supported-parameters-annotated-handlers.adoc[this] page.
 
-=== @ExceptionHandler
+[[ExceptionHandler]]
+=== `@ExceptionHandler`
 
 The `@MessageHandlerInterceptor` also allows for a more specific version of an intercepting function.
 Namely, an `@ExceptionHandler` annotated method.
@@ -437,7 +440,7 @@ You can introduce `@ExceptionHandler` annotated methods in any message handling 
 Furthermore, you can choose to react to all exceptions or define specific exception/message combinations to which the handler should respond.
 Check the following samples for some snippets on how to use this:
 
-==== Aggregate Exception Handlers
+==== Aggregate exception handlers
 
 [source,java]
 ----
@@ -483,7 +486,7 @@ class GiftCard {
 }
 ----
 
-==== Projector Exception Handlers
+==== Projector exception handlers
 
 [source,java]
 ----

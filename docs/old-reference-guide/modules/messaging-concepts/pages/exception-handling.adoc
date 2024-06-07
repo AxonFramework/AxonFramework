@@ -4,7 +4,7 @@ Exception handling is a well-known concept when developing software.
 Dealing with exceptions in a distributed application landscape is a little more challenging than we are typically used to.
 Especially when it comes to failures when handling a command or a query, messages that are intended to have a return value, we should be conscious about how we throw exceptions.
 
-== Handler Execution Exception
+== Handler execution exception
 
 The `HandlerExecutionException` marks an exception which originates from a message handling member.
 Since an link:../events/README.adoc[Event] message is unidirectional, handling an event does not include any return values.
@@ -19,7 +19,7 @@ To maintain support for conditional logic dependent on the type of exception thr
 It is thus recommended to throw a `CommandExecutionException` / `QueryExecutionException`with the required details, when command/query handling fails.
 This behaviour could be supported generically by implementing link:message-intercepting.adoc[interceptors] which perform exception wrapping for you.
 
-== @ExceptionHandler annotated methods
+== `@ExceptionHandler` annotated methods
 
 Axon Framework allows the use of methods annotated with `@ExceptionHandler` to provide more fine-grained control on how to react to exceptions.
 More specifically, this is a type of link:message-intercepting.adoc[message handler interceptor] dedicated to reacting to exceptional results.
