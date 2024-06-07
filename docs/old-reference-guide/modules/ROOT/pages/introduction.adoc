@@ -23,7 +23,7 @@ A summary of the various subsections is given below.
 |xref:upgrading-to-4-7.adoc[Upgrading to 4.7] |Step plan explaining how to upgrade to Axon Framework 4.7
 |xref:messaging-concepts:README.adoc[Messaging Concepts] |Conceptual overview of "Messages" within the Axon Framework
 |xref:axon-framework-commands:README.adoc[Commands] |Command Message Development using the Axon Framework
-|xref:events/README.adoc[Events] |Event Message Development using the Axon Framework
+|xref:events:README.adoc[Events] |Event Message Development using the Axon Framework
 |xref:queries/README.adoc[Queries] |Query Message Development using the Axon Framework
 |xref:sagas/README.adoc[Sagas] |Long Running Transaction development using the Axon Framework
 |xref:testing/README.adoc[Testing] |Testing capabilities provided by the Axon Framework
