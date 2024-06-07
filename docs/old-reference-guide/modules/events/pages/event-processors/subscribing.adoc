@@ -52,7 +52,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot AutoConfiguration
+==== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -85,7 +85,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot AutoConfiguration - Java
+==== Spring Boot auto configuration - Java
 
 [source,java]
 ----
@@ -107,7 +107,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot AutoConfiguration - Properties file
+==== Spring Boot auto configuration - Properties file
 
 A properties file allows the configuration of some fields on an Event Processor.
 Do note that the Java configuration provides more degrees of freedom.
@@ -126,7 +126,7 @@ axon.eventhandling.processors[my.processor].mode=subscribing
 axon.eventhandling.processors[my.processor].source=eventBus
 ----
 
-== Error Mode
+== Error mode
 
 Whenever the link:README.adoc#event-processor--error-handler[error handler] rethrows an exception, the `SubscribingEventProcessor` will have it bubble up to the publishing component of the event.
 Providing the exception to the event publisher allows the publishing component to deal with it accordingly.

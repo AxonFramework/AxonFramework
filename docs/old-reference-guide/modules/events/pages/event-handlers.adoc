@@ -85,7 +85,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Autoconfiguration
+==== Spring Boot auto configuration
 
 In a Spring Boot environment, simply adding the Event Handling Components to the Application Context is sufficient:
 

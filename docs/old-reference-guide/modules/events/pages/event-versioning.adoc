@@ -236,7 +236,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration - `@Order` annotation
+==== Spring Boot auto configuration - `@Order` annotation
 
 Axon honors Spring's `Order` annotation on upcasters.
 The numbers used in the annotation will dictate the ordering.
@@ -280,7 +280,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration - `EventUpcasterChain` bean
+==== Spring Boot auto configuration - `EventUpcasterChain` bean
 
 Adding an `EventUpcasterChain` bean to the Application Context will tell Axon to configure it for your event source:
 
