@@ -52,8 +52,6 @@ import static io.axoniq.axonserver.connector.event.PersistentStreamSegment.PENDI
  */
 public class PersistentStreamConnection {
 
-
-    private static final AtomicBoolean SEGMENT_MISSING = new AtomicBoolean(true);
     private static final int MAX_MESSAGES_PER_RUN = 10_000;
     private final Logger logger = LoggerFactory.getLogger(PersistentStreamConnection.class);
 
@@ -67,9 +65,8 @@ public class PersistentStreamConnection {
     });
     private final ScheduledExecutorService scheduler;
     private final int batchSize;
+    private final Map<Integer, SegmentConnection> segments = new ConcurrentHashMap<>();
 
-    private final Map<PersistentStreamSegment, AtomicBoolean> processGate = new ConcurrentHashMap<>();
-    private final Map<PersistentStreamSegment, AtomicBoolean> doneConfirmed = new ConcurrentHashMap<>();
 
     /**
      * Instantiates a connection for a persistent stream.
@@ -131,110 +128,24 @@ public class PersistentStreamConnection {
     }
 
     private void segmentClosed(PersistentStreamSegment persistentStreamSegment) {
-        processGate.remove(persistentStreamSegment);
+        SegmentConnection segmentConnection = segments.remove(persistentStreamSegment.segment());
+        if (segmentConnection != null) {
+            segmentConnection.close();
+        }
+
         logger.info("{}: Segment closed: {}", streamId, persistentStreamSegment);
     }
 
     private void segmentOpened(PersistentStreamSegment persistentStreamSegment) {
         logger.info("{}: Segment opened: {}", streamId, persistentStreamSegment);
-        processGate.put(persistentStreamSegment, new AtomicBoolean());
-        doneConfirmed.put(persistentStreamSegment, new AtomicBoolean());
+        segments.put(persistentStreamSegment.segment(), new SegmentConnection(persistentStreamSegment));
     }
 
     private void messageAvailable(PersistentStreamSegment persistentStreamSegment) {
-        if (!processGate.getOrDefault(persistentStreamSegment, SEGMENT_MISSING).get()) {
-            scheduler.submit(() -> readMessagesFromSegment(persistentStreamSegment));
+        SegmentConnection segmentConnection = segments.get(persistentStreamSegment.segment());
+        if (segmentConnection != null) {
+            segmentConnection.messageAvailable();
         }
-    }
-
-    private void readMessagesFromSegment(PersistentStreamSegment persistentStreamSegment) {
-        AtomicBoolean gate = processGate.get(persistentStreamSegment);
-        if (gate == null || !gate.compareAndSet(false, true)) {
-            return;
-        }
-
-        logger.debug("{}[{}] readMessagesFromSegment - closed: {}",
-                     streamId, persistentStreamSegment.segment(), persistentStreamSegment.isClosed());
-        boolean reschedule = true;
-        try {
-            int remaining = Math.max(MAX_MESSAGES_PER_RUN, batchSize);
-            GrpcMetaDataAwareSerializer serializer = new GrpcMetaDataAwareSerializer(configuration.eventSerializer());
-            while (remaining > 0 && !persistentStreamSegment.isClosed()) {
-                List<EventWithToken> batch = readBatch(persistentStreamSegment);
-                if (batch.isEmpty()) {
-                    break;
-                }
-
-                List<TrackedEventMessage<?>> eventMessages = upcastAndDeserialize(batch, serializer);
-                consumer.get().accept(eventMessages);
-                logger.debug("{}/{} processed {} entries",
-                             streamId,
-                             persistentStreamSegment.segment(),
-                             eventMessages.size());
-                long token = batch.get(batch.size() - 1).getToken();
-                persistentStreamSegment.acknowledge(token);
-                remaining -= batch.size();
-            }
-
-            acknowledgeDoneWhenClosed(persistentStreamSegment);
-        } catch (StreamClosedException e) {
-            logger.debug("{}: Stream closed for segment {}", streamId, persistentStreamSegment.segment());
-            processGate.remove(persistentStreamSegment);
-            reschedule = false;
-            // stop loop
-        } catch (Exception e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
-            persistentStreamSegment.error(e.getMessage());
-            logger.warn("{}: Exception while processing events for segment {}",
-                        streamId, persistentStreamSegment.segment(), e);
-            processGate.remove(persistentStreamSegment);
-            reschedule = false;
-        } finally {
-            gate.set(false);
-            if (reschedule && persistentStreamSegment.peek() != null) {
-                scheduler.submit(() -> readMessagesFromSegment(persistentStreamSegment));
-            }
-        }
-    }
-
-    private void acknowledgeDoneWhenClosed(PersistentStreamSegment persistentStreamSegment) {
-        if (persistentStreamSegment.isClosed() &&
-                doneConfirmed.getOrDefault(persistentStreamSegment, SEGMENT_MISSING).compareAndSet(false, true)) {
-            persistentStreamSegment.acknowledge(PENDING_WORK_DONE_MARKER);
-        }
-    }
-
-    private List<EventWithToken> readBatch(PersistentStreamSegment persistentStreamSegment)
-            throws InterruptedException {
-        List<EventWithToken> batch = new LinkedList<>();
-        // read first one without waiting
-        EventWithToken event = persistentStreamSegment.nextIfAvailable();
-        if (event == null) {
-            return batch;
-        }
-        batch.add(event);
-        // allow next event to arrive within a small amount of time
-        while (batch.size() < batchSize && (event = persistentStreamSegment.nextIfAvailable(1, TimeUnit.MILLISECONDS))
-                != null) {
-            batch.add(event);
-        }
-        return batch;
-    }
-
-    private List<TrackedEventMessage<?>> upcastAndDeserialize(List<EventWithToken> batch,
-                                                              GrpcMetaDataAwareSerializer serializer) {
-        return EventUtils.upcastAndDeserializeTrackedEvents(
-                                 batch.stream()
-                                      .map(e -> {
-                                          TrackingToken trackingToken = new GlobalSequenceTrackingToken(e.getToken());
-                                          return new TrackedDomainEventData<>(trackingToken,
-                                                                              new GrpcBackedDomainEventData(e.getEvent()));
-                                      }),
-                                 serializer,
-                                 configuration.upcasterChain())
-                         .collect(Collectors.toList());
     }
 
     /**
@@ -244,6 +155,121 @@ public class PersistentStreamConnection {
         PersistentStream persistentStream = persistentStreamHolder.getAndSet(null);
         if (persistentStream != null) {
             persistentStream.close();
+        }
+    }
+
+    private class SegmentConnection {
+        private final AtomicBoolean processGate = new AtomicBoolean();
+        private final AtomicBoolean doneConfirmed = new AtomicBoolean();
+        private final AtomicBoolean closed = new AtomicBoolean();
+        private final PersistentStreamSegment persistentStreamSegment;
+
+
+        public SegmentConnection(PersistentStreamSegment persistentStreamSegment) {
+            this.persistentStreamSegment = persistentStreamSegment;
+        }
+
+        public void messageAvailable() {
+            if (!processGate.get()) {
+                scheduler.submit(() -> readMessagesFromSegment(persistentStreamSegment));
+            }
+        }
+
+        private void readMessagesFromSegment(PersistentStreamSegment persistentStreamSegment) {
+            if (!processGate.compareAndSet(false, true)) {
+                return;
+            }
+
+            if (logger.isTraceEnabled()) {
+                logger.trace("{}[{}] readMessagesFromSegment - closed: {}",
+                             streamId, persistentStreamSegment.segment(), persistentStreamSegment.isClosed());
+            }
+
+            try {
+                int remaining = Math.max(MAX_MESSAGES_PER_RUN, batchSize);
+                GrpcMetaDataAwareSerializer serializer = new GrpcMetaDataAwareSerializer(configuration.eventSerializer());
+                while (remaining > 0 && !closed.get()) {
+                    List<EventWithToken> batch = readBatch(persistentStreamSegment);
+                    if (batch.isEmpty()) {
+                        break;
+                    }
+
+                    List<TrackedEventMessage<?>> eventMessages = upcastAndDeserialize(batch, serializer);
+                    if (!closed.get()) {
+                        consumer.get().accept(eventMessages);
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("{}/{} processed {} entries",
+                                         streamId,
+                                         persistentStreamSegment.segment(),
+                                         eventMessages.size());
+                        }
+                        long token = batch.get(batch.size() - 1).getToken();
+                        persistentStreamSegment.acknowledge(token);
+                        remaining -= batch.size();
+                    }
+                }
+
+                acknowledgeDoneWhenClosed(persistentStreamSegment);
+            } catch (StreamClosedException e) {
+                logger.debug("{}: Stream closed for segment {}", streamId, persistentStreamSegment.segment());
+                close();
+                // stop loop
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                persistentStreamSegment.error(e.getMessage());
+                logger.warn("{}: Exception while processing events for segment {}",
+                            streamId, persistentStreamSegment.segment(), e);
+                close();
+            } finally {
+                processGate.set(false);
+                if (!closed.get() && persistentStreamSegment.peek() != null) {
+                    scheduler.submit(() -> readMessagesFromSegment(persistentStreamSegment));
+                }
+            }
+        }
+
+        private void acknowledgeDoneWhenClosed(PersistentStreamSegment persistentStreamSegment) {
+            if (closed.get() &&
+                    doneConfirmed.compareAndSet(false, true)) {
+                persistentStreamSegment.acknowledge(PENDING_WORK_DONE_MARKER);
+            }
+        }
+
+        private List<EventWithToken> readBatch(PersistentStreamSegment persistentStreamSegment)
+                throws InterruptedException {
+            List<EventWithToken> batch = new LinkedList<>();
+            // read first one without waiting
+            EventWithToken event = persistentStreamSegment.nextIfAvailable();
+            if (event == null) {
+                return batch;
+            }
+            batch.add(event);
+            // allow next event to arrive within a small amount of time
+            while (batch.size() < batchSize && !closed.get() &&
+                    (event = persistentStreamSegment.nextIfAvailable(1,TimeUnit.MILLISECONDS)) != null) {
+                batch.add(event);
+            }
+            return batch;
+        }
+
+        private List<TrackedEventMessage<?>> upcastAndDeserialize(List<EventWithToken> batch,
+                                                                  GrpcMetaDataAwareSerializer serializer) {
+            return EventUtils.upcastAndDeserializeTrackedEvents(
+                                     batch.stream()
+                                          .map(e -> {
+                                              TrackingToken trackingToken = new GlobalSequenceTrackingToken(e.getToken());
+                                              return new TrackedDomainEventData<>(trackingToken,
+                                                                                  new GrpcBackedDomainEventData(e.getEvent()));
+                                          }),
+                                     serializer,
+                                     configuration.upcasterChain())
+                             .collect(Collectors.toList());
+        }
+
+        public void close() {
+            closed.set(true);
         }
     }
 }
