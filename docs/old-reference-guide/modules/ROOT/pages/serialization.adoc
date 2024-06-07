@@ -36,7 +36,7 @@ Take this into account when choosing the message serializer implementation.
 . The default `Serializer` is in charge of (de)serializing the remainder, being the messages (except the payload and metadata), tokens, snapshots, deadlines and sagas.
 These objects are generally not shared between different applications, and most of these classes aren't expected to have some of the getters and setters that are, for example, typically required by Jackson based serializers.
 For example, a `QueryMessage` consists of a payload and `ResponseType`, which will respectively be (de)serialized using the `message` and the `default` serializer, the query request and response payload will be (de)serialized using the`message`serializer.
-A flexible, general-purpose serializer like http://x-stream.github.io/[XStream] is quite ideal for this purpose.
+A flexible, general-purpose serializer like http://x-stream.github.io/[XStream] is ideal for this purpose.
 
 By default, all three `Serializer` flavors are set to use the `XStreamSerializer`, which internally uses http://x-stream.github.io/[XStream] to serialize objects to an XML format.
 XML is verbose, but XStream has the major benefit of being able to serialize virtually anything.
@@ -47,7 +47,7 @@ _XStream and JDK 17_
 
 Although XStream can "serialize virtually anything," more recent versions of the JDK impede its flexibility.
 This predicament comes down to XStream's reflective approach to finding out how to de-/serialize _any_ object, which has become problematic with Java's intent to secure its internals.
-Hence, if you're using JDK 17, the chances are that objects (e.g., your sagas) intended for serialization require additional configuration.
+Hence, if you're using JDK 17, the chances are that objects (for example, your sagas) intended for serialization require additional configuration.
 
 On some occasions configuring XStream's security settings is sufficient.
 Other times you will have to introduce custom https://x-stream.github.io/converters.html[`Converters`] to de-/serialize specific types.
@@ -57,7 +57,7 @@ ____
 
 XML's verbosity is typically fine when storing tokens, sagas, or snapshots, but for messages (and specifically events) XML might cost too much due to its serialized size.
 Thus for optimization reasons you can configure different serializers for your messages.
-Another very valid reason for customizing serializers is to achieve interoperability between different (Axon) applications, where the receiving end potentially enforces a specific serialized format.
+Another valid reason for customizing serializers is to achieve interoperability between different (Axon) applications, where the receiving end potentially enforces a specific serialized format.
 
 There is an implicit ordering between the configurable serializer.
 If no event `Serializer` is configured, the event de-/serialization will be performed by the message `Serializer`.
@@ -89,7 +89,7 @@ public class SerializerConfiguration {
 }
 ----
 
-===== Spring Boot - Configuration class
+===== Spring Boot - configuration class
 
 [source,java]
 ----
@@ -115,7 +115,7 @@ public class SerializerConfiguration {
 }
 ----
 
-===== Spring Boot - Properties file
+===== Spring Boot - properties file
 
 [source,text]
 ----
@@ -137,13 +137,13 @@ axon:
         messages:
 ----
 
-== Serializer Tuning
+== Serializer tuning
 
 Several things might be considered when the serialization process proofs to not be up to par with the expectations.
 
 === XStreamSerializer
 
-XStream is very configurable and extensible.
+XStream is extremely configurable and extensible.
 If you just use a plain `XStreamSerializer`, there are some quick wins ready to pick up.
 XStream allows you to configure aliases for package names and event class names.
 Aliases are typically much shorter (especially if you have long package names), making the serialized form of an event smaller.
@@ -160,7 +160,7 @@ The business prefers the term `"customer"`, so revision 1 was created with a fie
 This can be configured completely in XStream, using field aliases.
 You need to configure two aliases, in the following order: alias `"customerId"` to `"clientId"` and then alias `"customerId"` to `"customerId"`.
 This will tell XStream that if it encounters a field called `"customerId"`, it will call the corresponding XML element `"customerId"` (the second alias overrides the first).
-But if XStream encounters an XML element called `"clientId"`, it is a known alias and will be resolved to field name `"customerId"`.
+If XStream encounters an XML element called `"clientId"`, it is a known alias and will be resolved to field name `"customerId"`.
 Check out the XStream documentation for more information.
 
 For ultimate performance, you're probably better off without reflection based mechanisms altogether.
@@ -193,7 +193,7 @@ If it thus was handling a format to deserialize, it would not fail when it is in
 
 Enabling lenient serialization can be especially helpful to accommodate different message versions.
 This situation would occur naturally when using an event store, as the format of the events would change overtime.
-But this might also happen between commands and queries if several distinct versions of an application are run concurrently.
+This might also happen between commands and queries if several distinct versions of an application are run concurrently.
 A scenario when you would hit this is when going for a rolling upgrade pattern to deploying a new service.
 
 To accommodate more closely with the desire to ignore unknown fields, both the `XStreamSerializer` and `JacksonSerializer` can be enabled as such.
@@ -227,7 +227,7 @@ public class SerializerConfiguration {
 }
 ----
 
-=== Generic Types
+=== Generic types
 
 Sometimes the objects serialized by Axon will contain lists or collections of data.
 In other words, objects containing generics.
@@ -257,9 +257,9 @@ public class SerializerConfiguration {
 }
 ----
 
-=== ContentTypeConverters
+=== `ContentTypeConverters`
 
-An link:events/event-versioning.adoc#event-upcasting[upcaster] works on a given content type (e.g. dom4j Document).
+An link:events/event-versioning.adoc#event-upcasting[upcaster] works on a given content type (for example, dom4j Document).
 To provide extra flexibility between upcasters, content types between chained upcasters may vary.
 Axon will try to convert between the content types automatically by using a `ContentTypeConverter`.
 It will search for the shortest path from type `x` to type `y`, perform the conversion and pass the converted value into the requested upcaster.

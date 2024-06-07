@@ -12,12 +12,9 @@ simply declaring dependency to `axon-spring-boot-starter`, Axon will automatical
 components (command bus, event bus, query bus), as well as any component required to run and store aggregates and
 sagas.
 
-=== JPA &amp; Persistence Contexts
+=== JPA and persistence contexts
 
-With Spring Data-JPA, a JPA Persistence Context is automatically configured. Axon's Spring Boot Autoconfiguration module
-will make sure Axon's JPA Entities are automatically registered with this default context. Since 4.6.0. we use the
-`jakarta.persistence` namespace by default, for backwards compatibility classes using the `javax.persistence` are
-available in the new `legacyjpa` namespace.
+With Spring Data-JPA, a JPA Persistence Context is automatically configured. Axon's Spring Boot Autoconfiguration module will make sure Axon's JPA Entities are automatically registered with this default context. Since 4.6.0. we use the `jakarta.persistence` namespace by default, for backwards compatibility classes using the `javax.persistence` are available in the new `legacyjpa` namespace.
 
 However, when you explicitly include certain packages, for example using an `@EntityScan` annotation, this
 autoconfiguration will not happen anymore. If you then wish to use JPA based components from Axon, you will need to make
@@ -36,7 +33,7 @@ To register Axon's JPA Entities, include the relevant packages, as described bel
 With a lot of things happening in the background, it sometimes becomes difficult to understand how an annotation or just
 including a dependency enables so many features.
 
-=== Auto Configuration with Spring Boot 2
+=== Auto configuration with Spring Boot 2
 
 `axon-spring-boot-starter` follows general Spring boot convention in structuring the starter. It depends
 on `axon-spring-boot-autoconfigure` which holds concrete implementation of Axon auto-configuration. When Axon Spring
@@ -70,7 +67,7 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 
 This file maps different configuration classes which an Axon Spring Boot application will try to apply. So, as per this snippet, Spring Boot will try to apply all the configuration classes for `AxonServerAutoConfiguration`, `AxonAutoConfiguration`, …
 
-=== Auto Configuration with Spring Boot
+=== Auto configuration with Spring Boot
 
 `axon-spring-boot-starter` follows general Spring boot convention in structuring the starter. It depends
 on `axon-spring-boot-autoconfigure` which holds concrete implementation of Axon auto-configuration. When Axon Spring

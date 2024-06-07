@@ -31,7 +31,7 @@ ____
 
 ____
 
-*Zero Axon Configuration*
+*Zero Axon configuration*
 
 If you don't have _any_ manual configuration and use the framework's `axon-spring-boot-starter`, than the upgrade to 4.7 is seamless.
 
@@ -44,23 +44,23 @@ Adjust packages in `import` statements and FQCNs according to the new locations 
 |===
 |Axon 4.6.x |Axon 4.7.x
 
-|org.axonframework.common.jpa.EntityManagerProvider |org.axonframework.common.legacyjpa.EntityManagerProvider
-|org.axonframework.common.jpa.PagingJpaQueryIterable |org.axonframework.common.legacyjpa.PagingJpaQueryIterable
-|org.axonframework.common.jpa.SimpleEntityManagerProvider |org.axonframework.common.legacyjpa.SimpleEntityManagerProvider
-|org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter |org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterJpaConverter
-|org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter |org.axonframework.eventhandling.deadletter.legacyjpa.EventMessageDeadLetterJpaConverter
-|org.axonframework.eventhandling.deadletter.jpa.JpaDeadLetter |org.axonframework.eventhandling.deadletter.legacyjpa.JpaDeadLetter
-|org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue |org.axonframework.eventhandling.deadletter.legacyjpa.JpaSequencedDeadLetterQueue
-|org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore |org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore
-|org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine |org.axonframework.eventsourcing.eventstore.legacyjpa.JpaEventStorageEngine
-|org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver |org.axonframework.eventsourcing.eventstore.legacyjpa.SQLErrorCodesResolver
-|org.axonframework.messaging.interceptors.BeanValidationInterceptor |org.axonframework.messaging.interceptors.legacyvalidation.BeanValidationInterceptor
-|org.axonframework.messaging.interceptors.JSR303ViolationException |org.axonframework.messaging.interceptors.legacyvalidation.JSR303ViolationException
-|org.axonframework.modelling.command.GenericJpaRepository |org.axonframework.modelling.command.legacyjpa.GenericJpaRepository
-|org.axonframework.modelling.saga.repository.jpa.JpaSagaStore |org.axonframework.modelling.saga.repository.legacyjpa.JpaSagaStore
-|org.axonframework.springboot.autoconfig.JpaAutoConfiguration |org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration
-|org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration |org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxEventStoreAutoConfiguration
-|org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider |org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider
+|`org.axonframework.common.jpa.EntityManagerProvider`                                 |`org.axonframework.common.legacyjpa.EntityManagerProvider`
+|`org.axonframework.common.jpa.PagingJpaQueryIterable`                                |`org.axonframework.common.legacyjpa.PagingJpaQueryIterable`
+|`org.axonframework.common.jpa.SimpleEntityManagerProvider`                           |`org.axonframework.common.legacyjpa.SimpleEntityManagerProvider`
+|`org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter`              |`org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterJpaConverter`
+|`org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter`  |`org.axonframework.eventhandling.deadletter.legacyjpa.EventMessageDeadLetterJpaConverter`
+|`org.axonframework.eventhandling.deadletter.jpa.JpaDeadLetter`                       |`org.axonframework.eventhandling.deadletter.legacyjpa.JpaDeadLetter`
+|`org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue`         |`org.axonframework.eventhandling.deadletter.legacyjpa.JpaSequencedDeadLetterQueue`
+|`org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore`                       |`org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore`
+|`org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine`               |`org.axonframework.eventsourcing.eventstore.legacyjpa.JpaEventStorageEngine`
+|`org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver`               |`org.axonframework.eventsourcing.eventstore.legacyjpa.SQLErrorCodesResolver`
+|`org.axonframework.messaging.interceptors.BeanValidationInterceptor`                 |`org.axonframework.messaging.interceptors.legacyvalidation.BeanValidationInterceptor`
+|`org.axonframework.messaging.interceptors.JSR303ViolationException`                  |`org.axonframework.messaging.interceptors.legacyvalidation.JSR303ViolationException`
+|`org.axonframework.modelling.command.GenericJpaRepository`                           |`org.axonframework.modelling.command.legacyjpa.GenericJpaRepository`
+|`org.axonframework.modelling.saga.repository.jpa.JpaSagaStore`                       |`org.axonframework.modelling.saga.repository.legacyjpa.JpaSagaStore`
+|`org.axonframework.springboot.autoconfig.JpaAutoConfiguration`                       |`org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration`
+|`org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration`             |`org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxEventStoreAutoConfiguration`
+|`org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider`        |`org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider`
 |===
 
 === Step 2
@@ -94,7 +94,7 @@ However, Hibernate 6 will construct dedicated sequences per table using a sequen
 
 Although we strongly recommend that you use a dedicated sequence generator per table, the easiest way forward to switch back this new default of Hibernate:
 
-===== `persistence.xml` Configuration
+===== `persistence.xml` configuration
 
 [source,xml]
 ----
@@ -110,7 +110,7 @@ Although we strongly recommend that you use a dedicated sequence generator per t
 </persistence>
 ----
 
-===== Spring Boot - Properties file
+===== Spring Boot - properties file
 
 [source,text]
 ----
@@ -131,7 +131,7 @@ In your dependency configuration (Maven, Gradle, etc.) replace the `jakarta`-spe
 |axon-modelling-jakarta |axon-modelling
 |===
 
-== Migration Automation
+== Migration automation
 
 The steps above explain in detail what you need to do to upgrade to Axon Framework 4.7 or higher.
 If you want to automate some of these steps, there are two https://github.com/openrewrite[OpenRewrite] migration recipes you can use:
