@@ -855,12 +855,12 @@ class Coordinator {
 
             int maxSegmentsPerNode = maxSegmentProvider.apply(name);
 
-            if(segments.size() > maxSegmentsPerNode) {
+            if(workPackages.size()> maxSegmentsPerNode) {
                 logger.info("Total segments {} for processor {} is above maxSegmentsPerNode = {} releasing additional segments",
-                        segments.size(), name, maxSegmentsPerNode);
-                segments.stream().limit(segments.size() - maxSegmentsPerNode)
-                        .forEach(segment -> releaseUntil(segment.getSegmentId(),
-                                GenericEventMessage.clock.instant().plusMillis(tokenClaimInterval * 2)));
+                        workPackages.size(), name, maxSegmentsPerNode);
+                workPackages.values().stream().limit(workPackages.size() - maxSegmentsPerNode)
+                        .forEach(workPackage -> releaseUntil(workPackage.segment().getSegmentId(),
+                                GenericEventMessage.clock.instant().plusMillis(tokenClaimInterval)));
             }
 
             int maxSegmentsToClaim = maxSegmentsPerNode - workPackages.size();
