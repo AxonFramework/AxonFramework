@@ -25,7 +25,7 @@ A summary of the various subsections is given below.
 |xref:axon-framework-commands:README.adoc[Commands] |Command Message Development using the Axon Framework
 |xref:events:README.adoc[Events] |Event Message Development using the Axon Framework
 |xref:queries:README.adoc[Queries] |Query Message Development using the Axon Framework
-|xref:sagas/README.adoc[Sagas] |Long Running Transaction development using the Axon Framework
+|xref:sagas:README.adoc[Sagas] |Long Running Transaction development using the Axon Framework
 |xref:testing:README.adoc[Testing] |Testing capabilities provided by the Axon Framework
 |xref:serialization.adoc[Serialization] |Details on the serialization capabilities provided by the Axon Framework
 |xref:tuning:README.adoc[Tuning] |Tuning capabilities provided by the Axon Framework

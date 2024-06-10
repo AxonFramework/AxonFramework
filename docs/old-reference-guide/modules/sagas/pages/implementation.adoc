@@ -1,6 +1,6 @@
 = Implementation
 
-A Saga is a special type of event listener: one that manages a business transaction. Some transactions could be running for days or even weeks, while others are completed within a few milliseconds. In Axon, each instance of a Saga is responsible for managing a single business transaction. That means a Saga maintains state necessary to manage that transaction, continuing it or taking compensating actions to roll back any actions already taken. Typically, and contrary to regular event listeners, a saga has a starting point and an end, both triggered by events. While the starting point of a saga is usually very clear, there could be many ways for a saga to end.
+A Saga is a special type of event listener: one that manages a business transaction. Some transactions could be running for days or even weeks, while others are completed within a few milliseconds. In Axon, each instance of a Saga is responsible for managing a single business transaction. That means a Saga maintains state necessary to manage that transaction, continuing it or taking compensating actions to roll back any actions already taken. Typically, and contrary to regular event listeners, a saga has a starting point and an end, both triggered by events. While the starting point of a saga is usually clear, there could be many ways for a saga to end.
 
 In Axon, sagas are classes that define one or more `@SagaEventHandler` methods. Unlike regular event handlers, multiple instances of a saga may exist at any time. Sagas are managed by a single event processor (Tracking or Subscribing), which is dedicated to dealing with events for that specific saga type.
 
@@ -28,7 +28,7 @@ For example, consider an incoming Event with a method `String getOrderId()`, whi
 
 Sometimes, the name of the property you want to associate with is not the name of the association you want to use. For example, you have a Saga that matches "Sell orders" against "Buy orders", you could have a transaction object that contains the "buyOrderId" and a "sellOrderId". If you want the saga to associate the "sellOrderId" value as "orderId", you can define a different `keyName` in the `@SagaEventHandler` annotation. It would then become `@SagaEventHandler(associationProperty=&quot;sellOrderId&quot;, keyName=&quot;orderId&quot;)`
 
-== Injecting Resources
+== Injecting resources
 
 Sagas generally do more than just maintaining state based on events. They interact with external components. To do so, they need access to the resources necessary to address to components. Usually, these resources aren't really part of the saga and its state and these resources should not be persisted as such. However, once a saga is reconstructed, these resources must be injected before an event is routed to that instance.
 
@@ -48,12 +48,12 @@ When using the Configuration API, Axon will default to the `ConfigurationResourc
 
 The `SpringResourceInjector` uses Spring's dependency injection mechanism to inject resources into a Saga. This means you can use setter injection or direct field injection if you require. The method or field to be injected needs to be annotated in order for Spring to recognize it as a dependency, for example with `@Autowired`.
 
-== Saga Infrastructure
+== Saga infrastructure
 
 Events need to be redirected to the appropriate saga instances. To do so, some infrastructure classes are required. The most important components are the `SagaManager` and the `SagaRepository`.
 
 [[saga-manager]]
-=== Saga Manager
+=== Saga manager
 
 Like any component that handles events, the processing is done by an xref:../events/event-processors/README.adoc[Event Processor].
 However, Sagas are not singleton instances handling events.
@@ -68,7 +68,7 @@ A single `AnnotatedSagaManager` can only manage a single Saga type.
 
 The `SagaRepository` is responsible for storing and retrieving sagas, for use by the `SagaManager`. It is capable of retrieving specific saga instances by their identifier as well as by their association values.
 
-There are some special requirements, however. Since concurrency handling in sagas is a very delicate procedure, the repository must ensure that for each conceptual saga instance (with an equal identifier) only a single instance exists in the JVM.
+There are some special requirements, however. Since concurrency handling in sagas is a delicate procedure, the repository must ensure that for each conceptual saga instance (with an equal identifier) only a single instance exists in the JVM.
 
 Axon provides the `AnnotatedSagaRepository` implementation, which allows the lookup of saga instances while guaranteeing that only a single instance of the saga may be accessed at the same time. It uses a `SagaStore` to perform the actual persistence of saga instances.
 
@@ -76,13 +76,15 @@ The choice for the implementation to use depends mainly on the storage engine us
 
 In some cases, applications benefit from caching saga instances. In that case, there is a `CachingSagaStore` which wraps another implementation to add caching behavior. Note that the `CachingSagaStore` is a write-through cache, which means save operations are always immediately forwarded to the backing Store, to ensure data safety.
 
-==== JpaSagaStore
+[[JpaSagaStore]]
+==== `JpaSagaStore`
 
 The `JpaSagaStore` uses JPA to store the state and association values of sagas. Sagas themselves do not need any JPA annotations; Axon will serialize the sagas using a `Serializer` (similar to event serialization, you can choose between an `XStreamSerializer` or `JacksonSerializer`, which can be set by configuring the default `Serializer` in your application. For more details, see xref:../serialization.adoc[Serializers].
 
 The `JpaSagaStore` is configured with an `EntityManagerProvider`, which provides access to an `EntityManager` instance to use. This abstraction allows for the use of both application managed and container managed `EntityManager`s. Optionally, you can define the serializer to serialize the Saga instances with. Axon defaults to the `XStreamSerializer`.
 
-==== JdbcSagaStore
+[[JdbcSagaStore]]
+==== `JdbcSagaStore`
 
 The `JdbcSagaStore` uses plain JDBC to store stage instances and their association values. Similar to the `JpaSagaStore`, saga instances do not need to be aware of how they are stored. They are serialized using a serializer.
 
@@ -90,7 +92,8 @@ The `JdbcSagaStore` is initialized with either a `DataSource` or a `ConnectionPr
 
 Unlike JPA, the `JdbcSagaRepository` uses plain SQL statements to store and retrieve information. This may mean that some operations depend on the database specific SQL dialect. It may also be the case that certain database vendors provide non-standard features that you would like to use. To allow for this, you can provide your own `SagaSqlSchema`. The `SagaSqlSchema` is an interface that defines all the operations the repository needs to perform on the underlying database. It allows you to customize the SQL statement executed for each operation. The default is the `GenericSagaSqlSchema`. Other implementations available are `PostgresSagaSqlSchema`, `Oracle11SagaSqlSchema` and `HsqlSagaSchema`.
 
-==== MongoSagaStore
+[[MongoSagaStore]]
+==== `MongoSagaStore`
 
 The `MongoSagaStore` stores the saga instances and their associations in a MongoDB database. The `MongoSagaStore` stores all sagas in a single collection in a MongoDB database. For each saga instance, a single document is created.
 
@@ -147,8 +150,8 @@ public class AxonConfig {
 
 ----
 
-=== Spring Boot AutoConfiguration
-In a Spring environment, the Saga implementation should be annotated with `@Saga` to auto-configure it:
+=== Spring Boot auto configuration
+In a Spring environment, the Saga implementation should be annotated with `@Saga` to MongoSagaStoreto-configure it:
 
 [source,java]
 ----
@@ -189,7 +192,7 @@ public class AxonConfig {
 
 Alternatively, a default store can be defined through `EventProcessingConfigurer#registerSagaStore(Function&lt;Configuration, SagaStore&gt;)` method.
 
-=== Spring Boot AutoConfiguration
+=== Spring Boot auto configuration
 When Spring Boot is used and JPA or JDBC is on the classpath, then Axon auto-configures a `JpaSagaStore` or `JdbcSagaStore` respectively.
 To provide a custom `SagaStore`, providing a bean to the application context and defining the bean name on the `@Saga` annotation suffices: 
 

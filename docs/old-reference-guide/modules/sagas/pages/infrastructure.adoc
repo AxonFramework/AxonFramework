@@ -2,7 +2,7 @@
 
 Events need to be redirected to the appropriate saga instances. To do so, some infrastructure classes are required. The most important components are the `SagaManager` and the `SagaRepository`.
 
-== Saga Manager
+== Saga manager
 
 Like any component that handles events, the processing is done by an event processor. However, sagas are not singleton instances handling events. They have individual life cycles which need to be managed.
 
@@ -25,7 +25,7 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration();
 configurer.registerComponent(SagaStore.class, c -> new JpaSagaStore(...));
 ----
 
-=== Spring Boot AutoConfiguration
+=== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -43,7 +43,7 @@ public SagaStore mySagaStore() {
 
 The `SagaRepository` is responsible for storing and retrieving sagas, for use by the `SagaManager`. It is capable of retrieving specific saga instances by their identifier as well as by their association values.
 
-There are some special requirements, however. Since concurrency handling in sagas is a very delicate procedure, the repository must ensure that for each conceptual saga instance (with an equal identifier) only a single instance exists in the JVM.
+There are some special requirements, however. Since concurrency handling in sagas is a delicate procedure, the repository must ensure that for each conceptual saga instance (with an equal identifier) only a single instance exists in the JVM.
 
 Axon provides the `AnnotatedSagaRepository` implementation, which allows the lookup of saga instances while guaranteeing that only a single instance of the saga may be accessed at the same time. It uses a `SagaStore` to perform the actual persistence of saga instances.
 
@@ -51,13 +51,15 @@ The choice for the implementation to use depends mainly on the storage engine us
 
 In some cases, applications benefit from caching saga instances. In that case, there is a `CachingSagaStore` which wraps another implementation to add caching behavior. Note that the `CachingSagaStore` is a write-through cache, which means save operations are always immediately forwarded to the backing Store, to ensure data safety.
 
-=== JpaSagaStore
+[[JpaSagaStore]]
+=== `JpaSagaStore`
 
 The `JpaSagaStore` uses JPA to store the state and association values of sagas. Sagas themselves do not need any JPA annotations; Axon will serialize the sagas using a `Serializer` (similar to event serialization, you can choose between an `XStreamSerializer` or `JacksonSerializer`, which can be set by configuring the default `Serializer` in your application. For more details, see xref:../serialization.adoc[Serializers].
 
 The `JpaSagaStore` is configured with an `EntityManagerProvider`, which provides access to an `EntityManager` instance to use. This abstraction allows for the use of both application managed and container managed `EntityManager`s. Optionally, you can define the serializer to serialize the Saga instances with. Axon defaults to the `XStreamSerializer`.
 
-=== JdbcSagaStore
+[[JdbcSagaStore]]
+=== `JdbcSagaStore`
 
 The `JdbcSagaStore` uses plain JDBC to store stage instances and their association values.
 Similar to the `JpaSagaStore`, saga instances do not need to be aware of how they are stored. The store serializes the saga instances using a serializer.
@@ -87,7 +89,8 @@ You can change the schema by configuring a different version through the `JdbcSa
 
 ____
 
-=== MongoSagaStore
+[[MongoSagaStore]]
+=== `MongoSagaStore`
 
 The `MongoSagaStore` stores the saga instances and their associations in a MongoDB database. The `MongoSagaStore` stores all sagas in a single collection in a MongoDB database. For each saga instance, a single document is created.
 
