@@ -1,11 +1,11 @@
 = Message Tracking
 
-Tracking messages in your system can be very useful to analyze what the cause of a message was.
+Tracking messages in your system can be useful to analyze what the cause of a message was.
 There are several ways to track messages in your system.
 You can correlate messages to each other with a Correlation Data Provider
 or log the messages being handled and dispatched.
 
-== Correlation Data
+== Correlation data
 
 The framework provides the `CorrelationDataProvider`, as described link:../messaging-concepts/message-correlation.adoc[here].
 This interface and its implementations provide you the means to populate the meta-data of a message based on the message
@@ -30,7 +30,7 @@ We can see the effect of this in the following table.
 Check out the link:../messaging-concepts/message-correlation.adoc[message correlation page]
 to find out more about the `MessageOriginProvider`.
 
-== Interceptor Logging
+== Interceptor logging
 
 You can also track the flow of messages through your application using logging.
 You can leverage link:../messaging-concepts/message-intercepting.adoc[Handler- and DispatchInterceptors] to achieve this.

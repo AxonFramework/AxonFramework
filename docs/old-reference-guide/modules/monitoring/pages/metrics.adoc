@@ -46,7 +46,7 @@ public class MetricsConfiguration {
 }
 ----
 
-==== Spring Boot Auto Configuration
+==== Spring Boot auto configuration
 
 [source,text]
 ----
@@ -56,7 +56,7 @@ axon.metrics.auto-configuration.enabled=true
 
 == Micrometer
 
-==== Axon Configuration API - without Tags
+==== Axon Configuration API - without tags
 
 [source,java]
 ----
@@ -74,7 +74,7 @@ public class MetricsConfiguration {
 }
 ----
 
-==== Axon Configuration API - with Tags
+==== Axon Configuration API - with tags
 
 [source,java]
 ----
@@ -92,7 +92,7 @@ public class MetricsConfiguration {
 }
 ----
 
-==== Spring Boot Auto Configuration - without Tags
+==== Spring Boot auto configuration - without tags
 
 [source,text]
 ----
@@ -109,7 +109,7 @@ management.metrics.export.prometheus.enabled=true
 management.endpoint.prometheus.enabled=true
 ----
 
-==== Spring Boot Auto Configuration - with Tags
+==== Spring Boot auto configuration - with tags
 
 [source,text]
 ----

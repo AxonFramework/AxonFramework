@@ -46,7 +46,7 @@ public class AxonConfig {
 
 ----
 
-==== Spring Boot Auto Configuration
+==== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -101,7 +101,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration
+==== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -229,7 +229,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration - Bean Creation
+==== Spring Boot auto configuration - bean creation
 
 [source,java]
 ----
@@ -244,7 +244,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration - Bean Injection
+==== Spring Boot auto configuration - bean injection
 
 [source,java]
 ----
@@ -299,7 +299,7 @@ implementation group: 'org.axonframework', name: 'axon-tracing-opentelemetry', v
 
 Depending on your application, more configuration might be needed.
 
-==== Spring boot auto-configuration
+==== Spring Boot auto configuration
 
 When using the Spring Boot auto-configuration of Axon Framework, most things will be autoconfigured regardless of the implementation.
 
@@ -309,7 +309,7 @@ The following table contains all configurable settings, their defaults, and what
 |===
 |setting |Default |Description
 
-|`axon.tracing.showEventSourcingHandlers` |`false` |Whether to show event sourcing handlers as a trace. This can be very noisy and is disabled by default.
+|`axon.tracing.showEventSourcingHandlers` |`false` |Whether to show event sourcing handlers as a trace. This can be noisy and is disabled by default.
 |`axon.tracing.attributeProviders.aggregateIdentifier` |`true` |Whether to add the aggregate identifier as a label when handling a message
 |`axon.tracing.attributeProviders.messageId` |`true` |Whether to add the message identifier as a label when handling a message
 |`axon.tracing.attributeProviders.messageName` |`true` |Whether to add the message name as a label when handling a message
@@ -363,7 +363,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot Auto Configuration
+==== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -395,7 +395,7 @@ The following tabs show the possible traces.
 ==== Axon Server
 
 When using the `AxonServerCommandBus`, there will be two handling and dispatch traces since it uses a second `CommandBus` to invoke the command locally after receiving it from Axon Server.
-In addition, you can see the GRPC-call to Axon Server and the time it took to handle the call.
+In addition, you can see the gRPC-call to Axon Server and the time it took to handle the call.
 
 |===
 |Trace name |Description
@@ -441,7 +441,7 @@ Event processor invocations are traced as well.
 Since Streaming Event Processors are asynchronous, a new root trace is created for each event.
 Subscribing event processors, on the other hand, will become part of the current trace because they are invoked synchronously.
 
-==== Streaming Event Processors
+==== Streaming event processors
 
 |===
 |Trace name |Description
@@ -450,7 +450,7 @@ Subscribing event processors, on the other hand, will become part of the current
 |`${ProcessorType}[${processorName}].process(${EventClass})` |Inner span of handling the event, after all interceptors have been invoked.
 |===
 
-==== Subscribing Event Processors
+==== Subscribing event processors
 
 |===
 |Trace name |Description
@@ -536,7 +536,7 @@ The following tabs show the possible traces.
 
 ==== Streaming queries
 
-Streaming queries look very similar to the traces of a Direct query.
+Streaming queries look similar to the traces of a Direct query.
 They do not contain a `ResponseProcessingTask` span since their results are directly published to the invoker of the query.
 Traces will differ based on whether Axon Server is used or not.
 The following tabs show the possible traces.
@@ -559,7 +559,7 @@ The following tabs show the possible traces.
 |`SimpleQueryBus.streamingQuery(${queryName})` |The `QueryBus` is handling the query locally.
 |===
 
-==== Scatter-Gather queries
+==== Scatter-gather queries
 
 Scatter-Gather queries are like a direct query but can fetch results from multiple services at the same time.
 Part of the trace can thus be duplicated multiple times, since multiple services are invoked.

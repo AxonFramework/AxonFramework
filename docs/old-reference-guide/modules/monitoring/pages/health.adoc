@@ -1,9 +1,9 @@
-= Health indicators
+= Health Indicators
 
 Axon Framework provides health indicators for applications running Spring Boot with the https://docs.spring.io/spring-boot/docs/2.5.6/reference/html/actuator.html#actuator[actuator] module.
 These can be used to monitor the health of your application.
 
-=== Spring Boot Actuator Health Indicator for Axon Server
+=== Spring Boot actuator health indicator for Axon Server
 
 The Spring Boot Actuator Health Indicator shares whether the contexts to which an Axon Framework application is connected with are active.
 It does so by requesting the available connections from the `AxonServerConnectionManager`.

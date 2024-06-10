@@ -1,6 +1,6 @@
 = Monitoring
 
-The ability to monitor and measure what is going on is very important.
+The ability to monitor and measure what is going on is really important.
 This section contains all information regarding metrics, tracing and monitoring of your Axon Framework application.
 
 A summary of the various subsections is given below.
@@ -9,9 +9,9 @@ A summary of the various subsections is given below.
 |===
 |Subsection |Purpose
 
-|link:tracing.adoc[Tracing] |Tracing support for Axon Framework
-|link:metrics.adoc[Metrics] |How to configure and use metrics provided by Axon Framework
-|link:health.adoc[Health Indicators] |Spring Boot actuator health indicators provided by Axon Framework
-|link:processors.adoc[Event Tracker Status] |Tracking the status of your event processors
-|link:message-tracking.adoc[Message Tracking] |Tracking the origin of messages throughout your application
+|xref:tracing.adoc[Tracing] |Tracing support for Axon Framework
+|xref:metrics.adoc[Metrics] |How to configure and use metrics provided by Axon Framework
+|xref:health.adoc[Health Indicators] |Spring Boot actuator health indicators provided by Axon Framework
+|xref:processors.adoc[Event Tracker Status] |Tracking the status of your event processors
+|xref:message-tracking.adoc[Message Tracking] |Tracking the origin of messages throughout your application
 |===
