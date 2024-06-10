@@ -7,7 +7,7 @@ How to handle a query message has been covered in more detail in the link:query-
 
 This page will show how and when to use the query gateway and bus. How to configure and specifics on the the query gateway and bus implementations are discussed xref:implementations.adoc[here]
 
-== The Query Bus and Query Gateway
+== The query bus and query gateway
 
 The `QueryBus` is the mechanism that dispatches queries to query handlers. Queries are registered using the combination of the query request name and query response type. It is possible to register multiple handlers for the same request-response combination, which can be used to implement the scatter-gather pattern. When dispatching queries, the client must indicate whether it wants a response from a single handler or from all handlers.
 
@@ -21,7 +21,7 @@ Regardless whether you choose to use the `QueryBus` or the `QueryGateway`, both 
 . <<streaming-queries>>.
 
 [[point-to-point-queries]]
-=== Point-to-Point queries
+=== Point-to-point queries
 
 The direct query represents a query request to a single query handler. If no handler is found for a given query, a `NoHandlerForQueryException` is thrown. In case multiple handlers are registered, it is up to the implementation of the Query Bus to decide which handler is actually invoked. In the listing below we have a simple query handler:
 
@@ -63,7 +63,7 @@ However, if a `@QueryHandler` annotated function's return type is `CompletableFu
 the result will be returned asynchronously regardless of the type of the query bus.
 
 [[scatter-gather-queries]]
-=== Scatter-Gather queries
+=== Scatter-gather queries
 
 When you want responses from all of the query handlers matching your query message, the scatter-gather query is the type to use. As a response to that query a stream of results is returned. This stream contains a result from each handler that successfully handled the query, in unspecified order. In case there are no handlers for the query, or all handlers threw an exception while handling the request, the stream is empty.
 
@@ -284,8 +284,7 @@ message over the network. This result can potentially cause a buffer overflow or
 Instead of the multiple-instance-of approach, we use the `streamingQuery(query, CardSummary.class)`. This method will
 convert our response to a stream and chunk the result into smaller messages containing the `CardSummary` instances.
 
-Natively, if we want fine-grained control of the producing stream, we can use e.g. Project Reactor's `Flux` as the
-return type:
+Natively, if we want fine-grained control of the producing stream, we can use for example Project Reactor's `Flux` as the return type:
 
 [source,java]
 ----

@@ -7,6 +7,8 @@ include::axon-framework-commands:partial$nav.adoc[]
 
 include::events:partial$nav.adoc[]
 
+include::queries:partial$nav.adoc[]
+
 * xref::serialization.adoc[]
 
 * xref::spring-boot-integration.adoc[]

@@ -3,7 +3,7 @@
 The handling of a query comes down to an annotated handler returning the query's response. The goal of this chapter is to describe what such an `@QueryHandler` annotated method looks like, as well as describing the call order and response type options. For configuration of query handlers and the `QueryBus`, it is recommended to read the xref:configuration.adoc[Configuration] section.
 
 [[writing-query-handler]]
-== Writing a Query Handler
+== Writing a query handler
 
 In Axon, an object may declare a number of query handler methods, by annotating them with the `@QueryHandler` annotation. The object in question is what you would refer to as the Query Handler, or Query Handling Component. For a query handler method, the first declared parameter defines which query message object it will receive.
 
@@ -55,7 +55,7 @@ For the purpose of the example we have chosen to use a regular `Map` as the stor
 
 ____
 
-== Query Handler Call Order
+== Query handler call order
 
 In all circumstances, at most one query handler method is invoked per query handling instance. Axon will search for the most specific method to invoke, using following rules:
 
@@ -102,13 +102,13 @@ public class SubQueryHandler extends QueryHandler {
 
 In the example above, the handler method of `SubQueryHandler` will be invoked for queries for `QueryB` and result `MyResult` the handler methods of `QueryHandler` are invoked for queries for `QueryA` and `QueryC` and result `MyResult`.
 
-== Query Handler Return Values
+== Query handler return values
 
 Axon allows a multitude of return types for a query handler method, as defined <<writing-query-handler,earlier>> on this page. You should think of single objects and collections of objects, taking into account wildcards or generics too. Below we share a list of all the options which are supported and tested in the framework.
 
 For clarity, we make a deviation between single instance and multiple instances of a response type. This follows the requirement to specify the `ResponseType` when xref:query-dispatchers.adoc[dispatching a query], which expects the user to state if either a single result or multiple results are desired. Axon will use this `ResponseType` object to match a query with a query handler method, alongside the query payload and query name.
 
-=== Supported Single Instance Return Values
+=== Supported single instance return values
 
 To query for a single object, the `ReponseTypes#instanceOf(Class)` method should be used to create the required `ResponseType` object. This "instance-of-`Class`" `ResponseType` object in turn supports the following query handler return values:
 
@@ -139,7 +139,7 @@ Note that the querying party will retrieve a boxed result instead of the primiti
 
 ____
 
-=== Supported Multiple Instances Return Values
+=== Supported multiple instances return values
 
 To query for a multiple objects, the `ReponseTypes#multipleInstancesOf(Class)` method should be used to create the required `ResponseType` object. This "multiple-instances-of-`Class`" `ResponseType` object in turn supports the following query handler return values:
 
@@ -155,7 +155,7 @@ To query for a multiple objects, the `ReponseTypes#multipleInstancesOf(Class)` m
 * A `Stream` of `Class`
 * A `Future` of an `Iterable` of `Class`
 
-=== Unsupported Return Values
+=== Unsupported return values
 
 The following list contains method return values which are not supported when queried for:
 
