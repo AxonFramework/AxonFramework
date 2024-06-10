@@ -4,7 +4,7 @@ Deadlines can be scheduled from sagas and aggregates.
 The `DeadlineManager` component is responsible for scheduling deadlines and invoking `@DeadlineHandler`when the deadline is met. The `DeadlineManager` can be injected as a resource.
 It has four flavors: `SimpleDeadlineManager`, `JobRunrDeadlineManager`, `QuartzDeadlineManager` and `DbSchedulerDeadlineManager`.
 
-== Scheduling a Deadline
+== Scheduling a deadline
 
 A deadline can be scheduled by providing a `Duration` after which it will be triggered (or an `Instant` at which it will be triggered) and a _deadline name_.
 
@@ -31,7 +31,7 @@ class DeadlineSchedulingComponent {
 
 As a result we receive a `deadlineId` which can be used to cancel the deadline.
 In most cases, storing this `deadlineId` as a field within your Aggregate/Saga is the most convenient.
-Cancelling a deadline could come in handy when a certain event means that the previously scheduled deadline has become obsolete (e.g. there is a deadline for paying the invoice, but the client paid the amount which means that the deadline is obsolete and can be canceled).
+Cancelling a deadline could come in handy when a certain event means that the previously scheduled deadline has become obsolete (for example, there is a deadline for paying the invoice, but the client paid the amount which means that the deadline is obsolete and can be canceled).
 
 [source,java]
 ----
@@ -84,7 +84,7 @@ class DeadlineSchedulingWithPayloadComponent {
 }
 ----
 
-== Handling a Deadline
+== Handling a deadline
 
 We have now seen how to schedule a deadline.
 When the scheduled time is met, the corresponding `@DeadlineHandler` is invoked.
@@ -135,7 +135,7 @@ public void on() {
 }
 ----
 
-== Using Time In Your Application
+== Using time in your application
 
 In cases where applications need to access the clock, they can take advantage of the clock used in the EventMessage, by accessing `GenericEventMessage.clock`.
 This clock is set to Clock.systemUTC at runtime, and manipulated to simulate time during link:../testing/README.adoc[testing].
