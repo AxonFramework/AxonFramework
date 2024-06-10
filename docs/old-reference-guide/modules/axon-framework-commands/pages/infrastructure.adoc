@@ -682,7 +682,7 @@ public class AxonConfig {
 The alternative to the <<AxonServerCommandBus,`AxonServerCommandBus`>> is the `DistributedCommandBus`.
 Each instance of the `DistributedCommandBus` on each JVM is referred to as a "Segment".
 
-image:../../../assets/distributed-command-bus.png[Structure of the Distributed Command Bus]
+image:distributed-command-bus.png[Structure of the Distributed Command Bus]
 
 The `DistributedCommandBus` relies on two components: 
 

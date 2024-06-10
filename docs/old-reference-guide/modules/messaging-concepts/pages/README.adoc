@@ -87,7 +87,7 @@ Some listeners don't care about the intent (for example, database updating event
 These will listen to the abstract type.
 Other listeners do care about the intent and these will listen to the concrete subtypes (for example, to send an address change confirmation email to the customer).
 
-image::../../../assets/state-change-intent.png[Adding intent to events]
+image::state-change-intent.png[Adding intent to events]
 
 ____
 

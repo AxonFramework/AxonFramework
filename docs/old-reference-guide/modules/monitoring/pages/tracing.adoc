@@ -71,7 +71,7 @@ Creating a span that is not part of a trace will automatically create one with t
 
 Tools such as https://www.elastic.co/observability/application-performance-monitoring[ElasticSearch APM] can render tracing information, as visible in the following image:
 
-image::../../../assets/tracing.png[Trace as shown in ElasticSearch APM when dispatching and handling a command.]
+image::tracing.png[Trace as shown in ElasticSearch APM when dispatching and handling a command.]
 
 What we observe here is that a command is dispatched, distributed by Axon Server and handled.
 As a result of the command an `AccountRegisteredEvent` is published and a deadline is scheduled as well.
