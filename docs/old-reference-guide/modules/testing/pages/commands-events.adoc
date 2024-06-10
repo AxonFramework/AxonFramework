@@ -6,7 +6,7 @@ The features described in this chapter require the `axon-test` module, which can
 
 The fixtures described in this chapter work with any testing framework, such as JUnit and TestNG.
 
-== Command Model Testing
+== Command model testing
 
 The command handling component is typically the component in any CQRS based architecture that contains the most complexity. Being more complex than the others, this also means that there are extra test related requirements for this component.
 
@@ -105,9 +105,9 @@ To make optimal use of the migration between these stages, it is best to use the
 ____
 
 [[test-setup]]
-=== Test Setup
+=== Test setup
 
-During the configuration phase (i.e. before the first "given" is provided), you provide the building blocks required to execute the test. Specialized versions of the event bus, command bus and event store are provided as part of the fixture by default. There are accessor methods in place to obtain references to them. Any command handlers not registered directly on the aggregate need to be explicitly configured using the `registerAnnotatedCommandHandler` method. Besides an Annotated Command Handler, you can register a wide variety of components and settings that define how the infrastructure around the Aggregate's test should be set up, consisting out of the following:
+During the configuration phase (that is,  before the first "given" is provided), you provide the building blocks required to execute the test. Specialized versions of the event bus, command bus and event store are provided as part of the fixture by default. There are accessor methods in place to obtain references to them. Any command handlers not registered directly on the aggregate need to be explicitly configured using the `registerAnnotatedCommandHandler` method. Besides an Annotated Command Handler, you can register a wide variety of components and settings that define how the infrastructure around the Aggregate's test should be set up, consisting out of the following:
 
 * `registerRepository`:
 
@@ -125,7 +125,7 @@ Registers a custom `AggregateFactory`.
 
 Registers a xref:../axon-framework-commands/command-handlers.adoc#external-command-handlers[Annotated Command Handler object] that interacts with the aggregate.
  Use this method to register components containing `@CommandHandler` annotated methods that invoke the `Repository` to execute operation on an aggregate.
- You may end up in such a scenario when you prefer that command handlers and/or command messages are not contained inside the domain model (i.e. the aggregate).
+ You may end up in such a scenario when you prefer that command handlers and/or command messages are not contained inside the domain model (that is, the aggregate).
 
 * `registerCommandHandler`:
 
@@ -180,7 +180,7 @@ This method is used to complement the default `HandlerEnhancerDefinition` with a
 Registers a `CommandTargetResolver` to the test fixture.
 
 [[given-phase]]
-=== Given Phase
+=== Given phase
 
 Once you have configured the fixture, you can start the given phase.
 Axon's test fixtures provide several given methods aligning with the modeling options of an aggregate.
@@ -209,7 +209,7 @@ Below is a list of all the operations of the given phase:
  Note that it is _not_ recommended to use this operation when you are testing an event-sourced aggregate.
 
 [[test-execution-phase]]
-=== Test Execution Phase
+=== Test execution phase
 
 The execution phase, or "when phase," allows you several entry points towards the <<validation-phase,validation phase>>.
 Note that the test fixture only monitors activities that occur during the test _execution_ phase.
@@ -259,12 +259,12 @@ Below is a list of all the operations you can use in the execution phase:
  Use this method whenever you (1) do not have `@CommandHandler` annotations inside the command model and (2) have not <<test-setup,registered an external command handler>> with the fixture.
 
 [[validation-phase]]
-=== Validation Phase
+=== Validation phase
 
 The last phase is the validation phase, which allows you to check on the activities of the aggregate.
 This is generally done purely in terms of return values and events.
 
-==== Validating Command Result
+==== Validating command result
 
 The test fixture allows you to validate return values of your command handlers. You can explicitly define the expected return value, or simply require that the method successfully returned. You may also express any exceptions you expect the CommandHandler to throw.
 
@@ -319,7 +319,7 @@ Validates that the command handling result is an exceptional result with the giv
 
 Validates that the command handling result is an exceptional result and the exception details match the given `Matcher`.
 
-==== Validating Published Events
+==== Validating published events
 
 The other component is validation of published events. There are two ways of matching expected events.
 
@@ -440,11 +440,11 @@ class MyCommandModelTest {
 }
 ----
 
-==== Validating Aggregate State
+==== Validating aggregate state
 
 In certain circumstances, it may be desirable to validate the state in which an Aggregate was left after a test. This is especially the case in given-when-then scenario's where the _given_ represents an initial state as well, as is regular when using a xref:../axon-framework-commands/modeling/state-stored-aggregates.adoc[State-Stored Aggregate].
 
-The fixture provides a method that allows verification of the state of the aggregate, as it is left after the <<test-execution-phase,Execution Phase>> (e.g. the _when_ state), to be validated.
+The fixture provides a method that allows verification of the state of the aggregate, as it is left after the <<test-execution-phase,Execution Phase>> (for example, the _when_ state), to be validated.
 
 [source,java]
 ----
@@ -466,7 +466,7 @@ State validation for testing Event Sourced Aggregates is considered bad practice
 ____
 
 [[validating-deadlines]]
-==== Validating Deadlines
+==== Validating deadlines
 
 The validation phase also provides the option to verify scheduled and met xref:../deadlines/deadline-managers.adoc for a given Aggregate instance. You can expect scheduled deadlines both through a `Duration` or an `Instant`, using explicit equals, a `Matcher` or just a deadline type to verify the deadline message. +
 The following methods are available for validating Deadlines:

@@ -32,7 +32,7 @@ ____
 
 *Tip*
 
-It can be very useful to inject mock objects (e.g. Mockito or Easymock) into your Saga. It allows you to verify that the saga interacts correctly with your external resources.
+It can be useful to inject mock objects (for example, Mockito or Easymock) into your Saga. It allows you to verify that the saga interacts correctly with your external resources.
 
 ____
 
