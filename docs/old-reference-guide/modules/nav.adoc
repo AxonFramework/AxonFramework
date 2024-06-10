@@ -19,5 +19,7 @@ include::testing:partial$nav.adoc[]
 
 include::tuning:partial$nav.adoc[]
 
+include::monitoring:partial$nav.adoc[]
+
 * xref::spring-boot-integration.adoc[]
 * xref::modules.adoc[]
