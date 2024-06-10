@@ -73,7 +73,7 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration()
                                          .configureAggregate(giftCardConfigurer);
 ----
 
-==== Spring Boot AutoConfiguration
+==== Spring Boot auto configuration
 It is possible to define a custom `SnapshotTriggerDefinition` for an aggregate as a Spring bean.
 In order to tie the `SnapshotTriggerDefinition` bean to an aggregate, use the `snapshotTriggerDefinition` attribute on `@Aggregate` annotation.
 Listing below shows how to define a custom `EventCountSnapshotTriggerDefinition` which will take a snapshot every 500 events.
@@ -94,7 +94,7 @@ public SnapshotTriggerDefinition giftCardSnapshotTrigger(Snapshotter snapshotter
 public class GiftCard {...}
 ----
 
-=== Storing Snapshot Events
+=== Storing snapshot events
 
 When a snapshot is stored in the event store, it will automatically use that snapshot to summarize all prior events and return it in their place. All event store implementations allow for concurrent creation of snapshots. This means they allow snapshots to be stored while another process is adding events for the same aggregate. This allows the snapshotting process to run as a separate process altogether.
 
@@ -110,7 +110,7 @@ ____
 
 Axon provides a special type of snapshot event: the `AggregateSnapshot`, which stores an entire aggregate as a snapshot. The motivation is simple: your aggregate should only contain the state relevant to take business decisions. This is exactly the information you want captured in a snapshot. All event sourcing repositories provided by Axon recognize the `AggregateSnapshot`, and will extract the aggregate from it. Beware that using this snapshot event requires that the event serialization mechanism needs to be able to serialize the aggregate.
 
-=== Filtering Snapshot Events
+=== Filtering snapshot events
 
 When enabling snapshotting, several snapshots would be stored per Aggregate instance in the event store.
 At a certain stage, some of these snapshot events are no longer being used by the application as newer versions took their place.
@@ -139,7 +139,7 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration()
                                          .configureAggregate(giftCardConfigurer);
 ----
 
-==== Spring Boot AutoConfiguration
+==== Spring Boot auto configuration
 It is possible to define a custom `SnapshotFilter` for an aggregate as a Spring bean.
 In order to tie the `SnapshotFilter` bean to an aggregate, use the `snapshotFilter` attribute on `@Aggregate` annotation. 
 
@@ -176,7 +176,7 @@ public class GiftCard {
 }
 ----
 
-=== Initializing an Aggregate based on a Snapshot Event
+=== Initializing an aggregate based on a snapshot event
 
 A snapshot event is an event like any other. That means a snapshot event is handled just like any other domain event. When using annotations to demarcate event handlers (`@EventHandler`), you can annotate a method that initializes full aggregate state based on a snapshot event. The code sample below shows how snapshot events are treated like any other domain event within the aggregate.
 
@@ -265,7 +265,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot AutoConfiguration
+==== Spring Boot auto configuration
 The `Aggregate` annotation allows specification of the cache bean:
 
 [source,java]

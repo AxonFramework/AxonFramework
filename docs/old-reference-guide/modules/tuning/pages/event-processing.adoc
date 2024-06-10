@@ -55,10 +55,10 @@ Note that, especially, in such a setup you would need to delegate said split or 
 
 ____
 
-== Blacklisting Events
-In a heterogeneously distributed application landscape your event handling components might receive events they do not have actual event handling members for. That this occurs is completely fine; the chances of a single application handling the entirety of all existing events is very small. This fact however does open up the possibility for optimization by _blacklisting_ events.‌
+== Blacklisting events
+In a heterogeneously distributed application landscape your event handling components might receive events they do not have actual event handling members for. That this occurs is completely fine; the chances of a single application handling the entirety of all existing events is really small. This fact however does open up the possibility for optimization by _blacklisting_ events.
 
-To this end Axon has to option to automatically blacklist events it cannot handle. The Tracking Event Processor takes the lead in actual blacklisting, which it does by signaling the utilized event stream when none of its handlers can handle the event in question. The event stream provided by the Axon Server connection in turn implements the functionality to notify an Axon Server node that certain events cannot be handled by it.‌
+To this end Axon has to option to automatically blacklist events it cannot handle. The Tracking Event Processor takes the lead in actual blacklisting, which it does by signaling the utilized event stream when none of its handlers can handle the event in question. The event stream provided by the Axon Server connection in turn implements the functionality to notify an Axon Server node that certain events cannot be handled by it.
 
 By default, blacklisting is turned for an Axon client connected to Axon Server. To disable blacklisting, the `disableEventBlacklisting` property can be adjusted as follows:
 
@@ -74,7 +74,7 @@ Configurer configurer =
         .registerComponent(AxonServerConfiguration.class, c -> axonServerConfig);
 ----
 
-==== Spring Boot AutoConfiguration
+==== Spring Boot auto configuration
 
 [source,text]
 ----
