@@ -13,6 +13,8 @@ include::sagas:partial$nav.adoc[]
 
 include::deadlines:partial$nav.adoc[]
 
+include::testing:partial$nav.adoc[]
+
 * xref::serialization.adoc[]
 
 * xref::spring-boot-integration.adoc[]
