@@ -1,9 +1,9 @@
 = Event Processors
 
-link:event-handlers.adoc[Event handlers] define the business logic to be performed when an event is received.
+xref:event-handlers.adoc[Event handlers] define the business logic to be performed when an event is received.
 _Event Processors_ are the components that take care of the technical aspects of that processing.
-They start a link:../../messaging-concepts/unit-of-work.adoc[unit of work] and possibly a transaction.
-However, they also ensure that link:../../messaging-concepts/message-correlation.adoc[correlation data] can be correctly attached to all messages created during event processing, among other non-functional requirements.
+They start a xref:messaging-concepts:unit-of-work.adoc[unit of work] and possibly a transaction.
+However, they also ensure that xref:messaging-concepts:message-correlation.adoc[correlation data] can be correctly attached to all messages created during event processing, among other non-functional requirements.
 
 The image below depicts a representation of the organization of Event Processors and Event Handlers:
 
@@ -12,19 +12,19 @@ image::event-processors.png[Organization of Event Processors and Event Handlers]
 Axon has a layered approach towards organizing event handlers.
 First, an event handler is positioned in a _Processing Group_.
 Each event handler, or "Event Handling Component," will only ever belong to a single Processing Group.
-The Processing Group provides a level of configurable non-functional requirements, like <<Processing Group - Listener Invocation Error Handler,error handling>> and the link:streaming.adoc#sequential-processing[sequencing policy].
+The Processing Group provides a level of configurable non-functional requirements, like <<Processing group - listener invocation error handler,error handling>> and the xref:event-processors/streaming.adoc#sequential-processing[sequencing policy].
 
 The Event Processors, in turn, is in charge of the Processing Group.
 An Event Processor will control 1 to N Processing Groups, although there will be a one-to-one mapping in most cases.
 Similar to the Event Handling Component, a Processing Group will belong to a single Event Processor.
-This last layer allows the definition of the type of Event Processor used and concepts like the threading model and a more fine-grained degree of <<Event Processor - Error Handler,error handling>>.
+This last layer allows the definition of the type of Event Processor used and concepts like the threading model and a more fine-grained degree of <<Event processor - error handler,error handling>>.
 
-Event Processors come in roughly two forms: link:subscribing.adoc[Subscribing] and link:streaming.adoc[Streaming].
+Event Processors come in roughly two forms: xref:event-processors/subscribing.adoc[Subscribing] and xref:event-processors/streaming.adoc[Streaming].
 
 Subscribing Event Processors subscribe to a source of events and are invoked by the thread managed by the publishing mechanism.
 Streaming Event Processors, on the other hand, pull their messages from a source using a thread that it manages itself.
 
-For more specifics on either type, consult their respective sections link:subscribing.adoc[here] and link:streaming.adoc[here].
+For more specifics on either type, consult their respective sections xref:event-processors/subscribing.adoc[here] and xref:event-processors/streaming.adoc[here].
 The rest of this page dedicates itself to describing the Event Processor's common concepts and configuration options.
 Note that throughout, the `EventProcessingConfigurer` is used.
 The `EventProcessingConfigurer` is part of Axon's Configuration API, dedicated to configuring Event Processors.
@@ -35,11 +35,11 @@ All processors have a name, which identifies a processor instance across JVM ins
 Two processors with the same name are considered as two instances of the same processor.
 
 All event handlers are attached to a processor whose name by default is the package name of the event handler's class.
-Furthermore, the default processor implementation used by Axon is the link:streaming.adoc[Tracking Event Processor].
-The (default) event processor used can be adjusted, as is shown in the link:subscribing.adoc#configuring[subscribing] and link:streaming.adoc#configuring[streaming] sections.
+Furthermore, the default processor implementation used by Axon is the xref:event-processors/streaming.adoc[Tracking Event Processor].
+The (default) event processor used can be adjusted, as is shown in the xref:event-processors/subscribing.adoc#configuring[subscribing] and xref:event-processors/streaming.adoc#_configuring[streaming] sections.
 
-Event handlers, or Event Handling Components, come in roughly two flavors: "regular" (singleton, stateless) event handlers and link:../../sagas/README.adoc[sagas].
-link:event-handlers.adoc#registering-event-handlers[This] section describes the process to register an event handler, whereas link:../../sagas/implementation.adoc#configuring-a-saga[this] page describes the saga registration process.
+Event handlers, or Event Handling Components, come in roughly two flavors: "regular" (singleton, stateless) event handlers and xref:sagas:README.adoc[sagas].
+xref:event-handlers.adoc#registering-event-handlers[This] section describes the process to register an event handler, whereas xref:sagas:implementation.adoc#configuring-a-saga[this] page describes the saga registration process.
 
 Now let us consider that the following event handlers have been registered:
 
@@ -151,10 +151,10 @@ Errors are inevitable in any application.
 Depending on where they happen, you may want to respond differently.
 
 By default, exceptions raised by event handlers are caught in the <<Processing group - listener invocation error handler,Processing Group layer>>, logged, and processing continues with the following events.
-When an exception is thrown when a processor is trying to commit a transaction, update a link:streaming.adoc#token-store[token], or in any other part of the process, the exception will be propagated.
+When an exception is thrown when a processor is trying to commit a transaction, update a xref:event-processors/streaming.adoc#token-store[token], or in any other part of the process, the exception will be propagated.
 
-In the case of a link:streaming.adoc#error-mode[Streaming Event Processor], this means the processor will go into error mode, releasing any tokens and retrying at an incremental interval (starting at 1 second, up to max 60 seconds).
-A link:subscribing.adoc#error-mode[Subscribing Event Processor] will report a publication error to the component that provided the event.
+In the case of a xref:event-processors/streaming.adoc#error-mode[Streaming Event Processor], this means the processor will go into error mode, releasing any tokens and retrying at an incremental interval (starting at 1 second, up to max 60 seconds).
+A xref:event-processors/subscribing.adoc#error-mode[Subscribing Event Processor] will report a publication error to the component that provided the event.
 
 To change this behavior, both the Processing Group and Event Processor level allow customization on how to deal with exceptions:
 
@@ -220,16 +220,16 @@ public interface ListenerInvocationErrorHandler {
 ----
 
 You can choose to retry, ignore or rethrow the exception.
-The exception will bubble up to the <<Event Processor - Error Handler,Event Processor level>> when rethrown.
+The exception will bubble up to the <<event-processor-error-handler,Event Processor level>> when rethrown.
 
-[[event-processor--error-handler]]
+[[event-processor-error-handler]]
 === Event processor - error handler
 
 Exceptions occurring outside an event handler's scope, or have bubbled up from there, are handled by the `ErrorHandler`.
 The default error handler is the `PropagatingErrorHandler`, which will rethrow any exceptions it catches.
 
 How the Event Processor deals with a rethrown exception differ per implementation.
-The behaviour for the Subscribing- and the Streaming Event Processor can respectively be found xref:subscribing.adoc#error-mode[here] and link:streaming.adoc#error-mode[here].
+The behaviour for the Subscribing- and the Streaming Event Processor can respectively be found xref:event-processors/subscribing.adoc#error-mode[here] and xref:event-processors/streaming.adoc#error-mode[here].
 
 We can configure a default `ErrorHandler` for all Event Processors or an `ErrorHandler` for specific processors:
 
@@ -287,16 +287,16 @@ Based on the provided `ErrorContext` object, you can decide to ignore the error,
 === Dead-letter queue
 
 Although configuring a <<Processing group - listener invocation error handler,Listener Invocation Error Handler>>
-and <<Event processor - error handler,Error Handler>>
+and <<event-processor-error-handler,Error Handler>>
 helps you to deal with exceptions when processing events, you still end up in an event handling stop.
-When you only log the error and allow processing to proceed, you will most likely end up with missing data until you fix the predicament and link:streaming.adoc#replaying-events[replay]
+When you only log the error and allow processing to proceed, you will most likely end up with missing data until you fix the predicament and xref:event-processors/streaming.adoc#replaying-events[replay]
 past events.
 If you instead propagate the exception so the event processor keeps retrying, the event processor will stall entirely when the cause is consistent.
 
 Although this behavior is sufficient on many occasions, sometimes it is beneficial if we can unblock event handling by parking the problematic event.
 To that end, you can configure a dead-letter queue for a <<Event Processors,processing group>>.
 
-An essential concept of Axon Frameworks event processors is the maintenance of event ordering, even when you configure xref:streaming.adoc#parallel-processing[parallel processing].
+An essential concept of Axon Frameworks event processors is the maintenance of event ordering, even when you configure xref:event-processors/streaming.adoc#parallel-processing[parallel processing].
 A perfect example when this is a requirement is the need to handle events of the same aggregate in their publishing order.
 Simply dead lettering one failed event would cause subsequent events in the sequence to be applied to inconsistent state.
 
@@ -304,13 +304,13 @@ It is thus of utmost importance that a dead-letter queue for events enqueues an 
 To that end, the supported dead-letter queue is a so-called `SequencedDeadLetterQueue`.
 
 Integral to its design is to allow for queueing failed events and events that belong to a faulty sequence.
-It does so by maintaining a sequence identifier for each event, determined by the xref:streaming.adoc#sequential-processing[sequencing policy].
+It does so by maintaining a sequence identifier for each event, determined by the xref:event-processors/streaming.adoc#sequential-processing[sequencing policy].
 
 ____
 
 *Is there support for Sagas?*
 
-Currently, there is _no_ support for using a dead-letter queue for xref:../../sagas/README.adoc[sagas].
+Currently, there is _no_ support for using a dead-letter queue for xref:sagas:README.adoc[sagas].
 We've taken this decision as we cannot support a sequenced dead lettering approach as we do for regular event handling.
 
 Furthermore, we cannot do this, as a saga's associations can vary widely between events.
@@ -405,7 +405,7 @@ public class AxonConfig {
 You can set the maximum number of saved sequences (defaults to 1024) and the maximum number of dead letters in a sequence (also defaults to 1024).
 If either of these thresholds is exceeded, the queue will throw a `DeadLetterQueueOverflowException`.
 This exception means the processing group will stop processing new events altogether.
-Thus, the processing group moves back to the behavior described at the start of the <<Error Handling,Error Handling>> section.
+Thus, the processing group moves back to the behavior described at the start of the <<Error handling,Error Handling>> section.
 
 ==== Configuring a sequenced Dead-Letter-Queue provider
 
@@ -497,7 +497,7 @@ Note that the predicate only filters based on a sequence's _first_ entry.
 Returns `true` if it processes a sequence successfully.
 
 If the processing of a dead letter fails, the event will be offered to the dead-letter queue again.
-How the dead-lettering process reacts to this depends on the <<Dead-Letter Enqueue Policy,enqueue policy>>.
+How the dead-lettering process reacts to this depends on the <<Dead-letter enqueue policy,enqueue policy>>.
 
 You can retrieve a `SequencedDeadLetterProcessor` from the `EventProcessingConfiguration` based on a processing group name _if_ you have configured a dead-letter queue for this processing group.
 Below are a couple of examples of how to process dead-letter sequences:
@@ -576,7 +576,7 @@ public class DeadletterProcessor {
 For some event handlers, it is beneficial to know if the event it is processing is dead-lettered.
 To that end, you can include a parameter of type `DeadLetter<EventMessage<T>>` to your event handling methods.
 The generic refers to the type of event handled by the event handler.
-The injected `DeadLetter` parameter exposes several <<Dead-Letter attributes,attributes>>, like the `cause()` and `diagnostics()`, for example.
+The injected `DeadLetter` parameter exposes several <<Dead-letter attributes,attributes>>, like the `cause()` and `diagnostics()`, for example.
 
 Do note that the `DeadLetter` parameter is _nullable_.
 When the injected `DeadLetter` is `null`, you deal with a non-dead-lettered event.
@@ -611,14 +611,14 @@ A dead letter contains the following attributes:
 |`cause` |`Optional<Cause>` |The cause for the message to be dead lettered. Empty if the letter is enqueued because it is part of a sequence.
 |`enqueuedAt` |`Instant` |The moment in time when the event was enqueued in a dead-letter queue.
 |`lastTouched` |`Instant` |The moment in time when this letter was last touched. Will equal the `enqueuedAt` value if this letter is enqueued for the first time.
-|`diagnostics` |`MetaData` |The diagnostic `MetaData` concerning this letter. Filled through the <<Dead-Letter Enqueue Policy,enqueue policy>>.
+|`diagnostics` |`MetaData` |The diagnostic `MetaData` concerning this letter. Filled through the <<Dead-letter enqueue policy,enqueue policy>>.
 |===
 
 ==== Dead-letter enqueue policy
 
 By default, when you configure a dead-letter queue and event handling fails, the event is dead-lettered.
 However, you might not want all event failures to result in dead-lettered entries.
-Similarly, when <<Processing Dead-Letter Sequences,letter processing>> fails, you might want to reconsider whether you want to enqueue the letter again.
+Similarly, when <<Processing dead-letter sequences,letter processing>> fails, you might want to reconsider whether you want to enqueue the letter again.
 
 To that end, you can configure a so-called `EnqueuePolicy`.
 The enqueue policy ingests a `DeadLetter` and a cause (`Throwable`) and returns an `EnqueueDecision`.
@@ -696,8 +696,8 @@ public class AxonConfig {
 [[general_processor_configuration]]
 == General processor configuration
 
-Alongside <<Assigning handlers to processors,handler assignment>> and <<Error Handling,error handling>>, Event Processors allow configuration for other components too.
-For link:subscribing.adoc#configuring[Subscribing] and link:streaming.adoc#configuring[Streaming] Event Processor specific options, their respective sections should be checked.
+Alongside <<Assigning handlers to processors,handler assignment>> and <<Error handling,error handling>>, Event Processors allow configuration for other components too.
+For xref:event-processors/subscribing.adoc#configuring[Subscribing] and xref:event-processors/streaming.adoc#configuring[Streaming] Event Processor specific options, their respective sections should be checked.
 The remainder of this page will cover the generic configuration options for each Event Processor.
 
 === Event processor builders
@@ -728,9 +728,9 @@ The `EventProcessingConfigurer` provides two methods to configure an `EventProce
 
 === Event handler interceptors
 
-Since the Event Processor is the invoker of event handling methods, it is a spot to configure link:../../messaging-concepts/message-intercepting.adoc[Message Handler Interceptors] too.
+Since the Event Processor is the invoker of event handling methods, it is a spot to configure xref:messaging-concepts:message-intercepting.adoc[Message Handler Interceptors] too.
 Since Event Processors are dedicated to event handling, the `MessageHandlerInterceptor` is required to deal with an `EventMessage`.
-Differently put, an link:../../messaging-concepts/message-intercepting.adoc#event-handler-interceptors[EventHandlerInterceptor] can be registered to Event Processors.
+Differently put, an xref:messaging-concepts:message-intercepting.adoc#event-handler-interceptors[EventHandlerInterceptor] can be registered to Event Processors.
 
 The `EventProcessingConfigurer` provides two methods to configure `MessageHandlerInterceptor` instances:
 
@@ -740,7 +740,7 @@ The `EventProcessingConfigurer` provides two methods to configure `MessageHandle
 === Message monitors
 
 Any Event Processor instance provides the means to contain a Message Monitor.
-Message Monitors (discussed in more detail link:../../monitoring/metrics.adoc[here]) allow for monitoring the flow of messages throughout an Axon application.
+Message Monitors (discussed in more detail xref:monitoring:metrics.adoc[here]) allow for monitoring the flow of messages throughout an Axon application.
 For Event Processors, the message monitor deals explicitly with the events flowing through the Event Processor towards the event handling functions.
 
 The `EventProcessingConfigurer` provides two approaches towards configuring a `MessageMonitor`:
@@ -773,13 +773,13 @@ Note that in the majority of the scenarios, the defaults will suffice.
 This section simply serves to show these options to allow adjustment if the application requires it.
 
 The first of these is the `TransactionManager`.
-Axon uses the `TransactionManager` to attach a transaction to every link:../../messaging-concepts/unit-of-work.adoc[Unit of Work].
+Axon uses the `TransactionManager` to attach a transaction to every xref:messaging-concepts:unit-of-work.adoc[Unit of Work].
 Within a Spring environment, the `TransactionManager` defaults to a `SpringTransactionManager`, which uses Spring's `PlatformTransactionManager` under the hood.
 In non Spring environments, it would be wise to build a `TransactionManager` implement if transaction management is required, of course.
 Such an implementation only requires the definition of the `TransactionManager#startTransaction()` method.
 To adjust the transaction manager for an Event Processor, the `registerTransactionManager(String, Function<Configuration, TransactionManager>)` on the `EventProcessingConfigurer` should be used.
 
 Secondly, you can adjust the desired `RollbackConfiguration` per Event Processor.
-It is the `RollbackConfiguration` that decide when a link:../../messaging-concepts/unit-of-work.adoc[Unit of Work] should rollback the transaction.
-The default `RollbackConfiguration` is to rollback on any type of `Throwable`; the link:../../messaging-concepts/unit-of-work.adoc[Unit of Work] page describes the other options you can choose.
+It is the `RollbackConfiguration` that decide when a xref:messaging-concepts:unit-of-work.adoc[Unit of Work] should rollback the transaction.
+The default `RollbackConfiguration` is to rollback on any type of `Throwable`; the xref:messaging-concepts:unit-of-work.adoc[Unit of Work] page describes the other options you can choose.
 To adjust the default behaviour, the `registerRollbackConfiguration(String, Function<Configuration, RollbackConfiguration>)` function should be invoked on the `EventProcessingConfigurer`.

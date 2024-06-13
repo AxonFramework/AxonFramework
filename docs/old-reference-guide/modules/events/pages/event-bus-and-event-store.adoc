@@ -4,7 +4,7 @@
 
 The `EventBus` is the mechanism that dispatches events to the subscribed event handlers.
 Axon provides three implementations of the Event Bus: `AxonServerEventStore`, `EmbeddedEventStore` and `SimpleEventBus`.
-All three implementations support subscribing and tracking processors (see link:event-processors/README.adoc[Events Processors]).
+All three implementations support subscribing and tracking processors (see xref:event-processors/README.adoc[]).
 However, the `AxonServerEventStore` and `EmbeddedEventStore` persist events (see <<event-store,Event Store>>), which allows you to replay them at a later stage.
 The `SimpleEventBus` has a volatile storage and 'forgets' events as soon as they have been published to subscribed components.
 
@@ -20,7 +20,7 @@ Additionally, it persists published events and is able to retrieve previous even
 === Axon Server as an event store
 
 Axon provides an event store out of the box, the `AxonServerEventStore`.
-It connects to thelink:../../axon-server-introduction.md[ AxonIQ AxonServer Server ]to store and retrieve Events.
+It connects to the link:../../axon-server-introduction.md[AxonIQ AxonServer Server]to store and retrieve Events.
 
 ==== Axon Configuration API
 
@@ -561,17 +561,17 @@ Applications within the same context "speak the same language." In other words, 
 
 As such, we can share the `EventStore's` data source between these applications.
 We may thus achieve distribution by utilizing the source itself.
-You can use both the <<Embedded Event Store,`EmbeddedEventStore`>> and link:../../axon-server-introduction.md[Axon Server] for this.
+You can use both the <<Embedded event store,`EmbeddedEventStore`>> and link:../../axon-server-introduction.md[Axon Server] for this.
 The former would require the applications to point to the same data source, whereas the latter would require the applications to partake in the same context.
 
 However, sharing the entire event API is not recommended whenever the applications do not belong to the same context.
 Instead, we should protect the boundary of the contexts, except for some clearly defined cross-boundary messages.
 Since accessing the same source isn't an option, we require a different solution to share events.
 
-To distribute events between bounded contexts, you can use Axon Server's link:../../axon-server/administration/multi-context.md[multi-context] solution, for example.
+To distribute events between bounded contexts, you can use Axon Server's xref:axon_server_ref:ROOT:axon-server/administration/multi-context.adoc[] solution, for example.
 The multi-context support requires application registration to specific contexts.
 Then, you can open a stream to another context through the `AxonServerEventStore#createStreamableMessageSourceForContext(String)` operation.
-With this source in hand, you can configure a link:event-processors/streaming.adoc[Streaming Processor] to start reading from it.
+With this source in hand, you can configure a xref:event-processors/streaming.adoc[Streaming Processor] to start reading from it.
 
 Alternatively, you can use a message broker to distribute events between contexts.
 Axon provides a couple of these as link:../../extensions[extension modules], for example link:../../extensions/spring-amqp.md[Spring AMQP] or link:../../extensions/kafka.md[Kafka].

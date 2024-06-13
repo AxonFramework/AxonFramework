@@ -16,7 +16,7 @@ This is what you will want if you also upgrade to Spring 6, Spring Boot 3, or an
 This is what you will want if you have already moved to the optional `[module-name]-jakarta` modules in Axon Framework 4.6.x.
 
 Next to the full scenario descriptions, you are also able to use https://github.com/openrewrite[OpenRewrite] migration recipes provided by the Framework.
-Please go to the <<Migration Automation>> section for more details.
+Please go to the <<Migration automation>> section for more details.
 
 ____
 

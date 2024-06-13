@@ -7,11 +7,11 @@ In general, these can be grouped in two major areas:
 . Dispatching events from regular components
 
 This page will describe how to get an event message on the event bus from both locations.
-For more specifics regarding event publication and storage implementations in Axon Framework, read link:event-bus-and-event-store.adoc[this] section.
+For more specifics regarding event publication and storage implementations in Axon Framework, read xref:event-bus-and-event-store.adoc[this] section.
 
 == Dispatching events from an Aggregate
 
-The link:../axon-framework-commands/modeling/aggregate.adoc[Aggregate] or it's link:../axon-framework-commands/modeling/multi-entity-aggregates.adoc[Entities] are typically the starting point of all event messages.
+The xref:axon-framework-commands:modeling/aggregate.adoc[Aggregate] or it's xref:axon-framework-commands:modeling/multi-entity-aggregates.adoc[Entities] are typically the starting point of all event messages.
 The Event Message simply is the notification that a decision has been made; a successful resolution of handling a command message.
 
 To publish an event from an Aggregate, it is required to do this from the lifecycle of the Aggregate instance.
@@ -66,7 +66,7 @@ This interface provides the following methods:
 
 == Dispatching events from a Non-Aggregate
 
-In the vast majority of cases, the link:../axon-framework-commands/modeling/aggregate.adoc[Aggregates] will publish events by applying them.
+In the vast majority of cases, the xref:axon-framework-commands:modeling/aggregate.adoc[Aggregates] will publish events by applying them.
 However, occasionally, it is necessary to publish an event (possibly from within another component), directly to the Event Gateway:
 
 [source,java]

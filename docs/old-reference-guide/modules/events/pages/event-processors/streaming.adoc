@@ -1,16 +1,16 @@
 = Streaming Event Processor
 
-The `StreamingEventProcessor`, or Streaming Processor for short, is a type of xref:README.adoc[Event Processor].
+The `StreamingEventProcessor`, or Streaming Processor for short, is a type of xref:event-processors/README.adoc[Event Processor].
 As any Event Processor, it serves as the technical aspect to handle events by invoking the event handlers written in an Axon application.
 
 The Streaming Processor defines itself by receiving the events from a `StreamableMessageSource`.
 The `StreamableMessageSource` is an infrastructure component through which we can open a stream of events.
-The source can also specify positions on the event stream, so-called <<Tracking Tokens,Tracking Tokens>>, used as start positions when opening an event stream.
+The source can also specify positions on the event stream, so-called <<tracking-tokens,Tracking Tokens>>, used as start positions when opening an event stream.
 An example of a `StreamableMessageSource` is the xref:event-bus-and-event-store.adoc#event-store[`EventStore`], like for example Axon Server or an xref:event-bus-and-event-store.adoc#embedded-event-store[RDBMS].
 
 Furthermore, Streaming Processors use separate threads to process the events retrieved from the `StreamableMessageSource`.
 Using separate threads decouples the `StreamingEventProcessor` from other operations (for example, event publication or command handling), allowing for cleaner separation within any application. +
-Using separate threads allows for <<Parallel Processing,parallelization>> of the event load, either within a single JVM or between several.
+Using separate threads allows for <<parallel-processing,parallelization>> of the event load, either within a single JVM or between several.
 
 When starting a Streaming Processor, it will open an event stream through the configured `StreamableMessageSource`.
 The first time a stream has started, it, by default, will begin at the tail (the oldest/the first token) of the stream.
@@ -26,7 +26,11 @@ The oldest (the first) token is located at the tail of the stream, and the lates
 
 ____
 
-Maintaining the progress through tokens makes a Streaming Processor 1. able to deal with stopping and starting the processor, 2. more resilient against unintended shutdowns, and 3. the token provides a means to <<Replaying Events,replay>> events by adjusting the position of tokens.
+Maintaining the progress through tokens makes a Streaming Processor
+
+1. able to deal with stopping and starting the processor,
+2. more resilient against unintended shutdowns, and
+3. the token provides a means to <<replaying-events,replay>> events by adjusting the position of tokens.
 
 All combined, the Streaming Processor allows for decoupling, parallelization, resiliency, and replay-ability.
 It is these features that make the Streaming Processor the logical choice for the majority of applications.
@@ -41,7 +45,7 @@ In the majority of use cases, an Event Store is present.
 As the Event Store is a type of `StreamableMessageSource`, the default will switch to the Tracking Event Processor.
 
 If the application only has an Event Bus configured, the framework will lack a `StreamableMessageSource`.
-It will fall back to the link:subscribing.adoc[Subscribing Event Processor] as the default in these scenarios.
+It will fall back to the xref:event-processors/subscribing.adoc[Subscribing Event Processor] as the default in these scenarios.
 This implementation will use the configured `EventBus` as its `SubscribableMessageSource`.
 
 ____
@@ -52,12 +56,13 @@ There are two implementations of Streaming Processor available in Axon Framework
 . the Pooled Streaming Event Processor (PSEP for short).
 
 Both implementations support the same set of operations.
-Operations like replaying events through a <<Replaying Events,reset>>, <<Parallel Processing,parallelism>> and tracking the progress with <<Tracking Tokens,tokens>>.
-They diverge on their threading approach and work separation, as discussed in more detail in <<Thread Configuration,this>> section.
+Operations like replaying events through a <<replaying-events,reset>>, <<parallel-processing,parallelism>> and tracking the progress with <<tracking-tokens,tokens>>.
+They diverge on their threading approach and work separation, as discussed in more detail in <<Thread configuration,this>> section.
 
+[[configuring]]
 == Configuring
 
-The Streaming Processors have several additional components that you can configure, next to the link:README.adoc#general_processor_configuration[base options].
+The Streaming Processors have several additional components that you can configure, next to the xref:event-processors/README.adoc#general_processor_configuration[base options].
 For other streaming processor features that are configurable, we refer to their respective sections for more details.
 This chapter will cover how to configure a <<Configuring a tracking processor,Tracking>> or <<Configuring a pooled streaming processor,Pooled Streaming>> Processor respectively.
 
@@ -381,9 +386,9 @@ public class AxonConfig {
 
 The error mode differs between the Tracking- and Pooled Streaming Event Processor.
 
-Whenever the xref:README.adoc#event-processor--error-handler[error handler] rethrows an exception, a `TrackingEventProcessor` will retry processing the event using an incremental back-off period.
+Whenever the xref:event-processors/README.adoc#event-processor--error-handler[error handler] rethrows an exception, a `TrackingEventProcessor` will retry processing the event using an incremental back-off period.
 It will start at 1 second and double after each attempt until it reaches the maximum wait time of 60 seconds per attempt.
-This back-off time ensures that in a distributed environment, when another node is able to process events, it will have the opportunity to claim the <<Tracking tokens,token>> required to process the event.
+This back-off time ensures that in a distributed environment, when another node is able to process events, it will have the opportunity to claim the <<tracking-tokens,token>> required to process the event.
 
 The `PooledStreamingEventProcessor` simply aborts the failed part of the process.
 The Pooled Streaming Processor can deal with this since the <<Pooled streaming processor threading,threading mode>> is different from the Tracking Processor.
@@ -407,20 +412,20 @@ Using tokens gives the Streaming Event Processor several benefits, like:
 * Dealing with unintended shutdowns without losing track of the last events they've handled.
 * Collaboration over the event handling load from two perspectives.
 First, the tokens make sure only a single thread is actively processing specific events.
-Secondly, it allows <<Parallel Processing,parallelization>> of the load over several threads or nodes of a Streaming Processor.
-* <<Replaying Events,Replaying>> events by adjusting the token position of that processor.
+Secondly, it allows <<parallel-processing,parallelization>> of the load over several threads or nodes of a Streaming Processor.
+* <<replaying-events,Replaying>> events by adjusting the token position of that processor.
 
 To be able to reopen the stream at a later point, we should keep the progress somewhere.
 The progress is kept by updating and saving the `TrackingToken` after handling batches of events.
-Keeping the progress requires CRUD operation, for which the Streaming Processor uses the <<Token Store,`TokenStore`>>.
+Keeping the progress requires CRUD operation, for which the Streaming Processor uses the <<token-store,`TokenStore`>>.
 
-For a Streaming Processor to process any events, it needs <<Token Claims,"a claim">> on a `TrackingToken`.
+For a Streaming Processor to process any events, it needs <<Token claims,"a claim">> on a `TrackingToken`.
 The processor will update this claim every time it has finished handling a batch of events.
 This so-called "claim extension" is, just as updating and saving of tokens, delegated to the Token Store.
 Hence, the Streaming Processors achieves collaboration among instances/threads through token claims.
 
 In the absence of a claim, a processor will actively try to retrieve one.
-If a token claim is not extended for a configurable amount of time, other processor threads can <<Token Stealing,"steal">> the claim.
+If a token claim is not extended for a configurable amount of time, other processor threads can <<Token stealing,"steal">> the claim.
 Token stealing can, for example, happen if event processing is slow or encountered some exceptions.
 
 ____
@@ -429,9 +434,9 @@ ____
 
 When processing an event it may be beneficial to retrieve the token belonging to that event.
 First, this can be achieved by adding a parameter of type `TrackingToken` to the event handler.
-This support is mentioned in the link:../../messaging-concepts/supported-parameters-annotated-handlers.adoc#supported_parameters_for_event_handlers[Supported Parameters for Event Handlers] section.
+This support is mentioned in the xref:messaging-concepts:supported-parameters-annotated-handlers.adoc#supported-parameters-for-event-handlers[Supported Parameters for Event Handlers] section.
 
-Additionally, you can retrieve the token from the resources collection of the link:../../messaging-concepts/unit-of-work.adoc[Unit of Work].
+Additionally, you can retrieve the token from the resources collection of the xref:messaging-concepts:unit-of-work.adoc[Unit of Work].
 Both the Tracking and Pooled Streaming Event Processor add the current `TrackingToken` under the key `"Processor[{processor-name}]/Token"`.
 
 ____
@@ -444,13 +449,13 @@ However, if a Streaming Processor starts for the first time, there is no `Tracki
 
 Whenever this situation occurs, a Streaming Processor will construct an "initial token." By default, the initial token will start at the tail of the event stream.
 Thus, the processor will begin at the start and handle every event present in the message source.
-This start position is configurable, as is described <<Token Configuration,here>>.
+This start position is configurable, as is described <<Token configuration,here>>.
 
 ____
 
 *A Saga's Streaming Processor initial position*
 
-A Streaming Processor dedicated to a link:../../sagas/README.adoc[Saga] will default the initial token to the head of the stream.
+A Streaming Processor dedicated to a xref:sagas:README.adoc[Saga] will default the initial token to the head of the stream.
 The default initial token position ensures that the Saga does not react to events from the past, as in most cases, this would introduce unwanted side effects.
 
 ____
@@ -474,7 +479,7 @@ We can separate these options in "initial token" and "token claim" configuration
 
 ==== Initial token
 
-The <<Initial Tracking Token,initial token>> for a `StreamingEventProcessor` is configurable for every processor instance.
+The <<Initial tracking token,initial token>> for a `StreamingEventProcessor` is configurable for every processor instance.
 When configuring the initial token builder function, the received input parameter is the `StreamableMessageSource`.
 The message source, in turn, gives three possibilities to build a token, namely:
 
@@ -567,7 +572,7 @@ public class AxonConfig {
 
 ==== Token claims
 
-As described <<Tracking tokens,here>>, a streaming processor should claim a token before it is allowed to perform any processing work.
+As described <<tracking-tokens,here>>, a streaming processor should claim a token before it is allowed to perform any processing work.
 There are several scenarios where a processor may keep the claim for too long.
 This can occur when, for example, the event handling process is slow or encountered an exception.
 
@@ -666,8 +671,8 @@ public class AxonConfig {
 
 ==== Token stealing
 
-As described at the <<Tracking tokens,start>>, streaming processor threads can "steal" tokens from one another.
-A token is "stolen" when a thread loses a <<Token Claims,token claim>>.
+As described at the <<tracking-tokens,start>>, streaming processor threads can "steal" tokens from one another.
+A token is "stolen" when a thread loses a <<Token claims,token claim>>.
 Situations like this internally result in an `UnableToClaimTokenException,` caught by both streaming event processor implementations and translated into warn- or info-level log statements.
 
 Where the framework uses token claims to ensure that a single thread is processing a sequence of events, it supports token stealing to guarantee event processing is not blocked forever.
@@ -683,14 +688,14 @@ In practical terms, a token is stolen whenever the _claim timeout_ is exceeded.
 
 This timeout is met whenever the token's timestamp (for example, the `timestamp` column of your `token_entry` table) exceeds the `claimTimeout` of the `TokenStore`.
 By default, the `claimTimeout` value equals 10 seconds.
-To adjust it, you must configure a `TokenStore` instance through its builder, as shown in the <<Token Store,Token Store>> section.
+To adjust it, you must configure a `TokenStore` instance through its builder, as shown in the <<token-store,Token Store>> section.
 If you use Spring Boot, you can alternatively set the `axon.eventhandling.tokenstore.claim-timeout` for example to `30s` to increase it to 30 seconds.
 
 The token's timestamp is equally crucial in deciding when the timeout is met.
 The streaming processor thread holding the claim is in charge of updating the token timestamp.
 This timestamp is updated whenever the thread finishes a batch of events or whenever the processor extends the claim.
 When to extend a claim differs between the Tracking and Pooled Streaming processor.
-You should check out the <<Token Claims,token claim>> section if you want to know how to configure these values.
+You should check out the <<Token claims,token claim>> section if you want to know how to configure these values.
 
 To further clarify, a streaming processor's thread needs to be able to update the token claim and, by extension, the timestamp to ensure it won't get stolen.
 Hence, a staling processor thread will, one way or another, eventually lose the claim.
@@ -705,7 +710,7 @@ The consequence of token stealing is that an event may be handled twice (or more
 When a thread steals a token, the original thread was _already_ processing events from the token's position.
 To protect against doubling event handling, Axon Framework will combine committing the event handling task with updating the token.
 As the token claim is required to update the token, the original thread will fail the update.
-Following this, a rollback occurs on the link:../../messaging-concepts/unit-of-work.adoc[Unit of Work], resolving most issues arising from token stealing.
+Following this, a rollback occurs on the xref:messaging-concepts:unit-of-work.adoc[Unit of Work], resolving most issues arising from token stealing.
 
 The ability to rollback event handling tasks sheds light on the consequences of token stealing.
 Most event processors project events into a projection stored within a database.
@@ -741,7 +746,7 @@ The streaming processor will use the store to construct, fetch and claim tokens.
 
 When no token store is explicitly defined, an `InMemoryTokenStore` is used.
 The `InMemoryTokenStore` is _not_ recommended in most production scenarios since it cannot maintain the progress through application shutdowns.
-Unintentionally using the `InMemoryTokenStore` counts towards one of the unexpected scenarios where the framework creates an <<Initial Tracking Token,initial token>> on each application start-up.
+Unintentionally using the `InMemoryTokenStore` counts towards one of the unexpected scenarios where the framework creates an <<Initial tracking token,initial token>> on each application start-up.
 
 The framework provides a couple of `TokenStore` implementations:
 
@@ -865,7 +870,7 @@ String tokenStoreId = eventProcessor.getTokenStoreIdentifier();
 
 Streaming processors can use <<Thread configuration,multiple threads>> to process an event stream.
 Using multiple threads allows the `StreamingEventProcessor` to more efficiently process batches of events.
-As described <<Tracking tokens,here>>, a streaming processor's thread requires a claim on a tracking token to process events.
+As described <<tracking-tokens,here>>, a streaming processor's thread requires a claim on a tracking token to process events.
 
 Thus, to be able to parallelize the load, we require several tokens per processor.
 To that end, each token instance represents a _segment_ of the event stream, wherein each segment is identified through a number.
@@ -877,7 +882,7 @@ Only when a streaming processor starts for the first time can it initialize the 
 This requirement follows from the fact each token represents a single segment.
 Tokens, in turn, can only be initialized if they are not present yet, as is explained in more detail <<Initial tracking token,here>>.
 
-Whenever the number of segments should be adjusted during runtime, you can use the <<Splitting and merging segments,split and merge>> functionality.
+Whenever the number of segments should be adjusted during runtime, you can use the <<splitting-and-merging-segments,split and merge>> functionality.
 To adjust the number of initial segments, consider the following sample:
 
 ==== Tracking processor - Axon Configuration API
@@ -979,7 +984,7 @@ ____
 
 *Parallel Processing and Subscribing Event Processors*
 
-Note that link:subscribing.adoc[Subscribing Event Processor] don't manage their own threads.
+Note that xref:event-processors/subscribing.adoc[Subscribing Event Processor] don't manage their own threads.
 Therefore, it is not possible to configure how they should receive their events.
 Effectively, they will always work on a sequential-per-aggregate basis, as that is generally the level of concurrency in the command handling component.
 
@@ -994,12 +999,12 @@ Axon uses the `SequencingPolicy` for this.
 The `SequencingPolicy` is a function that returns a value for any given message.
 If the return value of the `SequencingPolicy` function is equal for two distinct event messages, it means that those messages must be processed sequentially.
 By default, Axon components will use the `SequentialPerAggregatePolicy`, making it so that events published by the same aggregate instance will be handled sequentially.
-Check out <<Sequential Processing,this>> section to understand how to influence the sequencing policy.
+Check out <<sequential-processing,this>> section to understand how to influence the sequencing policy.
 
 Each node running a streaming processor will attempt to start its configured amount of threads to start processing events.
 The number of segments that a single thread can claim differ between the Tracking- and Pooled Streaming Event Processor.
 A tracking processor can only claim a single segment per thread, whereas the pooled streaming processor can claim any amount of segments per thread.
-These approaches provide different pros and cons for each implementation, which <<Differences between Tracking and Pooled Streaming,this>> section explains further.
+These approaches provide different pros and cons for each implementation, which <<Differences between tracking and pooled streaming,this>> section explains further.
 
 [[sequential-processing]]
 === Sequential processing
@@ -1017,13 +1022,13 @@ ____
 
 **Parallel Processing and Sagas**
 
-A link:../../sagas/README.adoc[saga] instance is *never* invoked concurrently by multiple threads.
+A xref:sagas:README.adoc[saga] instance is *never* invoked concurrently by multiple threads.
 Therefore, the `SequencingPolicy` is irrelevant for a saga.
 Axon will ensure each saga instance receives the events it needs to process in the order they have been published on the event bus.
 
 ____
 
-Conceptually, the `SequencingPolicy` decides whether an event belongs to a given <<Parallel processing,segment>>.
+Conceptually, the `SequencingPolicy` decides whether an event belongs to a given <<parallel-processing,segment>>.
 Furthermore, Axon guarantees that Events that are part of the same segment are processed sequentially.
 
 The framework provides several policies you can use out of the box:
@@ -1127,7 +1132,7 @@ public interface SequencingPolicy<T> {
 === Thread configuration
 
 A Streaming Processor cannot process events in parallel without multiple threads configured.
-We can process events in parallel by running <<Multi-Node Processing,several nodes>> of an application.
+We can process events in parallel by running <<Multi-node processing,several nodes>> of an application.
 Or by configuring a `StreamingEventProcessor` to use several threads.
 The following section describes the threading differences between the Tracking- and Pooled Streaming Event Processor.
 These sections are followed up with samples on configuring multiple threads for the TEP and PSEP, respectively.
@@ -1137,7 +1142,7 @@ ____
 *Thread and Segment Count*
 
 Adjusting the number of threads will not automatically parallelize a Streaming Processor.
-A segment claim <<Parallel Processing,is required>> to let a thread process any events.
+A segment claim <<parallel-processing,is required>> to let a thread process any events.
 Hence, increasing the thread count should be paired with adjusting the segment count.
 
 ____
@@ -1147,7 +1152,7 @@ ____
 The `TrackingEventProcessor` uses a `ThreadFactory` to start the process of claiming segments.
 It will use a single thread per segment it is able to claim until the processor exhausts the configured amount of threads.
 Each thread will open a stream with the `StreamableMessageSource` and start processing events at their own speed.
-Other segment operations, like <<Splitting and merging segments,split and merge>>, are processed by the thread owning the segment operated on.
+Other segment operations, like <<splitting-and-merging-segments,split and merge>>, are processed by the thread owning the segment operated on.
 
 Since the tracking processor can only claim a single segment per thread, segments may go unprocessed if there are more segments than threads.
 Hence, we recommend setting the number of threads (on every node) higher than or equal to the total number of segments.
@@ -1208,7 +1213,7 @@ The `PooledStreamingEventProcessor` uses two threads pools instead of the single
 The first thread pool is in charge of opening a stream with the event source, claiming as _many_ segments as possible, and delegating all the work.
 
 The work it coordinates is foremost the events to handle.
-Next to event coordination, it deals with segment operations like <<Splitting and merging segments,split and merge>>.
+Next to event coordination, it deals with segment operations like <<splitting-and-merging-segments,split and merge>>.
 The component coordinating all the work is called the `Coordinator`.
 This coordinator defaults to using a `ScheduledExecutorService` with a single thread, which suffices in most scenarios.
 
@@ -1287,7 +1292,7 @@ axon.eventhandling.processors.my-processor.initial-segment-count=32
 
 ==== Differences between tracking and pooled streaming
 
-Based on the threading approaches of the <<Tracking processor threading,tracking processor>> and <<pooled streaming processor threading,pooled streaming processor>>, there are a couple of differences to note:
+Based on the threading approaches of the <<Tracking processor threading,tracking processor>> and <<Pooled streaming processor threading,pooled streaming processor>>, there are a couple of differences to note:
 
 * *Open Event Streams* - The tracking processor will open a stream *per* segment it claims.
 The pooled streaming processor will always open a single event stream and delegate the events to the segment workers.
@@ -1327,7 +1332,7 @@ For streaming processors, it doesn't matter whether the threads handling the eve
 When two (or more) instances of a streaming processor with the same name are active on different machines, they are considered two instances of the same logical processor.
 Hence, it is not just a processor's own threads that compete for segments but also the processors on different application instances.
 
-Thus, in a multi-node setup, each processor instance will try to <<Parallel processing,claim segments>>, preventing events assigned to that segment from being processed on other nodes.
+Thus, in a multi-node setup, each processor instance will try to <<parallel-processing,claim segments>>, preventing events assigned to that segment from being processed on other nodes.
 In this process, the processor updates the token by adding a node identifier when it claims a segment to enforce the claim.
 The node identifier is configurable on the `TokenStore`.
 By default, it will use the JVM's name (usually a combination of the hostname and process ID) as the `nodeId`.
@@ -1336,7 +1341,7 @@ In a multi-node scenario, a fair distribution of the segments is often desired.
 Otherwise, the event processing load could be distributed unequally over the active instances.
 There are roughly three approaches to balancing the number of segments claimed per node:
 
-. Through the link:../../../axon-server/introduction.md[Axon Server] Dashboard's load balancing feature.
+. Through the xref:axon_server_ref:ROOT:index.adoc[Axon Server] Dashboard's load balancing feature.
 . For Axon Server and Spring Boot users, you can use the `axon.axonserver.eventhandling.processors.[processor-name].load-balancing-strategy` application property.
 . Directly on a `StreamingEventProcessor`, with the `releaseSegment(int segmentId)` or `releaseSegment(int segmentId, long releaseDuration, TimeUnit unit)` method.
 
@@ -1379,7 +1384,7 @@ class StreamingProcessorService {
 [[splitting-and-merging-segments]]
 === Splitting and merging segments
 
-The Streaming Event Processor provides scalability by supporting <<Parallel processing,parallel processing>>.
+The Streaming Event Processor provides scalability by supporting <<parallel-processing,parallel processing>>.
 Through this, it is possible to tune the processor's performance by <<Thread configuration,adjusting the number of threads>>.
 However, only changing the number of threads is insufficient since the parallelization is dictated through the number of segments.
 
@@ -1390,7 +1395,7 @@ Splitting and merging allow you to control the number of segments dynamically.
 
 There are roughly two approaches to adjust the number of segments for a streaming processor:
 
-. Through the link:../../../axon-server/introduction.md[Axon Server] Dashboard with the split and merge buttons
+. Through the xref:axon_server_ref:ROOT:index.adoc[Axon Server] Dashboard with the split and merge buttons
 . Directly on a `StreamingEventProcessor`, with the `splitSegment(int segmentId)` and `mergeSegment(int segmentId)` methods
 
 When Axon Server is in place, we recommend using option one since it is easiest to use.
@@ -1432,7 +1437,7 @@ Thus, either the streaming processor already has a claim on the segments or can 
 Without the claims, the processor will simply fail the split or merge operation.
 
 It is advised to check which segments a streaming processor has a claim on.
-For that, link:../../monitoring/processors.adoc#event_tracker_status[status of the processor] is used.
+For that, xref:monitoring:processors.adoc#event-tracker-status[status of the processor] is used.
 The status information shows which segments a processor instance owns.
 This guides which processor to invoke the split or merge on.
 
@@ -1457,7 +1462,7 @@ ____
 A benefit of streaming events is that we can reopen the stream at any point in time.
 Whenever some event handling components misbehaved, and the view models they update or actions they triggered should happen again, starting anew can be useful.
 Handling events again by adjusting the position on the stream is what's called "a replay," a feature supported by the `StreamingEventProcessor`.
-The following sections describe how to <<Triggering a Reset,initiate a replay>> and what <<Replay API,replay API>> the framework provides.
+The following sections describe how to <<Triggering a reset,initiate a replay>> and what <<Replay API,replay API>> the framework provides.
 
 === Triggering a reset
 
@@ -1477,7 +1482,7 @@ ____
 A replay does not always have to start "from the beginning of time." Partially replaying the event stream suffices for a lot of applications.
 
 To perform a so-called "partial replay," you should provide the token at a specific point in time.
-The `StreamableMessageSource`'s <<Initial Tracking Token,`createTokenAt(Instant)` and `createTokenSince(Duration)`>> can be used for this.
+The `StreamableMessageSource`'s <<Initial tracking token,`createTokenAt(Instant)` and `createTokenSince(Duration)`>> can be used for this.
 
 If creating tokens based on time is not sufficient, but creating tokens based on the exact position is something that is more convenient, you could create a `TrackingToken` providing the position and give it to `resetTokens(TrackingToken startPosition)` or
 `resetTokens(TrackingToken startPosition, R resetContext)` methods.
@@ -1489,8 +1494,8 @@ Making the event handlers lenient (for example, deal with missing data) or perfo
 
 ____
 
-As the method name suggests, the reset adjusts the <<Tracking tokens,tracking token>> to a new position.
-When starting a reset, the streaming processor is _required_ to claim all its <<Parallel processing,segments>>.
+As the method name suggests, the reset adjusts the <<tracking-tokens,tracking token>> to a new position.
+When starting a reset, the streaming processor is _required_ to claim all its <<parallel-processing,segments>>.
 All claims are required since the processor needs to update all tokens to their new position to start the replay.
 
 To achieve this, the streaming event processor must be inactive when starting a reset.
@@ -1554,7 +1559,7 @@ ____
 If you are in a <<Multi-node processing,multi-node>> scenario, that means _all_ nodes should shut down the `StreamingEventProcessor`.
 Otherwise, another node will pick up the segments released by the inactive processor instance.
 
-Being able to shut down or start up all streaming processor instances is most easily achieved through the link:../../../axon-server/introduction.md[Axon Server] Dashboard.
+Being able to shut down or start up all streaming processor instances is most easily achieved through the xref:axon_server_ref:ROOT:index.adoc[Axon Server] Dashboard.
 The application's dashboard provides a "start" and "stop" button, which will start/stop the processor on every node.
 
 When Axon Server is not used, you should construct a custom endpoint in your application.
@@ -1642,7 +1647,10 @@ The type of the `resetContext` has to match the parameter's, or it will be null.
 You can configure a Streaming Event Processor to use multiple sources to process events from.
 When required to process events from several sources, we can configure a specific type of `StreamableMessageSource`: the `MultiStreamableMessageSource`.
 The `MultiStreamableMessageSource` is useful when a streaming processor should act on the events from:
-* several event stores, * link:../../../axon-server/administration/multi-context.md[multiple-contexts], or * from different storage types (for example, an Event Store and a Kafka Stream)
+
+* several event stores,
+* xref:axon_server_ref:ROOT:axon-server/administration/multi-context.adoc[multiple-contexts], or
+* from different storage types (for example, an Event Store and a Kafka Stream)
 
 Having multiple sources means that there might be a choice of multiple events that the processor could consume at any given instant.
 Therefore, you can specify a `Comparator` to choose between them.

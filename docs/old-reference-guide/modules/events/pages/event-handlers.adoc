@@ -11,7 +11,7 @@ Arguably the most important parameter of an event handler is the first parameter
 If the event handler does not need access to the payload of the message, you can specify the expected payload type on the `@EventHandler` annotation.
 
 Do not configure the payload type on the annotation if you want the payload to be passed as a parameter.
-For a complete list of all parameters, we refer to link:../messaging-concepts/supported-parameters-annotated-handlers.adoc#_supported_parameters_for_event_handlers[this] section.
+For a complete list of all parameters, we refer to xref:messaging-concepts:supported-parameters-annotated-handlers.adoc#supported-parameters-for-event-handlers[this] section.
 
 In all circumstances, at most one event handler method is invoked per listener instance.
 Axon will search for the most specific method to invoke, using the following rules:

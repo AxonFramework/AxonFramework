@@ -106,7 +106,7 @@ As upcasters work on a stream of events, all that can ever belong to the context
 
 However, this "stream of events" is not identical at all times.
 For example, when an aggregate is event-sourced, the event stream consists of aggregate instance-specific events.
-Furthermore, the stream of events starts from the link:event-processors/streaming.adoc#tracking-tokens[tracking token's] position for a link:event-processors/streaming.adoc[Streaming Event Processor].
+Furthermore, the stream of events starts from the xref:event-processors/streaming.adoc#tracking-tokens[tracking token's] position for a xref:event-processors/streaming.adoc[Streaming Event Processor].
 Hence, the context contains different state depending on what's included in the event stream.
 
 ____
