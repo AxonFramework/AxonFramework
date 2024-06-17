@@ -77,7 +77,7 @@ It also provides a number of building block implementations specific to Spring F
 
 This module provides Spring Boot auto-configuration for your project.
 It is by far the easiest option to get started as it automatically configures all Axon components.
-It is explained in more details link:spring-boot-integration.adoc[here].
+It is explained in more details xref:spring-boot-integration.adoc[here].
 
 === Axon Disruptor
 
@@ -222,7 +222,7 @@ This module provides Spring auto-configuration on top of the `axon-springcloud` 
 
 This module provides support for distributed tracing of Axon applications.
 The https://opentracing.io/[Open Tracing] standard is used to provide the tracing capabilities.
-If you're looking for Open Telemetry support, please check our documentation for that over link:monitoring/tracing.adoc[here].
+If you're looking for Open Telemetry support, please check our documentation for that over xref:monitoring:tracing.adoc[here].
 
 === Axon Tracing Spring Boot Starter
 

@@ -259,7 +259,7 @@ public class SerializerConfiguration {
 
 === `ContentTypeConverters`
 
-An link:events/event-versioning.adoc#event-upcasting[upcaster] works on a given content type (for example, dom4j Document).
+An xref:events:event-versioning.adoc#event-upcasting[upcaster] works on a given content type (for example, dom4j Document).
 To provide extra flexibility between upcasters, content types between chained upcasters may vary.
 Axon will try to convert between the content types automatically by using a `ContentTypeConverter`.
 It will search for the shortest path from type `x` to type `y`, perform the conversion and pass the converted value into the requested upcaster.
