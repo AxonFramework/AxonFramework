@@ -20,12 +20,12 @@ This token can be used to cancel the schedule, for example when a payment of an 
 Axon provides four `EventScheduler` implementations:
 
 . <<Simple event scheduler,Pure Java>>
-. <<Jobrunr event scheduler,JobRunr>>
-. <<db-scheduler event scheduler, db-scheduler>>
+. <<JobRunr event scheduler,JobRunr>>
+. <<Db-scheduler event scheduler, db-scheduler>>
 . <<Axon Server event scheduler,Axon Server>>
 . <<Quartz event scheduler,Quartz>>
 
-It is important to note that the `JubRunrEventScheduler`, `QuartzEventScheduler`, `AxonServerEventScheduler` and `DbSchedulerEventSerializer` all should use the xref:../serialization.adoc#different_serializer_for_events[event Serializer] to serialize and deserialize the scheduled event.
+It is important to note that the `JubRunrEventScheduler`, `QuartzEventScheduler`, `AxonServerEventScheduler` and `DbSchedulerEventSerializer` all should use the xref:ROOT:serialization.adoc#different-serializer-for-events[event Serializer] to serialize and deserialize the scheduled event.
 If the `Serializer` used by the scheduler does not align with the `Seralizer` used by the event store, exceptional scenarios should be expected.
 The Quartz implementation's `Serializer` can be set by defining a different `EventJobDataBinder`, whereas the JobRunr, Axon Server and db-scheduler implementations allows defining the used `Serializer` directly through the builder.
 

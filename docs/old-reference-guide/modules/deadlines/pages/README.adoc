@@ -12,6 +12,6 @@ A summary of the various subsections is given below.
 |===
 |Sub-Section |Purpose
 
-|link:deadline-managers.adoc[Deadline Managers] |Deadline Handling using Deadline Managers
-|link:event-schedulers.adoc[Event Schedulers] |Deadline Handling using Event Schedulers
+|xref:deadline-managers.adoc[Deadline Managers] |Deadline Handling using Deadline Managers
+|xref:event-schedulers.adoc[Event Schedulers] |Deadline Handling using Event Schedulers
 |===

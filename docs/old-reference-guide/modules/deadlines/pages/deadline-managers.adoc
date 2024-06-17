@@ -12,7 +12,7 @@ ____
 
 *Scheduled Events or Scheduled Deadlines*
 
-Unlike link:event-schedulers.adoc[Event Scheduling], when a deadline is triggered there will be no storing of the published message.
+Unlike xref:event-schedulers.adoc[Event Scheduling], when a deadline is triggered there will be no storing of the published message.
 Scheduling/Triggering a deadline does not involve an `EventBus` (or `EventStore`), hence the message *is not* stored.
 
 ____
@@ -138,7 +138,7 @@ public void on() {
 == Using time in your application
 
 In cases where applications need to access the clock, they can take advantage of the clock used in the EventMessage, by accessing `GenericEventMessage.clock`.
-This clock is set to Clock.systemUTC at runtime, and manipulated to simulate time during link:../testing/README.adoc[testing].
+This clock is set to Clock.systemUTC at runtime, and manipulated to simulate time during xref:testing:README.adoc[testing].
 
 [source,java]
 ----
@@ -148,7 +148,7 @@ public void handle(PublishTime cmd) {
 ----
 
 Note that the current timestamp is automatically added to the EventMessage.
-If handlers only need to rely on the timestamp the event was published, they can access that timestamp directly, as described in link:../events/event-handlers.adoc[Handling Events].
+If handlers only need to rely on the timestamp the event was published, they can access that timestamp directly, as described in xref:events:event-handlers.adoc[Handling Events].
 
 == Configuration
 

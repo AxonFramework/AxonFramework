@@ -179,6 +179,7 @@ When you serialize messages yourself, and want to benefit from the `Serializatio
 All optimization logic is implemented in that class.
 See the JavaDoc of the `MessageSerializer` for more details.
 
+[[different-serializer-for-events]]
 === Different serializer for events
 
 When using event sourcing, serialized events can stick around for a long time.
