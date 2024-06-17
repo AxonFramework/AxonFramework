@@ -60,7 +60,7 @@ As all the Event Sourcing Handlers combined will form the Aggregate, this is whe
 Note that the Aggregate Identifier *must* be set in the `@EventSourcingHandler` of the  first Event published by the aggregate.
 This is usually the creation event.
 Lastly, `@EventSourcingHandler` annotated functions are resolved using specific rules.
-These rules are the same for the `@EventHandler` annotated methods, and are thoroughly explained in link:../../events/event-handlers.adoc[Annotated Event Handler.]
+These rules are the same for the `@EventHandler` annotated methods, and are thoroughly explained in xref:events:event-handlers.adoc[Annotated Event Handler.]
 
 . A no-arg constructor, which is required by Axon.
 Axon Framework uses this constructor to create an empty aggregate instance before initializing it using past Events.
@@ -84,10 +84,10 @@ There are a couple of operations which are desirable to be performed whilst in t
 To that end, the `AggregateLifecycle` class in Axon provides a couple of static functions:
 
 . `apply(Object)` and `apply(Object, MetaData)`: The `AggregateLifecycle#apply` will publish an Event message on an `EventBus` such that it is known to have originated from the Aggregate executing the operation.
-There is the possibility to provide just the Event `Object` or both the Event and some specific link:../../messaging-concepts/anatomy-message.adoc#_meta_data[MetaData].
+There is the possibility to provide just the Event `Object` or both the Event and some specific xref:messaging-concepts:anatomy-message.adoc#meta-data[MetaData].
 
 . `createNew(Class, Callable)`: Instantiate a new Aggregate as a result of handling a Command.
-Read link:aggregate-creation-from-another-aggregate.adoc[this] for more details on this.
+Read xref:modeling/aggregate-creation-from-another-aggregate.adoc[this] for more details on this.
 
 . `isLive()`: Check to verify whether the Aggregate is in a 'live' state.
 An Aggregate is regarded to be 'live' if it has finished replaying historic events to recreate it's state.

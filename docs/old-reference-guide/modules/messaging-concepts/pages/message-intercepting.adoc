@@ -5,6 +5,7 @@ Dispatch interceptors are invoked before a message is dispatched to a message ha
 At that point, it may not even be known that a handler exists for that message.
 Handler interceptors are invoked just before the message handler is invoked.
 
+[[command-interceptors]]
 == Command interceptors
 
 One of the advantages of using a command bus is the ability to undertake action based on all incoming commands.

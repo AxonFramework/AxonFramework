@@ -1,6 +1,6 @@
 = Command Dispatchers
 
-The link:command-handlers.adoc[Command Handlers] pages provide the background on how to handle command messages in your application.
+The xref:command-handlers.adoc[Command Handlers] pages provide the background on how to handle command messages in your application.
 The dispatching process is the starting point of such a command message.
 Axon provides two interfaces you can use to send the commands to your command handlers, being:
 
@@ -8,7 +8,7 @@ Axon provides two interfaces you can use to send the commands to your command ha
 . The Command Gateway
 
 This page will show how and when to use the command gateway and bus.
-How to configure and specifics on the command gateway and bus implementations are discussed in the link:infrastructure.adoc[infrastructure] section.
+How to configure and specifics on the command gateway and bus implementations are discussed in the xref:infrastructure.adoc[infrastructure] section.
 
 [[the-command-bus]]
 == The `CommandBus`
@@ -109,7 +109,7 @@ public void sendCommand() {
 The `send` API as shown above introduces a couple of concepts, marked with numbered comments:
 
 . The `CommandGateway` interface providing the functionality to dispatch command messages.
-It does so by internally leveraging the `CommandBus` interface <<The Command Bus,dispatch messages>>.
+It does so by internally leveraging the `CommandBus` interface <<the-command-bus,dispatch messages>>.
 
 . The aggregate identifier is, per best practice, initialized as the String of a random unique identifier.
 Typed identifier objects are also possible, as long as the object implements a sensible `toString()` function.
@@ -117,7 +117,7 @@ Typed identifier objects are also possible, as long as the object implements a s
 . The `send(Object)` function requires a single parameter, the command object.
 This is an asynchronous approach to dispatching commands.
 As such the response of the `send` method is a `CompletableFuture`.
-This allows for chaining of follow-up operations _after_ the command <<Command Dispatching Results,result>> has been returned.
+This allows for chaining of follow-up operations _after_ the command <<Command dispatching results,result>> has been returned.
 
 ____
 
@@ -146,12 +146,12 @@ public void sendCommandAndWaitOnResult() {
 
 . The `CommandGateway#sendAndWait(Object)` function takes in a single parameter, your command object.
 It will wait indefinitely until the command dispatching and handling process has been resolved.
-The result returned by this method can either be successful or exceptional, as will be explained <<Command Dispatching Results,here>>.
+The result returned by this method can either be successful or exceptional, as will be explained <<Command dispatching results,here>>.
 
 . If waiting indefinitely is not desirable, a 'timeout' paired with the 'time unit' can be provided alongside the command object.
 Doing so will ensure that the command dispatching thread will not wait longer than specified.
 If command dispatching/handling was interrupted or the timeout was reached whilst using this approach, the command result will be `null`.
-In all other scenarios, the result follows the <<Command Dispatching Results,referenced>> approach.
+In all other scenarios, the result follows the <<Command dispatching results,referenced>> approach.
 
 == Command dispatching results
 
@@ -167,7 +167,7 @@ The successful resolution of command handling intentionally _should not_ provide
 Thus, if the `CommandBus`/`CommandGateway` provides a response (either directly or through the `CommandResultMessage)`, then you should assume the result of successful command handling to return `null`.
 
 While it is possible to return results from command handlers, this should be used sparsely.
-The intent of the Command should never be to retrieve a value, as that would be an indication that the message should be designed as a link:../queries/README.adoc[Query Message].
+The intent of the Command should never be to retrieve a value, as that would be an indication that the message should be designed as a xref:queries:README.adoc[Query Message].
 Exceptions to this would be the identifier of the Aggregate Root, or identifiers of entities the Aggregate Root has instantiated.
 The framework has one such exception build in, on the `@CommandHandler` annotated constructor of an Aggregate.
 In case the 'command handling constructor' has executed successfully, instead of the Aggregate itself, the value of the `@AggregateIdentifier` annotated field will be returned.

@@ -1,6 +1,6 @@
 = State Stored Aggregates
 
-In the link:aggregate.adoc[Aggregate] main page we have seen how to create an Aggregate backed by Event Sourcing.
+In the xref:modeling/aggregate.adoc[Aggregate] main page we have seen how to create an Aggregate backed by Event Sourcing.
 In other words, the storage method for an Event Sourced Aggregate is by replaying the events which constitute the changes on the Aggregate.
 
 An Aggregate can however be stored as-is too.
@@ -87,7 +87,7 @@ This identifier field must be annotated by the `@AggregateIdentifier` annotation
 When using JPA to store the Aggregate, Axon knows to use the `@Id` annotation provided by JPA.
 Since the Aggregate is an entity, the `@Id` annotation is a hard requirement.
 
-. This Aggregate has several 'link:multi-entity-aggregates.adoc[Aggregate Members]'.
+. This Aggregate has several 'xref:modeling/multi-entity-aggregates.adoc[Aggregate Members]'.
 Since the Aggregate is stored as is, the correct mapping of the entities should be taken into account.
 
 . A `@CommandHandler` annotated constructor, or differently put the 'command handling constructor'.
@@ -108,7 +108,7 @@ ____
 
 *Adjusting state in Command Handlers*
 
-Differently from link:aggregate.adoc[Event Sourced Aggregates], State-Stored Aggregates can pair the decision making logic and state changes in a Command Handler.
+Differently from xref:modeling/aggregate.adoc[Event Sourced Aggregates], State-Stored Aggregates can pair the decission making logic and state changes in a Command Handler.
 There are no consequences for State-Stored Aggregates in following this paradigm as there are no Event Sourcing Handlers which drive it's state.
 
 ____

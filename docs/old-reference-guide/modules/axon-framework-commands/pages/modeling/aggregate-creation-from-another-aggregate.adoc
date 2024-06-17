@@ -1,6 +1,6 @@
 = Aggregate Creation from another Aggregate
 
-Regularly, instantiating a new Aggregate is done by issuing a creation command which is handled by a `@CommandHandler` annotated Aggregate constructor. Such commands could for example be published by a simple REST endpoint or an link:../../events/event-handlers.adoc[Event Handling Component] as a reaction to a certain event. Sometimes the Domain however describes certain Entities to be created from another Entity. In this scenario it would thus be more faithful to the domain to instantiate an Aggregate from its parent Aggregate.
+Regularly, instantiating a new Aggregate is done by issuing a creation command which is handled by a `@CommandHandler` annotated Aggregate constructor. Such commands could for example be published by a simple REST endpoint or an xref:events:event-handlers.adoc[Event Handling Component] as a reaction to a certain event. Sometimes the Domain however describes certain Entities to be created from another Entity. In this scenario it would thus be more faithful to the domain to instantiate an Aggregate from its parent Aggregate.
 
 ____
 

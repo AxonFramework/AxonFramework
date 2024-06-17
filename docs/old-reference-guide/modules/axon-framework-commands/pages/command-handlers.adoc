@@ -8,7 +8,7 @@ To define a Command Handler in an Aggregate, simply annotate the method which sh
 The `@CommandHandler` annotated method will become a Command Handler for Command Messages where the _command name_ matches fully qualified class name of the first parameter of that method.
 Thus, a method signature of `void handle(RedeemCardCommand cmd)` annotated with `@CommandHandler`, will be the Command Handler of the `RedeemCardCommand` Command Messages.
 
-Command Messages can also be link:command-dispatchers.adoc[dispatched] with different _command names_.
+Command Messages can also be xref:command-dispatchers.adoc[dispatched] with different _command names_.
 To be able to handle those correctly, the `String commandName` value can be specified in the `@CommandHandler` annotation.
 
 In order for Axon to know which instance of an Aggregate type should handle the Command Message, the property carrying the Aggregate Identifier in the command object *must* be annotated with `@TargetAggregateIdentifier`.
@@ -125,7 +125,7 @@ State changes should *not* occur in _any_ Command Handling function.
 The Event Sourcing Handlers should be the only methods where the Aggregate's state is updated.
 Failing to do so means the Aggregate would miss state changes when it is being sourced from its events.
 
-Thelink:../testing/commands-events.adoc[ Aggregate Test Fixture] will guard against unintentional state changes in Command Handling functions.
+The xref:testing:commands-events.adoc[ Aggregate Test Fixture] will guard against unintentional state changes in Command Handling functions.
 It is thus advised to provide thorough test cases for _any_ Aggregate implementation.
 
 ____
@@ -139,7 +139,7 @@ ____
 
 === Applying events from event-sourcing handlers
 
-In some cases, especially when the Aggregate structure grows beyond just a couple of Entities, it is cleaner to react on events being published in other Entities of the same Aggregate (multi Entity Aggregates are explained in more detail link:modeling/multi-entity-aggregates.adoc[here]).
+In some cases, especially when the Aggregate structure grows beyond just a couple of Entities, it is cleaner to react on events being published in other Entities of the same Aggregate (multi Entity Aggregates are explained in more detail xref:modeling/multi-entity-aggregates.adoc[here]).
 However, since the Event Handling methods are also invoked when reconstructing Aggregate state, special precautions must be taken.
 
 It is possible to `apply()` new events inside an Event Sourcing Handler method.
@@ -155,7 +155,7 @@ An Aggregate *cannot* handle events from other sources then itself.
 This is intentional as the Event Sourcing Handlers are used to recreate the state of the Aggregate.
 For this it only needs it's own events as those represent it's state changes.
 
-To make an Aggregate react on events from other Aggregate instances, link:../sagas/README.adoc[Sagas] or link:../events/event-handlers.adoc[Event Handling Components] should be leveraged
+To make an Aggregate react on events from other Aggregate instances, xref:sagas:README.adoc[Sagas] or xref:events:event-handlers.adoc[Event Handling Components] should be leveraged
 
 ____
 

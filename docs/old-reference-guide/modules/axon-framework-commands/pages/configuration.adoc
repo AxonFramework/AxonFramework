@@ -4,7 +4,7 @@ This page aims to describe the suite of options for configuring the Command Mode
 
 == Aggregate configuration
 
-Core concepts within the Command Model are the link:modeling/aggregate.adoc[Aggregates] which are implemented. To instantiate a default Aggregate configuration you simply do the following:
+Core concepts within the Command Model are the xref:modeling/aggregate.adoc[Aggregates] which are implemented. To instantiate a default Aggregate configuration you simply do the following:
 
 ==== Axon Configuration API
 
@@ -40,9 +40,9 @@ public class GiftCard {
 [[registering-a-command-handler]]
 == Registering a command handler
 
-Often times the command handler functions are placed directly on the link:modeling/aggregate.adoc[aggregate]. When this approach is taken, simply registering the Aggregate as described above is sufficient for all its command handler methods to be registered too.
+Often times the command handler functions are placed directly on the xref:modeling/aggregate.adoc[aggregate]. When this approach is taken, simply registering the Aggregate as described above is sufficient for all its command handler methods to be registered too.
 
-link:command-handlers.adoc#external_command_handlers[External Command Handlers] however do require direct registration as being a command handler, which is shown in the following sample:
+xref:command-handlers.adoc#external_command_handlers[External Command Handlers] however do require direct registration as being a command handler, which is shown in the following sample:
 
 ==== Axon Configuration API
 
@@ -103,9 +103,9 @@ ____
 
 *Duplicate Command Handling Functions*
 
-As specified in the link:../messaging-concepts/README.adoc[Messaging Concepts] section, a command always has exactly one destination. That means there should only be a single Command Handler method for any given command.
+As specified in the xref:messaging-concepts:README.adoc[Messaging Concepts] section, a command always has exactly one destination. That means there should only be a single Command Handler method for any given command.
 
-By default, when a duplicate Command Handler method is registered, the last registration will be kept and a warning is logged. This behaviour can be adjusted by specifying a different `DuplicateCommandHandlerResolver`, as is described in the link:../tuning/README.adoc[Runtime Tuning] section.
+By default, when a duplicate Command Handler method is registered, the last registration will be kept and a warning is logged. This behaviour can be adjusted by specifying a different `DuplicateCommandHandlerResolver`, as is described in the xref:tuning:README.adoc[Runtime Tuning] section.
 
 ____
 
@@ -166,7 +166,7 @@ Those repositories do not store the aggregate itself, but the series of events g
 Based on these events, the state of an aggregate can be restored at any time.
 
 The `EventSourcingRepository` implementation provides the basic functionality needed by any event sourcing repository in the Axon Framework.
-It depends on an `EventStore` (see link:../events/event-bus-and-event-store.adoc[Event store implementations]), which abstracts the actual storage mechanism for the events.
+It depends on an `EventStore` (see xref:events:event-bus-and-event-store.adoc[Event store implementations]), which abstracts the actual storage mechanism for the events.
 
 == Aggregate factories
 
@@ -197,7 +197,7 @@ Instead of creating regular instances of using a constructor, it uses the Spring
 This will also inject any dependencies in your aggregate.
 
 Note that although you can inject dependencies as global fields of an aggregate, you can also inject them as parameters.
-When it comes to parameters added to message handling methods, Axon uses the so-called link:../messaging-concepts/supported-parameters-annotated-handlers.adoc[Parameter Resolver] support to inject your beans.
+When it comes to parameters added to message handling methods, Axon uses the so-called xref:messaging-concepts:supported-parameters-annotated-handlers.adoc[Parameter Resolver] support to inject your beans.
 As such, the `SpringPrototypeAggregateFactory` _does not_ play any role to inject dependencies to message handling methods.
 
 === Implementing your own `AggregateFactory`
