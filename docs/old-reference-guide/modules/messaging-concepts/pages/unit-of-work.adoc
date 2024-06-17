@@ -100,7 +100,7 @@ Axon Framework uses the unit of work to track actions performed by message handl
 After the handler has completed, Axon will try to commit the actions registered with the unit of work.
 
 It is possible to bind a transaction to a unit of work.
-Many components, such as the `CommandBus` and `QueryBus` implementations and all asynchronously processing `EventProcessor`s, allow you to configure a `TransactionManager`.
+Many components, such as the `CommandBus` and `QueryBus` implementations and all asynchronously processing `EventProcessor` s, allow you to configure a `TransactionManager`.
 This transaction manager will then be used to create the transactions to bind to the unit of work that is used to manage the process of a message.
 
 When application components need resources at different stages of message processing, such as a database connection or an `EntityManager`, these resources can be attached to the `UnitOfWork`.

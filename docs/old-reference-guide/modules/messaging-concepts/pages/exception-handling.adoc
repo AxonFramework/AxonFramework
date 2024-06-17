@@ -7,7 +7,7 @@ Especially when it comes to failures when handling a command or a query, message
 == Handler execution exception
 
 The `HandlerExecutionException` marks an exception which originates from a message handling member.
-Since an link:../events/README.adoc[Event] message is unidirectional, handling an event does not include any return values.
+Since an xref:events:README.adoc[Event] message is unidirectional, handling an event does not include any return values.
 As such, the `HandlerExecutionException` should only be returned as an exceptional result from handling a command.
 Axon provides a more concrete implementation of this exception for failed command and query handling, respectively the `CommandExecutionException` and `QueryExecutionException`.
 
@@ -17,11 +17,11 @@ To support and encourage this decoupling, Axon will generify any exception which
 
 To maintain support for conditional logic dependent on the type of exception thrown in a distributed scenario, it is possible to provide details in a `HandlerExecutionException`.
 It is thus recommended to throw a `CommandExecutionException` / `QueryExecutionException`with the required details, when command/query handling fails.
-This behaviour could be supported generically by implementing link:message-intercepting.adoc[interceptors] which perform exception wrapping for you.
+This behaviour could be supported generically by implementing xref:message-intercepting.adoc[interceptors] which perform exception wrapping for you.
 
 == `@ExceptionHandler` annotated methods
 
 Axon Framework allows the use of methods annotated with `@ExceptionHandler` to provide more fine-grained control on how to react to exceptions.
-More specifically, this is a type of link:message-intercepting.adoc[message handler interceptor] dedicated to reacting to exceptional results.
+More specifically, this is a type of xref:message-intercepting.adoc[message handler interceptor] dedicated to reacting to exceptional results.
 Note that such an `@ExceptionHandler` will only handle exceptions thrown from message handling functions in the same class.
-For more specifics on how to use this annotation, check out link:message-intercepting.adoc#_exceptionhandler[this] section.
+For more specifics on how to use this annotation, check out xref:message-intercepting.adoc#ExceptionHandler[this] section.

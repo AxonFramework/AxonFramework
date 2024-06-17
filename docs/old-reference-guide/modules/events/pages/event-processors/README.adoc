@@ -283,7 +283,7 @@ public interface ErrorHandler {
 
 Based on the provided `ErrorContext` object, you can decide to ignore the error, schedule retries, perform dead-letter-queue delivery, or rethrow the exception.
 
-[[dead-letter-qeue]]
+[[dead-letter-queue]]
 === Dead-letter queue
 
 Although configuring a <<Processing group - listener invocation error handler,Listener Invocation Error Handler>>

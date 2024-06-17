@@ -6,9 +6,9 @@ Usually, correlation is implemented using a specific message property, a so-call
 
 == Correlation data provider
 
-Messages in Axon Framework use the link:anatomy-message.adoc#_meta_data[`MetaData`] property to transport meta information about the message.
+Messages in Axon Framework use the xref:anatomy-message.adoc#meta-data[`MetaData`] property to transport meta information about the message.
 The `MetaData` object is of type `Map<String, Object>` and is passed around with the message.
-In order to fill the `MetaData` of a new message produced within a link:unit-of-work.adoc[Unit of Work], a so called `CorrelationDataProvider` can be used.
+In order to fill the `MetaData` of a new message produced within a xref:unit-of-work.adoc[Unit of Work], a so called `CorrelationDataProvider` can be used.
 It is the Unit of Work which is in charge of populating the `MetaData` of a new message based on this `CorrelationDataProvider`.
 Axon Framework currently provides a couple of implementations of this functional interface:
 
