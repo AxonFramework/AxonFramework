@@ -7,7 +7,7 @@ or log the messages being handled and dispatched.
 
 == Correlation data
 
-The framework provides the `CorrelationDataProvider`, as described link:../messaging-concepts/message-correlation.adoc[here].
+The framework provides the `CorrelationDataProvider`, as described xref:messaging-concepts:message-correlation.adoc[here].
 This interface and its implementations provide you the means to populate the meta-data of a message based on the message
 that is currently being handled.
 For instance, you could use this to store the command that triggered the event in the metadata of the event itself,
@@ -27,12 +27,12 @@ We can see the effect of this in the following table.
 | 4 | Event | 8231323 | 3 |
 |===
 
-Check out the link:../messaging-concepts/message-correlation.adoc[message correlation page]
+Check out the xref:messaging-concepts:message-correlation.adoc[message correlation page]
 to find out more about the `MessageOriginProvider`.
 
 == Interceptor logging
 
 You can also track the flow of messages through your application using logging.
-You can leverage link:../messaging-concepts/message-intercepting.adoc[Handler- and DispatchInterceptors] to achieve this.
+You can leverage xref:messaging-concepts:message-intercepting.adoc[Handler- and DispatchInterceptors] to achieve this.
 The `LoggingInterceptor` is provided out-of-the-box solution to log any type of message to SLF4J,
 but also provides a simple overridable template to set up your own desired logging format.

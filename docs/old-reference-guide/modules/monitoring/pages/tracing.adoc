@@ -617,4 +617,4 @@ Examples of this are:
 
 The `TracingHandlerEnhancerDefinition` functionality is autoconfigured for Spring Boot, with event sourcing handlers turned off by default.
 This is because loading an aggregate might invoke many of these handlers, hitting the maximum number of spans for your APM tool.
-Please refer to the <<Spring boot auto-configuration,Spring Boot configuration>> section if you want to enable this.
+Please refer to the <<Spring Boot auto configuration,Spring Boot configuration>> section if you want to enable this.

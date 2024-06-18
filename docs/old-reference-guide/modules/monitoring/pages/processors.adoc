@@ -1,12 +1,12 @@
 = Event Processor Monitoring
 
-link:../events/event-processors/README.adoc[Event processors] should be kept an eye on when determining the health and status of your application.
+xref:events:event-processors/README.adoc[Event processors] should be kept an eye on when determining the health and status of your application.
 You can achieve this by checking the Event Tracker Status, or monitoring the event processors through metrics.
 
 [[event-tracker-status]]
 == Event tracker status
 
-Since xref:../events/event-processors/streaming.adoc#tracking_tokens[Tracking Tokens] "track" the progress of a given Streaming Event Processor, they provide a sensible monitoring hook in any Axon application.
+Since xref:events:event-processors/streaming.adoc#tracking-tokens[Tracking Tokens] "track" the progress of a given Streaming Event Processor, they provide a sensible monitoring hook in any Axon application.
 Such a hook proves its usefulness when we want to rebuild our view model and we want to check when the processor has caught up with all the events.
 
 To that end the `StreamingEventProcessor` exposes the `processingStatus()` method.
@@ -16,8 +16,8 @@ The Event Tracker Status exposes a couple of metrics:
 
 * The `Segment` it reflects the status of.
 * A boolean through `isCaughtUp()` specifying whether it is caught up with the Event Stream.
-* A boolean through `isReplaying()` specifying whether the given Segment is xref:../events/event-processors/streaming.adoc#replaying-events[replaying].
-* A boolean through `isMerging()` specifying whether the given Segment is xref:../events/event-processors/streaming.adoc#splitting-and-merging-segments[merging].
+* A boolean through `isReplaying()` specifying whether the given Segment is xref:events:event-processors/streaming.adoc#replaying-events[replaying].
+* A boolean through `isMerging()` specifying whether the given Segment is xref:events:event-processors/streaming.adoc#splitting-and-merging-segments[merging].
 * The `TrackingToken` of the given Segment.
 * A boolean through `isErrorState()` specifying whether the Segment is in an error state.
 * An optional `Throwable` if the Event Tracker reached an error state.
@@ -34,7 +34,7 @@ For a complete overview, you should retrieve the status from each instance of yo
 
 == Metrics
 
-Besides querying the event processors for their status directly, the link:metrics.adoc[metric modules] provides a way to monitor event processors as well.
+Besides querying the event processors for their status directly, the xref:metrics.adoc[metric modules] provides a way to monitor event processors as well.
 The modules contain a `MessageMonitor` that exposes metrics about the processed messages of each processor, including capacity, latency, processing time and counters.
 
 The exposed metrics can be scraped by the tool of your choice (for example, https://prometheus.io/[Prometheus]) and alerting can be put in place for several useful metrics.
