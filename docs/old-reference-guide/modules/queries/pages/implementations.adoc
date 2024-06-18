@@ -1,6 +1,6 @@
 = Implementations
 
-When it comes to dispatching queries, as explained in the link:query-dispatchers.adoc[Dispatching Queries] section, there are a couple of implementations when it comes to actually sending the query message in question. The next sections provide an overview of the possible implementations, as well as pointing out how to set up query dispatching infrastructure with Axon.
+When it comes to dispatching queries, as explained in the xref:query-dispatchers.adoc[Dispatching Queries] section, there are a couple of implementations when it comes to actually sending the query message in question. The next sections provide an overview of the possible implementations, as well as pointing out how to set up query dispatching infrastructure with Axon.
 
 == Query gateway
 
@@ -49,9 +49,8 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
 ----
 
-{% endtab %}
 
-{% tab title="Spring Boot AutoConfiguration" %}
+==== Spring Boot auto-configuration
 By simply declaring dependency to `axon-spring-boot-starter`, Axon will automatically configure the Axon Server Query Bus:
 
 [source,text]
@@ -94,9 +93,8 @@ public class AxonConfig {
 }
 ----
 
-{% endtab %}
 
-{% tab title="Spring Boot AutoConfiguration" %}
+==== Spring Boot auto-configuration
 
 [source,java]
 ----
