@@ -1,12 +1,12 @@
 = Event Processing
 
-Typically, application components contain one or more xref:../events/event-processors/README.adoc[ Event Processors] which are responsible for processing incoming events. Tracking Event Processors have configuration aspects that can be changed at runtime to accommodate for changes in the system topology.
+Typically, application components contain one or more xref:events:event-processors/README.adoc[Event Processors] which are responsible for processing incoming events. Tracking Event Processors have configuration aspects that can be changed at runtime to accommodate for changes in the system topology.
 
 == Increasing and decreasing segment counts
 
 Tracking Event Processors that handle events in multiple threads use segments to separate the events in the stream across these threads in a reliable way. However, especially when these threads are spread across multiple instances of a component, and the number of instances changes, it may be useful to scale the number of segments accordingly.
 
-To this end, Axon Framework provides a xref:../events/event-processors/streaming.adoc#splitting-and-merging-segments[split and merge API]. This API can be utilized directly via a client configuration or through Axon Server, where the latter takes required coordination into account.
+To this end, Axon Framework provides a xref:events:event-processors/streaming.adoc#splitting-and-merging-segments[split and merge API]. This API can be utilized directly via a client configuration or through Axon Server, where the latter takes required coordination into account.
 
 === Segment tuning through Axon Framework
 
