@@ -1,0 +1,14 @@
+name: axon_framework_old_ref
+title: Axon Framework Reference Guide
+version: true
+prerelease: true
+start_page: ROOT:introduction.adoc
+
+asciidoc:
+  attributes:
+    component_description: The Axon Framework former reference guide
+    type: reference
+    group: product
+
+nav:
+  - modules/nav.adoc
