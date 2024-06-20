@@ -1,6 +1,6 @@
 = Introduction
 
-This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help build applications based on xref:../architecture-overview/#ddd-and-cqrs[CQRS/DDD] and xref:../architecture-overview/event-sourcing.adoc[Event Sourcing]
+This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help build applications based on link:../architecture-overview/#ddd-and-cqrs[CQRS/DDD] and link:../architecture-overview/event-sourcing.adoc[Event Sourcing]
 
 ____
 
