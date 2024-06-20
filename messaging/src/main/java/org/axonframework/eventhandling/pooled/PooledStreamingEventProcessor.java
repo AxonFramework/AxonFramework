@@ -51,6 +51,7 @@ import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -132,7 +133,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         this.workerExecutor = builder.workerExecutorBuilder.apply(name);
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
-        this.maxSegmentProvider = builder.maxSegmentProvider;
+        this.maxSegmentProvider = builder.maxSegmentProvider!=null?builder.maxSegmentProvider: p -> Short.MAX_VALUE;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.batchSize = builder.batchSize;
         this.clock = builder.clock;
@@ -347,7 +348,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      */
     @Override
     public int maxCapacity() {
-        return maxSegmentProvider.getMaxSegments(name);
+        return Optional.of(maxSegmentProvider.getMaxSegments(name)).orElseGet(() -> (int) Short.MAX_VALUE);
     }
 
     @Override

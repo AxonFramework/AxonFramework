@@ -758,23 +758,25 @@ class Coordinator {
                 // Claim new segments, construct work packages per new segment, and open stream based on lowest segment
                 unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
                 try {
-                    logger.debug("Processor [{}] will try to claim new segments.", name);
-                    Map<Segment, TrackingToken> newSegments = claimNewSegments();
                     TrackingToken streamStartPosition = lastScheduledToken;
+                    if(!releaseSegmentsIfTooManyClaimed()) {
+                        logger.debug("Processor [{}] will try to claim new segments.", name);
+                        Map<Segment, TrackingToken> newSegments = claimNewSegments();
 
-                    for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
-                        Segment segment = entry.getKey();
-                        TrackingToken token = entry.getValue();
-                        TrackingToken otherUnwrapped = WrappedToken.unwrapLowerBound(token);
+                        for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
+                            Segment segment = entry.getKey();
+                            TrackingToken token = entry.getValue();
+                            TrackingToken otherUnwrapped = WrappedToken.unwrapLowerBound(token);
 
-                        streamStartPosition = streamStartPosition == null || otherUnwrapped == null
-                                              ? null : streamStartPosition.lowerBound(otherUnwrapped);
-                        workPackages.computeIfAbsent(segment.getSegmentId(),
-                                                     wp -> workPackageFactory.apply(segment, token));
-                    }
+                            streamStartPosition = streamStartPosition == null || otherUnwrapped == null
+                                    ? null : streamStartPosition.lowerBound(otherUnwrapped);
+                            workPackages.computeIfAbsent(segment.getSegmentId(),
+                                    wp -> workPackageFactory.apply(segment, token));
+                        }
 
-                    if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
-                        logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
+                        if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
+                            logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
+                        }
                     }
                     ensureOpenStream(streamStartPosition);
                 } catch (Exception e) {
@@ -839,6 +841,25 @@ class Coordinator {
                                .thenRun(workPackages::clear);
         }
 
+
+        /**
+         * Compares segments claimed with what should the maximum segments should be claimed
+         * by a node for a fair distribution of segments among available processor nodes
+         * @return true if segments claimed by the Node > what it should be claiming
+         */
+        private boolean releaseSegmentsIfTooManyClaimed() {
+            int maxSegmentsPerNode = maxSegmentProvider.apply(name);
+            boolean tooManySegmentsClaimed = workPackages.size()> maxSegmentsPerNode;
+            if(tooManySegmentsClaimed) {
+                logger.info("Total segments {} for processor {} is above maxSegmentsPerNode = {}, going to release extra claimed segments",
+                        workPackages.size(), name, maxSegmentsPerNode);
+                workPackages.values().stream().limit(workPackages.size() - maxSegmentsPerNode)
+                        .forEach(workPackage -> releaseUntil(workPackage.segment().getSegmentId(),
+                                GenericEventMessage.clock.instant().plusMillis(tokenClaimInterval)));
+            }
+           return tooManySegmentsClaimed;
+        }
+
         /**
          * Attempts to claim new segments.
          *
@@ -852,19 +873,7 @@ class Coordinator {
             List<Segment> unClaimedSegments = segments.stream()
                                                       .filter(segment -> !workPackages.containsKey(segment.getSegmentId()))
                                                       .collect(Collectors.toList());
-
-            int maxSegmentsPerNode = maxSegmentProvider.apply(name);
-
-            if(workPackages.size()> maxSegmentsPerNode) {
-                logger.info("Total segments {} for processor {} is above maxSegmentsPerNode = {} releasing additional segments",
-                        workPackages.size(), name, maxSegmentsPerNode);
-                workPackages.values().stream().limit(workPackages.size() - maxSegmentsPerNode)
-                        .forEach(workPackage -> releaseUntil(workPackage.segment().getSegmentId(),
-                                GenericEventMessage.clock.instant().plusMillis(tokenClaimInterval)));
-            }
-
-            int maxSegmentsToClaim = maxSegmentsPerNode - workPackages.size();
-
+            int maxSegmentsToClaim = maxSegmentProvider.apply(name) - workPackages.size();
             for (Segment segment : unClaimedSegments) {
                 int segmentId = segment.getSegmentId();
                 if (isSegmentBlockedFromClaim(segmentId)) {

@@ -81,7 +81,6 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-@Disabled
 class PooledStreamingEventProcessorTest {
 
     private static final Logger logger = LoggerFactory.getLogger(PooledStreamingEventProcessorTest.class);
