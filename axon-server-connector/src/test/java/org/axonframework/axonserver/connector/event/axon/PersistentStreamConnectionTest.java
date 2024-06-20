@@ -84,7 +84,7 @@ class PersistentStreamConnectionTest {
     }
 
     @Test
-    void open() {
+    void consumesMessagesAndSendsAcknowledgements() {
         List<EventMessage<?>> eventMessages = new LinkedList<>();
         testSubject.open(eventMessages::addAll);
         MockPersistentStream mockPersistentStream = mockPersistentStreams.get(STREAM_ID);

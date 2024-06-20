@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -66,6 +67,7 @@ public class PersistentStreamConnection {
     private final ScheduledExecutorService scheduler;
     private final int batchSize;
     private final Map<Integer, SegmentConnection> segments = new ConcurrentHashMap<>();
+    private final AtomicInteger retrySeconds = new AtomicInteger(1);
 
 
     /**
@@ -123,7 +125,9 @@ public class PersistentStreamConnection {
         persistentStreamHolder.set(null);
         if (throwable != null) {
             logger.info("{}: Rescheduling persistent stream", streamId, throwable);
-            scheduler.schedule(this::start, 1, TimeUnit.SECONDS);
+            scheduler.schedule(this::start,
+                               retrySeconds.getAndUpdate(current -> Math.max(60, current *2)),
+                               TimeUnit.SECONDS);
         }
     }
 
@@ -138,6 +142,7 @@ public class PersistentStreamConnection {
 
     private void segmentOpened(PersistentStreamSegment persistentStreamSegment) {
         logger.info("{}: Segment opened: {}", streamId, persistentStreamSegment);
+        retrySeconds.set(1);
         segments.put(persistentStreamSegment.segment(), new SegmentConnection(persistentStreamSegment));
     }
 

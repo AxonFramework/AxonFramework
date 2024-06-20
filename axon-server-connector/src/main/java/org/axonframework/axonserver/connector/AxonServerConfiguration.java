@@ -1213,10 +1213,21 @@ public class AxonServerConfiguration {
         this.eventStoreConfiguration = eventStoreConfiguration;
     }
 
+    /**
+     * Returns the configured number of threads available for persistent stream handling.
+     *
+     * @return the configured number of threads available for persistent stream handling
+     */
     public int getPersistentStreamThreads() {
         return persistentStreamThreads;
     }
 
+    /**
+     * Configures the number of threads available for persistent stream handling. The
+     * default value is 10.
+     *
+     * @param persistentStreamThreads the number of threads
+     */
     public void setPersistentStreamThreads(int persistentStreamThreads) {
         this.persistentStreamThreads = persistentStreamThreads;
     }

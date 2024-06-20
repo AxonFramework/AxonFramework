@@ -64,6 +64,18 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
         this(eventProcessorProperties, null, deadLetterQueueProvider);
     }
 
+    /**
+     * Construct a {@link DeadLetterQueueProviderConfigurerModule}, using the given {@code eventProcessorProperties}
+     * and {@code axonServerConfiguration} to decide which processing groups receive the
+     * {@link SequencedDeadLetterQueue} from the given {@code deadLetterQueueProvider}.
+     *
+     * @param eventProcessorProperties The properties dictating for which processing groups the dead-letter queue is
+     *                                 {@link EventProcessorProperties.Dlq#isEnabled() enabled}.
+     * @param axonServerConfiguration  The AxonServerConfiguration containing optional dead-letter queue configuration
+     *                                 for persistent streams.
+     * @param deadLetterQueueProvider  The function providing the {@link SequencedDeadLetterQueue}.
+     *
+     */
     public DeadLetterQueueProviderConfigurerModule(
             EventProcessorProperties eventProcessorProperties,
             AxonServerConfiguration axonServerConfiguration,
@@ -77,18 +89,19 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
     @Override
     public void configureModule(@Nonnull Configurer configurer) {
         configurer.eventProcessing().registerDeadLetterQueueProvider(
-                processingGroup -> dlqEnabled(eventProcessorProperties.getProcessors(), processingGroup)
+                processingGroup -> dlqEnabled(processingGroup)
                         ? deadLetterQueueProvider.apply(processingGroup)
-                        : axonServerProcessorDlqProvider(processingGroup)
+                        : null
         );
 
     }
 
-    private Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> axonServerProcessorDlqProvider(String processingGroup) {
-        return asDlqEnabled(processingGroup) ? deadLetterQueueProvider.apply(processingGroup) : null;
+    private boolean dlqEnabled( String processingGroup) {
+        return dlqEnabled(eventProcessorProperties.getProcessors(), processingGroup)
+                || persistentStreamDlqEnabled(processingGroup);
     }
 
-    private boolean asDlqEnabled(String processingGroup) {
+    private boolean persistentStreamDlqEnabled(String processingGroup) {
         if (axonServerConfiguration == null || axonServerConfiguration.getEventhandling() == null || axonServerConfiguration.getEventhandling().getPersistentStreamProcessors() == null) {
             return false;
         }
