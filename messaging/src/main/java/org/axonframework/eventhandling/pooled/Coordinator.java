@@ -844,7 +844,8 @@ class Coordinator {
 
         /**
          * Compares segments claimed with what should the maximum segments should be claimed
-         * by a node for a fair distribution of segments among available processor nodes
+         * by a node for a fair distribution of segments among available processor nodes.
+         * Releases extra segments which are claimed by this event processor instance to be available for claim.
          * @return true if segments claimed by the Node > what it should be claiming
          */
         private boolean releaseSegmentsIfTooManyClaimed() {
