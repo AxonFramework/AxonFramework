@@ -51,7 +51,6 @@ import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -133,7 +132,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         this.workerExecutor = builder.workerExecutorBuilder.apply(name);
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
-        this.maxSegmentProvider = builder.maxSegmentProvider!=null?builder.maxSegmentProvider: p -> Short.MAX_VALUE;
+        this.maxSegmentProvider = builder.maxSegmentProvider;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.batchSize = builder.batchSize;
         this.clock = builder.clock;
@@ -348,7 +347,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      */
     @Override
     public int maxCapacity() {
-        return Optional.of(maxSegmentProvider.getMaxSegments(name)).orElseGet(() -> (int) Short.MAX_VALUE);
+        return maxSegmentProvider.getMaxSegments(name);
     }
 
     @Override
@@ -443,7 +442,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 ms -> ReplayToken.createReplayToken(ms.createHeadToken());
         private long tokenClaimInterval = 5000;
-        private MaxSegmentProvider maxSegmentProvider;
+        private MaxSegmentProvider maxSegmentProvider = p -> Short.MAX_VALUE;
         private long claimExtensionThreshold = 5000;
         private int batchSize = 1;
         private Clock clock = GenericEventMessage.clock;
@@ -670,6 +669,17 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         /**
+         * Sets the maximum number of segments this instance may claim.
+         *
+         * @param maxClaimedSegments the maximum number of segments this instance may claim
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder maxClaimedSegments(int maxClaimedSegments) {
+            this.maxSegmentProvider = n -> maxClaimedSegments;
+            return this;
+        }
+
+        /**
          * Defines the maximum number of segment this {@link StreamingEventProcessor} may claim. Defaults to {@value
          * Short#MAX_VALUE}.
          *
@@ -678,6 +688,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
+            assertNonNull(maxSegmentProvider, "The max segment provider may not be null. Provide a lambda of type (processorName: String) -> maxSegmentsToClaim");
             assertStrictPositive(maxSegmentProvider.getMaxSegments(name), "Max claimed segments should be a higher valuer than zero");
             this.maxSegmentProvider = maxSegmentProvider;
             return this;
