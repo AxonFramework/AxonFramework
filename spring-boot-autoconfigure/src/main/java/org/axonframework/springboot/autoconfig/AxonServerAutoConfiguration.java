@@ -205,6 +205,7 @@ public class AxonServerAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
     public ScheduledExecutorService persistentStreamScheduler(AxonServerConfiguration axonServerConfiguration) {
         return Executors.newScheduledThreadPool(axonServerConfiguration.getPersistentStreamThreads(),
@@ -212,7 +213,6 @@ public class AxonServerAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
     public ConfigurerModule persistentStreamProcessorsConfigurerModule(
             PersistentStreamMessageSourceFactory persistentStreamMessageSourceFactory,
