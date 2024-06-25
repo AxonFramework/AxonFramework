@@ -674,7 +674,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * @param maxClaimedSegments the maximum number of segments this instance may claim
          * @return the current Builder instance, for fluent interfacing
          */
-        Builder maxClaimedSegments(int maxClaimedSegments) {
+        public Builder maxClaimedSegments(int maxClaimedSegments) {
             this.maxSegmentProvider = n -> maxClaimedSegments;
             return this;
         }

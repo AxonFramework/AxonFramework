@@ -860,9 +860,6 @@ class EventProcessingModuleTest {
         assertTrue(resultPsep.isPresent());
 
         PooledStreamingEventProcessor psep = resultPsep.get();
-        int maxClaimedSegments =
-                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("maxClaimedSegments"), psep);
-        assertEquals(4, maxClaimedSegments);
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
@@ -891,9 +888,6 @@ class EventProcessingModuleTest {
         assertTrue(resultPsep.isPresent());
 
         PooledStreamingEventProcessor psep = resultPsep.get();
-        int maxClaimedSegments =
-                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("maxClaimedSegments"), psep);
-        assertEquals(4, maxClaimedSegments);
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
@@ -922,11 +916,6 @@ class EventProcessingModuleTest {
         assertTrue(resultPsep.isPresent());
 
         PooledStreamingEventProcessor psep = resultPsep.get();
-        int maxClaimedSegments = getFieldValue(
-                PooledStreamingEventProcessor.class.getDeclaredField("maxClaimedSegments"), psep
-        );
-        assertEquals(4, maxClaimedSegments);
-
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
         TrackingToken actualInitialToken = initialToken.apply(eventStoreTwo);

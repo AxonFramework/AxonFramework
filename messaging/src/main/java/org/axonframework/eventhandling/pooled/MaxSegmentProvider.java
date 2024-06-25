@@ -4,7 +4,7 @@ import java.util.function.Function;
 
 
 /**
- * Defines the maximum number of segment this {@link org.axonframework.eventhandling.StreamingEventProcessor} may claim. Defaults to {@value
+ * Defines the maximum number of segments this {@link org.axonframework.eventhandling.StreamingEventProcessor} may claim. Defaults to {@value
  * Short#MAX_VALUE}. This provides the interface to configure a function and the ability to configure the number of segments a single
  * processing instance can claim at the runtime. The {@link org.axonframework.eventhandling.pooled.Coordinator} can
  * rely on this function to query maximum segments at the runtime * {@link org.axonframework.eventhandling.pooled.Coordinator#releaseSegmentsIfTooManyClaimed}

@@ -846,7 +846,7 @@ class Coordinator {
          * Compares the maximum number of segments that can be claimed
          * by a node for a fair distribution of the segments among available processor nodes.
          * Releases extra segments claimed by this event processor instance to be available for claim by other processors
-         * @return true if segments claimed by the Node > MaxSegmentProvider.getMaxSegments
+         * @return true if segments were released
          */
         private boolean releaseSegmentsIfTooManyClaimed() {
             int maxSegmentsPerNode = maxSegmentProvider.apply(name);
