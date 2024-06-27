@@ -28,6 +28,7 @@ import org.axonframework.config.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
@@ -264,13 +265,21 @@ public class PersistentStreamConnection {
             return EventUtils.upcastAndDeserializeTrackedEvents(
                                      batch.stream()
                                           .map(e -> {
-                                              TrackingToken trackingToken = new GlobalSequenceTrackingToken(e.getToken());
+                                              TrackingToken trackingToken = createToken(e.getToken());
                                               return new TrackedDomainEventData<>(trackingToken,
                                                                                   new GrpcBackedDomainEventData(e.getEvent()));
                                           }),
                                      serializer,
                                      configuration.upcasterChain())
                              .collect(Collectors.toList());
+        }
+
+        private TrackingToken createToken(long token) {
+            if (token > persistentStreamSegment.resetPosition()) {
+                return new GlobalSequenceTrackingToken(token);
+            }
+            return ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(persistentStreamSegment.resetPosition()+1),
+                                   new GlobalSequenceTrackingToken(token));
         }
 
         public void close() {
