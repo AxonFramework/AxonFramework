@@ -46,6 +46,21 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
                                         persistentStreamProperties, scheduler, batchSize);
     }
 
+
+    /**
+     * Instantiates a {@code PersistentStreamMessageSource}.
+     * @param name the name of the event processor
+     * @param configuration global configuration of Axon components
+     * @param persistentStreamProperties properties for the persistent stream
+     * @param scheduler scheduler thread pool to schedule tasks
+     * @param batchSize the batch size for collecting events
+     */
+    public PersistentStreamMessageSource(String name, Configuration configuration, PersistentStreamProperties
+            persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize, String defaultContext) {
+        persistentStreamConnection = new PersistentStreamConnection(name, configuration,
+                persistentStreamProperties, scheduler, batchSize, defaultContext);
+    }
+
     @Override
     public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> consumer) {
         persistentStreamConnection.open(consumer);

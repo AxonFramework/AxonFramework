@@ -15,6 +15,7 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
+import com.google.common.base.Strings;
 import io.axoniq.axonserver.connector.event.EventChannel;
 import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamCallbacks;
@@ -70,6 +71,7 @@ public class PersistentStreamConnection {
     private final Map<Integer, SegmentConnection> segments = new ConcurrentHashMap<>();
     private final AtomicInteger retrySeconds = new AtomicInteger(1);
 
+    private final String defaultContext;
 
     /**
      * Instantiates a connection for a persistent stream.
@@ -89,6 +91,30 @@ public class PersistentStreamConnection {
         this.persistentStreamProperties = persistentStreamProperties;
         this.scheduler = scheduler;
         this.batchSize = batchSize;
+        this.defaultContext = null;
+    }
+
+    /**
+     * Instantiates a connection for a persistent stream.
+     * @param streamId the identifier of the persistent stream
+     * @param configuration global configuration of Axon components
+     * @param persistentStreamProperties properties for the persistent stream
+     * @param scheduler scheduler thread pool to schedule tasks
+     * @param batchSize the batch size for collecting events
+     * @param defaultContext the default context to use for the connection
+     */
+    public PersistentStreamConnection(String streamId,
+                                      Configuration configuration,
+                                      PersistentStreamProperties persistentStreamProperties,
+                                      ScheduledExecutorService scheduler,
+                                      int batchSize,
+                                      String defaultContext) {
+        this.streamId = streamId;
+        this.configuration = configuration;
+        this.persistentStreamProperties = persistentStreamProperties;
+        this.scheduler = scheduler;
+        this.batchSize = batchSize;
+        this.defaultContext = defaultContext;
     }
 
 
@@ -109,8 +135,9 @@ public class PersistentStreamConnection {
                                                                             this::segmentClosed,
                                                                             this::messageAvailable,
                                                                             this::streamClosed);
+        String context = Strings.isNullOrEmpty(defaultContext) ? axonServerConfiguration.getContext() : defaultContext;
         EventChannel eventChannel = axonServerConnectionManager.getConnection(
-                axonServerConfiguration.getContext()).eventChannel();
+                context  ).eventChannel();
         PersistentStream persistentStream = eventChannel.openPersistentStream(streamId,
                                                                               axonServerConfiguration.getEventFlowControl()
                                                                                                      .getPermits(),
