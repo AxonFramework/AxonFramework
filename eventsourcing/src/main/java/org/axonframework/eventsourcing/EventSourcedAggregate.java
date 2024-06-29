@@ -75,6 +75,12 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         return new EventSourcedAggregate<>(aggregateRoot, inspector, eventBus, repositoryProvider, snapshotTrigger);
     }
 
+    public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
+                                                          EventBus eventBus, RepositoryProvider repositoryProvider,
+                                                          SnapshotTrigger snapshotTrigger, boolean idempotent) {
+        return new EventSourcedAggregate<>(aggregateRoot, inspector, eventBus, repositoryProvider, snapshotTrigger, idempotent);
+    }
+
     /**
      * Initializes an EventSourcedAggregate instance using the given {@code aggregateFactory}, based on the given {@code
      * inspector}, which publishes events to the given {@code eventBus} and stores events in the given {@code
@@ -203,6 +209,13 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
                                     RepositoryProvider repositoryProvider, SnapshotTrigger snapshotTrigger) {
         super(aggregateRoot, model, eventBus, repositoryProvider);
+        this.initSequence();
+        this.snapshotTrigger = snapshotTrigger;
+    }
+
+    protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
+                                    RepositoryProvider repositoryProvider, SnapshotTrigger snapshotTrigger, boolean idempotent) {
+        super(aggregateRoot, model, eventBus, repositoryProvider, idempotent);
         this.initSequence();
         this.snapshotTrigger = snapshotTrigger;
     }

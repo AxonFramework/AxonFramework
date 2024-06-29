@@ -59,6 +59,7 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
     private String lockFactory;
     private String commandTargetResolver;
     private boolean filterEventsByType;
+    private boolean idempotent;
     private ApplicationContext applicationContext;
     private String aggregateFactory;
 
@@ -120,6 +121,10 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
      */
     public void setFilterEventsByType(boolean filterEventsByType) {
         this.filterEventsByType = filterEventsByType;
+    }
+
+    public void setIdempotent(boolean idempotent) {
+        this.idempotent = idempotent;
     }
 
     /**
@@ -203,6 +208,7 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
             );
         }
         aggregateConfigurer.configureFilterEventsByType(c -> filterEventsByType);
+        aggregateConfigurer.configureIdempotent(c -> idempotent);
         configurer.configureAggregate(aggregateConfigurer);
     }
 

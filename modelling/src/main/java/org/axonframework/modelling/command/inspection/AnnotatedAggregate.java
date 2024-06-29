@@ -29,6 +29,7 @@ import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -38,7 +39,12 @@ import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -67,11 +73,24 @@ import static java.lang.String.format;
  * @since 3.0
  */
 public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggregate<T>, ApplyMore {
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private static final String DEFAULT_CORRELATION_IDS_KEY = "correlationIds";
+
+    /**
+     * Returns the default metadata key for the correlation ids of a message.
+     *
+     * @return the default metadata key for the correlation ids
+     */
+    public static String getDefaultCorrelationIdsKey() {
+        return DEFAULT_CORRELATION_IDS_KEY;
+    }
 
     protected final AggregateModel<T> inspector;
     private final RepositoryProvider repositoryProvider;
     private final Queue<Runnable> delayedTasks = new LinkedList<>();
     private final EventBus eventBus;
+    private final boolean idempotent;
+    private final List<String> correlationIds = new ArrayList<>();
     private T aggregateRoot;
     private boolean applying = false;
     private boolean executingDelayedTasks = false;
@@ -107,6 +126,14 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         this.aggregateRoot = aggregateRoot;
     }
 
+    protected AnnotatedAggregate(T aggregateRoot,
+                                 AggregateModel<T> model,
+                                 EventBus eventBus,
+                                 RepositoryProvider repositoryProvider, boolean idempotent) {
+        this(model, eventBus, repositoryProvider, idempotent);
+        this.aggregateRoot = aggregateRoot;
+    }
+
     /**
      * Initialize an Aggregate instance for the given {@code aggregateRoot}, described by the given {@code
      * aggregateModel} that will publish events to the given {@code eventBus}.
@@ -129,9 +156,17 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     protected AnnotatedAggregate(AggregateModel<T> inspector,
                                  EventBus eventBus,
                                  RepositoryProvider repositoryProvider) {
+        this(inspector, eventBus, repositoryProvider, false);
+    }
+
+    protected AnnotatedAggregate(AggregateModel<T> inspector,
+                                 EventBus eventBus,
+                                 RepositoryProvider repositoryProvider,
+                                 boolean idempotent) {
         this.inspector = inspector;
         this.eventBus = eventBus;
         this.repositoryProvider = repositoryProvider;
+        this.idempotent = idempotent;
     }
 
     /**
@@ -360,6 +395,14 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         return (Class<? extends T>) aggregateRoot.getClass();
     }
 
+    public List<String> getCorrelationIds() {
+        return correlationIds;
+    }
+
+    public boolean isIdempotent() {
+        return idempotent;
+    }
+
     @Override
     protected void doMarkDeleted() {
         this.isDeleted = true;
@@ -375,8 +418,20 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (msg instanceof DomainEventMessage) {
             lastKnownSequence = ((DomainEventMessage<?>) msg).getSequenceNumber();
         }
+        if (idempotent) {
+            correlationIds.addAll(getCorrelationIds(msg));
+        }
         inspector.publish(msg, aggregateRoot);
         publishOnEventBus(msg);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> getCorrelationIds(EventMessage<?> msg) {
+        MetaData metaData = msg.getMetaData();
+
+        return metaData.containsKey(DEFAULT_CORRELATION_IDS_KEY)
+                ? (List<String>) metaData.get(DEFAULT_CORRELATION_IDS_KEY)
+                : Collections.singletonList((String) metaData.get(MessageOriginProvider.getDefaultCorrelationKey()));
     }
 
     /**
@@ -437,6 +492,10 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     private Object findHandlerAndHandleCommand(List<MessageHandlingMember<? super T>> handlers,
                                                CommandMessage<?> command) throws Exception {
+        if (idempotent && this.correlationIds.contains(command.getIdentifier())) {
+            logger.debug("Ignoring command with identifier {}.", command.getIdentifier());
+            return null;
+        }
         //noinspection unchecked
         return handlers.stream()
                        .filter(mh -> mh.unwrap(ForwardingCommandMessageHandlingMember.class)
