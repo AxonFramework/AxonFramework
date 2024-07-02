@@ -1130,7 +1130,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public Aggregate<R> newInstance(@Nonnull Callable<R> factoryMethod) throws Exception {
-            AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
+            AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType, getParameterResolverFactory(), getHandlerDefinition());
             return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider);
         }
 
