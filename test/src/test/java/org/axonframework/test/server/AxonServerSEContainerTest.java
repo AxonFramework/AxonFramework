@@ -54,7 +54,7 @@ class AxonServerSEContainerTest {
     void axonServer_latest_genericTest() {
         try (
                 final AxonServerSEContainer axonServerSEContainer =
-                        new AxonServerSEContainer(DockerImageName.parse("axoniq/axonserver:latest-dev"))
+                        new AxonServerSEContainer(DockerImageName.parse("axoniq/axonserver:latest"))
                                 .withDevMode(true)
         ) {
             axonServerSEContainer.start();

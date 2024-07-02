@@ -34,7 +34,7 @@ class SpringBootTestContainerIntegrationTest {
 
     @Container
     @ServiceConnection
-    static AxonServerContainer axonServer = new AxonServerContainer("axoniq/axonserver:latest-dev")
+    static AxonServerContainer axonServer = new AxonServerContainer("axoniq/axonserver:latest")
             .withDevMode(true);
 
     @Autowired

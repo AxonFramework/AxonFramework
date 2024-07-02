@@ -1,6 +1,6 @@
 services:
   axonserver:
-    image: "axoniq/axonserver:latest-dev"
+    image: "axoniq/axonserver:latest"
     hostname: axonserver
     ports:
       - 8024
