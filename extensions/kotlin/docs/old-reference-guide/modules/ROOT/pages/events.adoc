@@ -1,0 +1,40 @@
+:navtitle: Events
+= Events
+
+This section describes the additional functionality attached to Axon's xref:axon_framework_old_ref:events:README.adoc[event publication and handling] logic.
+
+== Event upcasters
+
+A simplified implementation of the xref:axon_framework_old_ref:events:event-versioning.adoc#event-upcasting[Single Event Upcaster] is given, which allows for a shorter implementation cycle. Making an upcaster to upcast the `CardIssuedEvent` from revision `0` to `1` can be written as follows:
+
+[source,kotlin]
+----
+import com.fasterxml.jackson.databind.JsonNode
+import org.axonframework.serialization.upcasting.event.SingleEventUpcaster
+
+fun `CardIssuedEvent 0 to 1 Upcaster`(): SingleEventUpcaster =
+        EventUpcaster.singleEventUpcaster(
+                eventType = CardIssuedEvent::class,
+                storageType = JsonNode::class,
+                revisions = Revisions("0", "1")
+        ) { event ->
+            // Perform your upcasting process of the CardIssuedEvent here
+            event
+        }
+
+class CardIssuedEvent
+----
+
+Alternatively, since `Revisions` is essentially a `Pair` of `String`, it is also possible to use link:https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/to.html[Kotlin's `to` function,window=_blank,role=external]:
+
+[source,kotlin]
+----
+EventUpcaster.singleEventUpcaster(
+        eventType = CardIssuedEvent::class,
+        storageType = JsonNode::class,
+        revisions = "0" to "1"
+) { event ->
+    // Perform your upcasting process of the CardIssuedEvent here
+    event
+}
+----

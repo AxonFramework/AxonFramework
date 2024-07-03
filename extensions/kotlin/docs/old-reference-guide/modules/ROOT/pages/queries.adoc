@@ -1,0 +1,76 @@
+:navtitle: Queries
+= Queries
+
+This section describes the additional functionality attached to Axon's xref:axon_framework_old_ref:queries:README.adoc[query dispatching and handling] logic.
+
+[[querygateway]]
+== `QueryGateway`
+
+Several inlined methods have been introduced on the `QueryGateway` to use generics instead of explicit `Class` objects and `ResponseType` parameters.
+
+[source,kotlin]
+----
+import org.axonframework.queryhandling.QueryGateway
+
+class QueryDispatcher(private val queryGateway: QueryGateway) {
+    fun getTotalNumberOfCards(): Int {
+           val query = CountCardSummariesQuery()
+           // Query will return a CompletableFuture so it has to be handled
+           return queryGateway.query<Int, CountCardSummariesQuery>(query)
+                   .join()
+       }
+}
+
+data class CountCardSummariesQuery(val filter: String = "")
+----
+
+In some cases, Kotlin's type inference system can deduce types without explicit generic parameters. One example of this would be an explicit return parameter:
+
+[source,kotlin]
+----
+import org.axonframework.queryhandling.QueryGateway
+import java.util.concurrent.CompletableFuture
+
+class QueryDispatcher(private val queryGateway: QueryGateway) {
+    fun getTotalNumberOfCards(): CompletableFuture<Int> =
+            queryGateway.query(CountCardSummariesQuery())
+}
+
+data class CountCardSummariesQuery(val filter: String = "")
+----
+
+There are multiple variants of the `query` method provided, for each type of `ResponseType`:
+
+- `query`
+- `queryOptional`
+- `queryMany`
+
+[[queryupdateemitter]]
+== `QueryUpdateEmitter`
+
+An inline `emit` method has been added to `QueryUpdateEmitter` to simplify emit method's call by using generics and moving the lambda predicate at the end of parameter list. This way the lambda function can be moved outside of the parentheses.
+
+[source,kotlin]
+----
+import org.axonframework.queryhandling.QueryUpdateEmitter
+import org.axonframework.eventhandling.EventHandler
+
+class CardSummaryProjection (private val queryUpdateEmitter : QueryUpdateEmitter) {
+    @EventHandler
+    fun on(event : CardIssuedEvent) {
+        // Update projection here
+
+        // Then emit the CountChangedUpdate to subscribers of CountCardSummariesQuery
+        // with the given filter
+        queryUpdateEmitter
+                .emit<CountCardSummariesQuery, CountChangedUpdate>(CountChangedUpdate()) { query ->
+                    // Sample filter based on ID field
+                    event.id.startsWith(query.idFilter)
+                }
+    }
+}
+
+class CardIssuedEvent(val id : String)
+class CountChangedUpdate
+data class CountCardSummariesQuery(val idFilter: String = "")
+----
