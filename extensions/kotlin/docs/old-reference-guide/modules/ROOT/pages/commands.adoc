@@ -1,0 +1,42 @@
+:navtitle: Commands
+= Commands
+
+This section describes the additional functionality attached to Axon's xref:axon_framework_old_ref:axon-framework-commands:README.adoc[command dispatching and handling] logic.
+
+[[commandgateway]]
+== `CommandGateway`
+
+An inlined method has been introduced on the `CommandGateway` which allows the introduction of a dedicated function to be invoked upon success or failure of handling the command. As such it provides a shorthand instead of using the `CommandCallback` directly yourself.
+
+Here is a sample of how this can be utilized within your own project:
+
+[source,kotlin]
+----
+import org.axonframework.commandhandling.CommandMessage
+import org.axonframework.commandhandling.gateway.CommandGateway
+import org.axonframework.messaging.MetaData
+import org.slf4j.LoggerFactory
+
+class CommandDispatcher(private val commandGateway: CommandGateway) {
+
+    private val logger = LoggerFactory.getLogger(CommandDispatcher::class.java)
+
+    // Sample usage providing specific logging logic, next to for example the LoggingInterceptor
+    fun issueCardCommand() {
+        commandGateway.send(
+                command = IssueCardCommand(),
+                onSuccess = { message: CommandMessage<out IssueCardCommand>, result: Any, _: MetaData ->
+                    logger.info("Successfully handled [{}], resulting in [{}]", message, result)
+                },
+                onError = { result: Any, exception: Throwable, _: MetaData ->
+                    logger.warn(
+                            "Failed handling the IssueCardCommand, with output [{} and exception [{}]",
+                            result, exception
+                    )
+                }
+        )
+    }
+}
+
+class IssueCardCommand
+----

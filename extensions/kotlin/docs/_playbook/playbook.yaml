@@ -39,4 +39,4 @@ runtime:
 
 ui:
   bundle:
-    url: https://github.com/AxonIQ/axoniq-library-ui/releases/download/v.0.1.9/ui-bundle.zip
+    url: https://github.com/AxonIQ/axoniq-library-ui/releases/download/v.0.1.10/ui-bundle.zip
