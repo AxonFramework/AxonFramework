@@ -50,6 +50,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
+import java.util.Optional;
 import javax.sql.DataSource;
 
 /**
@@ -160,7 +161,7 @@ public class JdbcAutoConfiguration {
     @ConditionalOnMissingBean
     public DeadLetterQueueProviderConfigurerModule deadLetterQueueProviderConfigurerModule(
             EventProcessorProperties eventProcessorProperties,
-            AxonServerConfiguration axonServerConfiguration,
+            Optional<AxonServerConfiguration> axonServerConfiguration,
             ConnectionProvider connectionProvider,
             TransactionManager transactionManager,
             DeadLetterSchema schema,
@@ -169,7 +170,7 @@ public class JdbcAutoConfiguration {
     ) {
         return new DeadLetterQueueProviderConfigurerModule(
                 eventProcessorProperties,
-                axonServerConfiguration,
+                axonServerConfiguration.orElse(null),
                 processingGroup -> config -> JdbcSequencedDeadLetterQueue.builder()
                                                                          .processingGroup(processingGroup)
                                                                          .connectionProvider(connectionProvider)
