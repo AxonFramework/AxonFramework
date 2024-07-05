@@ -1,0 +1,14 @@
+name: meta-annotations-guide
+title: Axon Framework Meta Annotations Guide
+version: true
+prerelease: true
+start_page: ROOT:index.adoc
+
+asciidoc:
+  attributes:
+    component_description: Guide that covers several considerations in regards to creating Meta Annotations for Axon Framework-based applications.
+    type: guide
+    group: axon-framework
+
+nav:
+  - modules/nav.adoc
