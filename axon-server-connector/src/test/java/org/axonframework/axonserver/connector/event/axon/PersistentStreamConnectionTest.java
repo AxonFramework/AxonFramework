@@ -10,6 +10,7 @@ import io.axoniq.axonserver.connector.event.PersistentStreamSegment;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
+import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.config.Configurer;
@@ -148,7 +149,7 @@ class PersistentStreamConnectionTest {
 
     private static class MockPersistentStreamSegment implements PersistentStreamSegment {
 
-        private final ConcurrentLinkedDeque<EventWithToken> entries = new ConcurrentLinkedDeque<>();
+        private final ConcurrentLinkedDeque<PersistentStreamEvent> entries = new ConcurrentLinkedDeque<>();
         private final AtomicBoolean closed = new AtomicBoolean();
         private final int segment;
         private Runnable onAvailable = () -> {};
@@ -159,19 +160,19 @@ class PersistentStreamConnectionTest {
         }
 
         @Override
-        public EventWithToken peek() {
+        public PersistentStreamEvent peek() {
             return entries.peek();
         }
 
         @Override
-        public EventWithToken nextIfAvailable() {
+        public PersistentStreamEvent nextIfAvailable() {
             return entries.isEmpty() ? null : entries.removeFirst();
         }
 
         @Override
-        public EventWithToken nextIfAvailable(long timeout, TimeUnit unit) throws InterruptedException {
+        public PersistentStreamEvent nextIfAvailable(long timeout, TimeUnit unit) throws InterruptedException {
             long endTime = System.currentTimeMillis() + unit.toMillis(timeout);
-            EventWithToken event = nextIfAvailable();
+            PersistentStreamEvent event = nextIfAvailable();
             while (event == null && System.currentTimeMillis() < endTime && !closed.get()) {
                 Thread.sleep(1);
                 event = nextIfAvailable();
@@ -180,8 +181,8 @@ class PersistentStreamConnectionTest {
         }
 
         @Override
-        public EventWithToken next() throws InterruptedException {
-            EventWithToken event = nextIfAvailable();
+        public PersistentStreamEvent next() throws InterruptedException {
+            PersistentStreamEvent event = nextIfAvailable();
             while (event == null && !closed.get()) {
                 Thread.sleep(1);
                 event = nextIfAvailable();
@@ -230,7 +231,7 @@ class PersistentStreamConnectionTest {
         }
 
         public void publish(EventWithToken eventWithToken) {
-            entries.add(eventWithToken);
+            entries.add(PersistentStreamEvent.newBuilder().setEvent(eventWithToken).build());
             onAvailable.run();
         }
     }
