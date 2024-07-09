@@ -1,0 +1,14 @@
+name: rdbms-tuning-guide
+title: Axon Framework RDBMS tuning Guide
+version: true
+prerelease: true
+start_page: ROOT:index.adoc
+
+asciidoc:
+  attributes:
+    component_description: Guide that covers several considerations in regards to tuning the database for events.
+    type: guide
+    group: axon-framework
+
+nav:
+  - modules/nav.adoc
