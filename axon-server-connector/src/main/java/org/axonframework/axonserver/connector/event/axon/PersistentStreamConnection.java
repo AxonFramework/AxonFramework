@@ -22,7 +22,7 @@ import io.axoniq.axonserver.connector.event.PersistentStreamCallbacks;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import io.axoniq.axonserver.connector.event.PersistentStreamSegment;
 import io.axoniq.axonserver.connector.impl.StreamClosedException;
-import io.axoniq.axonserver.grpc.event.EventWithToken;
+import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.config.Configuration;
@@ -222,7 +222,7 @@ public class PersistentStreamConnection {
                 int remaining = Math.max(MAX_MESSAGES_PER_RUN, batchSize);
                 GrpcMetaDataAwareSerializer serializer = new GrpcMetaDataAwareSerializer(configuration.eventSerializer());
                 while (remaining > 0 && !closed.get()) {
-                    List<EventWithToken> batch = readBatch(persistentStreamSegment);
+                    List<PersistentStreamEvent> batch = readBatch(persistentStreamSegment);
                     if (batch.isEmpty()) {
                         break;
                     }
@@ -236,7 +236,7 @@ public class PersistentStreamConnection {
                                          persistentStreamSegment.segment(),
                                          eventMessages.size());
                         }
-                        long token = batch.get(batch.size() - 1).getToken();
+                        long token = batch.get(batch.size() - 1).getEvent().getToken();
                         persistentStreamSegment.acknowledge(token);
                         remaining -= batch.size();
                     }
@@ -270,11 +270,11 @@ public class PersistentStreamConnection {
             }
         }
 
-        private List<EventWithToken> readBatch(PersistentStreamSegment persistentStreamSegment)
+        private List<PersistentStreamEvent> readBatch(PersistentStreamSegment persistentStreamSegment)
                 throws InterruptedException {
-            List<EventWithToken> batch = new LinkedList<>();
+            List<PersistentStreamEvent> batch = new LinkedList<>();
             // read first one without waiting
-            EventWithToken event = persistentStreamSegment.nextIfAvailable();
+            PersistentStreamEvent event = persistentStreamSegment.nextIfAvailable();
             if (event == null) {
                 return batch;
             }
@@ -287,26 +287,26 @@ public class PersistentStreamConnection {
             return batch;
         }
 
-        private List<TrackedEventMessage<?>> upcastAndDeserialize(List<EventWithToken> batch,
+        private List<TrackedEventMessage<?>> upcastAndDeserialize(List<PersistentStreamEvent> batch,
                                                                   GrpcMetaDataAwareSerializer serializer) {
             return EventUtils.upcastAndDeserializeTrackedEvents(
                                      batch.stream()
                                           .map(e -> {
-                                              TrackingToken trackingToken = createToken(e.getToken());
+                                              TrackingToken trackingToken = createToken(e);
                                               return new TrackedDomainEventData<>(trackingToken,
-                                                                                  new GrpcBackedDomainEventData(e.getEvent()));
+                                                                                  new GrpcBackedDomainEventData(e.getEvent().getEvent()));
                                           }),
                                      serializer,
                                      configuration.upcasterChain())
                              .collect(Collectors.toList());
         }
 
-        private TrackingToken createToken(long token) {
-            if (token > persistentStreamSegment.resetPosition()) {
-                return new GlobalSequenceTrackingToken(token);
+        private TrackingToken createToken(PersistentStreamEvent event) {
+            if (!event.getReplay()) {
+                return new GlobalSequenceTrackingToken(event.getEvent().getToken());
             }
-            return ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(persistentStreamSegment.resetPosition()+1),
-                                   new GlobalSequenceTrackingToken(token));
+            return ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(event.getEvent().getToken()+1),
+                                   new GlobalSequenceTrackingToken(event.getEvent().getToken()));
         }
 
         public void close() {

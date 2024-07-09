@@ -41,6 +41,7 @@ import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.service.connection.AxonServerConnectionDetails;
+import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -205,7 +206,7 @@ public class AxonServerAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingQualifiedBean(qualifier = "persistentStreamScheduler")
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
     public ScheduledExecutorService persistentStreamScheduler(AxonServerConfiguration axonServerConfiguration) {
         return Executors.newScheduledThreadPool(axonServerConfiguration.getPersistentStreamThreads(),
