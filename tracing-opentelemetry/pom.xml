@@ -33,7 +33,7 @@
     <packaging>bundle</packaging>
 
     <properties>
-        <opentelemetry-api.version>1.37.0</opentelemetry-api.version>
+        <opentelemetry-api.version>1.40.0</opentelemetry-api.version>
     </properties>
 
     <dependencies>
