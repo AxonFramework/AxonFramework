@@ -335,7 +335,7 @@ The JPA dead-letter queue is a suitable option for production environments by pe
 It constructs a `dead_letter_entry` table where it persists failed-events in.
 The JDBC dead-letter queue is a suitable option for production environments by persisting the dead letters.
 
-* `MongoSequencedDeadLetterQueue` - Mongo variant of the dead-letter queue, available via the link:../../../extensions/mongo.md[Mongo Extension].
+* `MongoSequencedDeadLetterQueue` - Mongo variant of the dead-letter queue, available via the xref:mongodb_extension_guide::index.adoc[Mongo Extension].
 
 It constructs a `deadletters` collection where it persists failed-events in.
 The MongoDB dead-letter queue is a suitable option for production environments by persisting the dead letters.

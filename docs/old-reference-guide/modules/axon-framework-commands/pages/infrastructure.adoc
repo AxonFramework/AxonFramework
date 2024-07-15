@@ -553,7 +553,7 @@ public class AxonConfig {
 === `AxonServerCommandBus`
 
 The `AxonServerCommandBus` is the _default_ distributed `CommandBus` implementation that is set by the framework.
-It connects to link:../../axon-server-introduction.adoc[AxonServer], with which it can send and receive commands.
+It connects to link:https://www.axoniq.io/products/axon-server[AxonServer,window=_blank,role=external], with which it can send and receive commands.
 
 As it is the default, configuring it is relatively straightforward:
 
@@ -696,8 +696,8 @@ It defines which segment of the `DistributedCommandBus` should be given a comman
 You can choose different flavors of these components that are available as extension modules.
 Currently, Axon provides two extensions to that end, which are:
 
-. The link:../../extensions/spring-cloud.adoc[SpringCloud] extension
-. The link:../../extensions/jgroups.adoc[JGroups] extension
+. The xref:springcloud_extension_guide::index.adoc[SpringCloud] extension
+. The xref:jgroups_extension_guide::index.adoc[JGroups] extension
 
 Configuring a distributed command bus can (mostly) be done without any modifications in configuration files.
 The most straightforward approach to this is to include the Spring Boot starter dependency of either the Spring Cloud or JGroups extension.
