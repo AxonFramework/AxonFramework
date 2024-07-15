@@ -20,7 +20,7 @@ Additionally, it persists published events and is able to retrieve previous even
 === Axon Server as an event store
 
 Axon provides an event store out of the box, the `AxonServerEventStore`.
-It connects to the link:../../axon-server-introduction.md[AxonIQ AxonServer Server]to store and retrieve Events.
+It connects to the link:https://www.axoniq.io/products/axon-server[AxonIQ AxonServer Server,window=_blank,role=external] to store and retrieve Events.
 
 ==== Axon Configuration API
 
@@ -561,7 +561,7 @@ Applications within the same context "speak the same language." In other words, 
 
 As such, we can share the `EventStore's` data source between these applications.
 We may thus achieve distribution by utilizing the source itself.
-You can use both the <<Embedded event store,`EmbeddedEventStore`>> and link:../../axon-server-introduction.md[Axon Server] for this.
+You can use both the <<Embedded event store,`EmbeddedEventStore`>> and link:https://www.axoniq.io/products/axon-server[Axon Server,window=_blank,role=external] for this.
 The former would require the applications to point to the same data source, whereas the latter would require the applications to partake in the same context.
 
 However, sharing the entire event API is not recommended whenever the applications do not belong to the same context.
@@ -574,7 +574,7 @@ Then, you can open a stream to another context through the `AxonServerEventStore
 With this source in hand, you can configure a xref:event-processors/streaming.adoc[Streaming Processor] to start reading from it.
 
 Alternatively, you can use a message broker to distribute events between contexts.
-Axon provides a couple of these as link:../../extensions[extension modules], for example link:../../extensions/spring-amqp.md[Spring AMQP] or link:../../extensions/kafka.md[Kafka].
+Axon provides a good bunch of these as extension modules, for example xref:amqp_extension_guide::index.adoc[Spring AMQP] or  xref:kafka_extension_guide::index.adoc[Kafka].
 
 Although this allows further event distribution, we still recommend consciously sharing _the correct_ events.
 Ideally, we add a form of context mapping, like an anti-corruption layer, between the contexts.
