@@ -49,7 +49,7 @@ class PersistentStreamConnectionTest {
     public static final String STREAM_ID = "stream-id";
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
     private final PersistentStreamProperties properties = new PersistentStreamProperties(STREAM_NAME, 2, "Seq",
-                                                                                         Collections.emptyList(), 0, null);
+                                                                                         Collections.emptyList(), "0", null);
     private PersistentStreamConnection testSubject;
     private final Map<String, MockPersistentStream> mockPersistentStreams = new ConcurrentHashMap<>();
 

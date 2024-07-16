@@ -15,7 +15,6 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.config.Configuration;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
@@ -35,17 +34,20 @@ public class PersistentStreamSequencingPolicy
         implements Function<Configuration, SequencingPolicy<? super EventMessage<?>>> {
 
     private final String name;
-    private final AxonServerConfiguration.PersistentStreamProcessorSettings settings;
+    private final String sequencingPolicy;
+    private final List<String> sequencingPolicyParameters;
 
     /**
      * Instantiates the {@code PersistentStreamSequencingPolicy}.
      * @param name the processor name
-     * @param settings persistent stream settings
      */
     public PersistentStreamSequencingPolicy(
-            String name, AxonServerConfiguration.PersistentStreamProcessorSettings settings) {
+            String name,
+            String sequencingPolicy,
+            List<String> sequencingPolicyParameters) {
         this.name = name;
-        this.settings = settings;
+        this.sequencingPolicy = sequencingPolicy;
+        this.sequencingPolicyParameters = sequencingPolicyParameters;
     }
 
     @Override
@@ -54,33 +56,33 @@ public class PersistentStreamSequencingPolicy
     }
 
     private Object sequencingIdentifier(EventMessage<?> event) {
-        if ("SequentialPerAggregatePolicy".equals(settings.getSequencingPolicy())) {
+        if ("SequentialPerAggregatePolicy".equals(sequencingPolicy)) {
             if (event instanceof DomainEventMessage) {
                 return ((DomainEventMessage<?>) event).getAggregateIdentifier();
             }
             return event.getIdentifier();
         }
-        if ("MetaDataSequencingPolicy".equals(settings.getSequencingPolicy())) {
+        if ("MetaDataSequencingPolicy".equals(sequencingPolicy)) {
             List<Object> metaDataValues = new LinkedList<>();
-            for (String sequencingPolicyParameter : settings.getSequencingPolicyParameters()) {
+            for (String sequencingPolicyParameter : sequencingPolicyParameters) {
                 metaDataValues.add(event.getMetaData().get(sequencingPolicyParameter));
             }
             return metaDataValues;
         }
-        if ("SequentialPolicy".equals(settings.getSequencingPolicy())) {
+        if ("SequentialPolicy".equals(sequencingPolicy)) {
             return "SequentialPolicy";
         }
-        if ("FullConcurrencyPolicy".equals(settings.getSequencingPolicy())) {
+        if ("FullConcurrencyPolicy".equals(sequencingPolicy)) {
             return event.getIdentifier();
         }
 
-        if ("PropertySequencingPolicy".equals(settings.getSequencingPolicy())) {
+        if ("PropertySequencingPolicy".equals(sequencingPolicy)) {
             throw new RuntimeException(
                     name + ": Cannot use PropertySequencingPolicy in combination with dead-letter queue");
         }
 
         throw new RuntimeException(
                 format("%s :Unknown sequencing policy %s in combination with dead-letter queue", name,
-                       settings.getSequencingPolicy()));
+                       sequencingPolicy));
     }
 }

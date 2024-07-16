@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot.autoconfig.legacyjpa;
 
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.legacyjpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
@@ -46,7 +45,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 
 import java.sql.SQLException;
-import java.util.Optional;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 
@@ -113,7 +111,6 @@ public class JpaJavaxAutoConfiguration {
     @ConditionalOnMissingBean
     public DeadLetterQueueProviderConfigurerModule deadLetterQueueProviderConfigurerModule(
             EventProcessorProperties eventProcessorProperties,
-            Optional<AxonServerConfiguration> axonServerConfiguration,
             EntityManagerProvider entityManagerProvider,
             TransactionManager transactionManager,
             Serializer genericSerializer,
@@ -121,7 +118,6 @@ public class JpaJavaxAutoConfiguration {
     ) {
         return new DeadLetterQueueProviderConfigurerModule(
                 eventProcessorProperties,
-                axonServerConfiguration.orElse(null),
                 processingGroup -> config -> JpaSequencedDeadLetterQueue.builder()
                                                                         .processingGroup(processingGroup)
                                                                         .entityManagerProvider(entityManagerProvider)

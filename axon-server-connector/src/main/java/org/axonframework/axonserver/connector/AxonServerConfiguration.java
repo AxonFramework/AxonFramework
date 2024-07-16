@@ -323,7 +323,13 @@ public class AxonServerConfiguration {
      * {@link AxonServerEventStore EventStore}.
      */
     private EventStoreConfiguration eventStoreConfiguration = new EventStoreConfiguration();
-    private int persistentStreamThreads =  10;
+
+    /**
+     * The configuration of each of the persistent streams. The key is the name of the processor, the value represents the
+     * settings to use for the persistent stream with that name.
+     */
+    private final Map<String, PersistentStreamSettings> persistentStreams = new HashMap<>();
+
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -1214,22 +1220,12 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * Returns the configured number of threads available for persistent stream handling.
+     * Returns the settings for each of the configured persistent streams, by name.
      *
-     * @return the configured number of threads available for persistent stream handling
+     * @return the settings for each of the configured persistent streams, by name.
      */
-    public int getPersistentStreamThreads() {
-        return persistentStreamThreads;
-    }
-
-    /**
-     * Configures the number of threads available for persistent stream handling. The
-     * default value is 10.
-     *
-     * @param persistentStreamThreads the number of threads
-     */
-    public void setPersistentStreamThreads(int persistentStreamThreads) {
-        this.persistentStreamThreads = persistentStreamThreads;
+    public Map<String, PersistentStreamSettings> getPersistentStreams() {
+        return persistentStreams;
     }
 
     /**
@@ -1474,11 +1470,6 @@ public class AxonServerConfiguration {
          */
         private final Map<String, ProcessorSettings> processors = new HashMap<>();
 
-        /**
-         * The configuration of each of the persistent stream processors. The key is the name of the processor, the value represents the
-         * settings to use for the processor with that name.
-         */
-        private final Map<String, PersistentStreamProcessorSettings> persistentStreamProcessors = new HashMap<>();
 
 
         /**
@@ -1490,14 +1481,6 @@ public class AxonServerConfiguration {
             return processors;
         }
 
-        /**
-         * Returns the settings for each of the configured persistent stream processors, by name.
-         *
-         * @return the settings for each of the configured persistent stream processors, by name.
-         */
-        public Map<String, PersistentStreamProcessorSettings> getPersistentStreamProcessors() {
-            return persistentStreamProcessors;
-        }
 
         public static class ProcessorSettings {
 
@@ -1691,11 +1674,6 @@ public class AxonServerConfiguration {
             return this;
         }
 
-        public Builder persistentStreamThreads(int persistentStreamThreads) {
-            instance.persistentStreamThreads = persistentStreamThreads;
-            return this;
-        }
-
         /**
          * Initializes a {@link AxonServerConfiguration} as specified through this Builder.
          *
@@ -1736,7 +1714,7 @@ public class AxonServerConfiguration {
         }
     }
 
-    public static class PersistentStreamProcessorSettings {
+    public static class PersistentStreamSettings {
         public static final String DEFAULT_SEQUENCING_POLICY = "SequentialPerAggregatePolicy";
 
         private int initialSegmentCount = 1;
@@ -1745,8 +1723,7 @@ public class AxonServerConfiguration {
         private String filter;
         private String name;
         private int batchSize = 1;
-        private int initial  = 0;
-        private Dlq dlq = new Dlq();
+        private String initialPosition = "TAIL";
 
         /**
          * The number of segments for the persistent stream if it needs to be created.
@@ -1866,108 +1843,19 @@ public class AxonServerConfiguration {
          * The initial token for the persistent stream.
          * @return the initial token
          */
-        public int getInitial() {
-            return initial;
+        public String getInitialPosition() {
+            return initialPosition;
         }
 
         /**
          * Sets the initial token for the persistent stream. The default value is 0, starting the persistent stream from
          * the first event in the event store.
+         * <p>You can use values HEAD or TAIL to start from the head or tail of the event stream.</p>
          * <p>This value is only used for creating the persistent stream.</p>
-         * @param initial the initial token
+         * @param initialPosition the initial token
          */
-        public void setInitial(int initial) {
-            this.initial = initial;
-        }
-
-        /**
-         * The dead letter queue configuration.
-         * @return dead letter queue configuration
-         */
-        public Dlq getDlq() {
-            return dlq;
-        }
-
-        /**
-         * Sets the dead letter queue configuration.
-         * @param dlq dead letter queue configuration
-         */
-        public void setDlq(Dlq dlq) {
-            this.dlq = dlq;
-        }
-    }
-
-    public static class Dlq {
-        private boolean enabled;
-        private DlqCache cache;
-
-        /**
-         * Indicates whether the dead letter queue is enabled for this persistent stream.
-         * @return whether the dead letter queue is enabled.
-         */
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        /**
-         * Sets whether the dead letter queue is enabled for this persistent stream.
-         * @param enabled enabled indicator.
-         */
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
-        }
-
-        /**
-         * Cache configuration for the dead letter queue.
-         * @return the cache configuration
-         */
-        public DlqCache getCache() {
-            return cache;
-        }
-
-        /**
-         * Configures the cache for the dead letter queue.
-         * @param cache the cache configuration
-         */
-        public void setCache(DlqCache cache) {
-            this.cache = cache;
-        }
-    }
-
-    public static class DlqCache {
-        private boolean enabled;
-        private int size = 1024;
-
-        /**
-         * Indicates whether caching is enabled for the dead letter queue.
-         * @return whether caching is enabled
-         */
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        /**
-         * Sets whether caching is enabled for the dead letter queue.
-         * @param enabled enabled indicator.
-         */
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
-        }
-
-        /**
-         * The size of the dead letter queue key cache.
-         * @return the size of the dead letter queue key cache
-         */
-        public int getSize() {
-            return size;
-        }
-
-        /**
-         * Sets the size of the dead letter queue key cache.
-         * @param size  the size of the dead letter queue key cache
-         */
-        public void setSize(int size) {
-            this.size = size;
+        public void setInitialPosition(String initialPosition) {
+            this.initialPosition = initialPosition;
         }
     }
 }

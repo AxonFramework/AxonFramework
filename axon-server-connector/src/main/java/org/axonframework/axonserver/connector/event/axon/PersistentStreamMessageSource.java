@@ -42,8 +42,7 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
      */
     public PersistentStreamMessageSource(String name, Configuration configuration, PersistentStreamProperties
             persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize) {
-        persistentStreamConnection = new PersistentStreamConnection(name, configuration,
-                                        persistentStreamProperties, scheduler, batchSize);
+        this(name, configuration, persistentStreamProperties, scheduler, batchSize, null);
     }
 
 
@@ -54,6 +53,7 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
      * @param persistentStreamProperties properties for the persistent stream
      * @param scheduler scheduler thread pool to schedule tasks
      * @param batchSize the batch size for collecting events
+     * @param context the context in which this persistent stream exists (or needs to be created)
      */
     public PersistentStreamMessageSource(String name, Configuration configuration, PersistentStreamProperties
             persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize, String defaultContext) {
