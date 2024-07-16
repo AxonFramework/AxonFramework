@@ -1029,7 +1029,7 @@ class TrackingEventProcessorTest {
         int numberOfEvents = 4;
         eventBus.publish(createEvents(numberOfEvents));
         await("Handle Events")
-                .atMost(Duration.ofSeconds(2))
+                .atMost(Duration.ofSeconds(5))
                 .pollDelay(Duration.ofMillis(50))
                 .until(() -> handled.size() == 4);
 

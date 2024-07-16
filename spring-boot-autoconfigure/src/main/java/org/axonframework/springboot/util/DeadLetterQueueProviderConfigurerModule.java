@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.util;
 
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
@@ -44,6 +45,7 @@ import javax.annotation.Nonnull;
 public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule {
 
     private final EventProcessorProperties eventProcessorProperties;
+    private final AxonServerConfiguration axonServerConfiguration;
     private final Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider;
 
     /**
@@ -59,17 +61,56 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
             EventProcessorProperties eventProcessorProperties,
             Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider
     ) {
+        this(eventProcessorProperties, null, deadLetterQueueProvider);
+    }
+
+    /**
+     * Construct a {@link DeadLetterQueueProviderConfigurerModule}, using the given {@code eventProcessorProperties}
+     * and {@code axonServerConfiguration} to decide which processing groups receive the
+     * {@link SequencedDeadLetterQueue} from the given {@code deadLetterQueueProvider}.
+     *
+     * @param eventProcessorProperties The properties dictating for which processing groups the dead-letter queue is
+     *                                 {@link EventProcessorProperties.Dlq#isEnabled() enabled}.
+     * @param axonServerConfiguration  The AxonServerConfiguration containing optional dead-letter queue configuration
+     *                                 for persistent streams.
+     * @param deadLetterQueueProvider  The function providing the {@link SequencedDeadLetterQueue}.
+     *
+     */
+    public DeadLetterQueueProviderConfigurerModule(
+            EventProcessorProperties eventProcessorProperties,
+            AxonServerConfiguration axonServerConfiguration,
+            Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider
+    ) {
         this.eventProcessorProperties = eventProcessorProperties;
+        this.axonServerConfiguration = axonServerConfiguration;
         this.deadLetterQueueProvider = deadLetterQueueProvider;
     }
 
     @Override
     public void configureModule(@Nonnull Configurer configurer) {
         configurer.eventProcessing().registerDeadLetterQueueProvider(
-                processingGroup -> dlqEnabled(eventProcessorProperties.getProcessors(), processingGroup)
+                processingGroup -> dlqEnabled(processingGroup)
                         ? deadLetterQueueProvider.apply(processingGroup)
                         : null
         );
+
+    }
+
+    private boolean dlqEnabled( String processingGroup) {
+        return dlqEnabled(eventProcessorProperties.getProcessors(), processingGroup)
+                || persistentStreamDlqEnabled(processingGroup);
+    }
+
+    private boolean persistentStreamDlqEnabled(String processingGroup) {
+        if (axonServerConfiguration == null || axonServerConfiguration.getEventhandling() == null || axonServerConfiguration.getEventhandling().getPersistentStreamProcessors() == null) {
+            return false;
+        }
+
+        return Optional.ofNullable (axonServerConfiguration.getEventhandling()
+                                                           .getPersistentStreamProcessors().get(processingGroup))
+                .map(AxonServerConfiguration.PersistentStreamProcessorSettings::getDlq)
+                .map(AxonServerConfiguration.Dlq::isEnabled)
+                .orElse(false);
     }
 
     private boolean dlqEnabled(Map<String, EventProcessorProperties.ProcessorSettings> processorSettings,

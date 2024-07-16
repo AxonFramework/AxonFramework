@@ -7,7 +7,7 @@ ____
 
 *OpenTracing deprecation warning*
 
-The link:../../extensions/tracing.md[OpenTracing extension] works in a different way than described on this page.
+The xref:tracing_extension_guide::index.adoc[OpenTracing extension] works in a different way than described on this page.
 Its functionality is limited and will not be updated to include the additional functionality described on this page.
 The OpenTracing standard itself is deprecated, please consider moving to OpenTelemetry instead.
 
@@ -27,7 +27,7 @@ The following standards are currently supported:
 |Tracing standard |Supported |Description
 
 |OpenTelemetry |Yes |https://opentelemetry.io/docs/concepts/what-is-opentelemetry/[OpenTelemetry] is the successor of OpenTracing, with auto-instrumentation being its most prominent feature.
-|OpenTracing |Limited |https://opentracing.io/[OpenTracing] is supported link:../../extensions/tracing.md[by an extension with limited functionality]. Usage of OpenTelemetry is recommended instead.
+|OpenTracing |Limited |https://opentracing.io/[OpenTracing] is supported xref:tracing_extension_guide::index.adoc[by an extension with limited functionality]. Usage of OpenTelemetry is recommended instead.
 |SLF4j |Yes |If you have no monitoring system in place but want to trace through logging, the framework provides a `LoggingSpanFactory`.
 |===
 
@@ -338,7 +338,7 @@ Note that when not using Spring boot, tracing each message handler invocation is
 == OpenTracing
 
 The OpenTracing standard is deprecated.
-If necessary, you can still use link:../../extensions/tracing.md[the OpenTracing extension of Axon Framework].
+If necessary, you can still use xref:tracing_extension_guide::index.adoc[the OpenTracing extension of Axon Framework].
 
 Note that the functionality of this extension is rather limited compared to the OpenTelemetry integration.
 Because of this, it's recommended to switch to OpenTelemetry if possible.

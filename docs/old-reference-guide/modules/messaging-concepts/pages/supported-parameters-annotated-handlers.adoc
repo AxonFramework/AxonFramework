@@ -11,7 +11,7 @@ your annotated handlers.
 You can configure additional `ParameterResolvers` by implementing the `ParameterResolverFactory` interface and
 configuring the new implementation.
 For more specifics on configuring custom `ParameterResolver`s we suggest
-reading link:../../appendices/message-handler-tuning/parameter-resolvers.adoc[this] section.
+reading xref:message-handler-tuning-guide::index.adoc[this] section.
 
 [[supported-parameters-for-command-handlers]]
 == Supported parameters for command handlers

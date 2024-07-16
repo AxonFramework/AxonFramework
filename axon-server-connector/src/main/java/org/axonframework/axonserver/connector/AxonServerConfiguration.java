@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,20 @@
 
 package org.axonframework.axonserver.connector;
 
+import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
+import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.util.EventCipher;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -228,7 +234,7 @@ public class AxonServerConfiguration {
      * Flag that allows block-listing of event types to be enabled.
      * <p>
      * Disabling this may have serious performance impact, as it requires all
-     * {@link org.axonframework.eventhandling.EventMessage events} from Axon Server to be sent to clients, even if a
+     * {@link EventMessage events} from Axon Server to be sent to clients, even if a
      * client is unable to process the event. Default is to have block-listing enabled.
      */
     private boolean eventBlockListingEnabled = true;
@@ -291,7 +297,7 @@ public class AxonServerConfiguration {
 
     /**
      * Defines the number of threads that should be used for connection management activities by the
-     * {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used by the
+     * {@link AxonServerConnectionFactory} used by the
      * {@link AxonServerConnectionManager}.
      * <p>
      * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
@@ -308,15 +314,16 @@ public class AxonServerConfiguration {
     private HeartbeatConfiguration heartbeat = new HeartbeatConfiguration();
 
     /**
-     * Properties describing the settings for {@link org.axonframework.eventhandling.EventProcessor EventProcessors}.
+     * Properties describing the settings for {@link EventProcessor EventProcessors}.
      */
-    private Eventhandling eventHandling = new Eventhandling();
+    private Eventhandling eventhandling = new Eventhandling();
 
     /**
      * Properties describing the settings for the
-     * {@link org.axonframework.axonserver.connector.event.axon.AxonServerEventStore EventStore}.
+     * {@link AxonServerEventStore EventStore}.
      */
     private EventStoreConfiguration eventStoreConfiguration = new EventStoreConfiguration();
+    private int persistentStreamThreads =  10;
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -930,7 +937,7 @@ public class AxonServerConfiguration {
      * Flag that allows block-listing of event types to be enabled.
      * <p>
      * Disabling this may have serious performance impact, as it requires all
-     * {@link org.axonframework.eventhandling.EventMessage events} from Axon Server to be sent to clients, even if a
+     * {@link EventMessage events} from Axon Server to be sent to clients, even if a
      * client is unable to process the event. Default is to have block-listing enabled.
      *
      * @return Flag that allows block-listing of event types to be enabled.
@@ -943,7 +950,7 @@ public class AxonServerConfiguration {
      * Sets flag that allows block-listing of event types to be enabled.
      * <p>
      * Disabling this may have serious performance impact, as it requires all
-     * {@link org.axonframework.eventhandling.EventMessage events} from Axon Server to be sent to clients, even if a
+     * {@link EventMessage events} from Axon Server to be sent to clients, even if a
      * client is unable to process the event. Default is to have block-listing enabled.
      *
      * @param eventBlockListingEnabled Flag that allows block-listing of event types to be enabled.
@@ -1112,7 +1119,7 @@ public class AxonServerConfiguration {
 
     /**
      * The number of threads that should be used for connection management activities by the
-     * {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used by the
+     * {@link AxonServerConnectionFactory} used by the
      * {@link AxonServerConnectionManager}.
      * <p>
      * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
@@ -1121,7 +1128,7 @@ public class AxonServerConfiguration {
      * Defaults to a pool size of {@code 2} threads.
      *
      * @return The number of threads that should be used for connection management activities by the
-     * {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used by the
+     * {@link AxonServerConnectionFactory} used by the
      * {@link AxonServerConnectionManager}.
      */
     public int getConnectionManagementThreadPoolSize() {
@@ -1130,7 +1137,7 @@ public class AxonServerConfiguration {
 
     /**
      * Define the number of threads that should be used for connection management activities by the
-     * {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used by the
+     * {@link AxonServerConnectionFactory} used by the
      * {@link AxonServerConnectionManager}.
      * <p>
      * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
@@ -1140,7 +1147,7 @@ public class AxonServerConfiguration {
      *
      * @param connectionManagementThreadPoolSize The number of threads that should be used for connection management
      *                                           activities by the
-     *                                           {@link io.axoniq.axonserver.connector.AxonServerConnectionFactory} used
+     *                                           {@link AxonServerConnectionFactory} used
      *                                           by the {@link AxonServerConnectionManager}.
      */
     public void setConnectionManagementThreadPoolSize(int connectionManagementThreadPoolSize) {
@@ -1175,16 +1182,16 @@ public class AxonServerConfiguration {
      * @return The configured {@link Eventhandling} of this application for Axon Server.
      */
     public Eventhandling getEventhandling() {
-        return eventHandling;
+        return eventhandling;
     }
 
     /**
      * Set the {@link Eventhandling} of this application for Axon Server
      *
-     * @param eventHandling The {@link Eventhandling} to set for this application.
+     * @param eventhandling The {@link Eventhandling} to set for this application.
      */
-    public void setEventHandling(Eventhandling eventHandling) {
-        this.eventHandling = eventHandling;
+    public void setEventhandling(Eventhandling eventhandling) {
+        this.eventhandling = eventhandling;
     }
 
     /**
@@ -1204,6 +1211,25 @@ public class AxonServerConfiguration {
      */
     public void setEventStoreConfiguration(EventStoreConfiguration eventStoreConfiguration) {
         this.eventStoreConfiguration = eventStoreConfiguration;
+    }
+
+    /**
+     * Returns the configured number of threads available for persistent stream handling.
+     *
+     * @return the configured number of threads available for persistent stream handling
+     */
+    public int getPersistentStreamThreads() {
+        return persistentStreamThreads;
+    }
+
+    /**
+     * Configures the number of threads available for persistent stream handling. The
+     * default value is 10.
+     *
+     * @param persistentStreamThreads the number of threads
+     */
+    public void setPersistentStreamThreads(int persistentStreamThreads) {
+        this.persistentStreamThreads = persistentStreamThreads;
     }
 
     /**
@@ -1449,12 +1475,28 @@ public class AxonServerConfiguration {
         private final Map<String, ProcessorSettings> processors = new HashMap<>();
 
         /**
+         * The configuration of each of the persistent stream processors. The key is the name of the processor, the value represents the
+         * settings to use for the processor with that name.
+         */
+        private final Map<String, PersistentStreamProcessorSettings> persistentStreamProcessors = new HashMap<>();
+
+
+        /**
          * Returns the settings for each of the configured processors, by name.
          *
          * @return the settings for each of the configured processors, by name.
          */
         public Map<String, ProcessorSettings> getProcessors() {
             return processors;
+        }
+
+        /**
+         * Returns the settings for each of the configured persistent stream processors, by name.
+         *
+         * @return the settings for each of the configured persistent stream processors, by name.
+         */
+        public Map<String, PersistentStreamProcessorSettings> getPersistentStreamProcessors() {
+            return persistentStreamProcessors;
         }
 
         public static class ProcessorSettings {
@@ -1465,7 +1507,7 @@ public class AxonServerConfiguration {
              * The load balancing strategy tells Axon Server how to share the event handling load among all available
              * application instances running this event processor, by moving segments from one instance to another. Note
              * that load balancing is <b>only</b> supported for
-             * {@link org.axonframework.eventhandling.StreamingEventProcessor StreamingEventProcessors}, as only
+             * {@link StreamingEventProcessor StreamingEventProcessors}, as only
              * {@code StreamingEventProcessors} are capable of splitting the event handling load in segments.
              * <p>
              * As the strategies names may change per Axon Server version it is recommended to check the documentation
@@ -1649,6 +1691,11 @@ public class AxonServerConfiguration {
             return this;
         }
 
+        public Builder persistentStreamThreads(int persistentStreamThreads) {
+            instance.persistentStreamThreads = persistentStreamThreads;
+            return this;
+        }
+
         /**
          * Initializes a {@link AxonServerConfiguration} as specified through this Builder.
          *
@@ -1686,6 +1733,241 @@ public class AxonServerConfiguration {
         public Builder connectTimeout(long timeout) {
             instance.setConnectTimeout(timeout);
             return this;
+        }
+    }
+
+    public static class PersistentStreamProcessorSettings {
+        public static final String DEFAULT_SEQUENCING_POLICY = "SequentialPerAggregatePolicy";
+
+        private int initialSegmentCount = 1;
+        private String sequencingPolicy = DEFAULT_SEQUENCING_POLICY;
+        private List<String> sequencingPolicyParameters = new LinkedList<>();
+        private String filter;
+        private String name;
+        private int batchSize = 1;
+        private int initial  = 0;
+        private Dlq dlq = new Dlq();
+
+        /**
+         * The number of segments for the persistent stream if it needs to be created.
+         * @return the number of segments for the persistent stream if it needs to be created
+         */
+        public int getInitialSegmentCount() {
+            return initialSegmentCount;
+        }
+
+        /**
+         * Sets the number of segments for the persistent stream if it needs to be created.
+         * @param initialSegmentCount the number of segments
+         */
+        public void setInitialSegmentCount(int initialSegmentCount) {
+            this.initialSegmentCount = initialSegmentCount;
+        }
+
+        /**
+         * The sequencing policy to use for the persistent stream.
+         * @return the sequencing policy name
+         */
+        public String getSequencingPolicy() {
+            return sequencingPolicy;
+        }
+
+        /**
+         * Sets the sequencing policy to use for the persistent stream.
+         * <p>
+         * Supported sequencing policies are:
+         * <ul>
+         *     <li>SequentialPerAggregatePolicy (default)</li>
+         *     <li>FullConcurrencyPolicy</li>
+         *     <li>SequentialPolicy</li>
+         *     <li>PropertySequencingPolicy</li>
+         *     <li>MetaDataSequencingPolicy</li>
+         * </ul>
+         * </p>
+         * <p>This value is only used for creating the persistent stream.</p>
+         * @param sequencingPolicy the sequencing policy name
+         */
+        public void setSequencingPolicy(String sequencingPolicy) {
+            this.sequencingPolicy = sequencingPolicy;
+        }
+
+        /**
+         * Parameters specified for the sequencing policy.
+         * @return a list of parameters specified for the sequencing policy
+         */
+        public List<String> getSequencingPolicyParameters() {
+            return sequencingPolicyParameters;
+        }
+
+        /**
+         * Sets the parameters specified for the sequencing policy.
+         * <p>
+         *     The <em>PropertySequencingPolicy</em> and <em>MetaDataSequencingPolicy</em> require parameters.
+         * </p>
+         * <p>This value is only used for creating the persistent stream.</p>
+         * @param sequencingPolicyParameters a list of parameters specified for the sequencing policy
+         */
+        public void setSequencingPolicyParameters(List<String> sequencingPolicyParameters) {
+            this.sequencingPolicyParameters = sequencingPolicyParameters;
+        }
+
+        /**
+         * Expression to filter out events in a persistent stream.
+         * @return the filter
+         */
+        public String getFilter() {
+            return filter;
+        }
+
+        /**
+         * Sets the expression to filter out events in a persistent stream.
+         * <p>This value is only used for creating the persistent stream.</p>
+         * @param filter  the filter
+         */
+        public void setFilter(String filter) {
+            this.filter = filter;
+        }
+
+        /**
+         * A logical name for the persistent stream.
+         * @return the given name for a persistent stream
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * Assigns a logical name for the persistent stream.
+         * <p>This value is only used for creating the persistent stream.</p>
+         * @param name  the given name for a persistent stream
+         */
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        /**
+         * The maximum number of events to process in a single transaction when reading a persistent stream.
+         * @return the batch size
+         */
+        public int getBatchSize() {
+            return batchSize;
+        }
+
+        /**
+         * Sets the maximum number of events to process in a single transaction when reading a persistent stream. The default
+         * value is 1.
+         * @param batchSize the batch size
+         */
+        public void setBatchSize(int batchSize) {
+            this.batchSize = batchSize;
+        }
+
+        /**
+         * The initial token for the persistent stream.
+         * @return the initial token
+         */
+        public int getInitial() {
+            return initial;
+        }
+
+        /**
+         * Sets the initial token for the persistent stream. The default value is 0, starting the persistent stream from
+         * the first event in the event store.
+         * <p>This value is only used for creating the persistent stream.</p>
+         * @param initial the initial token
+         */
+        public void setInitial(int initial) {
+            this.initial = initial;
+        }
+
+        /**
+         * The dead letter queue configuration.
+         * @return dead letter queue configuration
+         */
+        public Dlq getDlq() {
+            return dlq;
+        }
+
+        /**
+         * Sets the dead letter queue configuration.
+         * @param dlq dead letter queue configuration
+         */
+        public void setDlq(Dlq dlq) {
+            this.dlq = dlq;
+        }
+    }
+
+    public static class Dlq {
+        private boolean enabled;
+        private DlqCache cache;
+
+        /**
+         * Indicates whether the dead letter queue is enabled for this persistent stream.
+         * @return whether the dead letter queue is enabled.
+         */
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        /**
+         * Sets whether the dead letter queue is enabled for this persistent stream.
+         * @param enabled enabled indicator.
+         */
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        /**
+         * Cache configuration for the dead letter queue.
+         * @return the cache configuration
+         */
+        public DlqCache getCache() {
+            return cache;
+        }
+
+        /**
+         * Configures the cache for the dead letter queue.
+         * @param cache the cache configuration
+         */
+        public void setCache(DlqCache cache) {
+            this.cache = cache;
+        }
+    }
+
+    public static class DlqCache {
+        private boolean enabled;
+        private int size = 1024;
+
+        /**
+         * Indicates whether caching is enabled for the dead letter queue.
+         * @return whether caching is enabled
+         */
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        /**
+         * Sets whether caching is enabled for the dead letter queue.
+         * @param enabled enabled indicator.
+         */
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        /**
+         * The size of the dead letter queue key cache.
+         * @return the size of the dead letter queue key cache
+         */
+        public int getSize() {
+            return size;
+        }
+
+        /**
+         * Sets the size of the dead letter queue key cache.
+         * @param size  the size of the dead letter queue key cache
+         */
+        public void setSize(int size) {
+            this.size = size;
         }
     }
 }

@@ -17,6 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 
+import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
@@ -25,9 +26,13 @@ import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicy;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.Message;
@@ -36,15 +41,12 @@ import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.service.connection.AxonServerConnectionDetails;
+import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -53,6 +55,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.Nullable;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.
@@ -72,12 +76,14 @@ public class AxonServerAutoConfiguration {
     public static class ConnectionConfiguration implements ApplicationContextAware {
 
         private ApplicationContext applicationContext;
+
         @Bean
         public AxonServerConfiguration axonServerConfiguration() {
             AxonServerConfiguration configuration = new AxonServerConfiguration();
             configuration.setComponentName(clientName(applicationContext.getId()));
             return configuration;
         }
+
         @Override
         public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
             this.applicationContext = applicationContext;
@@ -86,7 +92,8 @@ public class AxonServerAutoConfiguration {
 
     @Configuration
     @ConditionalOnClass(name = "org.springframework.boot.autoconfigure.service.connection.ConnectionDetails")
-    public static class ConnectionDetailsConfiguration implements ApplicationContextAware{
+    public static class ConnectionDetailsConfiguration implements ApplicationContextAware {
+
         private ApplicationContext applicationContext;
 
         @ConditionalOnMissingBean(AxonServerConnectionDetails.class)
@@ -99,7 +106,8 @@ public class AxonServerAutoConfiguration {
 
         @ConditionalOnBean(type = "org.axonframework.springboot.service.connection.AxonServerConnectionDetails")
         @Bean
-        public AxonServerConfiguration axonServerConfigurationWithConnectionDetails(AxonServerConnectionDetails connectionDetails) {
+        public AxonServerConfiguration axonServerConfigurationWithConnectionDetails(
+                AxonServerConnectionDetails connectionDetails) {
             AxonServerConfiguration configuration = new AxonServerConfiguration();
             configuration.setComponentName(clientName(applicationContext.getId()));
             configuration.setServers(connectionDetails.routingServers());
@@ -196,5 +204,61 @@ public class AxonServerAutoConfiguration {
                                        .connectionManager(connectionManager)
                                        .build();
     }
-}
 
+    @Bean
+    @ConditionalOnMissingQualifiedBean(qualifier = "persistentStreamScheduler")
+    @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
+    public ScheduledExecutorService persistentStreamScheduler(AxonServerConfiguration axonServerConfiguration) {
+        return Executors.newScheduledThreadPool(axonServerConfiguration.getPersistentStreamThreads(),
+                                                new AxonThreadFactory("persistent-streams"));
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
+    public ConfigurerModule persistentStreamProcessorsConfigurerModule(
+            PersistentStreamMessageSourceFactory persistentStreamMessageSourceFactory,
+            AxonServerConfiguration axonServerConfiguration) {
+        return configurer -> configurer.eventProcessing(
+                processingConfigurer ->
+                        axonServerConfiguration.getEventhandling()
+                                .getPersistentStreamProcessors()
+                                .forEach((name, settings) -> {
+                                    // for DLQ enabled processors
+                                    processingConfigurer.registerSubscribingEventProcessor(
+                                            name,
+                                            configuration -> persistentStreamMessageSourceFactory.build(name,settings, configuration));
+                                    if (settings.getDlq().isEnabled()) {
+                                        processingConfigurer.registerSequencingPolicy(name,
+                                                new PersistentStreamSequencingPolicy(
+                                                        name,
+                                                        settings));
+                                        if (settings.getDlq().getCache().isEnabled()) {
+                                            processingConfigurer.registerDeadLetteringEventHandlerInvokerConfiguration(
+                                                    name,
+                                                    (c, builder) -> builder
+                                                            .enableSequenceIdentifierCache()
+                                                            .sequenceIdentifierCacheSize(settings.getDlq()
+                                                                    .getCache()
+                                                                    .getSize()));
+                                        }
+                                    }
+                                }));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
+    public PersistentStreamMessageSourceFactory persistentStreamMessageSourceFactory(
+            @Qualifier("persistentStreamScheduler") ScheduledExecutorService scheduledExecutorService) {
+        return (name, settings, configuration) -> new PersistentStreamMessageSource(name,
+                configuration,
+                new PersistentStreamProperties(settings.getName(),
+                        settings.getInitialSegmentCount(),
+                        settings.getSequencingPolicy(),
+                        settings.getSequencingPolicyParameters(),
+                        settings.getInitial(),
+                        settings.getFilter()),
+                scheduledExecutorService,
+                settings.getBatchSize());
+    }
+}
