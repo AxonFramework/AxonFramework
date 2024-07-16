@@ -165,11 +165,11 @@ public class PersistentStreamConnection {
             segmentConnection.close();
         }
 
-        logger.info("{}: Segment closed: {}", streamId, persistentStreamSegment);
+        logger.info("Segment closed: {}", persistentStreamSegment);
     }
 
     private void segmentOpened(PersistentStreamSegment persistentStreamSegment) {
-        logger.info("{}: Segment opened: {}", streamId, persistentStreamSegment);
+        logger.info("Segment opened: {}", persistentStreamSegment);
         retrySeconds.set(1);
         segments.put(persistentStreamSegment.segment(), new SegmentConnection(persistentStreamSegment));
     }

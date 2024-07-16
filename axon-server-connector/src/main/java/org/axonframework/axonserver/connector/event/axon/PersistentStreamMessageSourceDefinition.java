@@ -23,6 +23,9 @@ import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.concurrent.ScheduledExecutorService;
 
+/**
+ * Definition of a {@link PersistentStreamMessageSource}. Used to create instance with a specific Axon configuration.
+ */
 public class PersistentStreamMessageSourceDefinition implements SubscribableMessageSourceDefinition<EventMessage<?>> {
 
     private final String name;
@@ -31,6 +34,14 @@ public class PersistentStreamMessageSourceDefinition implements SubscribableMess
     private final int batchSize;
     private final String context;
 
+    /**
+     * Instantiates an instance.
+     * @param name the name of the persistent stream
+     * @param persistentStreamProperties the properties to create te persistent stream
+     * @param scheduler scheduler used for persistent stream operations
+     * @param batchSize the batch size for collecting events
+     * @param context the context in which this persistent stream exists (or needs to be created)
+     */
     public PersistentStreamMessageSourceDefinition(String name, PersistentStreamProperties
             persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize, String context) {
 

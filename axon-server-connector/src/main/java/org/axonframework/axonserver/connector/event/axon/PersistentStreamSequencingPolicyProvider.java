@@ -30,7 +30,7 @@ import static java.lang.String.format;
  * Implements the {@link SequencingPolicy} provider for a persistent stream.
  * The provider returns a sequencing key for an event used for the dead letter queue.
  */
-public class PersistentStreamSequencingPolicy
+public class PersistentStreamSequencingPolicyProvider
         implements Function<Configuration, SequencingPolicy<? super EventMessage<?>>> {
 
     private final String name;
@@ -39,9 +39,11 @@ public class PersistentStreamSequencingPolicy
 
     /**
      * Instantiates the {@code PersistentStreamSequencingPolicy}.
-     * @param name the processor name
+     * @param name the processor name.
+     * @param sequencingPolicy the name of the sequencing policy.
+     * @param sequencingPolicyParameters parameters for the sequencing policy.
      */
-    public PersistentStreamSequencingPolicy(
+    public PersistentStreamSequencingPolicyProvider(
             String name,
             String sequencingPolicy,
             List<String> sequencingPolicyParameters) {
