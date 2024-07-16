@@ -32,6 +32,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.SubscribableMessageSourceDefinition;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventBusSpanFactory;

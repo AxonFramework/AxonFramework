@@ -30,6 +30,7 @@ import javax.annotation.Nonnull;
  * Subscribable message source that receives event from a persistent stream from Axon Server.
  */
 public class PersistentStreamMessageSource implements SubscribableMessageSource<EventMessage<?>> {
+
     private final PersistentStreamConnection persistentStreamConnection;
 
     /**
@@ -56,9 +57,9 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
      * @param context the context in which this persistent stream exists (or needs to be created)
      */
     public PersistentStreamMessageSource(String name, Configuration configuration, PersistentStreamProperties
-            persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize, String defaultContext) {
+            persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize, String context) {
         persistentStreamConnection = new PersistentStreamConnection(name, configuration,
-                persistentStreamProperties, scheduler, batchSize, defaultContext);
+                persistentStreamProperties, scheduler, batchSize, context);
     }
 
     @Override
