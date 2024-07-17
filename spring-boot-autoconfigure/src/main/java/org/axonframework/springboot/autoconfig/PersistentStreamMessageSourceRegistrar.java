@@ -61,11 +61,12 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
         persistentStreams.forEach((name, settings) -> {
             BeanDefinitionBuilder beanDefinition = BeanDefinitionBuilder.genericBeanDefinition(
                     PersistentStreamMessageSourceDefinition.class);
-            beanDefinition.addConstructorArgValue(name);
+            String streamName = nonNullOrDefault(settings.getName(), name);
+            beanDefinition.addConstructorArgValue(streamName);
 
             BeanDefinitionBuilder streamProperties = BeanDefinitionBuilder.genericBeanDefinition(
                     PersistentStreamProperties.class);
-            streamProperties.addConstructorArgValue(nonNullOrDefault(settings.getName(), name));
+            streamProperties.addConstructorArgValue(streamName);
             streamProperties.addConstructorArgValue(settings.getInitialSegmentCount());
             streamProperties.addConstructorArgValue(settings.getSequencingPolicy());
             streamProperties.addConstructorArgValue(settings.getSequencingPolicyParameters());
