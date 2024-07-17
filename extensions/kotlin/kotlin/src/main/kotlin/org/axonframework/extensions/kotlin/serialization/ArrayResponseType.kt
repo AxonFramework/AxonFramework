@@ -30,6 +30,7 @@ import java.util.concurrent.Future
  *
  * @param E The element type which will be matched against and converted to
  * @author Gerard de Leeuw
+ * @since 4.10.0
  * @see org.axonframework.messaging.responsetypes.MultipleInstancesResponseType
  */
 class ArrayResponseType<E>(elementType: Class<E>) : AbstractResponseType<Array<E>>(elementType) {

@@ -44,7 +44,7 @@ import org.axonframework.serialization.SerializationException as AxonSerializati
  * @see kotlinx.serialization.Serializer
  * @see org.axonframework.serialization.Serializer
  *
- * @since 4.9.1
+ * @since 4.10.0
  * @author Gerard de Leeuw
  */
 class KotlinSerializer(
