@@ -33,6 +33,12 @@ import static java.lang.String.format;
 public class PersistentStreamSequencingPolicyProvider
         implements Function<Configuration, SequencingPolicy<? super EventMessage<?>>> {
 
+    public static final String SEQUENTIAL_PER_AGGREGATE_POLICY = "SequentialPerAggregatePolicy";
+    public static final String META_DATA_SEQUENCING_POLICY = "MetaDataSequencingPolicy";
+    public static final String SEQUENTIAL_POLICY = "SequentialPolicy";
+    public static final String FULL_CONCURRENCY_POLICY = "FullConcurrencyPolicy";
+    public static final String PROPERTY_SEQUENCING_POLICY = "PropertySequencingPolicy";
+    private static final String SEQUENTIAL_POLICY_IDENTIFIER = "SequentialPolicy";
     private final String name;
     private final String sequencingPolicy;
     private final List<String> sequencingPolicyParameters;
@@ -58,27 +64,27 @@ public class PersistentStreamSequencingPolicyProvider
     }
 
     private Object sequencingIdentifier(EventMessage<?> event) {
-        if ("SequentialPerAggregatePolicy".equals(sequencingPolicy)) {
+        if (SEQUENTIAL_PER_AGGREGATE_POLICY.equals(sequencingPolicy)) {
             if (event instanceof DomainEventMessage) {
                 return ((DomainEventMessage<?>) event).getAggregateIdentifier();
             }
             return event.getIdentifier();
         }
-        if ("MetaDataSequencingPolicy".equals(sequencingPolicy)) {
+        if (META_DATA_SEQUENCING_POLICY.equals(sequencingPolicy)) {
             List<Object> metaDataValues = new LinkedList<>();
             for (String sequencingPolicyParameter : sequencingPolicyParameters) {
                 metaDataValues.add(event.getMetaData().get(sequencingPolicyParameter));
             }
             return metaDataValues;
         }
-        if ("SequentialPolicy".equals(sequencingPolicy)) {
-            return "SequentialPolicy";
+        if (SEQUENTIAL_POLICY.equals(sequencingPolicy)) {
+            return SEQUENTIAL_POLICY_IDENTIFIER;
         }
-        if ("FullConcurrencyPolicy".equals(sequencingPolicy)) {
+        if (FULL_CONCURRENCY_POLICY.equals(sequencingPolicy)) {
             return event.getIdentifier();
         }
 
-        if ("PropertySequencingPolicy".equals(sequencingPolicy)) {
+        if (PROPERTY_SEQUENCING_POLICY.equals(sequencingPolicy)) {
             throw new RuntimeException(
                     name + ": Cannot use PropertySequencingPolicy in combination with dead-letter queue");
         }
