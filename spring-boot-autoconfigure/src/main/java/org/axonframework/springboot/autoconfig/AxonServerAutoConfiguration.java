@@ -23,9 +23,7 @@ import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
-import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
-import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
-import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
+import org.axonframework.axonserver.connector.event.axon.*;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -229,6 +227,40 @@ public class AxonServerAutoConfiguration {
             @Qualifier("persistentStreamScheduler") ScheduledExecutorService scheduledExecutorService,
             Environment environment) {
         return new PersistentStreamMessageSourceRegistrar(environment, scheduledExecutorService);
+    }
+
+    /**
+     * Creates a bean of type {@link PersistentStreamMessageSourceFactory} if one is not already defined.
+     * This factory is used to create instances of {@link PersistentStreamMessageSource} with specified configurations.
+     *
+     * @return A {@link PersistentStreamMessageSourceFactory} that constructs {@link PersistentStreamMessageSource} instances.
+     *         The returned factory creates a new {@link PersistentStreamMessageSource} with the following parameters:
+     *         <ul>
+     *             <li>name: The name of the persistent stream</li>
+     *             <li>configuration: The Axon framework configuration</li>
+     *             <li>persistentStreamProperties: Properties of the persistent stream</li>
+     *             <li>scheduler: The {@link ScheduledExecutorService} for scheduling tasks</li>
+     *             <li>batchSize: The number of events to fetch in a single batch</li>
+     *             <li>context: The context in which the persistent stream operates</li>
+     *         </ul>
+     * @Bean This method produces a Spring-managed bean.
+     * @ConditionalOnMissingBean This bean is only created if no other bean of type {@link PersistentStreamMessageSourceFactory} is present in the context.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public PersistentStreamMessageSourceFactory persistentStreamMessageSourceFactory(
+         ) {
+        return (  name,
+                  persistentStreamProperties,
+                  scheduler,
+                  batchSize,
+                  context, configuration) ->
+                new PersistentStreamMessageSource(name,
+                                                configuration,
+                                                 persistentStreamProperties,
+                                                scheduler,
+                                                 batchSize,
+                                                 context);
     }
 
 

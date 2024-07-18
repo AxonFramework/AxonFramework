@@ -34,6 +34,8 @@ public class PersistentStreamMessageSourceDefinition implements SubscribableMess
     private final int batchSize;
     private final String context;
 
+    private final PersistentStreamMessageSourceFactory messageSourceFactory;
+
     /**
      * Instantiates an instance.
      * @param name the name of the persistent stream
@@ -43,22 +45,17 @@ public class PersistentStreamMessageSourceDefinition implements SubscribableMess
      * @param context the context in which this persistent stream exists (or needs to be created)
      */
     public PersistentStreamMessageSourceDefinition(String name, PersistentStreamProperties
-            persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize, String context) {
-
+            persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize, String context, PersistentStreamMessageSourceFactory messageSourceFactory) {
         this.name = name;
         this.persistentStreamProperties = persistentStreamProperties;
         this.scheduler = scheduler;
         this.batchSize = batchSize;
         this.context = context;
+        this.messageSourceFactory = messageSourceFactory;
     }
 
     @Override
     public SubscribableMessageSource<EventMessage<?>> create(Configuration configuration) {
-        return new PersistentStreamMessageSource(name,
-                                                 configuration,
-                                                 persistentStreamProperties,
-                                                 scheduler,
-                                                 batchSize,
-                                                 context);
+        return messageSourceFactory.build(name, persistentStreamProperties, scheduler, batchSize, context, configuration);
     }
 }
