@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,7 +169,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
-     *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
+     *     <li>The {@link MaxSegmentProvider} (used by {@link #maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
@@ -414,7 +414,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
-     *     <li>The {@code maxClaimedSegments} (used by {@link #maxCapacity()}) defaults to {@value Short#MAX_VALUE}.</li>
+     *     <li>The {@link MaxSegmentProvider} (used by {@link #maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
@@ -442,7 +442,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 ms -> ReplayToken.createReplayToken(ms.createHeadToken());
         private long tokenClaimInterval = 5000;
-        private MaxSegmentProvider maxSegmentProvider = p -> Short.MAX_VALUE;
+        private MaxSegmentProvider maxSegmentProvider = MaxSegmentProvider.maxShort();
         private long claimExtensionThreshold = 5000;
         private int batchSize = 1;
         private Clock clock = GenericEventMessage.clock;
@@ -671,8 +671,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         /**
          * Sets the maximum number of segments this instance may claim.
          *
-         * @param maxClaimedSegments the maximum number of segments this instance may claim
-         * @return the current Builder instance, for fluent interfacing
+         * @param maxClaimedSegments The maximum number of segments this instance may claim.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder maxClaimedSegments(int maxClaimedSegments) {
             this.maxSegmentProvider = n -> maxClaimedSegments;
@@ -680,16 +680,19 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         /**
-         * Defines the maximum number of segment this {@link StreamingEventProcessor} may claim. Defaults to {@value
-         * Short#MAX_VALUE}.
+         * Defines the maximum number of segment this {@link StreamingEventProcessor} may claim per instance. Defaults
+         * to {@link MaxSegmentProvider#maxShort()}.
          *
-         * @param maxSegmentProvider the maximum number fo claimed segments for this {@link StreamingEventProcessor}
-         *
-         * @return the current Builder instance, for fluent interfacing
+         * @param maxSegmentProvider A {@link MaxSegmentProvider} providing the maximum number segments this
+         *                           {@link StreamingEventProcessor} may claim per instance.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
-            assertNonNull(maxSegmentProvider, "The max segment provider may not be null. Provide a lambda of type (processorName: String) -> maxSegmentsToClaim");
-            assertStrictPositive(maxSegmentProvider.getMaxSegments(name), "Max claimed segments should be a higher valuer than zero");
+            assertNonNull(maxSegmentProvider,
+                          "The max segment provider may not be null. "
+                                  + "Provide a lambda of type (processorName: String) -> maxSegmentsToClaim");
+            assertStrictPositive(maxSegmentProvider.getMaxSegments(name),
+                                 "Max claimed segments should be a higher valuer than zero");
             this.maxSegmentProvider = maxSegmentProvider;
             return this;
         }
