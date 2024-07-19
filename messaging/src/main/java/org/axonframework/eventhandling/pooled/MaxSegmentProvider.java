@@ -19,4 +19,13 @@ public interface MaxSegmentProvider extends Function<String, Integer> {
     default Integer apply(String processingGroup) {
         return getMaxSegments(processingGroup);
     }
+
+    /**
+     * A {@link MaxSegmentProvider} that always returns {@link Short#MAX_VALUE}.
+     *
+     * @return A {@link MaxSegmentProvider} that always returns {@link Short#MAX_VALUE}.
+     */
+    static MaxSegmentProvider maxShort() {
+        return processingGroup -> Short.MAX_VALUE;
+    }
 }
