@@ -4,18 +4,30 @@ import java.util.function.Function;
 
 
 /**
- * Defines the maximum number of segments this {@link org.axonframework.eventhandling.StreamingEventProcessor} may claim. Defaults to {@value
- * Short#MAX_VALUE}. This provides the interface to configure a function and the ability to configure the number of segments a single
- * processing instance can claim at the runtime. The {@link org.axonframework.eventhandling.pooled.Coordinator} can
- * rely on this function to query maximum segments at the runtime * {@link org.axonframework.eventhandling.pooled.Coordinator#releaseSegmentsIfTooManyClaimed}
-  when more event processing instances are available. This supports a fair distribution of the segments among all the event processing instances
+ * Functional interface returning the maximum amount of segments a {@link Coordinator} may claim, based on the given
+ * {@code processingGroup}.
  *
- * @param processingGroup the name of the event processor
- *
- * @return the maximum number of segments that can be claimed by an instance.
+ * @author Manish
+ * @since 4.10.0
  */
 public interface MaxSegmentProvider extends Function<String, Integer> {
+
+    /**
+     * Returns the maximum amount of segments to claim for the given {@code processingGroup}.
+     *
+     * @param processingGroup The name of a processing group for which to provide the maximum amount of segments it can
+     *                        claim.
+     * @return The maximum number of segments that can be claimed for the given {@code processingGroup}.
+     */
     int getMaxSegments(String processingGroup);
+
+    /**
+     * Returns the maximum amount of segments to claim for the given {@code processingGroup}.
+     *
+     * @param processingGroup The name of a processing group for which to provide the maximum amount of segments it can
+     *                        claim.
+     * @return The maximum number of segments that can be claimed for the given {@code processingGroup}.
+     */
     default Integer apply(String processingGroup) {
         return getMaxSegments(processingGroup);
     }
