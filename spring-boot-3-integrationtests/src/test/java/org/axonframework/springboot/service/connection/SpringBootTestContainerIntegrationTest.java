@@ -16,7 +16,7 @@
 
 package org.axonframework.springboot.service.connection;
 
-import io.axoniq.axonserver.grpc.admin.ContextOverview;
+import io.axoniq.axonserver.connector.AxonServerConnection;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.test.server.AxonServerContainer;
@@ -28,9 +28,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,7 +50,7 @@ class SpringBootTestContainerIntegrationTest {
     private AxonServerConnectionManager axonServerConnectionManager;
 
     @Test
-    void verifyApplicationStartsNormallyWithAxonServerInstance() throws ExecutionException, InterruptedException {
+    void verifyApplicationStartsNormallyWithAxonServerInstance() {
         assertTrue(axonServer.isRunning());
         assertNotNull(connectionDetails);
         assertTrue(connectionDetails.routingServers().endsWith("" + axonServer.getGrpcPort()));
@@ -61,12 +58,9 @@ class SpringBootTestContainerIntegrationTest {
 
         assertNotEquals("localhost:8024", axonServerConfiguration.getServers());
 
-        // Retrieving all contexts will try to establish a connection with the container
-        CompletableFuture<List<ContextOverview>> allContexts = axonServerConnectionManager.getConnection()
-                                                                                          .adminChannel()
-                                                                                          .getAllContexts();
-        await().atMost(Duration.ofMillis(500))
-               .until(allContexts::isDone);
-        assertFalse(allContexts.get().isEmpty());
+        AxonServerConnection connection = axonServerConnectionManager.getConnection();
+
+        await().atMost(Duration.ofSeconds(5))
+               .untilAsserted(() -> assertTrue(connection.isConnected()));
     }
 }
