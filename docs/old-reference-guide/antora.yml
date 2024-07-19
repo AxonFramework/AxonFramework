@@ -1,5 +1,5 @@
-name: axon_framework_old_ref
-title: Axon Framework Reference Guide
+name: axon_framework_ref
+title: Axon Framework
 version: true
 prerelease: true
 start_page: ROOT:introduction.adoc
