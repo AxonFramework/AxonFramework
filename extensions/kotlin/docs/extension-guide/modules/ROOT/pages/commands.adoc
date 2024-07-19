@@ -1,7 +1,7 @@
 :navtitle: Commands
 = Commands
 
-This section describes the additional functionality attached to Axon's xref:axon_framework_old_ref:axon-framework-commands:README.adoc[command dispatching and handling] logic.
+This section describes the additional functionality attached to Axon's xref:axon_framework_ref:axon-framework-commands:README.adoc[command dispatching and handling] logic.
 
 [[commandgateway]]
 == `CommandGateway`

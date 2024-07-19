@@ -67,7 +67,7 @@ Are you having trouble using the extension?
 We'd like to help you out the best we can!
 There are a couple of things to consider when you're traversing anything Axon:
 
-* Checking the [reference guide](https://library.axoniq.io/axon_framework_old_ref/) should be your first stop,
+* Checking the [reference guide](https://library.axoniq.io/axon_framework_ref/) should be your first stop,
   as the majority of possible scenarios you might encounter when using Axon should be covered there.
 * If the Reference Guide does not cover a specific topic you would've expected,
   we'd appreciate if you could post a [new thread/topic on our library fourms describing the problem](https://discuss.axoniq.io/c/26).
