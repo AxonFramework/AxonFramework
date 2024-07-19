@@ -21,11 +21,9 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 /**
  * An {@link AxonServerConnectionDetails} implementation based on a given {@link AxonServerConfiguration} bean.
  * <p>
- * Used to ensure the properties from an {@code ServiceConnection} annotated test container take precedence over
- * property-based configuration, as this would trigger the {@link AxonServerTestContainerConnectionDetailsFactory} to
- * construct a {@link AxonServerConnectionDetails} object first. Due to this ordering, the property-based format,
- * inserted through this class, is no longer able to override the properties, like the
- * {@link AxonServerConfiguration#getServers()}.
+ * Ensures there will be a {@code AxonServerConnectionDetails} instance in the absence of the container-based version
+ * constructed by the {@link AxonServerTestContainerConnectionDetailsFactory}. The container-based version only exists
+ * if there is a {@code ServiceConnection} annotated bean in the context, which is not a guarantee.
  *
  * @author Steven van Beelen
  * @since 4.9.4
