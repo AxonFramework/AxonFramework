@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,11 @@ import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
-import org.axonframework.axonserver.connector.event.axon.*;
+import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
+import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -43,7 +47,11 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -52,9 +60,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.lang.Nullable;
 
-import javax.annotation.Nonnull;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import javax.annotation.Nonnull;
 
 /**
  * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.
@@ -205,102 +213,104 @@ public class AxonServerAutoConfiguration {
 
     /**
      * Create a {@link ScheduledExecutorService} for persistent stream operations.
-     * @return the scheduler
+     *
+     * @return The a {@link ScheduledExecutorService} for persistent stream operations.
      */
     @Bean
     @ConditionalOnMissingQualifiedBean(qualifier = "persistentStreamScheduler")
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
     public ScheduledExecutorService persistentStreamScheduler() {
-        return Executors.newScheduledThreadPool(1,
-                                                new AxonThreadFactory("persistent-streams"));
+        return Executors.newScheduledThreadPool(1, new AxonThreadFactory("persistent-streams"));
     }
 
     /**
-     * Creates a registrar to create and register Spring beans for persistent streams.
-     * @param scheduledExecutorService the scheduler used for persistent stream operations.
-     * @param environment the Spring environment.
-     * @return the registrar
+     * Constructs a {@link PersistentStreamMessageSourceRegistrar} to create and register Spring beans for persistent
+     * streams.
+     *
+     * @param scheduledExecutorService The {@link ScheduledExecutorService} used for persistent stream operations.
+     * @param environment              The Spring {@link Environment}.
+     * @return The {@link PersistentStreamMessageSourceRegistrar} to create and register Spring beans for persistent
+     * streams.
      */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
     public PersistentStreamMessageSourceRegistrar persistentStreamRegistrar(
             @Qualifier("persistentStreamScheduler") ScheduledExecutorService scheduledExecutorService,
-            Environment environment) {
+            Environment environment
+    ) {
         return new PersistentStreamMessageSourceRegistrar(environment, scheduledExecutorService);
     }
 
     /**
-     * Creates a bean of type {@link PersistentStreamMessageSourceFactory} if one is not already defined.
-     * This factory is used to create instances of {@link PersistentStreamMessageSource} with specified configurations.
+     * Creates a bean of type {@link PersistentStreamMessageSourceFactory} if one is not already defined. This factory
+     * is used to create instances of the {@link PersistentStreamMessageSource} with specified configurations.
+     * <p>
+     * The returned factory creates a new {@link PersistentStreamMessageSource} with the following parameters:
+     * <ul>
+     *     <li>{@code name}: The name of the persistent stream.</li>
+     *     <li>{@code configuration}: The Axon framework configuration.</li>
+     *     <li>{@code persistentStreamProperties}: Properties of the persistent stream.</li>
+     *     <li>{@code scheduler}: The {@link ScheduledExecutorService} for scheduling tasks.</li>
+     *     <li>{@code batchSize}: The number of events to fetch in a single batch.</li>
+     *     <li>{@code context}: The context in which the persistent stream operates.</li>
+     * </ul>
      *
-     * @return A {@link PersistentStreamMessageSourceFactory} that constructs {@link PersistentStreamMessageSource} instances.
-     *         The returned factory creates a new {@link PersistentStreamMessageSource} with the following parameters:
-     *         <ul>
-     *             <li>name: The name of the persistent stream</li>
-     *             <li>configuration: The Axon framework configuration</li>
-     *             <li>persistentStreamProperties: Properties of the persistent stream</li>
-     *             <li>scheduler: The {@link ScheduledExecutorService} for scheduling tasks</li>
-     *             <li>batchSize: The number of events to fetch in a single batch</li>
-     *             <li>context: The context in which the persistent stream operates</li>
-     *         </ul>
-     * @Bean This method produces a Spring-managed bean.
-     * @ConditionalOnMissingBean This bean is only created if no other bean of type {@link PersistentStreamMessageSourceFactory} is present in the context.
+     * @return A {@link PersistentStreamMessageSourceFactory} that constructs {@link PersistentStreamMessageSource}
+     * instances.
      */
     @Bean
     @ConditionalOnMissingBean
-    public PersistentStreamMessageSourceFactory persistentStreamMessageSourceFactory(
-         ) {
-        return (  name,
-                  persistentStreamProperties,
-                  scheduler,
-                  batchSize,
-                  context, configuration) ->
-                new PersistentStreamMessageSource(name,
-                                                configuration,
-                                                 persistentStreamProperties,
-                                                scheduler,
-                                                 batchSize,
-                                                 context);
+    public PersistentStreamMessageSourceFactory persistentStreamMessageSourceFactory() {
+        return (name, persistentStreamProperties, scheduler, batchSize, context, configuration) ->
+                new PersistentStreamMessageSource(
+                        name, configuration, persistentStreamProperties, scheduler, batchSize, context
+                );
     }
 
-
     /**
-     * Creates a configurer module to configure sequencing policies for persistent streams connected to subscribing
-     * event processors with a dead letter queue.
-     * @param eventProcessorProperties  contains the configured event processors.
-     * @param axonServerConfiguration   contains the persistent stream definitions.
-     * @return a configurer module
+     * Creates a {@link ConfigurerModule} to configure
+     * {@link org.axonframework.eventhandling.async.SequencingPolicy sequencing policies} for persistent streams
+     * connected to {@link org.axonframework.eventhandling.SubscribingEventProcessor subscribing event processors} with
+     * a dead letter queue.
+     *
+     * @param processorProperties     Contains the configured event processors.
+     * @param axonServerConfiguration Contains the persistent stream definitions.
+     * @return A {@link ConfigurerModule} to configure
+     * {@link org.axonframework.eventhandling.async.SequencingPolicy sequencing policies} for persistent streams
+     * connected to {@link org.axonframework.eventhandling.SubscribingEventProcessor subscribing event processors} with
+     * a dead letter queue.
      */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
     public ConfigurerModule persistentStreamProcessorsConfigurerModule(
-            EventProcessorProperties eventProcessorProperties,
-            AxonServerConfiguration axonServerConfiguration) {
-        return configurer ->
-                configurer.eventProcessing(
-                        eventProcessingConfigurer ->
-                                eventProcessorProperties.getProcessors()
-                                                        .entrySet()
-                                                        .stream()
-                                                        .filter(e -> e.getValue().getMode()
-                                                                      .equals(EventProcessorProperties.Mode.SUBSCRIBING))
-                                                        .filter(e -> e.getValue().getDlq()
-                                                                      .isEnabled())
-                                                        .filter(e -> axonServerConfiguration.getPersistentStreams()
-                                                                                            .containsKey(
-                                                                                                    e.getValue()
-                                                                                                     .getSource()))
-                                                        .forEach(e -> {
-                                                            AxonServerConfiguration.PersistentStreamSettings
-                                                                    persistentStreamConfig = axonServerConfiguration.getPersistentStreams()
-                                                                                                                    .get(e.getValue()
-                                                                                                                          .getSource());
-                                                            eventProcessingConfigurer.registerSequencingPolicy(
-                                                                    e.getKey(),
-                                                                    new PersistentStreamSequencingPolicyProvider(
-                                                                            e.getKey(),
-                                                                            persistentStreamConfig.getSequencingPolicy(),
-                                                                            persistentStreamConfig.getSequencingPolicyParameters()));
-                                                        }));
+            EventProcessorProperties processorProperties,
+            AxonServerConfiguration axonServerConfiguration
+    ) {
+        return configurer -> configurer.eventProcessing(
+                processingConfigurer -> processorProperties.getProcessors()
+                                                           .entrySet()
+                                                           .stream()
+                                                           .filter(e -> e.getValue().getMode()
+                                                                         .equals(EventProcessorProperties.Mode.SUBSCRIBING))
+                                                           .filter(e -> e.getValue().getDlq().isEnabled())
+                                                           .filter(e -> axonServerConfiguration.getPersistentStreams()
+                                                                                               .containsKey(
+                                                                                                       e.getValue()
+                                                                                                        .getSource()))
+                                                           .forEach(e -> {
+                                                               AxonServerConfiguration.PersistentStreamSettings persistentStreamConfig =
+                                                                       axonServerConfiguration.getPersistentStreams()
+                                                                                              .get(e.getValue()
+                                                                                                    .getSource());
+                                                               processingConfigurer.registerSequencingPolicy(
+                                                                       e.getKey(),
+                                                                       new PersistentStreamSequencingPolicyProvider(
+                                                                               e.getKey(),
+                                                                               persistentStreamConfig.getSequencingPolicy(),
+                                                                               persistentStreamConfig.getSequencingPolicyParameters()
+                                                                       )
+                                                               );
+                                                           })
+        );
     }
 }

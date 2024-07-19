@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. AxonIQ
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import static io.axoniq.axonserver.connector.impl.ObjectUtils.nonNullOrDefault;
 
 /**
- * Post-processor to create Spring beans for persistent streams defined in the application configuration.
+ * Post-processor to create Spring beans for persistent streams defined in the application context.
+ *
+ * @author Marc Gathier
+ * @since 4.10.0
  */
 public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionRegistryPostProcessor {
 
@@ -44,48 +47,58 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
     private final Map<String, AxonServerConfiguration.PersistentStreamSettings> persistentStreams;
 
     /**
-     * Instantiates an instance. Retrieves the persistent stream definitions from the environment.
-     * @param environment               application configuration environment
-     * @param scheduledExecutorService  scheduler to schedule persistent stream operations
+     * Instantiates a {@link PersistentStreamMessageSourceRegistrar} instance.
+     * <p>
+     * This registrar will retrieve the
+     * {@link AxonServerConfiguration.PersistentStreamSettings persistent stream definitions} from the given
+     * {@code environment}.
+     *
+     * @param environment              Application configuration environment.
+     * @param scheduledExecutorService Scheduler to schedule persistent stream operations.
      */
     public PersistentStreamMessageSourceRegistrar(Environment environment,
                                                   ScheduledExecutorService scheduledExecutorService) {
         Binder binder = Binder.get(environment);
-        this.persistentStreams = binder.bind("axon.axonserver.persistent-streams",
-                                             Bindable.mapOf(String.class,
-                                                            AxonServerConfiguration.PersistentStreamSettings.class))
-                                       .orElse(Collections.emptyMap());
+        this.persistentStreams =
+                binder.bind(
+                              "axon.axonserver.persistent-streams",
+                              Bindable.mapOf(String.class, AxonServerConfiguration.PersistentStreamSettings.class)
+                      )
+                      .orElse(Collections.emptyMap());
         this.scheduledExecutorService = scheduledExecutorService;
     }
 
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry beanDefinitionRegistry) throws BeansException {
         persistentStreams.forEach((name, settings) -> {
-            BeanDefinitionBuilder beanDefinition = BeanDefinitionBuilder.genericBeanDefinition(
-                    PersistentStreamMessageSourceDefinition.class);
+            BeanDefinitionBuilder beanDefinition =
+                    BeanDefinitionBuilder.genericBeanDefinition(PersistentStreamMessageSourceDefinition.class);
             String streamName = nonNullOrDefault(settings.getName(), name);
             beanDefinition.addConstructorArgValue(streamName);
 
-            BeanDefinitionBuilder streamProperties = BeanDefinitionBuilder.genericBeanDefinition(
-                    PersistentStreamProperties.class);
+            BeanDefinitionBuilder streamProperties =
+                    BeanDefinitionBuilder.genericBeanDefinition(PersistentStreamProperties.class);
             streamProperties.addConstructorArgValue(streamName);
             streamProperties.addConstructorArgValue(settings.getInitialSegmentCount());
             streamProperties.addConstructorArgValue(settings.getSequencingPolicy());
             streamProperties.addConstructorArgValue(settings.getSequencingPolicyParameters());
             streamProperties.addConstructorArgValue(settings.getInitialPosition());
             streamProperties.addConstructorArgValue(settings.getFilter());
+
             beanDefinition.addConstructorArgValue(streamProperties.getBeanDefinition());
             beanDefinition.addConstructorArgValue(scheduledExecutorService);
             beanDefinition.addConstructorArgValue(settings.getBatchSize());
             beanDefinition.addConstructorArgValue(null);
             beanDefinition.addConstructorArgValue(new RuntimeBeanReference(PersistentStreamMessageSourceFactory.class));
+
             beanDefinitionRegistry.registerBeanDefinition(name, beanDefinition.getBeanDefinition());
         });
     }
 
     @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory configurableListableBeanFactory)
-            throws BeansException {
-        // no actions needed here
+    public void postProcessBeanFactory(
+            ConfigurableListableBeanFactory configurableListableBeanFactory
+    ) throws BeansException {
+        // No actions needed here
     }
 }

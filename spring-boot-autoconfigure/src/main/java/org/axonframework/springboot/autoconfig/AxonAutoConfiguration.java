@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -341,13 +341,17 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                             c -> {
                                 Object bean = applicationContext.getBean(settings.getSource());
                                 if (bean instanceof SubscribableMessageSourceDefinition) {
-                                    return ((SubscribableMessageSourceDefinition<? extends EventMessage<?>>) bean).create(c);
+                                    return ((SubscribableMessageSourceDefinition<? extends EventMessage<?>>) bean)
+                                            .create(c);
                                 }
                                 if (bean instanceof SubscribableMessageSource) {
                                     return (SubscribableMessageSource<? extends EventMessage<?>>) bean;
                                 }
-                                throw new AxonConfigurationException(format("Processor '%s' invalid source '%s': source must be SubscribableMessageSource or SubscribableMessageSourceFactory",
-                                                                            name, settings.getSource()));
+                                throw new AxonConfigurationException(format(
+                                        "Invalid message source [%s] configured for Event Processor [%s]. "
+                                                + "The message source should be a SubscribableMessageSource or SubscribableMessageSourceFactory",
+                                        settings.getSource(), name
+                                ));
                             }
                     );
                 }

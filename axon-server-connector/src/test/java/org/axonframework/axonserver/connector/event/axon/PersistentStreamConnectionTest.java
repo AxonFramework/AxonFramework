@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2024. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
@@ -17,10 +33,9 @@ import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,23 +50,24 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link PersistentStreamConnection}.
+ */
 class PersistentStreamConnectionTest {
 
-    public static final String STREAM_NAME = "stream-name";
-    public static final String STREAM_ID = "stream-id";
+    private static final String STREAM_NAME = "stream-name";
+    private static final String STREAM_ID = "stream-id";
+
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
-    private final PersistentStreamProperties properties = new PersistentStreamProperties(STREAM_NAME, 2, "Seq",
-                                                                                         Collections.emptyList(), "0", null);
-    private PersistentStreamConnection testSubject;
+    private final PersistentStreamProperties properties =
+            new PersistentStreamProperties(STREAM_NAME, 2, "Seq", Collections.emptyList(), "0", null);
     private final Map<String, MockPersistentStream> mockPersistentStreams = new ConcurrentHashMap<>();
+
+    private PersistentStreamConnection testSubject;
 
     @BeforeEach
     void setup() {
@@ -61,7 +77,7 @@ class PersistentStreamConnectionTest {
         AxonServerConnection mockAxonServerConnection = mock(AxonServerConnection.class);
         EventChannel mockEventChannel = mock(EventChannel.class);
 
-        when( mockEventChannel.openPersistentStream(anyString(), anyInt(), anyInt(), any(), any()))
+        when(mockEventChannel.openPersistentStream(anyString(), anyInt(), anyInt(), any(), any()))
                 .thenAnswer(invocationOnMock -> {
                     String streamId = invocationOnMock.getArgument(0);
                     mockPersistentStreams.put(streamId,
@@ -77,6 +93,7 @@ class PersistentStreamConnectionTest {
         AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
         configurer.registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration);
         int batchSize = 100;
+
         testSubject = new PersistentStreamConnection(STREAM_ID,
                                                      configurer.buildConfiguration(),
                                                      properties,
@@ -91,21 +108,28 @@ class PersistentStreamConnectionTest {
         MockPersistentStream mockPersistentStream = mockPersistentStreams.get(STREAM_ID);
         mockPersistentStream.publish(0, eventWithToken(0, "AggregateId-1", 0));
         mockPersistentStream.publish(0, eventWithToken(1, "AggregateId-1", 1));
-        assertWithin(1, TimeUnit.SECONDS, () -> Assertions.assertEquals(2, eventMessages.size()));
-        assertEquals(1, mockPersistentStream.lastAcknowledged(0));
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(100))
+               .until(() -> eventMessages.size() == 2);
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(100))
+               .until(() -> mockPersistentStream.lastAcknowledged(0) == 1);
 
         mockPersistentStream.closeSegment(0);
     }
 
-    private EventWithToken eventWithToken(int token, String aggregateId, int seqNr) {
-        return EventWithToken.newBuilder().setToken(token)
-                .setEvent(Event.newBuilder()
-                                  .setAggregateSequenceNumber(seqNr)
-                                  .setAggregateType(aggregateId)
-                                  .setMessageIdentifier(UUID.randomUUID().toString())
-                                  .setPayload(SerializedObject.newBuilder().setType("string"))
-                                  .setTimestamp(System.currentTimeMillis()))
-                .build();
+    private static EventWithToken eventWithToken(int token,
+                                                 @SuppressWarnings("SameParameterValue") String aggregateId,
+                                                 int seqNr) {
+        return EventWithToken.newBuilder()
+                             .setToken(token)
+                             .setEvent(Event.newBuilder()
+                                            .setAggregateSequenceNumber(seqNr)
+                                            .setAggregateType(aggregateId)
+                                            .setMessageIdentifier(UUID.randomUUID().toString())
+                                            .setPayload(SerializedObject.newBuilder().setType("string"))
+                                            .setTimestamp(System.currentTimeMillis()))
+                             .build();
     }
 
     private static class MockPersistentStream implements PersistentStream {
@@ -117,18 +141,21 @@ class PersistentStreamConnectionTest {
             this.callbacks = callbacks;
         }
 
-
         @Override
         public void close() {
             callbacks.onClosed();
         }
 
-        public void publish(int segmentNumber, EventWithToken eventWithToken) {
+        private void publish(@SuppressWarnings("SameParameterValue") int segmentNumber,
+                             EventWithToken eventWithToken) {
+            // Suppressing warning since we're dealing with a mock implementation of the segment
+            @SuppressWarnings("resource")
             MockPersistentStreamSegment segment = segments.computeIfAbsent(segmentNumber, i -> {
-
                 MockPersistentStreamSegment mockPersistentStreamSegment = new MockPersistentStreamSegment(i);
                 callbacks.onSegmentOpened().accept(mockPersistentStreamSegment);
-                mockPersistentStreamSegment.onAvailable(() -> callbacks.onAvailable().accept(mockPersistentStreamSegment));
+                mockPersistentStreamSegment.onAvailable(
+                        () -> callbacks.onAvailable().accept(mockPersistentStreamSegment)
+                );
                 return mockPersistentStreamSegment;
             });
             segment.publish(eventWithToken);
@@ -152,7 +179,8 @@ class PersistentStreamConnectionTest {
         private final ConcurrentLinkedDeque<PersistentStreamEvent> entries = new ConcurrentLinkedDeque<>();
         private final AtomicBoolean closed = new AtomicBoolean();
         private final int segment;
-        private Runnable onAvailable = () -> {};
+        private Runnable onAvailable = () -> {
+        };
         private final AtomicLong lastAcknowledged = new AtomicLong(-1);
 
         private MockPersistentStreamSegment(int segment) {
@@ -198,7 +226,6 @@ class PersistentStreamConnectionTest {
         @Override
         public void close() {
             closed.set(true);
-
         }
 
         @Override
@@ -213,6 +240,7 @@ class PersistentStreamConnectionTest {
 
         @Override
         public void onSegmentClosed(Runnable callback) {
+            // Not required for testing
         }
 
         @Override
@@ -222,7 +250,7 @@ class PersistentStreamConnectionTest {
 
         @Override
         public void error(String error) {
-
+            // Not required for testing
         }
 
         @Override
@@ -230,7 +258,7 @@ class PersistentStreamConnectionTest {
             return segment;
         }
 
-        public void publish(EventWithToken eventWithToken) {
+        private void publish(EventWithToken eventWithToken) {
             entries.add(PersistentStreamEvent.newBuilder().setEvent(eventWithToken).build());
             onAvailable.run();
         }

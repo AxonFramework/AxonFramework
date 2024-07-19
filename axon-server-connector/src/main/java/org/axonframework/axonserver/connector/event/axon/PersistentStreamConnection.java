@@ -51,12 +51,17 @@ import java.util.stream.Collectors;
 import static io.axoniq.axonserver.connector.event.PersistentStreamSegment.PENDING_WORK_DONE_MARKER;
 
 /**
- * Receives the events for a persistent stream and passes batches of events to the event consumer.
+ * A connection instance receiving the events for a persistent stream to pass on in batches of events to an event
+ * consumer.
+ *
+ * @author Marc Gathier
+ * @since 4.10.0
  */
 public class PersistentStreamConnection {
 
-    private static final int MAX_MESSAGES_PER_RUN = 10_000;
     private final Logger logger = LoggerFactory.getLogger(PersistentStreamConnection.class);
+
+    private static final int MAX_MESSAGES_PER_RUN = 10_000;
 
     private final String streamId;
     private final Configuration configuration;
@@ -75,11 +80,12 @@ public class PersistentStreamConnection {
 
     /**
      * Instantiates a connection for a persistent stream.
-     * @param streamId the identifier of the persistent stream
-     * @param configuration global configuration of Axon components
-     * @param persistentStreamProperties properties for the persistent stream
-     * @param scheduler scheduler thread pool to schedule tasks
-     * @param batchSize the batch size for collecting events
+     *
+     * @param streamId                   The identifier of the persistent stream.
+     * @param configuration              Global configuration of Axon components.
+     * @param persistentStreamProperties Properties for the persistent stream.
+     * @param scheduler                  Scheduler thread pool to schedule tasks.
+     * @param batchSize                  The batch size for collecting events.
      */
     public PersistentStreamConnection(String streamId,
                                       Configuration configuration,
@@ -96,12 +102,13 @@ public class PersistentStreamConnection {
 
     /**
      * Instantiates a connection for a persistent stream.
-     * @param streamId the identifier of the persistent stream
-     * @param configuration global configuration of Axon components
-     * @param persistentStreamProperties properties for the persistent stream
-     * @param scheduler scheduler thread pool to schedule tasks
-     * @param batchSize the batch size for collecting events
-     * @param defaultContext the default context to use for the connection
+     *
+     * @param streamId                   The identifier of the persistent stream.
+     * @param configuration              Global configuration of Axon components.
+     * @param persistentStreamProperties Properties for the persistent stream.
+     * @param scheduler                  Scheduler thread pool to schedule tasks.
+     * @param batchSize                  The batch size for collecting events.
+     * @param defaultContext             The default context to use for the connection.
      */
     public PersistentStreamConnection(String streamId,
                                       Configuration configuration,
@@ -120,7 +127,8 @@ public class PersistentStreamConnection {
 
     /**
      * Initiates the connection to Axon Server to read events from the persistent stream.
-     * @param consumer the consumer of batches of event messages
+     *
+     * @param consumer The consumer of batches of event messages.
      */
     public void open(Consumer<List<? extends EventMessage<?>>> consumer) {
         this.consumer.set(consumer);
@@ -128,35 +136,31 @@ public class PersistentStreamConnection {
     }
 
     private void start() {
-        AxonServerConnectionManager axonServerConnectionManager = configuration.getComponent(AxonServerConnectionManager.class);
+        AxonServerConnectionManager axonServerConnectionManager =
+                configuration.getComponent(AxonServerConnectionManager.class);
         AxonServerConfiguration axonServerConfiguration = configuration.getComponent(AxonServerConfiguration.class);
-
+        String context = Strings.isNullOrEmpty(defaultContext) ? axonServerConfiguration.getContext() : defaultContext;
         PersistentStreamCallbacks callbacks = new PersistentStreamCallbacks(this::segmentOpened,
                                                                             this::segmentClosed,
                                                                             this::messageAvailable,
                                                                             this::streamClosed);
-        String context = Strings.isNullOrEmpty(defaultContext) ? axonServerConfiguration.getContext() : defaultContext;
-        EventChannel eventChannel = axonServerConnectionManager.getConnection(
-                context  ).eventChannel();
-        PersistentStream persistentStream = eventChannel.openPersistentStream(streamId,
-                                                                              axonServerConfiguration.getEventFlowControl()
-                                                                                                     .getPermits(),
-                                                                              axonServerConfiguration.getEventFlowControl()
-                                                                                                     .getNrOfNewPermits(),
-                                                                              callbacks,
-                                                                              persistentStreamProperties);
+
+        EventChannel eventChannel = axonServerConnectionManager.getConnection(context).eventChannel();
+        PersistentStream persistentStream = eventChannel.openPersistentStream(
+                streamId,
+                axonServerConfiguration.getEventFlowControl().getPermits(),
+                axonServerConfiguration.getEventFlowControl().getNrOfNewPermits(),
+                callbacks,
+                persistentStreamProperties
+        );
         persistentStreamHolder.set(persistentStream);
     }
 
 
-    private void streamClosed(Throwable throwable) {
-        persistentStreamHolder.set(null);
-        if (throwable != null) {
-            logger.info("{}: Rescheduling persistent stream", streamId, throwable);
-            scheduler.schedule(this::start,
-                               retrySeconds.getAndUpdate(current -> Math.max(60, current *2)),
-                               TimeUnit.SECONDS);
-        }
+    private void segmentOpened(PersistentStreamSegment persistentStreamSegment) {
+        logger.info("Segment opened: {}", persistentStreamSegment);
+        retrySeconds.set(1);
+        segments.put(persistentStreamSegment.segment(), new SegmentConnection(persistentStreamSegment));
     }
 
     private void segmentClosed(PersistentStreamSegment persistentStreamSegment) {
@@ -168,16 +172,20 @@ public class PersistentStreamConnection {
         logger.info("Segment closed: {}", persistentStreamSegment);
     }
 
-    private void segmentOpened(PersistentStreamSegment persistentStreamSegment) {
-        logger.info("Segment opened: {}", persistentStreamSegment);
-        retrySeconds.set(1);
-        segments.put(persistentStreamSegment.segment(), new SegmentConnection(persistentStreamSegment));
-    }
-
     private void messageAvailable(PersistentStreamSegment persistentStreamSegment) {
         SegmentConnection segmentConnection = segments.get(persistentStreamSegment.segment());
         if (segmentConnection != null) {
             segmentConnection.messageAvailable();
+        }
+    }
+
+    private void streamClosed(Throwable throwable) {
+        persistentStreamHolder.set(null);
+        if (throwable != null) {
+            logger.info("{}: Rescheduling persistent stream", streamId, throwable);
+            scheduler.schedule(this::start,
+                               retrySeconds.getAndUpdate(current -> Math.max(60, current * 2)),
+                               TimeUnit.SECONDS);
         }
     }
 
@@ -192,11 +200,11 @@ public class PersistentStreamConnection {
     }
 
     private class SegmentConnection {
+
         private final AtomicBoolean processGate = new AtomicBoolean();
         private final AtomicBoolean doneConfirmed = new AtomicBoolean();
         private final AtomicBoolean closed = new AtomicBoolean();
         private final PersistentStreamSegment persistentStreamSegment;
-
 
         public SegmentConnection(PersistentStreamSegment persistentStreamSegment) {
             this.persistentStreamSegment = persistentStreamSegment;
@@ -220,7 +228,8 @@ public class PersistentStreamConnection {
 
             try {
                 int remaining = Math.max(MAX_MESSAGES_PER_RUN, batchSize);
-                GrpcMetaDataAwareSerializer serializer = new GrpcMetaDataAwareSerializer(configuration.eventSerializer());
+                GrpcMetaDataAwareSerializer serializer =
+                        new GrpcMetaDataAwareSerializer(configuration.eventSerializer());
                 while (remaining > 0 && !closed.get()) {
                     List<PersistentStreamEvent> batch = readBatch(persistentStreamSegment);
                     if (batch.isEmpty()) {
@@ -263,15 +272,9 @@ public class PersistentStreamConnection {
             }
         }
 
-        private void acknowledgeDoneWhenClosed(PersistentStreamSegment persistentStreamSegment) {
-            if (closed.get() &&
-                    doneConfirmed.compareAndSet(false, true)) {
-                persistentStreamSegment.acknowledge(PENDING_WORK_DONE_MARKER);
-            }
-        }
-
-        private List<PersistentStreamEvent> readBatch(PersistentStreamSegment persistentStreamSegment)
-                throws InterruptedException {
+        private List<PersistentStreamEvent> readBatch(
+                PersistentStreamSegment persistentStreamSegment
+        ) throws InterruptedException {
             List<PersistentStreamEvent> batch = new LinkedList<>();
             // read first one without waiting
             PersistentStreamEvent event = persistentStreamSegment.nextIfAvailable();
@@ -280,8 +283,8 @@ public class PersistentStreamConnection {
             }
             batch.add(event);
             // allow next event to arrive within a small amount of time
-            while (batch.size() < batchSize && !closed.get() &&
-                    (event = persistentStreamSegment.nextIfAvailable(1,TimeUnit.MILLISECONDS)) != null) {
+            while (batch.size() < batchSize && !closed.get()
+                    && (event = persistentStreamSegment.nextIfAvailable(1, TimeUnit.MILLISECONDS)) != null) {
                 batch.add(event);
             }
             return batch;
@@ -293,20 +296,28 @@ public class PersistentStreamConnection {
                                      batch.stream()
                                           .map(e -> {
                                               TrackingToken trackingToken = createToken(e);
-                                              return new TrackedDomainEventData<>(trackingToken,
-                                                                                  new GrpcBackedDomainEventData(e.getEvent().getEvent()));
+                                              return new TrackedDomainEventData<>(
+                                                      trackingToken,
+                                                      new GrpcBackedDomainEventData(e.getEvent().getEvent())
+                                              );
                                           }),
                                      serializer,
                                      configuration.upcasterChain())
                              .collect(Collectors.toList());
         }
 
+        private void acknowledgeDoneWhenClosed(PersistentStreamSegment persistentStreamSegment) {
+            if (closed.get() && doneConfirmed.compareAndSet(false, true)) {
+                persistentStreamSegment.acknowledge(PENDING_WORK_DONE_MARKER);
+            }
+        }
+
         private TrackingToken createToken(PersistentStreamEvent event) {
             if (!event.getReplay()) {
                 return new GlobalSequenceTrackingToken(event.getEvent().getToken());
             }
-            return ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(event.getEvent().getToken()+1),
-                                   new GlobalSequenceTrackingToken(event.getEvent().getToken()));
+            return ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(event.getEvent().getToken() + 1),
+                                                 new GlobalSequenceTrackingToken(event.getEvent().getToken()));
         }
 
         public void close() {

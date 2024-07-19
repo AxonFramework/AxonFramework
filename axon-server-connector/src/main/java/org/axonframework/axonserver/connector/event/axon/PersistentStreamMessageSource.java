@@ -27,7 +27,10 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 /**
- * Subscribable message source that receives event from a persistent stream from Axon Server.
+ * A {@link SubscribableMessageSource} that receives event from a persistent stream from Axon Server.
+ *
+ * @author Marc Gathier
+ * @since 4.10.0
  */
 public class PersistentStreamMessageSource implements SubscribableMessageSource<EventMessage<?>> {
 
@@ -35,31 +38,44 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
 
     /**
      * Instantiates a {@code PersistentStreamMessageSource}.
-     * @param name the name of the event processor
-     * @param configuration global configuration of Axon components
-     * @param persistentStreamProperties properties for the persistent stream
-     * @param scheduler scheduler thread pool to schedule tasks
-     * @param batchSize the batch size for collecting events
+     *
+     * @param name                       The name of the event processor.
+     * @param configuration              Global configuration of Axon components.
+     * @param persistentStreamProperties Properties for the persistent stream.
+     * @param scheduler                  Scheduler thread pool to schedule tasks.
+     * @param batchSize                  The batch size for collecting events.
      */
-    public PersistentStreamMessageSource(String name, Configuration configuration, PersistentStreamProperties
-            persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize) {
+    public PersistentStreamMessageSource(String name,
+                                         Configuration configuration,
+                                         PersistentStreamProperties persistentStreamProperties,
+                                         ScheduledExecutorService scheduler,
+                                         int batchSize) {
         this(name, configuration, persistentStreamProperties, scheduler, batchSize, null);
     }
 
 
     /**
      * Instantiates a {@code PersistentStreamMessageSource}.
-     * @param name the name of the event processor
-     * @param configuration global configuration of Axon components
-     * @param persistentStreamProperties properties for the persistent stream
-     * @param scheduler scheduler thread pool to schedule tasks
-     * @param batchSize the batch size for collecting events
-     * @param context the context in which this persistent stream exists (or needs to be created)
+     *
+     * @param name                       The name of the event processor.
+     * @param configuration              Global configuration of Axon components.
+     * @param persistentStreamProperties Properties for the persistent stream.
+     * @param scheduler                  Scheduler thread pool to schedule tasks.
+     * @param batchSize                  The batch size for collecting events.
+     * @param context                    The context in which this persistent stream exists (or needs to be created).
      */
-    public PersistentStreamMessageSource(String name, Configuration configuration, PersistentStreamProperties
-            persistentStreamProperties, ScheduledExecutorService scheduler, int batchSize, String context) {
-        persistentStreamConnection = new PersistentStreamConnection(name, configuration,
-                persistentStreamProperties, scheduler, batchSize, context);
+    public PersistentStreamMessageSource(String name,
+                                         Configuration configuration,
+                                         PersistentStreamProperties persistentStreamProperties,
+                                         ScheduledExecutorService scheduler,
+                                         int batchSize,
+                                         String context) {
+        persistentStreamConnection = new PersistentStreamConnection(name,
+                                                                    configuration,
+                                                                    persistentStreamProperties,
+                                                                    scheduler,
+                                                                    batchSize,
+                                                                    context);
     }
 
     @Override

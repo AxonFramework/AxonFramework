@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
-import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -264,10 +263,10 @@ class AxonServerAutoConfigurationTest {
     void axonServerPersistentStreamBeansCreated() {
         testContext.withPropertyValues("axon.axonserver.persistent-streams[payments].name=My Payments",
                                        "axon.axonserver.persistent-streams[orders].name=My Orders")
-                .run(context -> {
-                    assertThat(context).getBean("payments").isNotNull();
-                    assertThat(context).getBean("orders").isNotNull();
-                });
+                   .run(context -> {
+                       assertThat(context).getBean("payments").isNotNull();
+                       assertThat(context).getBean("orders").isNotNull();
+                   });
     }
 
     @Test
@@ -278,16 +277,18 @@ class AxonServerAutoConfigurationTest {
                                        "axon.eventhandling.processors.payments.mode=SUBSCRIBING")
                    .run(context -> {
                        assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
-                       ConfigurerModule configurerModule = context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
+                       ConfigurerModule configurerModule =
+                               context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
                        Configurer defaultConfigurer = DefaultConfigurer.defaultConfiguration();
                        configurerModule.configureModule(defaultConfigurer);
                        Configuration configuration = defaultConfigurer.buildConfiguration();
-                       SequencingPolicy<? super EventMessage<?>> sequencingPolicy = configuration.eventProcessingConfiguration()
-                                                                                         .sequencingPolicy("payments");
+                       SequencingPolicy<? super EventMessage<?>> sequencingPolicy =
+                               configuration.eventProcessingConfiguration().sequencingPolicy("payments");
                        assertThat(sequencingPolicy).isNotNull();
                        assertThat(sequencingPolicy).isNotInstanceOf(DEFAULT_SEQUENCING_POLICY_CLASS);
                    });
     }
+
     @Test
     void persistentStreamProcessorsConfigurerModuleAddsNoSequencingPolicyWithoutDlq() {
         testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
@@ -295,12 +296,14 @@ class AxonServerAutoConfigurationTest {
                                        "axon.eventhandling.processors.payments.mode=SUBSCRIBING")
                    .run(context -> {
                        assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
-                       ConfigurerModule configurerModule = context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
+                       ConfigurerModule configurerModule =
+                               context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
                        Configurer defaultConfigurer = DefaultConfigurer.defaultConfiguration();
                        configurerModule.configureModule(defaultConfigurer);
                        Configuration configuration = defaultConfigurer.buildConfiguration();
-                       assertThat(configuration.eventProcessingConfiguration().sequencingPolicy("payments")).isInstanceOf(
-                               DEFAULT_SEQUENCING_POLICY_CLASS);
+                       assertThat(
+                               configuration.eventProcessingConfiguration().sequencingPolicy("payments")
+                       ).isInstanceOf(DEFAULT_SEQUENCING_POLICY_CLASS);
                    });
     }
 
