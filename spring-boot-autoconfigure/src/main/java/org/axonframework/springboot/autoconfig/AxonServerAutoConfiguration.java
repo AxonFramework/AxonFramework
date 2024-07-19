@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,10 +103,12 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
-    public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration axonServerConfiguration,
+    public AxonServerConnectionManager platformConnectionManager(AxonServerConnectionDetails connectionDetails,
+                                                                 AxonServerConfiguration axonServerConfiguration,
                                                                  TagsConfigurationProperties tagsConfigurationProperties,
                                                                  ManagedChannelCustomizer managedChannelCustomizer) {
         return AxonServerConnectionManager.builder()
+                                          .routingServers(connectionDetails.routingServers())
                                           .axonServerConfiguration(axonServerConfiguration)
                                           .tagsConfiguration(tagsConfigurationProperties.toTagsConfiguration())
                                           .channelCustomizer(managedChannelCustomizer)
