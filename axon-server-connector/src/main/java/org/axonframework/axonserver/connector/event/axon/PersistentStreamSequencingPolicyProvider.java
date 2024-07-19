@@ -15,7 +15,6 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.config.Configuration;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
@@ -31,21 +30,32 @@ import static java.lang.String.format;
  * Implements the {@link SequencingPolicy} provider for a persistent stream.
  * The provider returns a sequencing key for an event used for the dead letter queue.
  */
-public class PersistentStreamSequencingPolicy
+public class PersistentStreamSequencingPolicyProvider
         implements Function<Configuration, SequencingPolicy<? super EventMessage<?>>> {
 
+    public static final String SEQUENTIAL_PER_AGGREGATE_POLICY = "SequentialPerAggregatePolicy";
+    public static final String META_DATA_SEQUENCING_POLICY = "MetaDataSequencingPolicy";
+    public static final String SEQUENTIAL_POLICY = "SequentialPolicy";
+    public static final String FULL_CONCURRENCY_POLICY = "FullConcurrencyPolicy";
+    public static final String PROPERTY_SEQUENCING_POLICY = "PropertySequencingPolicy";
+    private static final String SEQUENTIAL_POLICY_IDENTIFIER = "SequentialPolicy";
     private final String name;
-    private final AxonServerConfiguration.PersistentStreamProcessorSettings settings;
+    private final String sequencingPolicy;
+    private final List<String> sequencingPolicyParameters;
 
     /**
      * Instantiates the {@code PersistentStreamSequencingPolicy}.
-     * @param name the processor name
-     * @param settings persistent stream settings
+     * @param name the processor name.
+     * @param sequencingPolicy the name of the sequencing policy.
+     * @param sequencingPolicyParameters parameters for the sequencing policy.
      */
-    public PersistentStreamSequencingPolicy(
-            String name, AxonServerConfiguration.PersistentStreamProcessorSettings settings) {
+    public PersistentStreamSequencingPolicyProvider(
+            String name,
+            String sequencingPolicy,
+            List<String> sequencingPolicyParameters) {
         this.name = name;
-        this.settings = settings;
+        this.sequencingPolicy = sequencingPolicy;
+        this.sequencingPolicyParameters = sequencingPolicyParameters;
     }
 
     @Override
@@ -54,33 +64,33 @@ public class PersistentStreamSequencingPolicy
     }
 
     private Object sequencingIdentifier(EventMessage<?> event) {
-        if ("SequentialPerAggregatePolicy".equals(settings.getSequencingPolicy())) {
+        if (SEQUENTIAL_PER_AGGREGATE_POLICY.equals(sequencingPolicy)) {
             if (event instanceof DomainEventMessage) {
                 return ((DomainEventMessage<?>) event).getAggregateIdentifier();
             }
             return event.getIdentifier();
         }
-        if ("MetaDataSequencingPolicy".equals(settings.getSequencingPolicy())) {
+        if (META_DATA_SEQUENCING_POLICY.equals(sequencingPolicy)) {
             List<Object> metaDataValues = new LinkedList<>();
-            for (String sequencingPolicyParameter : settings.getSequencingPolicyParameters()) {
+            for (String sequencingPolicyParameter : sequencingPolicyParameters) {
                 metaDataValues.add(event.getMetaData().get(sequencingPolicyParameter));
             }
             return metaDataValues;
         }
-        if ("SequentialPolicy".equals(settings.getSequencingPolicy())) {
-            return "SequentialPolicy";
+        if (SEQUENTIAL_POLICY.equals(sequencingPolicy)) {
+            return SEQUENTIAL_POLICY_IDENTIFIER;
         }
-        if ("FullConcurrencyPolicy".equals(settings.getSequencingPolicy())) {
+        if (FULL_CONCURRENCY_POLICY.equals(sequencingPolicy)) {
             return event.getIdentifier();
         }
 
-        if ("PropertySequencingPolicy".equals(settings.getSequencingPolicy())) {
+        if (PROPERTY_SEQUENCING_POLICY.equals(sequencingPolicy)) {
             throw new RuntimeException(
                     name + ": Cannot use PropertySequencingPolicy in combination with dead-letter queue");
         }
 
         throw new RuntimeException(
                 format("%s :Unknown sequencing policy %s in combination with dead-letter queue", name,
-                       settings.getSequencingPolicy()));
+                       sequencingPolicy));
     }
 }

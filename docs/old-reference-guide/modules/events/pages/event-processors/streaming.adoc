@@ -1028,6 +1028,7 @@ Axon will ensure each saga instance receives the events it needs to process in t
 
 ____
 
+[[sequencing-policies]]
 Conceptually, the `SequencingPolicy` decides whether an event belongs to a given <<parallel-processing,segment>>.
 Furthermore, Axon guarantees that Events that are part of the same segment are processed sequentially.
 
