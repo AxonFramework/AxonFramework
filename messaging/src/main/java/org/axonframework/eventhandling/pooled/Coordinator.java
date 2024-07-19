@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -553,10 +553,11 @@ class Coordinator {
         }
 
         /**
-         * Sets the maximum number of segments this instance may claim.
+         * Sets the {@link MaxSegmentProvider} providing the maximum number of segments this instance may claim.
          *
-         * @param maxSegmentProvider the maximum number of segments this instance may claim
-         * @return the current Builder instance, for fluent interfacing
+         * @param maxSegmentProvider The {@link MaxSegmentProvider} providing the maximum number of segments this
+         *                           instance may claim.
+         * @return The current Builder instance, for fluent interfacing.
          */
         Builder maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
             this.maxSegmentProvider = maxSegmentProvider;
@@ -841,24 +842,29 @@ class Coordinator {
                                .thenRun(workPackages::clear);
         }
 
-
         /**
-         * Compares the maximum number of segments that can be claimed
-         * by a node for a fair distribution of the segments among available processor nodes.
-         * Releases extra segments claimed by this event processor instance to be available for claim by other processors
-         * @return true if segments were released
+         * Compares the maximum number of segments that can be claimed by a node for a fair distribution of the segments
+         * among available processor nodes. Releases extra segments claimed by this event processor instance to be
+         * available for claim by other processors.
+         *
+         * @return {@code true} if segments were released, {@code false} otherwise.
          */
         private boolean releaseSegmentsIfTooManyClaimed() {
             int maxSegmentsPerNode = maxSegmentProvider.apply(name);
-            boolean tooManySegmentsClaimed = workPackages.size()> maxSegmentsPerNode;
-            if(tooManySegmentsClaimed) {
-                logger.info("Total segments {} for processor {} is above maxSegmentsPerNode = {}, going to release extra claimed segments",
-                        workPackages.size(), name, maxSegmentsPerNode);
-                workPackages.values().stream().limit(workPackages.size() - maxSegmentsPerNode)
-                        .forEach(workPackage -> releaseUntil(workPackage.segment().getSegmentId(),
-                                GenericEventMessage.clock.instant().plusMillis(tokenClaimInterval)));
+            boolean tooManySegmentsClaimed = workPackages.size() > maxSegmentsPerNode;
+            if (tooManySegmentsClaimed) {
+                logger.info("Total segments [{}] for processor [{}] is above maxSegmentsPerNode = [{}], "
+                                    + "going to release surplus claimed segments.",
+                            workPackages.size(), name, maxSegmentsPerNode);
+                workPackages.values()
+                            .stream()
+                            .limit(workPackages.size() - maxSegmentsPerNode)
+                            .forEach(workPackage -> releaseUntil(
+                                    workPackage.segment().getSegmentId(),
+                                    GenericEventMessage.clock.instant().plusMillis(tokenClaimInterval)
+                            ));
             }
-           return tooManySegmentsClaimed;
+            return tooManySegmentsClaimed;
         }
 
         /**
