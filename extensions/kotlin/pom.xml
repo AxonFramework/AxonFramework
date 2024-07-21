@@ -77,7 +77,7 @@
         <maven-install.version>3.1.2</maven-install.version>
         <maven-jar.version>3.4.2</maven-jar.version>
         <maven-javadoc.version>3.5.0</maven-javadoc.version>
-        <maven-release.version>3.1.0</maven-release.version>
+        <maven-release.version>3.1.1</maven-release.version>
         <maven-source.version>3.3.1</maven-source.version>
         <maven-surefire.version>3.3.1</maven-surefire.version>
         <maven-resources.version>3.3.1</maven-resources.version>
