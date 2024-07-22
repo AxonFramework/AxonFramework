@@ -85,7 +85,7 @@
         <postgresql.version>42.7.3</postgresql.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>2.1.1</jakarta.annotation.version><!-- Don't upgrade due to JDK8 -->
-        <jakarta.el.version>6.0.1</jakarta.el.version>
+        <jakarta.el.version>4.0.0</jakarta.el.version><!-- Don't upgrade due to JDK11 -->
         <jakarta.el-impl.version>4.0.2</jakarta.el-impl.version>
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version><!-- Don't upgrade due to JDK8 -->
