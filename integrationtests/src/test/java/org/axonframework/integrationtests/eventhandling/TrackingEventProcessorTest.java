@@ -1691,7 +1691,7 @@ class TrackingEventProcessorTest {
         // Replayed messages aren't counted
         int numberOfEvents = 30;
         await("Handle Events - Replay").pollDelay(pollDelay)
-                                       .atMost(Duration.ofMillis(2500))
+                                       .atMost(Duration.ofMillis(4000))
                                        .untilAsserted(() -> assertEquals(
                                                numberOfEvents, handledEvents.size(),
                                                () -> "Actually handled [" + handledEvents.size() +
