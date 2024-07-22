@@ -71,7 +71,7 @@
             ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
         <!-- Axon Server -->
-        <axonserver-connector-java.version>2024.1.0-SNAPSHOT</axonserver-connector-java.version>
+        <axonserver-connector-java.version>2024.1.0</axonserver-connector-java.version>
         <!-- Caching -->
         <ehcache.version>2.10.9.2</ehcache.version>
         <ehcache3.version>3.10.8</ehcache3.version>
