@@ -84,7 +84,7 @@
         <mysql-connector-java.version>9.0.0</mysql-connector-java.version>
         <postgresql.version>42.7.3</postgresql.version>
         <!-- Jakarta -->
-        <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
+        <jakarta.annotation.version>2.1.1</jakarta.annotation.version><!-- Don't upgrade due to JDK8 -->
         <jakarta.el.version>6.0.1</jakarta.el.version>
         <jakarta.el-impl.version>4.0.2</jakarta.el-impl.version>
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
