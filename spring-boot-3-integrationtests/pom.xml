@@ -27,7 +27,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon-spring-boot-3-integrationtests</artifactId>
-    <version>4.10.0-SNAPSHOT</version>
+    <version>4.10.1-SNAPSHOT</version>
 
     <name>Axon Framework - Spring Boot 3 Integration Tests</name>
     <description>
