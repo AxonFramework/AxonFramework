@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2023. Axon Framework
+  ~ Copyright (c) 2010-2024. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@
         <kotlin.version>1.9.24</kotlin.version>
         <!-- Serialization -->
         <jackson-kotlin.version>2.17.1</jackson-kotlin.version>
-        <kotlin-serialization.version>1.7.1</kotlin-serialization.version>
+        <kotlin-serialization.version>1.6.3</kotlin-serialization.version>
         <!-- Logging -->
         <slf4j.version>2.0.13</slf4j.version>
         <log4j.version>2.13.3</log4j.version>
