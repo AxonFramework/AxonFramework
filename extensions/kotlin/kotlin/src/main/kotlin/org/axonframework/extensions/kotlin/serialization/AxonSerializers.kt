@@ -42,6 +42,7 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken
 import org.axonframework.eventhandling.tokenstore.ConfigToken
+import org.axonframework.extensions.kotlin.messaging.responsetypes.ArrayResponseType
 import org.axonframework.messaging.responsetypes.InstanceResponseType
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType
 import org.axonframework.messaging.responsetypes.OptionalResponseType

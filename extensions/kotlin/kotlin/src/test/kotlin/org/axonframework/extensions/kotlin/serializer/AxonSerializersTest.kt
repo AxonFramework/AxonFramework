@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken
 import org.axonframework.eventhandling.tokenstore.ConfigToken
-import org.axonframework.extensions.kotlin.serialization.ArrayResponseType
+import org.axonframework.extensions.kotlin.messaging.responsetypes.ArrayResponseType
 import org.axonframework.extensions.kotlin.serialization.AxonSerializersModule
 import org.axonframework.extensions.kotlin.serialization.KotlinSerializer
 import org.axonframework.messaging.responsetypes.InstanceResponseType

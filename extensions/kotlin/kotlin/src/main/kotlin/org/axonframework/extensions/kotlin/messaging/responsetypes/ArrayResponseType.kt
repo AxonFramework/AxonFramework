@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.axonframework.extensions.kotlin.serialization
+package org.axonframework.extensions.kotlin.messaging.responsetypes
 
 import org.axonframework.common.ReflectionUtils
 import org.axonframework.common.TypeReflectionUtils
