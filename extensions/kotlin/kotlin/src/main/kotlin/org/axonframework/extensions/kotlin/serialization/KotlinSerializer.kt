@@ -15,31 +15,27 @@
  */
 package org.axonframework.extensions.kotlin.serialization
 
-import kotlinx.serialization.BinaryFormat
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialFormat
+import kotlinx.serialization.*
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.StringFormat
 import kotlinx.serialization.builtins.ArraySerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.SetSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.serializer
-import org.axonframework.serialization.AnnotationRevisionResolver
-import org.axonframework.serialization.ChainingConverter
-import org.axonframework.serialization.Converter
-import org.axonframework.serialization.RevisionResolver
-import org.axonframework.serialization.SerializedObject
-import org.axonframework.serialization.SerializedType
+import org.axonframework.serialization.*
 import org.axonframework.serialization.Serializer
-import org.axonframework.serialization.SimpleSerializedObject
-import org.axonframework.serialization.SimpleSerializedType
-import org.axonframework.serialization.UnknownSerializedType
 import java.util.concurrent.ConcurrentHashMap
 import org.axonframework.serialization.SerializationException as AxonSerializationException
 
 /**
- * Implementation of Axon Serializer that uses a kotlinx.serialization implementation.
+ * Implementation of Axon [Serializer] that uses a [kotlinx.serialization] implementation.
+ *
+ * When instantiating the [KotlinSerializer], use the [AxonSerializersModule] to insert serializers for all common
+ * Axon Framework components.
+ * When the desired serialization format is JSON, the construction of the serializer would look as follows:
+ * `KotlinSerializer(serialFormat = Json { serializersModule = AxonSerializersModule })`
+ *
+ * Other construction parameters of the [KotlinSerializer] are the [RevisionResolver]
+ * (defaulted to a [AnnotationRevisionResolver]) and [Converter] (defaulted to a [ChainingConverter]).
  *
  * @see kotlinx.serialization.Serializer
  * @see org.axonframework.serialization.Serializer
