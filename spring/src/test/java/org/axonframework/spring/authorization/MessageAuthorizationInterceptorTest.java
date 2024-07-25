@@ -49,7 +49,7 @@ class MessageAuthorizationInterceptorTest {
     }
 
     @Test
-    @WithMockUser(username = "admin", authorities = {"aggregate.create"})
+    @WithMockUser(username = "admin", authorities = {"ROLE_aggregate.create"})
     public void shouldAuthorizeAndPropagateUsername() {
         UUID aggregateId = UUID.randomUUID();
         fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor<>())

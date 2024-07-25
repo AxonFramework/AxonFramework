@@ -23,19 +23,22 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 
 /**
- * Message interceptor that verifies authorization based on {@code @PreAuthorize} annotations on commands
+ * Message interceptor that verifies authorization based on {@link org.springframework.security.access.annotation.Secured}
+ * annotations on commands
  *
  * @author Roald Bankras
  *
@@ -49,11 +52,11 @@ public class MessageAuthorizationInterceptor<T extends Message<?>> implements Me
     public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
         throws Exception {
         T message = unitOfWork.getMessage();
-        if(! AnnotationUtils.isAnnotationPresent(message.getPayloadType(), PreAuthorize.class)) {
+        if(! AnnotationUtils.isAnnotationPresent(message.getPayloadType(), Secured.class)) {
             return interceptorChain.proceed();
         }
-        PreAuthorize annotation = message.getPayloadType().getAnnotation(PreAuthorize.class);
-        Set<GrantedAuthority> userId = Optional.ofNullable(message.getMetaData().get("authorities"))
+        Secured annotation = message.getPayloadType().getAnnotation(Secured.class);
+        Set<GrantedAuthority> authorities = Optional.ofNullable(message.getMetaData().get("authorities"))
                                                .map(uId -> {
                                                    log.debug("Found authorities: {}", uId);
                                                    return new HashSet<>((List<GrantedAuthority>) uId);
@@ -62,7 +65,8 @@ public class MessageAuthorizationInterceptor<T extends Message<?>> implements Me
                                                        "No authorities found"));
 
         log.debug("Authorizing for {} and {}", message.getPayloadType().getName(), annotation.value());
-        if (userId.contains(new SimpleGrantedAuthority(annotation.value()))) {
+        authorities.retainAll(Arrays.stream(annotation.value()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
+        if (!authorities.isEmpty()) {
             return interceptorChain.proceed();
         }
         throw new UnauthorizedMessageException("Unauthorized message " + message.getIdentifier());

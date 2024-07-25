@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.authorization;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.annotation.Secured;
 
 import java.util.UUID;
 
@@ -25,7 +25,7 @@ import java.util.UUID;
  *
  * @author Roald Bankras
  */
-@PreAuthorize("aggregate.create")
+@Secured("ROLE_aggregate.create")
 public class CreateAggregateCommand {
 
     private final UUID aggregateId;
