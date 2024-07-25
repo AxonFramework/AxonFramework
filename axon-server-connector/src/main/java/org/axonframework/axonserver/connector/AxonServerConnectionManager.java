@@ -230,7 +230,10 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder routingServers(String routingServers) {
-            assertNonEmpty(routingServers, "");
+            assertNonEmpty(
+                    routingServers,
+                    "Routing Servers should be a non-empty String of a comma-separated [hostname:grpcPort] entries"
+            );
             this.routingServers = routingServers;
             return this;
         }
