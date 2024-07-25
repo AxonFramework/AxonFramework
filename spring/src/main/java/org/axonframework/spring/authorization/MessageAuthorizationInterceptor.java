@@ -38,7 +38,7 @@ import javax.annotation.Nonnull;
 
 /**
  * Message interceptor that verifies authorization based on {@link org.springframework.security.access.annotation.Secured}
- * annotations on commands
+ * annotations on the payload of {@link Message Messages}.
  *
  * @author Roald Bankras
  *
