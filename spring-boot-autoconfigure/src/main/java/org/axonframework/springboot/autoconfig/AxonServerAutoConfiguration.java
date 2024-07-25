@@ -86,13 +86,43 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Configuration
+    @ConditionalOnMissingClass(value = "org.springframework.boot.autoconfigure.service.connection.ConnectionDetails")
+    public static class DefaultConnectionManagerConfiguration {
+
+        @Bean
+        public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration axonServerConfig,
+                                                                     TagsConfigurationProperties tagProperties,
+                                                                     ManagedChannelCustomizer managedChannelCustomizer) {
+            return AxonServerConnectionManager.builder()
+                                              .routingServers(axonServerConfig.getServers())
+                                              .axonServerConfiguration(axonServerConfig)
+                                              .tagsConfiguration(tagProperties.toTagsConfiguration())
+                                              .channelCustomizer(managedChannelCustomizer)
+                                              .build();
+        }
+    }
+
+    @Configuration
     @ConditionalOnClass(name = "org.springframework.boot.autoconfigure.service.connection.ConnectionDetails")
-    public static class ConnectionDetailsConfiguration {
+    public static class ConnectionDetailsConnectionManagerConfiguration {
 
         @Bean
         @ConditionalOnMissingBean(AxonServerConnectionDetails.class)
         PropertiesAxonServerConnectionDetails axonServerConnectionDetails(AxonServerConfiguration configuration) {
             return new PropertiesAxonServerConnectionDetails(configuration);
+        }
+
+        @Bean
+        public AxonServerConnectionManager platformConnectionManager(AxonServerConnectionDetails connectionDetails,
+                                                                     AxonServerConfiguration axonServerConfig,
+                                                                     TagsConfigurationProperties tagProperties,
+                                                                     ManagedChannelCustomizer managedChannelCustomizer) {
+            return AxonServerConnectionManager.builder()
+                                              .routingServers(connectionDetails.routingServers())
+                                              .axonServerConfiguration(axonServerConfig)
+                                              .tagsConfiguration(tagProperties.toTagsConfiguration())
+                                              .channelCustomizer(managedChannelCustomizer)
+                                              .build();
         }
     }
 
@@ -100,19 +130,6 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @ConditionalOnMissingBean
     public ManagedChannelCustomizer managedChannelCustomizer() {
         return ManagedChannelCustomizer.identity();
-    }
-
-    @Bean
-    public AxonServerConnectionManager platformConnectionManager(AxonServerConnectionDetails connectionDetails,
-                                                                 AxonServerConfiguration axonServerConfiguration,
-                                                                 TagsConfigurationProperties tagsConfigurationProperties,
-                                                                 ManagedChannelCustomizer managedChannelCustomizer) {
-        return AxonServerConnectionManager.builder()
-                                          .routingServers(connectionDetails.routingServers())
-                                          .axonServerConfiguration(axonServerConfiguration)
-                                          .tagsConfiguration(tagsConfigurationProperties.toTagsConfiguration())
-                                          .channelCustomizer(managedChannelCustomizer)
-                                          .build();
     }
 
     @Bean
