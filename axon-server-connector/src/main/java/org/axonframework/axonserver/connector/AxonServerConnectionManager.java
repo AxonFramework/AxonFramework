@@ -25,6 +25,7 @@ import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
@@ -217,7 +218,7 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
      */
     public static class Builder {
 
-        private String routingServers = "localhost:8024";
+        private String routingServers;
         private AxonServerConfiguration axonServerConfiguration;
         private TagsConfiguration tagsConfiguration = new TagsConfiguration();
         private UnaryOperator<ManagedChannelBuilder<?>> channelCustomization;
@@ -307,6 +308,8 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
             AxonServerConnectionFactory.Builder builder = AxonServerConnectionFactory.forClient(
                     axonServerConfiguration.getComponentName(), axonServerConfiguration.getClientId()
             );
+
+            this.routingServers = ObjectUtils.getOrDefault(routingServers, axonServerConfiguration.getServers());
             List<NodeInfo> nodeInfos = mapToNodeInfos(routingServers);
             if (!nodeInfos.isEmpty()) {
                 ServerAddress[] addresses = new ServerAddress[nodeInfos.size()];
