@@ -1,0 +1,13 @@
+name: axon_framework_ref
+title: Axon Framework New Reference Guide (WIP-Draft)
+version: true
+prerelease: true
+
+asciidoc:
+  attributes:
+    component_description: The Axon Framework reference documentation
+    type: reference
+    group: product
+
+nav:
+  - modules/nav.adoc

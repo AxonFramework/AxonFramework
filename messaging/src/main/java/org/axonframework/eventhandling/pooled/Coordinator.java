@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ class Coordinator {
     private final long tokenClaimInterval;
     private final long claimExtensionThreshold;
     private final Clock clock;
-    private final int maxClaimedSegments;
+    private final MaxSegmentProvider maxSegmentProvider;
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final boolean coordinatorExtendsClaims;
@@ -126,7 +126,7 @@ class Coordinator {
         this.tokenClaimInterval = builder.tokenClaimInterval;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.clock = builder.clock;
-        this.maxClaimedSegments = builder.maxClaimedSegments;
+        this.maxSegmentProvider = builder.maxSegmentProvider;
         this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
@@ -400,7 +400,7 @@ class Coordinator {
         private long tokenClaimInterval = 5000;
         private long claimExtensionThreshold = 5000;
         private Clock clock = GenericEventMessage.clock;
-        private int maxClaimedSegments;
+        private MaxSegmentProvider  maxSegmentProvider;
         private int initialSegmentCount = 16;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
         private Runnable shutdownAction = () -> {
@@ -553,13 +553,14 @@ class Coordinator {
         }
 
         /**
-         * Sets the maximum number of segments this instance may claim.
+         * Sets the {@link MaxSegmentProvider} providing the maximum number of segments this instance may claim.
          *
-         * @param maxClaimedSegments the maximum number of segments this instance may claim
-         * @return the current Builder instance, for fluent interfacing
+         * @param maxSegmentProvider The {@link MaxSegmentProvider} providing the maximum number of segments this
+         *                           instance may claim.
+         * @return The current Builder instance, for fluent interfacing.
          */
-        Builder maxClaimedSegments(int maxClaimedSegments) {
-            this.maxClaimedSegments = maxClaimedSegments;
+        Builder maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
+            this.maxSegmentProvider = maxSegmentProvider;
             return this;
         }
 
@@ -758,23 +759,25 @@ class Coordinator {
                 // Claim new segments, construct work packages per new segment, and open stream based on lowest segment
                 unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
                 try {
-                    logger.debug("Processor [{}] will try to claim new segments.", name);
-                    Map<Segment, TrackingToken> newSegments = claimNewSegments();
                     TrackingToken streamStartPosition = lastScheduledToken;
+                    if(!releaseSegmentsIfTooManyClaimed()) {
+                        logger.debug("Processor [{}] will try to claim new segments.", name);
+                        Map<Segment, TrackingToken> newSegments = claimNewSegments();
 
-                    for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
-                        Segment segment = entry.getKey();
-                        TrackingToken token = entry.getValue();
-                        TrackingToken otherUnwrapped = WrappedToken.unwrapLowerBound(token);
+                        for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
+                            Segment segment = entry.getKey();
+                            TrackingToken token = entry.getValue();
+                            TrackingToken otherUnwrapped = WrappedToken.unwrapLowerBound(token);
 
-                        streamStartPosition = streamStartPosition == null || otherUnwrapped == null
-                                              ? null : streamStartPosition.lowerBound(otherUnwrapped);
-                        workPackages.computeIfAbsent(segment.getSegmentId(),
-                                                     wp -> workPackageFactory.apply(segment, token));
-                    }
+                            streamStartPosition = streamStartPosition == null || otherUnwrapped == null
+                                    ? null : streamStartPosition.lowerBound(otherUnwrapped);
+                            workPackages.computeIfAbsent(segment.getSegmentId(),
+                                    wp -> workPackageFactory.apply(segment, token));
+                        }
 
-                    if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
-                        logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
+                        if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
+                            logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
+                        }
                     }
                     ensureOpenStream(streamStartPosition);
                 } catch (Exception e) {
@@ -840,6 +843,31 @@ class Coordinator {
         }
 
         /**
+         * Compares the maximum number of segments that can be claimed by a node for a fair distribution of the segments
+         * among available processor nodes. Releases extra segments claimed by this event processor instance to be
+         * available for claim by other processors.
+         *
+         * @return {@code true} if segments were released, {@code false} otherwise.
+         */
+        private boolean releaseSegmentsIfTooManyClaimed() {
+            int maxSegmentsPerNode = maxSegmentProvider.apply(name);
+            boolean tooManySegmentsClaimed = workPackages.size() > maxSegmentsPerNode;
+            if (tooManySegmentsClaimed) {
+                logger.info("Total segments [{}] for processor [{}] is above maxSegmentsPerNode = [{}], "
+                                    + "going to release surplus claimed segments.",
+                            workPackages.size(), name, maxSegmentsPerNode);
+                workPackages.values()
+                            .stream()
+                            .limit(workPackages.size() - maxSegmentsPerNode)
+                            .forEach(workPackage -> releaseUntil(
+                                    workPackage.segment().getSegmentId(),
+                                    GenericEventMessage.clock.instant().plusMillis(tokenClaimInterval)
+                            ));
+            }
+            return tooManySegmentsClaimed;
+        }
+
+        /**
          * Attempts to claim new segments.
          *
          * @return a Map with each {@link TrackingToken} for newly claimed {@link Segment}
@@ -852,9 +880,7 @@ class Coordinator {
             List<Segment> unClaimedSegments = segments.stream()
                                                       .filter(segment -> !workPackages.containsKey(segment.getSegmentId()))
                                                       .collect(Collectors.toList());
-
-            int maxSegmentsToClaim = maxClaimedSegments - workPackages.size();
-
+            int maxSegmentsToClaim = maxSegmentProvider.apply(name) - workPackages.size();
             for (Segment segment : unClaimedSegments) {
                 int segmentId = segment.getSegmentId();
                 if (isSegmentBlockedFromClaim(segmentId)) {

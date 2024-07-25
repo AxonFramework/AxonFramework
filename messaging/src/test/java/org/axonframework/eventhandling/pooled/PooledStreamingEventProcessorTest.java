@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -961,7 +961,7 @@ class PooledStreamingEventProcessorTest {
     @Test
     void maxCapacityReturnsConfiguredCapacity() {
         int expectedMaxCapacity = 500;
-        setTestSubject(createTestSubject(builder -> builder.maxClaimedSegments(expectedMaxCapacity)));
+        setTestSubject(createTestSubject(builder -> builder.maxSegmentProvider(p -> expectedMaxCapacity)));
 
         assertEquals(expectedMaxCapacity, testSubject.maxCapacity());
     }
@@ -1157,8 +1157,8 @@ class PooledStreamingEventProcessorTest {
     void buildWithZeroOrNegativeMaxCapacityThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxClaimedSegments(0));
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxClaimedSegments(-1));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSegmentProvider(e -> 0));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSegmentProvider(e -> -1));
     }
 
     @Test

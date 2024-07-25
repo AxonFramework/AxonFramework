@@ -1,0 +1,14 @@
+name: identifier-generation-guide
+title: Axon Framework Identifier Generation Guide
+version: true
+prerelease: true
+start_page: ROOT:index.adoc
+
+asciidoc:
+  attributes:
+    component_description: Guide that covers several considerations in regards to identifier generation in Axon Framework-based applications.
+    type: guide
+    group: axon-framework
+
+nav:
+  - modules/nav.adoc

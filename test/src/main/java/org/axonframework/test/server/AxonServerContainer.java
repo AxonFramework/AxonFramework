@@ -37,7 +37,7 @@ import java.util.Optional;
  */
 public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
 
-    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("axoniq/axonserver:latest-dev");
+    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("axoniq/axonserver");
 
     private static final int AXON_SERVER_HTTP_PORT = 8024;
     private static final int AXON_SERVER_GRPC_PORT = 8124;
@@ -115,7 +115,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
     protected void doStart() {
         super.doStart();
         try {
-            AxonServerContainerUtils.initCluster(getHost(), getHttpPort());
+            AxonServerContainerUtils.initCluster(getHost(), getHttpPort(), isShouldBeReused());
         } catch (IOException e) {
             throw new ContainerLaunchException("Axon Server cluster initialization failed.", e);
         }
