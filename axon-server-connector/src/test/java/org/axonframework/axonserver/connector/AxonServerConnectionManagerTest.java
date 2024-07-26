@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -376,5 +376,17 @@ class AxonServerConnectionManagerTest {
     void buildWithoutAxonServerConfigurationThrowsAxonConfigurationException() {
         AxonServerConnectionManager.Builder builderTestSubject = AxonServerConnectionManager.builder();
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void buildWithNullRoutingServersThrowsAxonConfigurationException() {
+        AxonServerConnectionManager.Builder builderTestSubject = AxonServerConnectionManager.builder();
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.routingServers(null));
+    }
+
+    @Test
+    void buildWithEmptyRoutingServersThrowsAxonConfigurationException() {
+        AxonServerConnectionManager.Builder builderTestSubject = AxonServerConnectionManager.builder();
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.routingServers(""));
     }
 }
