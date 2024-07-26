@@ -1008,7 +1008,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         protected void doAppendEvents(List<? extends EventMessage<?>> events) {
-            checkDuplicateAggregateConstruction(events.get(0));
             publishedEvents.addAll(events);
             events.stream().filter(DomainEventMessage.class::isInstance).map(e -> (DomainEventMessage<?>) e)
                   .forEach(event -> {
@@ -1026,40 +1025,17 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                       "Writing events for an unexpected aggregate. This could " +
                                               "indicate that a wrong aggregate is being triggered.");
                           } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
-                              throw new EventStoreException(format("Unexpected sequence number on stored event. " +
-                                                                           "Expected %s, \n but got %s.",
-                                                                   lastEvent.getSequenceNumber() + 1,
-                                                                   event.getSequenceNumber()));
+                              throw new FixtureExecutionException(format(
+                                      "Unexpected sequence number on stored event. " +
+                                              "Expected %s, \n but got %s.\n" +
+                                              "When constructing an aggregate in the when-phase,"
+                                              + " make sure that the given-phase is empty.",
+                                      lastEvent.getSequenceNumber() + 1, event.getSequenceNumber()
+                              ));
                           }
                       }
                       storedEvents.add(event);
                   });
-        }
-
-        /**
-         * Check if the test fixture constructed an aggregate twice, by validating if the given {@code firstToAppend}
-         * event is a {@link DomainEventMessage} with {@link DomainEventMessage#getSequenceNumber() sequence number} 0.
-         * If this is the case while there are events or commands provided in the given-phase, a
-         * {@link FixtureExecutionException} is thrown to signal the fixture (accidentally) constructs the aggregate
-         * again in the when-phase.
-         *
-         * @param firstToAppend The first event to be appended in the {@link #doAppendEvents(List)} operation to
-         *                      validate if it has a {@link DomainEventMessage#getSequenceNumber() sequence number} of
-         *                      0.
-         */
-        private void checkDuplicateAggregateConstruction(@Nullable EventMessage<?> firstToAppend) {
-            if (givenEvents.isEmpty() || firstToAppend == null) {
-                return;
-            }
-
-            if (DomainEventMessage.class.isAssignableFrom(firstToAppend.getClass())
-                    && ((DomainEventMessage<?>) firstToAppend).getSequenceNumber() == 0) {
-                throw new FixtureExecutionException(
-                        "Appending an event with sequence number 0 while there are already given events. "
-                                + "When constructing an aggregate in the when-phase, "
-                                + "make sure that the given-phase is empty."
-                );
-            }
         }
 
         private void injectAggregateIdentifier() {
