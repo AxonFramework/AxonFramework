@@ -100,7 +100,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
@@ -1008,34 +1007,35 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         protected void doAppendEvents(List<? extends EventMessage<?>> events) {
-            publishedEvents.addAll(events);
-            events.stream().filter(DomainEventMessage.class::isInstance).map(e -> (DomainEventMessage<?>) e)
-                  .forEach(event -> {
-                      if (aggregateIdentifier == null) {
-                          aggregateIdentifier = event.getAggregateIdentifier();
-                          injectAggregateIdentifier();
-                      }
+            events.forEach(e -> {
+                if (!DomainEventMessage.class.isInstance(e)) {
+                    // Since the event is not a domain event, only publish it i.o. validating/storing it.
+                    publishedEvents.add(e);
+                    return;
+                }
+                DomainEventMessage<?> event = (DomainEventMessage<?>) e;
 
-                      DomainEventMessage<?> lastEvent =
-                              (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
+                if (aggregateIdentifier == null) {
+                    aggregateIdentifier = event.getAggregateIdentifier();
+                    injectAggregateIdentifier();
+                }
 
-                      if (lastEvent != null) {
-                          if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
-                              throw new EventStoreException(
-                                      "Writing events for an unexpected aggregate. This could " +
-                                              "indicate that a wrong aggregate is being triggered.");
-                          } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
-                              throw new FixtureExecutionException(format(
-                                      "Unexpected sequence number on stored event. " +
-                                              "Expected %s, \n but got %s.\n" +
-                                              "When constructing an aggregate in the when-phase,"
-                                              + " make sure that the given-phase is empty.",
-                                      lastEvent.getSequenceNumber() + 1, event.getSequenceNumber()
-                              ));
-                          }
-                      }
-                      storedEvents.add(event);
-                  });
+                DomainEventMessage<?> lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
+
+                if (lastEvent != null) {
+                    if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
+                        throw new EventStoreException("Writing events for an unexpected aggregate. This could "
+                                                              + "indicate that a wrong aggregate is being triggered.");
+                    } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
+                        throw new EventStoreException(format(
+                                "Unexpected sequence number on stored event. " + "Expected %s, \n but got %s.",
+                                lastEvent.getSequenceNumber() + 1, event.getSequenceNumber()
+                        ));
+                    }
+                }
+                publishedEvents.add(event);
+                storedEvents.add(event);
+            });
         }
 
         private void injectAggregateIdentifier() {

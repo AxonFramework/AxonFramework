@@ -91,11 +91,10 @@ class FixtureTest_Generic {
     void storingExistingAggregateGeneratesException() {
         fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
-        String exceptionMessage = assertThrows(FixtureExecutionException.class, () ->
-                fixture.given(new MyEvent("aggregateId", 1))
-                       .when(new CreateAggregateCommand("aggregateId"))
-        ).getMessage();
-        assertTrue(exceptionMessage.contains("Unexpected sequence number on stored event."));
+        fixture.given(new MyEvent("aggregateId", 1))
+               .when(new CreateAggregateCommand("aggregateId"))
+               .expectException(EventStoreException.class)
+               .expectNoEvents();
     }
 
     @Test
@@ -145,7 +144,7 @@ class FixtureTest_Generic {
     @Test
     void fixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        assertThrows(FixtureExecutionException.class, () ->
+        assertThrows(EventStoreException.class, () ->
                 fixture.getEventStore().publish(
                         new GenericDomainEventMessage<>("test", identifier, 0, new StubDomainEvent()),
                         new GenericDomainEventMessage<>("test", identifier, 2, new StubDomainEvent()))

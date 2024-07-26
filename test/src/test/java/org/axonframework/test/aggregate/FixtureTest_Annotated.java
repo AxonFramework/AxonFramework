@@ -216,7 +216,7 @@ class FixtureTest_Annotated {
     @Test
     void fixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        assertThrows(FixtureExecutionException.class, () ->
+        assertThrows(EventStoreException.class, () ->
                 fixture.getEventStore().publish(
                         new GenericDomainEventMessage<>("test", identifier, 0, new StubDomainEvent()),
                         new GenericDomainEventMessage<>("test", identifier, 2, new StubDomainEvent()))
@@ -291,25 +291,21 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void fixtureThrowsFixtureExecutionExceptionWhenHandlingAggregateConstructingCommandWhileThereAreGivenEvents() {
+    void fixtureThrowsEventStoreExceptionWhenHandlingAggregateConstructingCommandWhileThereAreGivenEvents() {
         fixture.registerInjectableResource(new HardToCreateResource());
-        String exceptionMessage = assertThrows(
-                FixtureExecutionException.class,
-                () -> fixture.given(new MyEvent(AGGREGATE_ID, 0))
-                             .when(new CreateAggregateCommand(AGGREGATE_ID))
-        ).getMessage();
-        assertTrue(exceptionMessage.contains("Unexpected sequence number on stored event."));
+        fixture.given(new MyEvent(AGGREGATE_ID, 0))
+               .when(new CreateAggregateCommand(AGGREGATE_ID))
+               .expectException(EventStoreException.class)
+               .expectNoEvents();
     }
 
     @Test
-    void fixtureThrowsFixtureExecutionExceptionWhenHandlingAggregateConstructingCommandWhileThereAreGivenCommand() {
+    void fixtureThrowsEventStoreExceptionWhenHandlingAggregateConstructingCommandWhileThereAreGivenCommand() {
         fixture.registerInjectableResource(new HardToCreateResource());
-        String exceptionMessage = assertThrows(
-                FixtureExecutionException.class,
-                () -> fixture.givenCommands(new CreateAggregateCommand(AGGREGATE_ID))
-                             .when(new CreateAggregateCommand(AGGREGATE_ID))
-        ).getMessage();
-        assertTrue(exceptionMessage.contains("Unexpected sequence number on stored event."));
+        fixture.givenCommands(new CreateAggregateCommand(AGGREGATE_ID))
+               .when(new CreateAggregateCommand(AGGREGATE_ID))
+               .expectException(EventStoreException.class)
+               .expectNoEvents();
     }
 
     private static class StubDomainEvent {
