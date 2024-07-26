@@ -100,6 +100,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
@@ -1007,15 +1008,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         protected void doAppendEvents(List<? extends EventMessage<?>> events) {
-            if (!givenEvents.isEmpty() && !events.isEmpty()) {
-                EventMessage<?> firstEventToAppend = events.get(0);
-                if (DomainEventMessage.class.isAssignableFrom(firstEventToAppend.getClass())) {
-                    if (((DomainEventMessage<?>) firstEventToAppend).getSequenceNumber() == 0) {
-                        throw new FixtureExecutionException("let's try");
-                    }
-                }
-            }
-
+            checkDuplicateAggregateConstruction(events.get(0));
             publishedEvents.addAll(events);
             events.stream().filter(DomainEventMessage.class::isInstance).map(e -> (DomainEventMessage<?>) e)
                   .forEach(event -> {
@@ -1041,6 +1034,32 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                       }
                       storedEvents.add(event);
                   });
+        }
+
+        /**
+         * Check if the test fixture constructed an aggregate twice, by validating if the given {@code firstToAppend}
+         * event is a {@link DomainEventMessage} with {@link DomainEventMessage#getSequenceNumber() sequence number} 0.
+         * If this is the case while there are events or commands provided in the given-phase, a
+         * {@link FixtureExecutionException} is thrown to signal the fixture (accidentally) constructs the aggregate
+         * again in the when-phase.
+         *
+         * @param firstToAppend The first event to be appended in the {@link #doAppendEvents(List)} operation to
+         *                      validate if it has a {@link DomainEventMessage#getSequenceNumber() sequence number} of
+         *                      0.
+         */
+        private void checkDuplicateAggregateConstruction(@Nullable EventMessage<?> firstToAppend) {
+            if (givenEvents.isEmpty() || firstToAppend == null) {
+                return;
+            }
+
+            if (DomainEventMessage.class.isAssignableFrom(firstToAppend.getClass())
+                    && ((DomainEventMessage<?>) firstToAppend).getSequenceNumber() == 0) {
+                throw new FixtureExecutionException(
+                        "Appending an event with sequence number 0 while there are already given events. "
+                                + "When constructing an aggregate in the when-phase, "
+                                + "make sure that the given-phase is empty."
+                );
+            }
         }
 
         private void injectAggregateIdentifier() {
