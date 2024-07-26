@@ -18,8 +18,11 @@ package org.axonframework.spring.authorization;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.spring.stereotype.Aggregate;
+import org.springframework.security.access.annotation.Secured;
 
 import java.util.UUID;
 
@@ -36,12 +39,16 @@ public class TestAggregate {
     @AggregateIdentifier
     private UUID aggregateId;
 
-    public TestAggregate() {
+    @CommandHandler
+    @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+    @Secured("ROLE_aggregate.create")
+    public void create(CreateAggregateCommand cmd) {
+        apply(new AggregateCreatedEvent(cmd.getAggregateId()));
     }
 
     @CommandHandler
-    public TestAggregate(CreateAggregateCommand cmd) {
-        apply(new AggregateCreatedEvent(cmd.getAggregateId()));
+    public void update(UpdateAggregateCommand cmd) {
+        apply(new AggregateUpdatedEvent(cmd.getAggregateId()));
     }
 
     @EventSourcingHandler
