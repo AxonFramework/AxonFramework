@@ -10,7 +10,7 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-  milestone: 7
+  milestone: 8
   reviewers:
     - "AxonFramework/framework-developers"
     - "sandjelkovic"
@@ -30,7 +30,7 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-  milestone: 7
+  milestone: 8
   reviewers:
     - "AxonFramework/framework-developers"
     - "sandjelkovic"
