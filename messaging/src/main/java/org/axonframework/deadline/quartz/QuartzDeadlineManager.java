@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,23 +186,27 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        spanFactory
-                .createCancelAllWithinScopeSpan(deadlineName, scope)
-                .run(() -> {
-                    try {
-                        Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.jobGroupEquals(deadlineName));
-                        for (JobKey jobKey : jobKeys) {
-                            JobDetail jobDetail = scheduler.getJobDetail(jobKey);
-                            ScopeDescriptor jobScope = DeadlineJob.DeadlineJobDataBinder
-                                    .deadlineScope(serializer, jobDetail.getJobDataMap());
-                            if (scope.equals(jobScope)) {
-                                cancelSchedule(jobKey);
-                            }
-                        }
-                    } catch (SchedulerException e) {
-                        throw new DeadlineException(CANCEL_ERROR_MESSAGE, e);
-                    }
-                });
+        // By serializing and deserializing the ScopeDescriptor we make certain that the givenScope is in the right
+        // format to compare with the outcome from the
+        // DeadlineJob.DeadlineJobDataBinder#deadlineScope(Serializer, JobDataMap) operation.
+        ScopeDescriptor givenScope = serializer.deserialize(serializer.serialize(scope, String.class));
+
+        spanFactory.createCancelAllWithinScopeSpan(deadlineName, givenScope)
+                   .run(() -> {
+                       try {
+                           Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.jobGroupEquals(deadlineName));
+                           for (JobKey jobKey : jobKeys) {
+                               JobDetail jobDetail = scheduler.getJobDetail(jobKey);
+                               ScopeDescriptor jobScope = DeadlineJob.DeadlineJobDataBinder
+                                       .deadlineScope(serializer, jobDetail.getJobDataMap());
+                               if (givenScope.equals(jobScope)) {
+                                   cancelSchedule(jobKey);
+                               }
+                           }
+                       } catch (SchedulerException e) {
+                           throw new DeadlineException(CANCEL_ERROR_MESSAGE, e);
+                       }
+                   });
     }
 
     private void cancelSchedule(JobKey jobKey) {
