@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -86,11 +87,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static final int DEADLINE_TIMEOUT = 100;
     private static final int DEADLINE_WAIT_THRESHOLD = 15 * DEADLINE_TIMEOUT;
     private static final int CHILD_ENTITY_DEADLINE_TIMEOUT = 250;
-    private static final String IDENTIFIER = "id";
+    private static final UUID IDENTIFIER = UUID.randomUUID();
+    private static final UUID FAKE_IDENTIFIER = UUID.randomUUID();
     private static final boolean CANCEL_BEFORE_DEADLINE = true;
     private static final boolean DO_NOT_CANCEL_BEFORE_DEADLINE = false;
     private static final String END_SAGA = "end-saga";
-    private static final String SAGA_ENDED = "saga-ended";
+    private static final UUID SAGA_ENDED = UUID.randomUUID();
     private static final boolean LIVE = false;
     private static final boolean CLOSED = true;
     // This ensures we do not wire Axon Server components
@@ -280,14 +282,14 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
             uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
                     .asDeadlineMessage(deadlineMessage.getDeadlineName(),
-                                       new DeadlinePayload("fakeId"),
+                                       new DeadlinePayload(FAKE_IDENTIFIER),
                                        deadlineMessage.getTimestamp()));
             return chain.proceed();
         });
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
-                              new DeadlineOccurredEvent(new DeadlinePayload("fakeId")));
+                              new DeadlineOccurredEvent(new DeadlinePayload(FAKE_IDENTIFIER)));
     }
 
     @Test
@@ -295,12 +297,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
         //noinspection resource
         configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
                 GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(),
-                                                         new DeadlinePayload("fakeId"),
+                                                         new DeadlinePayload(FAKE_IDENTIFIER),
                                                          m.getTimestamp()));
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
-                              new DeadlineOccurredEvent(new DeadlinePayload("fakeId")));
+                              new DeadlineOccurredEvent(new DeadlinePayload(FAKE_IDENTIFIER)));
     }
 
     @Test
@@ -453,14 +455,14 @@ public abstract class AbstractDeadlineManagerTestSuite {
         //noinspection resource
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
             uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
-                    .asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload("fakeId"),
+                    .asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload(FAKE_IDENTIFIER),
                                        deadlineMessage.getTimestamp()));
             return chain.proceed();
         });
         configuration.eventStore().publish(testEventMessage);
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
-                              new DeadlineOccurredEvent(new DeadlinePayload("fakeId")));
+                              new DeadlineOccurredEvent(new DeadlinePayload(FAKE_IDENTIFIER)));
         assertSagaIs(LIVE);
     }
 
@@ -471,12 +473,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
         //noinspection resource
         configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
                 GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(),
-                                                         new DeadlinePayload("fakeId"),
+                                                         new DeadlinePayload(FAKE_IDENTIFIER),
                                                          m.getTimestamp()));
         configuration.eventStore().publish(testEventMessage);
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
-                              new DeadlineOccurredEvent(new DeadlinePayload("fakeId")));
+                              new DeadlineOccurredEvent(new DeadlinePayload(FAKE_IDENTIFIER)));
         assertSagaIs(LIVE);
     }
 
@@ -522,31 +524,31 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private void assertSagaIs(boolean live) {
         //noinspection unchecked
         SagaStore<MySaga> sagaStore = configuration.eventProcessingConfiguration().sagaStore();
-        Set<String> sagaIds = sagaStore.findSagas(MySaga.class, new AssociationValue("id", IDENTIFIER));
+        Set<String> sagaIds = sagaStore.findSagas(MySaga.class, new AssociationValue("id", IDENTIFIER.toString()));
         assertEquals(live, sagaIds.isEmpty());
     }
 
     private static class CreateMyAggregateCommand {
 
-        private final String id;
+        private final UUID id;
         private final boolean cancelBeforeDeadline;
         private final int deadlineMillis;
 
-        private CreateMyAggregateCommand(String id) {
+        private CreateMyAggregateCommand(UUID id) {
             this(id, false);
         }
 
-        private CreateMyAggregateCommand(String id, int deadlineMillis) {
+        private CreateMyAggregateCommand(UUID id, int deadlineMillis) {
             this(id, deadlineMillis, false);
         }
 
-        private CreateMyAggregateCommand(String id, boolean cancelBeforeDeadline) {
+        private CreateMyAggregateCommand(UUID id, boolean cancelBeforeDeadline) {
             this.id = id;
             this.cancelBeforeDeadline = cancelBeforeDeadline;
             this.deadlineMillis = DEADLINE_TIMEOUT;
         }
 
-        private CreateMyAggregateCommand(String id, int deadlineMillis, boolean cancelBeforeDeadline) {
+        private CreateMyAggregateCommand(UUID id, int deadlineMillis, boolean cancelBeforeDeadline) {
             this.id = id;
             this.cancelBeforeDeadline = cancelBeforeDeadline;
             this.deadlineMillis = deadlineMillis;
@@ -556,13 +558,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static class CancelDeadlineWithinScope {
 
         @TargetAggregateIdentifier
-        private final String id;
+        private final UUID id;
 
-        private CancelDeadlineWithinScope(String id) {
+        private CancelDeadlineWithinScope(UUID id) {
             this.id = id;
         }
 
-        public String getId() {
+        public UUID getId() {
             return id;
         }
 
@@ -587,13 +589,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static class CancelAllDeadlinesWithName {
 
         @TargetAggregateIdentifier
-        private final String id;
+        private final UUID id;
 
-        private CancelAllDeadlinesWithName(String id) {
+        private CancelAllDeadlinesWithName(UUID id) {
             this.id = id;
         }
 
-        public String getId() {
+        public UUID getId() {
             return id;
         }
 
@@ -618,9 +620,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static class TriggerDeadlineInChildEntityCommand {
 
         @TargetAggregateIdentifier
-        private final String id;
+        private final UUID id;
 
-        private TriggerDeadlineInChildEntityCommand(String id) {
+        private TriggerDeadlineInChildEntityCommand(UUID id) {
             this.id = id;
         }
     }
@@ -628,15 +630,15 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static class ScheduleSpecificDeadline {
 
         @TargetAggregateIdentifier
-        private final String id;
+        private final UUID id;
         private final String payload;
 
-        private ScheduleSpecificDeadline(String id, String payload) {
+        private ScheduleSpecificDeadline(UUID id, String payload) {
             this.id = id;
             this.payload = payload;
         }
 
-        public String getId() {
+        public UUID getId() {
             return id;
         }
 
@@ -661,13 +663,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     private static class MyAggregateCreatedEvent {
 
-        private final String id;
+        private final UUID id;
 
-        private MyAggregateCreatedEvent(String id) {
+        private MyAggregateCreatedEvent(UUID id) {
             this.id = id;
         }
 
-        public String getId() {
+        public UUID getId() {
             return id;
         }
 
@@ -698,15 +700,15 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     private static class SagaStartingEvent {
 
-        private final String id;
+        private final UUID id;
         private final boolean cancelBeforeDeadline;
 
-        private SagaStartingEvent(String id, boolean cancelBeforeDeadline) {
+        private SagaStartingEvent(UUID id, boolean cancelBeforeDeadline) {
             this.id = id;
             this.cancelBeforeDeadline = cancelBeforeDeadline;
         }
 
-        public String getId() {
+        public UUID getId() {
             return id;
         }
 
@@ -734,19 +736,19 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     private static class DeadlinePayload {
 
-        private final String id;
+        private final UUID id;
 
         // No-arg constructor used for Jackson Serialization
         @SuppressWarnings("unused")
         private DeadlinePayload() {
-            this("some-id");
+            this(UUID.randomUUID());
         }
 
-        private DeadlinePayload(String id) {
+        private DeadlinePayload(UUID id) {
             this.id = id;
         }
 
-        public String getId() {
+        public UUID getId() {
             return id;
         }
 
@@ -957,7 +959,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     public static class MyAggregate {
 
         @AggregateIdentifier
-        private String id;
+        private UUID id;
         @AggregateMember
         private MyEntity myEntity;
 
@@ -1038,9 +1040,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         @SuppressWarnings({"FieldCanBeLocal", "unused"})
         @EntityId
-        private final String id;
+        private final UUID id;
 
-        private MyEntity(String id) {
+        private MyEntity(UUID id) {
             this.id = id;
         }
 

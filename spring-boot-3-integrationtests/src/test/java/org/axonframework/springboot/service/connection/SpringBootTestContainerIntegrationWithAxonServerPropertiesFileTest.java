@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -32,9 +33,17 @@ import java.time.Duration;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating that the constructed {@link AxonServerConnectionDetails} from the {@link ServiceConnection}
+ * annotated test container take precedence over the properties (in this scenario provided through the {@code custom}
+ * profile).
+ *
+ * @author Steven van Beelen
+ */
 @SpringBootTest
 @Testcontainers
-class SpringBootTestContainerIntegrationTest {
+@ActiveProfiles("custom")
+class SpringBootTestContainerIntegrationWithAxonServerPropertiesFileTest {
 
     @Container
     @ServiceConnection

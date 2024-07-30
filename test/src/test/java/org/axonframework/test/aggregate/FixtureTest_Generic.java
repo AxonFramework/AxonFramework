@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.axonframework.eventsourcing.IncompatibleAggregateException;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
 
@@ -93,8 +92,9 @@ class FixtureTest_Generic {
         fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         fixture.given(new MyEvent("aggregateId", 1))
-                .when(new CreateAggregateCommand("aggregateId"))
-                .expectException(EventStoreException.class);
+               .when(new CreateAggregateCommand("aggregateId"))
+               .expectException(EventStoreException.class)
+               .expectNoEvents();
     }
 
     @Test
@@ -149,7 +149,6 @@ class FixtureTest_Generic {
                         new GenericDomainEventMessage<>("test", identifier, 0, new StubDomainEvent()),
                         new GenericDomainEventMessage<>("test", identifier, 2, new StubDomainEvent()))
         );
-
     }
 
     private class StubDomainEvent {

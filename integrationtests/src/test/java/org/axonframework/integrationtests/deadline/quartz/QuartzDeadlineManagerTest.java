@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
-import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
-import org.axonframework.integrationtests.utils.TestSerializer;
 import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -49,7 +49,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                     QuartzDeadlineManager.builder()
                                          .scheduler(scheduler)
                                          .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
-                                         .serializer(TestSerializer.xStreamSerializer())
+                                         .serializer(TestSerializer.JACKSON.getSerializer())
                                          .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
                                          .build();
             scheduler.start();
@@ -65,7 +65,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         QuartzDeadlineManager testSubject = QuartzDeadlineManager.builder()
                                                                  .scopeAwareProvider(scopeAwareProvider)
                                                                  .scheduler(scheduler)
-                                                                 .serializer(TestSerializer.xStreamSerializer())
+                                                                 .serializer(TestSerializer.JACKSON.getSerializer())
                                                                  .build();
 
         testSubject.shutdown();
@@ -83,7 +83,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         QuartzDeadlineManager testSubject = QuartzDeadlineManager.builder()
                                                                  .scopeAwareProvider(scopeAwareProvider)
                                                                  .scheduler(scheduler)
-                                                                 .serializer(TestSerializer.xStreamSerializer())
+                                                                 .serializer(TestSerializer.JACKSON.getSerializer())
                                                                  .build();
 
         assertThrows(DeadlineException.class, testSubject::shutdown);
@@ -95,7 +95,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         QuartzDeadlineManager.Builder builderTestSubject =
                 QuartzDeadlineManager.builder()
                                      .scopeAwareProvider(scopeAwareProvider)
-                                     .serializer(TestSerializer.xStreamSerializer());
+                                     .serializer(TestSerializer.JACKSON.getSerializer());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
@@ -106,7 +106,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         QuartzDeadlineManager.Builder builderTestSubject =
                 QuartzDeadlineManager.builder()
                                      .scheduler(scheduler)
-                                     .serializer(TestSerializer.xStreamSerializer());
+                                     .serializer(TestSerializer.JACKSON.getSerializer());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
