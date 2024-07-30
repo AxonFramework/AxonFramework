@@ -152,8 +152,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
             return saga.handle(event);
         } catch (Exception e) {
             if (suppressExceptions) {
-                logger.error(format("An exception occurred while a Saga [%s] was handling an Event [%s]:",
-                                    saga.getClass().getSimpleName(), event.getPayloadType().getSimpleName()), e);
+                logger.error(format("An exception occurred while a Saga [%s] was handling Event [%s] of type [%s]:",
+                        saga.getClass().getSimpleName(), event.getIdentifier(), event.getPayloadType().getSimpleName()), e);
                 return true;
             } else {
                 throw e;
