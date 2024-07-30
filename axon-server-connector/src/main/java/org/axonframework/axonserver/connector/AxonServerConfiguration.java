@@ -384,7 +384,10 @@ public class AxonServerConfiguration {
      * A list of {@link NodeInfo} instances based on the comma separated list of {@link #getServers()}.
      *
      * @return A list of {@link NodeInfo} instances based on the comma separated list of {@link #getServers()}.
+     * @deprecated In favor of the {@link AxonServerConnectionManager} itself being in charge of parsing the
+     * {@link #getServers()} list into a {@link NodeInfo} collection.
      */
+    @Deprecated
     public List<NodeInfo> routingServers() {
         String[] serverArr = servers.split(",");
         return Arrays.stream(serverArr).map(server -> {

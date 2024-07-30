@@ -42,12 +42,12 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.service.connection.AxonServerConnectionDetails;
+import org.axonframework.springboot.service.connection.PropertiesAxonServerConnectionDetails;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
@@ -75,57 +75,16 @@ import javax.annotation.Nonnull;
 @ConditionalOnClass(AxonServerConfiguration.class)
 @EnableConfigurationProperties(TagsConfigurationProperties.class)
 @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
-public class AxonServerAutoConfiguration {
+public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
-    @Configuration
-    @ConditionalOnMissingClass("org.springframework.boot.autoconfigure.service.connection.ConnectionDetails")
-    public static class ConnectionConfiguration implements ApplicationContextAware {
+    private ApplicationContext applicationContext;
 
-        private ApplicationContext applicationContext;
-
-        @Bean
-        public AxonServerConfiguration axonServerConfiguration() {
-            AxonServerConfiguration configuration = new AxonServerConfiguration();
-            configuration.setComponentName(clientName(applicationContext.getId()));
-            return configuration;
-        }
-
-        @Override
-        public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
-            this.applicationContext = applicationContext;
-        }
+    @Bean
+    public AxonServerConfiguration axonServerConfiguration() {
+        AxonServerConfiguration configuration = new AxonServerConfiguration();
+        configuration.setComponentName(clientName(applicationContext.getId()));
+        return configuration;
     }
-
-    @Configuration
-    @ConditionalOnClass(name = "org.springframework.boot.autoconfigure.service.connection.ConnectionDetails")
-    public static class ConnectionDetailsConfiguration implements ApplicationContextAware {
-
-        private ApplicationContext applicationContext;
-
-        @ConditionalOnMissingBean(AxonServerConnectionDetails.class)
-        @Bean
-        public AxonServerConfiguration axonServerConfiguration() {
-            AxonServerConfiguration configuration = new AxonServerConfiguration();
-            configuration.setComponentName(clientName(applicationContext.getId()));
-            return configuration;
-        }
-
-        @ConditionalOnBean(type = "org.axonframework.springboot.service.connection.AxonServerConnectionDetails")
-        @Bean
-        public AxonServerConfiguration axonServerConfigurationWithConnectionDetails(
-                AxonServerConnectionDetails connectionDetails) {
-            AxonServerConfiguration configuration = new AxonServerConfiguration();
-            configuration.setComponentName(clientName(applicationContext.getId()));
-            configuration.setServers(connectionDetails.routingServers());
-            return configuration;
-        }
-
-        @Override
-        public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
-            this.applicationContext = applicationContext;
-        }
-    }
-
 
     private static String clientName(@Nullable String id) {
         if (id == null) {
@@ -136,21 +95,51 @@ public class AxonServerAutoConfiguration {
         return id;
     }
 
+    @Configuration
+    @ConditionalOnMissingClass(value = "org.springframework.boot.autoconfigure.service.connection.ConnectionDetails")
+    public static class DefaultConnectionManagerConfiguration {
+
+        @Bean
+        public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration axonServerConfig,
+                                                                     TagsConfigurationProperties tagProperties,
+                                                                     ManagedChannelCustomizer managedChannelCustomizer) {
+            return AxonServerConnectionManager.builder()
+                                              .routingServers(axonServerConfig.getServers())
+                                              .axonServerConfiguration(axonServerConfig)
+                                              .tagsConfiguration(tagProperties.toTagsConfiguration())
+                                              .channelCustomizer(managedChannelCustomizer)
+                                              .build();
+        }
+    }
+
+    @Configuration
+    @ConditionalOnClass(name = "org.springframework.boot.autoconfigure.service.connection.ConnectionDetails")
+    public static class ConnectionDetailsConnectionManagerConfiguration {
+
+        @Bean
+        @ConditionalOnMissingBean(AxonServerConnectionDetails.class)
+        PropertiesAxonServerConnectionDetails axonServerConnectionDetails(AxonServerConfiguration configuration) {
+            return new PropertiesAxonServerConnectionDetails(configuration);
+        }
+
+        @Bean
+        public AxonServerConnectionManager platformConnectionManager(AxonServerConnectionDetails connectionDetails,
+                                                                     AxonServerConfiguration axonServerConfig,
+                                                                     TagsConfigurationProperties tagProperties,
+                                                                     ManagedChannelCustomizer managedChannelCustomizer) {
+            return AxonServerConnectionManager.builder()
+                                              .routingServers(connectionDetails.routingServers())
+                                              .axonServerConfiguration(axonServerConfig)
+                                              .tagsConfiguration(tagProperties.toTagsConfiguration())
+                                              .channelCustomizer(managedChannelCustomizer)
+                                              .build();
+        }
+    }
+
     @Bean
     @ConditionalOnMissingBean
     public ManagedChannelCustomizer managedChannelCustomizer() {
         return ManagedChannelCustomizer.identity();
-    }
-
-    @Bean
-    public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration axonServerConfiguration,
-                                                                 TagsConfigurationProperties tagsConfigurationProperties,
-                                                                 ManagedChannelCustomizer managedChannelCustomizer) {
-        return AxonServerConnectionManager.builder()
-                                          .axonServerConfiguration(axonServerConfiguration)
-                                          .tagsConfiguration(tagsConfigurationProperties.toTagsConfiguration())
-                                          .channelCustomizer(managedChannelCustomizer)
-                                          .build();
     }
 
     @Bean
@@ -312,5 +301,10 @@ public class AxonServerAutoConfiguration {
                                                                );
                                                            })
         );
+    }
+
+    @Override
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 }

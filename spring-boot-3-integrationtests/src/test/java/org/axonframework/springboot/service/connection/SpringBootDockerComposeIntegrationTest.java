@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,14 +47,9 @@ class SpringBootDockerComposeIntegrationTest {
     @Test
     void verifyApplicationRunsAndConnectsToAxonServerDefinedInDockerComposeFile() {
         assertTrue(application.isRunning());
-        AxonServerConfiguration config = application.getBean(AxonServerConfiguration.class);
 
         assertNotNull(application.getBean(AxonServerConnectionDetails.class),
                       "Expected an AxonServerConnectionDetails bean pointing to Axon Server in Docker");
-
-        assertNotNull(config);
-        assertNotEquals("localhost:8124", config.getServers());
-        assertNotEquals("localhost", config.getServers());
 
         AxonServerConnectionManager connectionFactory = application.getBean(AxonServerConnectionManager.class);
         AxonServerConnection connection = connectionFactory.getConnection();
