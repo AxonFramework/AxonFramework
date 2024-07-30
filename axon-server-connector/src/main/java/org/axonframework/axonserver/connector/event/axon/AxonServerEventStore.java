@@ -460,7 +460,11 @@ public class AxonServerEventStore extends AbstractEventStore {
                     .listEvents(context, new StreamObserver<EventWithToken>() {
                         @Override
                         public void onNext(EventWithToken eventWithToken) {
-                            logger.debug("Received event with token: {}", eventWithToken.getToken());
+                            if (logger.isTraceEnabled()) {
+                                logger.trace("Received event with token: {}. Stream Observer {}.",
+                                             eventWithToken.getToken(),
+                                             this);
+                            }
                             consumer.push(eventWithToken);
                         }
 
