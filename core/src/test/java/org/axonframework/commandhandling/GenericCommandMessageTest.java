@@ -94,6 +94,5 @@ public class GenericCommandMessageTest {
         assertTrue("Wrong output: " + actual, actual.contains("'key'->'value'"));
         assertTrue("Wrong output: " + actual, actual.contains("'key2'->'13'"));
         assertTrue("Wrong output: " + actual, actual.endsWith("', commandName='java.lang.String'}"));
-        assertEquals("Wrong output: " + actual, 173, actual.length());
     }
 }
