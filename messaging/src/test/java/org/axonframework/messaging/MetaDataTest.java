@@ -19,6 +19,7 @@ package org.axonframework.messaging;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MetaDataTest {
 
@@ -30,5 +31,16 @@ public class MetaDataTest {
         assertEquals(2, metaData.size());
         assertEquals(null, metaData.get("nullkey"));
         assertEquals("value", metaData.get("otherkey"));
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("MetaData[]", MetaData.emptyInstance().toString());
+        assertEquals("MetaData['key'->'value']", MetaData.with("key", "value").toString());
+        String actual = MetaData.with("key", "value").and("key2", "value2").toString();
+        assertTrue(actual.startsWith("MetaData["));
+        assertTrue(actual.contains(", "));
+        assertTrue(actual.contains("'key'->'value'"));
+        assertTrue(actual.contains("'key2'->'value2'"));
     }
 }
