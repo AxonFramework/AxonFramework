@@ -21,6 +21,8 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,6 +44,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @since 3.0
  */
 public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
+
+    private static final Logger logger = LoggerFactory.getLogger(SimpleEventHandlerInvoker.class);
 
     private final List<?> eventHandlers;
     private final List<EventMessageHandler> wrappedEventHandlers;
@@ -106,6 +110,12 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
+        if (logger.isTraceEnabled()) {
+            logger.trace("Received event {}. Segment Id {}. Thread {}.",
+                         message.getIdentifier(),
+                         segment.getSegmentId(),
+                         Thread.currentThread().getName());
+        }
         if (sequencingPolicyMatchesSegment(message, segment)) {
             for (EventMessageHandler handler : wrappedEventHandlers) {
                 try {
