@@ -17,22 +17,18 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
-import io.axoniq.axonserver.grpc.control.NodeInfo;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
-import org.axonframework.axonserver.connector.event.util.EventCipher;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Configuration class provided configurable fields and defaults for anything Axon Server related.

@@ -28,7 +28,6 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.async.SequencingPolicy;
