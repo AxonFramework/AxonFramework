@@ -40,6 +40,19 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class SpringAxonConfiguration implements FactoryBean<Configuration>, SmartLifecycle {
 
+    /**
+     * The {@link SmartLifecycle#getPhase()} value of this is set to be safely lower than the typical
+     * values listed in the Spring WebServer lifecycles.
+     *
+     * This means we make sure that:
+     * - Axon is ready when the web server starts
+     * - The web server is stopped before tearing down Axon
+     */
+    public static final int LIFECYCLE_PHASE = SmartLifecycle.DEFAULT_PHASE
+            - 1024 // this puts us next to the "graceful" stop of web servers...
+            - 1024 // this puts us next to the regular, start and non-graceful stop of web servers...
+            - 1024; // we place ourselves healthily below that, starting before web servers and stopping after.
+
     private final Configurer configurer;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final AtomicReference<Configuration> configuration = new AtomicReference<>();
@@ -94,5 +107,10 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
     @Autowired
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+    }
+
+    @Override
+    public int getPhase() {
+        return LIFECYCLE_PHASE;
     }
 }

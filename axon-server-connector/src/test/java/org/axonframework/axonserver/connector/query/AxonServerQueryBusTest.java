@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -327,6 +327,21 @@ class AxonServerQueryBusTest {
             spanFactory.verifySpanCompleted("QueryBus.scatterGatherQueryDistributed", testQuery);
             spanFactory.verifySpanPropagated("QueryBus.scatterGatherQueryDistributed", testQuery);
         });
+    }
+
+    @Test
+    void scatterGatherCloseStreamDoesNotThrowExceptionOnCloseMethod() {
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(stubResponse("<string>1</string>"),
+                                                                              stubResponse("<string>2</string>"),
+                                                                              stubResponse("<string>3</string>")));
+
+        Stream<QueryResponseMessage<String>> stream = testSubject.scatterGather(testQuery,
+                                                                                                    12,
+                                                                                                    TimeUnit.SECONDS);
+        assertEquals(3, stream.count());
+        stream.close();
     }
 
     @Test

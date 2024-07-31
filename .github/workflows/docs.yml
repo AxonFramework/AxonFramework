@@ -14,6 +14,9 @@ on:
     paths:
       - 'docs/**'
 
+env:
+  VALE_VERSION: ${{ vars.LIBRARY_VALE_VERSION || '3.3.0' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,14 +31,15 @@ jobs:
 
       - name: Install vale
         run: |
-            wget https://github.com/errata-ai/vale/releases/download/v2.23.0/vale_2.23.0_Linux_64-bit.tar.gz
-            sudo tar -xvzf vale_2.23.0_Linux_64-bit.tar.gz -C /usr/local/bin vale
+          wget "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz"
+          sudo tar -xvzf vale_${VALE_VERSION}_Linux_64-bit.tar.gz -C /usr/local/bin vale
 
       - name: Generate Site
         run: |
           cd docs/_playbook/
           npm install
           export GIT_CREDENTIALS='https://axoniq-devops:${{ secrets.LIBRARY_DEVBOT_TOKEN }}@github.com'
+          echo 'Using' `vale -v`
           npx antora playbook.yaml
 
       - name: Notify AxonIQ Library (if a push to a tracked branch)

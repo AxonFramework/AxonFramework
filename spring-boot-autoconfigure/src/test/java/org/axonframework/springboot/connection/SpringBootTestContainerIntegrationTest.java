@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,21 @@
 
 package org.axonframework.springboot.connection;
 
+import io.axoniq.axonserver.connector.AxonServerConnection;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.springboot.service.connection.AxonServerConnectionDetails;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.context.ApplicationContext;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.Duration;
+
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -35,17 +39,16 @@ class SpringBootTestContainerIntegrationTest {
 
     @Container
     @ServiceConnection
-    static AxonServerContainer axonServer = new AxonServerContainer("axoniq/axonserver:latest-dev")
-            .withDevMode(true);
+    private final static AxonServerContainer axonServer = new AxonServerContainer().withDevMode(true);
 
     @Autowired
-    ApplicationContext applicationContext;
+    private AxonServerConfiguration axonServerConfiguration;
 
     @Autowired
-    AxonServerConfiguration axonServerConfiguration;
+    private AxonServerConnectionDetails connectionDetails;
 
     @Autowired
-    AxonServerConnectionDetails connectionDetails;
+    private AxonServerConnectionManager axonServerConnectionManager;
 
     @Test
     void verifyApplicationStartsNormallyWithAxonServerInstance() {
@@ -55,5 +58,10 @@ class SpringBootTestContainerIntegrationTest {
         assertNotNull(axonServerConfiguration);
 
         assertNotEquals("localhost:8024", axonServerConfiguration.getServers());
+
+        AxonServerConnection connection = axonServerConnectionManager.getConnection();
+
+        await().atMost(Duration.ofSeconds(5))
+               .untilAsserted(() -> assertTrue(connection.isConnected()));
     }
 }

@@ -22,9 +22,9 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
@@ -177,9 +177,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     private TrackedEventMessage<?> asTrackedEventMessage(EventMessage<?> event) {
-        return new GenericTrackedEventMessage<>(
-                new GlobalSequenceTrackingToken(globalSequence.getAndIncrement()), event
-        );
+        return EventUtils.asTrackedEventMessage(
+                event, new GlobalSequenceTrackingToken(globalSequence.getAndIncrement()));
     }
 
     /**

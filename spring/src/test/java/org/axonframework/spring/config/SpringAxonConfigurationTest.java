@@ -21,7 +21,9 @@ import org.axonframework.config.Configurer;
 import org.axonframework.spring.event.AxonStartedEvent;
 import org.junit.jupiter.api.*;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.SmartLifecycle;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 class SpringAxonConfigurationTest {
@@ -38,5 +40,15 @@ class SpringAxonConfigurationTest {
 
         springAxonConfiguration.start();
         verify(context).publishEvent(isA(AxonStartedEvent.class));
+    }
+
+    @Test
+    void lifecyclePhaseIsLowerThanWebServers() {
+        int webServerGracefulShutdownLifecyclePhase = SmartLifecycle.DEFAULT_PHASE - 1024;
+        int webServerDefaultLifecyclePhase = webServerGracefulShutdownLifecyclePhase - 1024;
+
+        SpringAxonConfiguration springAxonConfiguration = new SpringAxonConfiguration(mock(Configurer.class));
+
+        assertTrue(springAxonConfiguration.getPhase() < webServerDefaultLifecyclePhase);
     }
 }

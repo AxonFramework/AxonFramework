@@ -324,4 +324,18 @@ class AnnotatedSagaTest {
                        .publishes(new TriggerExceptionWhileHandlingEvent(identifier));
         assertThrows(AxonAssertionError.class, fixtureExecutionResult::expectSuccessfulHandlerExecution);
     }
+
+    @Test
+    void fixtureApi_DomainEventMessageIsAssignableFromMessage() {
+        String aggregate1 = UUID.randomUUID().toString();
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        FixtureExecutionResult validator = fixture
+                .givenAggregate(aggregate1).published(
+                        GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(aggregate1)),
+                        new TriggerExistingSagaEvent(aggregate1),
+                        new TriggerAssociationResolverSagaEvent(aggregate1))
+                .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(aggregate1));
+
+        validator.expectActiveSagas(0);
+    }
 }

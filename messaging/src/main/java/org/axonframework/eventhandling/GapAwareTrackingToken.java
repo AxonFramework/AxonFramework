@@ -122,7 +122,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      */
     public GapAwareTrackingToken advanceTo(long index, int maxGapOffset) {
         long newIndex;
-        long smalledAllowedGap = Math.max(gapTruncationIndex, Math.max(index, this.index) - maxGapOffset);
+        long smalledAllowedGap = Math.min(index, Math.max(gapTruncationIndex, Math.max(index, this.index) - maxGapOffset));
         SortedSet<Long> gaps = new TreeSet<>(this.gaps.tailSet(smalledAllowedGap));
         if (gaps.remove(index) || this.gaps.contains(index)) {
             newIndex = this.index;

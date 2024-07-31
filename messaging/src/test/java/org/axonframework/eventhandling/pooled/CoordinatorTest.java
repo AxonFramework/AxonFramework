@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -27,14 +28,14 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.stubbing.Answer;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+import org.mockito.stubbing.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -44,21 +45,11 @@ import java.util.concurrent.TimeUnit;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.eventhandling.Segment.computeSegment;
 import static org.axonframework.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link Coordinator}.
@@ -95,7 +86,7 @@ class CoordinatorTest {
                                  .workPackageFactory((segment, trackingToken) -> workPackage)
                                  .initialToken(es -> ReplayToken.createReplayToken(es.createHeadToken()))
                                  .eventFilter(eventMessage -> true)
-                                 .maxClaimedSegments(SEGMENT_IDS.length)
+                                 .maxSegmentProvider(e -> SEGMENT_IDS.length)
                                  .build();
     }
 
@@ -195,6 +186,29 @@ class CoordinatorTest {
         assertTrue(resultEvents.contains(testEventTwo));
 
         verify(workPackage, times(0)).scheduleEvent(any());
+    }
+
+    @Test
+    void coordinatorShouldNotTryToOpenStreamWithNoToken() throws NoSuchFieldException {
+        //arrange
+        final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
+
+        doReturn(SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        doReturn(token).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
+        doReturn(SEGMENT_ZERO).when(workPackage).segment();
+        doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
+        //Using reflection to add a work package to keep the test simple
+        Map<Integer, WorkPackage> workPackages =
+                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("workPackages"), testSubject);
+        workPackages.put(SEGMENT_ID, workPackage);
+        CompletableFuture<Exception> abortFuture = new CompletableFuture<>();
+        doReturn(abortFuture).when(workPackage).abort(any());
+
+        //act
+        testSubject.start();
+
+        //asserts
+        verify(messageSource, never()).openStream(any(TrackingToken.class));
     }
 
     private Answer<Future<Void>> runTaskSync() {

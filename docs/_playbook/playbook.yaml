@@ -5,7 +5,7 @@ site:
 content:
   sources:
   - url: ../..
-    start_paths: ['docs/*', '!docs/_*']
+    start_paths: ['docs/*', '!docs/_*', '!docs/reference/*']
 
 asciidoc:
   attributes:
@@ -39,4 +39,4 @@ runtime:
 
 ui:
   bundle:
-    url: https://github.com/AxonIQ/axoniq-library-ui/releases/download/v.0.0.9/ui-bundle.zip
+    url: https://github.com/AxonIQ/axoniq-library-ui/releases/download/v.0.1.10/ui-bundle.zip

@@ -1,0 +1,25 @@
+* xref::introduction.adoc[]]
+* xref::upgrading-to-4-7.adoc[]
+
+include::messaging-concepts:partial$nav.adoc[]
+
+include::axon-framework-commands:partial$nav.adoc[]
+
+include::events:partial$nav.adoc[]
+
+include::queries:partial$nav.adoc[]
+
+include::sagas:partial$nav.adoc[]
+
+include::deadlines:partial$nav.adoc[]
+
+include::testing:partial$nav.adoc[]
+
+* xref::serialization.adoc[]
+
+include::tuning:partial$nav.adoc[]
+
+include::monitoring:partial$nav.adoc[]
+
+* xref::spring-boot-integration.adoc[]
+* xref::modules.adoc[]

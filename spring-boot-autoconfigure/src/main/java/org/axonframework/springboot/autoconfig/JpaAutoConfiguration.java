@@ -34,8 +34,10 @@ import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
@@ -57,6 +59,7 @@ import javax.sql.DataSource;
         "org.axonframework.eventhandling.deadletter.jpa",
         "org.axonframework.modelling.saga.repository.jpa",
 })
+@AutoConfigureAfter(HibernateJpaAutoConfiguration.class)
 public class JpaAutoConfiguration {
 
     private final TokenStoreProperties tokenStoreProperties;

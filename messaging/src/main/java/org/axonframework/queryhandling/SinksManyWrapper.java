@@ -18,6 +18,9 @@ package org.axonframework.queryhandling;
 
 import reactor.core.publisher.Sinks;
 
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.Supplier;
+
 /**
  * Wrapper around {@link Sinks.Many}. Since project-reactor is not a required dependency in this Axon version, we need
  * wrappers for backwards compatibility. As soon as dependency is no longer optional, this wrapper should be removed.
@@ -44,12 +47,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
      */
     @Override
     public void complete() {
-        Sinks.EmitResult result;
-        //noinspection StatementWithEmptyBody
-        while ((result = fluxSink.tryEmitComplete()) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
-            // busy spin
-        }
-        result.orThrow();
+        performWithBusyWaitSpin(fluxSink::tryEmitComplete).orThrow();
     }
 
     /**
@@ -59,12 +57,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
      */
     @Override
     public void next(T value) {
-        Sinks.EmitResult result;
-        //noinspection StatementWithEmptyBody
-        while ((result = fluxSink.tryEmitNext(value)) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
-            // busy spin
-        }
-        result.orThrow();
+        performWithBusyWaitSpin(() -> fluxSink.tryEmitNext(value)).orThrow();
     }
 
     /**
@@ -74,12 +67,26 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
      */
     @Override
     public void error(Throwable t) {
-        Sinks.EmitResult result;
-        //noinspection StatementWithEmptyBody
-        while ((result = fluxSink.tryEmitError(t)) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
-            // busy spin
-        }
-        result.orThrow();
+        performWithBusyWaitSpin(() -> fluxSink.tryEmitError(t)).orThrow();
+    }
 
+    private Sinks.EmitResult performWithBusyWaitSpin(Supplier<Sinks.EmitResult> action) {
+        int i=0;
+        Sinks.EmitResult result;
+        while ((result = action.get()) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
+            // for 100 iterations, just busy-spin. Will resolve most conditions
+            if (i < 100) {
+                i++;
+                // busy spin
+            } else if (i < 200) {
+                // for the next 100 iterations, yield, to force other threads to have a chance
+                i++;
+                Thread.yield();
+            } else {
+                // then after, park the thread to force other threads to perform their work
+                LockSupport.parkNanos(100);
+            }
+        }
+        return result;
     }
 }

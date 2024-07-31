@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,13 @@ import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.SubscribableMessageSourceDefinition;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventBusSpanFactory;
@@ -95,6 +97,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
+import static java.lang.String.format;
 import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 /**
@@ -332,7 +335,21 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 } else {
                     eventProcessingConfigurer.registerSubscribingEventProcessor(
                             name,
-                            c -> applicationContext.getBean(settings.getSource(), SubscribableMessageSource.class)
+                            c -> {
+                                Object bean = applicationContext.getBean(settings.getSource());
+                                if (bean instanceof SubscribableMessageSourceDefinition) {
+                                    return ((SubscribableMessageSourceDefinition<? extends EventMessage<?>>) bean)
+                                            .create(c);
+                                }
+                                if (bean instanceof SubscribableMessageSource) {
+                                    return (SubscribableMessageSource<? extends EventMessage<?>>) bean;
+                                }
+                                throw new AxonConfigurationException(format(
+                                        "Invalid message source [%s] configured for Event Processor [%s]. "
+                                                + "The message source should be a SubscribableMessageSource or SubscribableMessageSourceFactory",
+                                        settings.getSource(), name
+                                ));
+                            }
                     );
                 }
             }

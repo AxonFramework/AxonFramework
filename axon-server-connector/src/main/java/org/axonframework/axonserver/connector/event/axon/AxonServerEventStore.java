@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventData;
@@ -542,7 +541,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                           configuration.isForceReadFromLeader()
                                                   );
 
-            return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isEventBlockListingEnabled());
+            return new EventBuffer(stream, upcasterChain, eventSerializer, !configuration.isEventBlockListingEnabled());
         }
 
         public QueryResultStream query(String query, boolean liveUpdates) {
@@ -636,15 +635,9 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         @Override
         protected Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-            if (!snapshotFilterSet) {
-                // Snapshots are automatically fetched server-side, which is faster
-                return Stream.empty();
-            }
-
-            return StreamSupport.stream(new Spliterators.AbstractSpliterator<DomainEventData<?>>(Long.MAX_VALUE,
-                                                                                                 NONNULL | ORDERED
-                                                                                                         | DISTINCT
-                                                                                                         | CONCURRENT) {
+            return StreamSupport.stream(new Spliterators.AbstractSpliterator<DomainEventData<?>>(
+                    Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT
+            ) {
                 private long sequenceNumber = Long.MAX_VALUE;
                 private final List<DomainEventData<byte[]>> prefetched = new ArrayList<>();
 

@@ -1,0 +1,42 @@
+site:
+  title: Axon Framework docs PREVIEW
+  start_page: axon_framework_ref::index.adoc
+
+content:
+  sources:
+  - url: ../..
+    start_paths: ['docs/*', '!docs/_*', '!docs/ref*']
+
+asciidoc:
+  attributes:
+    experimental: true
+    page-pagination: true
+    kroki-fetch-diagram: true
+    primary-site-manifest-url: https://library.axoniq.io/site-manifest.json
+  extensions:
+  - asciidoctor-kroki
+  - '@asciidoctor/tabs'
+
+antora:
+  extensions:
+  - id: prose-linting
+    require: '@axoniq/antora-vale-extension'
+    enabled: true
+    vale_config: .vale.ini
+    update_styles: true
+  - id: lunr
+    require: '@antora/lunr-extension'
+    enabled: true
+    index_latest_only: true
+  - id: atlas
+    require: '@antora/atlas-extension'
+
+runtime:
+  fetch: true # fetch remote repos
+  log:
+    level: info
+    failure_level: error
+
+ui:
+  bundle:
+    url: localLinks/axoniq-library-ui/build/ui-bundle.zip

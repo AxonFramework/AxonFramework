@@ -66,10 +66,15 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
     @Override
     public void configureModule(@Nonnull Configurer configurer) {
         configurer.eventProcessing().registerDeadLetterQueueProvider(
-                processingGroup -> dlqEnabled(eventProcessorProperties.getProcessors(), processingGroup)
+                processingGroup -> dlqEnabled(processingGroup)
                         ? deadLetterQueueProvider.apply(processingGroup)
                         : null
         );
+
+    }
+
+    private boolean dlqEnabled( String processingGroup) {
+        return dlqEnabled(eventProcessorProperties.getProcessors(), processingGroup);
     }
 
     private boolean dlqEnabled(Map<String, EventProcessorProperties.ProcessorSettings> processorSettings,

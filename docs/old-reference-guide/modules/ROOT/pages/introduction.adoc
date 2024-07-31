@@ -1,0 +1,35 @@
+= Introduction
+
+This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help build applications based on link:../architecture-overview/#ddd-and-cqrs[CQRS/DDD] and link:../architecture-overview/event-sourcing.adoc[Event Sourcing]
+
+____
+
+Breaking Changes in Axon Framework 4.7!
+
+Against our normal approach towards minor releases, we sadly had to introduce breaking changes between Axon Framework 4.6 and 4.7.
+Our apologies for this.
+
+To help you with your upgrade we have constructed a dedicated page xref:upgrading-to-4-7.adoc[here] that helps you on your path to upgrade to 4.7.
+If you find any irregularities concerning your upgrade, be sure to reach out to us!
+
+____
+
+A summary of the various subsections is given below.
+
+[cols="<,<"]
+|===
+|Sub-Section |Purpose
+
+|xref:upgrading-to-4-7.adoc[Upgrading to 4.7] |Step plan explaining how to upgrade to Axon Framework 4.7
+|xref:messaging-concepts:README.adoc[Messaging Concepts] |Conceptual overview of "Messages" within the Axon Framework
+|xref:axon-framework-commands:README.adoc[Commands] |Command Message Development using the Axon Framework
+|xref:events:README.adoc[Events] |Event Message Development using the Axon Framework
+|xref:queries:README.adoc[Queries] |Query Message Development using the Axon Framework
+|xref:sagas:README.adoc[Sagas] |Long Running Transaction development using the Axon Framework
+|xref:testing:README.adoc[Testing] |Testing capabilities provided by the Axon Framework
+|xref:serialization.adoc[Serialization] |Details on the serialization capabilities provided by the Axon Framework
+|xref:tuning:README.adoc[Tuning] |Tuning capabilities provided by the Axon Framework
+|xref:monitoring:README.adoc[Monitoring and Metrics] |Monitoring and Metric capabilities provided by the Axon Framework
+|xref:spring-boot-integration.adoc[Spring Boot Integration] |Axon Framework integration with Spring Boot
+|xref:modules.adoc[Modules] |Modules provided by the Axon Framework
+|===

@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4.0.0
+        uses: actions/setup-java@v4.2.1
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
@@ -38,7 +38,7 @@ jobs:
       - name: Regular Build
         if: ${{ !matrix.sonar-enabled }}
         run: |
-          ./mvnw -B -U -Dstyle.color=always -Possrh -Pintegration-test clean verify
+          ./mvnw -B -U -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true clean verify
 
       - name: Build with Coverage reports
         if: matrix.sonar-enabled
@@ -69,7 +69,7 @@ jobs:
         if: success()
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: voxmedia/github-action-slack-notify-build@v1.6.0
+        uses: voxmedia/github-action-slack-notify-build@v2
         with:
           channel_id: CAGSEC92A
           status: SUCCESS
@@ -79,7 +79,7 @@ jobs:
         if: failure()
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: voxmedia/github-action-slack-notify-build@v1.6.0
+        uses: voxmedia/github-action-slack-notify-build@v2
         with:
           channel_id: CAGSEC92A
           status: FAILED
