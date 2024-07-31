@@ -18,7 +18,15 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.common.Registration;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -29,31 +37,112 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link DistributedCommandBus}.
  *
  * @author Allard Buijze
  */
-@SuppressWarnings("unchecked")
 class DistributedCommandBusTest {
 
     private DistributedCommandBus testSubject;
 
-    private Connector connector;
+    private StubConnector connector;
+    private CommandMessage<?> commandMessage;
+    private SimpleCommandBus delegate;
 
     @BeforeEach
     void setUp() {
+        commandMessage = new GenericCommandMessage<>("test");
         connector = new StubConnector();
-        testSubject = new DistributedCommandBus(new SimpleCommandBus(), connector);
+        delegate = new SimpleCommandBus();
+        testSubject = new DistributedCommandBus(delegate, connector);
     }
 
     @Test
-    void name() {
-        fail("Not implemented yet");
+    void publishedCommandsAreSentToConnector() {
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(commandMessage,
+                                                                              null);
+
+        assertSame(result, connector.getDispatchedCommands().get(commandMessage));
+        // the connector doesn't actually dispatch commands, so we expect the CompletableFuture to remain unfinished
+        assertFalse(result.isDone());
     }
 
-    private class StubConnector implements Connector {
+    @Test
+    void incomingCommandsAreRejectedWhenNoHandlerRegistered() {
+        Connector.ResultCallback mockCallback = mock();
+        connector.handler.get().accept(commandMessage, mockCallback);
+
+        verify(mockCallback).error(isA(NoHandlerForCommandException.class));
+    }
+
+    @Test
+    void incomingCommandsAreDelegatedToSubscribedHandlers() {
+        GenericMessage<String> okMessage = new GenericMessage<>("OK");
+        testSubject.subscribe(String.class.getName(), new MessageHandler<>() {
+            @Override
+            public Object handleSync(CommandMessage<?> message) {
+                return "OK";
+            }
+
+            @Override
+            public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
+                                                              ProcessingContext processingContext) {
+                return MessageStream.just(okMessage);
+            }
+        });
+        Connector.ResultCallback mockCallback = mock();
+        connector.handler.get().accept(commandMessage, mockCallback);
+
+        verify(mockCallback).success(same(okMessage));
+    }
+
+    @Test
+    void incomingCommandsAreRejectedForCancelledHandlerSubscription() {
+        GenericMessage<String> okMessage = new GenericMessage<>("OK");
+        Registration registration = testSubject.subscribe(String.class.getName(),
+                                                          new MessageHandler<>() {
+                                                              @Override
+                                                              public Object handleSync(
+                                                                      CommandMessage<?> message) {
+                                                                  return "OK";
+                                                              }
+
+                                                              @Override
+                                                              public MessageStream<? extends Message<?>> handle(
+                                                                      CommandMessage<?> message,
+                                                                      ProcessingContext processingContext) {
+                                                                  return MessageStream.just(
+                                                                          okMessage);
+                                                              }
+                                                          });
+
+        assertTrue(registration.cancel());
+        Connector.ResultCallback mockCallback = mock();
+        connector.handler.get().accept(commandMessage, mockCallback);
+
+        verify(mockCallback).error(isA(NoHandlerForCommandException.class));
+    }
+
+    @Test
+    void unregisterNonExistentCommandHandlerReturnsFalse() {
+        Registration registration = testSubject.subscribe(String.class.getName(), mock());
+        assertTrue(registration.cancel());
+        assertFalse(registration.cancel());
+    }
+
+    @Test
+    void describeToMentionsConnector() {
+        ComponentDescriptor mock = mock();
+        testSubject.describeTo(mock);
+
+        verify(mock).describeWrapperOf(delegate);
+        verify(mock).describeProperty("connector", connector);
+    }
+
+    private static class StubConnector implements Connector {
 
         private final Map<CommandMessage<?>, CompletableFuture<?>> dispatchedCommands = new ConcurrentHashMap<>();
         private final Map<String, Integer> subscriptions = new ConcurrentHashMap<>();
