@@ -55,7 +55,10 @@ class AxonServerContainerUtils {
      * @throws IOException When there are issues with the HTTP connection to the Axon Server instance at the given
      *                     {@code hostname} and {@code port}.
      */
-    static void initCluster(String hostname, int port) throws IOException {
+    static void initCluster(String hostname, int port, boolean shouldBeReused) throws IOException {
+        if (shouldBeReused && initialized(hostname, port)) {
+            return;
+        }
         final URL url = URI.create(String.format("http://%s:%d/v1/context/init", hostname, port)).toURL();
         HttpURLConnection connection = null;
         try {
@@ -159,5 +162,10 @@ class AxonServerContainerUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static boolean initialized(String hostname, int port) throws IOException {
+        List<String> cont = contexts(hostname, port);
+        return cont.contains("_admin") && cont.contains("default");
     }
 }

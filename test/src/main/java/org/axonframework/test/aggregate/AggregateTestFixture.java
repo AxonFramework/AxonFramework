@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1003,31 +1003,35 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         protected void doAppendEvents(List<? extends EventMessage<?>> events) {
-            publishedEvents.addAll(events);
-            events.stream().filter(DomainEventMessage.class::isInstance).map(e -> (DomainEventMessage<?>) e)
-                  .forEach(event -> {
-                      if (aggregateIdentifier == null) {
-                          aggregateIdentifier = event.getAggregateIdentifier();
-                          injectAggregateIdentifier();
-                      }
+            events.forEach(e -> {
+                if (!DomainEventMessage.class.isInstance(e)) {
+                    // Since the event is not a domain event, only publish it i.o. validating/storing it.
+                    publishedEvents.add(e);
+                    return;
+                }
+                DomainEventMessage<?> event = (DomainEventMessage<?>) e;
 
-                      DomainEventMessage<?> lastEvent =
-                              (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
+                if (aggregateIdentifier == null) {
+                    aggregateIdentifier = event.getAggregateIdentifier();
+                    injectAggregateIdentifier();
+                }
 
-                      if (lastEvent != null) {
-                          if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
-                              throw new EventStoreException(
-                                      "Writing events for an unexpected aggregate. This could " +
-                                              "indicate that a wrong aggregate is being triggered.");
-                          } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
-                              throw new EventStoreException(format("Unexpected sequence number on stored event. " +
-                                                                           "Expected %s, \n but got %s.",
-                                                                   lastEvent.getSequenceNumber() + 1,
-                                                                   event.getSequenceNumber()));
-                          }
-                      }
-                      storedEvents.add(event);
-                  });
+                DomainEventMessage<?> lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
+
+                if (lastEvent != null) {
+                    if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
+                        throw new EventStoreException("Writing events for an unexpected aggregate. This could "
+                                                              + "indicate that a wrong aggregate is being triggered.");
+                    } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
+                        throw new EventStoreException(format(
+                                "Unexpected sequence number on stored event. " + "Expected %s, \n but got %s.",
+                                lastEvent.getSequenceNumber() + 1, event.getSequenceNumber()
+                        ));
+                    }
+                }
+                publishedEvents.add(event);
+                storedEvents.add(event);
+            });
         }
 
         private void injectAggregateIdentifier() {
@@ -1102,7 +1106,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public Aggregate<R> newInstance(@Nonnull Callable<R> factoryMethod) throws Exception {
-            AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
+            AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType, getParameterResolverFactory(), getHandlerDefinition());
             return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider);
         }
 

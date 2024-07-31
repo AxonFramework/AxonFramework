@@ -1,0 +1,111 @@
+= Unit of Work
+
+The `UnitOfWork` is an important concept in the Axon Framework.
+Although, in most cases you are unlikely to interact with it directly.
+The processing of a message is seen as a single unit.
+The purpose of the unit of work is to coordinate actions performed during the processing of a message (command, event or query).
+Components can register actions to be performed during each of the stages of a `UnitOfWork`, such as `onPrepareCommit` or `onCleanup`.
+
+You are unlikely to need direct access to the `UnitOfWork`.
+It is mainly used by the building blocks that the Axon Framework provides.
+If you do need access to it, for whatever reason, there are a few ways to obtain it.
+A handler receives the unit of work through a parameter in the handle method.
+If you use annotation support, you may add a parameter of type `UnitOfWork` to your annotated method.
+In other locations, you can retrieve the unit of work bound to the current thread by calling `CurrentUnitOfWork.get()`.
+Note that this method will throw an exception if there is no `UnitOfWork` bound to the current thread.
+Use `CurrentUnitOfWork.isStarted()` to find out if one is available.
+
+One reason to require access to the current unit of work is to attach resources that need to be reused several times during the course of message processing, or if created resources need to be cleaned up when the unit of work completes.
+In such case, the `unitOfWork.getOrComputeResource()` and the lifecycle callback methods, such as `onRollback()`, `afterCommit()` and `onCleanup()` allow you to register resources and declare actions to be taken during the processing of this unit of work.
+
+____
+
+**Using the Unit of Work**
+
+Note that the Unit of Work is merely a buffer of changes, not a replacement for transactions.
+Although all staged changes are only committed when the Unit of Work is committed, its commit is not atomic.
+That means that when a commit fails, some changes might have been persisted, while others have not been.
+Best practices dictate that a command should never contain more than one action.
+If you stick to that practice, a unit of work will contain a single action, making it safe to use as-is.
+If you have more actions in your unit of work, then you could consider attaching a transaction to the unit of work's commit.
+Use `unitOfWork.onCommit(..)` to register actions that need to be taken when the unit of work is being committed.
+
+____
+
+Your handlers may throw an Exception as a result of processing a message.
+By default, unchecked exceptions will cause the `UnitOfWork` to roll back all changes.
+As a result, scheduled side effects are cancelled.
+
+Axon Framework provides a few rollback strategies out-of-the-box:
+
+* `RollbackConfigurationType.NEVER` - will always commit the `UnitOfWork`
+* `RollbackConfigurationType.ANY_THROWABLE`- will always roll back when an exception occurs
+* `RollbackConfigurationType.UNCHECKED_EXCEPTIONS`- will roll back on errors and runtime exceptions
+* `RollbackConfigurationType.RUNTIME_EXCEPTION`- will roll back on runtime exceptions (but not on errors)
+
+When using framework components to process messages, the lifecycle of the unit of work will be automatically managed for you.
+If you choose not to use these components, but implement processing yourself, you will need to programmatically start and commit (or roll back) a unit of work instead.
+
+In most cases, the `DefaultUnitOfWork` will provide you with the functionality you need.
+It expects processing to happen within a single thread.
+To execute a task in the context of a unit of work, simply call `UnitOfWork.execute(Runnable)` or `UnitOfWork.executeWithResult(Callable)` on a new `DefaultUnitOfWork`.
+The unit of work will be started and committed when the task completes, or rolled back if the task fails.
+You can also choose to manually start, commit or rollback the unit of work if you need more control.
+
+Typical usage is as follows:
+
+[source,java]
+----
+UnitOfWork uow = DefaultUnitOfWork.startAndGet(message);
+// then, either use the autocommit approach:
+uow.executeWithResult(() -> ... logic here);
+
+// or manually commit or rollback:
+try {
+    // business logic comes here
+    uow.commit();
+} catch (Exception e) {
+    uow.rollback(e);
+    // maybe rethrow...
+}
+----
+
+____
+
+**The Unit of Works and its Message**
+
+The Unit of Work revolves around messages.
+It is always started with a message to be processed.
+As a result of a Unit-of-Work's execution (`executeWithResult(...)`) a `ResultMessage` will be returned and the actual execution result will be the payload of that `ResultMessage`.
+If problems arose during message processing, we get an exceptional `ResultMessage` - `isExceptional()` will return `true` and `exceptionResult()` will get us the actual `Throwable` indicating what went wrong.
+
+____
+
+A `UnitOfWork` knows several phases.
+Each time it progresses to another phase, the listeners are notified.
+
+* Active phase - this is where the Unit of Work is started.
+The unit of work is generally registered with the current thread in this phase (through `CurrentUnitOfWork.set(UnitOfWork)`).
+Subsequently, the message is typically handled by a message handler in this phase.
+* Commit phase - after processing of the message is done but before the Unit of Work is committed, the `onPrepareCommit` listeners are invoked.
+If a Unit of Work is bound to a transaction, the `onCommit` listeners are invoked to commit any supporting transactions.
+When the commit succeeds, the `afterCommit` listeners are invoked.
+If a commit or any step before fails, the `onRollback` listeners are invoked.
+The message handler result is contained in the `ExecutionResult` of the unit of work, if available.
+* Cleanup phase - the phase where any of the resources held by this unit of work (such as locks) are to be released.
+If multiple units of work are nested, the cleanup phase is postponed until the outer unit of work is ready to clean up.
+
+The message handling process can be considered an atomic procedure; it should either be processed entirely, or not at all.
+Axon Framework uses the unit of work to track actions performed by message handlers.
+After the handler has completed, Axon will try to commit the actions registered with the unit of work.
+
+It is possible to bind a transaction to a unit of work.
+Many components, such as the `CommandBus` and `QueryBus` implementations and all asynchronously processing `EventProcessor` s, allow you to configure a `TransactionManager`.
+This transaction manager will then be used to create the transactions to bind to the unit of work that is used to manage the process of a message.
+
+When application components need resources at different stages of message processing, such as a database connection or an `EntityManager`, these resources can be attached to the `UnitOfWork`.
+The `unitOfWork.getResources()` method allows you to access the resources attached to the current unit of work.
+Several helper methods are available on the unit of work directly, to make working with resources easier.
+
+When nested units of work need to be able to access a resource, it is recommended to register it on the root unit of work, which can be accessed using `unitOfWork.root()`.
+If a unit of work is the root, it will simply return itself.

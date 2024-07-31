@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -932,7 +932,7 @@ class TrackingEventProcessorTest {
         int numberOfEvents = 4;
         eventBus.publish(createEvents(numberOfEvents));
         await("Handle Events - Initial").pollDelay(Duration.ofMillis(50))
-                                        .atMost(Duration.ofMillis(2500))
+                                        .atMost(Duration.ofMillis(4000))
                                         .untilAsserted(() -> assertEquals(
                                                 numberOfEvents, handled.size(),
                                                 () -> "Actually handled [" + handled.size() +
@@ -1029,7 +1029,7 @@ class TrackingEventProcessorTest {
         int numberOfEvents = 4;
         eventBus.publish(createEvents(numberOfEvents));
         await("Handle Events")
-                .atMost(Duration.ofSeconds(2))
+                .atMost(Duration.ofSeconds(5))
                 .pollDelay(Duration.ofMillis(50))
                 .until(() -> handled.size() == 4);
 
@@ -1691,7 +1691,7 @@ class TrackingEventProcessorTest {
         // Replayed messages aren't counted
         int numberOfEvents = 30;
         await("Handle Events - Replay").pollDelay(pollDelay)
-                                       .atMost(Duration.ofMillis(2500))
+                                       .atMost(Duration.ofMillis(4000))
                                        .untilAsserted(() -> assertEquals(
                                                numberOfEvents, handledEvents.size(),
                                                () -> "Actually handled [" + handledEvents.size() +

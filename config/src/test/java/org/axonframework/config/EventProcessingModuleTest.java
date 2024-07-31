@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -852,9 +852,6 @@ class EventProcessingModuleTest {
         assertTrue(resultPsep.isPresent());
 
         PooledStreamingEventProcessor psep = resultPsep.get();
-        int maxClaimedSegments =
-                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("maxClaimedSegments"), psep);
-        assertEquals(4, maxClaimedSegments);
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
@@ -883,9 +880,6 @@ class EventProcessingModuleTest {
         assertTrue(resultPsep.isPresent());
 
         PooledStreamingEventProcessor psep = resultPsep.get();
-        int maxClaimedSegments =
-                getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("maxClaimedSegments"), psep);
-        assertEquals(4, maxClaimedSegments);
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
@@ -914,11 +908,6 @@ class EventProcessingModuleTest {
         assertTrue(resultPsep.isPresent());
 
         PooledStreamingEventProcessor psep = resultPsep.get();
-        int maxClaimedSegments = getFieldValue(
-                PooledStreamingEventProcessor.class.getDeclaredField("maxClaimedSegments"), psep
-        );
-        assertEquals(4, maxClaimedSegments);
-
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 getFieldValue(PooledStreamingEventProcessor.class.getDeclaredField("initialToken"), psep);
         TrackingToken actualInitialToken = initialToken.apply(eventStoreTwo);

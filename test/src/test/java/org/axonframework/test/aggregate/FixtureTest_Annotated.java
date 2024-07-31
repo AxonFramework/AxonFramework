@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -288,6 +288,24 @@ class FixtureTest_Annotated {
         assertEquals(3, fixture.getEventStore()
                                .readEvents(testAggregateId)
                                .asStream().count());
+    }
+
+    @Test
+    void fixtureThrowsEventStoreExceptionWhenHandlingAggregateConstructingCommandWhileThereAreGivenEvents() {
+        fixture.registerInjectableResource(new HardToCreateResource());
+        fixture.given(new MyEvent(AGGREGATE_ID, 0))
+               .when(new CreateAggregateCommand(AGGREGATE_ID))
+               .expectException(EventStoreException.class)
+               .expectNoEvents();
+    }
+
+    @Test
+    void fixtureThrowsEventStoreExceptionWhenHandlingAggregateConstructingCommandWhileThereAreGivenCommand() {
+        fixture.registerInjectableResource(new HardToCreateResource());
+        fixture.givenCommands(new CreateAggregateCommand(AGGREGATE_ID))
+               .when(new CreateAggregateCommand(AGGREGATE_ID))
+               .expectException(EventStoreException.class)
+               .expectNoEvents();
     }
 
     private static class StubDomainEvent {

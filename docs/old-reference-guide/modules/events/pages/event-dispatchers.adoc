@@ -1,0 +1,80 @@
+= Event Dispatchers
+
+Event publication can originate from a couple of locations within your Axon Framework application.
+In general, these can be grouped in two major areas:
+
+. Dispatching events from an Aggregate, and
+. Dispatching events from regular components
+
+This page will describe how to get an event message on the event bus from both locations.
+For more specifics regarding event publication and storage implementations in Axon Framework, read xref:event-bus-and-event-store.adoc[this] section.
+
+== Dispatching events from an Aggregate
+
+The xref:axon-framework-commands:modeling/aggregate.adoc[Aggregate] or it's xref:axon-framework-commands:modeling/multi-entity-aggregates.adoc[Entities] are typically the starting point of all event messages.
+The Event Message simply is the notification that a decision has been made; a successful resolution of handling a command message.
+
+To publish an event from an Aggregate, it is required to do this from the lifecycle of the Aggregate instance.
+This is mandatory as we want the Aggregate identifier to be tied to the Event message.
+It is also of the essence that the events originate in order.
+This is achieved by adding a sequence number to every event from an Aggregate.
+
+The `AggregateLifecycle` provides a simple means to achieve the above:
+
+[source,java]
+----
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+
+public class GiftCard {
+
+    @CommandHandler
+    public GiftCard(IssueCardCommand cmd) {
+        AggregateLifecycle.apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
+    }
+    // omitted state, command and event sourcing handlers
+}
+
+----
+
+The `AggregateLifecycle#apply(Object)` will go through a number of steps:
+
+. The current scope of the Aggregate is retrieved.
+. The last known sequence number of the Aggregate is used to set the sequence number of the event to publish.
+. The provided Event payload, the `Object`, will be wrapped in an `EventMessage`.
+The `EventMessage` will also receive the `sequenceNumber` from the previous step, as well as the Aggregate its identifier.
+. The Event Message will be published from here on.
+The event will first be sent to all the Event Handlers in the Aggregate which are interested.
+This is necessary for link:../../architecture-overview/event-sourcing.md[Event Sourcing], to update the Aggregate's state accordingly.
+. After the Aggregate itself has handled the event, it will be published on the `EventBus`.
+
+____
+
+*MetaData in Aggregate Event Messages*
+
+The `AggregateLifecycle` also provides an `apply(Object, MetaData)` function.
+This can be used to attach command-handler specific MetaData.
+
+____
+
+The `AggregateLifecycle#apply` method returns an implementation of the `ApplyMore` interface.
+This interface provides the following methods:
+
+* `.andThenApply(Supplier<?>)` - Applies a next event resulting from the given `Supplier` in order.
+* `.andThen(Runnable)` - To execute some logic after the event has been applied
+* `.andThenApplyIf(Supplier<Boolean>, Supplier<?>)` - To apply a next event in the correct order, depending on a certain condition
+* `.andThenIf(Supplier<Boolean>, Runnable runnable)` - To execute some logic after the event has been applied, depending on a certain condition
+
+== Dispatching events from a Non-Aggregate
+
+In the vast majority of cases, the xref:axon-framework-commands:modeling/aggregate.adoc[Aggregates] will publish events by applying them.
+However, occasionally, it is necessary to publish an event (possibly from within another component), directly to the Event Gateway:
+
+[source,java]
+----
+private EventGateway eventGateway;
+
+public void dispatchEvent() {
+    eventGateway.publish(new CardIssuedEvent("cardId", 100, "shopId"));
+}
+// omitted class and constructor
+----

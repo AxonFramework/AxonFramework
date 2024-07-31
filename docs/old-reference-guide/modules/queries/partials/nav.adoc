@@ -1,0 +1,6 @@
+* xref:queries:README.adoc[]
+** xref:queries:query-processing.adoc[]
+** xref:queries:query-dispatchers.adoc[]
+** xref:queries:query-handlers.adoc[]
+** xref:queries:implementations.adoc[]
+** xref:queries:configuration.adoc[]

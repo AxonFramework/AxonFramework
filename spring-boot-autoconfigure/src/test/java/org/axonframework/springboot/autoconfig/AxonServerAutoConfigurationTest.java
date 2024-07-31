@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,15 @@ import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFac
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.Message;
 import org.axonframework.modelling.saga.ResourceInjector;
@@ -51,6 +59,7 @@ class AxonServerAutoConfigurationTest {
             m -> "some-custom-context-resolution";
     private static final ManagedChannelCustomizer CUSTOM_MANAGED_CHANNEL_CUSTOMIZER =
             ManagedChannelBuilder::directExecutor;
+    public static final Class<SequentialPerAggregatePolicy> DEFAULT_SEQUENCING_POLICY_CLASS = SequentialPerAggregatePolicy.class;
 
     private ApplicationContextRunner testContext;
 
@@ -212,6 +221,61 @@ class AxonServerAutoConfigurationTest {
         testContext.withUserConfiguration(TestContext.class)
                    .withPropertyValues("axon.axonserver.event-store.enabled=false")
                    .run(context -> assertThat(context).getBean(AxonServerEventStoreFactory.class).isNull());
+    }
+
+    @Test
+    void axonServerPersistentStreamBeansCreated() {
+        testContext.withPropertyValues("axon.axonserver.persistent-streams[payments].name=My Payments",
+                                       "axon.axonserver.persistent-streams[orders].name=My Orders")
+                   .run(context -> {
+                       assertThat(context).getBean("payments").isNotNull();
+                       assertThat(context).getBean("orders").isNotNull();
+                   });
+    }
+
+    @Test
+    void persistentStreamProcessorsConfigurerModuleAddsSequencingPolicy() {
+        testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
+                                       "axon.eventhandling.processors.payments.source=payments-stream",
+                                       "axon.eventhandling.processors.payments.dlq.enabled=true",
+                                       "axon.eventhandling.processors.payments.mode=SUBSCRIBING")
+                   .run(context -> {
+                       assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
+                       ConfigurerModule configurerModule =
+                               context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
+                       Configurer defaultConfigurer = DefaultConfigurer.defaultConfiguration();
+                       configurerModule.configureModule(defaultConfigurer);
+                       Configuration configuration = defaultConfigurer.buildConfiguration();
+                       SequencingPolicy<? super EventMessage<?>> sequencingPolicy =
+                               configuration.eventProcessingConfiguration().sequencingPolicy("payments");
+                       assertThat(sequencingPolicy).isNotNull();
+                       assertThat(sequencingPolicy).isNotInstanceOf(DEFAULT_SEQUENCING_POLICY_CLASS);
+                   });
+    }
+
+    @Test
+    void persistentStreamProcessorsConfigurerModuleAddsNoSequencingPolicyWithoutDlq() {
+        testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
+                                       "axon.eventhandling.processors.payments.source=payments-stream",
+                                       "axon.eventhandling.processors.payments.mode=SUBSCRIBING")
+                   .run(context -> {
+                       assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
+                       ConfigurerModule configurerModule =
+                               context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
+                       Configurer defaultConfigurer = DefaultConfigurer.defaultConfiguration();
+                       configurerModule.configureModule(defaultConfigurer);
+                       Configuration configuration = defaultConfigurer.buildConfiguration();
+                       assertThat(
+                               configuration.eventProcessingConfiguration().sequencingPolicy("payments")
+                       ).isInstanceOf(DEFAULT_SEQUENCING_POLICY_CLASS);
+                   });
+    }
+
+    @Test
+    void axonServerPersistentStreamBeansNotCreatedWhenAxonServerDisabled() {
+        testContext.withPropertyValues("axon.axonserver.persistent-streams[payments].name=My Payments",
+                                       "axon.axonserver.enabled=false")
+                   .run(context -> assertThat(context).getBean("payments").isNull());
     }
 
     @ContextConfiguration

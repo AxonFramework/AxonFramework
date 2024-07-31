@@ -1,0 +1,14 @@
+name: message-handler-tuning-guide
+title: Axon Framework Message Handler Tuning Guide
+version: true
+prerelease: true
+start_page: ROOT:index.adoc
+
+asciidoc:
+  attributes:
+    component_description: Guide that covers the message handler tuning in your Axon Framework applications.
+    type: guide
+    group: axon-framework
+
+nav:
+  - modules/nav.adoc

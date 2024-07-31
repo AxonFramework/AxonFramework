@@ -103,6 +103,16 @@ class ThrowableCauseTest {
     }
 
     @Test
+    void truncateCanHandleNullMessages() {
+        Throwable testThrowable = new RuntimeException();
+
+        ThrowableCause result = ThrowableCause.truncated(testThrowable);
+
+        assertEquals(testThrowable.getClass().getName(), result.type());
+        assertNull(result.message());
+    }
+
+    @Test
     void truncateShortensMessageIfItExceedsMessageSize() {
         String textThatShouldBeTruncated = "truncated-text-at-the-end";
         Throwable testThrowable = new RuntimeException(BLOB_OF_TEXT + textThatShouldBeTruncated);
