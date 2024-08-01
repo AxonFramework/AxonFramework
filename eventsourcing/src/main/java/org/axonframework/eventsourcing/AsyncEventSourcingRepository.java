@@ -50,8 +50,8 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
             ResourceKey.create("managedEntities");
 
     private final EventStore eventStore;
-    private final BiFunction<EventMessage<?>, T, T> eventStateApplier;
-    private final Function<ID, String> identifierResolver;
+    private final EventStateApplier<T> eventStateApplier;
+    private final IdentifierResolver<ID> identifierResolver;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
@@ -63,8 +63,8 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
      * @param identifierResolver Converts the given identifier to an aggregate identifier to load the event stream.
      */
     public AsyncEventSourcingRepository(EventStore eventStore,
-                                        BiFunction<EventMessage<?>, T, T> eventStateApplier,
-                                        Function<ID, String> identifierResolver) {
+                                        EventStateApplier<T> eventStateApplier,
+                                        IdentifierResolver<ID> identifierResolver) {
         this.eventStore = eventStore;
         this.eventStateApplier = eventStateApplier;
         this.identifierResolver = identifierResolver;
@@ -94,7 +94,7 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
         return managedEntities.computeIfAbsent(
                 identifier,
                 id -> {
-                    DomainEventStream eventStream = eventStore.readEvents(identifierResolver.apply(identifier));
+                    DomainEventStream eventStream = eventStore.readEvents(identifierResolver.resolve(identifier));
                     T currentState = null;
                     while (eventStream.hasNext()) {
                         DomainEventMessage<?> nextEvent = eventStream.next();
@@ -179,8 +179,8 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
             return currentState.updateAndGet(change);
         }
 
-        private T applyStateChange(EventMessage<?> event, BiFunction<EventMessage<?>, T, T> change) {
-            return currentState.updateAndGet(current -> change.apply(event, current));
+        private T applyStateChange(EventMessage<?> event, EventStateApplier<T> applier) {
+            return currentState.updateAndGet(current -> applier.changeState(event, current));
         }
     }
 }
