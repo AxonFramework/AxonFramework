@@ -360,7 +360,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
             Queue<Function<ProcessingContext, CompletableFuture<?>>> handlers = phaseHandlers.remove(phase);
             if (handlers == null || handlers.isEmpty()) {
                 logger.debug("Skipping phase {} (seq {}). No handlers registered", phase, phase.order());
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             }
             logger.debug("Calling {} handlers in phase {} (seq {}).", handlers.size(), phase, phase.order());
 

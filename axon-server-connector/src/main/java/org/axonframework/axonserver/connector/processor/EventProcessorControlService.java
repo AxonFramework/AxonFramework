@@ -24,6 +24,7 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.StreamingEventProcessor;
@@ -320,7 +321,7 @@ public class EventProcessorControlService implements Lifecycle {
         public CompletableFuture<Void> pauseProcessor() {
             try {
                 processor.shutDown();
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             } catch (Exception e) {
                 return exceptionallyCompletedFuture(e);
             }
@@ -330,7 +331,7 @@ public class EventProcessorControlService implements Lifecycle {
         public CompletableFuture<Void> startProcessor() {
             try {
                 processor.start();
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             } catch (Exception e) {
                 return exceptionallyCompletedFuture(e);
             }

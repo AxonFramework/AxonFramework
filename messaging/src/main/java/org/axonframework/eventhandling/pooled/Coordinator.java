@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -324,7 +325,7 @@ class Coordinator {
         }
 
         public static RunState initial(Runnable shutdownAction) {
-            return new RunState(false, false, CompletableFuture.completedFuture(null), shutdownAction);
+            return new RunState(false, false, FutureUtils.emptyCompletedFuture(), shutdownAction);
         }
 
         public RunState attemptStart() {
@@ -838,7 +839,7 @@ class Coordinator {
             return workPackages.values().stream()
                                .map(wp -> abortWorkPackage(wp, cause))
                                .reduce(CompletableFuture::allOf)
-                               .orElse(CompletableFuture.completedFuture(null))
+                               .orElse(FutureUtils.emptyCompletedFuture())
                                .thenRun(workPackages::clear);
         }
 

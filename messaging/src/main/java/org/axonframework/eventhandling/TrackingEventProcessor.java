@@ -20,6 +20,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.ExceptionUtils;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -752,7 +753,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     private CompletableFuture<Void> awaitTermination() {
         if (activeProcessorThreads() <= 0 && !workLauncherRunning.get()) {
-            return CompletableFuture.completedFuture(null);
+            return FutureUtils.emptyCompletedFuture();
         }
 
         logger.info("Processor '{}' awaiting termination...", getName());
@@ -780,7 +781,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                 }
                             }))
                             .reduce(CompletableFuture::allOf)
-                            .orElse(CompletableFuture.completedFuture(null));
+                            .orElse(FutureUtils.emptyCompletedFuture());
     }
 
     /**

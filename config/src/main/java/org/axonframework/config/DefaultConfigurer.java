@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
 import org.axonframework.commandhandling.tracing.DefaultCommandBusSpanFactory;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -1053,7 +1054,7 @@ public class DefaultConfigurer implements Configurer {
                         .map(LifecycleHandler::run)
                         .map(c -> c.thenRun(NOTHING))
                         .reduce(CompletableFuture::allOf)
-                        .orElse(CompletableFuture.completedFuture(null))
+                        .orElse(FutureUtils.emptyCompletedFuture())
                         .get(lifecyclePhaseTimeout, lifecyclePhaseTimeunit);
             } catch (CompletionException | ExecutionException e) {
                 exceptionHandler.accept(e);

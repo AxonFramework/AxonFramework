@@ -16,6 +16,8 @@
 
 package org.axonframework.lifecycle;
 
+import org.axonframework.common.FutureUtils;
+
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 
@@ -66,7 +68,7 @@ public interface Lifecycle {
             onStart(phase, () -> {
                 try {
                     action.run();
-                    return CompletableFuture.completedFuture(null);
+                    return FutureUtils.emptyCompletedFuture();
                 } catch (Exception e) {
                     CompletableFuture<Void> cf = new CompletableFuture<>();
                     cf.completeExceptionally(e);
@@ -88,7 +90,7 @@ public interface Lifecycle {
             onShutdown(phase, () -> {
                 try {
                     action.run();
-                    return CompletableFuture.completedFuture(null);
+                    return FutureUtils.emptyCompletedFuture();
                 } catch (Exception e) {
                     CompletableFuture<Void> cf = new CompletableFuture<>();
                     cf.completeExceptionally(e);
