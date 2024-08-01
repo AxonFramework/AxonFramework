@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.saga.repository;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.messaging.Message;
@@ -218,7 +219,7 @@ public abstract class CachingSagaStoreTest {
                              executor
                      ))
                      .reduce(CompletableFuture::allOf)
-                     .orElse(CompletableFuture.completedFuture(null))
+                     .orElse(FutureUtils.emptyCompletedFuture())
                      .get(10, TimeUnit.SECONDS);
         } catch (Exception e) {
             fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);
@@ -259,7 +260,7 @@ public abstract class CachingSagaStoreTest {
                              executor
                      ))
                      .reduce(CompletableFuture::allOf)
-                     .orElse(CompletableFuture.completedFuture(null))
+                     .orElse(FutureUtils.emptyCompletedFuture())
                      .get(10, TimeUnit.SECONDS);
         } catch (Exception e) {
             fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);

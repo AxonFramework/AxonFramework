@@ -1,5 +1,6 @@
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -404,8 +405,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         PL testSubject = createTestSubject();
 
         testSubject.onInvocation(ctx -> {
-            ctx.onPreInvocation(c2 -> CompletableFuture.completedFuture(null));
-            return CompletableFuture.completedFuture(null);
+            ctx.onPreInvocation(c2 -> FutureUtils.emptyCompletedFuture());
+            return FutureUtils.emptyCompletedFuture();
         });
 
         CompletableFuture<?> actual = execute(testSubject);
@@ -835,7 +836,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         @Override
         public CompletableFuture<?> apply(ProcessingContext processingContext) {
             completedExecutions.add(new ExecutionCompleted(id, phase));
-            return CompletableFuture.completedFuture(null);
+            return FutureUtils.emptyCompletedFuture();
         }
     }
 

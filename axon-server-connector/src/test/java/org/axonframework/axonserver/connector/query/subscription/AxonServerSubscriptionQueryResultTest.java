@@ -25,6 +25,7 @@ import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
 import io.grpc.stub.ClientCallStreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
@@ -57,7 +58,7 @@ class AxonServerSubscriptionQueryResultTest {
         SubscriptionQueryResult result = new SubscriptionQueryResult() {
             @Override
             public CompletableFuture<QueryResponse> initialResult() {
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             }
 
             @Override

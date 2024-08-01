@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.cache;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
@@ -216,7 +217,7 @@ public abstract class CachingIntegrationTestSuite {
                          () -> publishBulkUpdatesTo(associationValue, NUMBER_OF_UPDATES), executor
                  ))
                  .reduce(CompletableFuture::allOf)
-                 .orElse(CompletableFuture.completedFuture(null))
+                 .orElse(FutureUtils.emptyCompletedFuture())
                  .get(15, TimeUnit.SECONDS);
         await().pollDelay(DEFAULT_DELAY)
                .atMost(SIXTEEN_SECONDS)
@@ -281,7 +282,7 @@ public abstract class CachingIntegrationTestSuite {
                       () -> publishBulkUpdatesTo(name + "-id", NUMBER_OF_UPDATES), executor
               ))
               .reduce(CompletableFuture::allOf)
-              .orElse(CompletableFuture.completedFuture(null))
+              .orElse(FutureUtils.emptyCompletedFuture())
               .get(15, TimeUnit.SECONDS);
         await().pollDelay(DEFAULT_DELAY)
                .atMost(EIGHT_SECONDS)
@@ -362,7 +363,7 @@ public abstract class CachingIntegrationTestSuite {
                          executor
                  ))
                  .reduce(CompletableFuture::allOf)
-                 .orElse(CompletableFuture.completedFuture(null))
+                 .orElse(FutureUtils.emptyCompletedFuture())
                  .get(15, TimeUnit.SECONDS);
         await().pollDelay(DEFAULT_DELAY)
                .atMost(THIRTY_TWO_SECONDS)

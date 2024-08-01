@@ -37,6 +37,7 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.TestTargetContextResolver;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.Message;
@@ -147,7 +148,7 @@ class AxonServerQueryBusTest {
 
         when(mockConnection.queryChannel()).thenReturn(mockQueryChannel);
         when(mockQueryChannel.registerQueryHandler(any(), any()))
-                .thenReturn(() -> CompletableFuture.completedFuture(null));
+                .thenReturn(() -> FutureUtils.emptyCompletedFuture());
 
         when(localSegment.subscribe(any(), any(), any())).thenReturn(() -> true);
     }
@@ -287,7 +288,7 @@ class AxonServerQueryBusTest {
     @Test
     void subscribeHandler() {
         when(mockQueryChannel.registerQueryHandler(any(), any()))
-                .thenReturn(() -> CompletableFuture.completedFuture(null));
+                .thenReturn(() -> FutureUtils.emptyCompletedFuture());
 
         Registration result = testSubject.subscribe(TEST_QUERY, String.class, q -> "test: " + q.getPayloadType());
 
@@ -582,7 +583,7 @@ class AxonServerQueryBusTest {
         AtomicReference<QueryHandler> queryHandlerRef = new AtomicReference<>();
         doAnswer(i -> {
             queryHandlerRef.set(i.getArgument(0));
-            return (io.axoniq.axonserver.connector.Registration) () -> CompletableFuture.completedFuture(null);
+            return (io.axoniq.axonserver.connector.Registration) () -> FutureUtils.emptyCompletedFuture();
         }).when(mockQueryChannel)
           .registerQueryHandler(any(), any());
 

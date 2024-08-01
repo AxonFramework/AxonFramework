@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.Segment;
@@ -70,7 +71,7 @@ class SplitTaskTest {
         TrackerStatus expectedSplit = expectedTokens[1];
 
         when(workPackage.segment()).thenReturn(testSegmentToSplit);
-        when(workPackage.abort(null)).thenReturn(CompletableFuture.completedFuture(null));
+        when(workPackage.abort(null)).thenReturn(FutureUtils.emptyCompletedFuture());
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(testTokenToSplit);
         workPackages.put(SEGMENT_ID, workPackage);
 

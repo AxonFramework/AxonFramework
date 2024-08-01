@@ -16,6 +16,8 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.FutureUtils;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -60,7 +62,7 @@ public interface LifecycleOperations {
         onStart(phase, () -> {
             try {
                 startHandler.run();
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             } catch (Exception e) {
                 CompletableFuture<?> exceptionResult = new CompletableFuture<>();
                 exceptionResult.completeExceptionally(e);
@@ -112,7 +114,7 @@ public interface LifecycleOperations {
         onShutdown(phase, () -> {
             try {
                 shutdownHandler.run();
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             } catch (Exception e) {
                 CompletableFuture<?> exceptionResult = new CompletableFuture<>();
                 exceptionResult.completeExceptionally(e);

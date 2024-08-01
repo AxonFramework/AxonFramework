@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.lifecycle.Lifecycle;
@@ -142,7 +143,7 @@ public abstract class LifecycleHandlerInspector {
 
             return result instanceof CompletableFuture
                    ? (CompletableFuture<?>) result
-                   : CompletableFuture.completedFuture(null);
+                   : FutureUtils.emptyCompletedFuture();
         } catch (Exception e) {
             CompletableFuture<Void> exceptionallyCompletedFuture = new CompletableFuture<>();
             exceptionallyCompletedFuture.completeExceptionally(

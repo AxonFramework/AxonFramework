@@ -45,6 +45,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.StringUtils;
 import org.axonframework.lifecycle.Lifecycle;
@@ -930,7 +931,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
             return () -> {
                 updateHandler.getRegistration().cancel();
-                return CompletableFuture.completedFuture(null);
+                return FutureUtils.emptyCompletedFuture();
             };
         }
     }
