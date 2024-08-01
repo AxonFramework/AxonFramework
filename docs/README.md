@@ -2,7 +2,7 @@
 
 This folder contains the docs related to the Axon Framework project. The docs in this folder are written as part of the [AxonIQ Library](https://library.axoniq.io), and are [written in Ascii and built with Antora.](https://library.axoniq.io/contribution_guide/overview/platform.html)
 
-Currently, there are two different documentation sources (folders):
+The following are the current documentation sources (folders):
 
 - `af-fundamentals-tutorial`: [A tutorial covering Axon Framework's fundamental components and features.](https://library.axoniq.io/axon_framework_fundamentals/index.html)
 - `identifier-generation-guide` : [Guide that covers several considerations in regards to identifier generation in Axon Framework-based applications.](https://library.axoniq.io/identifier-generation-guide/index.html)
