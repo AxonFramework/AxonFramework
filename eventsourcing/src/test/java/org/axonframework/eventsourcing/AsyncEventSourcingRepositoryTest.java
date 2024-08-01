@@ -36,33 +36,34 @@ import static org.mockito.Mockito.*;
 
 class AsyncEventSourcingRepositoryTest {
 
-    private AsyncEventSourcingRepository<String, String> testSubject;
-    private EventStore mockEventStore;
+    private EventStore eventStore;
     private AppendEventTransaction eventTransaction;
+
+    private AsyncEventSourcingRepository<String, String> testSubject;
 
     @BeforeEach
     void setUp() {
-        mockEventStore = mock();
+        eventStore = mock();
         eventTransaction = mock();
-        testSubject = new AsyncEventSourcingRepository<>(mockEventStore,
-                                                         (event, value) -> value + "-" + event.getPayload(),
-                                                         c -> "id");
+        when(eventStore.currentTransaction(any())).thenReturn(eventTransaction);
 
-        when(mockEventStore.currentTransaction(any())).thenReturn(eventTransaction);
+        testSubject = new AsyncEventSourcingRepository<>(
+                eventStore,
+                (event, currentState) -> currentState + "-" + event.getPayload(),
+                identifier -> "id"
+        );
     }
 
     @Test
     void loadEventSourcedEntity() {
-        when(mockEventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
+        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
         StubProcessingContext processingContext = new StubProcessingContext();
-        CompletableFuture<ManagedEntity<String, String>> loaded = testSubject.load(
-                "test",
-                processingContext);
+        CompletableFuture<ManagedEntity<String, String>> loaded = testSubject.load("test", processingContext);
 
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());
         verify(eventTransaction).onEvent(any());
-        verify(mockEventStore).readEvents(eq("id"));
+        verify(eventStore).readEvents(eq("id"));
 
         assertEquals("null-0-1", loaded.resultNow().entity());
     }
@@ -93,7 +94,7 @@ class AsyncEventSourcingRepositoryTest {
 
     @Test
     void assigningEntityToOtherProcessingContextInExactFormat() throws Exception {
-        when(mockEventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
+        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
         StubProcessingContext processingContext = new StubProcessingContext();
         StubProcessingContext processingContext2 = new StubProcessingContext();
         ManagedEntity<String, String> loaded = testSubject.load("test", processingContext).get();
@@ -105,9 +106,10 @@ class AsyncEventSourcingRepositoryTest {
 
     @Test
     void assigningEntityToOtherProcessingContextInOtherFormat() throws Exception {
-        when(mockEventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
+        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
         StubProcessingContext processingContext = new StubProcessingContext();
         StubProcessingContext processingContext2 = new StubProcessingContext();
+
         ManagedEntity<String, String> loaded = testSubject.load("test", processingContext).get();
 
         testSubject.attach(new ManagedEntity<>() {
@@ -133,19 +135,18 @@ class AsyncEventSourcingRepositoryTest {
 
     @Test
     void updateLoadedEventSourcedEntity() {
-        when(mockEventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
+        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
         StubProcessingContext processingContext = new StubProcessingContext();
-        CompletableFuture<ManagedEntity<String, String>> loaded = testSubject.load(
-                "test",
-                processingContext);
+
+        CompletableFuture<ManagedEntity<String, String>> loaded = testSubject.load("test", processingContext);
 
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());
+        //noinspection unchecked
         ArgumentCaptor<Consumer<EventMessage<?>>> callback = ArgumentCaptor.forClass(Consumer.class);
-        verify(mockEventStore).readEvents(eq("id"));
+        verify(eventStore).readEvents(eq("id"));
         verify(eventTransaction).onEvent(callback.capture());
         assertEquals("null-0-1", loaded.resultNow().entity());
-
 
         callback.getValue().accept(new GenericEventMessage<>("live"));
 
@@ -154,34 +155,32 @@ class AsyncEventSourcingRepositoryTest {
 
     @Test
     void loadOrCreateShouldLoadWhenEventsAreReturned() {
-        when(mockEventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
+        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
         StubProcessingContext processingContext = new StubProcessingContext();
-        CompletableFuture<ManagedEntity<String, String>> loaded = testSubject.loadOrCreate(
-                "test",
-                processingContext,
-                () -> fail("This should not have been invoked"));
+
+        CompletableFuture<ManagedEntity<String, String>> loaded =
+                testSubject.loadOrCreate("test", processingContext, () -> fail("This should not have been invoked"));
 
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());
         verify(eventTransaction).onEvent(any());
-        verify(mockEventStore).readEvents(eq("id"));
+        verify(eventStore).readEvents(eq("id"));
 
         assertEquals("null-0-1", loaded.resultNow().entity());
     }
 
     @Test
     void loadOrCreateShouldCreateWhenNoEventsAreReturned() {
-        when(mockEventStore.readEvents("id")).thenReturn(DomainEventStream.empty());
+        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.empty());
         StubProcessingContext processingContext = new StubProcessingContext();
-        CompletableFuture<ManagedEntity<String, String>> loaded = testSubject.loadOrCreate(
-                "test",
-                processingContext,
-                () -> "created");
+
+        CompletableFuture<ManagedEntity<String, String>> loaded =
+                testSubject.loadOrCreate("test", processingContext, () -> "created");
 
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());
         verify(eventTransaction).onEvent(any());
-        verify(mockEventStore).readEvents(eq("id"));
+        verify(eventStore).readEvents(eq("id"));
 
         assertEquals("created", loaded.resultNow().entity());
     }

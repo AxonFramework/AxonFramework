@@ -31,20 +31,23 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 /**
- * Repository implementation that ensures safe concurrent access to entities stored in it. It delegates that actual
- * loading of entities to another repository, but attempts to pass loaded elements to waiting components immediately, to
- * avoid avoidable load operations on the underlying repository.
+ * Repository implementation that ensures safe concurrent access to entities stored in it. It delegates the actual
+ * loading of entities to another {@link AsyncRepository}, but attempts to pass loaded elements to waiting components
+ * immediately, to avoid avoidable load operations on the underlying repository.
  *
- * @param <ID> The type of identifier used to identify entities stored by this repository
- * @param <T>  The type of entity stored in this repository
+ * @param <ID> The type of identifier used to identify entities stored by this repository.
+ * @param <T>  The type of entity stored in this repository.
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public class AccessSerializingRepository<ID, T>
         implements AsyncRepository.LifecycleManagement<ID, T>, DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(AccessSerializingRepository.class);
 
-    private final ProcessingContext.ResourceKey<ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>>> workingAggregatesKey =
-            ProcessingContext.ResourceKey.create("workingAggregates");
+    private final ProcessingContext.ResourceKey<ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>>> workingEntitiesKey =
+            ProcessingContext.ResourceKey.create("workingEntities");
+
     private final AsyncRepository.LifecycleManagement<ID, T> delegate;
     private final ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> inProgress;
 
@@ -53,9 +56,15 @@ public class AccessSerializingRepository<ID, T>
      *
      * @param delegate The repository implementation to delegate loading of the entities to
      */
-    public AccessSerializingRepository(LifecycleManagement<ID, T> delegate) {
+    public AccessSerializingRepository(AsyncRepository.LifecycleManagement<ID, T> delegate) {
         this.delegate = delegate;
-        inProgress = new ConcurrentHashMap<>();
+        this.inProgress = new ConcurrentHashMap<>();
+    }
+
+    @Override
+    public ManagedEntity<ID, T> attach(@Nonnull ManagedEntity<ID, T> entity,
+                                       @Nonnull ProcessingContext processingContext) {
+        return delegate.attach(entity, processingContext);
     }
 
     @Override
@@ -75,103 +84,94 @@ public class AccessSerializingRepository<ID, T>
                          () -> delegate.loadOrCreate(identifier, processingContext, factoryMethod));
     }
 
-    @Override
-    public ManagedEntity<ID, T> persist(@Nonnull ID identifier, @Nonnull T entity,
-                                        @Nonnull ProcessingContext processingContext) {
-        ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> workingAggregates =
-                processingContext.computeResourceIfAbsent(workingAggregatesKey, ConcurrentHashMap::new);
-        ManagedEntity<ID, T> persisted = delegate.persist(identifier, entity, processingContext);
-        if (workingAggregates.put(identifier, CompletableFuture.completedFuture(persisted)) == null) {
-            CompletableFuture<ManagedEntity<ID, T>> doneMarker = new CompletableFuture<>();
-            inProgress.put(identifier, doneMarker);
-            processingContext.whenComplete(pc -> workingAggregates.get(identifier).getNow(null));
-            processingContext.onError((pc, phase, error) -> doneMarker.complete(null));
-        }
-        return persisted;
-    }
+    private CompletableFuture<ManagedEntity<ID, T>> awaitTurn(
+            ID identifier,
+            ProcessingContext processingContext,
+            Supplier<CompletableFuture<ManagedEntity<ID, T>>> entitySupplier
+    ) {
+        logger.info("Attempting to load [{}] in {}", identifier, processingContext);
+        ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> workingEntities =
+                processingContext.computeResourceIfAbsent(workingEntitiesKey, ConcurrentHashMap::new);
 
-
-    @Override
-    public ManagedEntity<ID, T> attach(@Nonnull ManagedEntity<ID, T> entity,
-                                       @Nonnull ProcessingContext processingContext) {
-        return delegate.attach(entity, processingContext);
-    }
-
-    private CompletableFuture<ManagedEntity<ID, T>> awaitTurn(ID aggregateIdentifier,
-                                                              ProcessingContext processingContext,
-                                                              Supplier<CompletableFuture<ManagedEntity<ID, T>>> action) {
-        logger.info("Attempting to load {} in {}", aggregateIdentifier, processingContext);
-        ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> workingAggregates = processingContext.computeResourceIfAbsent(
-                workingAggregatesKey,
-                ConcurrentHashMap::new);
-
-        if (workingAggregates.containsKey(aggregateIdentifier)) {
-            // we're working with it, so it must be safe
-            logger.info("Found a working aggregate for {} in {}. Returning it.",
-                        aggregateIdentifier,
-                        processingContext);
-            return workingAggregates.get(aggregateIdentifier);
+        if (workingEntities.containsKey(identifier)) {
+            // We're working with it, so it must be safe
+            logger.info("Found a working entity for [{}] in {}. Returning it.", identifier, processingContext);
+            return workingEntities.get(identifier);
         }
 
         CompletableFuture<ManagedEntity<ID, T>> doneMarker = new CompletableFuture<>();
-        CompletableFuture<ManagedEntity<ID, T>> replaced = inProgress.put(aggregateIdentifier, doneMarker);
-
-        doneMarker.whenComplete((r, e) -> inProgress.remove(aggregateIdentifier, doneMarker));
+        CompletableFuture<ManagedEntity<ID, T>> previousMarker = inProgress.put(identifier, doneMarker);
         CompletableFuture<ManagedEntity<ID, T>> previousTask;
-        if (replaced == null) {
-            logger.info("No previous task found for loading {}. Performing actual load.", aggregateIdentifier);
+
+        doneMarker.whenComplete((r, e) -> inProgress.remove(identifier, doneMarker));
+        if (previousMarker == null) {
+            logger.info("No previous task found for loading [{}]. Performing actual load.", identifier);
             previousTask = FutureUtils.emptyCompletedFuture();
         } else {
-            logger.info("Previous task detected. Will wait for it to complete before loading {} in {}",
-                        aggregateIdentifier,
-                        processingContext);
-            previousTask = replaced.whenComplete((r, e) -> logger.info("Previous task completed. Processing {} in {}",
-                                                                       r,
-                                                                       processingContext,
-                                                                       e));
+            logger.info("Previous task detected. Will wait for it to complete before loading [{}] in {}",
+                        identifier, processingContext);
+            previousTask = previousMarker.whenComplete(
+                    (r, e) -> logger.info("Previous task completed. Processing {} in {}", r, processingContext, e)
+            );
         }
+
         return previousTask.exceptionally(e -> {
-            logger.info("Previous task finished with error", e);
+            logger.info("Previous task finished with exception", e);
             return null;
-        }).thenCompose(previousAggregate -> {
-            if (previousAggregate == null) {
-                logger.info("Previous task for {} did not exist or completed with failure. Loading from delegate in {}.",
-                            aggregateIdentifier,
-                            processingContext);
+        }).thenCompose(previousEntity -> {
+            if (previousEntity == null) {
+                logger.info(
+                        "Previous task for [{}] did not exist or completed with a failure. Loading from delegate in {}.",
+                        identifier, processingContext
+                );
             } else {
-                logger.info("Previous task finished successfully and transferred entity {} to {}",
-                            aggregateIdentifier,
-                            processingContext);
+                logger.info("Previous task finished successfully and transferred entity [{}] to {}.",
+                            identifier, processingContext);
             }
-            CompletableFuture<ManagedEntity<ID, T>> workingAggregate;
-            if (previousAggregate == null) {
-                logger.info("Calling action in {} to load {}", processingContext, aggregateIdentifier);
-                workingAggregate = action.get();
+
+            CompletableFuture<ManagedEntity<ID, T>> workingEntity;
+            if (previousEntity == null) {
+                logger.info("Calling entity supplier in {} to load or create [{}].", processingContext, identifier);
+                workingEntity = entitySupplier.get();
             } else {
-                logger.info("Received {} in {}. Registering as managed instance",
-                            processingContext,
-                            aggregateIdentifier);
-                workingAggregate = CompletableFuture.completedFuture(delegate.attach(previousAggregate,
-                                                                                     processingContext));
+                logger.info("Received [{}] in {}. Registering as managed instance.", identifier, processingContext);
+                workingEntity = CompletableFuture.completedFuture(delegate.attach(previousEntity, processingContext));
             }
-            workingAggregates.put(aggregateIdentifier, workingAggregate);
-            return workingAggregate.whenComplete((r, e) -> {
-                logger.info("Aggregate {} released in {}", aggregateIdentifier, processingContext);
+            workingEntities.put(identifier, workingEntity);
+
+            return workingEntity.whenComplete((r, e) -> {
+                logger.info("Entity [{}] released in {}", identifier, processingContext);
                 processingContext.whenComplete(pc -> {
-                    logger.info("Processing in {} completed successfully. Passing {} to next task",
-                                processingContext,
-                                aggregateIdentifier);
-                    doneMarker.complete(workingAggregates.get(aggregateIdentifier).getNow(null));
+                    logger.info("Processing in {} completed successfully. Passing [{}] to next task.",
+                                processingContext, identifier);
+                    doneMarker.complete(workingEntities.get(identifier).getNow(null));
                 });
+
                 processingContext.onError((pc, phase, error) -> {
-                    logger.info("Processing in {} completed with error. Triggering next task to continue without {}",
-                                processingContext,
-                                aggregateIdentifier);
+                    logger.info("Processing in {} completed with error. Triggering next task to continue without [{}].",
+                                processingContext, identifier);
                     doneMarker.complete(null);
                 });
             });
-            // we need to apply one more function to avoid cancellations to impact the above logic
+            // We need to apply one more function to avoid cancellations to impact the above logic
         }).thenApply(Function.identity());
+    }
+
+    @Override
+    public ManagedEntity<ID, T> persist(@Nonnull ID identifier,
+                                        @Nonnull T entity,
+                                        @Nonnull ProcessingContext processingContext) {
+        ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> workingEntities =
+                processingContext.computeResourceIfAbsent(workingEntitiesKey, ConcurrentHashMap::new);
+        ManagedEntity<ID, T> persisted = delegate.persist(identifier, entity, processingContext);
+
+        if (workingEntities.put(identifier, CompletableFuture.completedFuture(persisted)) == null) {
+            CompletableFuture<ManagedEntity<ID, T>> doneMarker = new CompletableFuture<>();
+            inProgress.put(identifier, doneMarker);
+            processingContext.whenComplete(pc -> workingEntities.get(identifier).getNow(null));
+            processingContext.onError((pc, phase, error) -> doneMarker.complete(null));
+        }
+        return persisted;
     }
 
     @Override

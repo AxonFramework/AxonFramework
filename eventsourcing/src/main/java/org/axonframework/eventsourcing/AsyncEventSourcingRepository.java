@@ -37,18 +37,20 @@ import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
 
 /**
- * Repository implementation that loads entities based on their historic event streams, provided by an Event Store.
+ * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an {@link EventStore}.
  *
- * @param <ID> The type of identifier used to identify the entity
- * @param <T>  The type of the entity to load
+ * @param <ID> The type of identifier used to identify the entity.
+ * @param <T>  The type of the entity to load.
+ * @author Allard Buijze
+ * @since 0.1
  */
 public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.LifecycleManagement<ID, T> {
 
-    private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, T>>>> managedEntitiesKey = ResourceKey.create(
-            "managedEntities");
+    private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, T>>>> managedEntitiesKey =
+            ResourceKey.create("managedEntities");
 
     private final EventStore eventStore;
-    private final BiFunction<EventMessage<?>, T, T> applier;
+    private final BiFunction<EventMessage<?>, T, T> eventStateApplier;
     private final Function<ID, String> identifierResolver;
 
     /**
@@ -56,14 +58,15 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
      * apply state transitions to the entity based on the events received, and given {@code identifierResolver} to
      * resolve the aggregate identifier from the given identifier type.
      *
-     * @param eventStore         The event store to load events from
-     * @param applier            THe function to apply state changes to the loaded entities
-     * @param identifierResolver Converts the given identifier to an aggregate identifier to load the event stream
+     * @param eventStore         The event store to load events from.
+     * @param eventStateApplier  The function to apply event state changes to the loaded entities.
+     * @param identifierResolver Converts the given identifier to an aggregate identifier to load the event stream.
      */
-    public AsyncEventSourcingRepository(EventStore eventStore, BiFunction<EventMessage<?>, T, T> applier,
+    public AsyncEventSourcingRepository(EventStore eventStore,
+                                        BiFunction<EventMessage<?>, T, T> eventStateApplier,
                                         Function<ID, String> identifierResolver) {
         this.eventStore = eventStore;
-        this.applier = applier;
+        this.eventStateApplier = eventStateApplier;
         this.identifierResolver = identifierResolver;
     }
 
@@ -72,15 +75,15 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
                                        @Nonnull ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
-        CompletableFuture<EventSourcedEntity<ID, T>> result = managedEntities.computeIfAbsent(
+        return managedEntities.computeIfAbsent(
                 entity.identifier(),
                 id -> {
-                    EventSourcedEntity<ID, T> managedEntity = EventSourcedEntity.fromCached(entity);
+                    EventSourcedEntity<ID, T> eventSourcedEntity = EventSourcedEntity.mapToEventSourcedEntity(entity);
                     eventStore.currentTransaction(processingContext)
-                              .onEvent(event -> managedEntity.applyStateChange(event, applier));
-                    return CompletableFuture.completedFuture(managedEntity);
-                });
-        return result.resultNow();
+                              .onEvent(event -> eventSourcedEntity.applyStateChange(event, eventStateApplier));
+                    return CompletableFuture.completedFuture(eventSourcedEntity);
+                }
+        ).resultNow();
     }
 
     @Override
@@ -88,42 +91,46 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
                                                         @Nonnull ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
-        return managedEntities.computeIfAbsent(identifier, id -> {
-            DomainEventStream eventStream = eventStore.readEvents(identifierResolver.apply(identifier));
-            T currentState = null;
+        return managedEntities.computeIfAbsent(
+                identifier,
+                id -> {
+                    DomainEventStream eventStream = eventStore.readEvents(identifierResolver.apply(identifier));
+                    T currentState = null;
+                    while (eventStream.hasNext()) {
+                        DomainEventMessage<?> nextEvent = eventStream.next();
+                        currentState = eventStateApplier.apply(nextEvent, currentState);
+                    }
 
-            while (eventStream.hasNext()) {
-                DomainEventMessage<?> nextEvent = eventStream.next();
-                currentState = applier.apply(nextEvent, currentState);
-            }
-            EventSourcedEntity<ID, T> managedEntity = new EventSourcedEntity<>(identifier, currentState);
-            eventStore.currentTransaction(processingContext).onEvent(event -> managedEntity.applyStateChange(event,
-                                                                                                             applier));
-
-            return CompletableFuture.completedFuture(managedEntity);
-        }).thenApply(Function.identity());
+                    EventSourcedEntity<ID, T> managedEntity = new EventSourcedEntity<>(identifier, currentState);
+                    eventStore.currentTransaction(processingContext)
+                              .onEvent(event -> managedEntity.applyStateChange(event, eventStateApplier));
+                    return CompletableFuture.completedFuture(managedEntity);
+                }
+        ).thenApply(Function.identity());
     }
 
     @Override
     public CompletableFuture<ManagedEntity<ID, T>> loadOrCreate(@Nonnull ID identifier,
                                                                 @Nonnull ProcessingContext processingContext,
                                                                 @Nonnull Supplier<T> factoryMethod) {
-        return load(identifier, processingContext)
-                .thenApply(e -> {
-                    e.applyStateChange(c -> c != null ? c : factoryMethod.get());
-                    return e;
-                });
+        return load(identifier, processingContext).thenApply(
+                managedEntity -> {
+                    managedEntity.applyStateChange(entity -> entity != null ? entity : factoryMethod.get());
+                    return managedEntity;
+                }
+        );
     }
 
     @Override
-    public ManagedEntity<ID, T> persist(@Nonnull ID identifier, @Nonnull T entity,
+    public ManagedEntity<ID, T> persist(@Nonnull ID identifier,
+                                        @Nonnull T entity,
                                         @Nonnull ProcessingContext processingContext) {
-
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
+
         return managedEntities.computeIfAbsent(identifier, id -> {
             EventSourcedEntity<ID, T> managedEntity = new EventSourcedEntity<>(identifier, entity);
-            eventStore.currentTransaction(processingContext).onEvent(event -> managedEntity.applyStateChange(event,
-                                                                                                             applier));
+            eventStore.currentTransaction(processingContext)
+                      .onEvent(event -> managedEntity.applyStateChange(event, eventStateApplier));
             return CompletableFuture.completedFuture(managedEntity);
         }).resultNow();
     }
@@ -132,24 +139,29 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStore", eventStore);
         descriptor.describeProperty("identifierResolver", identifierResolver);
-        descriptor.describeProperty("applier", applier);
+        descriptor.describeProperty("eventStateApplier", eventStateApplier);
     }
 
+    /**
+     * Private implementation of the {@link ManagedEntity} supporting event sourcing.
+     *
+     * @param <ID> The type of identifier of the event sourced entity.
+     * @param <T>  The type of entity managed by this event sourced entity.
+     */
     private static class EventSourcedEntity<ID, T> implements ManagedEntity<ID, T> {
 
         private final ID identifier;
         private final AtomicReference<T> currentState;
 
-        public EventSourcedEntity(ID identifier, T currentState) {
+        private EventSourcedEntity(ID identifier, T currentState) {
             this.identifier = identifier;
             this.currentState = new AtomicReference<>(currentState);
         }
 
-        public static <ID, T> EventSourcedEntity<ID, T> fromCached(ManagedEntity<ID, T> entity) {
-            if (entity instanceof AsyncEventSourcingRepository.EventSourcedEntity<ID, T> ese) {
-                return ese;
-            }
-            return new EventSourcedEntity<>(entity.identifier(), entity.entity());
+        private static <ID, T> EventSourcedEntity<ID, T> mapToEventSourcedEntity(ManagedEntity<ID, T> entity) {
+            return entity instanceof AsyncEventSourcingRepository.EventSourcedEntity<ID, T> eventSourcedEntity
+                    ? eventSourcedEntity
+                    : new EventSourcedEntity<>(entity.identifier(), entity.entity());
         }
 
         @Override
@@ -167,7 +179,7 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
             return currentState.updateAndGet(change);
         }
 
-        public T applyStateChange(EventMessage<?> event, BiFunction<EventMessage<?>, T, T> change) {
+        private T applyStateChange(EventMessage<?> event, BiFunction<EventMessage<?>, T, T> change) {
             return currentState.updateAndGet(current -> change.apply(event, current));
         }
     }

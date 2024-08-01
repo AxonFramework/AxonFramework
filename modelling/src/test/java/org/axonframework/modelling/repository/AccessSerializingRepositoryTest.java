@@ -18,9 +18,9 @@ package org.axonframework.modelling.repository;
 
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.utils.AssertUtils;
 import org.junit.jupiter.api.*;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -28,46 +28,51 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class AccessSerializingRepositoryTest {
 
+    private static final String AGGREGATE_ID = "aggregateId";
+
     private AsyncRepository.LifecycleManagement<String, String> delegate;
+
     private AccessSerializingRepository<String, String> testSubject;
 
     @BeforeEach
     void setUp() {
+        //noinspection unchecked
         delegate = mock();
+        AtomicInteger concurrentCounter = new AtomicInteger();
+        when(delegate.load(eq(AGGREGATE_ID), any())).thenAnswer(invocation -> {
+            invocation.getArgument(1, ProcessingContext.class)
+                      .runOnAfterCommit(pc -> concurrentCounter.decrementAndGet());
+            return CompletableFuture.completedFuture(new StubEntity("instance" + concurrentCounter.incrementAndGet()));
+        });
+        when(delegate.attach(any(), any())).thenAnswer(i -> i.getArgument(0));
+
         testSubject = new AccessSerializingRepository<>(delegate);
     }
 
     @Test
     void concurrentAccessToSameIdentifierIsBlocked() {
-        AtomicInteger concurrentCounter = new AtomicInteger();
-        when(delegate.load(eq("aggregateId"), any())).thenAnswer(i -> {
-            i.getArgument(1, ProcessingContext.class).runOnAfterCommit(pc -> concurrentCounter.decrementAndGet());
-            return CompletableFuture.completedFuture(new StubEntity("instance" + concurrentCounter.incrementAndGet()));
-        });
-        when(delegate.attach(any(), any())).thenAnswer(i -> i.getArgument(0));
-
         AsyncUnitOfWork uow1 = new AsyncUnitOfWork();
         AsyncUnitOfWork uow2 = new AsyncUnitOfWork();
-
-        // set blockers to allow both to run concurrently and block a wait moment at the repository
+        // Set blockers to allow both to run concurrently and block a wait moment at the repository
         CompletableFuture<Void> uowBlocker1 = new CompletableFuture<>();
         CompletableFuture<Void> uowBlocker2 = new CompletableFuture<>();
         uow1.onPostInvocation(pc -> uowBlocker1);
         uow2.onPostInvocation(pc -> uowBlocker2);
-
         AtomicBoolean task2Loaded = new AtomicBoolean();
 
-        CompletableFuture<String> result1 = uow1.executeWithResult(pc -> testSubject.load("aggregateId", pc)
-                                                                                    .thenApply(ManagedEntity::entity));
-        CompletableFuture<String> result2 = uow2.executeWithResult(pc -> testSubject.load("aggregateId", pc)
-                                                                                    .thenApply(ManagedEntity::entity)
-                                                                                    .whenComplete((r, e) -> task2Loaded.set(
-                                                                                            true)));
+        CompletableFuture<String> result1 = uow1.executeWithResult(context -> testSubject.load(AGGREGATE_ID, context))
+                                                .thenApply(ManagedEntity::entity);
+        CompletableFuture<String> result2 = uow2.executeWithResult(
+                                                        context -> testSubject.load(AGGREGATE_ID, context)
+                                                                              .whenComplete((r, e) -> task2Loaded.set(true))
+                                                )
+                                                .thenApply(ManagedEntity::entity);
 
         assertFalse(result1.isDone());
         assertFalse(result2.isDone());
@@ -83,49 +88,44 @@ class AccessSerializingRepositoryTest {
 
         assertTrue(result1.isDone());
         assertTrue(result2.isDone());
-
         assertEquals("instance1", result1.resultNow());
         assertEquals("instance1", result2.resultNow());
+        // Load is invoked once as the entity was still present from the first operation.
+        verify(delegate, times(1)).load(eq(AGGREGATE_ID), any());
     }
 
     @Test
-    void aTimeoutOnAQueuedItemMakesTheNextWaitForCompletionOfAllPreviousItems() {
-        AtomicInteger concurrentCounter = new AtomicInteger();
-        when(delegate.load(eq("aggregateId"), any())).thenAnswer(i -> {
-            i.getArgument(1, ProcessingContext.class).runOnAfterCommit(pc -> concurrentCounter.decrementAndGet());
-            return CompletableFuture.completedFuture(new StubEntity("instance" + concurrentCounter.incrementAndGet()));
-        });
-        when(delegate.attach(any(), any())).thenAnswer(i -> i.getArgument(0));
-
+    void timeoutOnQueuedOperationMakesTheNextWaitForCompletionOfAllPreviousItems() {
         AsyncUnitOfWork uow1 = new AsyncUnitOfWork("uow1");
         AsyncUnitOfWork uow2 = new AsyncUnitOfWork("uow2");
         AsyncUnitOfWork uow3 = new AsyncUnitOfWork("uow3");
-
-        // set blockers to allow both to run concurrently and block a wait moment at the repository
+        // Det blockers to allow both to run concurrently and block a wait moment at the repository
         CompletableFuture<Void> uowBlocker1 = new CompletableFuture<>();
         CompletableFuture<Void> uowBlocker3 = new CompletableFuture<>();
         uow1.onPostInvocation(pc -> uowBlocker1);
         uow3.onPostInvocation(pc -> uowBlocker3);
-
         AtomicBoolean task2Loaded = new AtomicBoolean();
         AtomicBoolean task3Loaded = new AtomicBoolean();
 
-        CompletableFuture<String> result1 = uow1.executeWithResult(pc -> testSubject.load("aggregateId", pc))
+        CompletableFuture<String> result1 = uow1.executeWithResult(context -> testSubject.load(AGGREGATE_ID, context))
                                                 .thenApply(ManagedEntity::entity);
-        CompletableFuture<String> result2 = uow2.executeWithResult(pc -> testSubject.load("aggregateId", pc)
-                                                                                    .orTimeout(10,
-                                                                                               TimeUnit.MILLISECONDS)
-                                                                                    .whenComplete((r, e) -> task2Loaded.set(
-                                                                                            true)))
+        CompletableFuture<String> result2 = uow2.executeWithResult(
+                                                        context -> testSubject.load(AGGREGATE_ID, context)
+                                                                              .orTimeout(10, TimeUnit.MILLISECONDS)
+                                                                              .whenComplete((r, e) -> task2Loaded.set(true))
+                                                )
                                                 .thenApply(ManagedEntity::entity);
-        CompletableFuture<String> result3 = uow3.executeWithResult(pc -> testSubject.load("aggregateId", pc)
-                                                                                    .whenComplete((r, e) -> task3Loaded.set(
-                                                                                            true)))
+        CompletableFuture<String> result3 = uow3.executeWithResult(
+                                                        context -> testSubject.load(AGGREGATE_ID, context)
+                                                                              .whenComplete((r, e) -> task3Loaded.set(true))
+                                                )
                                                 .thenApply(ManagedEntity::entity);
 
         assertFalse(result1.isDone());
-        // this one times out, and is expected to have completed
-        AssertUtils.assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(result2.isDone()));
+        // This one times out, and is expected to have completed
+        await().pollDelay(Duration.ofMillis(10))
+               .atMost(Duration.ofMillis(100))
+               .untilAsserted(() -> assertTrue(result2.isCompletedExceptionally()));
 
         assertTrue(task2Loaded.get());
         assertFalse(result3.isDone());
@@ -142,34 +142,22 @@ class AccessSerializingRepositoryTest {
         assertTrue(result1.isDone());
         assertTrue(result2.isDone());
         assertTrue(result3.isDone());
-
         assertEquals("instance1", result1.resultNow());
         assertInstanceOf(TimeoutException.class, result2.exceptionNow());
         assertEquals("instance1", result3.resultNow());
-
-        verify(delegate, times(2)).load(eq("aggregateId"), any());
+        // Load is invoked twice since the middle operation failed.
+        verify(delegate, times(2)).load(eq(AGGREGATE_ID), any());
     }
 
-    private static class StubEntity implements ManagedEntity<String, String> {
-
-        private final String entity;
-
-        public StubEntity(String entity) {
-            this.entity = entity;
-        }
+    private record StubEntity(String entity) implements ManagedEntity<String, String> {
 
         @Override
         public String identifier() {
-            return "";
+            return "some-identifier";
         }
 
         @Override
-        public String entity() {
-            return entity;
-        }
-
-        @Override
-        public String applyStateChange(UnaryOperator change) {
+        public String applyStateChange(UnaryOperator<String> change) {
             throw new UnsupportedOperationException("Not implemented");
         }
     }

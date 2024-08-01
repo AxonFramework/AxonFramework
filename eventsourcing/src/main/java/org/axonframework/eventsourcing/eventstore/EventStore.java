@@ -94,13 +94,13 @@ public interface EventStore
     }
 
     /**
-     * Retrieves the transaction for appending events for the given {@code processingContext}. If no transaction is
-     * available, a new, empty transaction is created.
+     * Retrieves the {@link AppendEventTransaction transaction for appending events} for the given
+     * {@code processingContext}. If no transaction is available, a new, empty transaction is created.
      *
-     * @param processingContext The context for which to retrieve the transaction
-     * @return The transaction, existing or newly created, for the processing context
+     * @param processingContext The context for which to retrieve the {@link AppendEventTransaction}.
+     * @return The {@link AppendEventTransaction}, existing or newly created, for the given {@code processingContext}.
      */
     default AppendEventTransaction currentTransaction(ProcessingContext processingContext) {
-        throw new UnsupportedOperationException("Not implemented");
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 }

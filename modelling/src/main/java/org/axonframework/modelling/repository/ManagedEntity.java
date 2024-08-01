@@ -19,32 +19,34 @@ package org.axonframework.modelling.repository;
 import java.util.function.UnaryOperator;
 
 /**
- * A wrapper around an entity whose lifecycle is being managed by a Repository
+ * A wrapper around an entity whose lifecycle is being managed by an {@link AsyncRepository}.
  *
- * @param <ID> The type of identifier of the entity
- * @param <T>  The type of the entity
+ * @param <ID> The type of identifier of the entity.
+ * @param <T>  The type of the entity.
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public interface ManagedEntity<ID, T> {
 
     /**
-     * The identifier of the entity
+     * The identifier of the entity.
      *
-     * @return the identifier of the entity
+     * @return The identifier of the entity.
      */
     ID identifier();
 
     /**
-     * The current state of the entity
+     * The current state of the entity.
      *
-     * @return the current state of the entity
+     * @return The current state of the entity.
      */
     T entity();
 
     /**
-     * Change the current state of the entity using the given {code change} function
+     * Change the current state of the entity using the given {code change} function.
      *
-     * @param change The function applying the requested change
-     * @return the state of the entity after the change
+     * @param change The function applying the requested change.
+     * @return The state of the entity after the change.
      */
     T applyStateChange(UnaryOperator<T> change);
 }

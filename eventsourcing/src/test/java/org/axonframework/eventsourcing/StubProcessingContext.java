@@ -26,7 +26,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-@SuppressWarnings("unchecked")
+/**
+ * Stubbed implementation of the {@link ProcessingContext} used for testing purposes.
+ *
+ * @author Allard Buijze
+ */
 public class StubProcessingContext implements ProcessingContext {
 
     private final Map<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
@@ -38,31 +42,37 @@ public class StubProcessingContext implements ProcessingContext {
 
     @Override
     public <T> T updateResource(ResourceKey<T> key, Function<T, T> updateFunction) {
+        //noinspection unchecked
         return (T) resources.compute(key, (id, current) -> updateFunction.apply((T) current));
     }
 
     @Override
     public <T> T getResource(ResourceKey<T> key) {
+        //noinspection unchecked
         return (T) resources.get(key);
     }
 
     @Override
     public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> supplier) {
+        //noinspection unchecked
         return (T) resources.computeIfAbsent(key, k -> supplier.get());
     }
 
     @Override
     public <T> T putResource(ResourceKey<T> key, T instance) {
+        //noinspection unchecked
         return (T) resources.put(key, instance);
     }
 
     @Override
     public <T> T putResourceIfAbsent(ResourceKey<T> key, T newValue) {
+        //noinspection unchecked
         return (T) resources.putIfAbsent(key, newValue);
     }
 
     @Override
     public <T> T removeResource(ResourceKey<T> key) {
+        //noinspection unchecked
         return (T) resources.remove(key);
     }
 
