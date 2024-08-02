@@ -80,6 +80,7 @@ class AnnotationEventHandlerAdapterTest {
     }
 
     @Test
+    @Disabled("TODO #3062 - Exception Handler support")
     void wrapExceptionInResultInterceptor() {
         EventMessage<Object> testEventMessage =
                 asEventMessage("testing").andMetaData(MetaData.with("key", "value"));

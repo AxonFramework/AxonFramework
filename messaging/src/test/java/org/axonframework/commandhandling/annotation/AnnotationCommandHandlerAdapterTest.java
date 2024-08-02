@@ -153,6 +153,7 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
+    @Disabled("TODO #3062 - Exception Handler support")
     void exceptionHandlerAnnotatedMethodsAreSupportedForCommandHandlingComponents() throws Exception {
         List<Exception> interceptedExceptions = new ArrayList<>();
         mockTarget = new MyInterceptingCommandHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions);

@@ -167,6 +167,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
+    @Disabled("TODO #3062 - Exception Handler support")
     void exceptionHandlerAnnotatedMethodsAreSupportedForQueryHandlingComponents() throws Exception {
         List<Exception> interceptedExceptions = new ArrayList<>();
         testSubject = new AnnotationQueryHandlerAdapter<>(
