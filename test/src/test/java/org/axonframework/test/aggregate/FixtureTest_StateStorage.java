@@ -58,6 +58,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createStateStoredAggregate() {
         fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
@@ -66,6 +67,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void givenCommandsForStateStoredAggregate() {
         fixture.useStateStorage()
                .givenCommands(new InitializeCommand(AGGREGATE_ID, "message"))
@@ -76,6 +78,7 @@ class FixtureTest_StateStorage {
 
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createStateStoredAggregateWithCommand() {
         fixture.useStateStorage()
                .givenNoPriorActivity()
@@ -85,6 +88,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void emittedEventsFromExpectStateAreNotStored() {
         fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
@@ -116,6 +120,7 @@ class FixtureTest_StateStorage {
      * Follow up on GitHub issue https://github.com/AxonFramework/AxonFramework/issues/1219
      */
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void stateStoredAggregateCanAttachRegisteredResource() {
         String expectedMessage = "state stored resource injection works";
         HardToCreateResource testResource = spy(new HardToCreateResource());

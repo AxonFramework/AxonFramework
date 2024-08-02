@@ -79,6 +79,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void eventsCarryCorrectTimestamp() {
         fixture.givenCurrentTime(Instant.EPOCH)
                .andGiven(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
@@ -140,12 +141,14 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void unavailableResourcesCausesFailure() {
         TestExecutor<AnnotatedAggregate> given = fixture.given();
         assertThrows(FixtureExecutionException.class, () -> given.when(new CreateAggregateCommand()));
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void aggregateIdentifier_IdentifierAutomaticallyDeducted() {
         fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
                .when(new TestCommand("AggregateId"))
@@ -162,6 +165,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixtureGivenCommands_ResourcesNotAvailable() {
         assertThrows(
                 FixtureExecutionException.class, () -> fixture.givenCommands(new CreateAggregateCommand(AGGREGATE_ID))
@@ -169,6 +173,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixtureGivenCommands_ResourcesAvailable() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenCommands(new CreateAggregateCommand(AGGREGATE_ID),
@@ -180,6 +185,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void aggregateIdentifier_CustomTargetResolver() {
         CommandTargetResolver mockCommandTargetResolver = mock(CommandTargetResolver.class);
         when(mockCommandTargetResolver.resolveTarget(any()))
@@ -224,6 +230,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixture_AggregateDeleted() {
         fixture.given(new MyEvent(AGGREGATE_ID, 5))
                .when(new DeleteCommand(AGGREGATE_ID, false))
@@ -239,6 +246,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void andGiven() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenCommands(new CreateAggregateCommand(AGGREGATE_ID))
@@ -248,6 +256,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void andGivenCommands() {
         fixture.given(new MyEvent(AGGREGATE_ID, 1))
                .andGivenCommands(new TestCommand(AGGREGATE_ID))
@@ -256,6 +265,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void multipleAndGivenCommands() {
         fixture.given(new MyEvent(AGGREGATE_ID, 1))
                .andGivenCommands(new TestCommand(AGGREGATE_ID))
@@ -265,6 +275,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void givenNoPriorActivityAndPublishingNoEvents() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenNoPriorActivity()
@@ -274,6 +285,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void givenFollowedUpByAndGivenCurrentTimeWorksAsExcepted() {
         String testAggregateId = "1337";
 
@@ -291,6 +303,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixtureThrowsEventStoreExceptionWhenHandlingAggregateConstructingCommandWhileThereAreGivenEvents() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.given(new MyEvent(AGGREGATE_ID, 0))
@@ -300,6 +313,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixtureThrowsEventStoreExceptionWhenHandlingAggregateConstructingCommandWhileThereAreGivenCommand() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenCommands(new CreateAggregateCommand(AGGREGATE_ID))

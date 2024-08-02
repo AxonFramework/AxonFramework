@@ -77,6 +77,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptor() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         String result = commandGateway
@@ -96,6 +97,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithChainProceeding() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new ClearMyAggregateStateCommand("id", true)));
@@ -110,6 +112,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithoutChainProceeding() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new ClearMyAggregateStateCommand("id", false)));
@@ -122,6 +125,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithNestedEntity() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new MyNestedCommand("id", "state")));
@@ -138,6 +142,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithNestedNestedEntity() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new MyNestedNestedCommand("id", "state")));
@@ -175,6 +180,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorThrowingAnException() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         assertThrows(

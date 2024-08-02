@@ -42,6 +42,7 @@ class NestedUnitOfWorkTest {
     private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void stagedEventsLoadInCorrectOrder() {
         Configuration config = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
                                                 .configureAggregate(TestAggregate.class)

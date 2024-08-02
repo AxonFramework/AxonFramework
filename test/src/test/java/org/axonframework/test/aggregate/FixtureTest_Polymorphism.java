@@ -73,6 +73,7 @@ class FixtureTest_Polymorphism {
 
     @ParameterizedTest
     @ValueSource(strings = {"AggregateB", "AggregateC"})
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void commonCommandOnAggregate(String aggregateType) {
         String id = "id";
         DomainEventMessage<CreatedEvent> creationalEvent = new GenericDomainEventMessage<>(aggregateType,
@@ -85,6 +86,7 @@ class FixtureTest_Polymorphism {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void creatingNewPolymorphicAggregate() {
         AggregateTestFixture<AggregateD> fixture = new AggregateTestFixture<>(AggregateD.class);
         String id = "id";

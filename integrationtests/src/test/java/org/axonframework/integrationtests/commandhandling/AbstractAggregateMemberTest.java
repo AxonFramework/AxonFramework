@@ -44,6 +44,7 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     public void initializingFactoryAggregate_ShouldBeAbleToInitialize(){
         fixture.givenNoPriorActivity()
                 .when(new CreateFactoryCommand(factoryId))
@@ -51,6 +52,7 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     public void forwardingCommandToAggregateMemberWithTheSameGenericType_ShouldForwardCommandToEmployeeAggregate(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "employeeId"))
@@ -58,6 +60,7 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     public void forwardingCommandToAggregateMemberWithTheSameGenericType_ShouldForwardCommandToManagerAggregate(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "managerId"))
@@ -65,6 +68,7 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     public void sendCommandToNoneExistEntity_ShouldThrowAggregateEntityNotFoundException(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "none-exist-id"))

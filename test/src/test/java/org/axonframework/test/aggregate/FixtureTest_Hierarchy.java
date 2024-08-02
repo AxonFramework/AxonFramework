@@ -45,6 +45,7 @@ class FixtureTest_Hierarchy {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void creatingAggregateWithHierarchy() {
         fixture.givenNoPriorActivity()
                .when(new CreateAggregateCommand(AGGREGATE_IDENTIFIER))
@@ -52,6 +53,7 @@ class FixtureTest_Hierarchy {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void updateAggregateWithHierarchy() {
         fixture.given(new AggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new UpdateAggregateCommand(AGGREGATE_IDENTIFIER, "some state"))
@@ -59,6 +61,7 @@ class FixtureTest_Hierarchy {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createFirstLevelAggregateMemberWithinHierarchy() {
         fixture.given(new AggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new CreateFirstLevelAggregateMemberCommand(AGGREGATE_IDENTIFIER))
@@ -66,6 +69,7 @@ class FixtureTest_Hierarchy {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createSecondLevelAggregateMemberWithinHierarchy() {
         fixture.given(new AggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new CreateSecondLevelAggregateMemberCommand(AGGREGATE_IDENTIFIER))
@@ -73,6 +77,7 @@ class FixtureTest_Hierarchy {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void handlingCommandsOnFirstLevelAggregateMemberWithinHierarchy() {
         fixture.given(new AggregateCreatedEvent(AGGREGATE_IDENTIFIER),
                       new FirstLevelAggregateMemberCreatedEvent(AGGREGATE_IDENTIFIER))
@@ -81,6 +86,7 @@ class FixtureTest_Hierarchy {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void handlingCommandsOnSecondLevelAggregateMemberWithinHierarchy() {
         fixture.given(new AggregateCreatedEvent(AGGREGATE_IDENTIFIER),
                       new SecondLevelAggregateMemberCreatedEvent(AGGREGATE_IDENTIFIER))

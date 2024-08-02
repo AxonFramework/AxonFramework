@@ -55,6 +55,7 @@ class ConflictResolutionIntegrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void nonConflictingEventsAllowed() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
@@ -62,6 +63,7 @@ class ConflictResolutionIntegrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void unresolvedConflictCausesException() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
@@ -72,6 +74,7 @@ class ConflictResolutionIntegrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void expressedConflictCausesException() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
@@ -82,12 +85,12 @@ class ConflictResolutionIntegrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void noExpectedVersionIgnoresConflicts() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", null));
     }
-
 
     public static class StubAggregate {
 

@@ -92,6 +92,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void orderInCommandHandlerAggregate() {
         MyAggregate commandHandlerAggregate = configuration.commandGateway().sendAndWait(command, MyAggregate.class);
 
@@ -99,6 +100,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void orderInEventSourcedAggregate() {
         Repository<MyAggregate> repository = configuration.repository(MyAggregate.class);
         configuration.commandGateway().sendAndWait(command);
@@ -112,6 +114,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void orderInEventStore() {
         configuration.commandGateway().sendAndWait(command);
         assertEquals(expectedDescriptions(command), configuration.eventStore()

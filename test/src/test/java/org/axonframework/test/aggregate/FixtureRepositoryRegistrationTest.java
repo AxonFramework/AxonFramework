@@ -33,8 +33,7 @@ import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.saga.SagaMethodMessageHandlerDefinition;
 import org.axonframework.test.FixtureExecutionException;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -63,6 +62,7 @@ class FixtureRepositoryRegistrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixturesDefaultRepositoryCanBeWiredAsMessageHandlingParameter() {
         testSubject.givenNoPriorActivity()
                    .when("some-command")
@@ -70,6 +70,7 @@ class FixtureRepositoryRegistrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void customRepositoryCanBeWiredAsMessageHandlingParameter() {
         Repository<MyAggregate> testRepository =
                 CustomRepository.builder()

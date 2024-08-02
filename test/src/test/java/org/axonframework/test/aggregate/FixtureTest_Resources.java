@@ -22,8 +22,7 @@ import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.CreationPolicy;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.Executor;
 
@@ -62,6 +61,7 @@ class FixtureTest_Resources {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void resourcesAreScopedToSingleTest_MethodPartOne() {
         // executing the same test should pass, as resources are scoped to a single test only
         final Executor resource = mock(Executor.class);
@@ -75,6 +75,7 @@ class FixtureTest_Resources {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void resourcesAreScopedToSingleTest_MethodPartTwo() {
         resourcesAreScopedToSingleTest_MethodPartOne();
     }

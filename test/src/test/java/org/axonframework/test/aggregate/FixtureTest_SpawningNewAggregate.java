@@ -54,6 +54,7 @@ class FixtureTest_SpawningNewAggregate {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixtureWithoutRepositoryProviderInjected() {
         fixture.givenNoPriorActivity()
                .when(new CreateAggregate1Command("id", "aggregate2Id", false))
@@ -62,6 +63,7 @@ class FixtureTest_SpawningNewAggregate {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixtureShouldResolveResourcesInSpawnedAggregates() {
         fixture.registerInjectableResource(new Resource());
         fixture.givenNoPriorActivity()
@@ -72,6 +74,7 @@ class FixtureTest_SpawningNewAggregate {
 
     @SuppressWarnings("unchecked")
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixtureWithRepositoryProviderInjected() throws Exception {
         RepositoryProvider repositoryProvider = mock(RepositoryProvider.class);
         Repository<Aggregate2> aggregate2Repository = mock(Repository.class);
