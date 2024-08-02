@@ -21,7 +21,9 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
@@ -243,7 +245,8 @@ class FixtureTest_ExceptionHandling {
         }
 
         @CommandHandler
-        public MyAggregate(CreateMyAggregateCommand cmd) throws CheckedException {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateMyAggregateCommand cmd) throws CheckedException {
             if (cmd.shouldThrowCheckedException) {
                 throw new CheckedException();
             }

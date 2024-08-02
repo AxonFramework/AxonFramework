@@ -25,10 +25,12 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.AggregateVersion;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Documented;
@@ -853,7 +855,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
         private String id = "id";
 
         @CommandHandler
-        SomeIllegalAnnotatedIdMethodClass(String id) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(String id) {
             this.id = id;
         }
 
@@ -872,7 +875,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
         private String id = "id";
 
         @CommandHandler
-        SomeIllegalAnnotatedPersistenceIdMethodClass(String id) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(String id) {
             this.id = id;
         }
 

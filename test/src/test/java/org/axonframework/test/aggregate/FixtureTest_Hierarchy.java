@@ -18,8 +18,10 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 
@@ -144,7 +146,8 @@ class FixtureTest_Hierarchy {
     private static class TopAggregate extends SecondLevelAggregate {
 
         @CommandHandler
-        public TopAggregate(CreateAggregateCommand command) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateAggregateCommand command) {
             apply(new AggregateCreatedEvent(command.getAggregateIdentifier()));
         }
 

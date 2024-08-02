@@ -22,6 +22,8 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
@@ -53,7 +55,8 @@ class NestedUowRollbackTest {
         String id;
 
         @CommandHandler
-        public TestAggregate(Create cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(Create cmd) {
             apply(cmd);
         }
 
@@ -61,7 +64,7 @@ class NestedUowRollbackTest {
         }
 
         @EventSourcingHandler
-        public void handle(Create evt) {
+        public void on(Create evt) {
             id = evt.id;
         }
 

@@ -18,6 +18,8 @@ package org.axonframework.springboot.autoconfig.context;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.spring.stereotype.Aggregate;
 
 import java.util.UUID;
@@ -32,7 +34,8 @@ public class Cat extends Animal {
     private String hairColor;
 
     @CommandHandler
-    public Cat(CreateCatCommand command) {
+    @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+    public void handle(CreateCatCommand command) {
         apply(new CatCreatedEvent(command.getAggregateId(), command.getName()));
     }
 

@@ -66,7 +66,7 @@ class FixtureTest_CreationPolicy {
 
     @Test
     void createOrUpdatePolicyForExistingInstance() {
-        fixture.given(new CreatedEvent(AGGREGATE_ID))
+        fixture.given(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
@@ -106,7 +106,7 @@ class FixtureTest_CreationPolicy {
 
     @Test
     void neverCreatePolicy() {
-        fixture.given(new CreatedEvent(AGGREGATE_ID))
+        fixture.given(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .when(new ExecuteOnExistingCommand(AGGREGATE_ID))
                .expectEvents(new ExecutedOnExistingEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
@@ -174,20 +174,6 @@ class FixtureTest_CreationPolicy {
                 .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                 .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
                 .expectSuccessfulHandlerExecution();
-    }
-
-    private static class CreateCommand {
-
-        @TargetAggregateIdentifier
-        private final ComplexAggregateId id;
-
-        private CreateCommand(ComplexAggregateId id) {
-            this.id = id;
-        }
-
-        public ComplexAggregateId getId() {
-            return id;
-        }
     }
 
     private static class CreateOrUpdateCommand {
@@ -281,36 +267,6 @@ class FixtureTest_CreationPolicy {
 
         public ComplexAggregateId getId() {
             return id;
-        }
-    }
-
-    private static class CreatedEvent {
-
-        private final ComplexAggregateId id;
-
-        private CreatedEvent(ComplexAggregateId id) {
-            this.id = id;
-        }
-
-        public ComplexAggregateId getId() {
-            return id;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            CreatedEvent that = (CreatedEvent) o;
-            return Objects.equals(id, that.id);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
         }
     }
 
@@ -419,11 +375,6 @@ class FixtureTest_CreationPolicy {
         }
 
         @CommandHandler
-        public TestAggregate(CreateCommand command) {
-            apply(new CreatedEvent(command.getId()));
-        }
-
-        @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
         public void handle(CreateOrUpdateCommand command) {
             if (command.shouldPublishEvent()) {
@@ -462,11 +413,6 @@ class FixtureTest_CreationPolicy {
         @CreationPolicy(AggregateCreationPolicy.NEVER)
         public void handle(ExecuteOnExistingCommand command) {
             apply(new ExecutedOnExistingEvent(command.getId()));
-        }
-
-        @EventSourcingHandler
-        public void on(CreatedEvent event) {
-            this.id = event.getId();
         }
 
         @EventSourcingHandler

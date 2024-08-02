@@ -55,9 +55,13 @@ public abstract class ParentAggregate {
     @CommandHandler
     public static ParentAggregate create(CreateChildFactoryCommand cmd) {
         if (cmd.getChild() == 1) {
-            return new Child1Aggregate(new CreateChild1Command(cmd.getId()));
+            Child1Aggregate child1Aggregate = new Child1Aggregate();
+            child1Aggregate.handle(new CreateChild1Command(cmd.getId()));
+            return child1Aggregate;
         } else {
-            return new Child2Aggregate(new CreateChild2Command(cmd.getId()));
+            Child2Aggregate child2Aggregate = new Child2Aggregate();
+            child2Aggregate.handle(new CreateChild2Command(cmd.getId()));
+            return child2Aggregate;
         }
     }
 

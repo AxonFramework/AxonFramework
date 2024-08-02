@@ -18,7 +18,9 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
@@ -241,7 +243,8 @@ class FixtureTest_StateStorage {
         }
 
         @CommandHandler
-        public StateStoredAggregate(InitializeCommand cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(InitializeCommand cmd) {
             this.id = cmd.getId();
             this.message = cmd.getMessage();
             apply(new StubDomainEvent());

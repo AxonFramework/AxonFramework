@@ -20,7 +20,9 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.test.AxonAssertionError;
 import org.junit.jupiter.api.*;
@@ -350,7 +352,8 @@ class FixtureTest_Deadlines {
         }
 
         @CommandHandler
-        public MyAggregate(CreateMyAggregateCommand command, DeadlineManager deadlineManager) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateMyAggregateCommand command, DeadlineManager deadlineManager) {
             String deadlineName = DEADLINE_NAME;
             String deadlineId = deadlineManager.schedule(
                     Duration.ofMinutes(TRIGGER_DURATION_MINUTES), deadlineName, DEADLINE_PAYLOAD

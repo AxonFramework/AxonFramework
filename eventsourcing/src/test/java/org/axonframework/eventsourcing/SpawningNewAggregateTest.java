@@ -22,7 +22,9 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -253,7 +255,8 @@ class SpawningNewAggregateTest {
         }
 
         @CommandHandler
-        public Aggregate1(CreateAggregate1Command command) throws Exception {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateAggregate1Command command) throws Exception {
             apply(new Aggregate1CreatedEvent(command.getId()));
 
             createNew(Aggregate2.class, () -> new Aggregate2(command.getAggregate2Id()));

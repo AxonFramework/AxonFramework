@@ -59,19 +59,6 @@ class AggregateCreationFromCommandsTest {
         factoryInvocationCounter = new AtomicInteger(0);
     }
 
-    @Test
-    void constructorCreationWithoutFactory() {
-        createAndRegisterDefaultCommandHandler();
-        String aggregateId = UUID.randomUUID().toString();
-        commandBus.dispatch(
-                asCommandMessage(new StubAggregateForCreation.ConstructorCommand(aggregateId)), ProcessingContext.NONE
-        );
-
-        List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
-                                                                 .collect(Collectors.toList());
-        Assertions.assertEquals(1, events.size());
-        Assertions.assertEquals(aggregateId, events.get(0).getAggregateIdentifier());
-    }
 
     @Test
     void createAlwaysCreationWithoutFactory() {
@@ -102,20 +89,6 @@ class AggregateCreationFromCommandsTest {
         Assertions.assertEquals(aggregateId, events.get(0).getAggregateIdentifier());
     }
 
-    @Test
-    void constructorCreationWithFactoryConfiguredButNotInUse() {
-        createAndRegisterCommandHandlerWithFactory();
-        String aggregateId = UUID.randomUUID().toString();
-        commandBus.dispatch(
-                asCommandMessage(new StubAggregateForCreation.ConstructorCommand(aggregateId)), ProcessingContext.NONE
-        );
-
-        List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
-                                                                 .collect(Collectors.toList());
-        Assertions.assertEquals(1, events.size());
-        Assertions.assertEquals(aggregateId, events.get(0).getAggregateIdentifier());
-        Assertions.assertEquals(0, factoryInvocationCounter.get());
-    }
 
     @Test
     void createAlwaysCreationWithFactory() {

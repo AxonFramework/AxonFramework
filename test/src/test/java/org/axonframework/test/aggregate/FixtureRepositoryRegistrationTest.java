@@ -24,7 +24,9 @@ import org.axonframework.eventhandling.TimestampParameterResolverFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
@@ -180,7 +182,8 @@ class FixtureRepositoryRegistrationTest {
         private String aggregateId;
 
         @CommandHandler
-        public MyAggregate(String command, Repository<MyAggregate> repository) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(String command, Repository<MyAggregate> repository) {
             apply(command + "_" + repository.getClass().getSimpleName());
         }
 

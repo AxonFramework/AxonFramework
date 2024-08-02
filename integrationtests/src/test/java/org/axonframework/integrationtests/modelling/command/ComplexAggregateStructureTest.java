@@ -23,8 +23,10 @@ import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -46,7 +48,12 @@ class ComplexAggregateStructureTest {
         AggregateModel<Book> bookAggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(Book.class);
         EventBus mockEventBus = SimpleEventBus.builder().build();
         AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize(
-                (Callable<Book>) () -> new Book(new CreateBookCommand("book1")), bookAggregateModel, mockEventBus
+                (Callable<Book>) () -> {
+                    Book aggregate = new Book();
+                    aggregate.handle(new CreateBookCommand("book1"));
+                    return aggregate;
+                },
+                bookAggregateModel, mockEventBus
         );
         bookAggregate.handle(command(new CreateBookCommand("book1")));
         bookAggregate.handle(command(new CreatePageCommand("book1")));
@@ -79,7 +86,8 @@ class ComplexAggregateStructureTest {
         }
 
         @CommandHandler
-        public Book(CreateBookCommand cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateBookCommand cmd) {
             apply(new BookCreatedEvent(cmd.getBookId()));
         }
 

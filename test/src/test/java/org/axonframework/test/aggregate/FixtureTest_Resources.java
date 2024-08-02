@@ -18,8 +18,10 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -83,7 +85,8 @@ class FixtureTest_Resources {
         private String id;
 
         @CommandHandler
-        public AggregateWithResources(CreateAggregateCommand cmd, Executor resource, CommandBus commandBus) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateAggregateCommand cmd, Executor resource, CommandBus commandBus) {
             apply(new MyEvent(cmd.getAggregateIdentifier(), 1));
             resource.execute(() -> fail("Should not really be executed"));
         }

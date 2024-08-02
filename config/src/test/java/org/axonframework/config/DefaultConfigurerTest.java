@@ -61,7 +61,9 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryHandler;
@@ -665,14 +667,15 @@ class DefaultConfigurerTest {
         }
 
         @CommandHandler
-        public StubAggregate(String command, CommandBus commandBus) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(String command, CommandBus commandBus) {
             apply(command);
         }
 
-        @CommandHandler
         public static StubAggregate create(String command, CommandBus commandBus) {
-
-            return new StubAggregate(command, commandBus);
+            StubAggregate aggregate = new StubAggregate();
+            aggregate.handle(command, commandBus);
+            return aggregate;
         }
 
         @CommandHandler(commandName = "update")

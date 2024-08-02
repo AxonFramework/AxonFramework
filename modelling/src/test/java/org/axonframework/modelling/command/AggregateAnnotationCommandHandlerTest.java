@@ -21,7 +21,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.messaging.MessageHandler;
@@ -775,10 +774,12 @@ class AggregateAnnotationCommandHandlerTest {
         private List<StubCommandAnnotatedAbstractEntityB> absEntitiesB;
 
         @CommandHandler
-        public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData,
-                                             UnitOfWork<CommandMessage<?>> unitOfWork,
-                                             @MetaDataValue("notExist") String value) {
-            super(createCommand.getId());
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateCommand createCommand,
+                           MetaData metaData,
+                           UnitOfWork<CommandMessage<?>> unitOfWork,
+                           @MetaDataValue("notExist") String value) {
+            this.setIdentifier(createCommand.getId());
             assertNotNull(metaData);
             assertNotNull(unitOfWork);
             assertNull(value);
@@ -788,13 +789,14 @@ class AggregateAnnotationCommandHandlerTest {
 
         @CommandHandler
         public static StubCommandAnnotatedAggregate createStubCommandAnnotatedAggregate(
-                CreateFactoryMethodCommand createFactoryMethodCommand) {
+                CreateFactoryMethodCommand createFactoryMethodCommand
+        ) {
             return new StubCommandAnnotatedAggregate(createFactoryMethodCommand.getId());
         }
 
         @CommandHandler
-        public StubCommandAnnotatedAggregate(FailingCreateCommand createCommand) {
-            super(IdentifierFactory.getInstance().generateIdentifier());
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(FailingCreateCommand createCommand) {
             throw new RuntimeException(createCommand.getParameter());
         }
 

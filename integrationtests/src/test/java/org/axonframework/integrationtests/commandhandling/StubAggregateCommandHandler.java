@@ -34,7 +34,11 @@ public class StubAggregateCommandHandler {
 
     @CommandHandler
     public void handleStubAggregateCreated(CreateStubAggregateCommand command) throws Exception {
-        repository.newInstance(() -> new StubAggregate(command.getAggregateId()));
+        repository.newInstance(() -> {
+            StubAggregate aggregate = new StubAggregate();
+            aggregate.handle(command.getAggregateId());
+            return aggregate;
+        });
     }
 
     @CommandHandler

@@ -20,7 +20,9 @@ import jakarta.persistence.Entity;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
+import org.axonframework.modelling.command.CreationPolicy;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
@@ -36,7 +38,8 @@ public class Child1Aggregate extends ParentAggregate {
     }
 
     @CommandHandler
-    public Child1Aggregate(CreateChild1Command cmd) {
+    @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+    public void handle(CreateChild1Command cmd) {
         apply(new CreatedEvent(cmd.getId()));
     }
 

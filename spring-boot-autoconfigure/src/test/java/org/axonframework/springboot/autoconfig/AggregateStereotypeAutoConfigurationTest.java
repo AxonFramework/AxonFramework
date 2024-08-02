@@ -32,8 +32,10 @@ import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
@@ -197,7 +199,8 @@ class AggregateStereotypeAutoConfigurationTest {
             private String aggregateId;
 
             @CommandHandler
-            public TestAggregate(CreateTestAggregate cmd) {
+            @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+            public void handle(CreateTestAggregate cmd) {
                 apply(new TestAggregateCreated(cmd.getAggregateId()));
                 // Publish multiple events to hit the snapshot event count when configured.
                 apply(new TestAggregateUpdated(cmd.getAggregateId()));
@@ -236,7 +239,8 @@ class AggregateStereotypeAutoConfigurationTest {
             private String aggregateId;
 
             @CommandHandler
-            public CustomRepoTestAggregate(CreateCustomRepoTestAggregate cmd) {
+            @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+            public void handle(CreateCustomRepoTestAggregate cmd) {
                 apply(new CustomRepoTestAggregateCreated(cmd.getAggregateId()));
                 // Publish multiple events to hit the snapshot event count when configured.
                 apply(new CustomRepoTestAggregateUpdated(cmd.getAggregateId()));
@@ -272,7 +276,8 @@ class AggregateStereotypeAutoConfigurationTest {
             }
 
             @CommandHandler
-            public SimpleStateStoredAggregate(CreateStateStoredAggregateCommand command) {
+            @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+            public void handle(CreateStateStoredAggregateCommand command) {
                 this.aggregateId = command.getAggregateId();
             }
         }

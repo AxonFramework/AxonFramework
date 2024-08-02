@@ -359,7 +359,9 @@ public class AggregateConfigurerTest {
 
         CreationPolicyAggregateFactory<A> testFactory = identifier -> {
             counter.set(true);
-            return new A(identifier != null ? identifier.toString() : "null");
+            A aggregateA = new A();
+            aggregateA.handle(identifier != null ? identifier.toString() : "null");
+            return aggregateA;
         };
 
         AggregateConfigurer<A> testAggregateConfigurer =
@@ -480,11 +482,12 @@ public class AggregateConfigurerTest {
         }
 
         @CommandHandler
-        public A(CreateACommand cmd) {
-            this(cmd.getId());
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateACommand cmd) {
+            handle(cmd.getId());
         }
 
-        public A(String id) {
+        public void handle(String id) {
             apply(new ACreatedEvent(id));
         }
 
@@ -515,8 +518,9 @@ public class AggregateConfigurerTest {
         }
 
         @CommandHandler
-        public B(CreateBCommand cmd) {
-            super(cmd.getId());
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateBCommand cmd) {
+            super.handle(cmd.getId());
         }
 
         @CommandHandler

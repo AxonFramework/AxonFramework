@@ -17,6 +17,8 @@
 package org.axonframework.integrationtests.cache;
 
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventhandling.EventHandler;
@@ -35,12 +37,14 @@ public class TestAggregateRoot {
     }
 
     @CommandHandler
-    public TestAggregateRoot(CreateCommand cmd) {
+    @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+    public void handle(CreateCommand cmd) {
         apply(new CreatedEvent(cmd.id));
     }
 
     @CommandHandler
-    public TestAggregateRoot(FailingCreateCommand cmd) {
+    @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+    public void handle(FailingCreateCommand cmd) {
         throw new IllegalArgumentException("I don't like this");
     }
 

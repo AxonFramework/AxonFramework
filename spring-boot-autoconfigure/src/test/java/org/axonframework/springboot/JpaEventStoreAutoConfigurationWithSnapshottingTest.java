@@ -29,8 +29,10 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.stereotype.Aggregate;
@@ -205,7 +207,8 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
             }
 
             @CommandHandler
-            public TestAggregate(CreateCommand command) {
+            @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+            public void handle(CreateCommand command) {
                 AggregateLifecycle.apply(new CreatedEvent(command.getAggregateIdentifier()));
             }
 

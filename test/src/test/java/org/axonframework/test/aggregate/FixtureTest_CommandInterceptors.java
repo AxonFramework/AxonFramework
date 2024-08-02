@@ -28,10 +28,12 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -285,7 +287,8 @@ class FixtureTest_CommandInterceptors {
         }
 
         @CommandHandler
-        public InterceptorAggregate(CreateStandardAggregateCommand cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateStandardAggregateCommand cmd) {
             apply(new StandardAggregateCreatedEvent(cmd.getAggregateIdentifier()));
         }
 
