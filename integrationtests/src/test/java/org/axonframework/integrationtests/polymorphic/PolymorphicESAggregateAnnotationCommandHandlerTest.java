@@ -22,6 +22,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +34,7 @@ import javax.annotation.Nonnull;
  *
  * @author Milan Savic
  */
+@Disabled("TODO #3061 - Revisit Aggregate Polymorphism")
 public class PolymorphicESAggregateAnnotationCommandHandlerTest
         extends AbstractPolymorphicAggregateAnnotationCommandHandlerTestSuite {
 

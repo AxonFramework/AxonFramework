@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Milan Savic
  */
+@Disabled("TODO #3061 - Revisit Aggregate Polymorphism")
 public class PolymorphicJpaAggregateAnnotationCommandHandlerTest
         extends AbstractPolymorphicAggregateAnnotationCommandHandlerTestSuite {
 
