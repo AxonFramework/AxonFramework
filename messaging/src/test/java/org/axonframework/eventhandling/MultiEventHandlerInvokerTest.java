@@ -121,8 +121,8 @@ class MultiEventHandlerInvokerTest {
 
         testSubject.performReset(null);
 
-        verify(mockedEventHandlerInvokerOne, times(1)).performReset(eq(NO_RESET_PAYLOAD), null);
-        verify(mockedEventHandlerInvokerTwo, never()).performReset(eq(NO_RESET_PAYLOAD), null);
+        verify(mockedEventHandlerInvokerOne, times(1)).performReset(eq(NO_RESET_PAYLOAD), isNull());
+        verify(mockedEventHandlerInvokerTwo, never()).performReset(eq(NO_RESET_PAYLOAD), isNull());
     }
 
     @Test
@@ -134,8 +134,8 @@ class MultiEventHandlerInvokerTest {
 
         testSubject.performReset(resetContext, null);
 
-        verify(mockedEventHandlerInvokerOne, times(1)).performReset(eq(resetContext), null);
-        verify(mockedEventHandlerInvokerTwo, never()).performReset(eq(resetContext), null);
+        verify(mockedEventHandlerInvokerOne, times(1)).performReset(eq(resetContext), isNull());
+        verify(mockedEventHandlerInvokerTwo, never()).performReset(eq(resetContext), isNull());
     }
 
     @Test

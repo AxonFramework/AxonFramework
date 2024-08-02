@@ -93,8 +93,8 @@ class SimpleEventHandlerInvokerTest {
 
         testSubject.performReset(resetContext, null);
 
-        verify(mockHandler1).prepareReset(eq(resetContext), null);
-        verify(mockHandler2).prepareReset(eq(resetContext), null);
+        verify(mockHandler1).prepareReset(eq(resetContext), isNull());
+        verify(mockHandler2).prepareReset(eq(resetContext), isNull());
     }
 
     @Test
