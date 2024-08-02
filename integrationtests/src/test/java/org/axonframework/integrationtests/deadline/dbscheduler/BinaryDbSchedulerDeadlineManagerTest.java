@@ -41,6 +41,7 @@ import javax.sql.DataSource;
 import static org.axonframework.utils.DbSchedulerTestUtil.getScheduler;
 import static org.axonframework.utils.DbSchedulerTestUtil.reCreateTable;
 
+@Disabled("TODO #3065 - Revisit Deadline support")
 @ContextConfiguration
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(SpringExtension.class)

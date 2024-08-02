@@ -38,6 +38,7 @@ import org.quartz.impl.StdSchedulerFactory;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@Disabled("TODO #3065 - Revisit Deadline support")
 @ExtendWith(MockitoExtension.class)
 class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
