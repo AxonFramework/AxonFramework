@@ -131,7 +131,7 @@
         <spring-security.version>5.8.13</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.2.1</awaitility.version>
-        <hamcrest.version>2.2</hamcrest.version>
+        <hamcrest.version>3.0</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.10.3</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
