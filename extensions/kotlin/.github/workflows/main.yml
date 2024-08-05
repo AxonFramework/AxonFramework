@@ -73,7 +73,7 @@ jobs:
         if: success()
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: voxmedia/github-action-slack-notify-build@v1.6.0
+        uses: voxmedia/github-action-slack-notify-build@v2
         with:
           channel_id: CAGSEC92A
           status: SUCCESS
@@ -83,7 +83,7 @@ jobs:
         if: failure()
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: voxmedia/github-action-slack-notify-build@v1.6.0
+        uses: voxmedia/github-action-slack-notify-build@v2
         with:
           channel_id: CAGSEC92A
           status: FAILED
