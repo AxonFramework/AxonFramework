@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.spring.config.annotation.SpringBeanDependencyResolverFactory;
@@ -42,6 +43,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
@@ -111,11 +114,18 @@ class SpringBeanResolverFactoryTest {
 
             // Generates a FixtureExecutionException due to the inclusion of axon-test,
             //  which includes the FixtureResourceParameterResolverFactory
-            assertThrows(
-                    FixtureExecutionException.class,
-                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver)
+            CompletableFuture<Message<Void>> result =
+                    new AnnotationEventHandlerAdapter(bean, parameterResolver)
                             .handle(EVENT_MESSAGE, processingContext)
-            );
+                            .asCompletableFuture();
+            assertTrue(result.isCompletedExceptionally());
+            assertThrows(FixtureExecutionException.class, () -> {
+                try {
+                    result.get();
+                } catch (ExecutionException e) {
+                    throw e.getCause();
+                }
+            });
         });
     }
 
@@ -139,11 +149,18 @@ class SpringBeanResolverFactoryTest {
 
             // Generates a FixtureExecutionException due to the inclusion of axon-test,
             //  which includes the FixtureResourceParameterResolverFactory
-            assertThrows(
-                    FixtureExecutionException.class,
-                    () -> new AnnotationEventHandlerAdapter(bean, parameterResolver)
+            CompletableFuture<Message<Void>> result =
+                    new AnnotationEventHandlerAdapter(bean, parameterResolver)
                             .handle(EVENT_MESSAGE, processingContext)
-            );
+                            .asCompletableFuture();
+            assertTrue(result.isCompletedExceptionally());
+            assertThrows(FixtureExecutionException.class, () -> {
+                try {
+                    result.get();
+                } catch (ExecutionException e) {
+                    throw e.getCause();
+                }
+            });
         });
     }
 
@@ -192,11 +209,19 @@ class SpringBeanResolverFactoryTest {
         testApplicationContext.run(context -> {
             Object handler = context.getBean("duplicateResourceHandlerWithAutowired");
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
-
             AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(handler, parameterResolver);
+
             // Spring dependency resolution will resolve at time of execution
-            assertThrows(NoUniqueBeanDefinitionException.class,
-                         () -> adapter.handle(EVENT_MESSAGE, processingContext));
+            CompletableFuture<Message<Void>> result = adapter.handle(EVENT_MESSAGE, processingContext)
+                                                             .asCompletableFuture();
+            assertTrue(result.isCompletedExceptionally());
+            assertThrows(NoUniqueBeanDefinitionException.class, () -> {
+                try {
+                    result.get();
+                } catch (ExecutionException e) {
+                    throw e.getCause();
+                }
+            });
         });
     }
 
