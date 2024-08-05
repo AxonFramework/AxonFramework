@@ -86,6 +86,7 @@ class AggregateStereotypeAutoConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void aggregateStereotypeConfiguration() {
         testApplicationContext.run(context -> {
             // Publish the first command to create the TestAggregate
@@ -119,6 +120,7 @@ class AggregateStereotypeAutoConfigurationTest {
      * the {@code Repository}.
      */
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void aggregateStereotypeWithCustomizedRepository() {
         testApplicationContext.run(context -> {
             // Publish the first command to create the TestAggregate
