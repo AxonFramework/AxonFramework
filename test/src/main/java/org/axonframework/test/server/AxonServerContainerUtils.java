@@ -164,7 +164,11 @@ class AxonServerContainerUtils {
     }
 
     private static boolean initialized(String hostname, int port) throws IOException {
-        List<String> cont = contexts(hostname, port);
-        return cont.contains("_admin") && cont.contains("default");
+        try {
+            List<String> cont = contexts(hostname, port);
+            return cont.contains("_admin") && cont.contains("default");
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }
