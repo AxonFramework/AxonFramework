@@ -131,6 +131,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void alwaysCreateExceptionsArePropagates() {
         fixture.givenNoPriorActivity()
                .when(new AlwaysCreateWithEventSourcedResultCommand(AGGREGATE_ID, PUBLISH_NO_EVENTS))

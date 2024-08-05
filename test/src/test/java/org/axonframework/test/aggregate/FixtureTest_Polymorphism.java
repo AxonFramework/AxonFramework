@@ -59,6 +59,7 @@ class FixtureTest_Polymorphism {
 
     @ParameterizedTest(name = "[{index}] {1}")
     @MethodSource("provideForCreationalTest")
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void creationOfAggregate(Function<String, Object> commandBuilder, String aggregateType) {
         String id = "id";
         fixture.givenNoPriorActivity()

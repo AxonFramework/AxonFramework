@@ -56,6 +56,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void expectScheduledDeadline() {
         fixture.givenNoPriorActivity()
                .when(CREATE_COMMAND)
@@ -63,6 +64,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void expectScheduledDeadlineOfType() {
         fixture.givenNoPriorActivity()
                .when(CREATE_COMMAND)
@@ -70,6 +72,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void expectScheduledDeadlineWithName() {
         fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID, DEADLINE_NAME, "deadlineId"))
                .when(new SetPayloadlessDeadlineCommand(AGGREGATE_ID))

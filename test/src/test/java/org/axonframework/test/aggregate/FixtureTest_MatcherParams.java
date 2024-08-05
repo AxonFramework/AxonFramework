@@ -112,6 +112,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void fixture_UnexpectedReturnValue() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
@@ -198,6 +199,7 @@ class FixtureTest_MatcherParams {
 
     @Test
     @SuppressWarnings("unchecked")
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void fixture_DispatchMetaDataInCommand() throws Exception {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),

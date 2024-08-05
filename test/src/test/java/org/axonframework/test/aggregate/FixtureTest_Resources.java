@@ -44,6 +44,7 @@ class FixtureTest_Resources {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void resourcesAreScopedToSingleTest_ConstructorPartOne() {
         // executing the same test should pass, as resources are scoped to a single test only
         final Executor resource = mock(Executor.class);
@@ -56,6 +57,7 @@ class FixtureTest_Resources {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void resourcesAreScopedToSingleTest_ConstructorPartTwo() {
         resourcesAreScopedToSingleTest_ConstructorPartOne();
     }

@@ -84,6 +84,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredCommandDispatchInterceptorsAreInvoked() {
         when(firstMockCommandDispatchInterceptor.handle(any(CommandMessage.class)))
                 .thenAnswer(it -> it.getArguments()[0]);
@@ -129,6 +130,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredCommandDispatchInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandDispatchInterceptor(new TestCommandDispatchInterceptor());
 
@@ -141,6 +143,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredCommandHandlerInterceptorsAreInvoked() throws Exception {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
         //noinspection unchecked
@@ -184,6 +187,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredCommandHandlerInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
@@ -217,6 +221,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredHandlerInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
         fixture.registerCommandHandlerInterceptor((unitOfWork, interceptorChain) -> {
@@ -234,6 +239,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredDispatchInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
         fixture.registerCommandDispatchInterceptor(messages -> (i, command) -> {

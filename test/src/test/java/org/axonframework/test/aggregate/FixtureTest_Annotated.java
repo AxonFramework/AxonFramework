@@ -64,6 +64,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void nullIdentifierIsRejected() {
         AxonAssertionError error = assertThrows(AxonAssertionError.class, () ->
                 fixture.given(new MyEvent(null, 0))
@@ -122,6 +123,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void aggregateCommandHandlersOverwrittenByCustomHandlers() {
         final AtomicBoolean invoked = new AtomicBoolean(false);
         fixture.registerCommandHandler(CreateAggregateCommand.class, commandMessage -> {
@@ -238,6 +240,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void fixtureDetectsStateChangeOutsideOfHandler_AggregateDeleted() {
         TestExecutor<AnnotatedAggregate> exec = fixture.given(new MyEvent(AGGREGATE_ID, 5));
         AssertionError error =

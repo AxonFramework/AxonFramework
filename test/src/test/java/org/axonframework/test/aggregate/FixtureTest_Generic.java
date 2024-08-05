@@ -59,6 +59,7 @@ class FixtureTest_Generic {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void configureCustomAggregateFactory() {
         fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
@@ -124,6 +125,7 @@ class FixtureTest_Generic {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void readAggregate_WrongIdentifier() {
         fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));

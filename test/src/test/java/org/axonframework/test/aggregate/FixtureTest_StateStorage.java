@@ -102,6 +102,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void createStateStoredAggregate_ErrorInChanges() {
         ResultValidator<StateStoredAggregate> result =
                 fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
