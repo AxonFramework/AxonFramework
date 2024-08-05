@@ -265,18 +265,16 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public FixtureConfiguration<T> registerCommandDispatchInterceptor(
             MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor
     ) {
+        // TODO #3073 - Revisit Aggregate Test Fixture
         throw new UnsupportedOperationException("Not implemented yet");
-//        this.commandBus.registerDispatchInterceptor(commandDispatchInterceptor);
-//        return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
             MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor
     ) {
+        // TODO #3073 - Revisit Aggregate Test Fixture
         throw new UnsupportedOperationException("Not implemented yet");
-//        this.commandBus.registerHandlerInterceptor(commandHandlerInterceptor);
-//        return this;
     }
 
     @Override
