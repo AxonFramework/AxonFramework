@@ -21,6 +21,8 @@ import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFac
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -80,7 +82,20 @@ class ServerConnectorConfigurerModuleTest {
     }
 
     @Test
-    void customCommandLoadFactorProvider() {
-        fail("Not implemented yet");
+    @Disabled("TODO #3074 - Revisit Command Load Factor support")
+    void customCommandLoadFactorProvider() throws NoSuchFieldException {
+//        CommandLoadFactorProvider expected = command -> 5000;
+//        Configuration config =
+//                DefaultConfigurer.defaultConfiguration()
+//                                 .configureSerializer(c -> TestSerializer.xStreamSerializer())
+//                                 .registerComponent(CommandLoadFactorProvider.class, c -> expected)
+//                                 .buildConfiguration();
+//
+//        CommandBus commandBus = config.commandBus();
+//        assertTrue(commandBus instanceof AxonServerCommandBus);
+//        CommandLoadFactorProvider result = ReflectionUtils.getFieldValue(
+//                AxonServerCommandBus.class.getDeclaredField("loadFactorProvider"), commandBus
+//        );
+//        assertEquals(expected, result);
     }
 }
