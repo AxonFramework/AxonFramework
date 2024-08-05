@@ -60,6 +60,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     private final AggregateFactory<T> aggregateFactory;
     private final RepositoryProvider repositoryProvider;
     private final Predicate<? super DomainEventMessage<?>> eventStreamFilter;
+    private final boolean idempotent;
 
     /**
      * Instantiate a {@link EventSourcingRepository} based on the fields contained in the {@link Builder}.
@@ -89,6 +90,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.snapshotTriggerDefinition = builder.snapshotTriggerDefinition;
         this.repositoryProvider = builder.repositoryProvider;
         this.eventStreamFilter = builder.eventStreamFilter;
+        this.idempotent = builder.idempotent;
     }
 
     /**
@@ -154,7 +156,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
                             model,
                             eventStore,
                             repositoryProvider,
-                            trigger);
+                            trigger,
+                            idempotent);
         loadingAggregate.initializeState(eventStream);
         return loadingAggregate;
     }
@@ -244,6 +247,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         protected RepositoryProvider repositoryProvider;
         protected Cache cache;
         protected Predicate<? super DomainEventMessage<?>> eventStreamFilter;
+        protected boolean idempotent;
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
@@ -394,6 +398,11 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         public Builder<T> filterByAggregateType() {
             final String aggregateType = buildAggregateModel().type();
             return eventStreamFilter(event -> aggregateType.equals(event.getType()));
+        }
+
+        public Builder<T> idempotent(boolean idempotent) {
+            this.idempotent = idempotent;
+            return this;
         }
 
         /**
