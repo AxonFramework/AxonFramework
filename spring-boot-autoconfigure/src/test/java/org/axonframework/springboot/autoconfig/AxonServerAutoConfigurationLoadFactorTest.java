@@ -52,8 +52,8 @@ class AxonServerAutoConfigurationLoadFactorTest {
     }
 
     @Test
+    @Disabled("TODO #3074 - Revisit Command Load Factor support")
     void loadFactor() {
-        fail("Not implemented yet");
 //        testContext.withUserConfiguration(TestContext.class)
 //                   .withPropertyValues("axon.axonserver.command-load-factor=36")
 //                   .run(context -> {
