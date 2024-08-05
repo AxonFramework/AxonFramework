@@ -20,6 +20,7 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.TargetContextResolver;
+import org.axonframework.axonserver.connector.command.AxonServerConnector;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
@@ -67,28 +68,15 @@ public class AxonServerBusAutoConfiguration {
     @Bean
     @Primary
     @ConditionalOnMissingQualifiedBean(qualifier = "!localSegment", beanClass = CommandBus.class)
-    public CommandBus axonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager,
-                                                     AxonServerConfiguration axonServerConfiguration,
-                                                     @Qualifier("localSegment") CommandBus localSegment,
-                                                     @Qualifier("messageSerializer") Serializer messageSerializer,
-                                                     RoutingStrategy routingStrategy,
-//                                                     CommandPriorityCalculator priorityCalculator,
-//                                                     CommandLoadFactorProvider loadFactorProvider,
-                                                     TargetContextResolver<? super CommandMessage<?>> targetContextResolver,
-                                                     CommandBusSpanFactory spanFactory) {
-
-        throw new UnsupportedOperationException("Not implemented yet");
-//        return AxonServerCommandBus.builder()
-//                                   .axonServerConnectionManager(axonServerConnectionManager)
-//                                   .configuration(axonServerConfiguration)
-//                                   .localSegment(localSegment)
-//                                   .serializer(messageSerializer)
-//                                   .routingStrategy(routingStrategy)
-//                                   .priorityCalculator(priorityCalculator)
-//                                   .loadFactorProvider(loadFactorProvider)
-//                                   .targetContextResolver(targetContextResolver)
-//                                   .spanFactory(spanFactory)
-//                                   .build();
+    public AxonServerConnector axonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager,
+                                                    AxonServerConfiguration axonServerConfiguration,
+                                                    @Qualifier("localSegment") CommandBus localSegment,
+                                                    @Qualifier("messageSerializer") Serializer messageSerializer,
+                                                    RoutingStrategy routingStrategy,
+                                                    TargetContextResolver<? super CommandMessage<?>> targetContextResolver,
+                                                    CommandBusSpanFactory spanFactory) {
+        // TODO #3076 - Wire the AxonServerConnector instead of the AxonServerCommandBus
+        return (AxonServerConnector) null;
     }
 
     @Bean

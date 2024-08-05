@@ -398,20 +398,19 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(
             ignoredType = {
                     "org.axonframework.commandhandling.distributed.DistributedCommandBus",
-                    "org.axonframework.axonserver.connector.command.AxonServerCommandBus",
                     "org.axonframework.extensions.multitenancy.components.commandhandeling.MultiTenantCommandBus"
             },
             value = CommandBus.class
     )
-
     @Qualifier("localSegment")
     @Bean
     public CommandBus commandBus(TransactionManager txManager, Configuration axonConfiguration) {
-        SimpleCommandBus commandBus =
-                new SimpleCommandBus(txManager);
-        return new InterceptingCommandBus(commandBus,
-                                          List.of(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())),
-                                          Collections.emptyList());
+        SimpleCommandBus commandBus = new SimpleCommandBus(txManager);
+        return new InterceptingCommandBus(
+                commandBus,
+                List.of(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())),
+                Collections.emptyList()
+        );
     }
 
     @ConditionalOnMissingBean(value = QueryBus.class)
