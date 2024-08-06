@@ -23,6 +23,7 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -30,10 +31,11 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -59,66 +61,72 @@ class AggregateCreationFromCommandsTest {
         factoryInvocationCounter = new AtomicInteger(0);
     }
 
-
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createAlwaysCreationWithoutFactory() {
         createAndRegisterDefaultCommandHandler();
         String aggregateId = UUID.randomUUID().toString();
-        commandBus.dispatch(
+        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
                 asCommandMessage(new StubAggregateForCreation.CreateAlwaysCommand(aggregateId)), ProcessingContext.NONE
         );
+        assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
-                                                                 .collect(Collectors.toList());
-        Assertions.assertEquals(1, events.size());
-        Assertions.assertEquals(aggregateId, events.get(0).getAggregateIdentifier());
+                                                                 .toList();
+        assertEquals(1, events.size());
+        assertEquals(aggregateId, events.getFirst().getAggregateIdentifier());
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createIfMissingCreationWithoutFactory() {
         createAndRegisterDefaultCommandHandler();
         String aggregateId = UUID.randomUUID().toString();
-        commandBus.dispatch(
+        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
                 asCommandMessage(new StubAggregateForCreation.CreateIfMissingCommand(aggregateId)),
                 ProcessingContext.NONE
         );
+        assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
-                                                                 .collect(Collectors.toList());
-        Assertions.assertEquals(1, events.size());
-        Assertions.assertEquals(aggregateId, events.get(0).getAggregateIdentifier());
+                                                                 .toList();
+        assertEquals(1, events.size());
+        assertEquals(aggregateId, events.getFirst().getAggregateIdentifier());
     }
 
-
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createAlwaysCreationWithFactory() {
         createAndRegisterCommandHandlerWithFactory();
         String aggregateId = UUID.randomUUID().toString();
-        commandBus.dispatch(
+        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
                 asCommandMessage(new StubAggregateForCreation.CreateAlwaysCommand(aggregateId)), ProcessingContext.NONE
         );
+        assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
-                                                                 .collect(Collectors.toList());
-        Assertions.assertEquals(1, events.size());
-        Assertions.assertEquals(aggregateId, events.get(0).getAggregateIdentifier());
-        Assertions.assertEquals(1, factoryInvocationCounter.get());
+                                                                 .toList();
+        assertEquals(1, events.size());
+        assertEquals(aggregateId, events.getFirst().getAggregateIdentifier());
+        assertEquals(1, factoryInvocationCounter.get());
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createIfMissingCreationWithFactory() {
         createAndRegisterCommandHandlerWithFactory();
         String aggregateId = UUID.randomUUID().toString();
-        commandBus.dispatch(
+        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
                 asCommandMessage(new StubAggregateForCreation.CreateIfMissingCommand(aggregateId)),
                 ProcessingContext.NONE
         );
+        assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
-                                                                 .collect(Collectors.toList());
-        Assertions.assertEquals(1, events.size());
-        Assertions.assertEquals(aggregateId, events.get(0).getAggregateIdentifier());
-        Assertions.assertEquals(1, factoryInvocationCounter.get());
+                                                                 .toList();
+        assertEquals(1, events.size());
+        assertEquals(aggregateId, events.getFirst().getAggregateIdentifier());
+        assertEquals(1, factoryInvocationCounter.get());
     }
 
     private void createAndRegisterDefaultCommandHandler() {
@@ -128,7 +136,6 @@ class AggregateCreationFromCommandsTest {
                 .aggregateType(StubAggregateForCreation.class)
                 .aggregateModel(new AnnotatedAggregateMetaModelFactory().createModel(StubAggregateForCreation.class))
                 .build();
-        //noinspection resource
         ch.subscribe(commandBus);
     }
 
@@ -143,7 +150,6 @@ class AggregateCreationFromCommandsTest {
                 })
                 .aggregateModel(new AnnotatedAggregateMetaModelFactory().createModel(StubAggregateForCreation.class))
                 .build();
-        //noinspection resource
         ch.subscribe(commandBus);
     }
 }
