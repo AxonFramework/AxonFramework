@@ -79,8 +79,10 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
             assertNotNull(context.getBean(JpaEventStorageEngine.class));
 
             CommandGateway commandGateway = context.getBean(CommandGateway.class);
-            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), ProcessingContext.NONE);
-            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), ProcessingContext.NONE);
+            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), ProcessingContext.NONE)
+                          .getResultMessage().get();
+            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), ProcessingContext.NONE)
+                          .getResultMessage().get();
 
             verify(snapshotTriggerDefinition, atLeastOnce()).prepareTrigger(TestContext.TestAggregate.class);
             verify(snapshotter, atLeastOnce()).scheduleSnapshot(TestContext.TestAggregate.class, AGGREGATE_ID);
@@ -95,8 +97,10 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
             assertNotNull(context.getBean(JpaEventStorageEngine.class));
 
             CommandGateway commandGateway = context.getBean(CommandGateway.class);
-            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), ProcessingContext.NONE);
-            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), ProcessingContext.NONE);
+            commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), ProcessingContext.NONE)
+                          .getResultMessage().get();
+            commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), ProcessingContext.NONE)
+                          .getResultMessage().get();
 
             EventStore eventStore = context.getBean(EventStore.class);
             eventStore.readEvents(AGGREGATE_ID);

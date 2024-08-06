@@ -52,14 +52,9 @@ public class DefaultCommandGateway implements CommandGateway {
 
     @Override
     public CommandResult send(@Nonnull Object command, @Nullable ProcessingContext processingContext) {
-        return new FutureCommandResult(commandBus.dispatch(GenericCommandMessage.asCommandMessage(command),
-                                                           processingContext)
-                                                 .thenCompose(msg -> {
-                                                     if (msg instanceof ResultMessage<?> resultMessage
-                                                             && resultMessage.isExceptional()) {
-                                                         return CompletableFuture.failedFuture(resultMessage.exceptionResult());
-                                                     }
-                                                     return CompletableFuture.completedFuture(msg);
-                                                 }));
+        return new FutureCommandResult(
+                commandBus.dispatch(GenericCommandMessage.asCommandMessage(command), processingContext)
+                          .thenCompose(CompletableFuture::completedFuture)
+        );
     }
 }
