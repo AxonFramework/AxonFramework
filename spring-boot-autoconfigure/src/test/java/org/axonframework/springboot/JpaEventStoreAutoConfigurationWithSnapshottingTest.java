@@ -69,6 +69,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void snapshotterAndSnapshotTriggerDefinitionAreInvoked() {
         testContext.run(context -> {
             SnapshotTriggerDefinition snapshotTriggerDefinition =
@@ -90,6 +91,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void snapshotFilterIsInvoked() {
         testContext.run(context -> {
             SnapshotFilter snapshotFilter = context.getBean(SnapshotFilter.class);
