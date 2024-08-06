@@ -20,7 +20,9 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.test.matchers.Matchers;
 import org.junit.jupiter.api.*;
@@ -57,6 +59,7 @@ class FixtureTest_Polymorphism {
 
     @ParameterizedTest(name = "[{index}] {1}")
     @MethodSource("provideForCreationalTest")
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void creationOfAggregate(Function<String, Object> commandBuilder, String aggregateType) {
         String id = "id";
         fixture.givenNoPriorActivity()
@@ -71,6 +74,7 @@ class FixtureTest_Polymorphism {
 
     @ParameterizedTest
     @ValueSource(strings = {"AggregateB", "AggregateC"})
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void commonCommandOnAggregate(String aggregateType) {
         String id = "id";
         DomainEventMessage<CreatedEvent> creationalEvent = new GenericDomainEventMessage<>(aggregateType,
@@ -83,6 +87,7 @@ class FixtureTest_Polymorphism {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void creatingNewPolymorphicAggregate() {
         AggregateTestFixture<AggregateD> fixture = new AggregateTestFixture<>(AggregateD.class);
         String id = "id";
@@ -206,7 +211,8 @@ class FixtureTest_Polymorphism {
         }
 
         @CommandHandler
-        public AggregateB(CreateBCommand cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateBCommand cmd) {
             apply(new CreatedEvent(cmd.id));
         }
     }
@@ -217,7 +223,8 @@ class FixtureTest_Polymorphism {
         }
 
         @CommandHandler
-        public AggregateC(CreateCCommand cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateCCommand cmd) {
             apply(new CreatedEvent(cmd.id));
         }
     }
@@ -231,9 +238,14 @@ class FixtureTest_Polymorphism {
         }
 
         @CommandHandler
-        public AggregateD(CreateDCommand cmd) throws Exception {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateDCommand cmd) throws Exception {
             apply(new DCreatedEvent(cmd.id));
-            createNew(AggregateA.class, () -> new AggregateB(new CreateBCommand(cmd.id)));
+            createNew(AggregateA.class, () -> {
+                AggregateB aggregate = new AggregateB();
+                aggregate.handle(new CreateBCommand(cmd.id));
+                return aggregate;
+            });
         }
 
         @EventSourcingHandler

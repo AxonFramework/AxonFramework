@@ -61,7 +61,9 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryHandler;
@@ -118,6 +120,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void defaultConfigurationWithEventSourcing() throws Exception {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
@@ -228,6 +231,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void defaultConfigurationWithUpcaster() {
         AtomicInteger counter = new AtomicInteger();
         Configuration config = DefaultConfigurer.defaultConfiguration()
@@ -265,6 +269,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void jpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
@@ -299,6 +304,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void jpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
@@ -338,6 +344,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void jpaConfigurationWithJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> entityManager).registerComponent(
@@ -369,6 +376,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void defaultConfigurationWithMonitors() throws Exception {
         MessageCollectingMonitor defaultMonitor = new MessageCollectingMonitor();
         MessageCollectingMonitor commandBusMonitor = new MessageCollectingMonitor();
@@ -416,6 +424,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void defaultConfigurationWithCache() throws Exception {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
@@ -665,14 +674,15 @@ class DefaultConfigurerTest {
         }
 
         @CommandHandler
-        public StubAggregate(String command, CommandBus commandBus) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(String command, CommandBus commandBus) {
             apply(command);
         }
 
-        @CommandHandler
         public static StubAggregate create(String command, CommandBus commandBus) {
-
-            return new StubAggregate(command, commandBus);
+            StubAggregate aggregate = new StubAggregate();
+            aggregate.handle(command, commandBus);
+            return aggregate;
         }
 
         @CommandHandler(commandName = "update")

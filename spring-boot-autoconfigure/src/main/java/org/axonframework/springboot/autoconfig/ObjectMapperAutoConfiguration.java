@@ -28,7 +28,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration
-@AutoConfigureBefore(AxonAutoConfiguration.class)
+@AutoConfigureBefore({AxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
 @AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration")
 @ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
 @EnableConfigurationProperties(value = SerializerProperties.class)

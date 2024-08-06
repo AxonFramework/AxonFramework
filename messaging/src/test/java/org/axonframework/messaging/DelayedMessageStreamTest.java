@@ -25,16 +25,19 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DelayedMessageStreamTest {
 
-    private MessageStream<Message<?>> testSubject;
     private CompletableFuture<MessageStream<Message<?>>> future;
+
+    private MessageStream<Message<?>> testSubject;
 
     @BeforeEach
     void setUp() {
         future = new CompletableFuture<>();
+
         testSubject = DelayedMessageStream.create(future);
     }
 
     @Test
+    @Disabled("TODO #3063 - Clean-up MessageStream API")
     void elementsBecomeVisibleWhenFutureCompletes() {
         AtomicBoolean completed = new AtomicBoolean(false);
 

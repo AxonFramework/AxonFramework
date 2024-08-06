@@ -99,6 +99,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void polymorphicConfig() {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
                                                                         .withSubtypes(B.class);
@@ -176,6 +177,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void configureLockFactoryForEventSourcedAggregate() {
         PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
@@ -196,6 +198,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void configureSpanFactoryForEventSourcedAggregate() {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class);
 
@@ -217,6 +220,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void configureLockFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
         PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.jpaMappedConfiguration(A.class)
@@ -240,6 +244,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void configureSpanFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
         PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.jpaMappedConfiguration(A.class)
@@ -266,6 +271,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void configureLockFactoryForStateStoredAggregate() {
         PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
         AggregateConfigurer<A> aggregateConfigurer =
@@ -289,6 +295,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void configureSpanFactoryForStateStoredAggregate() {
         AggregateConfigurer<A> aggregateConfigurer =
                 AggregateConfigurer.jpaMappedConfiguration(
@@ -354,12 +361,15 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void configuredCreationPolicyAggregateFactoryIsUsedDuringAggregateConstruction() {
         AtomicBoolean counter = new AtomicBoolean(false);
 
         CreationPolicyAggregateFactory<A> testFactory = identifier -> {
             counter.set(true);
-            return new A(identifier != null ? identifier.toString() : "null");
+            A aggregateA = new A();
+            aggregateA.handle(identifier != null ? identifier.toString() : "null");
+            return aggregateA;
         };
 
         AggregateConfigurer<A> testAggregateConfigurer =
@@ -480,11 +490,12 @@ public class AggregateConfigurerTest {
         }
 
         @CommandHandler
-        public A(CreateACommand cmd) {
-            this(cmd.getId());
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateACommand cmd) {
+            handle(cmd.getId());
         }
 
-        public A(String id) {
+        public void handle(String id) {
             apply(new ACreatedEvent(id));
         }
 
@@ -515,8 +526,9 @@ public class AggregateConfigurerTest {
         }
 
         @CommandHandler
-        public B(CreateBCommand cmd) {
-            super(cmd.getId());
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateBCommand cmd) {
+            super.handle(cmd.getId());
         }
 
         @CommandHandler

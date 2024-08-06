@@ -39,11 +39,6 @@ public class StubAggregateForCreation {
     }
 
     @CommandHandler
-    public StubAggregateForCreation(ConstructorCommand cmd) {
-        AggregateLifecycle.apply(new CreatedEvent(cmd.aggregateId, null));
-    }
-
-    @CommandHandler
     @CreationPolicy(AggregateCreationPolicy.ALWAYS)
     public void handle(CreateAlwaysCommand cmd) {
         AggregateLifecycle.apply(new CreatedEvent(cmd.aggregateId, AggregateCreationPolicy.ALWAYS));
@@ -59,20 +54,6 @@ public class StubAggregateForCreation {
     public void on(CreatedEvent event) {
         this.identifier = event.aggregateIdentifier;
         aggregateCreationPolicy = event.aggregateCreationPolicy;
-    }
-
-    public static class ConstructorCommand {
-
-        @TargetAggregateIdentifier
-        private final String aggregateId;
-
-        public ConstructorCommand(String aggregateId) {
-            this.aggregateId = aggregateId;
-        }
-
-        public String getAggregateId() {
-            return aggregateId;
-        }
     }
 
     public static class CreateAlwaysCommand {

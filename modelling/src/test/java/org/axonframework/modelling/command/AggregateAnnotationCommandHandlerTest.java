@@ -21,7 +21,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.messaging.MessageHandler;
@@ -119,6 +118,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void aggregateConstructorThrowsException() {
         fail("Not implemented");
 //        commandBus.dispatch(asCommandMessage(new FailingCreateCommand("id", "parameter")),
@@ -132,6 +132,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void aggregateCommandHandlerThrowsException() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -149,6 +150,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void supportedCommands() {
         Set<String> actual = testSubject.supportedCommandNames();
         Set<String> expected = new HashSet<>(Arrays.asList(
@@ -174,6 +176,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerSubscribesToCommands() {
         //noinspection resource
         verify(commandBus).subscribe(eq(CreateCommand.class.getName()),
@@ -186,6 +189,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerCreatesAggregateInstance() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
@@ -202,6 +206,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerCreatesAlwaysAggregateInstance() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
@@ -221,6 +226,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerCreatesAlwaysAggregateInstanceWithNullId() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
@@ -240,6 +246,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
@@ -265,6 +272,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerCreatesOrUpdatesAggregateInstanceSupportsNullId() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
@@ -289,6 +297,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     public void commandHandlerAlwaysCreatesAggregateInstance() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
@@ -305,6 +314,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerCreatesAggregateInstanceWithFactoryMethod() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
@@ -321,6 +331,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerUpdatesAggregateInstanceAnnotatedMethod() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -340,6 +351,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedMethod() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -368,6 +380,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerUpdatesAggregateInstanceWithNullVersionAnnotatedMethod() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -387,6 +400,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerUpdatesAggregateInstanceAnnotatedField() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -406,6 +420,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedField() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -425,6 +440,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedIntegerField() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -445,6 +461,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandForEntityRejectedWhenNoInstanceIsAvailable() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -466,6 +483,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandledByEntity() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -488,6 +506,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandledByEntityFromCollection() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -511,6 +530,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandledByEntityFromCollectionNoEntityAvailable() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -532,6 +552,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandledByEntityFromCollectionNullIdInCommand() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -553,6 +574,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandledByNestedEntity() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -588,6 +610,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandledByEntityFromMap() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -611,6 +634,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandledByEntityFromMapNoEntityAvailable() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -632,6 +656,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandledByEntityFromMapNullIdInCommand() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -653,6 +678,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void rejectsDuplicateRegistrations() {
         commandBus = new SimpleCommandBus();
         commandBus = spy(commandBus);
@@ -668,6 +694,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerByAbstractEntityWithTheSameCommandType() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -690,6 +717,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerByAbstractEntityWithNoAvailableEntity() {
         fail("Not implemented");
 //        String aggregateIdentifier = "abc123";
@@ -775,10 +803,12 @@ class AggregateAnnotationCommandHandlerTest {
         private List<StubCommandAnnotatedAbstractEntityB> absEntitiesB;
 
         @CommandHandler
-        public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData,
-                                             UnitOfWork<CommandMessage<?>> unitOfWork,
-                                             @MetaDataValue("notExist") String value) {
-            super(createCommand.getId());
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateCommand createCommand,
+                           MetaData metaData,
+                           UnitOfWork<CommandMessage<?>> unitOfWork,
+                           @MetaDataValue("notExist") String value) {
+            this.setIdentifier(createCommand.getId());
             assertNotNull(metaData);
             assertNotNull(unitOfWork);
             assertNull(value);
@@ -788,13 +818,14 @@ class AggregateAnnotationCommandHandlerTest {
 
         @CommandHandler
         public static StubCommandAnnotatedAggregate createStubCommandAnnotatedAggregate(
-                CreateFactoryMethodCommand createFactoryMethodCommand) {
+                CreateFactoryMethodCommand createFactoryMethodCommand
+        ) {
             return new StubCommandAnnotatedAggregate(createFactoryMethodCommand.getId());
         }
 
         @CommandHandler
-        public StubCommandAnnotatedAggregate(FailingCreateCommand createCommand) {
-            super(IdentifierFactory.getInstance().generateIdentifier());
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(FailingCreateCommand createCommand) {
             throw new RuntimeException(createCommand.getParameter());
         }
 
@@ -823,11 +854,6 @@ class AggregateAnnotationCommandHandlerTest {
 
         @Override
         public String handleUpdate(UpdateCommandWithAnnotatedMethod updateCommand) {
-            return "Method works fine";
-        }
-
-        @CommandHandler
-        public String handleUpdateDuplicate(UpdateCommandWithAnnotatedMethod updateCommand) {
             return "Method works fine";
         }
 

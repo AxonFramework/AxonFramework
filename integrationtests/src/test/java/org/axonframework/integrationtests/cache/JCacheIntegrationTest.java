@@ -51,14 +51,12 @@ class JCacheIntegrationTest extends CachingIntegrationTestSuite {
         cacheManager.close();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Cache buildCache(String name) {
         return new JCacheAdapter(createCache(name));
     }
 
-    @SuppressWarnings("rawtypes")
-    private javax.cache.Cache createCache(String name) {
+    private javax.cache.Cache<Object, Object> createCache(String name) {
         MutableConfiguration<Object, Object> configuration =
                 new MutableConfiguration<>()
                         .setTypes(Object.class, Object.class)

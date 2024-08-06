@@ -22,7 +22,9 @@ import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +75,8 @@ public class ServerConnectorRunner {
 
 
         @CommandHandler
-        public MyAggregate(CreateMyAggregateCommand command) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateMyAggregateCommand command) {
             apply(new MyAggregateCreatedEvent(command.getId()));
         }
 

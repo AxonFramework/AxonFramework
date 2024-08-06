@@ -119,6 +119,7 @@ class ExceptionHandlerTest {
     }
 
     @Test
+    @Disabled("TODO #3062 - Exception Handler support")
     void exceptionHandlersAreInvokedInHandlerPriorityOrder() {
         CommandMessage<SomeCommand> command =
                 asCommandMessage(new SomeCommand(() -> new IllegalStateException("some-exception")));

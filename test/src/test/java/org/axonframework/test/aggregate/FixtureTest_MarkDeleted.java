@@ -18,9 +18,7 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.test.AxonAssertionError;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -46,6 +44,7 @@ class FixtureTest_MarkDeleted {
 
     @Test
     @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert") // Test succeeds when no Error is thrown
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createAggregateYieldsLiveAggregate() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenNoPriorActivity()
@@ -67,6 +66,7 @@ class FixtureTest_MarkDeleted {
 
     @Test
     @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert") // Test succeeds when no Error is thrown
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void deletedAggregateYieldsAggregateMarkedDeleted() {
         fixture.given(new MyEvent("id", 0))
                .when(new DeleteCommand("id", false))

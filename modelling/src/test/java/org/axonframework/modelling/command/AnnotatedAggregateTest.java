@@ -26,12 +26,10 @@ import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentMatcher;
-import org.mockito.InOrder;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
+import org.mockito.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,12 +37,9 @@ import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 public class AnnotatedAggregateTest {
 
@@ -67,8 +62,13 @@ public class AnnotatedAggregateTest {
     void applyingMultipleEventsInAndThenPublishesWithRightState() {
         Command command = new Command(ID, 2);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
-        Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
-                .newInstance(() -> new AggregateRoot(command))).getPayload();
+        Aggregate<AggregateRoot> aggregate =
+                uow.executeWithResult(() -> repository.newInstance(() -> {
+                       AggregateRoot root = new AggregateRoot();
+                       root.handle(command);
+                       return root;
+                   }))
+                   .getPayload();
         assertNotNull(aggregate);
 
         InOrder inOrder = inOrder(eventBus);
@@ -82,8 +82,13 @@ public class AnnotatedAggregateTest {
     void applyingEventInHandlerPublishesInRightOrder() {
         Command command = new Command(ID, 0);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
-        Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
-                .newInstance(() -> new AggregateRoot(command))).getPayload();
+        Aggregate<AggregateRoot> aggregate =
+                uow.executeWithResult(() -> repository.newInstance(() -> {
+                       AggregateRoot root = new AggregateRoot();
+                       root.handle(command);
+                       return root;
+                   }))
+                   .getPayload();
         assertNotNull(aggregate);
 
         InOrder inOrder = inOrder(eventBus);
@@ -110,8 +115,13 @@ public class AnnotatedAggregateTest {
     void conditionalApplyingEventInHandlerPublishesInRightOrder(boolean applyConditional) {
         Command_2 command = new Command_2(ID, 0, applyConditional);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
-        Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
-                .newInstance(() -> new AggregateRoot(command, sideEffect))).getPayload();
+        Aggregate<AggregateRoot> aggregate =
+                uow.executeWithResult(() -> repository.newInstance(() -> {
+                       AggregateRoot root = new AggregateRoot();
+                       root.handle(command, sideEffect);
+                       return root;
+                   }))
+                   .getPayload();
         assertNotNull(aggregate);
 
         InOrder inOrderEvents = inOrder(eventBus);
@@ -234,7 +244,8 @@ public class AnnotatedAggregateTest {
         }
 
         @CommandHandler
-        public AggregateRoot(Command command) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(Command command) {
             ApplyMore andThen = apply(new Event_1(command.getId(), 0));
             for (int i = 0; i < command.value; i++) {
                 andThen = andThen.andThenApply(() -> new Event_1(id, value + 1));
@@ -242,7 +253,8 @@ public class AnnotatedAggregateTest {
         }
 
         @CommandHandler
-        public AggregateRoot(Command_2 command, StubSideEffect sideEffect) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(Command_2 command, StubSideEffect sideEffect) {
             apply(new Event_1(command.getId(), 0))
                     .andThenApplyIf(() -> command.condition, () -> new Event_2(command.getId()))
                     .andThenApply(() -> new Event_3(id))

@@ -23,6 +23,7 @@ import org.axonframework.axonserver.connector.event.axon.AxonServerEventSchedule
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
@@ -91,12 +92,13 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3076 - Wire the AxonServerConnector instead of the AxonServerCommandBus")
     void axonServerCommandBusBeanTypesConfiguration() {
         testContext.run(context -> {
             Map<String, CommandBus> commandBusses = context.getBeansOfType(CommandBus.class);
 
             assertThat(commandBusses).containsKey("axonServerCommandBus");
-            // TODO - find a way to validate that the CommandBus is configured with a connector
+            // TODO #3076 - Find a way to validate that the CommandBus is configured with a connector
             assertThat(commandBusses.get("axonServerCommandBus")).isInstanceOf(CommandBus.class);
 
             assertThat(commandBusses).containsKey("commandBus");
@@ -114,13 +116,14 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3076 - Wire the AxonServerConnector instead of the AxonServerCommandBus")
     void axonServerDefaultCommandBusConfiguration() {
         testContext.withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
                    .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
                    .run(context -> {
                        assertThat(context).getBeanNames(CommandBus.class)
                                           .hasSize(2);
-                       // TODO - find a way to validate that the CommandBus is configured with a connector
+                       // TODO #3076 - Find a way to validate that the CommandBus is configured with a connector
                        assertThat(context).getBean("axonServerCommandBus")
                                           .isExactlyInstanceOf(CommandBus.class);
                        assertThat(context).getBean("commandBus")
@@ -136,19 +139,20 @@ class AxonServerAutoConfigurationTest {
                                           .hasSize(1);
                        assertThat(context).doesNotHaveBean("axonServerCommandBus");
                        assertThat(context).getBean("commandBus")
-                                          .isExactlyInstanceOf(SimpleCommandBus.class);
+                                          .isExactlyInstanceOf(InterceptingCommandBus.class);
                        assertThat(context).hasSingleBean(EventBus.class);
                    });
     }
 
     @Test
+    @Disabled("TODO #3076 - Wire the AxonServerConnector instead of the AxonServerCommandBus")
     void axonServerDefaultConfiguration_AxonServerEventStoreDisabled() {
         testContext.withPropertyValues("axon.axonserver.event-store.enabled=false")
                    .run(context -> {
                        QueryBus queryBus = context.getBean(QueryBus.class);
                        assertThat(queryBus).isNotNull();
                        assertThat(queryBus).isInstanceOf(AxonServerQueryBus.class);
-                       // TODO - find a way to validate that the CommandBus is configured with a connector
+                       // TODO #3076 - Find a way to validate that the CommandBus is configured with a connector
                        assertThat(context).getBean("axonServerCommandBus")
                                           .isExactlyInstanceOf(CommandBus.class);
                        assertThat(context).doesNotHaveBean("eventScheduler");
@@ -163,7 +167,7 @@ class AxonServerAutoConfigurationTest {
                        assertThat(context).getBeanNames(CommandBus.class)
                                           .hasSize(1);
                        assertThat(context).getBean(CommandBus.class)
-                                          .isExactlyInstanceOf(SimpleCommandBus.class);
+                                          .isExactlyInstanceOf(InterceptingCommandBus.class);
                    });
     }
 

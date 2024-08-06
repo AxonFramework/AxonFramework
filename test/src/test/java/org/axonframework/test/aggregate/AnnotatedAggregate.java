@@ -20,7 +20,9 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +56,8 @@ class AnnotatedAggregate implements AnnotatedAggregateInterface {
     }
 
     @CommandHandler
-    public AnnotatedAggregate(CreateAggregateCommand command, EventBus eventBus, HardToCreateResource resource) {
+    @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+    public void handle(CreateAggregateCommand command, EventBus eventBus, HardToCreateResource resource) {
         assertNotNull(resource, "resource should not be null");
         assertNotNull(eventBus, "Expected EventBus to be injected as resource");
 

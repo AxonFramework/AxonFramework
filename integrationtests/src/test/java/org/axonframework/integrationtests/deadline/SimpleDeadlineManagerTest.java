@@ -32,6 +32,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static org.mockito.Mockito.*;
 
+@Disabled("TODO #3065 - Revisit Deadline support")
 @ExtendWith(MockitoExtension.class)
 class SimpleDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 

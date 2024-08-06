@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Bean;
 @ConditionalOnClass(name = {"com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper"})
 @EnableConfigurationProperties(value = SerializerProperties.class)
 public class CBORMapperAutoConfiguration {
+
     @Bean("defaultAxonCborMapper")
     @ConditionalOnMissingBean(CBORMapper.class)
     @ConditionalOnExpression("'${axon.serializer.general}' == 'cbor' || '${axon.serializer.events}' == 'cbor' || '${axon.serializer.messages}' == 'cbor'")

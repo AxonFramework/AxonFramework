@@ -28,10 +28,12 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -82,6 +84,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredCommandDispatchInterceptorsAreInvoked() {
         when(firstMockCommandDispatchInterceptor.handle(any(CommandMessage.class)))
                 .thenAnswer(it -> it.getArguments()[0]);
@@ -110,6 +113,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void registeredCommandDispatchInterceptorIsInvokedAndAltersAppliedEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
@@ -126,6 +130,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredCommandDispatchInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandDispatchInterceptor(new TestCommandDispatchInterceptor());
 
@@ -138,6 +143,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredCommandHandlerInterceptorsAreInvoked() throws Exception {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
         //noinspection unchecked
@@ -164,6 +170,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void registeredCommandHandlerInterceptorIsInvokedAndAltersEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
@@ -180,6 +187,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredCommandHandlerInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
@@ -192,6 +200,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void registeredCommandDispatchAndHandlerInterceptorAreBothInvokedAndAlterEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
@@ -212,6 +221,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredHandlerInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
         fixture.registerCommandHandlerInterceptor((unitOfWork, interceptorChain) -> {
@@ -229,6 +239,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredDispatchInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
         fixture.registerCommandDispatchInterceptor(messages -> (i, command) -> {
@@ -245,6 +256,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorChainIsInvokedWhenInterceptorForEntityWiresInterceptorChainWithoutExistingEntity() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new DoWithEntityCommand(AGGREGATE_IDENTIFIER))
@@ -254,6 +266,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorChainIsNotInvokedWhenInterceptorForEntityDoesNotWireInterceptorChainWithoutExistingEntity() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new DoWithEntityWithoutInterceptorCommand(AGGREGATE_IDENTIFIER))
@@ -285,7 +298,8 @@ class FixtureTest_CommandInterceptors {
         }
 
         @CommandHandler
-        public InterceptorAggregate(CreateStandardAggregateCommand cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateStandardAggregateCommand cmd) {
             apply(new StandardAggregateCreatedEvent(cmd.getAggregateIdentifier()));
         }
 

@@ -59,14 +59,15 @@ class EhCacheIntegrationTest extends CachingIntegrationTestSuite {
         return new EhCacheAdapter(createCache(name));
     }
 
-    private Ehcache createCache(String name) {
-        return (Ehcache) cacheManager.createCache(
+    private Ehcache<Object, Object> createCache(String name) {
+        return (Ehcache<Object, Object>) cacheManager.createCache(
                 name,
                 CacheConfigurationBuilder
                         .newCacheConfigurationBuilder(
                                 Object.class,
                                 Object.class,
-                                ResourcePoolsBuilder.heap(100L).build())
+                                ResourcePoolsBuilder.heap(100L).build()
+                        )
                         .build());
     }
 }

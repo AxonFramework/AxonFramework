@@ -18,6 +18,8 @@ package org.axonframework.springboot.autoconfig.context;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.spring.stereotype.Aggregate;
 
 import java.util.Random;
@@ -32,7 +34,8 @@ public class Dog extends Animal {
     private int ageInYears;
 
     @CommandHandler
-    public Dog(CreateDogCommand command) {
+    @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+    public void handle(CreateDogCommand command) {
         apply(new DogCreatedEvent(command.getAggregateId(), command.getName()));
     }
 

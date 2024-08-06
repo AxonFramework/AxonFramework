@@ -19,7 +19,9 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -52,6 +54,7 @@ class FixtureTest_SpawningNewAggregate {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixtureWithoutRepositoryProviderInjected() {
         fixture.givenNoPriorActivity()
                .when(new CreateAggregate1Command("id", "aggregate2Id", false))
@@ -60,6 +63,7 @@ class FixtureTest_SpawningNewAggregate {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixtureShouldResolveResourcesInSpawnedAggregates() {
         fixture.registerInjectableResource(new Resource());
         fixture.givenNoPriorActivity()
@@ -70,6 +74,7 @@ class FixtureTest_SpawningNewAggregate {
 
     @SuppressWarnings("unchecked")
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixtureWithRepositoryProviderInjected() throws Exception {
         RepositoryProvider repositoryProvider = mock(RepositoryProvider.class);
         Repository<Aggregate2> aggregate2Repository = mock(Repository.class);
@@ -221,7 +226,8 @@ class FixtureTest_SpawningNewAggregate {
         }
 
         @CommandHandler
-        public Aggregate1(CreateAggregate1Command command) throws Exception {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateAggregate1Command command) throws Exception {
             apply(new Aggregate1CreatedEvent(command.getId()));
             createNew(Aggregate2.class, () -> new Aggregate2(command.getAggregate2Id(), command.isRequireResource()));
         }

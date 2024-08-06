@@ -20,6 +20,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
+import org.axonframework.modelling.command.CreationPolicy;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.createNew;
@@ -39,9 +41,14 @@ public class SimpleAggregate {
     }
 
     @CommandHandler
-    public SimpleAggregate(CreateSimpleAggregateCommand cmd) throws Exception {
+    @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+    public void handle(CreateSimpleAggregateCommand cmd) throws Exception {
         apply(new SimpleAggregateCreatedEvent(cmd.getId()));
-        createNew(ParentAggregate.class, () -> new Child1Aggregate(new CreateChild1Command("child1" + cmd.getId())));
+        createNew(ParentAggregate.class, () -> {
+            Child1Aggregate child1Aggregate = new Child1Aggregate();
+            child1Aggregate.handle(new CreateChild1Command("child1" + cmd.getId()));
+            return child1Aggregate;
+        });
     }
 
     @EventSourcingHandler

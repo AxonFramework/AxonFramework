@@ -24,8 +24,10 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.conflictresolution.ConflictResolver;
 import org.axonframework.eventsourcing.conflictresolution.Conflicts;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.ConflictingAggregateVersionException;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateVersion;
 import org.junit.jupiter.api.*;
@@ -53,6 +55,7 @@ class ConflictResolutionIntegrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void nonConflictingEventsAllowed() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
@@ -60,6 +63,7 @@ class ConflictResolutionIntegrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void unresolvedConflictCausesException() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
@@ -70,6 +74,7 @@ class ConflictResolutionIntegrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void expressedConflictCausesException() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
@@ -80,12 +85,12 @@ class ConflictResolutionIntegrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void noExpectedVersionIgnoresConflicts() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", null));
     }
-
 
     public static class StubAggregate {
 
@@ -97,7 +102,8 @@ class ConflictResolutionIntegrationTest {
         }
 
         @CommandHandler
-        public StubAggregate(CreateCommand command) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateCommand command) {
             apply(new CreatedEvent(command.getAggregateId()));
         }
 

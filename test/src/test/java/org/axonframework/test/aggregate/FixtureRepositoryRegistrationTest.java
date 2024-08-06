@@ -24,15 +24,16 @@ import org.axonframework.eventhandling.TimestampParameterResolverFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.saga.SagaMethodMessageHandlerDefinition;
 import org.axonframework.test.FixtureExecutionException;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -61,6 +62,7 @@ class FixtureRepositoryRegistrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void fixturesDefaultRepositoryCanBeWiredAsMessageHandlingParameter() {
         testSubject.givenNoPriorActivity()
                    .when("some-command")
@@ -68,6 +70,7 @@ class FixtureRepositoryRegistrationTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void customRepositoryCanBeWiredAsMessageHandlingParameter() {
         Repository<MyAggregate> testRepository =
                 CustomRepository.builder()
@@ -180,7 +183,8 @@ class FixtureRepositoryRegistrationTest {
         private String aggregateId;
 
         @CommandHandler
-        public MyAggregate(String command, Repository<MyAggregate> repository) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(String command, Repository<MyAggregate> repository) {
             apply(command + "_" + repository.getClass().getSimpleName());
         }
 

@@ -31,7 +31,7 @@ public class StubAggregate {
     @AggregateIdentifier
     private String identifier;
 
-    public StubAggregate(Object aggregateId) {
+    public void handle(Object aggregateId) {
         apply(new StubAggregateCreatedEvent(aggregateId));
     }
 

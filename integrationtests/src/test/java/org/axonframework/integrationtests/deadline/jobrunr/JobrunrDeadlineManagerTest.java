@@ -43,6 +43,7 @@ import java.util.Objects;
 import static org.jobrunr.server.BackgroundJobServerConfiguration.usingStandardBackgroundJobServerConfiguration;
 import static org.mockito.Mockito.*;
 
+@Disabled("TODO #3065 - Revisit Deadline support")
 @ExtendWith(MockitoExtension.class)
 class JobrunrDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 

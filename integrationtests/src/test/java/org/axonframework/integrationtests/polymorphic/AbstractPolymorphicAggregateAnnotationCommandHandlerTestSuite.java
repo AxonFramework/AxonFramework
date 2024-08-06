@@ -31,6 +31,8 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AggregateModellingException;
@@ -242,7 +244,8 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
     private static abstract class AbstractAggregateWithCommandHandlerConstructor {
 
         @CommandHandler
-        public AbstractAggregateWithCommandHandlerConstructor(String cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(String cmd) {
         }
     }
 
@@ -253,14 +256,16 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
     private static class B extends A {
 
         @CommandHandler
-        public B(String cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(String cmd) {
         }
     }
 
     private static class C extends A {
 
         @CommandHandler
-        public C(String cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(String cmd) {
         }
     }
 

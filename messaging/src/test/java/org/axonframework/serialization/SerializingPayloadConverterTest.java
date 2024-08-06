@@ -20,6 +20,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,22 +29,25 @@ import static org.mockito.Mockito.*;
 class SerializingPayloadConverterTest {
 
     private Serializer serializer;
+
     private SerializingPayloadConverter testSubject;
 
     @BeforeEach
     void setUp() {
-        serializer = mock(Serializer.class);
+        serializer = mock();
+
         testSubject = new SerializingPayloadConverter(serializer);
     }
 
     @Test
     void convertDelegatesToSerializer() {
-        when(serializer.convert(any(), eq(String.class))).thenReturn("Converted");
+        when(serializer.convert(any(), any(Type.class))).thenReturn("test");
         Message<Object> original = GenericMessage.asMessage("test").andMetaData(Map.of("key", "value"));
+
         Message<String> actual = testSubject.convertPayload(original, String.class);
 
         assertEquals(original.getIdentifier(), actual.getIdentifier());
         assertEquals(original.getMetaData(), actual.getMetaData());
-        assertEquals("Converted", original.getPayload());
+        assertEquals("test", original.getPayload());
     }
 }

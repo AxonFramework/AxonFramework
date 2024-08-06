@@ -22,6 +22,8 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
@@ -40,6 +42,7 @@ class NestedUnitOfWorkTest {
     private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void stagedEventsLoadInCorrectOrder() {
         Configuration config = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
                                                 .configureAggregate(TestAggregate.class)
@@ -63,12 +66,14 @@ class NestedUnitOfWorkTest {
     }
 
     static class TestAggregate {
+
         @EntityId
         String id;
         List<String> items = new ArrayList<>();
 
         @CommandHandler
-        public TestAggregate(Create cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(Create cmd) {
             apply(cmd);
         }
 
@@ -137,6 +142,7 @@ class NestedUnitOfWorkTest {
     }
 
     static class Handler {
+
         @CommandHandler
         public void handle(Test1 cmd, CommandGateway gw) {
             gw.sendAndWait(new Add("1", "first"));

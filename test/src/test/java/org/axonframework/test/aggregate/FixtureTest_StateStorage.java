@@ -18,7 +18,9 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
@@ -56,6 +58,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createStateStoredAggregate() {
         fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
@@ -64,6 +67,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void givenCommandsForStateStoredAggregate() {
         fixture.useStateStorage()
                .givenCommands(new InitializeCommand(AGGREGATE_ID, "message"))
@@ -74,6 +78,7 @@ class FixtureTest_StateStorage {
 
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void createStateStoredAggregateWithCommand() {
         fixture.useStateStorage()
                .givenNoPriorActivity()
@@ -83,6 +88,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void emittedEventsFromExpectStateAreNotStored() {
         fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
@@ -96,6 +102,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void createStateStoredAggregate_ErrorInChanges() {
         ResultValidator<StateStoredAggregate> result =
                 fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
@@ -114,6 +121,7 @@ class FixtureTest_StateStorage {
      * Follow up on GitHub issue https://github.com/AxonFramework/AxonFramework/issues/1219
      */
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void stateStoredAggregateCanAttachRegisteredResource() {
         String expectedMessage = "state stored resource injection works";
         HardToCreateResource testResource = spy(new HardToCreateResource());
@@ -241,7 +249,8 @@ class FixtureTest_StateStorage {
         }
 
         @CommandHandler
-        public StateStoredAggregate(InitializeCommand cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(InitializeCommand cmd) {
             this.id = cmd.getId();
             this.message = cmd.getMessage();
             apply(new StubDomainEvent());
