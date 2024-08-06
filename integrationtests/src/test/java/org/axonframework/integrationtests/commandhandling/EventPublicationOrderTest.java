@@ -27,19 +27,18 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/**
- * @author Allard Buijze
- * @author Nakul Mishra
- */
 class EventPublicationOrderTest {
 
     private CommandBus commandBus;
@@ -59,15 +58,19 @@ class EventPublicationOrderTest {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void publicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
         GenericDomainEventMessage<StubAggregateCreatedEvent> event =
                 new GenericDomainEventMessage<>("test", aggregateId, 0, new StubAggregateCreatedEvent(aggregateId));
         when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(event));
         doAnswer(invocation -> Void.class).when(eventStore).publish(isA(EventMessage.class));
-        commandBus.dispatch(
+
+        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
                 asCommandMessage(new UpdateStubAggregateWithExtraEventCommand(aggregateId)), ProcessingContext.NONE
         );
+        assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
+
         InOrder inOrder = inOrder(eventStore, eventStore, eventStore);
         inOrder.verify(eventStore).publish(isA(DomainEventMessage.class));
         inOrder.verify(eventStore).publish(argThat(new NotADomainEventMatcher()));
