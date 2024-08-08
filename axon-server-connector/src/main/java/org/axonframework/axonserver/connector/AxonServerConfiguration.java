@@ -1724,6 +1724,11 @@ public class AxonServerConfiguration {
         private int initialSegmentCount = 1;
 
         /**
+         * The number of threads used to process tasks (e.g. event handling) for the persistent stream. Defaults to 1.
+         */
+        private int threadCount = 1;
+
+        /**
          * The sequencing policy to use for the persistent stream.
          * <p>
          * Supported sequencing policies are:
@@ -1780,6 +1785,25 @@ public class AxonServerConfiguration {
          */
         public void setInitialSegmentCount(int initialSegmentCount) {
             this.initialSegmentCount = initialSegmentCount;
+        }
+
+        /**
+         * The number of threads used to process tasks (e.g. event handling) for the persistent stream. Defaults to 1.
+         *
+         * @return The number of threads used to process tasks (e.g. event handling) for the persistent stream.
+         */
+        public int getThreadCount() {
+            return threadCount;
+        }
+
+        /**
+         * Sets the number of threads used to process tasks (e.g. event handling) for the persistent stream.
+         *
+         * @param threadCount The number of threads used to process tasks (e.g. event handling) for the persistent
+         *                    stream.
+         */
+        public void setThreadCount(int threadCount) {
+            this.threadCount = threadCount;
         }
 
         /**
