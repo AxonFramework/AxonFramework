@@ -70,10 +70,10 @@ We can take this list to better to deduce what we will tackle for Axon Framework
   Doing so, we ensure that, for example, both Spring's Imperative and Reactive Transaction logic is maintained whenever the users code enters the framework.
 
 ## Messages
-* Disconnect message name from payload type. 
+- Disconnect message name from payload type. 
   This means during handler subscription, that you need to provide a name. 
   Annotation based may default to the FQCN, still.
-* Make the notion of 'namespaces' to all messages explicit. 
+- Make the notion of 'namespaces' to all messages explicit. 
   This is already present at the moment, but it's part of the payloadType. 
   Exposes this directly allows a (cleaner) mapping from messages-to-namespace, and namespaces-to-context.
 * Usage of the namespaces may also allow an easier integration of multi tenancy within the core of the Framework.
@@ -92,7 +92,7 @@ We can take this list to better to deduce what we will tackle for Axon Framework
   Without doing so, we can not guarantee that we can map the respective context implementations (e.g., `ThreadLocal` or `Context` (Project Reactor)) over to Axon Framework's `ProcessingContext`.
 
 ## Message Handling
-* A Message Handler should be capable of defining the business name of the message it handles,
+- A Message Handler should be capable of defining the business name of the message it handles,
   and the type it wants to receive it in.
 - A generic form of "stateful message handler" is a beneficial for any message handler in the system.
   For example, stateful command handlers would be a way to deal differently with your Command Model than the current aggregate approach.
@@ -156,8 +156,8 @@ We can take this list to better to deduce what we will tackle for Axon Framework
 ## Configuration
 - Break up Configuration module, to not have one module that depends on all other modules.
 - Define Message Handling Component configuration (MHC-configuration), without Annotations.
-* Drop default Serializer, to enforce users to think about the Serializer to use.
-* Revamp the configuration to allow a 'higher-level' configuration component,
+- Drop default Serializer, to enforce users to think about the Serializer to use.
+- Revamp the configuration to allow a 'higher-level' configuration component,
    like a "Command Handling Component Configuration" or "Command Center Configuration".
   Through this, we can have a user define a message handler, appending any type of additional behavior required.
   Furthermore, this allows us to eliminate unclear config options (e.g., why have a Parameter Resolver for the Repository?).
