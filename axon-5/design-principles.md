@@ -6,24 +6,42 @@ However, given there are tons of things we want to adjust (as shown below), and 
 We can take this list to better to deduce what we will tackle for Axon Framework 5, and what will move to Axon Framework
 6+.
 
-* Update JDK to 21
-* Module restructuring, as described [here](modularity.md#desired-structure)
-* Separate JPA/JDBC/Spring/... into extensions, as described [here](modularity.md#extensions)
-* Reactive programming support
-* Decouple message name from payload type through use of (e.g.) `QualifiedName`
-* Adjust Event Store API to support DCB
-* "Lean API" - layering what's there into smaller chunks for flexibility
-* Configuration API breakdown from one module to one-per-module
-* From Serializer to Converter & moving upcasting logic to the Converter
+* Update JDK to 21 
+  * Issue [#3066](https://github.com/AxonFramework/AxonFramework/issues/3066)
+* Module restructuring, as described [here](modularity.md#desired-structure) 
+  * Issue [#3080](https://github.com/AxonFramework/AxonFramework/issues/3080)
+* Separate JPA/JDBC/Spring/... into extensions, as described [here](modularity.md#extensions) 
+  * Issue [#3080](https://github.com/AxonFramework/AxonFramework/issues/3080)
+* Reactive programming support 
+  * Issue [#3069](https://github.com/AxonFramework/AxonFramework/issues/3069)
+* Decouple message name from payload type through use of (e.g.) `QualifiedName` 
+  * Issue [#3085](https://github.com/AxonFramework/AxonFramework/issues/3085)
+* Adjust Event Store API to support DCB 
+  * Issue [#3101](https://github.com/AxonFramework/AxonFramework/issues/3101)
+* "Lean API" - layering what's there into smaller chunks for flexibility 
+  * Spread over all the "revise XYZ logic" stories
+* Configuration API breakdown from one module to one-per-module 
+  * Spread over all the "revise XYZ logic"
+* From Serializer to Converter & moving upcasting logic to the Converter 
+  * Issue [#3102](https://github.com/AxonFramework/AxonFramework/issues/3102)
 * From Saga to Process Manager & dropping AF-specific Saga/Process storage 
-* Declarative aggregate configuration i.o. annotation-based
-* Revamp Deadline Messaging solution to use consistent hashing
-* Rethink Command Bus messaging pattern
-* Rethink Query Bus API, by merging direct/scatter-gather into streaming
-* Carry result back to Dispatch Interceptors
-* Change Event Scheduling into an Event Store concern
-* Rework Snapshotting process to provide choice in snapshot format next to the Aggregate object
-* Add message schema support
+  * Issue [#3097](https://github.com/AxonFramework/AxonFramework/issues/3097)
+* Declarative aggregate configuration i.o. annotation-based 
+  * Issue [#3067](https://github.com/AxonFramework/AxonFramework/issues/3067)
+* Revamp Deadline Messaging solution to use consistent hashing 
+  * Issue [#3065](https://github.com/AxonFramework/AxonFramework/issues/3065)
+* Rethink Command Bus messaging pattern 
+  * Issue [#3077](https://github.com/AxonFramework/AxonFramework/issues/3077)
+* Rethink Query Bus API, by merging direct/scatter-gather into streaming 
+  * Issue [#3079](https://github.com/AxonFramework/AxonFramework/issues/3079)
+* Carry result back to Dispatch Interceptors 
+  * Issue [#3103](https://github.com/AxonFramework/AxonFramework/issues/3103)
+* Change Event Scheduling into an Event Store concern 
+  * Issue [#3104](https://github.com/AxonFramework/AxonFramework/issues/3104)
+* Rework Snapshotting process to provide choice in snapshot format next to the Aggregate object 
+  * Issue [#3105](https://github.com/AxonFramework/AxonFramework/issues/3105)
+* Add message schema support 
+  * Issue [#3106](https://github.com/AxonFramework/AxonFramework/issues/3106)
 
 ## Base
 - Use JDK21 as the base.
