@@ -80,7 +80,7 @@
         <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.5.2.Final</hibernate-core.6.version>
+        <hibernate-core.6.version>6.6.0.Final</hibernate-core.6.version>
         <mysql-connector-java.version>9.0.0</mysql-connector-java.version>
         <postgresql.version>42.7.3</postgresql.version>
         <!-- Jakarta -->
@@ -102,7 +102,7 @@
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <!-- Logging -->
         <log4j.version>2.23.1</log4j.version>
-        <slf4j.version>2.0.13</slf4j.version>
+        <slf4j.version>2.0.16</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.26</dropwizard.metrics.version>
         <micrometer.version>1.13.2</micrometer.version>
@@ -123,14 +123,14 @@
         <xstream.version>1.4.20</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
-        <jobrunr.version>7.2.2</jobrunr.version>
+        <jobrunr.version>7.2.3</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
         <spring.version>5.3.37</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
         <spring-security.version>5.8.13</spring-security.version>
         <!-- Testing -->
-        <awaitility.version>4.2.1</awaitility.version>
+        <awaitility.version>4.2.2</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.10.3</junit.jupiter.version>
