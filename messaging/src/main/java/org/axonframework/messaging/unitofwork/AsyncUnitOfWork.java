@@ -33,6 +33,7 @@ import java.util.function.Supplier;
  * <p>
  * TODO rename class once old UnitOfWork is removed
  */
+// TODO #3064 - Rename to UnitOfWork once old version is removed.
 public class AsyncUnitOfWork implements ProcessingLifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncUnitOfWork.class);
