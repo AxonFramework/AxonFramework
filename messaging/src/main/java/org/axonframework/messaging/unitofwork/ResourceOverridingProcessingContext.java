@@ -23,83 +23,35 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
+/**
+ * A {@link ProcessingContext} implementation overriding a single resource from the wrapping {@code ProcessingContext}.
+ * <p>
+ * Should be used to instantiate a new {@code ProcessingContext} for which only a single resource should be adjusted
+ * compared to its delegate.
+ *
+ * @param <R> The type of the resource this resource-overriding {@link ProcessingContext} overrides.
+ * @author Allard Buijze
+ * @since 5.0.0
+ */
 public class ResourceOverridingProcessingContext<R> implements ProcessingContext {
 
     private final ProcessingContext delegate;
-    private final ResourceKey<R> resourceKey;
+
+    private final ResourceKey<R> key;
     private final AtomicReference<R> resource;
 
-    public ResourceOverridingProcessingContext(ProcessingContext delegate,
-                                               ResourceKey<R> resourceKey,
-                                               R initialResource) {
+    /**
+     * Constructs a resource-overriding {@link ProcessingContext} using the provided parameters.
+     *
+     * @param delegate The {@link ProcessingContext} to <em>only</em> override the given {@code key} for.
+     * @param key      The {@link org.axonframework.messaging.unitofwork.ProcessingContext.ResourceKey} to override in
+     *                 the {@code delegate} {@link ProcessingContext}.
+     * @param resource The resource of type {@code R} that's overridden with the given {@code key}.
+     */
+    public ResourceOverridingProcessingContext(ProcessingContext delegate, ResourceKey<R> key, R resource) {
         this.delegate = delegate;
-        this.resourceKey = resourceKey;
-        this.resource = new AtomicReference<>(initialResource);
-    }
-
-    @Override
-    public boolean containsResource(ResourceKey<?> key) {
-        return resourceKey.equals(key) || delegate.containsResource(key);
-    }
-
-    @Override
-    public <T> T updateResource(ResourceKey<T> key, Function<T, T> updateFunction) {
-        if (!resourceKey.equals(key)) {
-            return delegate.updateResource(key, updateFunction);
-        }
-        //noinspection unchecked
-        return (T) resource.updateAndGet((UnaryOperator<R>) updateFunction);
-    }
-
-    @Override
-    public <T> T getResource(ResourceKey<T> key) {
-        //noinspection unchecked
-        return resourceKey.equals(key) ? (T) resource.get() : delegate.getResource(key);
-    }
-
-    @Override
-    public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> supplier) {
-        if (!resourceKey.equals(key)) {
-            return delegate.computeResourceIfAbsent(key, supplier);
-        }
-        //noinspection unchecked
-        return (T) resource.updateAndGet(current -> current == null ? (R) supplier.get() : current);
-    }
-
-    @Override
-    public <T> T putResource(ResourceKey<T> key, T instance) {
-        if (!resourceKey.equals(key)) {
-            return delegate.putResource(key, instance);
-        }
-        //noinspection unchecked
-        return (T) resource.getAndSet((R) instance);
-    }
-
-    @Override
-    public <T> T putResourceIfAbsent(ResourceKey<T> key, T newValue) {
-        if (!resourceKey.equals(key)) {
-            return delegate.putResourceIfAbsent(key, newValue);
-        }
-        //noinspection unchecked
-        return (T) resource.getAndUpdate(current -> current == null ? (R) newValue : current);
-    }
-
-    @Override
-    public <T> T removeResource(ResourceKey<T> key) {
-        if (!resourceKey.equals(key)) {
-            return delegate.removeResource(key);
-        }
-        //noinspection unchecked
-        return (T) resource.getAndSet(null);
-    }
-
-    @Override
-    public <T> boolean removeResource(ResourceKey<T> key, T expectedInstance) {
-        if (!resourceKey.equals(key)) {
-            return delegate.removeResource(key, expectedInstance);
-        }
-        //noinspection unchecked
-        return resource.compareAndSet((R) expectedInstance, null);
+        this.key = key;
+        this.resource = new AtomicReference<>(resource);
     }
 
     @Override
@@ -125,16 +77,6 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     @Override
     public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
         return delegate.on(phase, action);
-    }
-
-    @Override
-    public ProcessingLifecycle onError(ErrorHandler action) {
-        return delegate.onError(action);
-    }
-
-    @Override
-    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
-        return delegate.whenComplete(action);
     }
 
     @Override
@@ -203,7 +145,77 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
+    public ProcessingLifecycle onError(ErrorHandler action) {
+        return delegate.onError(action);
+    }
+
+    @Override
+    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+        return delegate.whenComplete(action);
+    }
+
+    @Override
     public ProcessingLifecycle doFinally(Consumer<ProcessingContext> action) {
         return delegate.doFinally(action);
+    }
+
+    @Override
+    public boolean containsResource(ResourceKey<?> key) {
+        return this.key.equals(key) || delegate.containsResource(key);
+    }
+
+    @Override
+    public <T> T getResource(ResourceKey<T> key) {
+        //noinspection unchecked
+        return this.key.equals(key) ? (T) resource.get() : delegate.getResource(key);
+    }
+
+    @Override
+    public <T> T putResource(ResourceKey<T> key, T resource) {
+        //noinspection unchecked
+        return this.key.equals(key)
+                ? (T) this.resource.getAndSet((R) resource)
+                : delegate.putResource(key, resource);
+    }
+
+    @Override
+    public <T> T updateResource(ResourceKey<T> key, Function<T, T> resourceUpdater) {
+        //noinspection unchecked
+        return this.key.equals(key)
+                ? (T) resource.updateAndGet((UnaryOperator<R>) resourceUpdater)
+                : delegate.updateResource(key, resourceUpdater);
+    }
+
+    @Override
+    public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> resourceSupplier) {
+        //noinspection unchecked
+        return this.key.equals(key)
+                ? (T) resource.updateAndGet(current -> current == null
+                ? (R) resourceSupplier.get() : current) : delegate.computeResourceIfAbsent(key, resourceSupplier);
+    }
+
+    @Override
+    public <T> T putResourceIfAbsent(ResourceKey<T> key, T resource) {
+        //noinspection unchecked
+        return this.key.equals(key)
+                ? (T) this.resource.getAndUpdate(current -> current == null ? (R) resource : current)
+                : delegate.putResourceIfAbsent(key, resource);
+    }
+
+    @Override
+    public <T> T removeResource(ResourceKey<T> key) {
+        if (!this.key.equals(key)) {
+            return delegate.removeResource(key);
+        }
+        //noinspection unchecked
+        return (T) resource.getAndSet(null);
+    }
+
+    @Override
+    public <T> boolean removeResource(ResourceKey<T> key, T expectedResource) {
+        //noinspection unchecked
+        return this.key.equals(key)
+                ? resource.compareAndSet((R) expectedResource, null)
+                : delegate.removeResource(key, expectedResource);
     }
 }

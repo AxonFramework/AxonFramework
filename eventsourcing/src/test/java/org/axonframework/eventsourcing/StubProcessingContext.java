@@ -36,52 +36,6 @@ public class StubProcessingContext implements ProcessingContext {
     private final Map<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
 
     @Override
-    public boolean containsResource(ResourceKey<?> key) {
-        return resources.containsKey(key);
-    }
-
-    @Override
-    public <T> T updateResource(ResourceKey<T> key, Function<T, T> updateFunction) {
-        //noinspection unchecked
-        return (T) resources.compute(key, (id, current) -> updateFunction.apply((T) current));
-    }
-
-    @Override
-    public <T> T getResource(ResourceKey<T> key) {
-        //noinspection unchecked
-        return (T) resources.get(key);
-    }
-
-    @Override
-    public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> supplier) {
-        //noinspection unchecked
-        return (T) resources.computeIfAbsent(key, k -> supplier.get());
-    }
-
-    @Override
-    public <T> T putResource(ResourceKey<T> key, T instance) {
-        //noinspection unchecked
-        return (T) resources.put(key, instance);
-    }
-
-    @Override
-    public <T> T putResourceIfAbsent(ResourceKey<T> key, T newValue) {
-        //noinspection unchecked
-        return (T) resources.putIfAbsent(key, newValue);
-    }
-
-    @Override
-    public <T> T removeResource(ResourceKey<T> key) {
-        //noinspection unchecked
-        return (T) resources.remove(key);
-    }
-
-    @Override
-    public <T> boolean removeResource(ResourceKey<T> key, T expectedInstance) {
-        return resources.remove(key, expectedInstance);
-    }
-
-    @Override
     public boolean isStarted() {
         return false;
     }
@@ -103,16 +57,62 @@ public class StubProcessingContext implements ProcessingContext {
 
     @Override
     public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
-        throw new UnsupportedOperationException("Lifecycle handlers not yet supported in StubProcessingContext");
+        throw new UnsupportedOperationException("Lifecycle actions are not yet supported in the StubProcessingContext");
     }
 
     @Override
     public ProcessingLifecycle onError(ErrorHandler action) {
-        throw new UnsupportedOperationException("Lifecycle handlers not yet supported in StubProcessingContext");
+        throw new UnsupportedOperationException("Lifecycle actions are not yet supported in the StubProcessingContext");
     }
 
     @Override
     public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
-        throw new UnsupportedOperationException("Lifecycle handlers not yet supported in StubProcessingContext");
+        throw new UnsupportedOperationException("Lifecycle actions are not yet supported in the StubProcessingContext");
+    }
+
+    @Override
+    public boolean containsResource(ResourceKey<?> key) {
+        return resources.containsKey(key);
+    }
+
+    @Override
+    public <T> T getResource(ResourceKey<T> key) {
+        //noinspection unchecked
+        return (T) resources.get(key);
+    }
+
+    @Override
+    public <T> T putResource(ResourceKey<T> key, T resource) {
+        //noinspection unchecked
+        return (T) resources.put(key, resource);
+    }
+
+    @Override
+    public <T> T updateResource(ResourceKey<T> key, Function<T, T> resourceUpdater) {
+        //noinspection unchecked
+        return (T) resources.compute(key, (id, current) -> resourceUpdater.apply((T) current));
+    }
+
+    @Override
+    public <T> T putResourceIfAbsent(ResourceKey<T> key, T resource) {
+        //noinspection unchecked
+        return (T) resources.putIfAbsent(key, resource);
+    }
+
+    @Override
+    public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> resourceSupplier) {
+        //noinspection unchecked
+        return (T) resources.computeIfAbsent(key, k -> resourceSupplier.get());
+    }
+
+    @Override
+    public <T> T removeResource(ResourceKey<T> key) {
+        //noinspection unchecked
+        return (T) resources.remove(key);
+    }
+
+    @Override
+    public <T> boolean removeResource(ResourceKey<T> key, T expectedResource) {
+        return resources.remove(key, expectedResource);
     }
 }
