@@ -31,6 +31,7 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @since 0.6
  */
+@Deprecated // TODO #3064 Remove when AsyncUnitOfWork is fully integrated
 public abstract class CurrentUnitOfWork {
 
     private static final ThreadLocal<Deque<UnitOfWork<?>>> CURRENT = new ThreadLocal<>();
