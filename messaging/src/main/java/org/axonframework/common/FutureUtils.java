@@ -22,24 +22,26 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
 /**
- * TODO Add/enhance documentation as described in #2966.
+ * Utility class containing reusable functionality for interacting with the {@link CompletableFuture}.
  *
  * @author Allard Buijze
+ * @since 5.0.0
  */
 public abstract class FutureUtils {
 
     private FutureUtils() {
+        // Utility class
     }
 
     /**
-     * Utility method that doesn't do anything. Its purpose is to simplify conversion of a {@code CompletableFuture}
+     * Utility method that doesn't do anything. Its purpose is to simplify conversion of a {@link CompletableFuture}
      * with any generic type to a {@code CompletableFuture<Void>}.
      * <p>
      * Example: {@code completableFuture.thenApply(FutureUtils::ignoreResult}
      *
-     * @param toIgnore the actual result of the completable future
-     * @param <T>      the declared result of the completable future to ignore the result of
-     * @return {@code null}, as that's the only valid value for Void
+     * @param toIgnore The actual result of the {@link CompletableFuture}.
+     * @param <T>      The declared result of the {@link CompletableFuture} to ignore the result of.
+     * @return {@code null}, as that's the only valid value for {@link Void}.
      */
     @SuppressWarnings("UnusedReturnValue")
     public static <T> Void ignoreResult(@SuppressWarnings("unused") T toIgnore) {
@@ -47,22 +49,23 @@ public abstract class FutureUtils {
     }
 
     /**
-     * Creates a CompletableFuture that was completed with the {@code null} value.
+     * Creates a completed {@link CompletableFuture} with {@code null} as result.
      *
-     * @param <T> The declared type to return in the CompletableFuture
-     * @return a CompletableFuture that is completed with a {@code null} value
+     * @param <T> The declared type to return in the {@link CompletableFuture}.
+     * @return A {@link CompletableFuture} that is completed with {@code null}.
      */
     public static <T> CompletableFuture<T> emptyCompletedFuture() {
         return CompletableFuture.completedFuture(null);
     }
 
     /**
-     * Creates a function that can be passed to a CompletableFuture to complete given {@code future} with the same
-     * result as the CompletableFuture that this function is passed to
+     * Creates a function that can be passed to a {@link CompletableFuture#whenComplete(BiConsumer)} or
+     * {@link CompletableFuture#whenCompleteAsync(BiConsumer)} invocation, to complete the given {@code future} with the
+     * same result as the {@link CompletableFuture} that this function is passed to.
      *
-     * @param future The future to complete
-     * @param <T>    The declared type of result from the CompletableFuture
-     * @return a function that completes another future with the same results
+     * @param future The {@link CompletableFuture} to also complete.
+     * @param <T>    The declared type of result from the {@link CompletableFuture}.
+     * @return A function that completes another {@code future} with the same results.
      */
     public static <T> BiConsumer<T, Throwable> alsoComplete(CompletableFuture<T> future) {
         return (r, e) -> {
@@ -75,17 +78,18 @@ public abstract class FutureUtils {
     }
 
     /**
-     * Unwrap given {@code exception} from wrappers added by CompletableFuture. More specifically, if the given
-     * {@code exception} is a {@link CompletionException} or {@link ExecutionException}, it returns the cause.
-     * Otherwise, it will return the exception as-is.
+     * Unwrap given {@code exception} from the exception-wrappers added by {@link CompletableFuture}.
+     * <p>
+     * More specifically, if the given {@code exception} is a {@link CompletionException} or {@link ExecutionException},
+     * it returns the cause. Otherwise, it will return the exception as-is.
      *
-     * @param exception The exception to unwrap
-     * @return the unwrapped exception
+     * @param exception The exception to unwrap.
+     * @return The unwrapped exception if the given {@code exception} is of type {@link CompletionException} or
+     * {@link ExecutionException}. Otherwise, it is returned as is.
      */
     public static Throwable unwrap(Throwable exception) {
-        if (exception instanceof CompletionException || exception instanceof ExecutionException) {
-            return exception.getCause();
-        }
-        return exception;
+        return exception instanceof CompletionException || exception instanceof ExecutionException
+                ? exception.getCause()
+                : exception;
     }
 }
