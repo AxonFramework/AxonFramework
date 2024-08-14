@@ -14,7 +14,7 @@ Major API Changes
   recommended resolution path in the JavaDoc. It is strongly recommended to (1) upgrade to the latest Axon Framework 4
   version, (2) adjust any deprecations from Axon Framework you are using as recommended, and then (3) to make the change
   towards Axon Framework 5.
-* The entire API of the `UnitOfWork` has been rewritten to (1) construct an " async-native" flow to support both an
+* The entire API of the `UnitOfWork` has been rewritten to (1) construct an 'async-native' flow to support both an
   imperative and reactive style of programming, (2) eliminate the use of `ThreadLocal`, and (3) protect users from
   internals APIs. This does mean that any direct interaction with the `UnitOfWork` has become a breaking change. Please
   check the [Unit of Work](#unit-of-work) section for more details if you are facing this predicament.
