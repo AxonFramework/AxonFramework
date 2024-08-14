@@ -22,7 +22,15 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * TODO Add/enhance documentation as described in #2966.
+ * This class represents a Unit of Work that monitors the processing of a task.
+ * <p/>
+ * As an implementation of the {@link ProcessingLifecycle}, steps can be attached in several
+ * {@link ProcessingContext.DefaultPhases phases} of the Unit of Work to ensure the task-to-process is taken care off
+ * correctly. Furthermore, the Unit of Work implements resource management through the {@link ProcessingContext},
+ * providing the possibility to carry along resources throughout the phases.
+ * <p/>
+ * It is strongly recommended to interface with the {@code ProcessingLifecycle} and/or {@code ProcessingContext} instead
+ * of with the {@link AsyncUnitOfWork} directly.
  *
  * @author Allard Buijze
  * @author Gerard Klijs
@@ -30,9 +38,9 @@ import java.util.function.Supplier;
  * @author Mitchell Herrijgers
  * @author Sara Pellegrini
  * @author Steven van Beelen
- * <p>
- * TODO rename class once old UnitOfWork is removed
+ * @since 0.6
  */
+// TODO #3064 - Rename to UnitOfWork once old version is removed.
 public class AsyncUnitOfWork implements ProcessingLifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncUnitOfWork.class);
@@ -40,22 +48,35 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
     private final String identifier;
     private final UnitOfWorkProcessingContext context;
 
+
+    /**
+     * Constructs a {@link AsyncUnitOfWork} with a {@link UUID#randomUUID() random UUID String}. Will execute provided
+     * actions on the same thread invoking this Unit of Work.
+     */
     public AsyncUnitOfWork() {
         this(UUID.randomUUID().toString());
     }
 
+    /**
+     * Constructs a {@link AsyncUnitOfWork} with the given {@code identifier}. Will execute provided actions on the same
+     * thread invoking this Unit of Work.
+     *
+     * @param identifier The identifier of this Unit of Work.
+     */
     public AsyncUnitOfWork(String identifier) {
         this(identifier, Runnable::run);
     }
 
+    /**
+     * Constructs a {@link AsyncUnitOfWork} with the given {@code identifier}, processing actions through the given
+     * {@code workScheduler}.
+     *
+     * @param identifier    The identifier of this Unit of Work.
+     * @param workScheduler The {@link Executor} used to process the steps attached to the phases in this Unit of Work
+     */
     public AsyncUnitOfWork(String identifier, Executor workScheduler) {
         this.identifier = identifier;
         this.context = new UnitOfWorkProcessingContext(identifier, workScheduler);
-    }
-
-    @Override
-    public String toString() {
-        return "AsyncUnitOfWork{" + "id='" + identifier + '\'' + "phase='" + context.currentPhase.get() + '\'' + '}';
     }
 
     @Override
@@ -95,56 +116,78 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
     }
 
     /**
-     * Executes all the registered handlers in their respective phases.
+     * Executes all the registered action in their respective
+     * {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.Phase phases}.
      *
-     * @return a {@link CompletableFuture} that returns normally when the Unit Of Work has been committed or
-     * exceptionally with the exception that caused the Unit of Work to have been rolled back.
+     * @return A {@link CompletableFuture} that returns normally when this Unit Of Work has been committed or
+     * exceptionally with the exception that caused the Unit of Work to fail.
      */
     public CompletableFuture<Void> execute() {
         return context.commit();
     }
 
     /**
-     * Registers the given invocation for the {@link DefaultPhases#INVOCATION Invocation Phase} and executes the Unit of
-     * Work. The return value of the invocation is returned when this Unit of Work is committed.
+     * Registers the given {@code action} for the {@link DefaultPhases#INVOCATION invocation Phase} and executes this
+     * Unit of Work right away.
+     * <p>
+     * The return value of the given {@code action} is returned when this Unit of Work is committed, disregarding
+     * intermittent results of actions registered in other
+     * {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.Phase phases}.
      *
-     * @param invocation The handler to execute in the {@link DefaultPhases#INVOCATION Invocation Phase}
-     * @param <R>        The type of return value returned by the invocation
-     * @return a CompletableFuture that returns normally with the return value of the invocation when the Unit Of Work
-     * has been committed or exceptionally with the exception that caused the Unit of Work to have been rolled back.
+     * @param action The {@link Function} that's given the active {@link ProcessingContext} and returns a
+     *               {@link CompletableFuture} for chaining purposes and to carry the action's result.
+     * @param <R>    The type of return value returned by the {@code action}.
+     * @return A {@link CompletableFuture} that returns normally with the return value of the given {@code action} when
+     * the Unit Of Work has been committed. Or, an exceptionally completed future with the exception that caused this
+     * Unit of Work to fail.
      */
-    public <R> CompletableFuture<R> executeWithResult(Function<ProcessingContext, CompletableFuture<R>> invocation) {
+    public <R> CompletableFuture<R> executeWithResult(Function<ProcessingContext, CompletableFuture<R>> action) {
         CompletableFuture<R> result = new CompletableFuture<>();
-        onInvocation(p -> safe(() -> invocation.apply(p)).whenComplete(FutureUtils.alsoComplete(result)));
+        onInvocation(context -> safe(() -> action.apply(context)).whenComplete(FutureUtils.alsoComplete(result)));
         return execute().thenCombine(result, (executeResult, invocationResult) -> invocationResult);
     }
 
-    private <R> CompletableFuture<R> safe(Callable<CompletableFuture<R>> apply) {
+    /**
+     * Wraps a given {@code action} in a try-catch block to ensure exceptions are exclusively returned as a failed
+     * {@link CompletableFuture}.
+     *
+     * @param action A {@link Callable} to execute within the try-catch block.
+     * @return A {@link CompletableFuture} wrapping both the successful and exceptional result of the given
+     * {@code action}.
+     */
+    private <R> CompletableFuture<R> safe(Callable<CompletableFuture<R>> action) {
         try {
-            return apply.call();
+            return action.call();
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
     }
 
+    @Override
+    public String toString() {
+        return "UnitOfWork{" + "identifier='" + identifier + '\'' + "phase='" + context.currentPhase.get() + '\'' + '}';
+    }
+
     private static class UnitOfWorkProcessingContext implements ProcessingContext {
 
-        private final ConcurrentNavigableMap<Phase, Queue<Function<ProcessingContext, CompletableFuture<?>>>> phaseHandlers = new ConcurrentSkipListMap<>(
-                Comparator.comparingInt(Phase::order));
-        private final AtomicReference<Phase> currentPhase = new AtomicReference<>(null);
-        private final ConcurrentMap<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
         private final AtomicReference<Status> status = new AtomicReference<>(Status.NOT_STARTED);
-        private final Queue<ErrorHandler> errorHandlers = new ConcurrentLinkedQueue<>();
+        private final AtomicReference<Phase> currentPhase = new AtomicReference<>(null);
+
+        private final ConcurrentNavigableMap<Phase, Queue<Function<ProcessingContext, CompletableFuture<?>>>> phaseActions =
+                new ConcurrentSkipListMap<>(Comparator.comparingInt(Phase::order));
         private final Queue<Consumer<ProcessingContext>> completeHandlers = new ConcurrentLinkedQueue<>();
-        private final String name;
-        private final Executor workScheduler;
+        private final Queue<ErrorHandler> errorHandlers = new ConcurrentLinkedQueue<>();
         private final AtomicReference<CauseAndPhase> errorCause = new AtomicReference<>();
 
-        public UnitOfWorkProcessingContext(String name, Executor workScheduler) {
-            this.name = name;
+        private final ConcurrentMap<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
+
+        private final String identifier;
+        private final Executor workScheduler;
+
+        private UnitOfWorkProcessingContext(String identifier, Executor workScheduler) {
+            this.identifier = identifier;
             this.workScheduler = workScheduler;
         }
-
 
         @Override
         public boolean isStarted() {
@@ -164,8 +207,183 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         @Override
         public boolean isCompleted() {
             Status currentStatus = status.get();
-            return currentStatus == Status.COMPLETED
-                    || currentStatus == Status.COMPLETED_ERROR;
+            return currentStatus == Status.COMPLETED || currentStatus == Status.COMPLETED_ERROR;
+        }
+
+        @Override
+        public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+            var current = currentPhase.get();
+            if (current != null && phase.order() <= current.order()) {
+                throw new IllegalStateException(
+                        "Failed to register handler in phase " + phase + " (" + phase.order() + "). "
+                                + "ProcessingContext is already in phase " + current + " (" + current.order() + ")."
+                );
+            }
+            phaseActions.computeIfAbsent(phase, p -> new ConcurrentLinkedQueue<>())
+                        .add(safe(phase, action));
+            return this;
+        }
+
+        /**
+         * Wraps a given {@code action}, that is to be executed in the given {@code phase}, in a try-catch block to
+         * ensure exceptions are exclusively returned as a failed {@link CompletableFuture}.
+         *
+         * @param phase  The original phase instance the handler is registered under
+         * @param action The {@link Function} to perform safely. It's given the active {@link ProcessingContext} and
+         *               returns a {@link CompletableFuture} for chaining purposes and to carry the action's result.
+         * @return A {@link CompletableFuture} wrapping both the successful and exceptional result of the given
+         * {@code action}.
+         */
+        private Function<ProcessingContext, CompletableFuture<?>> safe(
+                Phase phase, Function<ProcessingContext, CompletableFuture<?>> action
+        ) {
+            return context -> {
+                CompletableFuture<?> result;
+                try {
+                    result = action.apply(context);
+                } catch (Exception e) {
+                    result = CompletableFuture.failedFuture(e);
+                }
+
+                return result.exceptionallyCompose((e) -> {
+                    if (!errorCause.compareAndSet(null, new CauseAndPhase(phase, e))) {
+                        errorCause.get().cause().addSuppressed(e);
+                    }
+                    return CompletableFuture.failedFuture(e);
+                });
+            };
+        }
+
+        @Override
+        public ProcessingLifecycle onError(ErrorHandler action) {
+            ErrorHandler silentAction = failSilently(action);
+            this.errorHandlers.add(silentAction);
+            var currentStatus = status.get();
+
+            if (currentStatus == Status.COMPLETED_ERROR && errorHandlers.remove(silentAction)) {
+                // When in the COMPLETED_ERROR status, execute immediately.
+                // The removal attempt is to make sure that we aren't concurrently executing from the registering thread
+                // as well as the thread that completed the processing context.
+                CauseAndPhase causeAndPhase = errorCause.get();
+                silentAction.handle(this, causeAndPhase.phase(), causeAndPhase.cause());
+            }
+            return this;
+        }
+
+        private ErrorHandler failSilently(ErrorHandler action) {
+            return (context, phase, exception) -> {
+                try {
+                    action.handle(context, phase, exception);
+                } catch (Throwable ex) {
+                    logger.warn("An onError handler threw an exception.", ex);
+                }
+            };
+        }
+
+        @Override
+        public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+            Consumer<ProcessingContext> silentAction = completeSilently(action);
+            this.completeHandlers.add(silentAction);
+            var currentStatus = status.get();
+
+            if (currentStatus == Status.COMPLETED && completeHandlers.remove(silentAction)) {
+                // When in the COMPLETED status, execute immediately.
+                // The removal attempt is to make sure that we aren't concurrently executing from the registering thread
+                // as well as the thread that completed the processing context.
+                silentAction.accept(this);
+            }
+            return this;
+        }
+
+        private Consumer<ProcessingContext> completeSilently(Consumer<ProcessingContext> action) {
+            return context -> {
+                try {
+                    action.accept(context);
+                } catch (Throwable e) {
+                    logger.warn("A Completion handler threw an exception.", e);
+                }
+            };
+        }
+
+        private CompletableFuture<Void> commit() {
+            if (!status.compareAndSet(Status.NOT_STARTED, Status.STARTED)) {
+                throw new IllegalStateException(
+                        "Cannot switch [" + status.get() + "] to STARTED. "
+                                + "This ProcessingContext cannot be committed (again)."
+                );
+            }
+
+            return executeAllPhaseHandlers()
+                    .thenRun(this::runCompletionHandlers)
+                    .exceptionallyCompose(this::runErrorHandlers);
+        }
+
+        private CompletableFuture<Void> executeAllPhaseHandlers() {
+            if (phaseActions.isEmpty()) {
+                // We're done.
+                return FutureUtils.emptyCompletedFuture();
+            }
+
+            CompletableFuture<Void> nextPhaseResult = runNextPhase().toCompletableFuture();
+            // Avoid stack overflow due to recursion when executed in single thread.
+            while (!phaseActions.isEmpty() && nextPhaseResult.isDone()) {
+                if (nextPhaseResult.isCompletedExceptionally()) {
+                    return nextPhaseResult;
+                } else {
+                    nextPhaseResult = runNextPhase().toCompletableFuture();
+                }
+            }
+            return nextPhaseResult.thenCompose(result -> executeAllPhaseHandlers());
+        }
+
+        private void runCompletionHandlers() {
+            status.set(Status.COMPLETED);
+
+            while (!completeHandlers.isEmpty()) {
+                Consumer<ProcessingContext> nextCompletionHandler = completeHandlers.poll();
+                if (nextCompletionHandler != null) {
+                    workScheduler.execute(() -> nextCompletionHandler.accept(this));
+                }
+            }
+        }
+
+        private CompletionStage<Void> runErrorHandlers(Throwable e) {
+            status.set(Status.COMPLETED_ERROR);
+            CauseAndPhase recordedCause = errorCause.get();
+
+            while (!errorHandlers.isEmpty()) {
+                ErrorHandler nextErrorHandler = errorHandlers.poll();
+                if (nextErrorHandler != null) {
+                    workScheduler.execute(
+                            () -> nextErrorHandler.handle(this, recordedCause.phase(), recordedCause.cause())
+                    );
+                }
+            }
+            return CompletableFuture.failedFuture(e);
+        }
+
+        private CompletableFuture<Void> runNextPhase() {
+            if (phaseActions.isEmpty()) {
+                return FutureUtils.emptyCompletedFuture();
+            }
+            Phase current = phaseActions.firstKey();
+            currentPhase.set(current);
+
+            Queue<Function<ProcessingContext, CompletableFuture<?>>> actionQueue = phaseActions.remove(current);
+            if (actionQueue == null || actionQueue.isEmpty()) {
+                logger.debug("Skipping phase {} (with order [{}]), since no actions are registered.",
+                             current, current.order());
+                return FutureUtils.emptyCompletedFuture();
+            }
+            logger.debug("Calling {}# actions in phase {} (with order {}).",
+                         actionQueue.size(), current, current.order());
+
+            return actionQueue.stream()
+                              .map(handler -> FutureUtils.emptyCompletedFuture()
+                                                         .thenComposeAsync(result -> handler.apply(this), workScheduler)
+                                                         .thenAccept(FutureUtils::ignoreResult))
+                              .reduce(CompletableFuture::allOf)
+                              .orElseGet(FutureUtils::emptyCompletedFuture);
         }
 
         @Override
@@ -180,27 +398,27 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public <T> T updateResource(ResourceKey<T> key, Function<T, T> update) {
+        public <T> T putResource(ResourceKey<T> key, T resource) {
             //noinspection unchecked
-            return (T) resources.compute(key, (k, v) -> update.apply((T) v));
+            return (T) resources.put(key, resource);
         }
 
         @Override
-        public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> instance) {
+        public <T> T updateResource(ResourceKey<T> key, Function<T, T> resourceUpdater) {
             //noinspection unchecked
-            return (T) resources.computeIfAbsent(key, t -> instance.get());
+            return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
         }
 
         @Override
-        public <T> T putResource(ResourceKey<T> key, T instance) {
+        public <T> T putResourceIfAbsent(ResourceKey<T> key, T resource) {
             //noinspection unchecked
-            return (T) resources.put(key, instance);
+            return (T) resources.putIfAbsent(key, resource);
         }
 
         @Override
-        public <T> T putResourceIfAbsent(ResourceKey<T> key, T newValue) {
+        public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> resourceSupplier) {
             //noinspection unchecked
-            return (T) resources.putIfAbsent(key, newValue);
+            return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
         }
 
         @Override
@@ -210,179 +428,29 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public <T> boolean removeResource(ResourceKey<T> key, T expectedInstance) {
-            return resources.remove(key, expectedInstance);
-        }
-
-        @Override
-        public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
-            var p = currentPhase.get();
-            if (p != null && phase.order() <= p.order()) {
-                throw new IllegalStateException("Failed to register handler in phase " + phase + " (" + phase.order()
-                                                        + "). ProcessingContext is already in phase " + p + " ("
-                                                        + p.order() + ")");
-            }
-            phaseHandlers.computeIfAbsent(phase, k -> new ConcurrentLinkedQueue<>()).add(safe(phase, action));
-            return this;
-        }
-
-        @Override
-        public ProcessingLifecycle onError(ErrorHandler action) {
-            ErrorHandler silentAction = failSilently(action);
-            this.errorHandlers.add(silentAction);
-            var p = status.get();
-            if (p == Status.COMPLETED_ERROR && errorHandlers.remove(silentAction)) {
-                // when in the completed phase, execute immediately
-                // the removal attempt is to make sure that we aren't concurrently executing from the registering thread
-                // as well as the thread that completed the processing context.
-                CauseAndPhase causeAndPhase = errorCause.get();
-                silentAction.handle(this, causeAndPhase.phase(), causeAndPhase.cause());
-            }
-            return this;
-        }
-
-        @Override
-        public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
-            Consumer<ProcessingContext> silentAction = completeSilently(action);
-            this.completeHandlers.add(silentAction);
-            var p = status.get();
-            if (p == Status.COMPLETED && completeHandlers.remove(silentAction)) {
-                // when in the completed phase, execute immediately
-                // the removal attempt is to make sure that we aren't concurrently executing from the registering thread
-                // as well as the thread that completed the processing context.
-                silentAction.accept(this);
-            }
-            return this;
-        }
-
-        private ErrorHandler failSilently(ErrorHandler action) {
-            return (pc, ph, e) -> {
-                try {
-                    action.handle(pc, ph, e);
-                } catch (Throwable ex) {
-                    logger.warn("An onError handler threw an exception.", ex);
-                }
-            };
-        }
-
-        private Consumer<ProcessingContext> completeSilently(Consumer<ProcessingContext> action) {
-            return p -> {
-                try {
-                    action.accept(p);
-                } catch (Throwable e) {
-                    logger.warn("A Completion handler threw an exception.", e);
-                }
-            };
-        }
-
-        /**
-         * Wraps a given action to ensure exceptions are exclusively returned as a failed CompetableFuture and ensures
-         * any exceptions or failures are registered in the processing context for the error handlers.
-         *
-         * @param phase  The original phase instance the handler is registered under
-         * @param action The action to perform in this phase
-         * @return a safe handler that doesn't throw unchecked exception
-         */
-        private Function<ProcessingContext, CompletableFuture<?>> safe(
-                Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
-            return c -> {
-                CompletableFuture<?> result;
-                try {
-                    result = action.apply(c);
-                } catch (Exception e) {
-                    result = CompletableFuture.failedFuture(e);
-                }
-                return result.exceptionallyCompose((e) -> {
-                    if (!errorCause.compareAndSet(null, new CauseAndPhase(phase, e))) {
-                        errorCause.get().cause().addSuppressed(e);
-                    }
-                    return CompletableFuture.failedFuture(e);
-                });
-            };
-        }
-
-        public CompletableFuture<Void> commit() {
-            if (!status.compareAndSet(Status.NOT_STARTED, Status.STARTED)) {
-                throw new IllegalStateException("ProcessingContext cannot be committed (again)");
-            }
-
-            return executeAllPhaseHandlers()
-                    .thenRun(this::runCompletionHandlers)
-                    .exceptionallyCompose(this::invokeErrorHandlers);
-        }
-
-        private CompletableFuture<Void> executeAllPhaseHandlers() {
-            if (phaseHandlers.isEmpty()) {
-                // we're done
-                return FutureUtils.emptyCompletedFuture();
-            }
-            CompletableFuture<Void> nextPhaseResult = runNextPhase().toCompletableFuture();
-            // Avoid stack overflow due to recursion when executed in single thread
-            while (!phaseHandlers.isEmpty() && nextPhaseResult.isDone()) {
-                if (nextPhaseResult.isCompletedExceptionally()) {
-                    return nextPhaseResult;
-                } else {
-                    nextPhaseResult = runNextPhase().toCompletableFuture();
-                }
-            }
-            return nextPhaseResult.thenCompose(r -> executeAllPhaseHandlers());
-        }
-
-        private void runCompletionHandlers() {
-            status.set(Status.COMPLETED);
-            while (!completeHandlers.isEmpty()) {
-                Consumer<ProcessingContext> next = completeHandlers.poll();
-                if (next != null) {
-                    this.workScheduler.execute(() -> next.accept(this));
-                }
-            }
-        }
-
-        private CompletionStage<Void> invokeErrorHandlers(Throwable e) {
-            CauseAndPhase recordedCause = errorCause.get();
-            status.set(Status.COMPLETED_ERROR);
-            while (!errorHandlers.isEmpty()) {
-                ErrorHandler next = errorHandlers.poll();
-                if (next != null) {
-                    this.workScheduler.execute(() -> next.handle(this, recordedCause.phase(), recordedCause.cause()));
-                }
-            }
-            return CompletableFuture.failedFuture(e);
-        }
-
-        private CompletableFuture<Void> runNextPhase() {
-            if (phaseHandlers.isEmpty()) {
-                return FutureUtils.emptyCompletedFuture();
-            }
-            Phase phase = phaseHandlers.firstKey();
-            currentPhase.set(phase);
-
-            Queue<Function<ProcessingContext, CompletableFuture<?>>> handlers = phaseHandlers.remove(phase);
-            if (handlers == null || handlers.isEmpty()) {
-                logger.debug("Skipping phase {} (seq {}). No handlers registered", phase, phase.order());
-                return FutureUtils.emptyCompletedFuture();
-            }
-            logger.debug("Calling {} handlers in phase {} (seq {}).", handlers.size(), phase, phase.order());
-
-            return handlers.stream()
-                           .map(handler -> FutureUtils.emptyCompletedFuture()
-                                                      .thenComposeAsync(r -> handler.apply(this), workScheduler)
-                                                      .thenAccept(FutureUtils::ignoreResult))
-                           .reduce(CompletableFuture::allOf)
-                           .orElseGet(FutureUtils::emptyCompletedFuture);
+        public <T> boolean removeResource(ResourceKey<T> key, T expectedResource) {
+            return resources.remove(key, expectedResource);
         }
 
         @Override
         public String toString() {
-            return "UnitOfWorkProcessingContext{" + "name='" + name + '\'' + ", currentPhase=" + currentPhase.get()
+            return "UnitOfWorkProcessingContext{"
+                    + "identifier='" + identifier + '\'' + ", currentPhase=" + currentPhase.get()
                     + '}';
         }
 
         private enum Status {
-
             NOT_STARTED, STARTED, COMPLETED_ERROR, COMPLETED
         }
 
+        /**
+         * Tuple combining the given {@code phase} and {@code cause} to be used during the invocation of registered
+         * {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.ErrorHandler ErrorHandlers}.
+         *
+         * @param phase The {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.Phase} in which the given
+         *              {@code cause} was thrown.
+         * @param cause The {@link Throwable} thrown in an action executed in the given {@code phase}.
+         */
         private record CauseAndPhase(Phase phase, Throwable cause) {
 
         }

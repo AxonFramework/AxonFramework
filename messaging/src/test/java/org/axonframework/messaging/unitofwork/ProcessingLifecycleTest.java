@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test suite for implementations of the {@link ProcessingLifecycle}.
  *
  * @param <PL> The implementation of the {@link ProcessingLifecycle} being tested.
+ * @author Allard Buijze
  * @author Gerard Klijs
  * @author Milan Savić
  * @author Sara Pellegrini
