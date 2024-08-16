@@ -26,6 +26,7 @@ import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -118,7 +119,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         return load(identifier, processingContext).thenApply(
                 managedEntity -> {
                     managedEntity.applyStateChange(
-                            entity -> entity.equals(modelFactory.get()) ? factoryMethod.get() : entity
+                            entity -> entity == null || entity.equals(modelFactory.get()) ? factoryMethod.get() : entity
                     );
                     return managedEntity;
                 }
