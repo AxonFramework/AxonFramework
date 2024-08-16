@@ -119,7 +119,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         return load(identifier, processingContext).thenApply(
                 managedEntity -> {
                     managedEntity.applyStateChange(
-                            entity -> entity == null || entity.equals(modelFactory.get()) ? factoryMethod.get() : entity
+                            entity -> Objects.equals(entity, modelFactory.get()) ? factoryMethod.get() : entity
                     );
                     return managedEntity;
                 }
