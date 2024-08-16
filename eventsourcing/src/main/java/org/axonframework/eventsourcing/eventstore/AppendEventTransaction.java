@@ -25,6 +25,7 @@ import java.util.function.Consumer;
  * {@link EventStore}.
  *
  * @author Allard Buijze
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public interface AppendEventTransaction {
@@ -42,5 +43,5 @@ public interface AppendEventTransaction {
      *
      * @param callback The callback to invoke when an event is appended.
      */
-    void onEvent(Consumer<EventMessage<?>> callback);
+    void onAppend(Consumer<EventMessage<?>> callback);
 }

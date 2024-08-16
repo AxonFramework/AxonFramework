@@ -30,28 +30,31 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
 
 /**
- * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an {@link EventStore}.
+ * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an
+ * {@link EventStore}.
  *
  * @param <ID> The type of identifier used to identify the entity.
- * @param <T>  The type of the entity to load.
+ * @param <M>  The type of the model to load.
  * @author Allard Buijze
  * @since 0.1
  */
-public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.LifecycleManagement<ID, T> {
+public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.LifecycleManagement<ID, M> {
 
-    private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, T>>>> managedEntitiesKey =
+    private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, M>>>> managedEntitiesKey =
             ResourceKey.create("managedEntities");
 
     private final EventStore eventStore;
-    private final EventStateApplier<T> eventStateApplier;
     private final IdentifierResolver<ID> identifierResolver;
+    private final EventStateApplier<M> eventStateApplier;
+    // TODO #3093 - This should be a revamp of the AggregateFactory. IF this is the way to go.
+    private final Supplier<M> modelFactory;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
@@ -59,80 +62,100 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
      * resolve the aggregate identifier from the given identifier type.
      *
      * @param eventStore         The event store to load events from.
-     * @param eventStateApplier  The function to apply event state changes to the loaded entities.
      * @param identifierResolver Converts the given identifier to an aggregate identifier to load the event stream.
+     * @param eventStateApplier  The function to apply event state changes to the loaded entities.
+     * @param modelFactory       Supplier of the model this repository constructs. Used to define the default instance
+     *                           given to the {@code eventStateApplier}.
      */
     public AsyncEventSourcingRepository(EventStore eventStore,
-                                        EventStateApplier<T> eventStateApplier,
-                                        IdentifierResolver<ID> identifierResolver) {
+                                        IdentifierResolver<ID> identifierResolver,
+                                        EventStateApplier<M> eventStateApplier,
+                                        Supplier<M> modelFactory) {
         this.eventStore = eventStore;
-        this.eventStateApplier = eventStateApplier;
         this.identifierResolver = identifierResolver;
+        this.eventStateApplier = eventStateApplier;
+        this.modelFactory = modelFactory;
     }
 
     @Override
-    public ManagedEntity<ID, T> attach(@Nonnull ManagedEntity<ID, T> entity,
+    public ManagedEntity<ID, M> attach(@Nonnull ManagedEntity<ID, M> entity,
                                        @Nonnull ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
                 entity.identifier(),
                 id -> {
-                    EventSourcedEntity<ID, T> eventSourcedEntity = EventSourcedEntity.mapToEventSourcedEntity(entity);
-                    eventStore.currentTransaction(processingContext)
-                              .onEvent(event -> eventSourcedEntity.applyStateChange(event, eventStateApplier));
-                    return CompletableFuture.completedFuture(eventSourcedEntity);
+                    EventSourcedEntity<ID, M> sourcedEntity = EventSourcedEntity.mapToEventSourcedEntity(entity);
+                    updateActiveModel(sourcedEntity, processingContext);
+                    return CompletableFuture.completedFuture(sourcedEntity);
                 }
         ).resultNow();
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
-                                                        @Nonnull ProcessingContext processingContext) {
+    public CompletableFuture<ManagedEntity<ID, M>> load(@Nonnull ID identifier,
+                                                        @Nonnull ProcessingContext processingContext,
+                                                        long start,
+                                                        long end) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
                 identifier,
                 id -> {
                     DomainEventStream eventStream = eventStore.readEvents(identifierResolver.resolve(identifier));
-                    T currentState = null;
+                    M currentState = null;
                     while (eventStream.hasNext()) {
                         DomainEventMessage<?> nextEvent = eventStream.next();
-                        currentState = eventStateApplier.apply(nextEvent, currentState);
+                        currentState = eventStateApplier.apply(currentState, nextEvent);
                     }
 
-                    EventSourcedEntity<ID, T> managedEntity = new EventSourcedEntity<>(identifier, currentState);
-                    eventStore.currentTransaction(processingContext)
-                              .onEvent(event -> managedEntity.applyStateChange(event, eventStateApplier));
+                    EventSourcedEntity<ID, M> managedEntity = new EventSourcedEntity<>(identifier, currentState);
+                    updateActiveModel(managedEntity, processingContext);
                     return CompletableFuture.completedFuture(managedEntity);
                 }
         ).thenApply(Function.identity());
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, T>> loadOrCreate(@Nonnull ID identifier,
+    public CompletableFuture<ManagedEntity<ID, M>> loadOrCreate(@Nonnull ID identifier,
                                                                 @Nonnull ProcessingContext processingContext,
-                                                                @Nonnull Supplier<T> factoryMethod) {
+                                                                @Nonnull Supplier<M> factoryMethod) {
         return load(identifier, processingContext).thenApply(
                 managedEntity -> {
-                    managedEntity.applyStateChange(entity -> entity != null ? entity : factoryMethod.get());
+                    managedEntity.applyStateChange(
+                            entity -> entity.equals(modelFactory.get()) ? factoryMethod.get() : entity
+                    );
                     return managedEntity;
                 }
         );
     }
 
     @Override
-    public ManagedEntity<ID, T> persist(@Nonnull ID identifier,
-                                        @Nonnull T entity,
+    public ManagedEntity<ID, M> persist(@Nonnull ID identifier,
+                                        @Nonnull M entity,
                                         @Nonnull ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(identifier, id -> {
-            EventSourcedEntity<ID, T> managedEntity = new EventSourcedEntity<>(identifier, entity);
-            eventStore.currentTransaction(processingContext)
-                      .onEvent(event -> managedEntity.applyStateChange(event, eventStateApplier));
-            return CompletableFuture.completedFuture(managedEntity);
+            EventSourcedEntity<ID, M> sourcedEntity = new EventSourcedEntity<>(identifier, entity);
+            updateActiveModel(sourcedEntity, processingContext);
+            return CompletableFuture.completedFuture(sourcedEntity);
         }).resultNow();
+    }
+
+    /**
+     * Update the given {@code entity} for any event that is published within its lifecycle, by invoking the
+     * {@link EventStateApplier} in the
+     * {@link org.axonframework.eventsourcing.eventstore.AppendEventTransaction#onAppend(Consumer)}. onAppend hook is
+     * used to immediately source events that are being published by the model
+     *
+     * @param entity            An {@link ManagedEntity} to make the state change for.
+     * @param processingContext The context for which to retrieve the active
+     *                          {@link org.axonframework.eventsourcing.eventstore.AppendEventTransaction}.
+     */
+    private void updateActiveModel(EventSourcedEntity<ID, M> entity, ProcessingContext processingContext) {
+        eventStore.currentTransaction(processingContext)
+                  .onAppend(event -> entity.applyStateChange(event, eventStateApplier));
     }
 
     @Override
@@ -146,14 +169,14 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
      * Private implementation of the {@link ManagedEntity} supporting event sourcing.
      *
      * @param <ID> The type of identifier of the event sourced entity.
-     * @param <T>  The type of entity managed by this event sourced entity.
+     * @param <M>  The type of entity managed by this event sourced entity.
      */
-    private static class EventSourcedEntity<ID, T> implements ManagedEntity<ID, T> {
+    private static class EventSourcedEntity<ID, M> implements ManagedEntity<ID, M> {
 
         private final ID identifier;
-        private final AtomicReference<T> currentState;
+        private final AtomicReference<M> currentState;
 
-        private EventSourcedEntity(ID identifier, T currentState) {
+        private EventSourcedEntity(ID identifier, M currentState) {
             this.identifier = identifier;
             this.currentState = new AtomicReference<>(currentState);
         }
@@ -170,17 +193,17 @@ public class AsyncEventSourcingRepository<ID, T> implements AsyncRepository.Life
         }
 
         @Override
-        public T entity() {
+        public M entity() {
             return currentState.get();
         }
 
         @Override
-        public T applyStateChange(UnaryOperator<T> change) {
+        public M applyStateChange(UnaryOperator<M> change) {
             return currentState.updateAndGet(change);
         }
 
-        private T applyStateChange(EventMessage<?> event, EventStateApplier<T> applier) {
-            return currentState.updateAndGet(current -> applier.changeState(event, current));
+        private M applyStateChange(EventMessage<?> event, EventStateApplier<M> applier) {
+            return currentState.updateAndGet(current -> applier.changeState(current, event));
         }
     }
 }

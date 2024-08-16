@@ -69,10 +69,12 @@ public class AccessSerializingRepository<ID, T>
 
     @Override
     public CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
-                                                        @Nonnull ProcessingContext processingContext) {
+                                                        @Nonnull ProcessingContext processingContext,
+                                                        long start,
+                                                        long end) {
         return awaitTurn(identifier,
                          processingContext,
-                         () -> delegate.load(identifier, processingContext));
+                         () -> delegate.load(identifier, processingContext, start, end));
     }
 
     @Override

@@ -34,6 +34,9 @@ import java.util.function.UnaryOperator;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link AsyncEventSourcingRepository}.
+ */
 class AsyncEventSourcingRepositoryTest {
 
     private EventStore eventStore;
@@ -49,8 +52,9 @@ class AsyncEventSourcingRepositoryTest {
 
         testSubject = new AsyncEventSourcingRepository<>(
                 eventStore,
-                (event, currentState) -> currentState + "-" + event.getPayload(),
-                identifier -> "id"
+                identifier -> "id",
+                (currentState, event) -> currentState + "-" + event.getPayload(),
+                String::new
         );
     }
 
