@@ -74,6 +74,7 @@ import static org.axonframework.common.BuilderUtils.assertPositive;
  * @author Rene de Waele
  * @since 3.0
  */
+@Deprecated // TODO Replace for AsyncEmbeddedEventStore once fully integrated
 public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);

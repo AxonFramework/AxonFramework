@@ -35,7 +35,8 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @author Rene de Waele
- */
+ */ // TODO Remove once AsyncEventStore is fully integrated
+@Deprecated
 public interface EventStore
         extends EventBus, StreamableMessageSource<TrackedEventMessage<?>>, DomainEventSequenceAware {
 
@@ -73,8 +74,8 @@ public interface EventStore
     /**
      * Stores the given (temporary) {@code snapshot} event. This snapshot replaces the segment of the event stream
      * identified by the {@code snapshot}'s {@link DomainEventMessage#getAggregateIdentifier() Aggregate Identifier} up
-     * to (and including) the event with the {@code snapshot}'s {@link DomainEventMessage#getSequenceNumber() sequence
-     * number}.
+     * to (and including) the event with the {@code snapshot}'s
+     * {@link DomainEventMessage#getSequenceNumber() sequence number}.
      * <p>
      * These snapshots will only affect the {@link DomainEventStream} returned by the {@link #readEvents(String)}
      * method. They do not change the events returned by {@link EventStore#openStream(TrackingToken)} or those received

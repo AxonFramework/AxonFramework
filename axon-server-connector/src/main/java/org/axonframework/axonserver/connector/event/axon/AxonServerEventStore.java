@@ -92,6 +92,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Allard Buijze
  * @since 4.0
  */
+@Deprecated // TODO Replace for AsyncEmbeddedEventStore once fully integrated
 public class AxonServerEventStore extends AbstractEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

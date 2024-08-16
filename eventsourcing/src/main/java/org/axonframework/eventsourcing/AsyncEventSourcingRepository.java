@@ -17,9 +17,8 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext.ResourceKey;
@@ -36,6 +35,8 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
 
+import static org.axonframework.eventsourcing.eventstore.SourcingCondition.singleModelFor;
+
 /**
  * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an
  * {@link EventStore}.
@@ -50,7 +51,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, M>>>> managedEntitiesKey =
             ResourceKey.create("managedEntities");
 
-    private final EventStore eventStore;
+    private final AsyncEventStore eventStore;
     private final IdentifierResolver<ID> identifierResolver;
     private final EventStateApplier<M> eventStateApplier;
     // TODO #3093 - This should be a revamp of the AggregateFactory. IF this is the way to go.
@@ -67,7 +68,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      * @param modelFactory       Supplier of the model this repository constructs. Used to define the default instance
      *                           given to the {@code eventStateApplier}.
      */
-    public AsyncEventSourcingRepository(EventStore eventStore,
+    public AsyncEventSourcingRepository(AsyncEventStore eventStore,
                                         IdentifierResolver<ID> identifierResolver,
                                         EventStateApplier<M> eventStateApplier,
                                         Supplier<M> modelFactory) {
@@ -101,18 +102,12 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
         return managedEntities.computeIfAbsent(
                 identifier,
-                id -> {
-                    DomainEventStream eventStream = eventStore.readEvents(identifierResolver.resolve(identifier));
-                    M currentState = null;
-                    while (eventStream.hasNext()) {
-                        DomainEventMessage<?> nextEvent = eventStream.next();
-                        currentState = eventStateApplier.apply(currentState, nextEvent);
-                    }
-
-                    EventSourcedEntity<ID, M> managedEntity = new EventSourcedEntity<>(identifier, currentState);
-                    updateActiveModel(managedEntity, processingContext);
-                    return CompletableFuture.completedFuture(managedEntity);
-                }
+                id -> eventStore.source(singleModelFor(identifierResolver.resolve(id), start, end))
+                                .asFlux() // TODO not overly confident we should enforce the use of Flux here. Although it does provide the easiest reactive API.
+                                .reduce(modelFactory.get(), eventStateApplier::changeState)
+                                .map(state -> new EventSourcedEntity<>(identifier, state))
+                                .doOnNext(sourcedEntity -> updateActiveModel(sourcedEntity, processingContext))
+                                .toFuture()
         ).thenApply(Function.identity());
     }
 

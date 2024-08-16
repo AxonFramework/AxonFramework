@@ -23,6 +23,7 @@ package org.axonframework.eventhandling;
  * @param <T> The type of payload contained in this Message
  * @author Rene de Waele
  */
+// TODO Shouldn't we make the tracked-info part of **every** EventMessage?
 public interface TrackedEventMessage<T> extends EventMessage<T> {
 
     /**

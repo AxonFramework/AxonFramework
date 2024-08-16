@@ -17,12 +17,13 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.function.Consumer;
 
 /**
  * Interface describing the actions that can be taken on a transaction to append one or more events to the
- * {@link EventStore}.
+ * {@link AsyncEventStore}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -31,12 +32,19 @@ import java.util.function.Consumer;
 public interface AppendEventTransaction {
 
     /**
-     * Appends an {@code eventMessage} to be appended to an {@link EventStore} in this transaction.
+     *
+     */
+    ProcessingContext.ResourceKey<Long> APPEND_POSITION_KEY = ProcessingContext.ResourceKey.create("appendPosition");
+
+    /**
+     * Appends an {@code eventMessage} to be appended to an {@link AsyncEventStore} in this transaction with the given
+     * {@code condition}.
      *
      * @param eventMessage The {@link EventMessage} to append.
+     * @param condition    The consistency condition validated when...
      */
-    // TODO - Add tags/labels/indices/association to the appendEvent operation
-    void appendEvent(EventMessage<?> eventMessage);
+    //TODO does a condition per event make sense? Wouldn't this apply for the entire?
+    void appendEvent(EventMessage<?> eventMessage, AppendCondition condition);
 
     /**
      * Registers a callback to invoke when an event is appended to this transaction.
@@ -45,3 +53,5 @@ public interface AppendEventTransaction {
      */
     void onAppend(Consumer<EventMessage<?>> callback);
 }
+
+// TODO use the onAppend callback to retrieve the sequence of the last appended event, or have a separate method for this?

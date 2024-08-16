@@ -42,6 +42,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Rene de Waele
  * @since 3.0
  */
+@Deprecated // TODO Replace for AsyncEmbeddedEventStore once fully integrated
 public abstract class AbstractEventStore extends AbstractEventBus implements EventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventStore.class);

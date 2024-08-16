@@ -92,4 +92,13 @@ public abstract class FutureUtils {
                 ? exception.getCause()
                 : exception;
     }
+
+    /**
+     *
+     * @param exception
+     * @return
+     */
+    public static String unwrapMessage(Throwable exception) {
+        return unwrap(exception).getMessage();
+    }
 }
