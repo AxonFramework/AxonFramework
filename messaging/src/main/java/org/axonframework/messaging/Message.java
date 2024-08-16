@@ -75,7 +75,7 @@ public interface Message<T> extends Serializable {
      * @return the type of payload.
      * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
      */
-    @Deprecated
+    @Deprecated // TODO #3085 - Introduce QualifiedName
     Class<T> getPayloadType();
 
     /**
