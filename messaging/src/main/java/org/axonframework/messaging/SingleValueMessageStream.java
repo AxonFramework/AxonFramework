@@ -16,30 +16,55 @@
 
 package org.axonframework.messaging;
 
+import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
-class SingleValueMessageStream<T extends Message<?>> implements MessageStream<T> {
+/**
+ * A {@link MessageStream} implementation using a single {@link Message} or {@link CompletableFuture} completing to a
+ * {@code Message} as the source.
+ *
+ * @param <M> The type of {@link Message} carried in this stream.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final CompletableFuture<T> value;
+    private final CompletableFuture<M> messageFuture;
 
-    public SingleValueMessageStream(T value) {
-        this.value = CompletableFuture.completedFuture(value);
+    /**
+     * Constructs a {@link MessageStream} wrapping the given {@code message} into a
+     * {@link CompletableFuture#completedFuture(Object) completed CompletableFuture} as the single value in this
+     * stream.
+     *
+     * @param message The {@link Message} of type {@code M} which is the singular value contained in this
+     *                {@link MessageStream}.
+     */
+    SingleValueMessageStream(M message) {
+        this(CompletableFuture.completedFuture(message));
     }
 
-    public SingleValueMessageStream(CompletableFuture<T> value) {
-        this.value = value;
+    /**
+     * Constructs a {@link MessageStream} with the given {@code messageFuture} as the provider of the single value in
+     * this stream.
+     *
+     * @param messageFuture The {@link CompletableFuture} resulting in the singular {@link Message} contained in this
+     *                      {@link MessageStream}.
+     */
+    SingleValueMessageStream(@NotNull CompletableFuture<M> messageFuture) {
+        this.messageFuture = messageFuture;
     }
 
     @Override
-    public CompletableFuture<T> asCompletableFuture() {
-        return value;
+    public CompletableFuture<M> asCompletableFuture() {
+        return messageFuture;
     }
 
     @Override
-    public Flux<T> asFlux() {
-        return Flux.from(Mono.fromFuture(value));
+    public Flux<M> asFlux() {
+        return Flux.from(Mono.fromFuture(messageFuture));
     }
 }

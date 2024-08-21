@@ -16,37 +16,51 @@
 
 package org.axonframework.messaging;
 
+import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-class FailedMessageStream<T extends Message<?>> implements MessageStream<T> {
+/**
+ * A {@link MessageStream} implementation that completes exceptionally through the given {@code error}.
+ *
+ * @param <M> The type of {@link Message} carried in this stream.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private final Throwable error;
 
-    public FailedMessageStream(Throwable error) {
+    /**
+     * Constructs a {@link FailedMessageStream} that will complete exceptionally with the given {@code error}.
+     *
+     * @param error The {@link Throwable} that caused this {@link MessageStream} to complete exceptionally.
+     */
+    FailedMessageStream(@NotNull Throwable error) {
         this.error = error;
     }
 
     @Override
-    public CompletableFuture<T> asCompletableFuture() {
+    public CompletableFuture<M> asCompletableFuture() {
         return CompletableFuture.failedFuture(error);
     }
 
     @Override
-    public Flux<T> asFlux() {
+    public Flux<M> asFlux() {
         return Flux.error(error);
     }
 
     @Override
-    public <R extends Message<?>> MessageStream<R> map(Function<T, R> mapper) {
+    public <R extends Message<?>> MessageStream<R> map(@NotNull Function<M, R> mapper) {
         //noinspection unchecked
         return (FailedMessageStream<R>) this;
     }
 
     @Override
-    public MessageStream<T> whenComplete(Runnable completeHandler) {
+    public MessageStream<M> whenComplete(Runnable completeHandler) {
         return this;
     }
 }
