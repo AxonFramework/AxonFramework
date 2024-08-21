@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class OnItemMessageStreamTest extends MessageStreamTest<String> {
+class OnNextItemMessageStreamTest extends MessageStreamTest<String> {
 
     @SuppressWarnings("unchecked")
     @Test
@@ -69,14 +69,14 @@ class OnItemMessageStreamTest extends MessageStreamTest<String> {
     }
 
     @Override
-    OnItemMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
-        return new OnItemMessageStream<>(MessageStream.fromIterable(values), m -> {
+    OnNextItemMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
+        return new OnNextItemMessageStream<>(MessageStream.fromIterable(values), m -> {
         });
     }
 
     @Override
-    OnItemMessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
-        return new OnItemMessageStream<>(MessageStream.fromIterable(values).concatWith(MessageStream.failed(failure)),
+    OnNextItemMessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
+        return new OnNextItemMessageStream<>(MessageStream.fromIterable(values).concatWith(MessageStream.failed(failure)),
                                          m -> {
                                          });
     }

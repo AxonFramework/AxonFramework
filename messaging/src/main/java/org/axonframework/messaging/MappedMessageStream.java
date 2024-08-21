@@ -16,17 +16,37 @@
 
 package org.axonframework.messaging;
 
+import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-class MappedMessageStream<T extends Message<?>, M extends Message<?>> implements MessageStream<M> {
+/**
+ * Implementation of the {@link MessageStream} that maps the {@link Message Messages} from type {@code M} to type
+ * {@code R}.
+ *
+ * @param <R> The type of {@link Message} carried as output to this stream.
+ * @param <M> The type of {@link Message} carried as input to this stream.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+class MappedMessageStream<R extends Message<?>, M extends Message<?>> implements MessageStream<M> {
 
-    private final MessageStream<T> delegate;
-    private final Function<T, M> mapper;
+    private final MessageStream<R> delegate;
+    private final Function<R, M> mapper;
 
-    public MappedMessageStream(MessageStream<T> delegate, Function<T, M> mapper) {
+    /**
+     * Construct a {@link MappedMessageStream} mapping the {@link Message Messages} of the given {@code delegate}
+     * {@link MessageStream} to type {@code M}.
+     *
+     * @param delegate The {@link MessageStream} from which its {@link Message Messages} are mapped with the given
+     *                 {@code mapper}.
+     * @param mapper   The {@link Function} mapping {@link Message Messages} of type {@code R} to {@code M}.
+     */
+    MappedMessageStream(@NotNull MessageStream<R> delegate,
+                        @NotNull Function<R, M> mapper) {
         this.delegate = delegate;
         this.mapper = mapper;
     }

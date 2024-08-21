@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -23,30 +24,34 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * MessageStream implementation that wraps a stream that becomes available asynchronously.
+ * An implementation of the {@link MessageStream} that wraps a stream that will become available asynchronously.
  *
- * @param <T> The type of message carried in this Message Stream
+ * @param <M> The type of {@link Message} carried in this stream.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
  */
-public class DelayedMessageStream<T extends Message<?>> implements MessageStream<T> {
+public class DelayedMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final CompletableFuture<MessageStream<T>> delegate;
+    private final CompletableFuture<MessageStream<M>> delegate;
 
-    private DelayedMessageStream(CompletableFuture<MessageStream<T>> delegate) {
+    private DelayedMessageStream(@NotNull CompletableFuture<MessageStream<M>> delegate) {
         this.delegate = delegate;
     }
 
     /**
-     * Creates a MessageStream that delays actions to its delegate when it becomes available.
+     * Creates a {@link MessageStream} that delays actions to its {@code delegate} when it becomes available.
      * <p>
-     * If the given {@code delegate} has already completed, it returns the MessageStream immediately, otherwise it
-     * returns in instance of DelayedMessageStream that
+     * If the given {@code delegate} has already {@link CompletableFuture#isDone() completed}, it returns the
+     * {@code MessageStream} immediately from it. Otherwise, it returns a {@link DelayedMessageStream} instance wrapping
+     * the given {@code delegate}.
      *
-     * @param delegate A CompletableFuture providing access to the MessageStream to delegate to when it becomes
-     *                 available
-     * @param <T>      The type of Message carried by this stream
-     * @return A MessageStream that delegates all actions to the delegate when it becomes available
+     * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream} to delegate to when it
+     *                 becomes available.
+     * @param <M>      The type of {@link Message} carried in this stream.
+     * @return A {@link MessageStream} that delegates all actions to the {@code delegate} when it becomes available.
      */
-    public static <T extends Message<?>> MessageStream<T> create(CompletableFuture<MessageStream<T>> delegate) {
+    public static <M extends Message<?>> MessageStream<M> create(CompletableFuture<MessageStream<M>> delegate) {
         if (delegate.isDone()) {
             try {
                 return delegate.get();
@@ -60,12 +65,13 @@ public class DelayedMessageStream<T extends Message<?>> implements MessageStream
     }
 
     @Override
-    public CompletableFuture<T> asCompletableFuture() {
+    public CompletableFuture<M> asCompletableFuture() {
         return delegate.thenCompose(MessageStream::asCompletableFuture);
     }
 
     @Override
-    public Flux<T> asFlux() {
-        return Mono.fromFuture(delegate).flatMapMany(MessageStream::asFlux);
+    public Flux<M> asFlux() {
+        return Mono.fromFuture(delegate)
+                   .flatMapMany(MessageStream::asFlux);
     }
 }
