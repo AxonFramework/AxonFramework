@@ -22,6 +22,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.stream.StreamSupport;
 
 /**
@@ -58,5 +59,17 @@ class IterableMessageStream<M extends Message<?>> implements MessageStream<M> {
     @Override
     public Flux<M> asFlux() {
         return Flux.fromIterable(source);
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
+        return CompletableFuture.completedFuture(
+                StreamSupport.stream(source.spliterator(), NOT_PARALLEL)
+                             .reduce(identity, accumulator, (thisResult, thatResult) -> {
+                                 throw new UnsupportedOperationException(
+                                         "Cannot combine reduce results as parallelized reduce is not supported."
+                                 );
+                             })
+        );
     }
 }

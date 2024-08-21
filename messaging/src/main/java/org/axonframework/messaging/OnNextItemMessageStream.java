@@ -20,6 +20,7 @@ import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -62,5 +63,13 @@ class OnNextItemMessageStream<M extends Message<?>> implements MessageStream<M> 
     public Flux<M> asFlux() {
         return delegate.asFlux()
                        .doOnNext(onNext);
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
+        return delegate.reduce(identity, (initial, message) -> {
+            onNext.accept(message);
+            return accumulator.apply(initial, message);
+        });
     }
 }

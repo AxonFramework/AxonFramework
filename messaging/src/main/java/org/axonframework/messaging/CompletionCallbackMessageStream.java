@@ -20,6 +20,7 @@ import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 /**
  * Implementation of the {@link MessageStream} that invokes the given {@code completeHandler} once the
@@ -63,5 +64,16 @@ class CompletionCallbackMessageStream<M extends Message<?>> implements MessageSt
     public Flux<M> asFlux() {
         return delegate.asFlux()
                        .doOnComplete(completeHandler);
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        return delegate.reduce(identity, accumulator)
+                       .whenComplete((result, exception) -> {
+                           if (exception == null) {
+                               completeHandler.run();
+                           }
+                       });
     }
 }

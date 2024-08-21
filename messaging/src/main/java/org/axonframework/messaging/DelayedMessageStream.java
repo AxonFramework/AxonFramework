@@ -22,6 +22,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
 
 /**
  * An implementation of the {@link MessageStream} that wraps a stream that will become available asynchronously.
@@ -73,5 +74,11 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
     public Flux<M> asFlux() {
         return Mono.fromFuture(delegate)
                    .flatMapMany(MessageStream::asFlux);
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
     }
 }

@@ -20,6 +20,7 @@ import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -57,5 +58,16 @@ class StreamMessageStream<M extends Message<?>> implements MessageStream<M> {
     @Override
     public <R extends Message<?>> MessageStream<R> map(Function<M, R> mapper) {
         return new StreamMessageStream<>(source.map(mapper));
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
+        return CompletableFuture.completedFuture(
+                source.sequential()
+                      .reduce(identity, accumulator, (thisResult, thatResult) -> {
+                          throw new UnsupportedOperationException(
+                                  "Cannot combine reduce results as parallelized reduce is not supported.");
+                      })
+        );
     }
 }

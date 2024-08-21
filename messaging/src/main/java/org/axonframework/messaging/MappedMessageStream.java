@@ -20,6 +20,7 @@ import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -61,5 +62,12 @@ class MappedMessageStream<R extends Message<?>, M extends Message<?>> implements
     @Override
     public Flux<M> asFlux() {
         return delegate.asFlux().map(mapper);
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        // TODO implement
+        return null;
     }
 }

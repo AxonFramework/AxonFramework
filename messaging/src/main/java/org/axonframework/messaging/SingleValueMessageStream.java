@@ -21,6 +21,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 /**
  * A {@link MessageStream} implementation using a single {@link Message} or {@link CompletableFuture} completing to a
@@ -66,5 +67,10 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M>
     @Override
     public Flux<M> asFlux() {
         return Flux.from(Mono.fromFuture(messageFuture));
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
+        return messageFuture.thenApply(m -> accumulator.apply(identity, m));
     }
 }

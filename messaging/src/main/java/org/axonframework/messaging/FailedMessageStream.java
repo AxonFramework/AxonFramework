@@ -20,6 +20,7 @@ import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -57,6 +58,11 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
     public <R extends Message<?>> MessageStream<R> map(@NotNull Function<M, R> mapper) {
         //noinspection unchecked
         return (FailedMessageStream<R>) this;
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
+        return CompletableFuture.failedFuture(error);
     }
 
     @Override

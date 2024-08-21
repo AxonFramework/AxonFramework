@@ -20,6 +20,8 @@ import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
@@ -60,5 +62,35 @@ class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStrea
     @Override
     public Flux<M> asFlux() {
         return delegate.asFlux().onErrorResume(e -> onError.apply(e).asFlux());
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, M, R> accumulator) {
+        StatefulAccumulator<R> wrapped = new StatefulAccumulator<>(identity, accumulator);
+        return delegate.reduce(identity, wrapped)
+                       .exceptionallyCompose(e -> onError.apply(e)
+                                                         .reduce(wrapped.latest(), wrapped));
+    }
+
+    private class StatefulAccumulator<R> implements BiFunction<R, M, R> {
+
+        private final AtomicReference<R> latest;
+        private final BiFunction<R, M, R> accumulator;
+
+        public StatefulAccumulator(R identity, BiFunction<R, M, R> accumulator) {
+            this.latest = new AtomicReference<>(identity);
+            this.accumulator = accumulator;
+        }
+
+        @Override
+        public R apply(R initial, M message) {
+            R result = accumulator.apply(initial, message);
+            latest.set(result);
+            return result;
+        }
+
+        R latest() {
+            return latest.get();
+        }
     }
 }

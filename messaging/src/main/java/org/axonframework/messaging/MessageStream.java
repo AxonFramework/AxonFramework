@@ -20,8 +20,10 @@ import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -169,7 +171,27 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Invokes the given {@code onNext} each time an item is consumed from this {@link MessageStream stream}.
+     * Returns a {@link CompletableFuture} of type {@code R}, using the given {@code identity} as the initial value for
+     * the given {@code accumulator}.
+     * <p>
+     * The {@code accumulator} will process all {@link Message Messages} within this {@link MessageStream stream} until
+     * a single value of type {@code R} is left.
+     * <p>
+     * Note that parallel processes <b>are not</b> supported!
+     *
+     * @param identity    The initial value given to the {@code accumulator}.
+     * @param accumulator The {@link BiFunction} accumulating all {@link Message Messages} from this
+     *                    {@link MessageStream stream} into a return value of type {@code R}.
+     * @param <R>         The result of the {@code accumulator} after reducing all {@link Message Messages} from this
+     *                    {@link MessageStream stream}.
+     * @return A {@link CompletableFuture} carrying the result of the given {@code accumulator} that reduced the entire
+     * {@link MessageStream stream}.
+     */
+    <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                    @NotNull BiFunction<R, M, R> accumulator);
+
+    /**
+     * Invokes the given {@code onNext} each time a {@link Message} is consumed from this {@link MessageStream stream}.
      * <p>
      * Depending on the stream's implementation, the function may be invoked when the item is provided to the
      * {@link Consumer}, or at the moment it's available for reading on the stream. Subscribing multiple times to the

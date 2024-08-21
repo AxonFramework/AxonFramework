@@ -20,6 +20,7 @@ import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 /**
  * Implementation of the {@link MessageStream} that concatenates two {@code MessageStreams}.
@@ -64,5 +65,12 @@ class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<
     @Override
     public Flux<M> asFlux() {
         return first.asFlux().concatWith(second.asFlux());
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        return first.reduce(identity, accumulator)
+                    .thenCompose(intermediate -> second.reduce(intermediate, accumulator));
     }
 }

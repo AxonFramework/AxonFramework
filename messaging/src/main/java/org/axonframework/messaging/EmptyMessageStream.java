@@ -21,6 +21,7 @@ import org.axonframework.common.FutureUtils;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -65,6 +66,11 @@ class EmptyMessageStream<M extends Message<?>> implements MessageStream<M> {
     public <R extends Message<?>> MessageStream<R> map(@NotNull Function<M, R> mapper) {
         //noinspection unchecked
         return (MessageStream<R>) this;
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
