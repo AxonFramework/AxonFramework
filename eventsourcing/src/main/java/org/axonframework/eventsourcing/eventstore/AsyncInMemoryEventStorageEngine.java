@@ -58,7 +58,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                                                 @Nonnull List<? extends EventMessage<?>> events) {
         synchronized (this.events) {
             long currentPosition = this.events.lastKey();
-            if (condition.position() <= currentPosition) {
+            if (condition.consistencyMarker() <= currentPosition) {
                 return CompletableFuture.failedFuture(new AppendConditionAssertionException());
             }
 
@@ -106,7 +106,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         return types.isEmpty() || types.contains(eventName);
     }
 
-    private static boolean isTagsApproved(TrackedEventMessage<?> event, Set<EventCriteria.Tag> tags) {
+    private static boolean isTagsApproved(TrackedEventMessage<?> event, Set<Tag> tags) {
         return tags.isEmpty() || tags.stream().reduce(
                 true,
                 (previousCheck, tag) -> {
