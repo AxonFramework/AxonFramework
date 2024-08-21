@@ -18,10 +18,13 @@ import javax.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 3.0
  */ // TODO Rename to EmbeddedEventStore once fully integrated
+// TODO Discuss whether this operation needs "the smarts" as present in the EmbeddedEventStore to combine multiple readers by maintaining a windowed cache.
+// Essentially these smarts have moved to the PooledStreamingEventProcessor already.. Although, the caching is an additional optimization on top of this.
+// Which we aren't using for Axon Server at all right now.
 public class AsyncEmbeddedEventStore implements AsyncEventStore {
 
-    private final ProcessingContext.ResourceKey<AppendEventTransaction> appendTransactionKey =
-            ProcessingContext.ResourceKey.create("appendTransaction");
+    private final ProcessingContext.ResourceKey<EventStoreTransaction> eventStoreTransactionKey =
+            ProcessingContext.ResourceKey.create("StoreTransaction");
 
     private final AsyncEventStorageEngine storageEngine;
     private final Clock clock;
@@ -32,23 +35,15 @@ public class AsyncEmbeddedEventStore implements AsyncEventStore {
     }
 
     @Override
-    public AppendEventTransaction currentTransaction(ProcessingContext processingContext) {
+    public EventStoreTransaction transaction(ProcessingContext processingContext, String context) {
         return processingContext.computeResourceIfAbsent(
-                appendTransactionKey,
-                () -> new QueueingAppendTransaction(processingContext, storageEngine)
+                eventStoreTransactionKey,
+                () -> new QueueingEventStoreTransaction(processingContext, storageEngine)
         );
     }
 
     @Override
-    public MessageStream<? extends EventMessage<?>> source(SourcingCondition condition) {
-        return storageEngine.source(condition);
-    }
-
-    @Override
     public MessageStream<? extends EventMessage<?>> stream(StreamingCondition condition) {
-        // TODO Discuss whether this operation needs "the smarts" as present in the EmbeddedEventStore to combine multiple readers by maintaining a windowed cache.
-        // Essentially these smarts have moved to the PooledStreamingEventProcessor already.. Although, the caching is an additional optimization on top of this.
-        // Which we aren't using for Axon Server at all right now.
         return storageEngine.stream(condition);
     }
 

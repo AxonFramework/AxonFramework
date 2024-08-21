@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.AppendEventTransaction;
+import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.MessageStream;
@@ -43,8 +43,10 @@ import static org.mockito.Mockito.*;
  */
 class AsyncEventSourcingRepositoryTest {
 
+    private static final String TEST_CONTEXT = "DEFAULT_CONTEXT";
+
     private AsyncEventStore eventStore;
-    private AppendEventTransaction eventTransaction;
+    private EventStoreTransaction eventTransaction;
 
     private AsyncEventSourcingRepository<String, String> testSubject;
 
@@ -52,13 +54,13 @@ class AsyncEventSourcingRepositoryTest {
     void setUp() {
         eventStore = mock();
         eventTransaction = mock();
-        when(eventStore.currentTransaction(any())).thenReturn(eventTransaction);
+        when(eventStore.transaction(any(), eq(TEST_CONTEXT))).thenReturn(eventTransaction);
 
         testSubject = new AsyncEventSourcingRepository<>(
                 eventStore,
                 identifier -> "id",
                 (currentState, event) -> currentState + "-" + event.getPayload(),
-                String::new
+                TEST_CONTEXT
         );
     }
 
@@ -67,19 +69,19 @@ class AsyncEventSourcingRepositoryTest {
         ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStore)
-                .source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types().contains("id")));
+                .source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types().contains("id")), );
 
         CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
 
         assertTrue(result.isDone());
         assertFalse(result.isCompletedExceptionally(), () -> FutureUtils.unwrapMessage(result.exceptionNow()));
         verify(eventTransaction).onAppend(any());
-        verify(eventStore).source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types().contains("id")));
+        verify(eventStore).source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types().contains("id")), );
 
         assertTrue(result.isDone());
         assertFalse(result.isCompletedExceptionally(), () -> FutureUtils.unwrapMessage(result.exceptionNow()));
         verify(eventTransaction).onAppend(any());
-        verify(eventStore).source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types().contains("id")));
+        verify(eventStore).source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types().contains("id")), );
 
         assertEquals("-0-1", result.resultNow().entity());
     }
@@ -115,7 +117,7 @@ class AsyncEventSourcingRepositoryTest {
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStore)
                 .source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types()
-                                                                                          .contains("id")));
+                                                                                          .contains("id")), );
 
         ManagedEntity<String, String> result = testSubject.load("test", processingContext).get();
 
@@ -131,7 +133,7 @@ class AsyncEventSourcingRepositoryTest {
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStore)
                 .source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types()
-                                                                                          .contains("id")));
+                                                                                          .contains("id")), );
 
         ManagedEntity<String, String> result = testSubject.load("test", processingContext).get();
 
@@ -162,14 +164,14 @@ class AsyncEventSourcingRepositoryTest {
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStore)
                 .source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types()
-                                                                                          .contains("id")));
+                                                                                          .contains("id")), );
 
         CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
 
         assertTrue(result.isDone());
         assertFalse(result.isCompletedExceptionally());
         verify(eventStore).source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types()
-                                                                                                    .contains("id")));
+                                                                                                    .contains("id")), );
         //noinspection unchecked
         ArgumentCaptor<Consumer<EventMessage<?>>> callback = ArgumentCaptor.forClass(Consumer.class);
         verify(eventTransaction).onAppend(callback.capture());
@@ -185,7 +187,7 @@ class AsyncEventSourcingRepositoryTest {
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStore)
                 .source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types()
-                                                                                          .contains("id")));
+                                                                                          .contains("id")), );
 
         CompletableFuture<ManagedEntity<String, String>> result =
                 testSubject.loadOrCreate("test", processingContext, () -> fail("This should not have been invoked"));
@@ -199,7 +201,7 @@ class AsyncEventSourcingRepositoryTest {
         doReturn(MessageStream.empty())
                 .when(eventStore)
                 .source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types()
-                                                                                          .contains("id")));
+                                                                                          .contains("id")), );
 
         CompletableFuture<ManagedEntity<String, String>> loaded =
                 testSubject.loadOrCreate("test", processingContext, () -> "created");
@@ -208,11 +210,12 @@ class AsyncEventSourcingRepositoryTest {
         assertFalse(loaded.isCompletedExceptionally());
         verify(eventTransaction).onAppend(any());
         verify(eventStore).source(ArgumentMatchers.<SourcingCondition>argThat(condition -> condition.criteria().types()
-                                                                                                    .contains("id")));
+                                                                                                    .contains("id")), );
 
         assertEquals("created", loaded.resultNow().entity());
     }
 
+    // TODO - Perfect candidate to move to a commons test utils module
     private static DomainEventMessage<?> domainEvent(int seq) {
         return new GenericDomainEventMessage<>("test", "id", seq, seq);
     }

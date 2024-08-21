@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext.ResourceKey;
@@ -26,7 +27,6 @@ import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -55,8 +55,8 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     private final AsyncEventStore eventStore;
     private final IdentifierResolver<ID> identifierResolver;
     private final EventStateApplier<M> eventStateApplier;
-    // TODO #3093 - This should be a revamp of the AggregateFactory. IF this is the way to go.
-    private final Supplier<M> modelFactory;
+    // TODO rename this field to something else
+    private final String contextOrNamespace;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
@@ -66,17 +66,16 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      * @param eventStore         The event store to load events from.
      * @param identifierResolver Converts the given identifier to an aggregate identifier to load the event stream.
      * @param eventStateApplier  The function to apply event state changes to the loaded entities.
-     * @param modelFactory       Supplier of the model this repository constructs. Used to define the default instance
-     *                           given to the {@code eventStateApplier}.
+     * @param contextOrNamespace
      */
     public AsyncEventSourcingRepository(AsyncEventStore eventStore,
                                         IdentifierResolver<ID> identifierResolver,
                                         EventStateApplier<M> eventStateApplier,
-                                        Supplier<M> modelFactory) {
+                                        String contextOrNamespace) {
         this.eventStore = eventStore;
         this.identifierResolver = identifierResolver;
         this.eventStateApplier = eventStateApplier;
-        this.modelFactory = modelFactory;
+        this.contextOrNamespace = contextOrNamespace;
     }
 
     @Override
@@ -103,12 +102,17 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
         return managedEntities.computeIfAbsent(
                 identifier,
-                id -> eventStore.source(singleModelFor(identifierResolver.resolve(id), start, end))
-                                .asFlux() // TODO not overly confident we should enforce the use of Flux here. Although it does provide the easiest reactive API.
-                                .reduce(modelFactory.get(), eventStateApplier::changeState)
-                                .map(state -> new EventSourcedEntity<>(identifier, state))
-                                .doOnNext(sourcedEntity -> updateActiveModel(sourcedEntity, processingContext))
-                                .toFuture()
+                id -> eventStore.transaction(processingContext, contextOrNamespace)
+                                .source(singleModelFor(identifierResolver.resolve(id), start, end), processingContext)
+                                .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, em) -> {
+                                    entity.applyStateChange(em, eventStateApplier);
+                                    return entity;
+                                })
+                                .whenComplete((entity, exception) -> {
+                                    if (exception == null) {
+                                        updateActiveModel(entity, processingContext);
+                                    }
+                                })
         ).thenApply(Function.identity());
     }
 
@@ -119,7 +123,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         return load(identifier, processingContext).thenApply(
                 managedEntity -> {
                     managedEntity.applyStateChange(
-                            entity -> Objects.equals(entity, modelFactory.get()) ? factoryMethod.get() : entity
+                            entity -> entity != null ? entity : factoryMethod.get()
                     );
                     return managedEntity;
                 }
@@ -141,16 +145,14 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
     /**
      * Update the given {@code entity} for any event that is published within its lifecycle, by invoking the
-     * {@link EventStateApplier} in the
-     * {@link org.axonframework.eventsourcing.eventstore.AppendEventTransaction#onAppend(Consumer)}. onAppend hook is
-     * used to immediately source events that are being published by the model
+     * {@link EventStateApplier} in the {@link EventStoreTransaction#onAppend(Consumer)}. onAppend hook is used to
+     * immediately source events that are being published by the model
      *
      * @param entity            An {@link ManagedEntity} to make the state change for.
-     * @param processingContext The context for which to retrieve the active
-     *                          {@link org.axonframework.eventsourcing.eventstore.AppendEventTransaction}.
+     * @param processingContext The context for which to retrieve the active {@link EventStoreTransaction}.
      */
     private void updateActiveModel(EventSourcedEntity<ID, M> entity, ProcessingContext processingContext) {
-        eventStore.currentTransaction(processingContext)
+        eventStore.transaction(processingContext, contextOrNamespace)
                   .onAppend(event -> entity.applyStateChange(event, eventStateApplier));
     }
 
