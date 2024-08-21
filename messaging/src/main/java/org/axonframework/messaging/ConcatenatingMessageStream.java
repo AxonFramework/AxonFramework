@@ -20,19 +20,40 @@ import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
-class ConcatenatingMessageStream<T extends Message<?>> implements MessageStream<T> {
+/**
+ * Implementation of the {@link MessageStream} that concatenates two {@code MessageStreams}.
+ * <p>
+ * Will only start streaming {@link Message Messages} from the {@code second MessageStream} when the
+ * {@code first MessageStream} completes successfully.
+ *
+ * @param <M> The type of {@link Message} carried in this stream.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final MessageStream<T> first;
-    private final MessageStream<T> second;
+    private final MessageStream<M> first;
+    private final MessageStream<M> second;
 
-    public ConcatenatingMessageStream(@NotNull MessageStream<T> first, @NotNull MessageStream<T> second) {
+    /**
+     * Construct a {@link ConcatenatingMessageStream} that initially consume from the {@code first MessageStream},
+     * followed by the {@code second} if the {@code first MessageStream} completes successfully
+     *
+     * @param first  The initial {@link MessageStream} to consume {@link Message Messages} from.
+     * @param second The second {@link MessageStream} to start consuming from once the {@code first} stream completes
+     *               successfully.
+     */
+    ConcatenatingMessageStream(@NotNull MessageStream<M> first,
+                               @NotNull MessageStream<M> second) {
         this.first = first;
         this.second = second;
     }
 
     @Override
-    public CompletableFuture<T> asCompletableFuture() {
+    public CompletableFuture<M> asCompletableFuture() {
         return first.asCompletableFuture().thenCompose(i -> {
             if (i == null) {
                 return second.asCompletableFuture();
@@ -42,7 +63,14 @@ class ConcatenatingMessageStream<T extends Message<?>> implements MessageStream<
     }
 
     @Override
-    public Flux<T> asFlux() {
+    public Flux<M> asFlux() {
         return first.asFlux().concatWith(second.asFlux());
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        return first.reduce(identity, accumulator)
+                    .thenCompose(intermediate -> second.reduce(intermediate, accumulator));
     }
 }

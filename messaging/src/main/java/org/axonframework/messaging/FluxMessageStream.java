@@ -16,41 +16,61 @@
 
 package org.axonframework.messaging;
 
+import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
-class FluxMessageStream<T extends Message<?>> implements MessageStream<T> {
+/**
+ * A {@link MessageStream} implementation using a {@link Flux} as the {@link Message} source.
+ *
+ * @param <M> The type of {@link Message} carried in this stream.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final Flux<T> source;
+    private final Flux<M> source;
 
-    public FluxMessageStream(Flux<T> source) {
+    /**
+     * Constructs a {@link MessageStream} using the given {@code source} to provide the {@link Message Messages}.
+     *
+     * @param source The {@link Flux} sourcing the {@link Message Messages} for this {@link MessageStream}.
+     */
+    FluxMessageStream(@NotNull Flux<M> source) {
         this.source = source;
     }
 
     @Override
-    public CompletableFuture<T> asCompletableFuture() {
+    public CompletableFuture<M> asCompletableFuture() {
         return source.next().toFuture();
     }
 
     @Override
-    public Flux<T> asFlux() {
+    public Flux<M> asFlux() {
         return source;
     }
 
     @Override
-    public <R extends Message<?>> MessageStream<R> map(Function<T, R> mapper) {
+    public <R extends Message<?>> MessageStream<R> map(@NotNull Function<M, R> mapper) {
         return new FluxMessageStream<>(source.map(mapper));
     }
 
     @Override
-    public MessageStream<T> whenComplete(Runnable completeHandler) {
-        return new FluxMessageStream<>(source.doOnComplete(completeHandler));
+    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
+        return source.reduce(identity, accumulator).toFuture();
     }
 
     @Override
-    public MessageStream<T> onErrorContinue(Function<Throwable, MessageStream<T>> onError) {
+    public MessageStream<M> onErrorContinue(@NotNull Function<Throwable, MessageStream<M>> onError) {
         return new FluxMessageStream<>(source.onErrorResume(e -> onError.apply(e).asFlux()));
+    }
+
+    @Override
+    public MessageStream<M> whenComplete(@NotNull Runnable completeHandler) {
+        return new FluxMessageStream<>(source.doOnComplete(completeHandler));
     }
 }

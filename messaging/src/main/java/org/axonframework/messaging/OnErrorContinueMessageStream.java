@@ -16,29 +16,81 @@
 
 package org.axonframework.messaging;
 
+import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
-public class OnErrorContinueMessageStream<T extends Message<?>> implements MessageStream<T> {
+/**
+ * Implementation of the {@link MessageStream} that when the stream completes exceptionally will continue on a
+ * {@code MessageStream} returned by the given {@code onError} {@link Function}.
+ *
+ * @param <M> The type of {@link Message} carried in this stream.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final MessageStream<T> delegate;
-    private final Function<Throwable, MessageStream<T>> onError;
+    private final MessageStream<M> delegate;
+    private final Function<Throwable, MessageStream<M>> onError;
 
-    public OnErrorContinueMessageStream(MessageStream<T> delegate,
-                                        Function<Throwable, MessageStream<T>> onError) {
+    /**
+     * Construct an {@link OnErrorContinueMessageStream} that will proceed on the resulting {@link MessageStream} from
+     * the given {@code onError} when the {@code delegate} completes exceptionally
+     *
+     * @param delegate The delegate {@link MessageStream} to proceed from with the result of {@code onError} <em>if</em>
+     *                 it completes exceptionally.
+     * @param onError  A {@link Function} providing the replacement {@link MessageStream} to continue from if the given
+     *                 {@code delegate} completes exceptionally.
+     */
+    OnErrorContinueMessageStream(@NotNull MessageStream<M> delegate,
+                                 @NotNull Function<Throwable, MessageStream<M>> onError) {
         this.delegate = delegate;
         this.onError = onError;
     }
 
     @Override
-    public CompletableFuture<T> asCompletableFuture() {
+    public CompletableFuture<M> asCompletableFuture() {
         return delegate.asCompletableFuture().exceptionallyCompose(e -> onError.apply(e).asCompletableFuture());
     }
 
     @Override
-    public Flux<T> asFlux() {
+    public Flux<M> asFlux() {
         return delegate.asFlux().onErrorResume(e -> onError.apply(e).asFlux());
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, M, R> accumulator) {
+        StatefulAccumulator<R> wrapped = new StatefulAccumulator<>(identity, accumulator);
+        return delegate.reduce(identity, wrapped)
+                       .exceptionallyCompose(e -> onError.apply(e)
+                                                         .reduce(wrapped.latest(), wrapped));
+    }
+
+    private class StatefulAccumulator<R> implements BiFunction<R, M, R> {
+
+        private final AtomicReference<R> latest;
+        private final BiFunction<R, M, R> accumulator;
+
+        public StatefulAccumulator(R identity, BiFunction<R, M, R> accumulator) {
+            this.latest = new AtomicReference<>(identity);
+            this.accumulator = accumulator;
+        }
+
+        @Override
+        public R apply(R initial, M message) {
+            R result = accumulator.apply(initial, message);
+            latest.set(result);
+            return result;
+        }
+
+        R latest() {
+            return latest.get();
+        }
     }
 }

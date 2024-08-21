@@ -16,32 +16,64 @@
 
 package org.axonframework.messaging;
 
+import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
-class CompletionCallbackMessageStream<T extends Message<?>> implements MessageStream<T> {
+/**
+ * Implementation of the {@link MessageStream} that invokes the given {@code completeHandler} once the
+ * {@code delegate MessageStream} completes.
+ *
+ * @param <M> The type of {@link Message} carried in this stream.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+class CompletionCallbackMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final MessageStream<T> delegate;
+    private final MessageStream<M> delegate;
     private final Runnable completeHandler;
 
-    public CompletionCallbackMessageStream(MessageStream<T> delegate, Runnable completeHandler) {
+    /**
+     * Construct a {@link CompletionCallbackMessageStream} invoking the given {@code completeHandler} when the given
+     * {@code delegate} completes.
+     *
+     * @param delegate        The {@link MessageStream} that once completed results in the invocation of the given
+     *                        {@code completeHandler}.
+     * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
+     */
+    CompletionCallbackMessageStream(@NotNull MessageStream<M> delegate,
+                                    @NotNull Runnable completeHandler) {
         this.delegate = delegate;
         this.completeHandler = completeHandler;
     }
 
     @Override
-    public CompletableFuture<T> asCompletableFuture() {
-        return delegate.asCompletableFuture().whenComplete((r, e) -> {
-            if (e == null) {
-                completeHandler.run();
-            }
-        });
+    public CompletableFuture<M> asCompletableFuture() {
+        return delegate.asCompletableFuture()
+                       .whenComplete((result, exception) -> {
+                           if (exception == null) {
+                               completeHandler.run();
+                           }
+                       });
     }
 
     @Override
-    public Flux<T> asFlux() {
+    public Flux<M> asFlux() {
         return delegate.asFlux()
                        .doOnComplete(completeHandler);
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        return delegate.reduce(identity, accumulator)
+                       .whenComplete((result, exception) -> {
+                           if (exception == null) {
+                               completeHandler.run();
+                           }
+                       });
     }
 }
