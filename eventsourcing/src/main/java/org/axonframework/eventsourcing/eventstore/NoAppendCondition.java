@@ -16,6 +16,10 @@ class NoAppendCondition implements AppendCondition {
      */
     static final NoAppendCondition INSTANCE = new NoAppendCondition();
 
+    private NoAppendCondition() {
+        // No-arg constructor to enforce use of INSTANCE constant.
+    }
+
     @Override
     public long consistencyMarker() {
         return -1;

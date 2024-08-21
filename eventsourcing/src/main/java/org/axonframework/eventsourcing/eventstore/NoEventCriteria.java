@@ -24,6 +24,10 @@ class NoEventCriteria implements EventCriteria {
      */
     static final NoEventCriteria INSTANCE = new NoEventCriteria();
 
+    private NoEventCriteria() {
+        // No-arg constructor to enforce use of INSTANCE constant.
+    }
+
     @Override
     public Set<String> types() {
         return Set.of();
