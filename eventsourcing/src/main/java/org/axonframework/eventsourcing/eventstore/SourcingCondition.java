@@ -6,11 +6,11 @@ import java.util.OptionalLong;
 
 /**
  * Interface describing the condition to
- * {@link EventSourcingTransaction#source(SourcingCondition, ProcessingContext) source} events from an Event Store.
+ * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) source} events from an Event Store.
  * <p>
  * The condition has a mandatory {@link #criteria()} used to retrieve the exact sequence of events to source the
  * model(s). The {@link #start()} and {@link #end()} operations define the window of events that the
- * {@link EventSourcingTransaction} is interested in. Use these fields to retrieve slices of the model(s) to source.
+ * {@link EventStoreTransaction} is interested in. Use these fields to retrieve slices of the model(s) to source.
  *
  * @author Marco Amann
  * @author Milan Savic

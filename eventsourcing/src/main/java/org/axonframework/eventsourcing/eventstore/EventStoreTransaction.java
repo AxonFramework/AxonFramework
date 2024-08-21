@@ -32,7 +32,7 @@ import java.util.function.Consumer;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface EventSourcingTransaction {
+public interface EventStoreTransaction {
 
     /**
      * A {@link org.axonframework.messaging.unitofwork.ProcessingContext.ResourceKey} referring to the position of the

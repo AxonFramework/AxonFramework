@@ -8,9 +8,9 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * has been published.
  * <p>
  * Such a {@code Tag} is typically used by the {@link EventCriteria} as a filter when
- * {@link EventSourcingTransaction#source(SourcingCondition, ProcessingContext) sourcing},
+ * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing},
  * {@link AsyncEventStore#stream(StreamingCondition) streaming} or
- * {@link EventSourcingTransaction#appendEvent(EventMessage) appending} events.
+ * {@link EventStoreTransaction#appendEvent(EventMessage) appending} events.
  *
  * @param key   The key of this {@link Tag}.
  * @param value The value of this {@link Tag}.

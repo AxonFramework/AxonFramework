@@ -7,9 +7,9 @@ import java.util.Set;
 
 /**
  * Interface describing criteria to be taken into account when
- * {@link EventSourcingTransaction#source(SourcingCondition, ProcessingContext) sourcing},
+ * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing},
  * {@link AsyncEventStore#stream(StreamingCondition) streaming} or
- * {@link EventSourcingTransaction#appendEvent(EventMessage) appending} events.
+ * {@link EventStoreTransaction#appendEvent(EventMessage) appending} events.
  * <p>
  * During sourcing or streaming, the {@link #types()} and {@link #tags()} are used as a filter. While appending events,
  * the {@code #types()} and {@code #tags()} are used to validate the consistency boundary of the event(s) to append. The
@@ -27,9 +27,9 @@ public interface EventCriteria {
      * <p>
      * Use this instance when all events are of interest during
      * {@link AsyncEventStore#stream(StreamingCondition) streaming} or when there are no consistency boundaries to
-     * validate during {@link EventSourcingTransaction#appendEvent(EventMessage) appending}. Note that this
+     * validate during {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that this
      * {@link EventCriteria} does not make sense for
-     * {@link EventSourcingTransaction#source(SourcingCondition, ProcessingContext) sourcing}, as it is <b>not</b>
+     * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing}, as it is <b>not</b>
      * recommended to source the entire event store.
      *
      * @return An {@link EventCriteria} that contains no criteria at all.

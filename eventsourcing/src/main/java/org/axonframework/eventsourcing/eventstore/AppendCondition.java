@@ -5,7 +5,7 @@ import org.axonframework.eventhandling.EventMessage;
 /**
  * Interface describing the consistency boundary condition for
  * {@link org.axonframework.eventhandling.EventMessage EventMessages} when
- * {@link EventSourcingTransaction#appendEvent(EventMessage) appending} them to an Event Store.
+ * {@link EventStoreTransaction#appendEvent(EventMessage) appending} them to an Event Store.
  *
  * @author Steven van Beelen
  * @author Milan Savic

@@ -10,8 +10,8 @@ import java.util.Set;
  * <p>
  * Use this instance when all events are of interest during {@link AsyncEventStore#stream(StreamingCondition) streaming}
  * or when there are no consistency boundaries to validate during
- * {@link EventSourcingTransaction#appendEvent(EventMessage) appending}. Note that {@code EventCriteria} criteria does
- * not make sense for {@link EventSourcingTransaction#source(SourcingCondition, ProcessingContext) sourcing}, as it is
+ * {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that {@code EventCriteria} criteria does
+ * not make sense for {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing}, as it is
  * <b>not</b> recommended to source the entire event store.
  *
  * @author Steven van Beelen
