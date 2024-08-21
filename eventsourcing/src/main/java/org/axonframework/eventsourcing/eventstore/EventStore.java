@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -92,16 +91,5 @@ public interface EventStore
     default Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
         return readEvents(aggregateIdentifier).asStream().map(DomainEventMessage::getSequenceNumber)
                                               .max(Long::compareTo);
-    }
-
-    /**
-     * Retrieves the {@link AppendEventTransaction transaction for appending events} for the given
-     * {@code processingContext}. If no transaction is available, a new, empty transaction is created.
-     *
-     * @param processingContext The context for which to retrieve the {@link AppendEventTransaction}.
-     * @return The {@link AppendEventTransaction}, existing or newly created, for the given {@code processingContext}.
-     */
-    default AppendEventTransaction currentTransaction(ProcessingContext processingContext) {
-        throw new UnsupportedOperationException("Not implemented yet");
     }
 }
