@@ -23,6 +23,7 @@ import reactor.core.publisher.Flux;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
 /**
@@ -59,6 +60,15 @@ class IterableMessageStream<M extends Message<?>> implements MessageStream<M> {
     @Override
     public Flux<M> asFlux() {
         return Flux.fromIterable(source);
+    }
+
+    @Override
+    public <R extends Message<?>> MessageStream<R> map(Function<M, R> mapper) {
+        return new IterableMessageStream<>(
+                StreamSupport.stream(source.spliterator(), NOT_PARALLEL)
+                             .map(mapper)
+                             .toList()
+        );
     }
 
     @Override

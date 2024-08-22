@@ -71,6 +71,11 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M>
     }
 
     @Override
+    public <R extends Message<?>> MessageStream<R> map(Function<M, R> mapper) {
+        return new SingleValueMessageStream<>(source.thenApply(mapper));
+    }
+
+    @Override
     public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
         return source.thenApply(m -> accumulator.apply(identity, m));
     }

@@ -65,9 +65,9 @@ class MappedMessageStream<R extends Message<?>, M extends Message<?>> implements
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, M, R> accumulator) {
-        // TODO implement
-        return null;
+    public <RR> CompletableFuture<RR> reduce(@NotNull RR identity,
+                                             @NotNull BiFunction<RR, M, RR> accumulator) {
+        return delegate.map(mapper)
+                       .reduce(identity, accumulator);
     }
 }
