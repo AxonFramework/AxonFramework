@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Abstract implementation of the PropertyAccessStrategy that uses a no-arg, public method to access the property
@@ -51,6 +53,14 @@ public abstract class AbstractMethodPropertyAccessStrategy extends PropertyAcces
                          methodName, targetClass.getName());
         }
         return null;
+    }
+
+    private <T> Optional<Method> getMethod(Class<T> targetClass, String methodName) {
+        return Arrays.stream(targetClass.getMethods())
+                .filter(method -> method.getName().equals(methodName))
+                .filter(method -> method.getParameterCount() == 0)
+                .filter(method -> !method.getReturnType().equals(Void.TYPE))
+                .findFirst();
     }
 
     /**

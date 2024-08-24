@@ -16,10 +16,19 @@
 
 package org.axonframework.common.property;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class BeanPropertyAccessStrategyTest extends
         AbstractPropertyAccessStrategyTest<BeanPropertyAccessStrategyTest.TestMessage> {
+
+    private static final Logger log = LoggerFactory.getLogger(BeanPropertyAccessStrategyTest.class);
 
     @Override
     protected String exceptionPropertyName() {
