@@ -55,6 +55,33 @@ public class BeanPropertyAccessStrategyTest extends
         return new BeanPropertyAccessStrategy().propertyFor(TestMessage.class, property);
     }
 
+    /**
+     * Before the Performance optimization(avoiding exceptions) for each event a lot of events were thrown, if the
+     * accessors the access do not follow the Bean Standard, but follows the Record Standard. Furthermore, for
+     * aggregateId-Properties will be scanned, which also caused exceptions. The performance optimization decreased the
+     * CPU time by 65 %.
+     * <p/>
+     * Before the optimization 100,000 executions had a duration of around 355ms.</br> After the optimization 100,000
+     * executions had a duration of around 116ms.
+     * <p/>
+     * On a MacBook Pro M1 using jdk 21 the duration is around 105-130ms. I am not sure if this test can be used,
+     * because I don't know about the build environment and other developer environments.
+     */
+    @Test
+    @Timeout(value = 200, unit = TimeUnit.MILLISECONDS)
+    void testPerformanceWhenMethodNotExisting() {
+        BeanPropertyAccessStrategy beanPropertyAccess = new BeanPropertyAccessStrategy();
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < 100000; i++) {
+            beanPropertyAccess.propertyFor(TestMessage.class, "notExistingProperty" + i);
+        }
+        long end = System.currentTimeMillis();
+        log.info("Used time: {} nanos", (end - start));
+        // 100,000 requests
+        // with exception -> 357 millis
+        // without exception -> 113 millis
+    }
+
     protected String voidPropertyName() {
         return "voidMethod";
     }
