@@ -54,8 +54,18 @@ public abstract class AbstractMethodPropertyAccessStrategy extends PropertyAcces
         return Arrays.stream(targetClass.getMethods())
                      .filter(method -> method.getName().equals(methodName))
                      .filter(method -> method.getParameterCount() == 0)
-                     .filter(method -> !method.getReturnType().equals(Void.TYPE))
+                     .filter(this::isNotReturningVoid)
                      .findFirst();
+    }
+
+    private boolean isNotReturningVoid(Method method) {
+        boolean returnsVoid = method.getReturnType().equals(Void.TYPE);
+        if (returnsVoid && logger.isDebugEnabled()) {
+            logger.debug(
+                    "Method with name '{}' in '{}' cannot be accepted as a property accessor, as it returns void",
+                    method.getName(), method.getDeclaringClass().getName());
+        }
+        return !returnsVoid;
     }
 
     /**

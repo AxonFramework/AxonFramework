@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,19 +56,24 @@ public class BeanPropertyAccessStrategyTest extends
     }
 
     /**
-     * Before the Performance optimization(avoiding exceptions) for each event a lot of events were thrown, if the
-     * accessors the access do not follow the Bean Standard, but follows the Record Standard. Furthermore, for
-     * aggregateId-Properties will be scanned, which also caused exceptions. The performance optimization decreased the
-     * CPU time by 65 %.
+     * The build server environment is very slow. Currently there is no strategy when and how to test the
+     * performance of this class. However, maybe in the future this code will be helpfull for someone.
      * <p/>
-     * Before the optimization 100,000 executions had a duration of around 355ms.</br> After the optimization 100,000
-     * executions had a duration of around 116ms.
+     * The suggested way to disable this test for the moment was to drop the test annotation.
      * <p/>
-     * On a MacBook Pro M1 using jdk 21 the duration is around 105-130ms. I am not sure if this test can be used,
-     * because I don't know about the build environment and other developer environments.
+     * The goal this test should be to keep the code fast. This can currently not be achieved, because
+     * the build servers are "slow".
+     * <p/>
+     * Facts on a MacBook Pro M1:<p/>
+     * Duration of the Test
+     * <ul>
+     *     <li>before the performance fix: 355ms<p/></li>
+     *     <li>after the performance fix: 116ms<p/></li>
+     * </ul>
      */
-    @Test
-    @Timeout(value = 200, unit = TimeUnit.MILLISECONDS)
+//    @Test
+//    @Timeout(value = 200, unit = TimeUnit.MILLISECONDS)
+    @SuppressWarnings("unused")
     void testPerformanceWhenMethodNotExisting() {
         BeanPropertyAccessStrategy beanPropertyAccess = new BeanPropertyAccessStrategy();
         long start = System.currentTimeMillis();
@@ -77,9 +82,6 @@ public class BeanPropertyAccessStrategyTest extends
         }
         long end = System.currentTimeMillis();
         log.info("Used time: {} nanos", (end - start));
-        // 100,000 requests
-        // with exception -> 357 millis
-        // without exception -> 113 millis
     }
 
     protected String voidPropertyName() {
