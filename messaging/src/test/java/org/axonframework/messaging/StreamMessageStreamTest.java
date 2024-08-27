@@ -21,21 +21,27 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Test class validating the {@link StreamMessageStream} through the {@link MessageStreamTest} suite.
+ *
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ */
 class StreamMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
-    StreamMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
-        return new StreamMessageStream<>(values.stream());
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        return MessageStream.fromStream(messages.stream());
     }
 
     @Override
-    StreamMessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
         Assumptions.abort("StreamMessageStream doesn't support failures");
         return null;
     }
 
     @Override
-    String createRandomValidStreamEntry() {
-        return "TestValue-" + ThreadLocalRandom.current().nextInt(10000);
+    String createRandomValidEntry() {
+        return "test--" + ThreadLocalRandom.current().nextInt(10000);
     }
 }

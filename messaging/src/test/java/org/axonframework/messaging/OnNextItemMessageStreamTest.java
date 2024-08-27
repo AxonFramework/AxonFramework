@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
@@ -28,11 +29,37 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link OnNextItemMessageStream} through the {@link MessageStreamTest} suite.
+ *
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ */
 class OnNextItemMessageStreamTest extends MessageStreamTest<String> {
 
-    @SuppressWarnings("unchecked")
+    private static final @NotNull Consumer<Message<String>> NO_OP_ON_NEXT = message -> {
+    };
+
+    @Override
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        return new OnNextItemMessageStream<>(MessageStream.fromIterable(messages), NO_OP_ON_NEXT);
+    }
+
+    @Override
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
+        return new OnNextItemMessageStream<>(MessageStream.fromIterable(messages)
+                                                          .concatWith(MessageStream.failed(failure)),
+                                             NO_OP_ON_NEXT);
+    }
+
+    @Override
+    String createRandomValidEntry() {
+        return "test-" + ThreadLocalRandom.current().nextInt(10000);
+    }
+
     @Test
     void onNextNotInvokedOnEmptyStream() {
+        //noinspection unchecked
         Consumer<Message<?>> handler = mock();
         MessageStream<Message<?>> testSubject = MessageStream.empty().onNextItem(handler);
 
@@ -66,23 +93,5 @@ class OnNextItemMessageStreamTest extends MessageStreamTest<String> {
         assertEquals(2, seen.size());
         assertEquals("first", seen.getFirst().getPayload());
         assertEquals("second", seen.get(1).getPayload());
-    }
-
-    @Override
-    OnNextItemMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
-        return new OnNextItemMessageStream<>(MessageStream.fromIterable(values), m -> {
-        });
-    }
-
-    @Override
-    OnNextItemMessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
-        return new OnNextItemMessageStream<>(MessageStream.fromIterable(values).concatWith(MessageStream.failed(failure)),
-                                         m -> {
-                                         });
-    }
-
-    @Override
-    String createRandomValidStreamEntry() {
-        return "RandomValue" + ThreadLocalRandom.current().nextInt(10000);
     }
 }
