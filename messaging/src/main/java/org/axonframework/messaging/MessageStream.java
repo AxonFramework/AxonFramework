@@ -23,7 +23,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -201,7 +200,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return A {@link MessageStream stream} that will invoke the given {@code onNext} for each item.
      */
     default MessageStream<M> onNextItem(@NotNull Consumer<M> onNext) {
-        return new OnNextItemMessageStream<>(this, onNext);
+        return new OnNextMessageStream<>(this, onNext);
     }
 
     /**

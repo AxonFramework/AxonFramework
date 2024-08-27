@@ -30,26 +30,26 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link OnNextItemMessageStream} through the {@link MessageStreamTest} suite.
+ * Test class validating the {@link OnNextMessageStream} through the {@link MessageStreamTest} suite.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class OnNextItemMessageStreamTest extends MessageStreamTest<String> {
+class OnNextMessageStreamTest extends MessageStreamTest<String> {
 
     private static final @NotNull Consumer<Message<String>> NO_OP_ON_NEXT = message -> {
     };
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new OnNextItemMessageStream<>(MessageStream.fromIterable(messages), NO_OP_ON_NEXT);
+        return new OnNextMessageStream<>(MessageStream.fromIterable(messages), NO_OP_ON_NEXT);
     }
 
     @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
-        return new OnNextItemMessageStream<>(MessageStream.fromIterable(messages)
-                                                          .concatWith(MessageStream.failed(failure)),
-                                             NO_OP_ON_NEXT);
+        return new OnNextMessageStream<>(MessageStream.fromIterable(messages)
+                                                      .concatWith(MessageStream.failed(failure)),
+                                         NO_OP_ON_NEXT);
     }
 
     @Override
