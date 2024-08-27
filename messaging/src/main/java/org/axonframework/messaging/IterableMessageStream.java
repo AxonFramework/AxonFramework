@@ -72,7 +72,8 @@ class IterableMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
         return CompletableFuture.completedFuture(
                 StreamSupport.stream(source.spliterator(), NOT_PARALLEL)
                              .reduce(identity, accumulator, (thisResult, thatResult) -> {

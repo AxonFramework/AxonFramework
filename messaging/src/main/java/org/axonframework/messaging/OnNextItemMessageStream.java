@@ -53,10 +53,11 @@ class OnNextItemMessageStream<M extends Message<?>> implements MessageStream<M> 
 
     @Override
     public CompletableFuture<M> asCompletableFuture() {
-        return delegate.asCompletableFuture().thenApply(i -> {
-            onNext.accept(i);
-            return i;
-        });
+        return delegate.asCompletableFuture()
+                       .thenApply(message -> {
+                           onNext.accept(message);
+                           return message;
+                       });
     }
 
     @Override
@@ -66,10 +67,11 @@ class OnNextItemMessageStream<M extends Message<?>> implements MessageStream<M> 
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
-        return delegate.reduce(identity, (initial, message) -> {
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        return delegate.reduce(identity, (base, message) -> {
             onNext.accept(message);
-            return accumulator.apply(initial, message);
+            return accumulator.apply(base, message);
         });
     }
 }

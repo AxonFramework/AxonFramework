@@ -47,7 +47,8 @@ class StreamMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public CompletableFuture<M> asCompletableFuture() {
-        return CompletableFuture.completedFuture(source.findFirst().orElse(null));
+        return CompletableFuture.completedFuture(source.findFirst()
+                                                       .orElse(null));
     }
 
     @Override

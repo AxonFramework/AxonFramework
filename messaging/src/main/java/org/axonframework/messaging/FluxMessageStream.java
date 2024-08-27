@@ -60,13 +60,18 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
-        return source.reduce(identity, accumulator).toFuture();
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        return source.reduce(identity, accumulator)
+                     .toFuture();
     }
 
     @Override
     public MessageStream<M> onErrorContinue(@NotNull Function<Throwable, MessageStream<M>> onError) {
-        return new FluxMessageStream<>(source.onErrorResume(e -> onError.apply(e).asFlux()));
+        return new FluxMessageStream<>(source.onErrorResume(
+                exception -> onError.apply(exception)
+                                    .asFlux()
+        ));
     }
 
     @Override
