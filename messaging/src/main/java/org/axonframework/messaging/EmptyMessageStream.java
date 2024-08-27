@@ -69,8 +69,9 @@ class EmptyMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
-        return FutureUtils.emptyCompletedFuture();
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        return CompletableFuture.completedFuture(identity);
     }
 
     @Override

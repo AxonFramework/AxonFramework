@@ -56,20 +56,25 @@ class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStrea
 
     @Override
     public CompletableFuture<M> asCompletableFuture() {
-        return delegate.asCompletableFuture().exceptionallyCompose(e -> onError.apply(e).asCompletableFuture());
+        return delegate.asCompletableFuture()
+                       .exceptionallyCompose(exception -> onError.apply(exception)
+                                                                 .asCompletableFuture());
     }
 
     @Override
     public Flux<M> asFlux() {
-        return delegate.asFlux().onErrorResume(e -> onError.apply(e).asFlux());
+        return delegate.asFlux()
+                       .onErrorResume(exception -> onError.apply(exception)
+                                                          .asFlux());
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, M, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, M, R> accumulator) {
         StatefulAccumulator<R> wrapped = new StatefulAccumulator<>(identity, accumulator);
         return delegate.reduce(identity, wrapped)
-                       .exceptionallyCompose(e -> onError.apply(e)
-                                                         .reduce(wrapped.latest(), wrapped));
+                       .exceptionallyCompose(exception -> onError.apply(exception)
+                                                                 .reduce(wrapped.latest(), wrapped));
     }
 
     private class StatefulAccumulator<R> implements BiFunction<R, M, R> {

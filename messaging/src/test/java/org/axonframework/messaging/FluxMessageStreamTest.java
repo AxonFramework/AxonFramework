@@ -22,21 +22,27 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Test class validating the {@link FluxMessageStream} through the {@link MessageStreamTest} suite.
+ *
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ */
 class FluxMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
-    MessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
-        return new FluxMessageStream<>(Flux.fromIterable(values));
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        return MessageStream.fromFlux(Flux.fromIterable(messages));
     }
 
     @Override
-    MessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
-        Flux<Message<String>> stringFlux = Flux.fromIterable(values).concatWith(Mono.error(failure));
-        return new FluxMessageStream<>(stringFlux);
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
+        return MessageStream.fromFlux(Flux.fromIterable(messages)
+                                          .concatWith(Mono.error(failure)));
     }
 
     @Override
-    String createRandomValidStreamEntry() {
-        return "RandomValue" + ThreadLocalRandom.current().nextInt(10000);
+    String createRandomValidEntry() {
+        return "test-" + ThreadLocalRandom.current().nextInt(10000);
     }
 }

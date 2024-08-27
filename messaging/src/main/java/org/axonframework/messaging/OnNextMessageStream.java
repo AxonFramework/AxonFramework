@@ -32,31 +32,32 @@ import java.util.function.Consumer;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class OnNextItemMessageStream<M extends Message<?>> implements MessageStream<M> {
+class OnNextMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private final MessageStream<M> delegate;
     private final Consumer<M> onNext;
 
     /**
-     * Construct an {@link OnNextItemMessageStream} that invokes the given {@code onNext} {@link Consumer} each time a
+     * Construct an {@link OnNextMessageStream} that invokes the given {@code onNext} {@link Consumer} each time a
      * new {@link Message} is consumed by the given {@code delegate}.
      *
      * @param delegate The delegate {@link MessageStream} from which each consumed {@link Message} is given to the
      *                 {@code onNext} {@link Consumer}.
      * @param onNext   The {@link Consumer} to handle each consumed {@link Message} from the given {@code delegate}.
      */
-    OnNextItemMessageStream(@NotNull MessageStream<M> delegate,
-                            @NotNull Consumer<M> onNext) {
+    OnNextMessageStream(@NotNull MessageStream<M> delegate,
+                        @NotNull Consumer<M> onNext) {
         this.delegate = delegate;
         this.onNext = onNext;
     }
 
     @Override
     public CompletableFuture<M> asCompletableFuture() {
-        return delegate.asCompletableFuture().thenApply(i -> {
-            onNext.accept(i);
-            return i;
-        });
+        return delegate.asCompletableFuture()
+                       .thenApply(message -> {
+                           onNext.accept(message);
+                           return message;
+                       });
     }
 
     @Override
@@ -66,10 +67,11 @@ class OnNextItemMessageStream<M extends Message<?>> implements MessageStream<M> 
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
-        return delegate.reduce(identity, (initial, message) -> {
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        return delegate.reduce(identity, (base, message) -> {
             onNext.accept(message);
-            return accumulator.apply(initial, message);
+            return accumulator.apply(base, message);
         });
     }
 }

@@ -22,6 +22,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * A {@link MessageStream} implementation using a single {@link Message} or {@link CompletableFuture} completing to a
@@ -34,7 +35,7 @@ import java.util.function.BiFunction;
  */
 class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final CompletableFuture<M> messageFuture;
+    private final CompletableFuture<M> source;
 
     /**
      * Constructs a {@link MessageStream} wrapping the given {@code message} into a
@@ -49,28 +50,34 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M>
     }
 
     /**
-     * Constructs a {@link MessageStream} with the given {@code messageFuture} as the provider of the single value in
+     * Constructs a {@link MessageStream} with the given {@code source} as the provider of the single {@link Message} in
      * this stream.
      *
-     * @param messageFuture The {@link CompletableFuture} resulting in the singular {@link Message} contained in this
-     *                      {@link MessageStream}.
+     * @param source The {@link CompletableFuture} resulting in the singular {@link Message} contained in this
+     *               {@link MessageStream}.
      */
-    SingleValueMessageStream(@NotNull CompletableFuture<M> messageFuture) {
-        this.messageFuture = messageFuture;
+    SingleValueMessageStream(@NotNull CompletableFuture<M> source) {
+        this.source = source;
     }
 
     @Override
     public CompletableFuture<M> asCompletableFuture() {
-        return messageFuture;
+        return source;
     }
 
     @Override
     public Flux<M> asFlux() {
-        return Flux.from(Mono.fromFuture(messageFuture));
+        return Flux.from(Mono.fromFuture(source));
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
-        return messageFuture.thenApply(m -> accumulator.apply(identity, m));
+    public <R extends Message<?>> MessageStream<R> map(Function<M, R> mapper) {
+        return new SingleValueMessageStream<>(source.thenApply(mapper));
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
+        return source.thenApply(message -> accumulator.apply(identity, message));
     }
 }

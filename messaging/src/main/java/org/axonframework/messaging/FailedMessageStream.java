@@ -61,7 +61,8 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@NotNull R identity,
+                                           @NotNull BiFunction<R, M, R> accumulator) {
         return CompletableFuture.failedFuture(error);
     }
 
