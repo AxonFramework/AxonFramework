@@ -62,10 +62,10 @@ abstract class AsyncEmbeddedEventStoreTest<ESE extends AsyncEventStorageEngine> 
 
         CompletableFuture<EventStoreTransaction> result = uow.executeWithResult(
                 testContext -> {
-                    EventStoreTransaction currentTransaction = testSubject.currentTransaction(testContext);
+                    EventStoreTransaction currentTransaction = testSubject.transaction(testContext, "any-context");
                     testContext.runOnPostInvocation(context -> {
                         currentTransaction.onAppend(event -> onAppendInvoked.set(true));
-                        currentTransaction.appendEvent(testEvent, testCondition);
+                        currentTransaction.appendEvent(testEvent);
                     });
                     return CompletableFuture.completedFuture(currentTransaction);
                 }
@@ -75,7 +75,7 @@ abstract class AsyncEmbeddedEventStoreTest<ESE extends AsyncEventStorageEngine> 
         EventStoreTransaction resultTransaction = result.join();
 
         resultTransaction.onAppend(event -> onAppendInvoked.set(true));
-        resultTransaction.appendEvent(testEvent, testCondition);
+        resultTransaction.appendEvent(testEvent);
 
         assertTrue(onAppendInvoked.get());
     }

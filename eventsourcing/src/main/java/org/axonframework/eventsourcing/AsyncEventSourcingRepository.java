@@ -103,7 +103,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         return managedEntities.computeIfAbsent(
                 identifier,
                 id -> eventStore.transaction(processingContext, contextOrNamespace)
-                                .source(singleModelFor(identifierResolver.resolve(id), start, end), processingContext)
+                                .source(singleModelFor("aggregateIdentifier", identifierResolver.resolve(id), start, end), processingContext)
                                 .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, em) -> {
                                     entity.applyStateChange(em, eventStateApplier);
                                     return entity;
