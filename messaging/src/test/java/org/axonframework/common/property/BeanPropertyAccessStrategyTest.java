@@ -77,7 +77,7 @@ public class BeanPropertyAccessStrategyTest extends
             beanPropertyAccess.propertyFor(TestMessage.class, "notExistingProperty" + i);
         }
         long end = System.currentTimeMillis();
-        log.info("Used time: {} nanos", (end - start));
+        log.info("Used time: {} millis", (end - start));
     }
 
     protected String voidPropertyName() {
