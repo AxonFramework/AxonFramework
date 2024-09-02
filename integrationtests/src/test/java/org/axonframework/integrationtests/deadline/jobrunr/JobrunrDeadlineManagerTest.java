@@ -30,8 +30,6 @@ import org.jobrunr.scheduling.JobScheduler;
 import org.jobrunr.server.BackgroundJobServer;
 import org.jobrunr.storage.InMemoryStorageProvider;
 import org.jobrunr.storage.StorageProvider;
-import org.junit.*;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -95,23 +93,27 @@ class JobrunrDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         verify(scheduler).shutdown();
     }
 
+    @Override
     @Test
-    @Ignore("Cancel all within scope is not implemented for the non pro version.")
-    void deadlineCancellationWithinScopeOnAggregate() {
+    @Disabled("Cancel all within scope is not implemented for the non pro version.")
+    public void deadlineCancellationWithinScopeOnAggregate() {
     }
 
+    @Override
     @Test
-    @Ignore("Cancel all is not implemented for the non pro version.")
-    void deadlineCancelAllOnAggregateIsTracedCorrectly() {
+    @Disabled("Cancel all is not implemented for the non pro version.")
+    public void deadlineCancelAllOnAggregateIsTracedCorrectly() {
     }
 
+    @Override
     @Test
-    @Ignore("Cancel all within scope is not implemented for the non pro version.")
-    void deadlineCancellationWithinScopeOnSaga() {
+    @Disabled("Cancel all within scope is not implemented for the non pro version.")
+    public void deadlineCancellationWithinScopeOnSaga() {
     }
 
+    @Override
     @Test
-    @Ignore("Cancel all is not implemented for the non pro version.")
-    void deadlineCancelAllOnSagaIsCorrectlyTraced() {
+    @Disabled("Cancel all is not implemented for the non pro version.")
+    public void deadlineCancelAllOnSagaIsCorrectlyTraced() {
     }
 }
