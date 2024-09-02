@@ -74,7 +74,8 @@ public sealed interface AsyncRepository<ID, T>
      * {@code null} if it can't be found.
      */
     default CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
-                                                         @Nonnull ProcessingContext processingContext, long start) {
+                                                         @Nonnull ProcessingContext processingContext,
+                                                         long start) {
         return load(identifier, processingContext, start, END);
     }
 
@@ -89,8 +90,10 @@ public sealed interface AsyncRepository<ID, T>
      * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or
      * {@code null} if it can't be found.
      */
-    CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier, @Nonnull ProcessingContext processingContext,
-                                                 long start, long end);
+    CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
+                                                 @Nonnull ProcessingContext processingContext,
+                                                 long start,
+                                                 long end);
 
     /**
      * Loads an entity from the repository. If the entity is not found it creates one using the specified
