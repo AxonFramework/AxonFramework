@@ -16,32 +16,34 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.*;
-
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 /**
- * Test class validating the {@link StreamMessageStream} through the {@link MessageStreamTest} suite.
+ * Test class validating the {@link MappedMessageStream} through the {@link MessageStreamTest} suite.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class StreamMessageStreamTest extends MessageStreamTest<String> {
+class MappedMessageStreamTest extends MessageStreamTest<String> {
+
+    private static final Function<Message<String>, Message<String>> NO_OP_MAPPER = message -> message;
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return MessageStream.fromStream(messages.stream());
+        return new MappedMessageStream<>(MessageStream.fromIterable(messages), NO_OP_MAPPER);
     }
 
     @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
-        Assumptions.abort("StreamMessageStream doesn't support failures");
-        return null;
+        return new MappedMessageStream<>(MessageStream.fromIterable(messages)
+                                                      .concatWith(MessageStream.failed(failure)),
+                                         NO_OP_MAPPER);
     }
 
     @Override
     String createRandomValidEntry() {
-        return "test--" + ThreadLocalRandom.current().nextInt(10000);
+        return "test-" + ThreadLocalRandom.current().nextInt(10000);
     }
 }

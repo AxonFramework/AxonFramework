@@ -21,59 +21,57 @@ import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 /**
- * Implementation of the {@link MessageStream} that invokes the given {@code completeHandler} once the
- * {@code delegate MessageStream} completes.
+ * An implementation of the {@link MessageStream} that invokes the given {@code onNext} {@link Consumer} each time a new
+ * {@link Message} is consumed from this {@code MessageStream}.
  *
  * @param <M> The type of {@link Message} carried in this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class CompletionCallbackMessageStream<M extends Message<?>> implements MessageStream<M> {
+class OnNextMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private final MessageStream<M> delegate;
-    private final Runnable completeHandler;
+    private final Consumer<M> onNext;
 
     /**
-     * Construct a {@link CompletionCallbackMessageStream} invoking the given {@code completeHandler} when the given
-     * {@code delegate} completes.
+     * Construct an {@link OnNextMessageStream} that invokes the given {@code onNext} {@link Consumer} each time a
+     * new {@link Message} is consumed by the given {@code delegate}.
      *
-     * @param delegate        The {@link MessageStream} that once completed results in the invocation of the given
-     *                        {@code completeHandler}.
-     * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
+     * @param delegate The delegate {@link MessageStream} from which each consumed {@link Message} is given to the
+     *                 {@code onNext} {@link Consumer}.
+     * @param onNext   The {@link Consumer} to handle each consumed {@link Message} from the given {@code delegate}.
      */
-    CompletionCallbackMessageStream(@NotNull MessageStream<M> delegate,
-                                    @NotNull Runnable completeHandler) {
+    OnNextMessageStream(@NotNull MessageStream<M> delegate,
+                        @NotNull Consumer<M> onNext) {
         this.delegate = delegate;
-        this.completeHandler = completeHandler;
+        this.onNext = onNext;
     }
 
     @Override
     public CompletableFuture<M> asCompletableFuture() {
         return delegate.asCompletableFuture()
-                       .whenComplete((result, exception) -> {
-                           if (exception == null) {
-                               completeHandler.run();
-                           }
+                       .thenApply(message -> {
+                           onNext.accept(message);
+                           return message;
                        });
     }
 
     @Override
     public Flux<M> asFlux() {
         return delegate.asFlux()
-                       .doOnComplete(completeHandler);
+                       .doOnNext(onNext);
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@NotNull R identity,
                                            @NotNull BiFunction<R, M, R> accumulator) {
-        return delegate.reduce(identity, accumulator)
-                       .whenComplete((result, exception) -> {
-                           if (exception == null) {
-                               completeHandler.run();
-                           }
-                       });
+        return delegate.reduce(identity, (base, message) -> {
+            onNext.accept(message);
+            return accumulator.apply(base, message);
+        });
     }
 }

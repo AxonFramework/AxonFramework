@@ -17,27 +17,34 @@
 package org.axonframework.messaging;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Test class validating the {@link ConcatenatingMessageStream} through the {@link MessageStreamTest} suite.
+ *
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ */
 class ConcatenatingMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
-    ConcatenatingMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
-        if (values.isEmpty()) {
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        if (messages.isEmpty()) {
             return new ConcatenatingMessageStream<>(MessageStream.empty(), MessageStream.empty());
-        } else if (values.size() == 1) {
-            return new ConcatenatingMessageStream<>(MessageStream.just(values.getFirst()), MessageStream.empty());
+        } else if (messages.size() == 1) {
+            return new ConcatenatingMessageStream<>(MessageStream.just(messages.getFirst()), MessageStream.empty());
         }
-        return new ConcatenatingMessageStream<>(MessageStream.just(values.getFirst()),
-                                                MessageStream.fromIterable(values.subList(1, values.size())));
+        return new ConcatenatingMessageStream<>(MessageStream.just(messages.getFirst()),
+                                                MessageStream.fromIterable(messages.subList(1, messages.size())));
     }
 
     @Override
-    MessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
-        return createTestSubject(values).concatWith(MessageStream.failed(failure));
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
+        return testSubject(messages).concatWith(MessageStream.failed(failure));
     }
 
     @Override
-    String createRandomValidStreamEntry() {
-        return null;
+    String createRandomValidEntry() {
+        return "test-" + ThreadLocalRandom.current().nextInt(10000);
     }
 }
