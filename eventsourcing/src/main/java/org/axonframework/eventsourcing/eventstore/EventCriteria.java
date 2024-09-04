@@ -11,9 +11,9 @@ import java.util.Set;
  * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or
  * {@link EventStoreTransaction#appendEvent(EventMessage) appending} events.
  * <p>
- * During sourcing or streaming, the {@link #types()} and {@link #tags()} are used as a filter. While appending events,
- * the {@code #types()} and {@code #tags()} are used to validate the consistency boundary of the event(s) to append. The
- * latter happens in tandem with the {@link AppendCondition#consistencyMarker()}.
+ * During sourcing or streaming, the {@link #types()} and {@link #indices()} are used as a filter. While appending
+ * events, the {@code #types()} and {@code #tags()} are used to validate the consistency boundary of the event(s) to
+ * append. The latter happens starting from the {@link AppendCondition#consistencyMarker()}.
  *
  * @author Marco Amann
  * @author Milan Savic
@@ -60,12 +60,25 @@ public interface EventCriteria {
     Set<String> types();
 
     /**
-     * A {@link Set} of {@link Tag Tags} applicable for sourcing, streaming, or appending events. A {@code Tag} can, for
-     * example, refer to a model's (aggregate) identifier name and value.
+     * A {@link Set} of {@link Index Indices} applicable for sourcing, streaming, or appending events. An {@code Index}
+     * can, for example, refer to a model's (aggregate) identifier name and value.
      *
-     * @return The {@link Set} of {@link Tag tags} applicable for sourcing, streaming, or appending events.
+     * @return The {@link Set} of {@link Index Indices} applicable for sourcing, streaming, or appending events.
      */
-    Set<Tag> tags();
+    Set<Index> indices();
+
+    /**
+     * Matches the given {@code indices} with the {@link #indices()} of this {@link EventCriteria}.
+     * <p>
+     * Returns {@code true} if they are deemed to be equal, {@code false} otherwise.
+     *
+     * @param indices The {@link Set} of {@link Index Indices} to compare with {@code this EventCriteria} its
+     *                {@link #indices()}.
+     * @return {@code true} if they are deemed to be equal, {@code false} otherwise.
+     */
+    default boolean matchingIndices(Set<Index> indices) {
+        return this.indices().equals(indices);
+    }
 
     /**
      * Combines {@code this} {@link EventCriteria} with {@code that EventCriteria}.

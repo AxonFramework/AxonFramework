@@ -13,10 +13,10 @@ import java.util.Set;
 class CombinedEventCriteria implements EventCriteria {
 
     private final Set<String> types;
-    private final Set<Tag> tags;
+    private final Set<Index> indices;
 
     /**
-     * Constructs a {@link CombinedEventCriteria} combining the {@link #types()} and {@link #tags()} of the given
+     * Constructs a {@link CombinedEventCriteria} combining the {@link #types()} and {@link #indices()} of the given
      * {@code first} and {@code second} {@link EventCriteria}.
      *
      * @param first  The {@link EventCriteria} to combine with the {@code second} into a single {@code EventCriteria}.
@@ -26,8 +26,8 @@ class CombinedEventCriteria implements EventCriteria {
         this.types = new HashSet<>(first.types());
         this.types.addAll(second.types());
 
-        this.tags = new HashSet<>(first.tags());
-        this.tags.addAll(second.tags());
+        this.indices = new HashSet<>(first.indices());
+        this.indices.addAll(second.indices());
     }
 
     @Override
@@ -36,7 +36,7 @@ class CombinedEventCriteria implements EventCriteria {
     }
 
     @Override
-    public Set<Tag> tags() {
-        return Set.copyOf(tags);
+    public Set<Index> indices() {
+        return Set.copyOf(indices);
     }
 }
