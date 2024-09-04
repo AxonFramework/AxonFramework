@@ -23,8 +23,8 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
+import org.axonframework.eventsourcing.eventstore.Index;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
@@ -85,7 +85,7 @@ class AsyncEventSourcingRepositoryTest {
     }
 
     private static boolean conditionPredicate(SourcingCondition condition) {
-        return condition.criteria().tags().contains(new Tag("aggregateIdentifier", "id"));
+        return condition.criteria().indices().contains(new Index("aggregateIdentifier", "id"));
     }
 
     @Test
