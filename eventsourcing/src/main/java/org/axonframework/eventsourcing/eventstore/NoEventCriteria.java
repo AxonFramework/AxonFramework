@@ -8,10 +8,11 @@ import java.util.Set;
 /**
  * A no-op implementation of the {@link EventCriteria}.
  * <p>
- * Use this instance when all events are of interest during {@link AsyncEventStore#stream(StreamingCondition) streaming}
+ * Use this instance when all events are of interest during
+ * {@link StreamableEventSource#open(String, org.axonframework.eventsourcing.eventstore.StreamingCondition) streaming}
  * or when there are no consistency boundaries to validate during
- * {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that {@code EventCriteria} criteria does
- * not make sense for {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing}, as it is
+ * {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that {@code EventCriteria} criteria does not
+ * make sense for {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing}, as it is
  * <b>not</b> recommended to source the entire event store.
  *
  * @author Steven van Beelen

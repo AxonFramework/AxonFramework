@@ -8,7 +8,7 @@ import java.util.Set;
 /**
  * Interface describing criteria to be taken into account when
  * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing},
- * {@link AsyncEventStore#stream(StreamingCondition) streaming} or
+ * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or
  * {@link EventStoreTransaction#appendEvent(EventMessage) appending} events.
  * <p>
  * During sourcing or streaming, the {@link #types()} and {@link #tags()} are used as a filter. While appending events,
@@ -26,8 +26,8 @@ public interface EventCriteria {
      * Construct a {@link EventCriteria} that contains no criteria at all.
      * <p>
      * Use this instance when all events are of interest during
-     * {@link AsyncEventStore#stream(StreamingCondition) streaming} or when there are no consistency boundaries to
-     * validate during {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that this
+     * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or when there are no consistency
+     * boundaries to validate during {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that this
      * {@link EventCriteria} does not make sense for
      * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing}, as it is <b>not</b>
      * recommended to source the entire event store.
@@ -68,7 +68,7 @@ public interface EventCriteria {
     Set<Tag> tags();
 
     /**
-     * Combines {@code this} {@link EventCriteria} with {@code that EventCriteria}
+     * Combines {@code this} {@link EventCriteria} with {@code that EventCriteria}.
      *
      * @param that The {@link EventCriteria} to combine with {@code this}.
      * @return A combined {@link EventCriteria}, consisting out of {@code this} and the given {@code that}.
