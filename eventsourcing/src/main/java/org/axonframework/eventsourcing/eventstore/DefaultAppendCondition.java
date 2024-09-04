@@ -25,4 +25,9 @@ record DefaultAppendCondition(
                 criteria.combine(condition.criteria())
         );
     }
+
+    @Override
+    public AppendCondition withMarker(long consistencyMarker) {
+        return new DefaultAppendCondition(Math.min(consistencyMarker, this.consistencyMarker), criteria);
+    }
 }

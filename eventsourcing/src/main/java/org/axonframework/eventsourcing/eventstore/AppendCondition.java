@@ -68,4 +68,15 @@ public interface AppendCondition {
      * @return An {@link AppendCondition} combined with the given {@code condition}.
      */
     AppendCondition with(SourcingCondition condition);
+
+    /**
+     * Combines the {@code this AppendCondition} with the given {@code consistencyMarker}.
+     * <p>
+     * Will typically pick the lowest value among the existing {@link #consistencyMarker()} and given
+     * {@code consistencyMarker}.
+     *
+     * @param consistencyMarker The consistency marker {@code this AppendCondition} should comply with.
+     * @return An {@link AppendCondition} with the given {@code consistencyMarker}.
+     */
+    AppendCondition withMarker(long consistencyMarker);
 }

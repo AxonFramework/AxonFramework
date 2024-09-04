@@ -34,4 +34,9 @@ class NoAppendCondition implements AppendCondition {
     public AppendCondition with(SourcingCondition condition) {
         return AppendCondition.from(condition);
     }
+
+    @Override
+    public AppendCondition withMarker(long consistencyMarker) {
+        throw new UnsupportedOperationException("Cannot add a consistency marker without any criteria");
+    }
 }
