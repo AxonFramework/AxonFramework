@@ -17,9 +17,64 @@ import java.util.OptionalLong;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-// TODO does this work for single-context reading? Multi-context reading? Aggregate reading? Saga/Process reading? Query Model reading?
-// Guess this will depend on the used EventCriteria at this stage. The start and end value reflect the positions on the entire stream anyhow, not a given model.
 public interface SourcingCondition {
+
+    /**
+     * Default {@link Index#key()} used when constructing a {@link SourcingCondition} tailored towards an aggregate.
+     * <p>
+     * Represents the value {@code "aggregateIdentifier"}.
+     */
+    String AGGREGATE_IDENTIFIER_NAME = "aggregateIdentifier";
+
+    /**
+     * Construct a {@link SourcingCondition} used to source an aggregate instance identified by the given
+     * {@code aggregateIdentifier}.
+     * <p>
+     * The {@link Index} will use the {@link #AGGREGATE_IDENTIFIER_NAME} as the {@link Index#key()}.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate to source.
+     * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
+     * {@code aggregateIdentifier}.
+     */
+    static SourcingCondition aggregateFor(String aggregateIdentifier) {
+        return aggregateFor(aggregateIdentifier, -1L);
+    }
+
+    /**
+     * Construct a {@link SourcingCondition} used to source an aggregate instance identified by the given
+     * {@code aggregateIdentifier}.
+     * <p>
+     * Will start the sequence at the given {@code start} value. The {@link Index} will use the
+     * {@link #AGGREGATE_IDENTIFIER_NAME} as the {@link Index#key()}.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate to source.
+     * @param start               The start position in the event sequence to retrieve of the aggregate to source.
+     * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
+     * {@code aggregateIdentifier}.
+     */
+    static SourcingCondition aggregateFor(String aggregateIdentifier,
+                                          Long start) {
+        return aggregateFor(aggregateIdentifier, start, Long.MAX_VALUE);
+    }
+
+    /**
+     * Construct a {@link SourcingCondition} used to source an aggregate instance identified by the given
+     * {@code aggregateIdentifier}.
+     * <p>
+     * Will start the sequence at the given {@code start} value and cut it off at the given {@code end} value. The
+     * {@link Index} will use the {@link #AGGREGATE_IDENTIFIER_NAME} as the {@link Index#key()}.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate to source.
+     * @param start               The start position in the event sequence to retrieve of the aggregate to source.
+     * @param end                 The end position in the event sequence to retrieve of the aggregate to source.
+     * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
+     * {@code aggregateIdentifier}.
+     */
+    static SourcingCondition aggregateFor(String aggregateIdentifier,
+                                          Long start,
+                                          Long end) {
+        return singleModelFor(AGGREGATE_IDENTIFIER_NAME, aggregateIdentifier, start, end);
+    }
 
     /**
      * Construct a {@link SourcingCondition} used to source a single model instance identified by the given

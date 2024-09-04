@@ -13,7 +13,7 @@ class SingleModelCondition implements SourcingCondition {
 
     private final EventCriteria identifierCriteria;
     private final Long start;
-    private final Long end;
+    private final OptionalLong end;
 
     /**
      * Constructs a {@link SingleModelCondition} using the given {@code identifierName} and {@code identifierValue} to
@@ -26,27 +26,24 @@ class SingleModelCondition implements SourcingCondition {
      * @param start           The start position in the event sequence to retrieve of the model to source.
      * @param end             The end position in the event sequence to retrieve of the model to source.
      */
-    SingleModelCondition(String identifierName,
-                         String identifierValue,
-                         Long start,
-                         Long end) {
+    SingleModelCondition(String identifierName, String identifierValue, Long start, Long end) {
         this.identifierCriteria = EventCriteria.hasIdentifier(identifierName, identifierValue);
-        this.start = start;
-        this.end = end;
+        this.start = start != null ? start : -1;
+        this.end = end == null ? OptionalLong.empty() : OptionalLong.of(end);
     }
 
     @Override
     public EventCriteria criteria() {
-        return identifierCriteria;
+        return this.identifierCriteria;
     }
 
     @Override
     public long start() {
-        return this.start != null ? this.start : -1;
+        return this.start;
     }
 
     @Override
     public OptionalLong end() {
-        return OptionalLong.of(end);
+        return this.end;
     }
 }
