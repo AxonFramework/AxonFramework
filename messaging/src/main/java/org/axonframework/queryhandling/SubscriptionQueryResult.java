@@ -95,23 +95,23 @@ public interface SubscriptionQueryResult<I, U> extends Registration {
                                     try {
                                         updateConsumer.accept(update);
                                     } catch (Exception e) {
-                                        errorConsumer.accept(e);
                                         cancel();
+                                        errorConsumer.accept(e);
                                     }
                                 },
                                 throwable -> {
-                                    errorConsumer.accept(throwable);
                                     cancel();
+                                    errorConsumer.accept(throwable);
                                 }
                         );
                     } catch (Exception e) {
-                        errorConsumer.accept(e);
                         cancel();
+                        errorConsumer.accept(e);
                     }
                 },
                 throwable -> {
-                    errorConsumer.accept(throwable);
                     cancel();
+                    errorConsumer.accept(throwable);
                 }
         );
     }
