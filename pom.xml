@@ -101,7 +101,7 @@
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <!-- Logging -->
-        <log4j.version>2.23.1</log4j.version>
+        <log4j.version>2.24.0</log4j.version>
         <slf4j.version>2.0.16</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.27</dropwizard.metrics.version>
@@ -140,7 +140,7 @@
         <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
         <hibernate-validator.8.version>8.0.1.Final</hibernate-validator.8.version>
         <!-- Build / Plugin -->
-        <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
+        <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>5.1.9</felix.maven-bundle-plugin.version>
         <jacoco-maven.version>0.8.12</jacoco-maven.version>
         <maven-assembly.version>3.7.1</maven-assembly.version>
