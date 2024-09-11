@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,10 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
     /**
      * {@link Clock} instance used to set the time on new events. To fix the time while testing set this value to a
      * constant value.
+     *
+     * @deprecated #3083 - Configure application wide Clock
      */
+    @Deprecated // TODO #3083 - Configure application wide Clock
     public static Clock clock = Clock.systemUTC();
 
     /**
