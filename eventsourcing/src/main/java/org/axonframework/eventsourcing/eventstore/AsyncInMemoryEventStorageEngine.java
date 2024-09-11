@@ -92,16 +92,16 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     @Override
     public CompletableFuture<Long> appendEvents(@NotNull AppendCondition condition,
                                                 @NotNull List<? extends EventMessage<?>> events) {
-        int tagCount = condition.criteria().indices().size();
-        if (tagCount > 1) {
-            return CompletableFuture.failedFuture(tooManyIndices(tagCount, 1));
+        int indexCount = condition.criteria().indices().size();
+        if (indexCount > 1) {
+            return CompletableFuture.failedFuture(tooManyIndices(indexCount, 1));
         }
 
         synchronized (this.events) {
             long head = this.events.isEmpty() ? -1 : this.events.lastKey();
             List<? extends EventMessage<?>> eventsToAppend;
 
-            if (tagCount != 0) {
+            if (indexCount != 0) {
                 if (this.events.tailMap(condition.consistencyMarker() + 1)
                                .values()
                                .stream()
