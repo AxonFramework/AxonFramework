@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.validation.constraints.NotEmpty;
+
 import java.util.Set;
 
 /**
@@ -30,7 +32,7 @@ class HasIdentifier implements EventCriteria {
 
     private final Index identifierIndex;
 
-    HasIdentifier(String key, String value) {
+    HasIdentifier(@NotEmpty String key, @NotEmpty String value) {
         this.identifierIndex = new Index(key, value);
     }
 

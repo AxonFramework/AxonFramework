@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.validation.constraints.NotNull;
+
 /**
  * Default implementation of the {@link AppendCondition}, using the given {@code consistencyMarker} and {@code criteria}
  * as output for the {@link #consistencyMarker()} and {@link #criteria()} operations respectively.
@@ -27,7 +29,7 @@ package org.axonframework.eventsourcing.eventstore;
  */
 record DefaultAppendCondition(
         long consistencyMarker,
-        EventCriteria criteria
+        @NotNull EventCriteria criteria
 ) implements AppendCondition {
 
     @Override

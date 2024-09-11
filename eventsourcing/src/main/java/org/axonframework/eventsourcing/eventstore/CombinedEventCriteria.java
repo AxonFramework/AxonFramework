@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.validation.constraints.NotNull;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,7 +40,7 @@ class CombinedEventCriteria implements EventCriteria {
      * @param first  The {@link EventCriteria} to combine with the {@code second} into a single {@code EventCriteria}.
      * @param second The {@link EventCriteria} to combine with the {@code first} into a single {@code EventCriteria}.
      */
-    CombinedEventCriteria(EventCriteria first, EventCriteria second) {
+    CombinedEventCriteria(@NotNull EventCriteria first, @NotNull EventCriteria second) {
         this.types = new HashSet<>(first.types());
         this.types.addAll(second.types());
 
