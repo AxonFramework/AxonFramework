@@ -31,7 +31,7 @@ class SingleModelCondition implements SourcingCondition {
 
     private final EventCriteria identifierCriteria;
     private final Long start;
-    private final OptionalLong end;
+    private final Long end;
 
     /**
      * Constructs a {@link SingleModelCondition} using the given {@code identifierName} and {@code identifierValue} to
@@ -50,7 +50,7 @@ class SingleModelCondition implements SourcingCondition {
                          Long end) {
         this.identifierCriteria = EventCriteria.hasIdentifier(identifierName, identifierValue);
         this.start = start != null ? start : -1;
-        this.end = end == null ? OptionalLong.empty() : OptionalLong.of(end);
+        this.end = end;
     }
 
     @Override
@@ -65,6 +65,6 @@ class SingleModelCondition implements SourcingCondition {
 
     @Override
     public OptionalLong end() {
-        return this.end;
+        return this.end == null ? OptionalLong.empty() : OptionalLong.of(this.end);
     }
 }
