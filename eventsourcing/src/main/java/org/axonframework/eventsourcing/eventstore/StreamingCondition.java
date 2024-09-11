@@ -28,8 +28,10 @@ import javax.annotation.Nullable;
  * This condition has a mandatory {@link #position()} that dictates from what point streaming should commence.
  * Additionally, an {@link #criteria()} can be set to filter the stream of events.
  *
+ * @author Michal Negacz
+ * @author Milan Savić
  * @author Marco Amann
- * @author Milan Savic
+ * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
  */
