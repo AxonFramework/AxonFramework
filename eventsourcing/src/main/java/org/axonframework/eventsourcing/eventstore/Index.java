@@ -15,8 +15,10 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @param key   The key of this {@link Index}.
  * @param value The value of this {@link Index}.
  * @author Allard Buijze
+ * @author Michal Negacz
+ * @author Milan Savić
  * @author Marco Amann
- * @author Milan Savic
+ * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
  */

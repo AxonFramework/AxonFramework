@@ -34,8 +34,10 @@ import java.util.function.Function;
  *
  * @param <P> The type of payload carried by this {@link EventMessage}.
  * @author Allard Buijze
+ * @author Michal Negacz
+ * @author Milan Savić
  * @author Marco Amann
- * @author Milan Savic
+ * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
  */

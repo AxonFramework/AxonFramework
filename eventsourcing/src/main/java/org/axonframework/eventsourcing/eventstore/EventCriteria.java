@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -31,8 +33,10 @@ import java.util.Set;
  * events, the {@code #types()} and {@code #tags()} are used to validate the consistency boundary of the event(s) to
  * append. The latter happens starting from the {@link AppendCondition#consistencyMarker()}.
  *
+ * @author Michal Negacz
+ * @author Milan Savić
  * @author Marco Amann
- * @author Milan Savic
+ * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
  */
@@ -62,7 +66,7 @@ public interface EventCriteria {
      * @param value The value of the identifier.
      * @return A simple {@link EventCriteria} that can filter on the {@code name} and {@code value} combination.
      */
-    static EventCriteria hasIdentifier(String name, String value) {
+    static EventCriteria hasIdentifier(@NotEmpty String name, @NotEmpty String value) {
         return new HasIdentifier(name, value);
     }
 
@@ -92,7 +96,7 @@ public interface EventCriteria {
      *                {@link #indices()}.
      * @return {@code true} if they are deemed to be equal, {@code false} otherwise.
      */
-    default boolean matchingIndices(Set<Index> indices) {
+    default boolean matchingIndices(@NotNull Set<Index> indices) {
         return this.indices().equals(indices);
     }
 
@@ -102,7 +106,7 @@ public interface EventCriteria {
      * @param that The {@link EventCriteria} to combine with {@code this}.
      * @return A combined {@link EventCriteria}, consisting out of {@code this} and the given {@code that}.
      */
-    default EventCriteria combine(EventCriteria that) {
+    default EventCriteria combine(@NotNull EventCriteria that) {
         return new CombinedEventCriteria(this, that);
     }
 }

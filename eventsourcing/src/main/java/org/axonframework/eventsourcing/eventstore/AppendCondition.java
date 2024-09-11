@@ -23,9 +23,11 @@ import org.axonframework.eventhandling.EventMessage;
  * {@link org.axonframework.eventhandling.EventMessage EventMessages} when
  * {@link EventStoreTransaction#appendEvent(EventMessage) appending} them to an Event Store.
  *
- * @author Steven van Beelen
- * @author Milan Savic
+ * @author Michal Negacz
+ * @author Milan Savić
  * @author Marco Amann
+ * @author Sara Pellegrini
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public interface AppendCondition {
