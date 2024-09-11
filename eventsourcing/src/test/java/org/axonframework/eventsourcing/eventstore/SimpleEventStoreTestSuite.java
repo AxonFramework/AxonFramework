@@ -40,8 +40,8 @@ import static org.mockito.Mockito.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
- * Test suite validating the {@link SimpleEventStore} for different implementations of the
- * {@link AsyncEventStorageEngine}.
+ * Test suite validating the {@link SimpleEventStore} and {@link DefaultEventStoreTransaction} for different
+ * implementations of the {@link AsyncEventStorageEngine}.
  *
  * @author Steven van Beelen
  */
