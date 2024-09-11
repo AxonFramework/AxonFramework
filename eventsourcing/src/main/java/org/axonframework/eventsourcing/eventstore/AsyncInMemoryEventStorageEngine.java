@@ -187,10 +187,14 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     }
 
     private static boolean matchingIndices(TrackedEventMessage<?> trackedEvent, EventCriteria criteria) {
+        if (criteria.indices().isEmpty()) {
+            // No criteria are present, so we match successfully.
+            return true;
+        }
         if (trackedEvent instanceof IndexedEventMessage<?> taggedEvent) {
             return criteria.matchingIndices(taggedEvent.indices());
         }
-        return criteria.indices().isEmpty();
+        return false;
     }
 
     @Override
