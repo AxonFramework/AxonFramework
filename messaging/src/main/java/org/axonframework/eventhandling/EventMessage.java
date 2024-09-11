@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.validation.constraints.NotNull;
 import org.axonframework.messaging.Message;
 
 import java.time.Instant;
 import java.util.Map;
-import javax.annotation.Nonnull;
 
 /**
  * Represents a Message wrapping an Event, which is represented by its payload. An Event is a representation of an
@@ -35,15 +35,15 @@ import javax.annotation.Nonnull;
 public interface EventMessage<T> extends Message<T> {
 
     /**
-     * Returns the identifier of this event. The identifier is used to define the uniqueness of an event. Two events
-     * may contain similar (or equal) payload and timestamp, if the EventIdentifiers are different, they both represent
-     * a different occurrence of an Event. If two messages have the same identifier, they both represent the same
-     * unique occurrence of an event, even though the resulting view may be different. You may not assume two messages
-     * are equal (i.e. interchangeable) if their identifier is equal.
+     * Returns the identifier of this event. The identifier is used to define the uniqueness of an event. Two events may
+     * contain similar (or equal) payload and timestamp, if the EventIdentifiers are different, they both represent a
+     * different occurrence of an Event. If two messages have the same identifier, they both represent the same unique
+     * occurrence of an event, even though the resulting view may be different. You may not assume two messages are
+     * equal (i.e. interchangeable) if their identifier is equal.
      * <p/>
-     * For example, an AddressChangeEvent may occur twice for the same Event, because someone moved back to the
-     * previous address. In that case, the Event payload is equal for both EventMessage instances, but the Event
-     * Identifier is different for both.
+     * For example, an AddressChangeEvent may occur twice for the same Event, because someone moved back to the previous
+     * address. In that case, the Event payload is equal for both EventMessage instances, but the Event Identifier is
+     * different for both.
      *
      * @return the identifier of this event.
      */
@@ -58,22 +58,22 @@ public interface EventMessage<T> extends Message<T> {
     Instant getTimestamp();
 
     /**
-     * Returns a copy of this EventMessage with the given {@code metaData}. The payload, {@link #getTimestamp()
-     * Timestamp} and {@link #getIdentifier() Identifier} remain unchanged.
+     * Returns a copy of this EventMessage with the given {@code metaData}. The payload,
+     * {@link #getTimestamp() Timestamp} and {@link #getIdentifier() Identifier} remain unchanged.
      *
      * @param metaData The new MetaData for the Message
      * @return a copy of this message with the given MetaData
      */
     @Override
-    EventMessage<T> withMetaData(@Nonnull Map<String, ?> metaData);
+    EventMessage<T> withMetaData(@NotNull Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this EventMessage with it MetaData merged with the given {@code metaData}. The payload, {@link
-     * #getTimestamp() Timestamp} and {@link #getIdentifier() Identifier} remain unchanged.
+     * Returns a copy of this EventMessage with it MetaData merged with the given {@code metaData}. The payload,
+     * {@link #getTimestamp() Timestamp} and {@link #getIdentifier() Identifier} remain unchanged.
      *
      * @param metaData The MetaData to merge with
      * @return a copy of this message with the given MetaData
      */
     @Override
-    EventMessage<T> andMetaData(@Nonnull Map<String, ?> metaData);
+    EventMessage<T> andMetaData(@NotNull Map<String, ?> metaData);
 }
