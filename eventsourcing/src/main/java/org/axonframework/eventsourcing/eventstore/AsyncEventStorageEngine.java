@@ -39,7 +39,7 @@ import static java.util.Arrays.asList;
  * (for example) a model. The latter provides an <b>infinite</b> stream.
  *
  * @author Allard Buijze
- * @author Milan Savic
+ * @author Milan Savić
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0

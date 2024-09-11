@@ -51,7 +51,7 @@ import static org.axonframework.eventsourcing.eventstore.IndexedEventMessage.asI
  *
  * @author Allard Buijze
  * @author Rene de Waele
- * @author Milan Savic
+ * @author Milan Savić
  * @author Steven van Beelen
  * @since 3.0.0
  */
@@ -141,6 +141,10 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
 
     @Override
     public MessageStream<EventMessage<?>> source(@NotNull SourcingCondition condition) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Start sourcing events with condition [{}].", condition);
+        }
+
         return MessageStream.fromStream(
                 eventsToStream(
                         condition.start(),
@@ -152,6 +156,10 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
 
     @Override
     public MessageStream<TrackedEventMessage<?>> stream(@NotNull StreamingCondition condition) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Start streaming events with condition [{}].", condition);
+        }
+
         return MessageStream.fromStream(
                 eventsToStream(condition.position().position().orElse(-1),
                                Long.MAX_VALUE,
