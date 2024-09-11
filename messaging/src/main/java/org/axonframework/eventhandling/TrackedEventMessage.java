@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ package org.axonframework.eventhandling;
  * @param <T> The type of payload contained in this Message
  * @author Rene de Waele
  */
-// TODO Shouldn't we make the tracked-info part of **every** EventMessage?
+// TODO replace this for a entry/pair of TrackingToken-to-MessageImpl
 public interface TrackedEventMessage<T> extends EventMessage<T> {
 
     /**
