@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.OptionalLong;
@@ -71,8 +72,7 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
      * {@code aggregateIdentifier}.
      */
-    static SourcingCondition aggregateFor(@NotEmpty String aggregateIdentifier,
-                                          Long start) {
+    static SourcingCondition aggregateFor(@NotEmpty String aggregateIdentifier, Long start) {
         return aggregateFor(aggregateIdentifier, start, Long.MAX_VALUE);
     }
 
@@ -89,9 +89,7 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
      * {@code aggregateIdentifier}.
      */
-    static SourcingCondition aggregateFor(@NotEmpty String aggregateIdentifier,
-                                          Long start,
-                                          Long end) {
+    static SourcingCondition aggregateFor(@NotEmpty String aggregateIdentifier, Long start, Long end) {
         return singleModelFor(AGGREGATE_IDENTIFIER_NAME, aggregateIdentifier, start, end);
     }
 
@@ -104,8 +102,7 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} that will retrieve an event sequence for the given {@code identifierName} to
      * {@code identifierValue} combination.
      */
-    static SourcingCondition singleModelFor(@NotEmpty String identifierName,
-                                            @NotEmpty String identifierValue) {
+    static SourcingCondition singleModelFor(@NotEmpty String identifierName, @NotEmpty String identifierValue) {
         return singleModelFor(identifierName, identifierValue, null);
     }
 
@@ -120,8 +117,7 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} that will retrieve an event sequence for the given {@code identifierName} to
      * {@code identifierValue} combination.
      */
-    static SourcingCondition singleModelFor(@NotEmpty String identifierName,
-                                            @NotEmpty String identifierValue,
+    static SourcingCondition singleModelFor(@NotEmpty String identifierName, @NotEmpty String identifierValue,
                                             Long start) {
         return singleModelFor(identifierName, identifierValue, start, null);
     }
@@ -138,11 +134,9 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} that will retrieve an event sequence for the given {@code identifierName} to
      * {@code identifierValue} combination.
      */
-    static SourcingCondition singleModelFor(@NotEmpty String identifierName,
-                                            @NotEmpty String identifierValue,
-                                            Long start,
-                                            Long end) {
-        return new SingleModelCondition(identifierName, identifierValue, start, end);
+    static SourcingCondition singleModelFor(@NotEmpty String identifierName, @NotEmpty String identifierValue,
+                                            Long start, Long end) {
+        return new DefaultSourcingCondition(EventCriteria.hasIdentifier(identifierName, identifierValue), start, end);
     }
 
     /**
@@ -171,4 +165,16 @@ public interface SourcingCondition {
     default OptionalLong end() {
         return OptionalLong.empty();
     }
+
+    /**
+     * Combine the {@link #criteria()}, {@link #start()}, and {@link #end()} of {@code this SourcingCondition} with the
+     * {@code criteria}, {@code start}, and {@code end} of the given {@code other SourcingCondition}.
+     * <p>
+     * Typically, the minimum value of both {@code start} values and the maximum value of both {@code end} values will
+     * be part of the end result.
+     *
+     * @param other The {@link SourcingCondition} to combine with {@code this SourcingCondition}.
+     * @return A combined {@link SourcingCondition} based on {@code this SourcingCondition} and the given {@code other}.
+     */
+    SourcingCondition combine(@NotNull SourcingCondition other);
 }
