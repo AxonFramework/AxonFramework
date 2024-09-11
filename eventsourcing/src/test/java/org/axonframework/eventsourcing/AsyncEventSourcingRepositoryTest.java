@@ -75,7 +75,7 @@ class AsyncEventSourcingRepositoryTest {
         CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
 
         assertTrue(result.isDone());
-        assertFalse(result.isCompletedExceptionally(), () -> FutureUtils.unwrapMessage(result.exceptionNow()));
+        assertFalse(result.isCompletedExceptionally(), () -> result.exceptionNow().toString());
         verify(eventStore, times(2)).transaction(processingContext, TEST_CONTEXT);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
