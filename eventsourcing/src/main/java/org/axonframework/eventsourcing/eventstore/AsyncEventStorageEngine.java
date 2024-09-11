@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,112 +16,143 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.validation.constraints.NotNull;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 
 /**
- * Provides a mechanism to append as well as retrieve events from an underlying storage mechanism.
+ * Provides a mechanism to {@link #appendEvents(AppendCondition, EventMessage[]) append} as well as retrieve
+ * {@link EventMessage events} from an underlying storage mechanism.
+ * <p>
+ * Retrieval can be done either through {@link #source(SourcingCondition) sourcing} or
+ * {@link #stream(StreamingCondition) streaming}. The former generates a <b>finite</b> stream intended to event source
+ * (for example) a model. The latter provides an <b>infinite</b> stream.
  *
  * @author Allard Buijze
- * @author Rene de Waele
  * @author Milan Savic
+ * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0
- */
-// Concrete impls like in-mem, JPA, JDBC, AxonServer, R2DBC
-// Layered impls like Converting (serializing & upcasting)
+ */ // TODO Rename to EventStorageEngine once fully integrated
 public interface AsyncEventStorageEngine extends DescribableComponent {
 
     /**
-     * Append one or more events to the event storage. Events will be appended in the order that they are offered in.
+     * Append one or more {@link EventMessage events} to the underlying storage solution.
      * <p>
-     * Note that all events should have a unique event identifier. When storing {@link DomainEventMessage domain events}
-     * events should also have a unique combination of aggregate id and sequence number.
+     * Events will be appended in the order that they are offered in, validating the given {@code condition} before
+     * being stored. Note that all events should have a unique event identifier. When storing
+     * {@link IndexedEventMessage indexed events} the {@link IndexedEventMessage#indices() indices} will be stored as
+     * well.
      * <p>
-     * By default this method creates a list of the offered events and then invokes
+     * By default, this method creates a {@link List} of the offered events and then invokes
      * {@link #appendEvents(AppendCondition, List)}.
      *
-     * @param events Events to append to the event storage
+     * @param events One or more {@link EventMessage events} to append to the underlying storage solution.
+     * @return A {@link CompletableFuture} of {@link Long} returning the position of the last event to be appended.
      */
-    default CompletableFuture<Long> appendEvents(@Nonnull AppendCondition condition,
-                                                 @Nonnull EventMessage<?>... events) {
+    default CompletableFuture<Long> appendEvents(@NotNull AppendCondition condition,
+                                                 @NotNull EventMessage<?>... events) {
         return appendEvents(condition, asList(events));
     }
 
     /**
-     * Append a list of events to the event storage. Events will be appended in the order that they are offered in.
+     * Appends a {@link List} of {@link EventMessage events} to the underlying storage solution.
      * <p>
-     * Note that all events should have a unique event identifier. When storing {@link DomainEventMessage domain events}
-     * events should also have a unique combination of aggregate id and sequence number.
+     * Events will be appended in the order that they are offered in, validating the given {@code condition} before
+     * being stored. Note that all events should have a unique event identifier. When storing
+     * {@link IndexedEventMessage indexed events} the {@link IndexedEventMessage#indices() indices} will be stored as
+     * well.
      *
-     * @param events Events to append to the event storage
+     * @param events The {@link List} of {@link EventMessage events} to append to the underlying storage solution.
+     * @return A {@link CompletableFuture} of {@link Long} returning the position of the last event in the given
+     * {@link List} to be appended.
      */
-    CompletableFuture<Long> appendEvents(@Nonnull AppendCondition condition,
-                                         @Nonnull List<? extends EventMessage<?>> events);
+    CompletableFuture<Long> appendEvents(@NotNull AppendCondition condition,
+                                         @NotNull List<? extends EventMessage<?>> events);
 
     /**
-     * Get a {@link DomainEventStream} containing all events published by the aggregate with given
-     * {@code aggregateIdentifier}. By default calling this method is shorthand for an invocation of
-     * {@link #source(String, long)} with a sequence number of 0.
+     * Creates a <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
+     * {@code condition}.
+     * <p>
+     * The {@code condition} dictates the sequence to load based on the {@link SourcingCondition#criteria()}.
+     * Additionally, an optional {@link SourcingCondition#start()} and {@link SourcingCondition#end()} position may be
+     * provided.
      * <p>
      * The returned stream is finite, i.e. it should not block to wait for further events if the end of the event stream
      * of the aggregate is reached.
      *
-     * @param condition The identifier of the aggregate to return an event stream for
-     * @return A non-blocking DomainEventStream of the given aggregate
+     * @param condition The {@link SourcingCondition} dictating the {@link MessageStream stream} of
+     *                  {@link EventMessage events} to source.
+     * @return A <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
+     * {@code condition}.
      */
-    MessageStream<TrackedEventMessage<?>> source(@Nonnull SourcingCondition condition);
-    // TODO finite
-    // TODO we need a different object, as we should return a stream **and** the position of the last event, as that is the consistency marker to use when appending new events with the same condition
+    MessageStream<EventMessage<?>> source(@NotNull SourcingCondition condition);
 
     /**
-     * Open an event stream containing all events stored since given tracking token. The returned stream is comprised of
-     * events from aggregates as well as other application events. Pass a {@code trackingToken} of {@code null} to open
-     * a stream containing all available events.
+     * Creates an <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
+     * {@code condition}.
      * <p>
-     * If the value of the given {@code mayBlock} is {@code true} the returned stream is allowed to block while waiting
-     * for new event messages if the end of the stream is reached.
+     * The {@code condition} may dictate the {@link StreamingCondition#position()} to start streaming from, as well as
+     * define {@link StreamingCondition#criteria() filter criteria} for the returned {@code MessageStream}.
      *
-     * @param condition Object describing the global index of the last processed event or {@code null} to create a
-     *                  stream of all events in the store
-     * @return A stream containing all tracked event messages stored since the given tracking token
+     * @param condition The {@link StreamingCondition} dictating the {@link StreamingCondition#position()} to start
+     *                  streaming from, as well as the {@link StreamingCondition#criteria() filter criteria} used for
+     *                  the returned {@link MessageStream}.
+     * @return An <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
+     * {@code condition}.
      */
-    MessageStream<TrackedEventMessage<?>> stream(@Nonnull StreamingCondition condition);
-    // TODO infinite
+    MessageStream<TrackedEventMessage<?>> stream(@NotNull StreamingCondition condition);
 
     /**
-     * Creates a token that is at the tail of an event stream - that tracks events from the beginning of time.
+     * Creates a {@link TrackingToken} that is at the tail of an event stream.
+     * <p>
+     * In other words, a token that tracks events from the beginning of time.
      *
-     * @return a tracking token at the tail of an event stream, if event stream is empty {@code null} is returned
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} at the tail of an event stream.
      */
     CompletableFuture<TrackingToken> tailToken();
 
     /**
-     * Creates a token that is at the head of an event stream - that tracks all new events.
+     * Creates a {@link TrackingToken} that is at the head of an event stream.
+     * <p>
+     * In other words, a token that tracks all <b>new</b> events from this point forward.
      *
-     * @return a tracking token at the head of an event stream, if event stream is empty {@code null} is returned
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} at the head of an event stream.
      */
     CompletableFuture<TrackingToken> headToken();
 
     /**
-     * Creates a token that tracks all events after given {@code dateTime}. If there is an event exactly at the given
-     * {@code dateTime}, it will be tracked too.
+     * Creates a {@link TrackingToken} that tracks all {@link EventMessage events} after the given {@code at}.
+     * <p>
+     * If there is an event exactly at the given {@code at}, it will be tracked too.
      *
-     * @param at The date and time for determining criteria how the tracking token should be created. A tracking token
-     *           should point to very first event before this date and time.
-     * @return a tracking token at the given {@code dateTime}, if there aren't events matching this criteria
-     * {@code null} is returned
+     * @param at The {@link Instant} determining how the {@link TrackingToken} should be created. A tracking token
+     *           should point to very first event before this {@link Instant}.
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} at the given {@code at}, if there aren't events
+     * matching this criteria {@code null} is returned
      */
-    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
+    CompletableFuture<TrackingToken> tokenAt(@NotNull Instant at);
+
+
+    /**
+     * Creates a {@link TrackingToken} tracking all {@link EventMessage events} since the given {@code since}.
+     * <p>
+     * If there is an {@link EventMessage} exactly at that time (before given {@code since}), it will be tracked too.
+     *
+     * @param since The {@link Duration} determining how the {@link TrackingToken} should be created. The returned token
+     *              points at very first event before this {@code Duration}.
+     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at a position before the given
+     * {@code duration}.
+     */
+    CompletableFuture<TrackingToken> tokenSince(@NotNull Duration since);
 }
