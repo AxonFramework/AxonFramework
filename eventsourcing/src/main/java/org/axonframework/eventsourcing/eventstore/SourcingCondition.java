@@ -1,5 +1,22 @@
+/*
+ * Copyright (c) 2010-2024. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.validation.constraints.NotEmpty;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.OptionalLong;
@@ -12,8 +29,10 @@ import java.util.OptionalLong;
  * model(s). The {@link #start()} and {@link #end()} operations define the window of events that the
  * {@link EventStoreTransaction} is interested in. Use these fields to retrieve slices of the model(s) to source.
  *
+ * @author Michal Negacz
+ * @author Milan Savić
  * @author Marco Amann
- * @author Milan Savic
+ * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
  */
@@ -36,7 +55,7 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
      * {@code aggregateIdentifier}.
      */
-    static SourcingCondition aggregateFor(String aggregateIdentifier) {
+    static SourcingCondition aggregateFor(@NotEmpty String aggregateIdentifier) {
         return aggregateFor(aggregateIdentifier, -1L);
     }
 
@@ -52,7 +71,7 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
      * {@code aggregateIdentifier}.
      */
-    static SourcingCondition aggregateFor(String aggregateIdentifier,
+    static SourcingCondition aggregateFor(@NotEmpty String aggregateIdentifier,
                                           Long start) {
         return aggregateFor(aggregateIdentifier, start, Long.MAX_VALUE);
     }
@@ -70,7 +89,7 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
      * {@code aggregateIdentifier}.
      */
-    static SourcingCondition aggregateFor(String aggregateIdentifier,
+    static SourcingCondition aggregateFor(@NotEmpty String aggregateIdentifier,
                                           Long start,
                                           Long end) {
         return singleModelFor(AGGREGATE_IDENTIFIER_NAME, aggregateIdentifier, start, end);
@@ -85,8 +104,8 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} that will retrieve an event sequence for the given {@code identifierName} to
      * {@code identifierValue} combination.
      */
-    static SourcingCondition singleModelFor(String identifierName,
-                                            String identifierValue) {
+    static SourcingCondition singleModelFor(@NotEmpty String identifierName,
+                                            @NotEmpty String identifierValue) {
         return singleModelFor(identifierName, identifierValue, null);
     }
 
@@ -101,8 +120,8 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} that will retrieve an event sequence for the given {@code identifierName} to
      * {@code identifierValue} combination.
      */
-    static SourcingCondition singleModelFor(String identifierName,
-                                            String identifierValue,
+    static SourcingCondition singleModelFor(@NotEmpty String identifierName,
+                                            @NotEmpty String identifierValue,
                                             Long start) {
         return singleModelFor(identifierName, identifierValue, start, null);
     }
@@ -119,8 +138,8 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} that will retrieve an event sequence for the given {@code identifierName} to
      * {@code identifierValue} combination.
      */
-    static SourcingCondition singleModelFor(String identifierName,
-                                            String identifierValue,
+    static SourcingCondition singleModelFor(@NotEmpty String identifierName,
+                                            @NotEmpty String identifierValue,
                                             Long start,
                                             Long end) {
         return new SingleModelCondition(identifierName, identifierValue, start, end);
