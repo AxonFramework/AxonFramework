@@ -199,7 +199,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
 
     @Test
-    void deadlineCancellationWithinScopeOnAggregate() {
+    public void deadlineCancellationWithinScopeOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, "some-payload"));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, "some-payload"));
@@ -259,7 +259,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void deadlineCancelAllOnAggregateIsTracedCorrectly() {
+    public void deadlineCancelAllOnAggregateIsTracedCorrectly() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
                                                                                 DEADLINE_TIMEOUT,
                                                                                 DO_NOT_CANCEL_BEFORE_DEADLINE));
@@ -365,7 +365,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void deadlineCancellationWithinScopeOnSaga() {
+    public void deadlineCancellationWithinScopeOnSaga() {
         SagaStartingEvent sagaStartingEvent = new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE);
         ScheduleSpecificDeadline firstSchedule = new ScheduleSpecificDeadline(IDENTIFIER, "some-payload");
         ScheduleSpecificDeadline secondSchedule = new ScheduleSpecificDeadline(IDENTIFIER, "some-payload");
@@ -406,7 +406,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void deadlineCancelAllOnSagaIsCorrectlyTraced() {
+    public void deadlineCancelAllOnSagaIsCorrectlyTraced() {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
         configuration.eventStore().publish(asEventMessage(new CancelAllDeadlinesWithName(IDENTIFIER)));
 

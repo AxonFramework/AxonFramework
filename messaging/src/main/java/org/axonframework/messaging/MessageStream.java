@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -201,6 +202,17 @@ public interface MessageStream<M extends Message<?>> {
      */
     default MessageStream<M> onNextItem(@NotNull Consumer<M> onNext) {
         return new OnNextMessageStream<>(this, onNext);
+    }
+
+    /**
+     * TODO this is by no means done yet...please fix.
+     *
+     * @param consumer
+     * @return
+     */
+    default MessageStream<M> consume(@NotNull Predicate<M> consumer) {
+        asFlux().takeWhile(consumer).subscribe().dispose();
+        return this;
     }
 
     /**
