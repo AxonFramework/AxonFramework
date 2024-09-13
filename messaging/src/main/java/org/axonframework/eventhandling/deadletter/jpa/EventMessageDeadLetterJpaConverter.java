@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,7 @@
 
 package org.axonframework.eventhandling.deadletter.jpa;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
@@ -56,8 +49,8 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         Optional<DomainEventMessage> domainEventMessage = Optional.of(eventMessage).filter(
                 DomainEventMessage.class::isInstance).map(DomainEventMessage.class::cast);
 
-        SerializedObject<byte[]> serializedPayload = eventSerializer.serialize(message.getPayload(), byte[].class);
-        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.getMetaData(), byte[].class);
+        SerializedObject<byte[]> serializedPayload = message.serializePayload(eventSerializer, byte[].class);
+        SerializedObject<byte[]> serializedMetadata = message.serializeMetaData(eventSerializer, byte[].class);
         Optional<SerializedObject<byte[]>> serializedToken = trackedEventMessage.map(m -> genericSerializer.serialize(m.trackingToken(),
                                                                                                                byte[].class));
 
