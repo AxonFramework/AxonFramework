@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
+import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,7 +37,6 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -135,10 +135,8 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     private void setEventFields(PreparedStatement statement,
                                 AtomicInteger fieldIndex,
                                 E eventMessage) throws SQLException {
-        SerializedObject<byte[]> serializedPayload =
-                eventSerializer.serialize(eventMessage.getPayload(), byte[].class);
-        SerializedObject<byte[]> serializedMetaData =
-                eventSerializer.serialize(eventMessage.getMetaData(), byte[].class);
+        SerializedObject<byte[]> serializedPayload = eventMessage.serializePayload(eventSerializer, byte[].class);
+        SerializedObject<byte[]> serializedMetaData = eventMessage.serializeMetaData(eventSerializer, byte[].class);
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getClass().getName());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getIdentifier());
         statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(eventMessage.getTimestamp()));
@@ -159,11 +157,11 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                                       AtomicInteger fieldIndex,
                                       DomainEventMessage<?> eventMessage) throws SQLException {
         statement.setString(fieldIndex.getAndIncrement(),
-                            getOrDefault(eventMessage, DomainEventMessage::getType, null));
+                getOrDefault(eventMessage, DomainEventMessage::getType, null));
         statement.setString(fieldIndex.getAndIncrement(),
-                            getOrDefault(eventMessage, DomainEventMessage::getAggregateIdentifier, null));
+                getOrDefault(eventMessage, DomainEventMessage::getAggregateIdentifier, null));
         statement.setLong(fieldIndex.getAndIncrement(),
-                          getOrDefault(eventMessage, DomainEventMessage::getSequenceNumber, -1L));
+                getOrDefault(eventMessage, DomainEventMessage::getSequenceNumber, -1L));
     }
 
     private void setTrackedEventFields(PreparedStatement statement,
@@ -171,8 +169,8 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                                        EventMessage<?> eventMessage) throws SQLException {
         boolean isTrackedEvent = eventMessage instanceof TrackedEventMessage;
         setTrackedEventFields(statement,
-                              fieldIndex,
-                              isTrackedEvent ? ((TrackedEventMessage<?>) eventMessage).trackingToken() : null);
+                fieldIndex,
+                isTrackedEvent ? ((TrackedEventMessage<?>) eventMessage).trackingToken() : null);
     }
 
     private void setTrackedEventFields(PreparedStatement statement,
