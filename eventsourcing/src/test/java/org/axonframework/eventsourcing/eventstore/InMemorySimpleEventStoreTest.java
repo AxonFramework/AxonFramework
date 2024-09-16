@@ -16,7 +16,20 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.junit.jupiter.api.*;
+import reactor.test.StepVerifier;
+
 import java.time.Clock;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.axonframework.eventsourcing.eventstore.SourcingCondition.aggregateFor;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Test class validating the {@link SimpleEventStore} together with the {@link AsyncInMemoryEventStorageEngine}.
@@ -28,5 +41,45 @@ class InMemorySimpleEventStoreTest extends SimpleEventStoreTestSuite<AsyncInMemo
     @Override
     protected AsyncInMemoryEventStorageEngine buildStorageEngine() {
         return new AsyncInMemoryEventStorageEngine(Clock.systemUTC());
+    }
+
+    /**
+     * By sourcing twice within a given UnitOfWork, the DefaultEventStoreTransaction combines the AppendConditions. By
+     * following this up with an appendEvent invocation, the in-memory EventStorageEngine will throw an
+     * AppendConditionAssertionException as intended.
+     */
+    @Test
+    void appendEventsThrowsAppendConditionAssertionExceptionWhenToManyIndicesAreGiven() {
+        SourcingCondition firstCondition = aggregateFor(TEST_AGGREGATE_ID);
+        SourcingCondition secondCondition = aggregateFor("other-aggregate-id");
+        AtomicReference<MessageStream<EventMessage<?>>> streamReference = new AtomicReference<>();
+
+        EventMessage<?> testEvent = eventMessage(0);
+
+        AsyncUnitOfWork uow = new AsyncUnitOfWork();
+        uow.runOnPreInvocation(context -> {
+               EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
+               MessageStream<EventMessage<?>> firstStream = transaction.source(firstCondition, context);
+               MessageStream<EventMessage<?>> secondStream = transaction.source(secondCondition, context);
+               streamReference.set(firstStream.concatWith(secondStream));
+           })
+           .runOnPostInvocation(context -> {
+               EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
+               transaction.appendEvent(testEvent);
+           });
+
+        CompletableFuture<Void> result = uow.execute();
+
+        await().atMost(Duration.ofMillis(500))
+               .pollDelay(Duration.ofMillis(25))
+               .untilAsserted(() -> {
+                   assertTrue(result.isCompletedExceptionally());
+                   assertInstanceOf(AppendConditionAssertionException.class, result.exceptionNow());
+               });
+
+        // The stream should be entirely empty, as two non-existing models are sourced.
+        assertNotNull(streamReference.get());
+        StepVerifier.create(streamReference.get().asFlux())
+                    .verifyComplete();
     }
 }
