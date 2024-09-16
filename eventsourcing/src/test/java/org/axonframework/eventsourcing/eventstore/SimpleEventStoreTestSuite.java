@@ -182,6 +182,56 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
     }
 
     @Test
+    void appendEventsThrowsAppendConditionAssertionExceptionWhenTheConsistencyMarkerIsSurpassedByMatchingEvents() {
+        SourcingCondition testCondition = SourcingCondition.aggregateFor(TEST_AGGREGATE_ID);
+        AtomicReference<MessageStream<EventMessage<?>>> fastStreamReference = new AtomicReference<>();
+        AtomicReference<MessageStream<EventMessage<?>>> slowStreamReference = new AtomicReference<>();
+
+        EventMessage<?> testEvent = eventMessage(0);
+
+        AsyncUnitOfWork fastUow = new AsyncUnitOfWork();
+        fastUow.runOnPreInvocation(context -> {
+                   EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
+                   fastStreamReference.set(transaction.source(testCondition, context));
+               })
+               .runOnPostInvocation(context -> {
+                   EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
+                   transaction.appendEvent(testEvent);
+               });
+
+        AsyncUnitOfWork slowUow = new AsyncUnitOfWork();
+        slowUow.runOnPreInvocation(context -> {
+                   EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
+                   slowStreamReference.set(transaction.source(testCondition, context));
+               })
+               // By completing the fast UnitOfWork after sourcing in the slow UnitOfWork, we:
+               // 1. Ensure the AppendCondition will have a consistency marker set to zero, as the stream is empty, and
+               // 2. Ascertain the consistency marker is surpassed by appending an event in the fast UnitOfWork
+               .runOnPreInvocation(context -> awaitCompletion(fastUow.execute()))
+               .runOnPostInvocation(context -> {
+                   EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
+                   transaction.appendEvent(testEvent);
+               });
+
+        CompletableFuture<Void> result = slowUow.execute();
+
+        await().atMost(Duration.ofMillis(500))
+               .pollDelay(Duration.ofMillis(25))
+               .untilAsserted(() -> {
+                   assertTrue(result.isCompletedExceptionally());
+                   assertInstanceOf(AppendConditionAssertionException.class, result.exceptionNow());
+               });
+
+        // The streams should both be entirely empty, as non-existing models are sourced.
+        assertNotNull(fastStreamReference.get());
+        StepVerifier.create(fastStreamReference.get().asFlux())
+                    .verifyComplete();
+        assertNotNull(slowStreamReference.get());
+        StepVerifier.create(slowStreamReference.get().asFlux())
+                    .verifyComplete();
+    }
+
+    @Test
     void appendEventInvocationsInvokeAllOnAppendCallbacks() {
         EventMessage<?> testEvent = eventMessage(0);
         AtomicReference<EventMessage<?>> callbackOneReference = new AtomicReference<>();
