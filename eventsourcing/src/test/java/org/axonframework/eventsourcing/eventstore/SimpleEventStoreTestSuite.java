@@ -47,16 +47,16 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  */
 abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
 
-    private static final String TEST_CONTEXT = "some-context";
-    private static final String NOT_MATCHING_CONTEXT = "some-other-context";
-    private static final String TEST_AGGREGATE_ID = "someId";
+    protected static final String TEST_CONTEXT = "some-context";
+    protected static final String NOT_MATCHING_CONTEXT = "some-other-context";
+    protected static final String TEST_AGGREGATE_ID = "someId";
 
-    private ESE storageEngine;
+    protected ESE storageEngine;
 
     @Captor
-    private ArgumentCaptor<List<EventMessage<?>>> eventsCaptor;
+    protected ArgumentCaptor<List<EventMessage<?>>> eventsCaptor;
 
-    private SimpleEventStore testSubject;
+    protected SimpleEventStore testSubject;
 
     @BeforeEach
     void setUp() {
@@ -438,7 +438,7 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
     }
 
     // This seems reusable to me
-    private static <R> R awaitCompletion(CompletableFuture<R> completion) {
+    protected static <R> R awaitCompletion(CompletableFuture<R> completion) {
         await().atMost(Duration.ofMillis(500))
                .pollDelay(Duration.ofMillis(25))
                .untilAsserted(() -> assertFalse(completion.isCompletedExceptionally(),
@@ -446,7 +446,8 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         return completion.join();
     }
 
-    private static EventMessage<?> eventMessage(int seq) {
+    // This seems reusable to me
+    protected static EventMessage<?> eventMessage(int seq) {
         return GenericEventMessage.asEventMessage("Event[" + seq + "]");
     }
 }
