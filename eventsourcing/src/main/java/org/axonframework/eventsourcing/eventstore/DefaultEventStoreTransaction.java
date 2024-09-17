@@ -45,7 +45,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
             ProcessingContext.ResourceKey.create("eventQueue");
 
     private final AsyncEventStorageEngine eventStorageEngine;
-    private final ProcessingContext context; // the context this transaction belongs too
+    private final ProcessingContext processingContext;
     private final List<Consumer<EventMessage<?>>> callbacks = new CopyOnWriteArrayList<>();
 
     /**
@@ -54,14 +54,14 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *
      * @param eventStorageEngine The {@link AsyncEventStorageEngine} used to
      *                           {@link #appendEvent(EventMessage) append events} with.
-     * @param context            The {@link ProcessingContext} from which to
+     * @param processingContext  The {@link ProcessingContext} from which to
      *                           {@link #appendEvent(EventMessage) append events} and attach resources like the
      *                           {@link EventStoreTransaction#APPEND_POSITION_KEY} to.
      */
     public DefaultEventStoreTransaction(@NotNull AsyncEventStorageEngine eventStorageEngine,
-                                        @NotNull ProcessingContext context) {
+                                        @NotNull ProcessingContext processingContext) {
         this.eventStorageEngine = eventStorageEngine;
-        this.context = context;
+        this.processingContext = processingContext;
     }
 
     @Override
@@ -78,7 +78,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     @Override
     public void appendEvent(@NotNull EventMessage<?> eventMessage) {
-        List<EventMessage<?>> eventQueue = context.computeResourceIfAbsent(
+        List<EventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
                     attachAppendEventsStep();
@@ -91,7 +91,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     private void attachAppendEventsStep() {
-        context.onPrepareCommit(
+        processingContext.onPrepareCommit(
                 commitContext -> {
                     AppendCondition appendCondition =
                             commitContext.computeResourceIfAbsent(appendConditionKey, AppendCondition::none);
