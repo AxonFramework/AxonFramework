@@ -184,7 +184,7 @@ public class PersistentStreamConnection {
         if (throwable != null) {
             logger.info("{}: Rescheduling persistent stream", streamId, throwable);
             scheduler.schedule(this::start,
-                               retrySeconds.getAndUpdate(current -> Math.max(60, current * 2)),
+                               retrySeconds.getAndUpdate(current -> Math.min(60, current * 2)),
                                TimeUnit.SECONDS);
         }
     }
