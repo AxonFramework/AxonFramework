@@ -44,16 +44,6 @@ import java.util.function.Function;
 public interface IndexedEventMessage<P> extends EventMessage<P> {
 
     /**
-     * Convert an {@link EventMessage} to a {@link TrackedEventMessage} using the given {@code trackingToken}. If the
-     * event is a {@link DomainEventMessage} the message will be converted to a {@link
-     * GenericTrackedDomainEventMessage}, otherwise a {@link GenericTrackedEventMessage} is returned.
-     *
-     * @param eventMessage  the message to convert
-     * @param trackingToken the tracking token to use for the resulting message
-     * @param <T>           the payload type of the event
-     * @return the message converted to a tracked event message
-     */
-    /**
      * Converts the given {@code event} into an {@link IndexedEventMessage} by adding the given {@code indices} to it.
      * <p>
      * If the {@code event} is already an {@link IndexedEventMessage}, the {@code indices} are added to the existing
