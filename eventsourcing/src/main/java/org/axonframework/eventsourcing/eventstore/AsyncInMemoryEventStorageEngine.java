@@ -132,7 +132,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         }
     }
 
-    // TODO remove this branch once the MessageStream allows to return a Pair<TrackingToken, EventMessage>
+    // TODO #3129 - MessageStream allows Pair<TrackingToken, EventMessage> type - Remove this method.
     private static <P> TrackedEventMessage<P> asTrackedEventMessage(EventMessage<P> event, TrackingToken token) {
         return event instanceof IndexedEventMessage<P> taggedEvent
                 ? new GenericTrackedAndIndexedEventMessage<>(event, token, taggedEvent.indices())
@@ -258,6 +258,6 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     @Override
     public void describeTo(@NotNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("clock", clock);
-        // TODO Anything else here?
+        // TODO - Discuss: Anything else here?
     }
 }

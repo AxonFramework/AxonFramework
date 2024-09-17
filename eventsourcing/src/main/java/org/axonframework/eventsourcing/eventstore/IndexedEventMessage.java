@@ -67,7 +67,7 @@ public interface IndexedEventMessage<P> extends EventMessage<P> {
      * @return An {@link IndexedEventMessage} based on the given {@code event} and {@code indices}.
      */
     static <P> IndexedEventMessage<P> asIndexedEvent(EventMessage<P> event, Set<Index> indices) {
-        // TODO remove this branch once the MessageStream allows to return a Pair<TrackingToken, EventMessage>
+        // TODO #3129 - MessageStream allows Pair<TrackingToken, EventMessage> type - Remove this if-branch.
         if (event instanceof TrackedEventMessage<P> trackedEvent) {
             return new GenericTrackedAndIndexedEventMessage<>(event, trackedEvent.trackingToken(), indices);
         }

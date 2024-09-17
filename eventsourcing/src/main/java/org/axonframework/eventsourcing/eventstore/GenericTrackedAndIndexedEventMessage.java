@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-// TODO remove this branch once the MessageStream allows to return a Pair<TrackingToken, EventMessage>
+// TODO #3129 - MessageStream allows Pair<TrackingToken, EventMessage> type - Remove this class.
 public class GenericTrackedAndIndexedEventMessage<P> implements IndexedEventMessage<P>, TrackedEventMessage<P> {
 
     private final EventMessage<P> delegate;
