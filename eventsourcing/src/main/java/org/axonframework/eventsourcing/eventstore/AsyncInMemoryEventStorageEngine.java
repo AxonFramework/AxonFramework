@@ -258,6 +258,6 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     @Override
     public void describeTo(@NotNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("clock", clock);
-        // TODO - Discuss: Anything else here?
+        descriptor.describeProperty("offset", offset);
     }
 }
