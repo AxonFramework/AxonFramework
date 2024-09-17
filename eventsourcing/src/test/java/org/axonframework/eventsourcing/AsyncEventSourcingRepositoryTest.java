@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -45,6 +44,7 @@ import static org.mockito.Mockito.*;
 class AsyncEventSourcingRepositoryTest {
 
     private static final String TEST_CONTEXT = "DEFAULT_CONTEXT";
+    private static final Index TEST_MODEL_INDEX = new Index("aggregateId", "id");
 
     private AsyncEventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
@@ -59,7 +59,7 @@ class AsyncEventSourcingRepositoryTest {
 
         testSubject = new AsyncEventSourcingRepository<>(
                 eventStore,
-                identifier -> "id",
+                identifier -> TEST_MODEL_INDEX,
                 (currentState, event) -> currentState + "-" + event.getPayload(),
                 TEST_CONTEXT
         );
@@ -82,10 +82,6 @@ class AsyncEventSourcingRepositoryTest {
                 .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
 
         assertEquals("null-0-1", result.resultNow().entity());
-    }
-
-    private static boolean conditionPredicate(SourcingCondition condition) {
-        return condition.criteria().indices().contains(new Index("aggregateIdentifier", "id"));
     }
 
     @Test
@@ -215,7 +211,11 @@ class AsyncEventSourcingRepositoryTest {
         assertEquals("created", loaded.resultNow().entity());
     }
 
-    // TODO - Perfect candidate to move to a commons test utils module
+    private static boolean conditionPredicate(SourcingCondition condition) {
+        return condition.criteria().indices().contains(TEST_MODEL_INDEX);
+    }
+
+    // TODO - Discuss: Perfect candidate to move to a commons test utils module
     private static DomainEventMessage<?> domainEvent(int seq) {
         return new GenericDomainEventMessage<>("test", "id", seq, seq);
     }

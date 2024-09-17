@@ -20,7 +20,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext.ResourceKey;
 import org.axonframework.modelling.repository.AsyncRepository;
@@ -36,15 +36,14 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.eventsourcing.eventstore.SourcingCondition.singleModelFor;
-
 /**
  * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an
- * {@link EventStore}.
+ * {@link AsyncEventStore}.
  *
  * @param <ID> The type of identifier used to identify the entity.
  * @param <M>  The type of the model to load.
  * @author Allard Buijze
+ * @author Steven van Beelen
  * @since 0.1
  */
 public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.LifecycleManagement<ID, M> {
@@ -53,27 +52,29 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
             ResourceKey.create("managedEntities");
 
     private final AsyncEventStore eventStore;
-    private final IdentifierResolver<ID> identifierResolver;
+    private final IndexResolver<ID> indexResolver;
     private final EventStateApplier<M> eventStateApplier;
     // TODO rename this field to something else
     private final String contextOrNamespace;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
-     * apply state transitions to the entity based on the events received, and given {@code identifierResolver} to
-     * resolve the aggregate identifier from the given identifier type.
+     * apply state transitions to the entity based on the events received, and given {@code indexResolver} to resolve
+     * the {@link org.axonframework.eventsourcing.eventstore.Index} of the given identifier type.
      *
      * @param eventStore         The event store to load events from.
-     * @param identifierResolver Converts the given identifier to an aggregate identifier to load the event stream.
+     * @param indexResolver      Converts the given identifier to an
+     *                           {@link org.axonframework.eventsourcing.eventstore.Index} used to load a matching event
+     *                           stream.
      * @param eventStateApplier  The function to apply event state changes to the loaded entities.
      * @param contextOrNamespace
      */
     public AsyncEventSourcingRepository(AsyncEventStore eventStore,
-                                        IdentifierResolver<ID> identifierResolver,
+                                        IndexResolver<ID> indexResolver,
                                         EventStateApplier<M> eventStateApplier,
                                         String contextOrNamespace) {
         this.eventStore = eventStore;
-        this.identifierResolver = identifierResolver;
+        this.indexResolver = indexResolver;
         this.eventStateApplier = eventStateApplier;
         this.contextOrNamespace = contextOrNamespace;
     }
@@ -103,7 +104,10 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         return managedEntities.computeIfAbsent(
                 identifier,
                 id -> eventStore.transaction(processingContext, contextOrNamespace)
-                                .source(singleModelFor("aggregateIdentifier", identifierResolver.resolve(id), start, end), processingContext)
+                                .source(
+                                        SourcingCondition.conditionFor(indexResolver.resolve(id), start, end),
+                                        processingContext
+                                )
                                 .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, em) -> {
                                     entity.applyStateChange(em, eventStateApplier);
                                     return entity;
@@ -159,7 +163,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStore", eventStore);
-        descriptor.describeProperty("identifierResolver", identifierResolver);
+        descriptor.describeProperty("indexResolver", indexResolver);
         descriptor.describeProperty("eventStateApplier", eventStateApplier);
     }
 
