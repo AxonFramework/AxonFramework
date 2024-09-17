@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -40,103 +39,45 @@ import java.util.OptionalLong;
 public interface SourcingCondition {
 
     /**
-     * Default {@link Index#key()} used when constructing a {@link SourcingCondition} tailored towards an aggregate.
+     * Construct a {@link SourcingCondition} used to source a model based on the given {@code index}.
+     *
+     * @param index The {@link Index} used as part of the {@link SourcingCondition#criteria()}.
+     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code index}.
+     */
+    static SourcingCondition conditionFor(@NotNull Index index) {
+        return conditionFor(index, -1L);
+    }
+
+    /**
+     * Construct a {@link SourcingCondition} used to source a model based on the given {@code index}.
      * <p>
-     * Represents the value {@code "aggregateIdentifier"}.
+     * Will start the sequence at the given {@code start} value.
+     *
+     * @param index The {@link Index} used as part of the {@link SourcingCondition#criteria()}.
+     * @param start The start position in the event sequence to retrieve of the model to source.
+     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code index},
+     * starting at the given {@code start}.
      */
-    String AGGREGATE_IDENTIFIER_NAME = "aggregateIdentifier";
+    static SourcingCondition conditionFor(@NotNull Index index,
+                                          Long start) {
+        return conditionFor(index, start, Long.MAX_VALUE);
+    }
 
     /**
-     * Construct a {@link SourcingCondition} used to source an aggregate instance identified by the given
-     * {@code aggregateIdentifier}.
+     * Construct a {@link SourcingCondition} used to source a model based on the given {@code index}.
      * <p>
-     * The {@link Index} will use the {@link #AGGREGATE_IDENTIFIER_NAME} as the {@link Index#key()}.
+     * Will start the sequence at the given {@code start} value and cut it off at the given {@code end} value.
      *
-     * @param aggregateIdentifier The identifier of the aggregate to source.
-     * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
-     * {@code aggregateIdentifier}.
+     * @param index The {@link Index} used as part of the {@link SourcingCondition#criteria()}.
+     * @param start The start position in the event sequence to retrieve of the model to source.
+     * @param end   The end position in the event sequence to retrieve of the model to source.
+     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code index},
+     * starting at the given {@code start} and ending at the given {@code end}.
      */
-    static SourcingCondition aggregateFor(@NotEmpty String aggregateIdentifier) {
-        return aggregateFor(aggregateIdentifier, -1L);
-    }
-
-    /**
-     * Construct a {@link SourcingCondition} used to source an aggregate instance identified by the given
-     * {@code aggregateIdentifier}.
-     * <p>
-     * Will start the sequence at the given {@code start} value. The {@link Index} will use the
-     * {@link #AGGREGATE_IDENTIFIER_NAME} as the {@link Index#key()}.
-     *
-     * @param aggregateIdentifier The identifier of the aggregate to source.
-     * @param start               The start position in the event sequence to retrieve of the aggregate to source.
-     * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
-     * {@code aggregateIdentifier}.
-     */
-    static SourcingCondition aggregateFor(@NotEmpty String aggregateIdentifier, Long start) {
-        return aggregateFor(aggregateIdentifier, start, Long.MAX_VALUE);
-    }
-
-    /**
-     * Construct a {@link SourcingCondition} used to source an aggregate instance identified by the given
-     * {@code aggregateIdentifier}.
-     * <p>
-     * Will start the sequence at the given {@code start} value and cut it off at the given {@code end} value. The
-     * {@link Index} will use the {@link #AGGREGATE_IDENTIFIER_NAME} as the {@link Index#key()}.
-     *
-     * @param aggregateIdentifier The identifier of the aggregate to source.
-     * @param start               The start position in the event sequence to retrieve of the aggregate to source.
-     * @param end                 The end position in the event sequence to retrieve of the aggregate to source.
-     * @return A {@link SourcingCondition} used to source an aggregate instance identified by the given
-     * {@code aggregateIdentifier}.
-     */
-    static SourcingCondition aggregateFor(@NotEmpty String aggregateIdentifier, Long start, Long end) {
-        return singleModelFor(AGGREGATE_IDENTIFIER_NAME, aggregateIdentifier, start, end);
-    }
-
-    /**
-     * Construct a {@link SourcingCondition} used to source a single model instance identified by the given
-     * {@code identifierName} to {@code identifierValue} combination.
-     *
-     * @param identifierName  The name of the identifier of the model to source.
-     * @param identifierValue The value of the identifier of the model to source.
-     * @return A {@link SourcingCondition} that will retrieve an event sequence for the given {@code identifierName} to
-     * {@code identifierValue} combination.
-     */
-    static SourcingCondition singleModelFor(@NotEmpty String identifierName, @NotEmpty String identifierValue) {
-        return singleModelFor(identifierName, identifierValue, null);
-    }
-
-    /**
-     * Construct a {@link SourcingCondition} used to source a single model instance identified by the given
-     * {@code identifierName} to {@code identifierValue} combination. Will start the sequence at the given {@code start}
-     * value.
-     *
-     * @param identifierName  The name of the identifier of the model to source.
-     * @param identifierValue The value of the identifier of the model to source.
-     * @param start           The start position in the event sequence to retrieve of the model to source.
-     * @return A {@link SourcingCondition} that will retrieve an event sequence for the given {@code identifierName} to
-     * {@code identifierValue} combination.
-     */
-    static SourcingCondition singleModelFor(@NotEmpty String identifierName, @NotEmpty String identifierValue,
-                                            Long start) {
-        return singleModelFor(identifierName, identifierValue, start, null);
-    }
-
-    /**
-     * Construct a {@link SourcingCondition} used to source a single model instance identified by the given
-     * {@code identifierName} to {@code identifierValue} combination. Will start the sequence at the given {@code start}
-     * value and cut it off at the given {@code end} value.
-     *
-     * @param identifierName  The name of the identifier of the model to source.
-     * @param identifierValue The value of the identifier of the model to source.
-     * @param start           The start position in the event sequence to retrieve of the model to source.
-     * @param end             The end position in the event sequence to retrieve of the model to source.
-     * @return A {@link SourcingCondition} that will retrieve an event sequence for the given {@code identifierName} to
-     * {@code identifierValue} combination.
-     */
-    static SourcingCondition singleModelFor(@NotEmpty String identifierName, @NotEmpty String identifierValue,
-                                            Long start, Long end) {
-        return new DefaultSourcingCondition(EventCriteria.hasIdentifier(identifierName, identifierValue), start, end);
+    static SourcingCondition conditionFor(@NotNull Index index,
+                                          Long start,
+                                          Long end) {
+        return new DefaultSourcingCondition(EventCriteria.hasIndex(index), start, end);
     }
 
     /**

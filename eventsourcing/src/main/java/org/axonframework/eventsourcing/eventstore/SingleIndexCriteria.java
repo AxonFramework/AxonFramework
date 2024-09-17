@@ -16,24 +16,22 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.Set;
 
 /**
- * An {@link EventCriteria} implementation dedicated towards a single identifier.
- * <p>
- * Will construct a single {@link Index} with the given {@code key} and {@code value} as its input respectively.
+ * An {@link EventCriteria} implementation dedicated towards a single {@link Index}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class HasIdentifier implements EventCriteria {
+class SingleIndexCriteria implements EventCriteria {
 
-    private final Index identifierIndex;
+    private final Index index;
 
-    HasIdentifier(@NotEmpty String key, @NotEmpty String value) {
-        this.identifierIndex = new Index(key, value);
+    SingleIndexCriteria(@NotNull Index index) {
+        this.index = index;
     }
 
     @Override
@@ -43,6 +41,6 @@ class HasIdentifier implements EventCriteria {
 
     @Override
     public Set<Index> indices() {
-        return Set.of(identifierIndex);
+        return Set.of(index);
     }
 }

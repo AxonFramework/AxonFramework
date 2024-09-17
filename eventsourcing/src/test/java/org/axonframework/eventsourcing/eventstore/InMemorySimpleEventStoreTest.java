@@ -27,7 +27,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.eventsourcing.eventstore.SourcingCondition.aggregateFor;
+import static org.axonframework.eventsourcing.eventstore.SourcingCondition.conditionFor;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
@@ -50,8 +50,8 @@ class InMemorySimpleEventStoreTest extends SimpleEventStoreTestSuite<AsyncInMemo
      */
     @Test
     void appendEventsThrowsAppendConditionAssertionExceptionWhenToManyIndicesAreGiven() {
-        SourcingCondition firstCondition = aggregateFor(TEST_AGGREGATE_ID);
-        SourcingCondition secondCondition = aggregateFor("other-aggregate-id");
+        SourcingCondition firstCondition = conditionFor(TEST_AGGREGATE_INDEX);
+        SourcingCondition secondCondition = conditionFor(new Index("aggregateId", "other-aggregate-id"));
         AtomicReference<MessageStream<EventMessage<?>>> streamReference = new AtomicReference<>();
 
         EventMessage<?> testEvent = eventMessage(0);

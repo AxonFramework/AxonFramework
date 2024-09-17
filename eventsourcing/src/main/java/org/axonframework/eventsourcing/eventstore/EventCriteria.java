@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -59,15 +58,13 @@ public interface EventCriteria {
     }
 
     /**
-     * Construct a simple {@link EventCriteria} based on the given {@code name} as the identifier name and {@code value}
-     * as the identifier's value.
+     * Construct a simple {@link EventCriteria} based on the given {@code index}.
      *
-     * @param name  The name of the identifier.
-     * @param value The value of the identifier.
-     * @return A simple {@link EventCriteria} that can filter on the {@code name} and {@code value} combination.
+     * @param index The singular {@link Index} of the {@link EventCriteria} being constructed.
+     * @return A simple {@link EventCriteria} based on the given {@code index}.
      */
-    static EventCriteria hasIdentifier(@NotEmpty String name, @NotEmpty String value) {
-        return new HasIdentifier(name, value);
+    static EventCriteria hasIndex(@NotNull Index index) {
+        return new SingleIndexCriteria(index);
     }
 
     /**

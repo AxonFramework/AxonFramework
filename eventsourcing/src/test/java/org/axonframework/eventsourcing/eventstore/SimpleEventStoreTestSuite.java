@@ -50,6 +50,7 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
     protected static final String TEST_CONTEXT = "some-context";
     protected static final String NOT_MATCHING_CONTEXT = "some-other-context";
     protected static final String TEST_AGGREGATE_ID = "someId";
+    protected static final Index TEST_AGGREGATE_INDEX = new Index("aggregateIdentifier", TEST_AGGREGATE_ID);
 
     protected ESE storageEngine;
 
@@ -76,11 +77,11 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
 
     @Test
     void sourcingReturnsExpectedMessageStream() {
-        SourcingCondition testSourcingCondition = SourcingCondition.aggregateFor(TEST_AGGREGATE_ID);
-        Index expectedIndex = new Index(SourcingCondition.AGGREGATE_IDENTIFIER_NAME, TEST_AGGREGATE_ID);
+        Index expectedIndex = TEST_AGGREGATE_INDEX;
         EventMessage<?> expectedEventOne = eventMessage(0);
         EventMessage<?> expectedEventTwo = eventMessage(1);
         EventMessage<?> expectedEventThree = eventMessage(4);
+        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(expectedIndex);
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         CompletableFuture.allOf(
                 storageEngine.appendEvents(AppendCondition.from(testSourcingCondition),
@@ -109,11 +110,11 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
 
     @Test
     void sourcingConditionIsMappedToAppendConditionByEventStoreTransaction() {
-        SourcingCondition testSourcingCondition = SourcingCondition.aggregateFor(TEST_AGGREGATE_ID);
-        Index expectedIndex = new Index(SourcingCondition.AGGREGATE_IDENTIFIER_NAME, TEST_AGGREGATE_ID);
+        Index expectedIndex = TEST_AGGREGATE_INDEX;
         EventMessage<?> expectedEventOne = eventMessage(0);
         EventMessage<?> expectedEventTwo = eventMessage(1);
         EventMessage<?> expectedEventThree = eventMessage(2);
+        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(expectedIndex);
 
         AtomicReference<MessageStream<EventMessage<?>>> initialStreamReference = new AtomicReference<>();
         AtomicReference<MessageStream<EventMessage<?>>> finalStreamReference = new AtomicReference<>();
@@ -183,7 +184,7 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
 
     @Test
     void appendEventsThrowsAppendConditionAssertionExceptionWhenTheConsistencyMarkerIsSurpassedByMatchingEvents() {
-        SourcingCondition testCondition = SourcingCondition.aggregateFor(TEST_AGGREGATE_ID);
+        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_INDEX);
         AtomicReference<MessageStream<EventMessage<?>>> fastStreamReference = new AtomicReference<>();
         AtomicReference<MessageStream<EventMessage<?>>> slowStreamReference = new AtomicReference<>();
 
@@ -279,11 +280,11 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         StreamingCondition testStreamingCondition = StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(4));
 
         CompletableFuture.allOf(
-                storageEngine.appendEvents(AppendCondition.from(SourcingCondition.aggregateFor(TEST_AGGREGATE_ID)),
+                storageEngine.appendEvents(AppendCondition.from(SourcingCondition.conditionFor(TEST_AGGREGATE_INDEX)),
                                            eventMessage(0), eventMessage(1)),
                 storageEngine.appendEvents(AppendCondition.none(),
                                            eventMessage(2), eventMessage(3)),
-                storageEngine.appendEvents(AppendCondition.from(SourcingCondition.aggregateFor(TEST_AGGREGATE_ID))
+                storageEngine.appendEvents(AppendCondition.from(SourcingCondition.conditionFor(TEST_AGGREGATE_INDEX))
                                                           .withMarker(3),
                                            expectedEventOne),
                 storageEngine.appendEvents(AppendCondition.none(),
@@ -304,7 +305,7 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         EventMessage<?> expectedEventOne = eventMessage(0);
         EventMessage<?> expectedEventTwo = eventMessage(1);
         EventMessage<?> expectedEventThree = eventMessage(4);
-        SourcingCondition testSourcingCondition = SourcingCondition.aggregateFor(TEST_AGGREGATE_ID);
+        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_INDEX);
         StreamingCondition testStreamingCondition = StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(0))
                                                                       .with(testSourcingCondition.criteria());
 
