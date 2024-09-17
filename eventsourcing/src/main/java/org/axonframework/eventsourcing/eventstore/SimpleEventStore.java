@@ -117,6 +117,7 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
         if (this.context.equals(context)) {
             return;
         }
+        // TODO - Discuss: Do we want a dedicated exception here?
         throw new IllegalArgumentException("Context '" + context + "' does not match context '" + this.context + "'");
     }
 }

@@ -215,7 +215,7 @@ class AsyncEventSourcingRepositoryTest {
         return condition.criteria().indices().contains(TEST_MODEL_INDEX);
     }
 
-    // TODO - Discuss: Perfect candidate to move to a commons test utils module
+    // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     private static DomainEventMessage<?> domainEvent(int seq) {
         return new GenericDomainEventMessage<>("test", "id", seq, seq);
     }

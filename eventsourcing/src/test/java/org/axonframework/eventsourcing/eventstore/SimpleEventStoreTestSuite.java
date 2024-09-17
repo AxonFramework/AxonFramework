@@ -488,7 +488,7 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         assertThrows(IllegalArgumentException.class, () -> testSubject.tokenSince(NOT_MATCHING_CONTEXT, Duration.ZERO));
     }
 
-    // This seems reusable to me
+    // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     protected static <R> R awaitCompletion(CompletableFuture<R> completion) {
         await().atMost(Duration.ofMillis(500))
                .pollDelay(Duration.ofMillis(25))
@@ -497,7 +497,7 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         return completion.join();
     }
 
-    // This seems reusable to me
+    // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     protected static EventMessage<?> eventMessage(int seq) {
         return GenericEventMessage.asEventMessage("Event[" + seq + "]");
     }
