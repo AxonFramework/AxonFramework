@@ -30,6 +30,12 @@ class SingleIndexCriteria implements EventCriteria {
 
     private final Index index;
 
+    /**
+     * Construct a {@link SingleIndexCriteria} using the given {@code index} as the singular {@link Index} of this
+     * {@link EventCriteria}.
+     *
+     * @param index The singular {@link Index} of this {@link EventCriteria}.
+     */
     SingleIndexCriteria(@NotNull Index index) {
         this.index = index;
     }
