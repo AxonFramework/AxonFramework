@@ -54,29 +54,29 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     private final AsyncEventStore eventStore;
     private final IndexResolver<ID> indexResolver;
     private final EventStateApplier<M> eventStateApplier;
-    // TODO rename this field to something else
-    private final String contextOrNamespace;
+    private final String context;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
      * apply state transitions to the entity based on the events received, and given {@code indexResolver} to resolve
      * the {@link org.axonframework.eventsourcing.eventstore.Index} of the given identifier type.
      *
-     * @param eventStore         The event store to load events from.
-     * @param indexResolver      Converts the given identifier to an
-     *                           {@link org.axonframework.eventsourcing.eventstore.Index} used to load a matching event
-     *                           stream.
-     * @param eventStateApplier  The function to apply event state changes to the loaded entities.
-     * @param contextOrNamespace
+     * @param eventStore        The event store to load events from.
+     * @param indexResolver     Converts the given identifier to an
+     *                          {@link org.axonframework.eventsourcing.eventstore.Index} used to load a matching event
+     *                          stream.
+     * @param eventStateApplier The function to apply event state changes to the loaded entities.
+     * @param context           The (bounded) context this {@link AsyncEventSourcingRepository} provides access to
+     *                          models for.
      */
     public AsyncEventSourcingRepository(AsyncEventStore eventStore,
                                         IndexResolver<ID> indexResolver,
                                         EventStateApplier<M> eventStateApplier,
-                                        String contextOrNamespace) {
+                                        String context) {
         this.eventStore = eventStore;
         this.indexResolver = indexResolver;
         this.eventStateApplier = eventStateApplier;
-        this.contextOrNamespace = contextOrNamespace;
+        this.context = context;
     }
 
     @Override
@@ -103,7 +103,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
         return managedEntities.computeIfAbsent(
                 identifier,
-                id -> eventStore.transaction(processingContext, contextOrNamespace)
+                id -> eventStore.transaction(processingContext, context)
                                 .source(
                                         SourcingCondition.conditionFor(indexResolver.resolve(id), start, end),
                                         processingContext
@@ -153,10 +153,11 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      * immediately source events that are being published by the model
      *
      * @param entity            An {@link ManagedEntity} to make the state change for.
-     * @param processingContext The context for which to retrieve the active {@link EventStoreTransaction}.
+     * @param processingContext The {@link ProcessingContext} for which to retrieve the active
+     *                          {@link EventStoreTransaction}.
      */
     private void updateActiveModel(EventSourcedEntity<ID, M> entity, ProcessingContext processingContext) {
-        eventStore.transaction(processingContext, contextOrNamespace)
+        eventStore.transaction(processingContext, context)
                   .onAppend(event -> entity.applyStateChange(event, eventStateApplier));
     }
 
@@ -165,6 +166,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         descriptor.describeProperty("eventStore", eventStore);
         descriptor.describeProperty("indexResolver", indexResolver);
         descriptor.describeProperty("eventStateApplier", eventStateApplier);
+        descriptor.describeProperty("context", context);
     }
 
     /**
