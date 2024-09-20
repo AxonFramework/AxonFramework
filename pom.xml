@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>4.10.1-SNAPSHOT</version>
+    <version>4.10.1</version>
     <modules>
         <module>axon-server-connector</module>
         <module>disruptor</module>
@@ -933,7 +933,7 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>HEAD</tag>
+        <tag>axon-4.10.1</tag>
     </scm>
 
     <developers>
