@@ -49,8 +49,11 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         Optional<DomainEventMessage> domainEventMessage = Optional.of(eventMessage).filter(
                 DomainEventMessage.class::isInstance).map(DomainEventMessage.class::cast);
 
+        // Serialize the payload with message.serializePayload to make the deserialization lazy and thus
+        // make us able to store deserialization errors as well.
         SerializedObject<byte[]> serializedPayload = message.serializePayload(eventSerializer, byte[].class);
-        SerializedObject<byte[]> serializedMetadata = message.serializeMetaData(eventSerializer, byte[].class);
+        // For compatibility, we use the serializer directly for the metadata
+        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.getMetaData(), byte[].class);
         Optional<SerializedObject<byte[]>> serializedToken = trackedEventMessage.map(m -> genericSerializer.serialize(m.trackingToken(),
                                                                                                                byte[].class));
 
