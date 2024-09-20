@@ -29,7 +29,6 @@ import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
-import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,6 +36,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -157,11 +157,11 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                                       AtomicInteger fieldIndex,
                                       DomainEventMessage<?> eventMessage) throws SQLException {
         statement.setString(fieldIndex.getAndIncrement(),
-                getOrDefault(eventMessage, DomainEventMessage::getType, null));
+                            getOrDefault(eventMessage, DomainEventMessage::getType, null));
         statement.setString(fieldIndex.getAndIncrement(),
-                getOrDefault(eventMessage, DomainEventMessage::getAggregateIdentifier, null));
+                            getOrDefault(eventMessage, DomainEventMessage::getAggregateIdentifier, null));
         statement.setLong(fieldIndex.getAndIncrement(),
-                getOrDefault(eventMessage, DomainEventMessage::getSequenceNumber, -1L));
+                          getOrDefault(eventMessage, DomainEventMessage::getSequenceNumber, -1L));
     }
 
     private void setTrackedEventFields(PreparedStatement statement,
@@ -169,8 +169,8 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                                        EventMessage<?> eventMessage) throws SQLException {
         boolean isTrackedEvent = eventMessage instanceof TrackedEventMessage;
         setTrackedEventFields(statement,
-                fieldIndex,
-                isTrackedEvent ? ((TrackedEventMessage<?>) eventMessage).trackingToken() : null);
+                              fieldIndex,
+                              isTrackedEvent ? ((TrackedEventMessage<?>) eventMessage).trackingToken() : null);
     }
 
     private void setTrackedEventFields(PreparedStatement statement,
