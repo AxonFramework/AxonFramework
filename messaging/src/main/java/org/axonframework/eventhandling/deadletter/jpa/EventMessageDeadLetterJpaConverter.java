@@ -16,7 +16,14 @@
 
 package org.axonframework.eventhandling.deadletter.jpa;
 
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
@@ -42,7 +49,9 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
 
     @SuppressWarnings("rawtypes")
     @Override
-    public DeadLetterEventEntry convert(EventMessage<?> message, Serializer eventSerializer, Serializer genericSerializer) {
+    public DeadLetterEventEntry convert(EventMessage<?> message,
+                                        Serializer eventSerializer,
+                                        Serializer genericSerializer) {
         GenericEventMessage<?> eventMessage = (GenericEventMessage<?>) message;
         Optional<TrackedEventMessage> trackedEventMessage = Optional.of(eventMessage).filter(
                 TrackedEventMessage.class::isInstance).map(TrackedEventMessage.class::cast);
@@ -54,9 +63,8 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         SerializedObject<byte[]> serializedPayload = message.serializePayload(eventSerializer, byte[].class);
         // For compatibility, we use the serializer directly for the metadata
         SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.getMetaData(), byte[].class);
-        Optional<SerializedObject<byte[]>> serializedToken = trackedEventMessage.map(m -> genericSerializer.serialize(m.trackingToken(),
-                                                                                                               byte[].class));
-
+        Optional<SerializedObject<byte[]>> serializedToken =
+                trackedEventMessage.map(m -> genericSerializer.serialize(m.trackingToken(), byte[].class));
 
         return new DeadLetterEventEntry(
                 message.getClass().getName(),
@@ -75,7 +83,9 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     }
 
     @Override
-    public EventMessage<?> convert(DeadLetterEventEntry entry, Serializer eventSerializer, Serializer genericSerializer) {
+    public EventMessage<?> convert(DeadLetterEventEntry entry,
+                                   Serializer eventSerializer,
+                                   Serializer genericSerializer) {
         SerializedMessage<?> serializedMessage = new SerializedMessage<>(entry.getEventIdentifier(),
                                                                          entry.getPayload(),
                                                                          entry.getMetaData(),

@@ -18,12 +18,26 @@ package org.axonframework.eventhandling.deadletter.jpa;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
-import org.junit.jupiter.api.Test;
+import org.axonframework.serialization.Revision;
+import org.axonframework.serialization.SerializedMessage;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.TestSerializer;
+import org.junit.jupiter.api.*;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
@@ -54,21 +68,25 @@ class EventMessageDeadLetterJpaConverterTest {
     @Test
     void canConvertTrackedDomainEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
         testConversion(new GenericTrackedDomainEventMessage<>(new GlobalSequenceTrackingToken(232323L),
-                "MyType",
-                "8239081092",
-                25L,
-                new GenericEventMessage<>(event, metaData),
-                Instant::now));
+                                                              "MyType",
+                                                              "8239081092",
+                                                              25L,
+                                                              new GenericEventMessage<>(event, metaData),
+                                                              Instant::now));
     }
 
     @Test
     void canConvertMessagesWithSerializationErrors() {
-        GenericEventMessage<Object> message = new GenericEventMessage<>(new SerializedMessage<>(
+        SerializedType eventType = new SimpleSerializedType(
+                "org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverterTest$SerializationErrorClass",
+                null
+        );
+        EventMessage<Object> message = new GenericEventMessage<>(new SerializedMessage<>(
                 "my-identifier",
                 new SimpleSerializedObject<>(
                         "{'my-wrong-payload':'wadawd'}".getBytes(StandardCharsets.UTF_8),
                         byte[].class,
-                        new SimpleSerializedType("org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverterTest$SerializationErrorClass", null)
+                        eventType
                 ),
                 new SimpleSerializedObject<>(
                         "{}".getBytes(StandardCharsets.UTF_8),
@@ -84,27 +102,29 @@ class EventMessageDeadLetterJpaConverterTest {
 
     @Test
     void canConvertTrackedDomainEventMessageWithGapAwareTokenAndBackCorrectly() {
-        testConversion(new GenericTrackedDomainEventMessage<>(new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L)),
-                "MyType",
-                "8239081092",
-                25L,
-                new GenericEventMessage<>(event, metaData),
-                Instant::now));
+        TrackingToken testToken = new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L));
+        testConversion(new GenericTrackedDomainEventMessage<>(testToken,
+                                                              "MyType",
+                                                              "8239081092",
+                                                              25L,
+                                                              new GenericEventMessage<>(event, metaData),
+                                                              Instant::now));
     }
 
     @Test
     void canConvertTrackedEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
         testConversion(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(232323L),
-                new GenericEventMessage<>(event, metaData),
-                Instant::now));
+                                                        new GenericEventMessage<>(event, metaData),
+                                                        Instant::now));
     }
 
 
     @Test
     void canConvertTrackedEventMessageWithGapAwareTokenAndBackCorrectly() {
-        testConversion(new GenericTrackedEventMessage<>(new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L)),
-                new GenericEventMessage<>(event, metaData),
-                Instant::now));
+        TrackingToken testToken = new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L));
+        testConversion(new GenericTrackedEventMessage<>(testToken,
+                                                        new GenericEventMessage<>(event, metaData),
+                                                        Instant::now));
     }
 
     private void testConversion(EventMessage<?> message) {
@@ -114,7 +134,8 @@ class EventMessageDeadLetterJpaConverterTest {
         assertCorrectlyMapped(message, deadLetterEventEntry);
         assertTrue(converter.canConvert(deadLetterEventEntry));
 
-        EventMessage<?> restoredEventMessage = converter.convert(deadLetterEventEntry, eventSerializer, genericSerializer);
+        EventMessage<?> restoredEventMessage =
+                converter.convert(deadLetterEventEntry, eventSerializer, genericSerializer);
         assertCorrectlyRestored(message, restoredEventMessage);
     }
 
@@ -146,13 +167,13 @@ class EventMessageDeadLetterJpaConverterTest {
         assertEquals(eventMessage.getIdentifier(), deadLetterEventEntry.getEventIdentifier());
         assertEquals(eventMessage.getTimestamp().toString(), deadLetterEventEntry.getTimeStamp());
         assertEquals(eventMessage.getPayload().getClass().getName(),
-                deadLetterEventEntry.getPayload().getType().getName());
+                     deadLetterEventEntry.getPayload().getType().getName());
         assertEquals(PAYLOAD_REVISION, deadLetterEventEntry.getPayload().getType().getRevision());
         assertEquals(eventSerializer.serialize(event, String.class).getData(),
-                new String(deadLetterEventEntry.getPayload().getData()));
+                     new String(deadLetterEventEntry.getPayload().getData()));
         assertEquals(MetaData.class.getName(), deadLetterEventEntry.getMetaData().getType().getName());
         assertEquals(eventSerializer.serialize(metaData, String.class).getData(),
-                new String(deadLetterEventEntry.getMetaData().getData()));
+                     new String(deadLetterEventEntry.getMetaData().getData()));
 
         if (eventMessage instanceof DomainEventMessage) {
             DomainEventMessage<?> domainEventMessage = (DomainEventMessage<?>) eventMessage;
@@ -167,9 +188,9 @@ class EventMessageDeadLetterJpaConverterTest {
         if (eventMessage instanceof TrackedEventMessage) {
             TrackedEventMessage<?> trackedEventMessage = (TrackedEventMessage<?>) eventMessage;
             assertEquals(trackedEventMessage.trackingToken().getClass().getName(),
-                    deadLetterEventEntry.getTrackingToken().getType().getName());
+                         deadLetterEventEntry.getTrackingToken().getType().getName());
             assertEquals(genericSerializer.serialize(trackedEventMessage.trackingToken(), String.class).getData(),
-                    new String(deadLetterEventEntry.getTrackingToken().getData()));
+                         new String(deadLetterEventEntry.getTrackingToken().getData()));
         } else {
             assertNull(deadLetterEventEntry.getTrackingToken());
         }
@@ -209,7 +230,9 @@ class EventMessageDeadLetterJpaConverterTest {
         }
     }
 
-    class SerializationErrorClass {
+    // Suppressed since it's used for test 'canConvertMessagesWithSerializationErrors'
+    @SuppressWarnings("unused")
+    static class SerializationErrorClass {
         String myValue;
     }
 }
