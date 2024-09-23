@@ -9,28 +9,28 @@ Any patch release made for an Axon project is tailored towards resolving bugs. T
 
 ==== Enhancements
 
-- [#3123] Introduce `SubscriptionQueryResult#handle` default implementation that expects a `Consumer<Throwable>` [#3124](https://github.com/AxonFramework/AxonFramework/pull/3124)
-- Exceptions in QueryHandler methods are swallowed for subscription queries [#3123](https://github.com/AxonFramework/AxonFramework/issues/3123)
-- Reduce the number of property lookups for matching entities [#3119](https://github.com/AxonFramework/AxonFramework/pull/3119)
-- Adjust the `AbstractMethodPropertyAccessStrategy` to filter better on none-matching methods  [#3117](https://github.com/AxonFramework/AxonFramework/pull/3117)
-- Introduce `PersistentStreamScheduledExecutorBuilder` [#3078](https://github.com/AxonFramework/AxonFramework/pull/3078)
-- Account for contexts call on un-initialized containers [#3054](https://github.com/AxonFramework/AxonFramework/pull/3054)
+- [#3123] Introduce `SubscriptionQueryResult#handle` default implementation that expects a `Consumer<Throwable>` link:https://github.com/AxonFramework/AxonFramework/pull/3124[#3124,window=_blank,role=external]
+- Exceptions in QueryHandler methods are swallowed for subscription queries link:https://github.com/AxonFramework/AxonFramework/issues/3123[#3123,window=_blank,role=external]
+- Reduce the number of property lookups for matching entities link:https://github.com/AxonFramework/AxonFramework/pull/3119[#3119,window=_blank,role=external]
+- Adjust the `AbstractMethodPropertyAccessStrategy` to filter better on none-matching methods  link:https://github.com/AxonFramework/AxonFramework/pull/3117[#3117,window=_blank,role=external]
+- Introduce `PersistentStreamScheduledExecutorBuilder` link:https://github.com/AxonFramework/AxonFramework/pull/3078[#3078,window=_blank,role=external]
+- Account for contexts call on un-initialized containers link:https://github.com/AxonFramework/AxonFramework/pull/3054[#3054,window=_blank,role=external]
 
 ==== Bug fixes
 
-- Fix rescheduling of failed Persistent Streams [#3130](https://github.com/AxonFramework/AxonFramework/pull/3130)
-- Allow DLQ to handle deserialization errors [#3126](https://github.com/AxonFramework/AxonFramework/pull/3126)
+- Fix rescheduling of failed Persistent Streams link:https://github.com/AxonFramework/AxonFramework/pull/3130[#3130,window=_blank,role=external]
+- Allow DLQ to handle deserialization errors link:https://github.com/AxonFramework/AxonFramework/pull/3126[#3126,window=_blank,role=external]
 
 ==== Contributors
 
 We'd like to thank all the contributors who worked on this release!
 
-- [@smcvb](https://github.com/smcvb)
-- [@MGathier](https://github.com/MGathier)
-- [@meks77](https://github.com/meks77)
-- [@abuijze](https://github.com/abuijze)
-- [@CodeDrivenMitch](https://github.com/CodeDrivenMitch)
-- [@tharoldD](https://github.com/tharoldD)
+- link:https://github.com/smcvb[@smcvb,window=_blank,role=external]
+- link:https://github.com/MGathier[@MGathier,window=_blank,role=external]
+- link:https://github.com/meks77[@meks77,window=_blank,role=external]
+- link:https://github.com/abuijze[@abuijze,window=_blank,role=external]
+- link:https://github.com/CodeDrivenMitch[@CodeDrivenMitch,window=_blank,role=external]
+- link:https://github.com/tharoldD[@tharoldD,window=_blank,role=external]
 
 == Release 4.9
 

@@ -1,5 +1,5 @@
 = Major Releases
-:navtitle: Major Releases
+:navtitle: Release Notes
 
 All the enhancements and features which have been introduced to our major releases of the Axon Framework are noted here.
 
@@ -7,39 +7,39 @@ All the enhancements and features which have been introduced to our major releas
 
 === _Features_
 
-- Persistent streams [#3030](https://github.com/AxonFramework/AxonFramework/pull/3030)
-- Inject multiple test resources [#2948](https://github.com/AxonFramework/AxonFramework/pull/2948)
+- Persistent streams link:https://github.com/AxonFramework/AxonFramework/pull/3030[#3030,window=_blank,role=external]
+- Inject multiple test resources link:https://github.com/AxonFramework/AxonFramework/pull/2948[#2948,window=_blank,role=external]
 
 === _Enhancements_
 
-- Persistent stream configuration [#3043](https://github.com/AxonFramework/AxonFramework/pull/3043)
-- Rebalance Segments in PooledStreamingEventProcessor [#3028](https://github.com/AxonFramework/AxonFramework/pull/3028)
-- [#3007] Set a SmartLifecycle phase lower than the ones written in the spring WebServer lifecycle ones. [#3009](https://github.com/AxonFramework/AxonFramework/pull/3009)
-- Spring: Place the Axon shutdown hook AFTER the WebServer ones [#3007](https://github.com/AxonFramework/AxonFramework/issues/3007)
-- Update index.adoc, remove link to how-to's [#2978](https://github.com/AxonFramework/AxonFramework/pull/2978)
-- Automate migration to Axon 4.9+ [#2944](https://github.com/AxonFramework/AxonFramework/pull/2944)
-- refactor: Parameterized logging with constant log values [#2910](https://github.com/AxonFramework/AxonFramework/pull/2910)
-- Enhancement/test container reuse [#2883](https://github.com/AxonFramework/AxonFramework/pull/2883)
+- Persistent stream configuration link:https://github.com/AxonFramework/AxonFramework/pull/3043[#3043,window=_blank,role=external]
+- Rebalance Segments in PooledStreamingEventProcessor link:https://github.com/AxonFramework/AxonFramework/pull/3028[#3028,window=_blank,role=external]
+- [#3007] Set a SmartLifecycle phase lower than the ones written in the spring WebServer lifecycle ones. link:https://github.com/AxonFramework/AxonFramework/pull/3009[#3009,window=_blank,role=external]
+- Spring: Place the Axon shutdown hook AFTER the WebServer ones link:https://github.com/AxonFramework/AxonFramework/issues/3007[#3007,window=_blank,role=external]
+- Update index.adoc, remove link to how-to's link:https://github.com/AxonFramework/AxonFramework/pull/2978[#2978,window=_blank,role=external]
+- Automate migration to Axon 4.9+ link:https://github.com/AxonFramework/AxonFramework/pull/2944[#2944,window=_blank,role=external]
+- refactor: Parameterized logging with constant log values link:https://github.com/AxonFramework/AxonFramework/pull/2910[#2910,window=_blank,role=external]
+- Enhancement/test container reuse link:https://github.com/AxonFramework/AxonFramework/pull/2883[#2883,window=_blank,role=external]
 
 === _Bug fixes_
 
-- Removed _old_ from AF reference guide docs module [#3046](https://github.com/AxonFramework/AxonFramework/pull/3046)
-- Updated links to Extensions and appendices [#3041](https://github.com/AxonFramework/AxonFramework/pull/3041)
-- Changed broken `xref` to broken links - to allow the build process to f… [#3032](https://github.com/AxonFramework/AxonFramework/pull/3032)
+- Removed _old_ from AF reference guide docs module link:https://github.com/AxonFramework/AxonFramework/pull/3046[#3046,window=_blank,role=external]
+- Updated links to Extensions and appendices link:https://github.com/AxonFramework/AxonFramework/pull/3041[#3041,window=_blank,role=external]
+- Changed broken `xref` to broken links - to allow the build process to f… link:https://github.com/AxonFramework/AxonFramework/pull/3032[#3032,window=_blank,role=external]
 
 === _Contributors_
 
 We'd like to thank all the contributors who worked on this release!
 
-- [@smcvb](https://github.com/smcvb)
-- [@MGathier](https://github.com/MGathier)
-- [@timtebeek](https://github.com/timtebeek)
-- [@dgomezg](https://github.com/dgomezg)
-- [@pckuyer](https://github.com/pckuyer)
-- [@Sajjad-HTLO](https://github.com/Sajjad-HTLO)
-- [@bystam](https://github.com/bystam)
-- [@manishatGit](https://github.com/manishatGit)
-- [@tharoldD](https://github.com/tharoldD)
+- link:https://github.com/smcvb[@smcvb,window=_blank,role=external]
+- link:https://github.com/MGathier[@MGathier,window=_blank,role=external]
+- link:https://github.com/timtebeek[@timtebeek,window=_blank,role=external]
+- link:https://github.com/dgomezg[@dgomezg,window=_blank,role=external]
+- link:https://github.com/pckuyer[@pckuyer,window=_blank,role=external]
+- link:https://github.com/Sajjad-HTLO[@Sajjad-HTLO,window=_blank,role=external]
+- link:https://github.com/bystam[@bystam,window=_blank,role=external]
+- link:https://github.com/manishatGit[@manishatGit,window=_blank,role=external]
+- link:https://github.com/tharoldD[@tharoldD,window=_blank,role=external]
 
 == Release 4.9
 
