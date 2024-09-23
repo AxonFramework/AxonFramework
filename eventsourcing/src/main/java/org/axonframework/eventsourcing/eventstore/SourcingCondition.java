@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.OptionalLong;
@@ -44,7 +44,7 @@ public interface SourcingCondition {
      * @param index The {@link Index} used as part of the {@link SourcingCondition#criteria()}.
      * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code index}.
      */
-    static SourcingCondition conditionFor(@NotNull Index index) {
+    static SourcingCondition conditionFor(@Nonnull Index index) {
         return conditionFor(index, -1L);
     }
 
@@ -58,7 +58,7 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code index},
      * starting at the given {@code start}.
      */
-    static SourcingCondition conditionFor(@NotNull Index index,
+    static SourcingCondition conditionFor(@Nonnull Index index,
                                           Long start) {
         return conditionFor(index, start, Long.MAX_VALUE);
     }
@@ -74,7 +74,7 @@ public interface SourcingCondition {
      * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code index},
      * starting at the given {@code start} and ending at the given {@code end}.
      */
-    static SourcingCondition conditionFor(@NotNull Index index,
+    static SourcingCondition conditionFor(@Nonnull Index index,
                                           Long start,
                                           Long end) {
         return new DefaultSourcingCondition(EventCriteria.hasIndex(index), start, end);
@@ -117,5 +117,5 @@ public interface SourcingCondition {
      * @param other The {@link SourcingCondition} to combine with {@code this SourcingCondition}.
      * @return A combined {@link SourcingCondition} based on {@code this SourcingCondition} and the given {@code other}.
      */
-    SourcingCondition combine(@NotNull SourcingCondition other);
+    SourcingCondition combine(@Nonnull SourcingCondition other);
 }

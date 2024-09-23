@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -60,8 +60,8 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * @param events One or more {@link EventMessage events} to append to the underlying storage solution.
      * @return A {@link CompletableFuture} of {@link Long} returning the position of the last event to be appended.
      */
-    default CompletableFuture<Long> appendEvents(@NotNull AppendCondition condition,
-                                                 @NotNull EventMessage<?>... events) {
+    default CompletableFuture<Long> appendEvents(@Nonnull AppendCondition condition,
+                                                 @Nonnull EventMessage<?>... events) {
         return appendEvents(condition, asList(events));
     }
 
@@ -77,8 +77,8 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * @return A {@link CompletableFuture} of {@link Long} returning the position of the last event in the given
      * {@link List} to be appended.
      */
-    CompletableFuture<Long> appendEvents(@NotNull AppendCondition condition,
-                                         @NotNull List<? extends EventMessage<?>> events);
+    CompletableFuture<Long> appendEvents(@Nonnull AppendCondition condition,
+                                         @Nonnull List<? extends EventMessage<?>> events);
 
     /**
      * Creates a <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
@@ -96,7 +96,7 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * @return A <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<EventMessage<?>> source(@NotNull SourcingCondition condition);
+    MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition);
 
     /**
      * Creates an <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
@@ -111,7 +111,7 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * @return An <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<TrackedEventMessage<?>> stream(@NotNull StreamingCondition condition);
+    MessageStream<TrackedEventMessage<?>> stream(@Nonnull StreamingCondition condition);
 
     /**
      * Creates a {@link TrackingToken} that is at the tail of an event stream.
@@ -141,7 +141,7 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * @return A {@link CompletableFuture} of a {@link TrackingToken} at the given {@code at}, if there aren't events
      * matching this criteria {@code null} is returned
      */
-    CompletableFuture<TrackingToken> tokenAt(@NotNull Instant at);
+    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
 
 
     /**
@@ -154,5 +154,5 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at a position before the given
      * {@code duration}.
      */
-    CompletableFuture<TrackingToken> tokenSince(@NotNull Duration since);
+    CompletableFuture<TrackingToken> tokenSince(@Nonnull Duration since);
 }

@@ -16,10 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.eventhandling.DomainEventMessage;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 
 import java.util.HashSet;
@@ -56,7 +54,8 @@ public interface IndexedEventMessage<P> extends EventMessage<P> {
      * @param <P>     The type of payload carried by the given {@code event}.
      * @return An {@link IndexedEventMessage} based on the given {@code event} and {@code indices}.
      */
-    static <P> IndexedEventMessage<P> asIndexedEvent(EventMessage<P> event, Set<Index> indices) {
+    static <P> IndexedEventMessage<P> asIndexedEvent(@Nonnull EventMessage<P> event,
+                                                     @Nonnull Set<Index> indices) {
         // TODO #3129 - MessageStream allows Pair<TrackingToken, EventMessage> type - Remove this if-branch.
         if (event instanceof TrackedEventMessage<P> trackedEvent) {
             return new GenericTrackedAndIndexedEventMessage<>(event, trackedEvent.trackingToken(), indices);
@@ -87,5 +86,5 @@ public interface IndexedEventMessage<P> extends EventMessage<P> {
      * @return A new {@link IndexedEventMessage} using the given {@code updater} to adjust the {@link #indices()} of the
      * new event.
      */
-    IndexedEventMessage<P> updateIndices(Function<Set<Index>, Set<Index>> updater);
+    IndexedEventMessage<P> updateIndices(@Nonnull Function<Set<Index>, Set<Index>> updater);
 }

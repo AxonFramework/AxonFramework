@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
 
@@ -44,7 +44,8 @@ public class GenericIndexedEventMessage<P> implements IndexedEventMessage<P> {
      * @param delegate The delegate {@link EventMessage} used for all {@code EventMessage} related operations.
      * @param indices  The {@link Set} of {@link Index Indices} relating to the given {@code delegate}.
      */
-    public GenericIndexedEventMessage(EventMessage<P> delegate, Set<Index> indices) {
+    public GenericIndexedEventMessage(@Nonnull EventMessage<P> delegate,
+                                      @Nonnull Set<Index> indices) {
         this.delegate = delegate;
         this.indices = indices;
     }
@@ -80,21 +81,21 @@ public class GenericIndexedEventMessage<P> implements IndexedEventMessage<P> {
     }
 
     @Override
-    public EventMessage<P> withMetaData(@NotNull Map<String, ?> metaData) {
+    public EventMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
         return getMetaData().equals(metaData)
                 ? this
                 : new GenericIndexedEventMessage<>(this.delegate.withMetaData(metaData), this.indices);
     }
 
     @Override
-    public EventMessage<P> andMetaData(@NotNull Map<String, ?> metaData) {
+    public EventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
         return metaData.isEmpty() || getMetaData().equals(metaData)
                 ? this
                 : new GenericIndexedEventMessage<>(this.delegate.andMetaData(metaData), this.indices);
     }
 
     @Override
-    public IndexedEventMessage<P> updateIndices(Function<Set<Index>, Set<Index>> updater) {
+    public IndexedEventMessage<P> updateIndices(@Nonnull Function<Set<Index>, Set<Index>> updater) {
         return new GenericIndexedEventMessage<>(this, updater.apply(this.indices));
     }
 }

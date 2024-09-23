@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 
 /**
@@ -53,7 +54,7 @@ public interface AppendCondition {
      * @param condition The {@link SourcingCondition} to base an {@link AppendCondition}.
      * @return An {@link AppendCondition} based on the given {@code condition}.
      */
-    static AppendCondition from(SourcingCondition condition) {
+    static AppendCondition from(@Nonnull SourcingCondition condition) {
         return new DefaultAppendCondition(condition.end().orElse(-1L), condition.criteria());
     }
 
@@ -85,7 +86,7 @@ public interface AppendCondition {
      * @param condition The {@link SourcingCondition} to combine with {@code this AppendCondition}.
      * @return An {@link AppendCondition} combined with the given {@code condition}.
      */
-    AppendCondition with(SourcingCondition condition);
+    AppendCondition with(@Nonnull SourcingCondition condition);
 
     /**
      * Combines the {@code this AppendCondition} with the given {@code consistencyMarker}.

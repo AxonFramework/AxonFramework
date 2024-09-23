@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -88,7 +88,7 @@ public interface Message<T> extends Serializable {
      * @param metaData The new MetaData for the Message
      * @return a copy of this message with the given MetaData
      */
-    Message<T> withMetaData(@NotNull Map<String, ?> metaData);
+    Message<T> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Returns a copy of this Message with it MetaData merged with the given {@code metaData}. The payload remains
@@ -97,7 +97,7 @@ public interface Message<T> extends Serializable {
      * @param metaData The MetaData to merge with
      * @return a copy of this message with the given MetaData
      */
-    Message<T> andMetaData(@NotNull Map<String, ?> metaData);
+    Message<T> andMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Serialize the payload of this message to the {@code expectedRepresentation} using given {@code serializer}. This
@@ -144,7 +144,7 @@ public interface Message<T> extends Serializable {
      * @param <C>        The new type of payload
      * @return a message with the converted payload
      */
-    default <C> Message<C> withConvertedPayload(@NotNull Function<T, C> conversion) {
+    default <C> Message<C> withConvertedPayload(@Nonnull Function<T, C> conversion) {
         if (Objects.equals(getPayload(), conversion.apply(getPayload()))) {
             return (Message<C>) this;
         }

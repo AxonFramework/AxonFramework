@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 
 import java.util.OptionalLong;
 
@@ -42,7 +42,7 @@ class DefaultSourcingCondition implements SourcingCondition {
      * @param start    The start position in the event sequence to retrieve of the model to source.
      * @param end      The end position in the event sequence to retrieve of the model to source.
      */
-    DefaultSourcingCondition(@NotNull EventCriteria criteria,
+    DefaultSourcingCondition(@Nonnull EventCriteria criteria,
                              Long start,
                              Long end) {
         this.criteria = criteria;
@@ -66,7 +66,7 @@ class DefaultSourcingCondition implements SourcingCondition {
     }
 
     @Override
-    public SourcingCondition combine(@NotNull SourcingCondition other) {
+    public SourcingCondition combine(@Nonnull SourcingCondition other) {
         return new DefaultSourcingCondition(
                 criteria().combine(other.criteria()),
                 Math.min(this.start, other.start()),

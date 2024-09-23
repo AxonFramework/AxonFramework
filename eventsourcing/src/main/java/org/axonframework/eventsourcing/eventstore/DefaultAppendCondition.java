@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Default implementation of the {@link AppendCondition}, using the given {@code consistencyMarker} and {@code criteria}
@@ -29,11 +29,11 @@ import jakarta.validation.constraints.NotNull;
  */
 record DefaultAppendCondition(
         long consistencyMarker,
-        @NotNull EventCriteria criteria
+        @Nonnull EventCriteria criteria
 ) implements AppendCondition {
 
     @Override
-    public AppendCondition with(SourcingCondition condition) {
+    public AppendCondition with(@Nonnull SourcingCondition condition) {
         return new DefaultAppendCondition(
                 condition.end()
                          .stream()

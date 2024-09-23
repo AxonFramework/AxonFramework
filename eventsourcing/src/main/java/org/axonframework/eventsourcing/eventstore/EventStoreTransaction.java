@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -60,8 +60,8 @@ public interface EventStoreTransaction {
      * @return The {@link MessageStream} of type {@link EventMessage} containing to the event sequence complying to the
      * given {@code condition}.
      */
-    MessageStream<EventMessage<?>> source(@NotNull SourcingCondition condition,
-                                          @NotNull ProcessingContext context);
+    MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition,
+                                          @Nonnull ProcessingContext context);
 
     /**
      * Appends an {@code eventMessage} to be appended to an {@link AsyncEventStore} in this transaction with the given
@@ -69,7 +69,7 @@ public interface EventStoreTransaction {
      *
      * @param eventMessage The {@link EventMessage} to append.
      */
-    void appendEvent(@NotNull EventMessage<?> eventMessage);
+    void appendEvent(@Nonnull EventMessage<?> eventMessage);
 
     /**
      * Registers a {@code callback} to invoke when an event is {@link #appendEvent(EventMessage) appended} to this
@@ -80,5 +80,5 @@ public interface EventStoreTransaction {
      *
      * @param callback A {@link Consumer} to invoke when an event is appended in this transaction.
      */
-    void onAppend(@NotNull Consumer<EventMessage<?>> callback);
+    void onAppend(@Nonnull Consumer<EventMessage<?>> callback);
 }

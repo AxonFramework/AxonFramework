@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
@@ -72,7 +72,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
      *
      * @param clock The {@link Clock} used for time-based operations, like {@link #tokenSince(Duration)}.
      */
-    public AsyncInMemoryEventStorageEngine(@NotNull Clock clock) {
+    public AsyncInMemoryEventStorageEngine(@Nonnull Clock clock) {
         this(clock, 0L);
     }
 
@@ -83,15 +83,15 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
      * @param clock  The {@link Clock} used for time-based operations, like {@link #tokenSince(Duration)}.
      * @param offset The value to use for the token of the first event appended.
      */
-    public AsyncInMemoryEventStorageEngine(@NotNull Clock clock,
-                                           @NotNull long offset) {
+    public AsyncInMemoryEventStorageEngine(@Nonnull Clock clock,
+                                           long offset) {
         this.clock = clock;
         this.offset = offset;
     }
 
     @Override
-    public CompletableFuture<Long> appendEvents(@NotNull AppendCondition condition,
-                                                @NotNull List<? extends EventMessage<?>> events) {
+    public CompletableFuture<Long> appendEvents(@Nonnull AppendCondition condition,
+                                                @Nonnull List<? extends EventMessage<?>> events) {
         int indexCount = condition.criteria().indices().size();
         if (indexCount > 1) {
             return CompletableFuture.failedFuture(tooManyIndices(indexCount, 1));
@@ -140,7 +140,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     }
 
     @Override
-    public MessageStream<EventMessage<?>> source(@NotNull SourcingCondition condition) {
+    public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
@@ -155,7 +155,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     }
 
     @Override
-    public MessageStream<TrackedEventMessage<?>> stream(@NotNull StreamingCondition condition) {
+    public MessageStream<TrackedEventMessage<?>> stream(@Nonnull StreamingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
@@ -224,7 +224,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@NotNull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }
@@ -247,7 +247,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenSince(Duration since) {
+    public CompletableFuture<TrackingToken> tokenSince(@Nonnull Duration since) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation tokenSince() is invoked with Duration [{}].", since);
         }
@@ -256,7 +256,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     }
 
     @Override
-    public void describeTo(@NotNull ComponentDescriptor descriptor) {
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("clock", clock);
         descriptor.describeProperty("offset", offset);
     }
