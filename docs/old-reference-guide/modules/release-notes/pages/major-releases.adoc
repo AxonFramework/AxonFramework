@@ -20,7 +20,7 @@ All the enhancements and features which have been introduced to our major releas
 - refactor: Parameterized logging with constant log values [#2910](https://github.com/AxonFramework/AxonFramework/pull/2910)
 - Enhancement/test container reuse [#2883](https://github.com/AxonFramework/AxonFramework/pull/2883)
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 - Removed _old_ from AF reference guide docs module [#3046](https://github.com/AxonFramework/AxonFramework/pull/3046)
 - Updated links to Extensions and appendices [#3041](https://github.com/AxonFramework/AxonFramework/pull/3041)
@@ -42,7 +42,7 @@ We'd like to thank all the contributors who worked on this release!
 
 == Release 4.9
 
-=== _Behavioral Breaking Change_
+=== _Behavioral breaking change_
 
 In https://github.com/AxonFramework/AxonFramework/pull/2778[issue #2778] we adapted the default `TrackingToken` of each `StreamingEventProcessor` to become a `ReplayToken` instead of a `null`.
 These changes result in the certainty that tasks that should not be performed on a replay of old events, like virtually any Saga event handlers, are ignored upon introduction of the Event Handling Component.
@@ -85,7 +85,7 @@ As such, the default `ReplayToken` should be regarded as a behavioral breaking c
 * Prevent processors from resetting when no handlers support replay https://github.com/AxonFramework/AxonFramework/pull/2769[#2769]
 * Improve JavaDoc of the `CommandTargetResolver` https://github.com/AxonFramework/AxonFramework/issues/2742[#2742]
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 * Execute the axon-spring-boot-3-integrationtests actually with spring 3 https://github.com/AxonFramework/AxonFramework/pull/2862[#2862]
 * Resolve classloading issue with ConnectionDetails https://github.com/AxonFramework/AxonFramework/pull/2833[#2833]
@@ -158,7 +158,7 @@ We'd like to thank all the contributors who worked on this release!
 * Add cache using EhCache 3 https://github.com/AxonFramework/AxonFramework/pull/2709[#2709]
 * Add cache using Ehcache 3 https://github.com/AxonFramework/AxonFramework/issues/2420[#2420]
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 * Remove payloadType tag from EventProcessorLatencyMetric https://github.com/AxonFramework/AxonFramework/pull/2683[#2683]
 
@@ -217,7 +217,7 @@ For an exhaustive list of the features, enhancements, and bug fixes introduced, 
 * [#2129] Fine tune `Repository` registration in the `AggregateTestFixture` https://github.com/AxonFramework/AxonFramework/pull/2552[#2552]
 * [#1630] Allow disabling of sequence number generation in the `GenericJpaRepository` https://github.com/AxonFramework/AxonFramework/pull/2550[#2550]
 * Several fixes to successfully run a JDK17 build https://github.com/AxonFramework/AxonFramework/pull/2544[#2544]
-* Adjust dependabot behavior https://github.com/AxonFramework/AxonFramework/pull/2536[#2536]
+* Adjust Dependabot behavior https://github.com/AxonFramework/AxonFramework/pull/2536[#2536]
 * Enable heartbeats to Axon Server by default https://github.com/AxonFramework/AxonFramework/pull/2530[#2530]
 * [#2383] Add `ConditionalOnMissingBean` to `SpringAxonConfiguration` and `SpringConfigurer` https://github.com/AxonFramework/AxonFramework/pull/2526[#2526]
 * Small test and code improvement for JobRunr deadline manager https://github.com/AxonFramework/AxonFramework/pull/2510[#2510]
@@ -229,7 +229,7 @@ For an exhaustive list of the features, enhancements, and bug fixes introduced, 
 * JDK16 - axon-messaging own unit test fail on https://github.com/AxonFramework/AxonFramework/issues/1826[#1826]
 * GenericJpaRepository to enable/disable the sequence number generation https://github.com/AxonFramework/AxonFramework/issues/1630[#1630]
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 * Fix typos in Javadoc https://github.com/AxonFramework/AxonFramework/pull/2475[#2475]
 * Aggregate Repository Spring wiring causes NullPointerException https://github.com/AxonFramework/AxonFramework/issues/1123[#1123]
@@ -311,7 +311,7 @@ For a list that also contains the dependency upgrades we refer to https://github
 * Strip test prefix once required in JUnit 3 from test method names https://github.com/AxonFramework/AxonFramework/pull/2321[#2321]
 * Apache Maven Wrapper 3.8.6 https://github.com/AxonFramework/AxonFramework/pull/2320[#2320]
 * Allow ReplayToken creation to be customizable when resetting a projection https://github.com/AxonFramework/AxonFramework/pull/2308[#2308]
-* Ensure all dispatchable messages are serialiable by Jackson and Xstream. https://github.com/AxonFramework/AxonFramework/pull/2295[#2295]
+* Ensure all dispatchable messages are serialiable by Jackson and XStream. https://github.com/AxonFramework/AxonFramework/pull/2295[#2295]
 * Testclasses for javax jakarta extension https://github.com/AxonFramework/AxonFramework/pull/2280[#2280]
 * Remove redundant method definition https://github.com/AxonFramework/AxonFramework/pull/2270[#2270]
 * Integration Test for Command and Query Priority Calculations https://github.com/AxonFramework/AxonFramework/pull/2266[#2266]
@@ -359,7 +359,7 @@ For a list that also contains the dependency upgrades we refer to https://github
 * [#1898] Empty associationProperty leads to IndexOutOfBoundsException https://github.com/AxonFramework/AxonFramework/pull/1899[#1899]
 * Empty associationProperty leads to IndexOutOfBoundsException https://github.com/AxonFramework/AxonFramework/issues/1898[#1898]
 * Provide means of configuring a `CommandCallback` https://github.com/AxonFramework/AxonFramework/issues/1889[#1889]
-* Splitted builds into pr and not pr, added ghactions to dependabot and other minors https://github.com/AxonFramework/AxonFramework/pull/1830[#1830]
+* Splitted builds into pr and not pr, added ghactions to Dependabot and other minors https://github.com/AxonFramework/AxonFramework/pull/1830[#1830]
 * Fine tune triggered Deadline validation for Test Fixtures https://github.com/AxonFramework/AxonFramework/pull/1797[#1797]
 * Simplified DeadlineManager configuration https://github.com/AxonFramework/AxonFramework/pull/1796[#1796]
 * Expand RetryScheduler to support more granular decision when to retry https://github.com/AxonFramework/AxonFramework/issues/1723[#1723]
@@ -375,7 +375,7 @@ For a list that also contains the dependency upgrades we refer to https://github
 * Query handlers of the same name and response type within one class https://github.com/AxonFramework/AxonFramework/issues/719[#719]
 * MultipleInstancesResponseType should recognize handler with single result https://github.com/AxonFramework/AxonFramework/issues/602[#602]
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 * Rename SpanFactory.registerTagProvider to registerSpanAttributeProvider https://github.com/AxonFramework/AxonFramework/pull/2347[#2347]
 * [#2341] Adjust type checking in `SimpleQueryUpdateEmitter` to accompany type erasure https://github.com/AxonFramework/AxonFramework/pull/2343[#2343]
@@ -404,7 +404,7 @@ For a list that also contains the dependency upgrades we refer to https://github
 * Wire the event `Serializer` into `QuartzEventSchedulerFactoryBean` https://github.com/AxonFramework/AxonFramework/issues/2088[#2088]
 * Fix typo in pom.xml https://github.com/AxonFramework/AxonFramework/pull/2022[#2022]
 * Fix typos https://github.com/AxonFramework/AxonFramework/pull/2016[#2016]
-* Exponential Retry for Tracking event processor not happening for transient exceptions when using postgres JdbcTokenStore https://github.com/AxonFramework/AxonFramework/issues/1920[#1920]
+* Exponential Retry for Tracking event processor not happening for transient exceptions when using Postgres JdbcTokenStore https://github.com/AxonFramework/AxonFramework/issues/1920[#1920]
 
 === _Contributors_
 
@@ -478,7 +478,7 @@ For an exhaustive list of all adjustments made for release 4.5 you can check out
  The first steps taken in this pull request are the deprecation of annotation-specific methods from the `MessageHandlingMember` interface.
  Added to this is a new approach towards defining attributes of a message handling member through `HandlerAttributes`.
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 * The `InMemoryEventStorageEngine` is a good fit for testing purposes.
  However, it included a discrepancy towards the event storing solution compared to other event storage solutions.
@@ -512,7 +512,7 @@ For an exhaustive list of all adjustments made for release 4.5 you can check out
  Issue https://github.com/AxonFramework/AxonFramework/issues/1391[#1391] describes the intent to the configuration of snapshot filtering to be performed on Aggregate level.
  The former can be configured through the `Configurer`, whereas the latter is by usage of the `AggregateConfigurer`.
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 * The `AggregateTestFixture` was incorrectly noting an old method in one of its exceptions.
  This has been marked and resolved in https://github.com/AxonFramework/AxonFramework/issues/1428[#1428].
@@ -550,7 +550,7 @@ For a full list of all the feature request and enhancements done for release 4.4
  The current token position, token-at-reset, is-merging and merge-completed position have been added to the set.
  Read the link:../../axon-framework/monitoring/processors.md#event-tracker-status-a-idevent-tracker-statusa[Event Tracker Status] section for more specifics on this.
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 * A `ConcurrencyException` was thrown when an aggregate was created at two distinct JVM's at the same time.
  As `ConcurrencyException`s are typically retryable, the creation command would be issued again if a `RetryScheduler` was in place.
@@ -584,7 +584,7 @@ For a complete list of all the changes made in 4.3 you can check out https://git
 
 * `Optional` return types can now be used for Query Handling methods. 
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 * An Aggregate's `Snapshotter` was not auto configured when Spring Boot is being used, as was filed under https://github.com/AxonFramework/AxonFramework/issues/932[#932].
 
@@ -612,7 +612,7 @@ For a full list of all features, enhancements and bugs, check out the https://gi
 * We have introduced the `EventGateway` in a similar fashion as the `CommandGateway` and `QueryGateway`.
  As with the command and query version, the `EventGateway` provides a simpler API when it comes to dispatching Events on the `EventBus`.
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 * Command and Query message priority was not set correctly for the Axon Server Connector.
  This issue has been addressed under bug https://github.com/AxonFramework/AxonFramework/pull/1004[#1004].
@@ -642,7 +642,7 @@ We refer to https://github.com/AxonFramework/AxonFramework/milestone/31?closed=1
 
 * To simplify configuration and more easily overcome deprecation, the https://en.wikipedia.org/wiki/Builder_pattern[Builder pattern] has been implemented for all infrastructure components.
 
-=== _Bug Fixes_
+=== _Bug fixes_
 
 The bugs marked for release 4.0 were issues introduced to new features or enhancements. As such they should not have impacted users in any way. Regardless, the full list can be found https://github.com/AxonFramework/AxonFramework/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A%22Release+4.0%22++label%3A%22Type%3A+Bug%22[here].
 
