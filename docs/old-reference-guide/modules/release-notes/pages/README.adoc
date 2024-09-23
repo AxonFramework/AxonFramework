@@ -1,4 +1,5 @@
-= Axon Framework
+= Release Notes
+:navtitle: Release Notes
 
 The release notes section for the Axon framework for all major/minor releases.
 
