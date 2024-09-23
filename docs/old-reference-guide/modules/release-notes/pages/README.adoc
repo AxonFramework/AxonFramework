@@ -1,0 +1,29 @@
+= Axon Framework
+
+The release notes section for the Axon framework for all major/minor releases.
+
+[cols="<,<"]
+|===
+|Release Type |Version 
+
+|_*Major*_ |link:major-releases#release-4.9[4.9] 
+| |link:major-releases#release-4.8[4.8] 
+| |link:major-releases#release-4.7[4.7] 
+| |link:major-releases#release-4.6[4.6] 
+| |link:major-releases#release-4.5[4.5] 
+| |link:major-releases#release-4.4[4.4] 
+| |link:major-releases#release-4.3[4.3] 
+| |link:major-releases#release-4.2[4.2] 
+| |link:major-releases#release-4.1[4.1] 
+| |link:major-releases#release-4.0[4.0] 
+|_*Minor*_ |link:minor-releases#release-4.9[4.9] 
+| |link:minor-releases#release-4.8[4.8] 
+| |link:minor-releases#release-4.7[4.7] 
+| |link:minor-releases#release-4.6[4.6] 
+| |link:minor-releases#release-4.5[4.5] 
+| |link:minor-releases#release-4.4[4.4] 
+| |link:minor-releases#release-4.3[4.3] 
+| |link:minor-releases#release-4.2[4.2] 
+| |link:minor-releases#release-4.1[4.1] 
+| |link:minor-releases#release-4.0[4.0] 
+|===

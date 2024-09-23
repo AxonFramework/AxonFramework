@@ -1,0 +1,1095 @@
+= Minor Releases
+
+Any patch release made for an Axon project is tailored towards resolving bugs. This page aims to provide a dedicated overview of patch releases per project.
+
+== Release 4.10
+
+=== Release 4.10.1
+
+==== Enhancements
+
+- [#3123] Introduce `SubscriptionQueryResult#handle` default implementation that expects a `Consumer<Throwable>` [#3124](https://github.com/AxonFramework/AxonFramework/pull/3124)
+- Exceptions in QueryHandler methods are swallowed for subscription queries [#3123](https://github.com/AxonFramework/AxonFramework/issues/3123)
+- Reduce the number of property lookups for matching entities [#3119](https://github.com/AxonFramework/AxonFramework/pull/3119)
+- Adjust the `AbstractMethodPropertyAccessStrategy` to filter better on none-matching methods  [#3117](https://github.com/AxonFramework/AxonFramework/pull/3117)
+- Introduce `PersistentStreamScheduledExecutorBuilder` [#3078](https://github.com/AxonFramework/AxonFramework/pull/3078)
+- Account for contexts call on un-initialized containers [#3054](https://github.com/AxonFramework/AxonFramework/pull/3054)
+
+==== Bug Fixes
+
+- Fix rescheduling of failed Persistent Streams [#3130](https://github.com/AxonFramework/AxonFramework/pull/3130)
+- Allow DLQ to handle deserialization errors [#3126](https://github.com/AxonFramework/AxonFramework/pull/3126)
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+- [@smcvb](https://github.com/smcvb)
+- [@MGathier](https://github.com/MGathier)
+- [@meks77](https://github.com/meks77)
+- [@abuijze](https://github.com/abuijze)
+- [@CodeDrivenMitch](https://github.com/CodeDrivenMitch)
+- [@tharoldD](https://github.com/tharoldD)
+
+== Release 4.9
+
+=== Release 4.9.3
+
+==== Enhancements
+
+* Skip jacoco if `sonar-enabled` is false. https://github.com/AxonFramework/AxonFramework/pull/2976[#2976]
+
+==== Bug Fixes
+
+* Add additional check for NoToken so we never try to open a stream with it. https://github.com/AxonFramework/AxonFramework/pull/2986[#2986]
+* Use `TransactionManager` in the `EventProcessorControlService` to invoke `TokenStore#retrieveStorageIdentifier` https://github.com/AxonFramework/AxonFramework/pull/2985[#2985]
+* Resolve issue with eager gap cleanup https://github.com/AxonFramework/AxonFramework/pull/2977[#2977]
+* Fix SagaTestFixture use DomainEventMessage https://github.com/AxonFramework/AxonFramework/pull/2974[#2974]
+* Weird state causing tracking processors to never advance https://github.com/AxonFramework/AxonFramework/issues/2958[#2958]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/gklijs[@gklijs]
+* https://github.com/smcvb[@smcvb]
+* https://github.com/TimoFrye[@TimoFrye]
+* https://github.com/abuijze[@abuijze]
+
+=== Release 4.9.2
+
+==== Bug Fixes
+
+* Added explicit AutoConfigureBefore and AutoConfigureAfter in JpaAutoConfiguration https://github.com/AxonFramework/AxonFramework/pull/2964[#2964]
+* Resolved MySQL startup problems in integration tests https://github.com/AxonFramework/AxonFramework/pull/2963[#2963]
+* Fix Exception on using OpenTelemetry and ScatterGather queries https://github.com/AxonFramework/AxonFramework/pull/2960[#2960]
+* [#2955] Fix ability to replay when at least one Event Handling Component supports a reset https://github.com/AxonFramework/AxonFramework/pull/2957[#2957]
+* `@DisallowReplay` on a single Event Handling Components blocks replay of the entire `StreamingEventProcessor` https://github.com/AxonFramework/AxonFramework/issues/2955[#2955]
+* fix: reverse eventBlockListingEnabled value for EventBuffer#disableIg… https://github.com/AxonFramework/AxonFramework/pull/2947[#2947]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/vitko[@vitko]
+* https://github.com/abuijze[@abuijze]
+* https://github.com/CptCheesebeard[@CptCheesebeard]
+* https://github.com/CodeDrivenMitch[@CodeDrivenMitch]
+
+=== Release 4.9.1
+
+==== Enhancements
+
+* Added support for TrackingToken parameter in SagaTestFixture https://github.com/AxonFramework/AxonFramework/pull/2917[#2917]
+* [#2900] Removed requirement for property to disable AxonServer EventStore and enable another one https://github.com/AxonFramework/AxonFramework/pull/2909[#2909]
+* Align the `TrackingToken` assert for JPA, JDBC, and AxonServer https://github.com/AxonFramework/AxonFramework/pull/2903[#2903]
+
+==== Bug Fixes
+
+* Resolved apparent memory leak in GapAwareTrackingToken https://github.com/AxonFramework/AxonFramework/pull/2936[#2936]
+* Axon Spring Boot Starter fails to connect to Axon Server on Spring Boot version 3.1.6+ https://github.com/AxonFramework/AxonFramework/issues/2914[#2914]
+* Integration test should use current Axon version https://github.com/AxonFramework/AxonFramework/pull/2908[#2908]
+* Behavioral change in 4.9 JpaEventStoreAutoConfiguration https://github.com/AxonFramework/AxonFramework/issues/2900[#2900]
+* Make the viable name match with the override, the current name can be… https://github.com/AxonFramework/AxonFramework/pull/2888[#2888]
+
+==== Dependency Upgrade
+
+* Upgrade Axon Server Connector Java to 2023.2.0 https://github.com/AxonFramework/AxonFramework/pull/2913[#2913]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/gklijs[@gklijs]
+* https://github.com/smcvb[@smcvb]
+* https://github.com/abuijze[@abuijze]
+
+== Release 4.8
+
+=== Release 4.8.3
+
+==== Enhancements
+
+* [#2855] Support Hierarchical Spring Contexts within `SpringConfigurer.ComponentLocator` https://github.com/AxonFramework/AxonFramework/pull/2870[#2870]
+* Enhance segment logging for `PooledStreamingEventProcessor` https://github.com/AxonFramework/AxonFramework/pull/2869[#2869]
+* ComponentLocator does not resolve beans from Spring Parent Context https://github.com/AxonFramework/AxonFramework/issues/2855[#2855]
+* [#2844] Improve shutdown behavior for `DbSchedulerDeadlineManager` https://github.com/AxonFramework/AxonFramework/pull/2852[#2852]
+* Shutdown-Mechanism of DbSchedulerDeadlineManager https://github.com/AxonFramework/AxonFramework/issues/2844[#2844]
+
+==== Bug Fixes
+
+* Disable JPA and JDBC `EventStorageEngine` creation when Axon Server is enabled https://github.com/AxonFramework/AxonFramework/pull/2871[#2871]
+* [#2845] Ensure ConfigurerModule order is respected in Spring Autoconfiguration https://github.com/AxonFramework/AxonFramework/pull/2846[#2846]
+* InfraConfiguration.springAxonConfigurer ignores ConfigurerModule.order() https://github.com/AxonFramework/AxonFramework/issues/2845[#2845]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/gklijs[@gklijs]
+* https://github.com/smcvb[@smcvb]
+* https://github.com/abuijze[@abuijze]
+
+=== Release 4.8.2
+
+==== Enhancements
+
+* Removed spring-devtools.properties https://github.com/AxonFramework/AxonFramework/pull/2820[#2820]
+* Add default constructor for the `AxonServerContainer` https://github.com/AxonFramework/AxonFramework/pull/2809[#2809]
+
+==== Bug Fixes
+
+* axon-tracing-opentelemetry with Spring Devtools crashes on start https://github.com/AxonFramework/AxonFramework/issues/2828[#2828]
+* Ensure insert order is maintained for `SequencedDeadLetterQueue#deadLetterSequence(String)` invocations https://github.com/AxonFramework/AxonFramework/pull/2827[#2827]
+* Fix inconsistencies around the `AxonServerConfiguration` https://github.com/AxonFramework/AxonFramework/pull/2814[#2814]
+* Enable Annotated Message Interceptor support for Command Handling Components https://github.com/AxonFramework/AxonFramework/pull/2804[#2804]
+* Fix property-based Load Balancing Strategy configuration bug https://github.com/AxonFramework/AxonFramework/pull/2802[#2802]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/smcvb[@smcvb]
+* https://github.com/abuijze[@abuijze]
+
+=== Release 4.8.1
+
+==== Enhancements
+
+* Log when `HandlerExecutionException#details` are missing and on `AbstractRepository` failures https://github.com/AxonFramework/AxonFramework/pull/2796[#2796]
+* Allow `Coordinator` to extend Token claims as an optimization https://github.com/AxonFramework/AxonFramework/pull/2785[#2785]
+* Introduce Maven profile to update versions for non-parent POM related module https://github.com/AxonFramework/AxonFramework/issues/2638[#2638]
+
+==== Bug Fixes
+
+* Enable provisioning a `Message` with custom `MetaData` for `QueryGateway#streamingQuery` https://github.com/AxonFramework/AxonFramework/pull/2795[#2795]
+* Ensure Aggregate Member Command Handlers are retrievable in complex Aggregate Hierarchy https://github.com/AxonFramework/AxonFramework/pull/2794[#2794]
+* Aggregate fixture hierarchy behaviour https://github.com/AxonFramework/AxonFramework/issues/2792[#2792]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/smcvb[@smcvb]
+
+== Release 4.7
+
+=== Release 4.7.6
+
+==== Enhancements
+
+* [#2752] Truncate `Cause` message to fit default column width https://github.com/AxonFramework/AxonFramework/pull/2759[#2759]
+* DLQ - PSQLException: ERROR: value too long for type character varying(255) https://github.com/AxonFramework/AxonFramework/issues/2752[#2752]
+
+==== Bug Fixes
+
+* Synchronize during Event Processor initialization https://github.com/AxonFramework/AxonFramework/pull/2756[#2756]
+* Duplicate initialization of TrackingEventProcessor worker threads https://github.com/AxonFramework/AxonFramework/issues/2751[#2751]
+* Fix Initialization of PSEP when using Saga https://github.com/AxonFramework/AxonFramework/pull/2736[#2736]
+* When registering the same Saga multiple times, only the last one is kept. https://github.com/AxonFramework/AxonFramework/pull/2726[#2726]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/gklijs[@gklijs]
+* https://github.com/smcvb[@smcvb]
+* https://github.com/Morlack[@Morlack]
+
+=== Release 4.7.5
+
+==== Bug Fixes
+
+* Fix autoconfiguration not picking up SpanFactory for AxonServerQueryBus 4.7 https://github.com/AxonFramework/AxonFramework/pull/2695[#2695]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/Morlack[@Morlack]
+
+=== Release 4.7.4
+
+==== Enhancements
+
+* Polymorphic Aggregate auto-configuration test enhancements https://github.com/AxonFramework/AxonFramework/pull/2690[#2690]
+* AbstractRepository logs warning when aggregate is loaded to process deadline message https://github.com/AxonFramework/AxonFramework/issues/2669[#2669]
+* Don't log warn when the aggregate is handling a deadline message. https://github.com/AxonFramework/AxonFramework/pull/2644[#2644]
+
+==== Bug Fixes
+
+* Use cause from decision https://github.com/AxonFramework/AxonFramework/pull/2688[#2688]
+* Also include custom aggregate names to resolve deadline handlers https://github.com/AxonFramework/AxonFramework/pull/2686[#2686]
+* Deadline Handlers are not executed when created and handled within Aggregates with custom type name https://github.com/AxonFramework/AxonFramework/issues/2678[#2678]
+* Spring AoT fix https://github.com/AxonFramework/AxonFramework/pull/2675[#2675]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/gklijs[@gklijs]
+* https://github.com/smcvb[@smcvb]
+* https://github.com/abuijze[@abuijze]
+* https://github.com/hatzlj[@hatzlj]
+
+=== Release 4.7.3
+
+==== Enhancements
+
+* Include dependency upgrades with migration https://github.com/AxonFramework/AxonFramework/pull/2631[#2631]
+
+==== Bug Fixes
+
+* Replace `SpringPrototypeAggregateFactory` `BeanDefinition` introspection for direct method invocation https://github.com/AxonFramework/AxonFramework/pull/2637[#2637]
+* Deprecated fallback warning with Spring 6.0.5 https://github.com/AxonFramework/AxonFramework/issues/2630[#2630]
+* Fix OpenTelemetry warning https://github.com/AxonFramework/AxonFramework/pull/2635[#2635]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/smcvb[@smcvb]
+* https://github.com/timtebeek[@timtebeek]
+* https://github.com/Morlack[@Morlack]
+
+=== Release 4.7.2
+
+==== Features
+
+* Add Migration module with OpenRewrite recipes for AxonFramework 4.7 https://github.com/AxonFramework/AxonFramework/pull/2597[#2597]
+* Automatic migration recipes to 4.7+ https://github.com/AxonFramework/AxonFramework/issues/2596[#2596]
+
+==== Enhancements
+
+* [#2611] Clarify active `UnitOfWork` expectation in the `Repository` https://github.com/AxonFramework/AxonFramework/pull/2625[#2625]
+* `ClassCastException` on `@ExceptionHandler` annotated Aggregate when loading Aggregate manually in an `@EventHandler` annotated method https://github.com/AxonFramework/AxonFramework/issues/2611[#2611]
+
+==== Bug Fixes
+
+* Add missing copyright notices and remove duplicate notices https://github.com/AxonFramework/AxonFramework/pull/2626[#2626]
+* [#2620] Test correlation data population for `DeadlineManager` implementations https://github.com/AxonFramework/AxonFramework/pull/2624[#2624]
+* SimpleDeadlineManager does not use CorrelationDataProviders https://github.com/AxonFramework/AxonFramework/issues/2620[#2620]
+* Fix OpenTelemetry support - 4.7 Edition https://github.com/AxonFramework/AxonFramework/pull/2617[#2617]
+* refactor: Add ASLv2 license header https://github.com/AxonFramework/AxonFramework/pull/2613[#2613]
+* [#2604] Ensure `given(Object...)` can be followed up by `andGivenCurrentTime` https://github.com/AxonFramework/AxonFramework/pull/2607[#2607]
+* AggregateTestFixture.andGivenCurrentTime() should not clear fixture given state https://github.com/AxonFramework/AxonFramework/issues/2604[#2604]
+* [#2555] Switch to `ConcurrentHashMap` in Saga related classes https://github.com/AxonFramework/AxonFramework/pull/2592[#2592]
+* Make the `AssociationResolver` and `SagaMethodMessageHandlerDefinition` thread safe. https://github.com/AxonFramework/AxonFramework/issues/2591[#2591]
+* Make SnapshotFilter a hard requirement https://github.com/AxonFramework/AxonFramework/pull/2586[#2586]
+* SagaFixtureTests in parallel concurrent mode https://github.com/AxonFramework/AxonFramework/issues/2555[#2555]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/gklijs[@gklijs]
+* https://github.com/smcvb[@smcvb]
+* https://github.com/Morlack[@Morlack]
+* https://github.com/stefanmirkovic[@stefanmirkovic]
+* https://github.com/timtebeek[@timtebeek]
+
+=== Release 4.7.1
+
+==== Bug Fixes
+
+* Fix not calling shutdown on `EmbeddedEventStore` in combination with `javax` https://github.com/AxonFramework/AxonFramework/pull/2585[#2585]
+* Axon Spring AutoConfiguration binds wrong EventStore (Jakarta/Javax) https://github.com/AxonFramework/AxonFramework/issues/2584[#2584]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/gklijs[@gklijs]
+
+== Release 4.6
+
+=== Release 4.6.8
+
+==== Enhancements
+
+* Move the check for whether the event processor is caught up before do… https://github.com/AxonFramework/AxonFramework/pull/2714[#2714]
+
+==== Bug Fixes
+
+* Make `registerHandlerInterceptor` lazy https://github.com/AxonFramework/AxonFramework/pull/2716[#2716]
+* Adjust the JavaDoc of the `EventProcessorLatencyMonitor` https://github.com/AxonFramework/AxonFramework/pull/2704[#2704]
+* Wait till processing is done until setting the caughtUp flag for the PooledStreamingEventProcessor. https://github.com/AxonFramework/AxonFramework/pull/2698[#2698]
+* Fix autoconfiguration not picking up SpanFactory for AxonServerQueryBus 4.6 https://github.com/AxonFramework/AxonFramework/pull/2696[#2696]
+* Pooled Streaming Event Processor incorrectly sets the `caughtUp` flag https://github.com/AxonFramework/AxonFramework/issues/2694[#2694]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/gklijs[@gklijs]
+* https://github.com/smcvb[@smcvb]
+* https://github.com/Morlack[@Morlack]
+
+=== Release 4.6.7
+
+==== Bug Fixes
+
+* Fix OpenTelemetry warning https://github.com/AxonFramework/AxonFramework/pull/2635[#2635]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/Morlack[@Morlack]
+
+=== Release 4.6.6
+
+==== Bug Fixes
+
+* Fix OpenTelemetry support on queries https://github.com/AxonFramework/AxonFramework/pull/2621[#2621]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/Morlack[@Morlack]
+
+=== Release 4.6.5
+
+==== Bug Fixes
+
+* Fix OpenTelemetry support https://github.com/AxonFramework/AxonFramework/pull/2612[#2612]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/Morlack[@Morlack]
+
+=== Release 4.6.4
+
+==== Bug Fixes
+
+* Ensure retrieved Saga Identifiers collection is thread-safe https://github.com/AxonFramework/AxonFramework/pull/2595[#2595]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/smcvb[@smcvb]
+
+=== Release 4.6.3
+
+==== Enhancements
+
+* Proposed changes to caching saga fix https://github.com/AxonFramework/AxonFramework/pull/2532[#2532]
+* Allow usage of specific serializers for the JpaDLQ https://github.com/AxonFramework/AxonFramework/pull/2486[#2486]
+
+==== Bug Fixes
+
+* Ensure default `TrackingEventProcessorConfiguration` is taken into account for Sagas https://github.com/AxonFramework/AxonFramework/pull/2533[#2533]
+* Saga Caching Enhancements https://github.com/AxonFramework/AxonFramework/pull/2531[#2531]
+* Cancel of direct query https://github.com/AxonFramework/AxonFramework/pull/2528[#2528]
+* [#2514] Fix naming of registered `Repository` and `AggregateFactory` beans https://github.com/AxonFramework/AxonFramework/pull/2525[#2525]
+* Fix caching mechanism for Sagas https://github.com/AxonFramework/AxonFramework/pull/2517[#2517]
+* Wrong Spring repository bean name when using aggregate polymorphism https://github.com/AxonFramework/AxonFramework/issues/2514[#2514]
+* SpringAxonAutoConfigurer warns about multiple beans defined for polymorphic aggregates. https://github.com/AxonFramework/AxonFramework/issues/2512[#2512]
+* Roll back slf4j to major version 1 https://github.com/AxonFramework/AxonFramework/pull/2497[#2497]
+* DeadLetterQueue uses wrong Serializer to (de)serialize Tokens https://github.com/AxonFramework/AxonFramework/issues/2485[#2485]
+* Adhere to expected Exception Handler invocation order https://github.com/AxonFramework/AxonFramework/pull/2483[#2483]
+* [#2481] Check `MessageHandlerRegistrar` registration to be non-null https://github.com/AxonFramework/AxonFramework/pull/2482[#2482]
+* NullPointerException on Shutdown without Start https://github.com/AxonFramework/AxonFramework/issues/2481[#2481]
+* 
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/smcvb[@smcvb]
+* https://github.com/Morlack[@Morlack]
+* https://github.com/saratry[@saratry]
+
+=== Release 4.6.2
+
+==== Features
+
+* [#2444] Exact class type matcher https://github.com/AxonFramework/AxonFramework/pull/2446[#2446]
+* Add matcher for exact class type https://github.com/AxonFramework/AxonFramework/issues/2444[#2444]
+
+==== Enhancements
+
+* Update the `README.md` to guide users better https://github.com/AxonFramework/AxonFramework/pull/2470[#2470]
+* [#2456] Replace use of unregister for deregister https://github.com/AxonFramework/AxonFramework/pull/2466[#2466]
+* Prefer 'deregister' to 'unregister' https://github.com/AxonFramework/AxonFramework/issues/2456[#2456]
+
+==== Bug Fixes
+
+* [#2473] Ensure lifecycle handlers for components declared as Spring beans are invoked https://github.com/AxonFramework/AxonFramework/pull/2474[#2474]
+* Axon Server event scheduler is never started https://github.com/AxonFramework/AxonFramework/issues/2473[#2473]
+* Fixes recovering quartz jobs in case of sudden shutdown https://github.com/AxonFramework/AxonFramework/pull/2472[#2472]
+* [#2464] Set subtypes on `SpringPrototypeAggregateFactory` https://github.com/AxonFramework/AxonFramework/pull/2469[#2469]
+* [#2449] Adhere to Spring's `@Order` annotation for Message Handling Component registration https://github.com/AxonFramework/AxonFramework/pull/2468[#2468]
+* Replace `IdentifierMissingException` in `AnnotationCommandTargetResolver` for `IllegalArgumentException` https://github.com/AxonFramework/AxonFramework/pull/2465[#2465]
+* Commands routed to the parent of polymorphic aggregates cause IncompatibleAggregateException https://github.com/AxonFramework/AxonFramework/issues/2464[#2464]
+* Fixes the saga list injection bug, issue 2462. https://github.com/AxonFramework/AxonFramework/pull/2463[#2463]
+* Injecting Lists in Saga no longer works https://github.com/AxonFramework/AxonFramework/issues/2462[#2462]
+* [#2445] Revert default `EventUpcasterChain` construction in `DefaultConfigurer` https://github.com/AxonFramework/AxonFramework/pull/2459[#2459]
+* CachingSagaStore corrupts Cache entries when using computeIfPresent https://github.com/AxonFramework/AxonFramework/issues/2458[#2458]
+* [#2454] Reintroduce changes from PR #1905 https://github.com/AxonFramework/AxonFramework/pull/2455[#2455]
+* Pull request 1905 is missing from master https://github.com/AxonFramework/AxonFramework/issues/2454[#2454]
+* QuartzDeadlineManager does not recover from failures https://github.com/AxonFramework/AxonFramework/issues/2451[#2451]
+* Spring `@Order` seems to be ignored for different event handler components belonging to the same event processor https://github.com/AxonFramework/AxonFramework/issues/2449[#2449]
+* Fix `Cache#computeIfPresent` return value in `CachingSagaStore` https://github.com/AxonFramework/AxonFramework/pull/2448[#2448]
+* Axon Spring Boot application fails to start when multiple EventUpcasterChain spring beans are defined https://github.com/AxonFramework/AxonFramework/issues/2445[#2445]
+* Added Spring Resource Injector to Application Context https://github.com/AxonFramework/AxonFramework/pull/2441[#2441]
+* Add test scope to `mysql-connector-java` dependency https://github.com/AxonFramework/AxonFramework/pull/2436[#2436]
+* [#2431] Use `XStreamSerializer#defaultSerializer` to mitigate XStream exclusion issues https://github.com/AxonFramework/AxonFramework/pull/2434[#2434]
+* Fix regression for GenericJpaRepository autoconfig https://github.com/AxonFramework/AxonFramework/pull/2433[#2433]
+* JpaSagaStore cannot be used without XStream https://github.com/AxonFramework/AxonFramework/issues/2431[#2431]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+* https://github.com/gklijs[@gklijs]
+* https://github.com/smcvb[@smcvb]
+* https://github.com/Blackdread[@Blackdread]
+* https://github.com/abuijze[@abuijze]
+
+=== Release 4.6.1
+
+==== Enhancements
+
+* Added ConditionalOnMissingBean to AutoConfiguration https://github.com/AxonFramework/AxonFramework/pull/2414[#2414]
+* Add `ConditionalOnMissingBean` to `AxonServerActuatorAutoConfigurationis` https://github.com/AxonFramework/AxonFramework/issues/2411[#2411]
+
+==== Bug Fixes
+
+* Only return unique sequence identifiers in deadLetters call of JPA DLQ https://github.com/AxonFramework/AxonFramework/pull/2428[#2428]
+* autowiring command model Repository results in NoSuchBeanDefinitionException in 4.6.0 https://github.com/AxonFramework/AxonFramework/issues/2426[#2426]
+* Deadlines bug https://github.com/AxonFramework/AxonFramework/pull/2424[#2424]
+* [#1211] Add `Cache#computeIfPresent` and use in `CachingSagaStore` for Association Values https://github.com/AxonFramework/AxonFramework/pull/2423[#2423]
+* Renamed size column name in JdbcTokenStore https://github.com/AxonFramework/AxonFramework/pull/2413[#2413]
+* [#2393] Move retrieval of Command Handler to the end of the InterceptorChain https://github.com/AxonFramework/AxonFramework/pull/2412[#2412]
+* JdbcTokenStore uses query that contains reserved word in oracle https://github.com/AxonFramework/AxonFramework/issues/2409[#2409]
+* [#2389] Make constructors accessible in `NoArgumentConstructorCreationPolicyAggregateFactory` https://github.com/AxonFramework/AxonFramework/pull/2407[#2407]
+* Rename index column to sequenceIndex https://github.com/AxonFramework/AxonFramework/pull/2401[#2401]
+* [#2396] Deadletter logging changes https://github.com/AxonFramework/AxonFramework/pull/2398[#2398]
+* Dead Letter Queue implementations can leak personal data to log https://github.com/AxonFramework/AxonFramework/issues/2396[#2396]
+* CommandHandlerInterceptor annotated method in aggregate root doesn't work when command handling entity not created https://github.com/AxonFramework/AxonFramework/issues/2393[#2393]
+* [#2382] Disable batch optimization for token-based event reading https://github.com/AxonFramework/AxonFramework/pull/2390[#2390]
+* Aggregates no longer allow private/protected no-arg constructors https://github.com/AxonFramework/AxonFramework/issues/2389[#2389]
+* Events are not processed when optimize-event-consumption is disabled https://github.com/AxonFramework/AxonFramework/issues/2382[#2382]
+* [#2367] Fix Repository beans not being registered to the Spring application context https://github.com/AxonFramework/AxonFramework/pull/2370[#2370]
+* [#2364] Fix framework failing to start due to a `ClassNotFoundException` https://github.com/AxonFramework/AxonFramework/pull/2369[#2369]
+* Fix GA for Slack release announcement https://github.com/AxonFramework/AxonFramework/pull/2368[#2368]
+* Aggregate `org.axonframework.modelling.command.Repository` bean not available in Spring context https://github.com/AxonFramework/AxonFramework/issues/2367[#2367]
+* Event storage engines cannot be used without XStream https://github.com/AxonFramework/AxonFramework/issues/2364[#2364]
+* Concurrency conflicts in CachingSagaStore https://github.com/AxonFramework/AxonFramework/issues/1211[#1211]
+
+==== Dependency Upgrade
+
+* Bump testcontainers.version from 1.17.4 to 1.17.5 https://github.com/AxonFramework/AxonFramework/pull/2425[#2425]
+* Bump axonserver-connector-java from 4.6.1 to 4.6.2 https://github.com/AxonFramework/AxonFramework/pull/2419[#2419]
+* Upgrade to `axonserver-connector-java` 4.6.2 https://github.com/AxonFramework/AxonFramework/pull/2416[#2416]
+* Bump testcontainers.version from 1.17.3 to 1.17.4 https://github.com/AxonFramework/AxonFramework/pull/2415[#2415]
+* Bump slf4j.version from 2.0.2 to 2.0.3 https://github.com/AxonFramework/AxonFramework/pull/2408[#2408]
+* Bump hibernate-core.version from 5.6.11.Final to 5.6.12.Final https://github.com/AxonFramework/AxonFramework/pull/2405[#2405]
+* Bump joda-time from 2.11.0 to 2.11.2 https://github.com/AxonFramework/AxonFramework/pull/2395[#2395]
+* Bump spring.boot.version from 2.7.3 to 2.7.4 https://github.com/AxonFramework/AxonFramework/pull/2392[#2392]
+* Bump joda-time from 2.11.0 to 2.11.1 https://github.com/AxonFramework/AxonFramework/pull/2391[#2391]
+* Bump slf4j.version from 2.0.1 to 2.0.2 https://github.com/AxonFramework/AxonFramework/pull/2388[#2388]
+* Bump javassist from 3.29.0-GA to 3.29.2-GA https://github.com/AxonFramework/AxonFramework/pull/2387[#2387]
+* Bump jackson-bom from 2.13.3 to 2.13.4 https://github.com/AxonFramework/AxonFramework/pull/2386[#2386]
+* Bump byte-buddy.version from 1.12.16 to 1.12.17 https://github.com/AxonFramework/AxonFramework/pull/2385[#2385]
+* Bump junit.jupiter.version from 5.9.0 to 5.9.1 https://github.com/AxonFramework/AxonFramework/pull/2384[#2384]
+* Bump maven-bundle-plugin from 5.1.4 to 5.1.8 https://github.com/AxonFramework/AxonFramework/pull/2381[#2381]
+* Bump maven-javadoc-plugin from 3.4.0 to 3.4.1 https://github.com/AxonFramework/AxonFramework/pull/2380[#2380]
+* Bump micrometer-core from 1.9.3 to 1.9.4 https://github.com/AxonFramework/AxonFramework/pull/2379[#2379]
+* Bump metrics-core from 4.2.9 to 4.2.12 https://github.com/AxonFramework/AxonFramework/pull/2378[#2378]
+* Bump hibernate-core.version from 5.6.10.Final to 5.6.11.Final https://github.com/AxonFramework/AxonFramework/pull/2377[#2377]
+* Bump byte-buddy.version from 1.12.13 to 1.12.16 https://github.com/AxonFramework/AxonFramework/pull/2376[#2376]
+* Bump maven-assembly-plugin from 3.4.0 to 3.4.2 https://github.com/AxonFramework/AxonFramework/pull/2375[#2375]
+* Bump maven-install-plugin from 3.0.0 to 3.0.1 https://github.com/AxonFramework/AxonFramework/pull/2374[#2374]
+* Bump slf4j.version from 2.0.0 to 2.0.1 https://github.com/AxonFramework/AxonFramework/pull/2373[#2373]
+* Bump spring.boot.version from 2.7.2 to 2.7.3 https://github.com/AxonFramework/AxonFramework/pull/2372[#2372]
+* Bump spring-framework-bom from 5.3.22 to 5.3.23 https://github.com/AxonFramework/AxonFramework/pull/2366[#2366]
+
+== Release 4.5
+
+=== Release 4.5.15
+
+==== Enhancements
+
+* [#2290] `TrackingEventProcessor` does not wait for his worker threads to shut down https://github.com/AxonFramework/AxonFramework/pull/2292[#2292]
+* TrackingEventProcessor does not wait for his worker threads to shut down https://github.com/AxonFramework/AxonFramework/issues/2290[#2290]
+
+==== Bug Fixes
+
+* Improve the concurrent behaviour of the tracking event processor. https://github.com/AxonFramework/AxonFramework/pull/2311[#2311]
+* Fix a problem where when a shutdown takes places while the worklaunch… https://github.com/AxonFramework/AxonFramework/pull/2305[#2305]
+* Remove update handler registration on `UpdateHandlerRegistration#complete` https://github.com/AxonFramework/AxonFramework/pull/2300[#2300]
+* Canceled subscription query remains active if updates Flux is not subscribed, causing error on emit https://github.com/AxonFramework/AxonFramework/issues/2299[#2299]
+* Fix duplicate command handler detection. https://github.com/AxonFramework/AxonFramework/pull/2298[#2298]
+* TrackingEventProcessor cannot be reset immediately after shutdown in very rare cases https://github.com/AxonFramework/AxonFramework/issues/2293[#2293]
+* [#2289] Incorrect warning message in case of shutdown timeout https://github.com/AxonFramework/AxonFramework/pull/2291[#2291]
+* Incorrect warning message in case of shutdown timeout https://github.com/AxonFramework/AxonFramework/issues/2289[#2289]
+* Duplicate command handler resolver is triggered in polymorphic aggregates https://github.com/AxonFramework/AxonFramework/issues/2243[#2243]
+
+==== Dependency Upgrade
+
+* Upgrade Axon Server Connector Java to 4.5.7 https://github.com/AxonFramework/AxonFramework/pull/2313[#2313]
+* Bump mysql-connector-java from 8.0.29 to 8.0.30 https://github.com/AxonFramework/AxonFramework/pull/2303[#2303]
+
+=== Release 4.5.14
+
+==== Bug Fixes
+
+* TrackingEventProcessors shutdown is not working correctly in 4.5.13 https://github.com/AxonFramework/AxonFramework/issues/2287[#2287]
+* Snapshots are not read with snapshot filter and same serializer for events and snapshots https://github.com/AxonFramework/AxonFramework/pull/2286[#2286]
+* Snapshots are not considered during loading of an Aggregate using Axon-Server-Connector https://github.com/AxonFramework/AxonFramework/issues/2285[#2285]
+
+=== Release 4.5.13
+
+==== Features
+
+* Make the shutdown timeout configurable https://github.com/AxonFramework/AxonFramework/issues/1981[#1981]
+
+==== Enhancements
+
+* Pooled Streaming Event Processor configuration enhancement https://github.com/AxonFramework/AxonFramework/pull/2276[#2276]
+* Introduce mechanism to interrupt `TrackingEventProcessor` worker threads https://github.com/AxonFramework/AxonFramework/pull/2041[#2041]
+* Allow lifecycle phase timeout configuration https://github.com/AxonFramework/AxonFramework/pull/2037[#2037]
+
+==== Bug Fixes
+
+* Retry to initialize the token store correctly on exception for PSEP. https://github.com/AxonFramework/AxonFramework/pull/2277[#2277]
+* Process events with identical `TrackingToken` together in the `PooledStreamingEventProcessor` https://github.com/AxonFramework/AxonFramework/pull/2275[#2275]
+* PooledStreamingEventProcessor does not Retry if initialization fails https://github.com/AxonFramework/AxonFramework/issues/2274[#2274]
+
+==== Dependency Upgrade
+
+* Bump projectreactor.version from 3.4.20 to 3.4.21 https://github.com/AxonFramework/AxonFramework/pull/2284[#2284]
+* Bump axonserver-connector-java from 4.5.4 to 4.5.5 https://github.com/AxonFramework/AxonFramework/pull/2278[#2278]
+* Bump axonserver-connector-java from 4.5.5 to 4.5.6 https://github.com/AxonFramework/AxonFramework/pull/2282[#2282]
+
+=== Release 4.5.12
+
+==== Bug Fixes
+
+* Ensure commands and queries are processed in FIFO order https://github.com/AxonFramework/AxonFramework/pull/2263[#2263]
+* Commands with same priority are not handled in the correct order https://github.com/AxonFramework/AxonFramework/issues/2257[#2257]
+
+=== Release 4.5.11
+
+==== Enhancements
+
+* Release announcement on discuss https://github.com/AxonFramework/AxonFramework/pull/2256[#2256]
+
+==== Bug Fixes
+
+* [#2242] Correctly support null-identifier and no-event scenarios from Command Handling constructors, `Always`, and `Create-If-Missing` creation policies https://github.com/AxonFramework/AxonFramework/pull/2248[#2248]
+* Check attribute filter deep equals https://github.com/AxonFramework/AxonFramework/pull/2246[#2246]
+* Fix Duplicate command handler resolver is triggered in polymorphic ag… https://github.com/AxonFramework/AxonFramework/pull/2245[#2245]
+* Duplicate command handler resolver is triggered in polymorphic aggregates https://github.com/AxonFramework/AxonFramework/issues/2243[#2243]
+* AggregateTestFixture throws AggregateNotFoundException when a command handler with a creation policy applies no events https://github.com/AxonFramework/AxonFramework/issues/2242[#2242]
+
+==== Dependency Upgrade
+
+* Bump spring-framework-bom from 5.3.20 to 5.3.21 https://github.com/AxonFramework/AxonFramework/pull/2255[#2255]
+* Bump metrics-core from 4.1.31 to 4.1.32 https://github.com/AxonFramework/AxonFramework/pull/2247[#2247]
+
+=== Release 4.5.10
+
+* Axon's test fixtures perform a "deep equals" operation, using reflection as they go. JDK17,
+ rightfully so, does not allow that for all classes.
+ To solve scenarios where users utilize objects from, for example, `java.lang`,
+ we have introduced a distinct `DeepEqualsMatcher` in pull request https://github.com/AxonFramework/AxonFramework/pull/2210[#2210].
+ This matcher implementation considers the situation that an `InaccessibleObjectException` might be thrown from Axon's test fixtures,
+ correctly dealing with the scenario by assuming the assertion failed.
+* Contributor https://github.com/fabio-couto[`fabio-couto`] noticed a predicament within the `PooledStreamingEventProcessor` (PSEP for short) when they were facing connectivity issues with their RDBMS.
+ In the face of these issues, the PSEP coordinator is incapable of fetching events, resulting in canceled work packages.
+ As part of canceling, the PSEP actively tries to release token claims, which is yet another database operation.
+ This loop of several connectivity issues causes the PSEP to enter a state it could not recover from.
+ Pull request https://github.com/AxonFramework/AxonFramework/pull/2225[#2225], provided by `fabio-couto`, solves this predicament.
+* A fix was introduced to the `EventTypeUpcaster` to solve issues further down the upcasting chain.
+ Contributor https://github.com/dakr0013[`dakr0013`] noted that upcaster invoked _after_ an `EventTypeUpcaster` failed because the expected intermediate event type was adjusted to `Object`.
+ `dakr0013` provided a pull request, which we made some adjustments in PR https://github.com/AxonFramework/AxonFramework/pull/2177[#2177] to accommodate additional scenarios.
+
+You can check out the https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.5.10[release notes] when you're looking for an exhaustive list of all the changes.
+
+=== Release 4.5.9
+
+This release brings three adjustments worth mentioning to the framework, namely:
+
+. Contributor `oysteing` opened issue https://github.com/AxonFramework/AxonFramework/issues/2154[#2154],
+describing that the `ReplayStatus` enumeration never entered the `REPLAY` status for a `PooledStreamingEventProcessor`.
+ We resolved this finding in pull request https://github.com/AxonFramework/AxonFramework/pull/2168[#2168] by ensuring the `TrackingToken` carries the replay status as intended.
+. The `AggregateTestFixture` incorrectly assumed a test succeeded in the absence of an exception when you would use the `expectExceptionMessage` validation step.
+ We resolved this predicament in pull request https://github.com/AxonFramework/AxonFramework/pull/2127[#2127].
+. Lastly, we further upgraded the XStream dependency for a CVE in https://github.com/AxonFramework/AxonFramework/pull/2097[this] pull request.
+ This time, for https://x-stream.github.io/CVE-2021-43859.html[CVE-2021-43859].
+
+For an exhaustive list of the changes in 4.5.9, we refer to the https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.5.9[release notes].
+
+=== Release 4.5.8
+
+This release brings two adjustments worth mentioning to the framework.
+Namely:
+
+. We spotted a bug within the `PooledStreamingEventProcessor` (PSEP).
+ More specifically, whenever a subset of the tokens for the PSEP existed, calculating the lower bound of a token would cause failures.
+ We addressed this predicament in pull request https://github.com/AxonFramework/AxonFramework/pull/2082[#2082].
+. We introduce an enhancement in the API of the `CommandGateway`.
+ You can now directly insert `MetaData` whenever using the `CommandGateway#send` or `CommandGateway#sendAndWait` operations.
+ You can verify the changes https://github.com/AxonFramework/AxonFramework/pull/2085[#here].
+
+=== Release 4.5.7
+
+This https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.5.7[release] contains a single fix.
+Namely, pull request https://github.com/AxonFramework/AxonFramework/pull/2067[#2067].
+This pull request solves a bug that had the `PooledStreamingEventProcessor` not handle new events resulting from an `EventMultiUpcaster`.
+The kudos for spotting the bug go to https://discuss.axoniq.io/u/daysleeper75[Magnus Heino], which started a discussion on our https://discuss.axoniq.io/t/events-other-than-first-event-created-by-contextawareeventmultiupcaster-are-not-processed-by-eventhandler/3756[forum] after he noticed the issue.
+
+=== Release 4.5.6
+
+* Although Axon Framework doesn't use the log4j-core dependency directly, we updated it to the most recent version for ease of mind.
+ You can follow these increments in issues https://github.com/AxonFramework/AxonFramework/pull/2038[#2038], https://github.com/AxonFramework/AxonFramework/pull/2040[#2040] and https://github.com/AxonFramework/AxonFramework/pull/2052[#2052].
+
+* Contributor `jasperfect` spotted a predicament with duplicate aggregate creation combined with using caches.
+ Axon didn't invalidate the cache as it should have, causing unexpected behavior.
+ You can find the issue description https://github.com/AxonFramework/AxonFramework/issues/2017[here].
+ Additionally, you can find the pull request solving the problem https://github.com/AxonFramework/AxonFramework/pull/2027[here].
+
+* Contributor `shubhojitr` stated in issue https://github.com/AxonFramework/AxonFramework/issues/2051[#2051] that the `axonserver-connector-java` project pulled in a non-secure version of `grpc-netty`.
+ As this isn't an issue on Axon Framework itself, we solved the problem under the connector project.
+ As a follow-up, we incremented the framework's version for the `axonserver-connector-java` project to 4.5.4, which contains the most recent version of the `grpc-bom`.
+
+For an exhaustive list of all the changes, check out the https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.5.6[4.5.6 release notes].
+
+=== Release 4.5.5
+
+* The auto-configuration we introduced for `XStream` used a suboptimal approach.
+ We assumed searching for the `@ComponentScan` would suffice but didn't consider that Spring enabled SpEL operations in the annotation's properties.
+ This approach thus caused some applications to break on start-up.
+ As such, this approach is replaced entirely by using the outcome of the `AutoConfigurationPackages#get(BeanFactory)` method.
+ For those interested in the details of the solution, check out https://github.com/AxonFramework/AxonFramework/pull/1976[this] pull request. Kudos to contributor `maverick1601` for drafting issue https://github.com/AxonFramework/AxonFramework/issues/1963[#1963] explaining the predicament.
+
+* We introduced an optimization towards updating the `TrackingToken`.
+ In (distributed) environments where the configuration states several segments per Streaming Processor, there are always threads receiving events that they're not in charge of due to the configured `SequencingPolicy`.
+ The old implementation eagerly updated the token in such scenarios, but this didn't benefit the end-user immediately.
+ Pull request https://github.com/AxonFramework/AxonFramework/pull/1999[#1999] introduce a wait period for 'event-less-batches', for both the `TrackingEventProcessor` and `PooledStreamingEventProcessor`.
+ This adjustment minimizes the number of token updates performed by both processor implementations.
+
+* The introduction of Spring Boot version 2.6.0 brought an issue to light within Axon's Spring usage.
+ The `AbstractAnnotationHandlerBeanPostProcessor` took `FactoryBean` instances into account when searching for message handling methods.
+ This approach, however, is not recommended by Spring, which they enforced in their latest release.
+ The result was circular dependency exceptions on start-up whenever somebody used Spring Boot 2.6.0.
+ The fix was simple, though, as we should simply ignore `FactoryBean` instances.
+ After spotting the issue, we resolved it in https://github.com/AxonFramework/AxonFramework/pull/2013[this] pull request.
+
+For an exhaustive list of all the changes, check out the https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.5.5[4.5.5 release notes].
+
+=== Release 4.5.4
+
+* First and foremost, we updated the XStream version to 1.4.18. This upgrade was a requirement since several https://x-stream.github.io/changes.html[CVE's] were noted for XStream version 1.4.17.
+ As a consequence of XStream's solution imposed through the CVE's, everybody is required to specify the security context of an `XStream` instance.
+ This change also has an impact on Axon Framework since the `XStreamSerializer` is the default serializer.
+ So as of this release, any usages of the default `XStreamSerializer` will come with warnings, stating it is highly recommended to use an `XStream` instance for which the security context is set through types or wildcards.
+ When your application uses Spring Boot, Axon will default to selecting the secured types based on your `@ComponentScan` annotated beans (e.g., like the `@SpringBootApplication` annotation).
+ For those interested in the details of the solution, check out https://github.com/AxonFramework/AxonFramework/pull/1917[this] pull request.
+
+* User 'nils-christian' noted in issue https://github.com/AxonFramework/AxonFramework/issues/1892[#1892] that Axon executed Upcaster beans in a Spring environment in the incorrect order.
+ This ordering issue was due to a misconception in deducing the `@Order` annotation on upcaster beans.
+ We resolved the problem in pull request https://github.com/AxonFramework/AxonFramework/pull/1895[#1895].
+
+* We noticed a `TokenStore` operation that Axon did not invoke within a transaction.
+ In most scenarios, this worked out, but when using Micronaut, for example, this (correctly) caused an exception.
+ After spotting the issue, we resolved it in https://github.com/AxonFramework/AxonFramework/pull/1908[this] pull request.
+
+For an exhaustive list of all the changes, check out the https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.5.4[4.5.4 release notes].
+
+=== Release 4.5.3
+
+* One new feature has been introduced in 4.5.3: the `PropertySequencingPolicy` by contributor `nils-christian`.
+ This link:../../axon-framework/events/event-processors.md#sequential-processing[sequencing policy] can be configured to look for a common property in the events.
+
+* The version of the `axonserver-connector-java` has been updated to 4.5.2.
+ This update resolves a troublesome issue around permit updates for subscription queries, which exhausted the number of queries an application could have running.
+ For those curious about the solution, pull request https://github.com/AxonIQ/axonserver-connector-java/pull/85[85] addresses this issue.
+
+* The `WorkerLauncher` runnable, used by the `TrackingEventProcessor` to start its threads, was not considered when you shut down a tracking processor.
+ As a consequence, it could start new segment operations while `shutdown` already completed "successfully."
+ Pull request https://github.com/AxonFramework/AxonFramework/pull/1866[1866] resolves this problem, ensuring a tracking processor shuts down as intended.
+
+* Issue https://github.com/AxonFramework/AxonFramework/issues/1853[1853] describes an issue where the link:../../axon-framework/axon-framework-commands/command-handlers.md#aggregate-command-handler-creation-policy[creation policy] `always`.
+ Exceptions thrown from within a command handler annotated with `@CreationPolicy(ALWAYS)` weren't correctly propagated.
+ Pull request https://github.com/AxonFramework/AxonFramework/pull/1854[1854] solves this issue.
+
+For an exhaustive list of all the changes, check out the https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.5.3[4.5.3 release notes].
+
+=== Release 4.5.2
+
+* Added a missing `isReplaying` flag on the `StreamingEventProcessor`.
+Pull request https://github.com/AxonFramework/AxonFramework/pull/1821[#1821] reintroduces this functionality in this release.
+
+* Some enhancements in regards to logging Exceptions and stacktraces when initialization fails.
+This https://github.com/AxonFramework/AxonFramework/commit/197eabea4259f98a4a06c999e4bd5ed7b373a3d4[commit] reintroduces this functionality in this release.
+
+* Improved Axon Framework (`AxonServerEventStore`) which will now rethrown Exceptions that has a valid `Status.Code`.
+Pull request https://github.com/AxonFramework/AxonFramework/pull/1842[#1842] reintroduces this functionality in this release.
+
+* General improvements on the `PooledStreamingEventProcessor` made across several Pull Requests.
+
+For a detailed perspective on the release notes, please check https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.5.2[this] page.
+
+=== Release 4.5.1
+
+* Some internals have changed concerning command handling exceptions.
+ Within a single JVM, Axon Framework knows whether the exception is transient or not.
+ This piece of information allows the link:../../axon-framework/axon-framework-commands/infrastructure.md#configuring-the-command-gateway[`RetryScheduler`] to retry a non-transient exception since those are retryable.
+ With the move towards distributed environments, the information whether an exception is transient was lost when we moved to the dedicated `CommandHandlingException` containing a details object.
+ Pull request https://github.com/AxonFramework/AxonFramework/pull/1743[#1742] reintroduces this functionality in this release.
+
+* The new `RevisionSnapshotFilter` introduced in release 4.5 sneaked in a bug by not validating the aggregate type upon filtering.
+ Pull request https://github.com/AxonFramework/AxonFramework/pull/1771[#1771] describes and solves the problem by introducing the aggregate type to the `RevisionSnapshotFilter`.
+
+* By enabling the link:../../axon-framework/axon-framework-commands/command-handlers.md#aggregate-command-handler-creation-policy[`CreationPolicy`] for the link:../../axon-framework/axon-framework-commands/infrastructure.md#disruptorcommandbus[`DisruptorCommandBus`], a timing issue was introduced with handling events.
+ Contributor "junkdog" marked the problem in issue https://github.com/AxonFramework/AxonFramework/issues/1778[#1778], after which pull request https://github.com/AxonFramework/AxonFramework/pull/1792[#1792] solved it.
+
+* Contributor "michaelbub" noted in issue https://github.com/AxonFramework/AxonFramework/issues/1786[#1786] that resetting a `StreamingEventProcessor` to a point in the future reacted differently when no token was stored yet.
+ This followed from the implementation of the `ReplayToken`, which wrongfully assumed that if the given 'token at reset' was `null`, the start position should be `null` too.
+ However, the start position might be the future, and hence it should be used in favor of `null`.
+ This issue is addressed under https://github.com/AxonFramework/AxonFramework/pull/1802[this] pull request.
+
+For a detailed perspective on the release notes, please check https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.5.1[this] page.
+
+== Release 4.4
+
+=== Release 4.4.9
+
+Release 4.4.9 of Axon Framework has incremented _all_ used dependencies towards their latest bug release.
+This has done to resolve potentially security issues, as was reported with XStream 1.4.14 (that was resolved in 1.4.16).
+
+For those looking for the set of adjustments please take a look at tag https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.4.8[4.4.9]
+
+=== Release 4.4.8
+
+* A bug was noted whenever a query handler returned a `Future`/`CompletableFuture` in combination with a subscription query, with Axon Server as the infrastructure.
+ In this format, Axon would incorrectly use the scatter-gather query for the initial result of the subscription query.
+ Whenever the returned result was completed, this didn't cause any issues.
+ However, for a `Future`/`CompletableFuture` a `TimeoutException` would be thrown.
+ The issue was luckily easily mitigated by changing the "number of expected results" from within the `QueryRequest` to default to 1 instead of zero.
+ As an effect, the point-to-point would be invoked instead of scatter-gather.
+ For reference, the issue can be found https://github.com/AxonFramework/AxonFramework/issues/1737[here].
+
+* Whenever an interface is used as the type of an `@AggregateMember` annotated field, Axon would throw a `NullPointerException`.
+ This is far from friendly, and has been changed towards an `AxonConfigurationException` in pull request https://github.com/AxonFramework/AxonFramework/pull/1742[#1742].
+
+Note that the named issues comprise the complete changelist for https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.4.8[Axon Framework 4.4.8]. 
+
+=== Release 4.4.7
+
+* The https://github.com/AxonIQ/axonserver-connector-java[Axon Server Connector Java] version 4.4.7 has been included in this release as well.
+ As such, it's fixes (found https://github.com/AxonIQ/axonserver-connector-java/releases/tag/4.4.7[here]) are thus also part of this release.
+
+* Contributor "krosenvold" noticed that the SQL to retrieve a stream of events was performed twice in quick concession.
+ The provided solution (in pull request https://github.com/AxonFramework/AxonFramework/pull/1689[#1689]) would resolve this, but the problem was spotted to originate elsewhere.
+ Commit https://github.com/AxonFramework/AxonFramework/commit/16b71529472ddb7345bd247ee5dd930dc6bd2206[16b7152] saw an end to this occurrence by making a minor tweak in the `EmbeddedEventStore`.
+
+* As rightfully noticed by user "pepperbob", there was a type discrepancy when reading events through a tracking token.
+ An event would always become a `DomainEventMessage` when read through the `EventStorageEngine`, whereas it might originally have been a regular `EventMessage`.
+ The problem has been fixed in commit https://github.com/AxonFramework/AxonFramework/commit/c61a95bff14cda0ed3fea154747067560a670b4d[c61a95b].
+ Furthermore, the entire description of the issue can be found https://github.com/AxonFramework/AxonFramework/issues/1697[here].
+
+* Through the use of the `AxonServerQueryBus`, a cancelled subscription query was wrongfully completed normally where it should complete exceptionally.
+ This problem is marked and resolved under pull request https://github.com/AxonFramework/AxonFramework/pull/1695[#1695].
+
+For a detailed perspective on the release notes, please check https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.4.7[this] page. 
+
+=== Release 4.4.6
+
+* Contributor "Rafaesp" noted that a registered `CommandHandlerInterceptor` in the `AggregateTestFixture` could be invoked more often than desired.
+ This only occurred if the fixture's `givenCommands(...)` method was invoked, but nonetheless this behaviour was incorrect.
+ The issue is marked under https://github.com/AxonFramework/AxonFramework/issues/1665[#1665] and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1666[#1666].
+
+* In 4.4.4, a fix was introduced which ensured a `ChildEntity` (read, the Aggregate Members) was no longer duplicated in an aggregate hierarchy.
+ This fix had the troublesome side effect that aggregate member command handlers weren't registered on every level of the aggregate hierarchy anymore.
+ The resolution to this problem can be found in pull request https://github.com/AxonFramework/AxonFramework/pull/1674[#1674].
+
+* Using the subscription query in a distributed environment had a possible troublesome side effect.
+ If a consumer of updates was closed for whatever reason, it could also close the producing side.
+ This is obviously undesired, as no single consumer should influence if the producer should still dispatch updates to other consumers.
+ The problem was marked under issue https://github.com/AxonFramework/AxonFramework/issues/1680[#1680] and resolved in https://github.com/AxonFramework/AxonFramework/commit/9907ae9bc1374a58ad9c8eca3dad2004086e2261[this] commit.
+
+* Right before we aimed to release 4.4.6, contributor "haraldk" provided a thorough issue description when using the `SequenceEventStorageEngine`.
+ He noted that if snapshots were used for an aggregate, there was a window of opportunity that the 'active' `EventStorageEngine` in the sequencing engine did not return any events.
+ This followed from the sequence number logic, which wrongfully defaulted to position "0", even though the starting sequence number is per definition higher if a snapshot has been found.
+ The clarifying issue can be found https://github.com/AxonFramework/AxonFramework/issues/1682[here], with its resolution present in pull request https://github.com/AxonFramework/AxonFramework/pull/1683[#1683].
+
+For a complete overview of all the changes you can check the release notes https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.4.6[here].
+
+=== Release 4.4.5
+
+* When creating a `TrackingToken` at a certain position through `StreamableMessageSource#createTokenAt(Instant)`, a tail token was wrongfully returned if the provided timestamp exceeded the timestamp of the last event.
+ Instead, the token closests to the provided timestamp should be returned, was equals the head token.
+ This discrepancy between documentation and implementation was marked by `mbreevoort` and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1607[#1607].
+
+* A certain path within the `AxonServerEventStore` allowed for event retrieval without correctly deserializing the `MetaData` of the events.
+ If someone tried to access the `MetaData`, a `CannotConvertBetweenTypesException` was being thrown.
+ This problem, among others, was remedied in pull request https://github.com/AxonFramework/AxonFramework/pull/1612[#1612], by ensuring the correct `Serializer` taking gRPC message types into account is consistently used. 
+
+For a complete set of the release notes, please check https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.4.5[here].
+
+=== Release 4.4.4
+
+* There was a bug which made it so that an `@ResetHandler` annotated method without any parameters was included for validation if a component could handle a specific type of event.
+ This exact validation is used to filter out events from the event stream to optimize the entire stream.
+ The optimization was thus mitigated by the simple fact of introducing a default `@ResetHandler`.
+ The problem was marked by `@kad-hesseg` (for which thanks) and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1597[#1597].
+
+* A new `SnapshotTriggerDefinition` called `AggregateLoadTimeSnapShotTriggerDefinition` has been introduced, which uses the load time of an aggregate to trigger a snapshot creation.
+
+* When using an aggregate class hierarchy, `@AggregateMember` annotated fields present on the root would be duplicated for every class in the hierarchy which included message handling functions.
+ This problem was traced back to the `AnnotatedAggregateMetaModelFactory.AnnotatedAggregateModel` which looped over an inconsistent set of classes to find these members.
+ The issue was marked by `@kad-malota` and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1595[#1595].
+
+For a complete set of the release notes, please check https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.4.4[here].
+
+=== Release 4.4.3
+
+* An optimization in the snapshotting process was introduced in pull request https://github.com/AxonFramework/AxonFramework/pull/1510[#1510].
+ This PR ensures no unnecessary snapshots are staged in the `AbstractSnapshotter` by validating none have been scheduled yet.
+ This fix will resolve potential high I.O. when snapshots are being recreated for aggregates which have a high number of events.
+
+* The assignment rules used by the `EventProcessingConfigurer` weren't always taken into account as desired.
+ This inconsistency compared to regular assignment through the `@ProcessingGroup` annotation has been resolved in https://github.com/AxonFramework/AxonFramework/pull/1500[this] pull request.
+
+* Heartbeat messages between Axon Server and an Axon Framework application were already configurable, but only from the server's side.
+ Properties have been introduced to also enables this from the clients end, as specified further in https://github.com/AxonFramework/AxonFramework/pull/1511[this] pull request.
+ Enabling heartbeat messages will ensure the connection is preemptively closed if no response has been received in the configured time frame.
+
+To check out all fixes introduced in 4.4.3, you can check them out on https://github.com/AxonFramework/AxonFramework/issues?q=is%3Aclosed+milestone%3A%22Release+4.4.3%22[this] page.
+
+=== Release 4.4.2
+
+* A persistent loop of 500ms was spotted during event consumption from Axon Server.
+ Credits go to Damir Murat who has spotted the https://github.com/AxonFramework/AxonFramework/issues/1481[issue].
+ With his help the issue was found quickly and eventually resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1484[#1484].
+
+* A serialization issue was found when working with the `ConfigToken` and de-/serialize it through the `JacksonSerializer`.
+ This problem was uncovered in issue https://github.com/AxonFramework/AxonFramework/issues/1482[#1482] and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1485[#1485].
+
+* The introduction of the https://github.com/AxonIQ/axonserver-connector-java[AxonServer Connector for Java] to simplify the framework's integration with Axon Server introduced some configuration issues.
+ For example, the `AxonServerConfiguration#isForceReadFromLeader` wasn't used when opening an event stream (resolved in PR https://github.com/AxonFramework/AxonFramework/pull/1488[#1488]).
+
+* Furthermore, properties like the `max-message-size`, gRPC keep alive settings and `processorNotificationRate` weren't used when forming a connection with Axon Server.
+ This issue was covered by pull request https://github.com/AxonFramework/AxonFramework/pull/1487[#1487].
+
+https://github.com/AxonFramework/AxonFramework/issues?q=is%3Aclosed+milestone%3A%22Release+4.4.2%22[This] page shares a complete list of all resolved issues for this release.
+
+=== Release 4.4.1
+
+A single fix was performed as soon as possible to release 4.4, in conjunction with the new https://github.com/AxonIQ/axonserver-connector-java[Axon Server Connector] used by this release.
+There was an off by one scenario when an Event Processor started reading events from the beginning of time.
+This meant that the first event in the event store was systematically skipped.
+The bug was resolved in https://github.com/AxonFramework/AxonFramework/commit/3a055407437589bc1388cecca0b6e2f0bc61ea26[this] commit.
+
+== Release 4.3
+
+=== Release 4.3.5
+
+* The `TrackingEventProcessor#mergeSegment(int)` method was invoked with the high segment number of the pair to merge,
+
+an error would occur in the process as it expected to receive the lower number on all scenarios.
+
+This was resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1450[#1450].
+
+* A small connectivity adjustment which was performed in the `AxonServerConnectionManager` for bug release 4.3.4 has been reverted.
+
+Although it worked successfully for some scenarios, it did not correctly cover all possibilities.
+
+The commit can be found https://github.com/AxonFramework/AxonFramework/commit/5b9348040f4f977db3b9a15c3ae55904710814b6[here] for reference.
+
+The full scenario will be covered through the adjusted connector which is underway for beta release in 4.4.
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?q=is%3Aclosed+milestone%3A%22Release+4.3.5%22++label%3A%22Type%3A+Bug%22+[issue tracker].
+
+=== Release 4.3.4
+
+* Whilst adjusting the `JdbcEventStorageEngine` in https://github.com/AxonFramework/AxonFramework/issues/1187[#1187] to allow more flexibility to configure the used statements, we accidentally dropped support for adjusting how the store wrote timestamps.
+
+This issue was rectified by user `ovstetun` in pull request https://github.com/AxonFramework/AxonFramework/pull/1454[#1454].
+
+* Snapshots were incorrectly created in the same phase as the publication of events.
+
+This has been moved to the after commit phase of the `UnitOfWork` in issue https://github.com/AxonFramework/AxonFramework/pull/1457[#1457].
+
+* When using the `SequenceEventStorageEngine` to merge an active and historic event stream there was a discrepancy when the active stream didn't contain any events and the historic stream did.
+
+This has been resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1459[#1459].
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?q=is%3Aclosed+milestone%3A%22Release+4.3.4%22++label%3A%22Type%3A+Bug%22+[issue tracker].
+
+=== Release 4.3.3
+
+This bug release contained a single fix, under pull request https://github.com/AxonFramework/AxonFramework/pull/1425[#1425]. A situation was reported where a Tracking Event Processor did not catch up with the last event, until a new event was available after that event. Effectively causing it to read up to N-1. This only accounted for usages of the `MultiStreamableMessageSource`, thus when two (or more) event streams were combined into a single source for a `TrackingEventProcessor`.
+
+To remain complete, https://github.com/AxonFramework/AxonFramework/issues?q=is%3Aclosed+milestone%3A%22Release+4.3.3%22++label%3A%22Type%3A+Bug%22+[here] is the issue tracker page contained the closed issues for release 4.3.3.
+
+=== Release 4.3.2
+
+* When using the `QueryGateway`, it was not possible to provide a `QueryMessage` as the query field since the `queryName` would be derived from the class name of the provided query.
+
+Hence, `QueryMessage` would be the `queryName`, instead of the actual `queryName`.
+
+This issue has been resolved in https://github.com/AxonFramework/AxonFramework/pull/1410[#1410].
+
+* There was a window of opportunity where the `Snapshotter` would publish the last event in its stream twice.
+
+This could cause faulty snapshots in some scenarios.
+
+This issue was marked under https://github.com/AxonFramework/AxonFramework/issues/1408[#1408] and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1416[#1416].
+
+* The bi-directional stream created by the Axon Server Connector wasn't always closed correctly; specifically in error cases.
+
+This problem has been resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1397[1397].
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?q=is%3Aclosed+milestone%3A%22Release+4.3.2%22++label%3A%22Type%3A+Bug%22+[issue tracker].
+
+=== Release 4.3.1
+
+* Through the new link:../../axon-framework/axon-framework-commands/command-handlers.md#aggregate-command-handler-creation-policy[Create-or-Update]
+
+feature a bug was introduced which didn't allow non-String aggregate identifiers.
+
+This problem was quickly resolved in https://github.com/AxonFramework/AxonFramework/pull/1363[#1363],
+
+allowing the usage of "complex" aggregate identifiers once more.
+
+* The graceful shutdown process introduced in 4.3 had a couple of minor problems.
+
+One of which was the shutdown order within the `AxonServerCommandBus` and `AxonServerQueryBus`,
+
+which basically made it so that the approach prior to 4.3 was maintained.
+
+We also noticed that the `AxonServerConnectionManager` never shutdown nicely.
+
+All of these, plus some other minor fixes, have been performed in https://github.com/AxonFramework/AxonFramework/pull/1372[#1372].
+
+* The `AggregateCreationPolicy#ALWAYS` did not behave as expected, resulting in faulty behaviour when used.
+
+Pull request https://github.com/AxonFramework/AxonFramework/pull/1371[#1371] saw an end to this problem,
+
+ensuring the desired usage of all newly introduced creation policies.
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?q=is%3Aclosed+milestone%3A%22Release+4.3.1%22++label%3A%22Type%3A+Bug%22+[issue tracker].
+
+== Release 4.2
+
+=== Release 4.2.2
+
+* In a distributed setup, the `DisruptorCommandBus` was not always correctly identified as being the local segment.
+
+Due to this, aggregate repositories weren't created by the `DisruptorCommandBus` as is required in such a configuration.
+
+This was marked in https://github.com/AxonFramework/AxonFramework/issues/874[#874] and resolved through https://github.com/AxonFramework/AxonFramework/pull/1287[#1287].
+
+* As described in https://github.com/AxonFramework/AxonFramework/issues/1274[#1274],
+
+a query handler with return type `Future` was not being returned at all but threw an exception.
+
+Pull request https://github.com/AxonFramework/AxonFramework/pull/1323[#1323] solved that in 4.2.2.
+
+* An issue was solved where the `JdbcAutoConfiguration` unintentionally depended on a JPA specific class.
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A%22Release+4.2.2%22++label%3A%22Type%3A+Bug%22[issue tracker].
+
+=== Release 4.2.1
+
+* A one-to-many `Upcaster` instance tied to Axon Server would only use the first event result and ignore the rest.
+
+This issue has been resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1264[#1264].
+
+* The `axon-legacy` module's `GapAwareTrackingToken` did not implement the `TrackingToken` interface.
+
+This was marked in issue https://github.com/AxonFramework/AxonFramework/issues/1230[#1230] and resolved in https://github.com/AxonFramework/AxonFramework/pull/1231[#1231].
+
+* The builders of the `ExponentialBackOffIntervalRetryScheduler` and `IntervalRetryScheduler` previously
+
+did not implement the `validate()` method correctly.
+
+Through this a `NullPointerException` could occur on start-up,
+
+as marked in https://github.com/AxonFramework/AxonFramework/issues/1293[#1293].
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A%22Release+4.2.1%22++label%3A%22Type%3A+Bug%22[issue tracker].
+
+== Release 4.1
+
+=== Release 4.1.2
+
+* A dependency on `XStream` was enforced undesirably through the Builder pattern introduced in 4.0.
+
+This has been resolved by using a `Supplier` of a `Serializer` in the Builders instead, as described under https://github.com/AxonFramework/AxonFramework/issues/1054[this] issue.
+
+* Due to a hierarchy issue in the Spring Boot auto configuration, the `JdbcTokenStore` was not always used as expected.
+
+The ordering has been fixed under issue https://github.com/AxonFramework/AxonFramework/issues/1077[#1077].
+
+* The ordering of message handling functions was incorrect according to the documentation.
+
+Classes take precedence over interface, and the depth of interface hierarchy is calculated based on the inheritance level (as described https://github.com/AxonFramework/AxonFramework/pull/1129[here]).
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A%22Release+4.1.2%22++label%3A%22Type%3A+Bug%22[issue tracker].
+
+=== Release 4.1.1
+
+* Query Dispatch Interceptors were not called correctly when a link:../../axon-framework/queries/query-dispatchers.md#subscription-queries[subscription query] was performed when Axon Server was used as the `QueryBus`.
+
+This issue was marked https://github.com/AxonFramework/AxonFramework/issues/1013[here] and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1042[#1042].
+
+* When Axon Server was (auto) configured without being able to connect to an actual instance, processing instructions were incorrectly dispatched regardless.
+
+Pull request https://github.com/AxonFramework/AxonFramework/pull/1040[#1040] resolves this by making sure an active connection is present.
+
+* The Spring Boot auto configuration did not allow the exclusion of the `axon-server-connector` dependency due to a direct dependency on classes.
+
+This has been resolved by expecting fully qualified class names as Strings instead (resolved under https://github.com/AxonFramework/AxonFramework/pull/1041[this] pull request).
+
+* The `JpaEventStorageEngine` was not wrapping the `appendEvents` operation in a transaction.
+
+Problem has been resolved under issue https://github.com/AxonFramework/AxonFramework/issues/1035[#1035].
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A%22Release+4.1.1%22++label%3A%22Type%3A+Bug%22[issue tracker].
+
+== Release 4.0
+
+=== Release 4.0.4
+
+* Deserialization failures were accidentally swallowed by the command and query gateway (marked under https://github.com/AxonFramework/AxonFramework/issues/967[#967]).
+* Resolved an issue where custom exception in a Command Handling constructor caused `NullPointerExceptions`.
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A%22Release+4.0.4%22++label%3A%22Type%3A+Bug%22[issue tracker].
+
+=== Release 4.0.3
+
+* The `SimpleQueryBus` reported exceptions on the initial result incorrectly upon performing a subscription query.
+
+Issue has been described and resolved under https://github.com/AxonFramework/AxonFramework/issues/913[#913].
+
+* Resolved issue where the the "download Axon Server" message was shown upon a reconnect of an application to a Axon Server node.
+* Large global index gaps between events caused issues when querying the event stream (described https://github.com/AxonFramework/AxonFramework/issues/419[here]).
+* Fixed inconsistency in the `GlobalSequenceTrackingToken#covers(TrackingToken)` method.
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A%22Release+4.0.3%22++label%3A%22Type%3A+Bug%22[issue tracker].
+
+=== Release 4.0.2
+
+* A timeout was thrown instead of a exception by Axon Server when a duplicate aggregate id was created, which is resolved in https://github.com/AxonFramework/AxonFramework/issues/903[#903].
+* Command or Query handling exceptions were not properly serialized through Axon Server (resolved in https://github.com/AxonFramework/AxonFramework/pull/904[#904]).
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A%22Release+4.0.2%22++label%3A%22Type%3A+Bug%22[issue tracker].
+
+=== Release 4.0.1
+
+* Resolved `QueryUpdateEmitter` configuration for the Axon Server connector set up (see issue https://github.com/AxonFramework/AxonFramework/issues/896[here]).
+* For migration purposes legacy `TrackingTokens` should have been added, which is resolved https://github.com/AxonFramework/AxonFramework/issues/886[here].
+* Event Processing was stopped after a reconnection with Axon Server. Resolve the problem in issue https://github.com/AxonFramework/AxonFramework/issues/883[#883].
+
+For a complete list of all resolved bugs we refer to the https://github.com/AxonFramework/AxonFramework/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A%22Release+4.0.1%22++label%3A%22Type%3A+Bug%22[issue tracker].
