@@ -21,7 +21,6 @@ import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.modelling.command.inspection.EntityModel;
-import org.hibernate.EntityMode;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Field;
