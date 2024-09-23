@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,10 +135,8 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     private void setEventFields(PreparedStatement statement,
                                 AtomicInteger fieldIndex,
                                 E eventMessage) throws SQLException {
-        SerializedObject<byte[]> serializedPayload =
-                eventSerializer.serialize(eventMessage.getPayload(), byte[].class);
-        SerializedObject<byte[]> serializedMetaData =
-                eventSerializer.serialize(eventMessage.getMetaData(), byte[].class);
+        SerializedObject<byte[]> serializedPayload = eventMessage.serializePayload(eventSerializer, byte[].class);
+        SerializedObject<byte[]> serializedMetaData = eventMessage.serializeMetaData(eventSerializer, byte[].class);
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getClass().getName());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getIdentifier());
         statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(eventMessage.getTimestamp()));

@@ -98,4 +98,16 @@ class AxonServerContainerTest {
             assertEquals("axoniq/axonserver:latest", testSubject.getDockerImageName());
         }
     }
+
+    @Test
+    void constructionWithReuseEnabledStartsMultipleTimesAsExpected() {
+        try (AxonServerContainer testSubject = new AxonServerContainer().withReuse(true)) {
+
+            testSubject.doStart();
+            assertTrue(testSubject.isRunning());
+
+            testSubject.doStart();
+            assertTrue(testSubject.isRunning());
+        }
+    }
 }
