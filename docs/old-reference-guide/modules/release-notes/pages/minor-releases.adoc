@@ -497,7 +497,7 @@ We'd like to thank all the contributors who worked on this release!
 * Remove update handler registration on `UpdateHandlerRegistration#complete` https://github.com/AxonFramework/AxonFramework/pull/2300[#2300]
 * Canceled subscription query remains active if updates Flux is not subscribed, causing error on emit https://github.com/AxonFramework/AxonFramework/issues/2299[#2299]
 * Fix duplicate command handler detection. https://github.com/AxonFramework/AxonFramework/pull/2298[#2298]
-* TrackingEventProcessor cannot be reset immediately after shutdown in very rare cases https://github.com/AxonFramework/AxonFramework/issues/2293[#2293]
+* TrackingEventProcessor cannot be reset immediately after shutdown in rare cases https://github.com/AxonFramework/AxonFramework/issues/2293[#2293]
 * [#2289] Incorrect warning message in case of shutdown timeout https://github.com/AxonFramework/AxonFramework/pull/2291[#2291]
 * Incorrect warning message in case of shutdown timeout https://github.com/AxonFramework/AxonFramework/issues/2289[#2289]
 * Duplicate command handler resolver is triggered in polymorphic aggregates https://github.com/AxonFramework/AxonFramework/issues/2243[#2243]
@@ -642,11 +642,11 @@ For an exhaustive list of all the changes, check out the https://github.com/Axon
 
 === Release 4.5.4
 
-* First and foremost, we updated the XStream version to 1.4.18. This upgrade was a requirement since several https://x-stream.github.io/changes.html[CVE's] were noted for XStream version 1.4.17.
+* Firstly, we updated the XStream version to 1.4.18. This upgrade was a requirement since several https://x-stream.github.io/changes.html[CVE's] were noted for XStream version 1.4.17.
  As a consequence of XStream's solution imposed through the CVE's, everybody is required to specify the security context of an `XStream` instance.
  This change also has an impact on Axon Framework since the `XStreamSerializer` is the default serializer.
  So as of this release, any usages of the default `XStreamSerializer` will come with warnings, stating it is highly recommended to use an `XStream` instance for which the security context is set through types or wildcards.
- When your application uses Spring Boot, Axon will default to selecting the secured types based on your `@ComponentScan` annotated beans (e.g., like the `@SpringBootApplication` annotation).
+ When your application uses Spring Boot, Axon will default to selecting the secured types based on your `@ComponentScan` annotated beans (for example, like the `@SpringBootApplication` annotation).
  For those interested in the details of the solution, check out https://github.com/AxonFramework/AxonFramework/pull/1917[this] pull request.
 
 * User 'nils-christian' noted in issue https://github.com/AxonFramework/AxonFramework/issues/1892[#1892] that Axon executed Upcaster beans in a Spring environment in the incorrect order.
@@ -823,7 +823,7 @@ To check out all fixes introduced in 4.4.3, you can check them out on https://gi
 
 === Release 4.4.2
 
-* A persistent loop of 500ms was spotted during event consumption from Axon Server.
+* A persistent loop of 500 ms was spotted during event consumption from Axon Server.
  Credits go to Damir Murat who has spotted the https://github.com/AxonFramework/AxonFramework/issues/1481[issue].
  With his help the issue was found quickly and eventually resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1484[#1484].
 
