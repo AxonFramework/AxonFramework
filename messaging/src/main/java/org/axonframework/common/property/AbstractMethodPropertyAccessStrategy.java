@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Abstract implementation of the PropertyAccessStrategy that uses a no-arg, public method to access the property
@@ -37,20 +39,33 @@ public abstract class AbstractMethodPropertyAccessStrategy extends PropertyAcces
     @Override
     public <T> Property<T> propertyFor(Class<? extends T> targetClass, String property) {
         String methodName = getterName(property);
-        try {
-            final Method method = targetClass.getMethod(methodName);
-            if (!Void.TYPE.equals(method.getReturnType())) {
-                return new MethodAccessedProperty<>(method, property);
-            }
-            logger.debug(
-                    "Method with name '{}' in '{}' cannot be accepted as a property accessor, as it returns void",
-                    methodName, targetClass.getName());
-        } catch (NoSuchMethodException e) {
+        Optional<Method> method = getMethod(targetClass, methodName);
+        if (!method.isPresent()) {
             logger.debug("No method with name '{}' found in {} to use as property accessor. " +
                                  "Attempting to fall back to other strategies.",
                          methodName, targetClass.getName());
+            return null;
+        } else {
+            return new MethodAccessedProperty<>(method.get(), property);
         }
-        return null;
+    }
+
+    private <T> Optional<Method> getMethod(Class<T> targetClass, String methodName) {
+        return Arrays.stream(targetClass.getMethods())
+                     .filter(method -> method.getName().equals(methodName))
+                     .filter(method -> method.getParameterCount() == 0)
+                     .filter(this::isNotReturningVoid)
+                     .findFirst();
+    }
+
+    private boolean isNotReturningVoid(Method method) {
+        boolean returnsVoid = method.getReturnType().equals(Void.TYPE);
+        if (returnsVoid && logger.isDebugEnabled()) {
+            logger.debug(
+                    "Method with name '{}' in '{}' cannot be accepted as a property accessor, as it returns void",
+                    method.getName(), method.getDeclaringClass().getName());
+        }
+        return !returnsVoid;
     }
 
     /**
