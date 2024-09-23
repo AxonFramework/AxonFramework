@@ -1506,6 +1506,11 @@ public class AxonServerConfiguration {
         private int initialSegmentCount = 1;
 
         /**
+         * The number of threads used to process tasks (e.g. event handling) for the persistent stream. Defaults to 1.
+         */
+        private int threadCount = 1;
+
+        /**
          * The sequencing policy to use for the persistent stream.
          * <p>
          * Supported sequencing policies are:
@@ -1525,7 +1530,11 @@ public class AxonServerConfiguration {
         private List<String> sequencingPolicyParameters = new LinkedList<>();
 
         /**
-         * Expression to filter out events in a persistent stream.
+         * Expression to filter out events in a persistent stream, expecting the Axon Server Query Language as its
+         * syntax.
+         * <p>
+         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
+         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
          */
         private String filter;
 
@@ -1562,6 +1571,25 @@ public class AxonServerConfiguration {
          */
         public void setInitialSegmentCount(int initialSegmentCount) {
             this.initialSegmentCount = initialSegmentCount;
+        }
+
+        /**
+         * The number of threads used to process tasks (e.g. event handling) for the persistent stream. Defaults to 1.
+         *
+         * @return The number of threads used to process tasks (e.g. event handling) for the persistent stream.
+         */
+        public int getThreadCount() {
+            return threadCount;
+        }
+
+        /**
+         * Sets the number of threads used to process tasks (e.g. event handling) for the persistent stream.
+         *
+         * @param threadCount The number of threads used to process tasks (e.g. event handling) for the persistent
+         *                    stream.
+         */
+        public void setThreadCount(int threadCount) {
+            this.threadCount = threadCount;
         }
 
         /**
@@ -1616,7 +1644,10 @@ public class AxonServerConfiguration {
         }
 
         /**
-         * Expression to filter out events in a persistent stream.
+         * Expression to filter out events in a persistent stream, using Axon Server Query Language as its syntax.
+         * <p>
+         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
+         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
          *
          * @return The filter expression.
          */
@@ -1625,8 +1656,11 @@ public class AxonServerConfiguration {
         }
 
         /**
-         * Sets the expression to filter out events in a persistent stream.
-         * <p>This value is only used for creating the persistent stream.</p>
+         * Sets the expression to filter out events in a persistent stream, expecting the Axon Server Query Language as
+         * its syntax.
+         * <p>
+         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
+         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
          *
          * @param filter The filter expression.
          */

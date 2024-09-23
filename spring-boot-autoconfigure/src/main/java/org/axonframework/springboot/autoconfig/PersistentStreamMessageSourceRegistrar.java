@@ -19,6 +19,7 @@ import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -31,7 +32,7 @@ import org.springframework.core.env.Environment;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
+import javax.annotation.Nonnull;
 
 import static io.axoniq.axonserver.connector.impl.ObjectUtils.nonNullOrDefault;
 
@@ -43,8 +44,8 @@ import static io.axoniq.axonserver.connector.impl.ObjectUtils.nonNullOrDefault;
  */
 public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionRegistryPostProcessor {
 
-    private final ScheduledExecutorService scheduledExecutorService;
     private final Map<String, AxonServerConfiguration.PersistentStreamSettings> persistentStreams;
+    private final PersistentStreamScheduledExecutorBuilder executorBuilder;
 
     /**
      * Instantiates a {@link PersistentStreamMessageSourceRegistrar} instance.
@@ -53,11 +54,12 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
      * {@link AxonServerConfiguration.PersistentStreamSettings persistent stream definitions} from the given
      * {@code environment}.
      *
-     * @param environment              Application configuration environment.
-     * @param scheduledExecutorService Scheduler to schedule persistent stream operations.
+     * @param environment     Application configuration environment.
+     * @param executorBuilder The {@link java.util.concurrent.ScheduledExecutorService} builder used during
+     *                        construction of the {@link PersistentStreamMessageSourceDefinition}.
      */
     public PersistentStreamMessageSourceRegistrar(Environment environment,
-                                                  ScheduledExecutorService scheduledExecutorService) {
+                                                  PersistentStreamScheduledExecutorBuilder executorBuilder) {
         Binder binder = Binder.get(environment);
         this.persistentStreams =
                 binder.bind(
@@ -65,11 +67,13 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
                               Bindable.mapOf(String.class, AxonServerConfiguration.PersistentStreamSettings.class)
                       )
                       .orElse(Collections.emptyMap());
-        this.scheduledExecutorService = scheduledExecutorService;
+        this.executorBuilder = executorBuilder;
     }
 
     @Override
-    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry beanDefinitionRegistry) throws BeansException {
+    public void postProcessBeanDefinitionRegistry(
+            @Nonnull BeanDefinitionRegistry beanDefinitionRegistry
+    ) throws BeansException {
         persistentStreams.forEach((name, settings) -> {
             BeanDefinitionBuilder beanDefinition =
                     BeanDefinitionBuilder.genericBeanDefinition(PersistentStreamMessageSourceDefinition.class);
@@ -86,7 +90,7 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
             streamProperties.addConstructorArgValue(settings.getFilter());
 
             beanDefinition.addConstructorArgValue(streamProperties.getBeanDefinition());
-            beanDefinition.addConstructorArgValue(scheduledExecutorService);
+            beanDefinition.addConstructorArgValue(executorBuilder.build(settings.getThreadCount(), streamName));
             beanDefinition.addConstructorArgValue(settings.getBatchSize());
             beanDefinition.addConstructorArgValue(null);
             beanDefinition.addConstructorArgValue(new RuntimeBeanReference(PersistentStreamMessageSourceFactory.class));
@@ -97,7 +101,7 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
 
     @Override
     public void postProcessBeanFactory(
-            ConfigurableListableBeanFactory configurableListableBeanFactory
+            @Nonnull ConfigurableListableBeanFactory configurableListableBeanFactory
     ) throws BeansException {
         // No actions needed here
     }

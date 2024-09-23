@@ -17,14 +17,17 @@
 package org.axonframework.springboot.autoconfig;
 
 import io.grpc.ManagedChannelBuilder;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
@@ -50,6 +53,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -237,6 +242,23 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
+    void persistentStreamSettingsArePopulatedAsExpected() {
+        testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
+                                       "axon.axonserver.persistent-streams[payments-stream].thread-count=4")
+                   .run(context -> {
+                       assertThat(context).hasSingleBean(AxonServerConfiguration.class);
+                       Map<String, AxonServerConfiguration.PersistentStreamSettings> persistentStreams =
+                               context.getBean(AxonServerConfiguration.class).getPersistentStreams();
+
+                       assertThat(persistentStreams).hasSize(1);
+                       AxonServerConfiguration.PersistentStreamSettings paymentsStreamSettings =
+                               persistentStreams.get("payments-stream");
+                       assertThat(paymentsStreamSettings).isNotNull();
+                       assertThat(paymentsStreamSettings.getThreadCount()).isEqualTo(4);
+                   });
+    }
+
+    @Test
     void persistentStreamProcessorsConfigurerModuleAddsSequencingPolicy() {
         testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
                                        "axon.eventhandling.processors.payments.source=payments-stream",
@@ -281,6 +303,35 @@ class AxonServerAutoConfigurationTest {
                    .run(context -> assertThat(context).getBean("payments").isNull());
     }
 
+    @Test
+    void persistentStreamScheduledExecutorBuilderConstructsUniqueScheduledExecutorServices() {
+        testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
+                                       "axon.eventhandling.processors.payments.source=payments-stream")
+                   .run(context -> {
+                       assertThat(context).hasSingleBean(PersistentStreamScheduledExecutorBuilder.class);
+                       PersistentStreamScheduledExecutorBuilder executorBuilder =
+                               context.getBean(PersistentStreamScheduledExecutorBuilder.class);
+
+                       ScheduledExecutorService fooExecutor = executorBuilder.build(1, "foo");
+                       assertThat(fooExecutor).isNotEqualTo(executorBuilder.build(1, "foo"));
+                   });
+    }
+
+    @Test
+    void persistentStreamScheduledExecutorBuilderReusesScheduledExecutorService() {
+        testContext.withUserConfiguration(SinglePersistentStreamScheduledExecutorServiceConfiguration.class)
+                   .withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
+                                       "axon.eventhandling.processors.payments.source=payments-stream")
+                   .run(context -> {
+                       assertThat(context).hasSingleBean(PersistentStreamScheduledExecutorBuilder.class);
+                       PersistentStreamScheduledExecutorBuilder executorBuilder =
+                               context.getBean(PersistentStreamScheduledExecutorBuilder.class);
+
+                       ScheduledExecutorService fooExecutor = executorBuilder.build(1, "foo");
+                       assertThat(fooExecutor).isEqualTo(executorBuilder.build(1, "foo"));
+                   });
+    }
+
     @ContextConfiguration
     @EnableAutoConfiguration
     private static class TestContext {
@@ -304,6 +355,15 @@ class AxonServerAutoConfigurationTest {
         @Bean
         public ManagedChannelCustomizer customManagedChannelCustomizer() {
             return CUSTOM_MANAGED_CHANNEL_CUSTOMIZER;
+        }
+    }
+
+    private static class SinglePersistentStreamScheduledExecutorServiceConfiguration {
+
+        @Bean
+        @Qualifier("persistentStreamScheduler")
+        public ScheduledExecutorService persistentStreamScheduler() {
+            return Executors.newScheduledThreadPool(1, new AxonThreadFactory("persistent-streams"));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,18 @@ import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Revision;
+import org.axonframework.serialization.SerializedMessage;
+import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.TestSerializer;
 import org.junit.jupiter.api.*;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,8 +76,34 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     @Test
+    void canConvertMessagesWithSerializationErrors() {
+        SerializedType eventType = new SimpleSerializedType(
+                "org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverterTest$SerializationErrorClass",
+                null
+        );
+        EventMessage<Object> message = new GenericEventMessage<>(new SerializedMessage<>(
+                "my-identifier",
+                new SimpleSerializedObject<>(
+                        "{'my-wrong-payload':'wadawd'}".getBytes(StandardCharsets.UTF_8),
+                        byte[].class,
+                        eventType
+                ),
+                new SimpleSerializedObject<>(
+                        "{}".getBytes(StandardCharsets.UTF_8),
+                        byte[].class,
+                        new SimpleSerializedType("org.axonframework.messaging.MetaData", null)
+                ),
+                eventSerializer
+        ), Instant::now);
+        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, eventSerializer, genericSerializer);
+        assertNotNull(deadLetterEventEntry);
+        assertEquals("{'my-wrong-payload':'wadawd'}", new String(deadLetterEventEntry.getPayload().getData()));
+    }
+
+    @Test
     void canConvertTrackedDomainEventMessageWithGapAwareTokenAndBackCorrectly() {
-        testConversion(new GenericTrackedDomainEventMessage<>(new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L)),
+        TrackingToken testToken = new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L));
+        testConversion(new GenericTrackedDomainEventMessage<>(testToken,
                                                               "MyType",
                                                               "8239081092",
                                                               25L,
@@ -89,7 +121,8 @@ class EventMessageDeadLetterJpaConverterTest {
 
     @Test
     void canConvertTrackedEventMessageWithGapAwareTokenAndBackCorrectly() {
-        testConversion(new GenericTrackedEventMessage<>(new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L)),
+        TrackingToken testToken = new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L));
+        testConversion(new GenericTrackedEventMessage<>(testToken,
                                                         new GenericEventMessage<>(event, metaData),
                                                         Instant::now));
     }
@@ -101,7 +134,8 @@ class EventMessageDeadLetterJpaConverterTest {
         assertCorrectlyMapped(message, deadLetterEventEntry);
         assertTrue(converter.canConvert(deadLetterEventEntry));
 
-        EventMessage<?> restoredEventMessage = converter.convert(deadLetterEventEntry, eventSerializer, genericSerializer);
+        EventMessage<?> restoredEventMessage =
+                converter.convert(deadLetterEventEntry, eventSerializer, genericSerializer);
         assertCorrectlyRestored(message, restoredEventMessage);
     }
 
@@ -194,5 +228,11 @@ class EventMessageDeadLetterJpaConverterTest {
         public int hashCode() {
             return myProperty != null ? myProperty.hashCode() : 0;
         }
+    }
+
+    // Suppressed since it's used for test 'canConvertMessagesWithSerializationErrors'
+    @SuppressWarnings("unused")
+    static class SerializationErrorClass {
+        String myValue;
     }
 }
