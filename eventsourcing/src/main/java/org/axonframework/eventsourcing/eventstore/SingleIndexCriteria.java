@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 
 import java.util.Set;
 
@@ -36,7 +36,7 @@ class SingleIndexCriteria implements EventCriteria {
      *
      * @param index The singular {@link Index} of this {@link EventCriteria}.
      */
-    SingleIndexCriteria(@NotNull Index index) {
+    SingleIndexCriteria(@Nonnull Index index) {
         this.index = index;
     }
 

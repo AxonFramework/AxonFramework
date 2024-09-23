@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
@@ -33,9 +34,9 @@ public class GenericTrackedAndIndexedEventMessage<P> implements IndexedEventMess
     private final TrackingToken token;
     private final Set<Index> indices;
 
-    public GenericTrackedAndIndexedEventMessage(EventMessage<P> delegate,
-                                                TrackingToken token,
-                                                Set<Index> indices) {
+    public GenericTrackedAndIndexedEventMessage(@Nonnull EventMessage<P> delegate,
+                                                @Nonnull TrackingToken token,
+                                                @Nonnull Set<Index> indices) {
         this.delegate = delegate;
         this.token = token;
         this.indices = indices;
@@ -77,7 +78,7 @@ public class GenericTrackedAndIndexedEventMessage<P> implements IndexedEventMess
     }
 
     @Override
-    public EventMessage<P> withMetaData(Map<String, ?> metaData) {
+    public EventMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
         return getMetaData().equals(metaData)
                 ? this
                 : new GenericTrackedAndIndexedEventMessage<>(this.delegate.withMetaData(metaData),
@@ -86,7 +87,7 @@ public class GenericTrackedAndIndexedEventMessage<P> implements IndexedEventMess
     }
 
     @Override
-    public EventMessage<P> andMetaData(Map<String, ?> metaData) {
+    public EventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
         return metaData.isEmpty() || getMetaData().equals(metaData)
                 ? this
                 : new GenericTrackedAndIndexedEventMessage<>(this.delegate.andMetaData(metaData),
@@ -95,12 +96,12 @@ public class GenericTrackedAndIndexedEventMessage<P> implements IndexedEventMess
     }
 
     @Override
-    public TrackedEventMessage<P> withTrackingToken(TrackingToken trackingToken) {
+    public TrackedEventMessage<P> withTrackingToken(@Nonnull TrackingToken trackingToken) {
         return new GenericTrackedAndIndexedEventMessage<>(this.delegate, trackingToken, this.indices);
     }
 
     @Override
-    public IndexedEventMessage<P> updateIndices(Function<Set<Index>, Set<Index>> updater) {
+    public IndexedEventMessage<P> updateIndices(@Nonnull Function<Set<Index>, Set<Index>> updater) {
         return new GenericTrackedAndIndexedEventMessage<>(this.delegate, this.token, updater.apply(this.indices));
     }
 }

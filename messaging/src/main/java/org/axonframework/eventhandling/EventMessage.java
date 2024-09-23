@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 
 import java.time.Instant;
@@ -65,7 +65,7 @@ public interface EventMessage<T> extends Message<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    EventMessage<T> withMetaData(@NotNull Map<String, ?> metaData);
+    EventMessage<T> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Returns a copy of this EventMessage with it MetaData merged with the given {@code metaData}. The payload,
@@ -75,5 +75,5 @@ public interface EventMessage<T> extends Message<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    EventMessage<T> andMetaData(@NotNull Map<String, ?> metaData);
+    EventMessage<T> andMetaData(@Nonnull Map<String, ?> metaData);
 }

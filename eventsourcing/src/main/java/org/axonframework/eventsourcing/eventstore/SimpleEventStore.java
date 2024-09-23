@@ -16,8 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -28,7 +27,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
 
 /**
  * Simple implementation of the {@link AsyncEventStore} and {@link StreamableEventSource} fixed for a <b>single</b>
@@ -62,15 +60,15 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
      *                           {@link #open(String, StreamingCondition) open event streams} with.
      * @param context            The (bounded) {@code context} this event store operates in.
      */
-    public SimpleEventStore(@NotNull AsyncEventStorageEngine eventStorageEngine,
-                            @NotEmpty String context) {
+    public SimpleEventStore(@Nonnull AsyncEventStorageEngine eventStorageEngine,
+                            @Nonnull String context) {
         this.eventStorageEngine = eventStorageEngine;
         this.context = context;
     }
 
     @Override
-    public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext,
-                                             @NotEmpty String context) {
+    public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext,
+                                             @Nonnull String context) {
         validate(context);
         return processingContext.computeResourceIfAbsent(
                 eventStoreTransactionKey,
@@ -90,31 +88,34 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
     }
 
     @Override
-    public MessageStream<TrackedEventMessage<?>> open(String context, StreamingCondition condition) {
+    public MessageStream<TrackedEventMessage<?>> open(@Nonnull String context,
+                                                      @Nonnull StreamingCondition condition) {
         validate(context);
         return eventStorageEngine.stream(condition);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> headToken(String context) {
+    public CompletableFuture<TrackingToken> headToken(@Nonnull String context) {
         validate(context);
         return eventStorageEngine.headToken();
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken(String context) {
+    public CompletableFuture<TrackingToken> tailToken(@Nonnull String context) {
         validate(context);
         return eventStorageEngine.tailToken();
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(String context, Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull String context,
+                                                    @Nonnull Instant at) {
         validate(context);
         return eventStorageEngine.tokenAt(at);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenSince(String context, Duration since) {
+    public CompletableFuture<TrackingToken> tokenSince(@Nonnull String context,
+                                                       @Nonnull Duration since) {
         validate(context);
         return eventStorageEngine.tokenSince(since);
     }

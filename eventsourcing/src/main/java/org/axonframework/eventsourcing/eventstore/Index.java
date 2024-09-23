@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -39,6 +39,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public record Index(@NotEmpty String key, @NotEmpty String value) {
+public record Index(@Nonnull String key,
+                    @Nonnull String value) {
 
 }

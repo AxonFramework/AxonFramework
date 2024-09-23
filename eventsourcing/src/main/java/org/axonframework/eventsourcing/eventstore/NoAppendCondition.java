@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
+
 /**
  * An {@link AppendCondition} implementation that has {@link EventCriteria#noCriteria() no criteria}.
  * <p>
@@ -47,7 +49,7 @@ class NoAppendCondition implements AppendCondition {
     }
 
     @Override
-    public AppendCondition with(SourcingCondition condition) {
+    public AppendCondition with(@Nonnull SourcingCondition condition) {
         return AppendCondition.from(condition);
     }
 

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.TrackingToken;
 
 /**
@@ -28,12 +28,12 @@ import org.axonframework.eventhandling.TrackingToken;
  * @since 5.0.0
  */
 record DefaultStreamingCondition(
-        @NotNull TrackingToken position,
-        @NotNull EventCriteria criteria
+        @Nonnull TrackingToken position,
+        @Nonnull EventCriteria criteria
 ) implements StreamingCondition {
 
     @Override
-    public StreamingCondition with(EventCriteria criteria) {
+    public StreamingCondition with(@Nonnull EventCriteria criteria) {
         return new DefaultStreamingCondition(this.position, this.criteria.combine(criteria));
     }
 }

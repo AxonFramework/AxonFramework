@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -58,15 +58,15 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *                           {@link #appendEvent(EventMessage) append events} and attach resources like the
      *                           {@link EventStoreTransaction#APPEND_POSITION_KEY} to.
      */
-    public DefaultEventStoreTransaction(@NotNull AsyncEventStorageEngine eventStorageEngine,
-                                        @NotNull ProcessingContext processingContext) {
+    public DefaultEventStoreTransaction(@Nonnull AsyncEventStorageEngine eventStorageEngine,
+                                        @Nonnull ProcessingContext processingContext) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
     }
 
     @Override
-    public MessageStream<EventMessage<?>> source(@NotNull SourcingCondition condition,
-                                                 @NotNull ProcessingContext context) {
+    public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition,
+                                                 @Nonnull ProcessingContext context) {
         context.updateResource(
                 appendConditionKey,
                 appendCondition -> appendCondition == null
@@ -77,7 +77,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void appendEvent(@NotNull EventMessage<?> eventMessage) {
+    public void appendEvent(@Nonnull EventMessage<?> eventMessage) {
         List<EventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
@@ -105,7 +105,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void onAppend(@NotNull Consumer<EventMessage<?>> callback) {
+    public void onAppend(@Nonnull Consumer<EventMessage<?>> callback) {
         callbacks.add(callback);
     }
 }

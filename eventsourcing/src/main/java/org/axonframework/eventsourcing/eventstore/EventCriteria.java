@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -63,7 +63,7 @@ public interface EventCriteria {
      * @param index The singular {@link Index} of the {@link EventCriteria} being constructed.
      * @return A simple {@link EventCriteria} based on the given {@code index}.
      */
-    static EventCriteria hasIndex(@NotNull Index index) {
+    static EventCriteria hasIndex(@Nonnull Index index) {
         return new SingleIndexCriteria(index);
     }
 
@@ -93,7 +93,7 @@ public interface EventCriteria {
      *                {@link #indices()}.
      * @return {@code true} if they are deemed to be equal, {@code false} otherwise.
      */
-    default boolean matchingIndices(@NotNull Set<Index> indices) {
+    default boolean matchingIndices(@Nonnull Set<Index> indices) {
         return this.indices().equals(indices);
     }
 
@@ -103,7 +103,7 @@ public interface EventCriteria {
      * @param that The {@link EventCriteria} to combine with {@code this}.
      * @return A combined {@link EventCriteria}, consisting out of {@code this} and the given {@code that}.
      */
-    default EventCriteria combine(@NotNull EventCriteria that) {
+    default EventCriteria combine(@Nonnull EventCriteria that) {
         return new CombinedEventCriteria(this, that);
     }
 }

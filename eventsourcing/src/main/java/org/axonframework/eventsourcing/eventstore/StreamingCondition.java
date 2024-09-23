@@ -16,10 +16,10 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.TrackingToken;
 
-import javax.annotation.Nullable;
 
 /**
  * Interface describing the condition to {@link StreamableEventSource#open(String, StreamingCondition) stream} events
@@ -73,5 +73,5 @@ public interface StreamingCondition {
      * @return A {@link StreamingCondition} that combined the given {@code criteria} with the {@link #criteria()} of
      * {@code this} {@link StreamingCondition}.
      */
-    StreamingCondition with(@NotNull EventCriteria criteria);
+    StreamingCondition with(@Nonnull EventCriteria criteria);
 }

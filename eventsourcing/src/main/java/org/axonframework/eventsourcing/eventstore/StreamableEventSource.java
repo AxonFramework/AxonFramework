@@ -16,8 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MessageStream;
@@ -54,8 +53,8 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      *                  {@link StreamingCondition#criteria() event criteria} to filter the stream with.
      * @return An {@link MessageStream event stream} of the given {@code context} matching the given {@code condition}.
      */
-    MessageStream<E> open(@NotEmpty String context,
-                          @NotNull StreamingCondition condition);
+    MessageStream<E> open(@Nonnull String context,
+                          @Nonnull StreamingCondition condition);
 
     /**
      * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream} for the given
@@ -67,7 +66,7 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the start of the
      * {@link MessageStream event stream} for the given {@code context}.
      */
-    CompletableFuture<TrackingToken> headToken(@NotEmpty String context);
+    CompletableFuture<TrackingToken> headToken(@Nonnull String context);
 
     /**
      * Creates a {@link TrackingToken} pointing at the end of the {@link MessageStream event stream} for the given
@@ -80,7 +79,7 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the end of the
      * {@link MessageStream event stream} for the given {@code context}.
      */
-    CompletableFuture<TrackingToken> tailToken(@NotEmpty String context);
+    CompletableFuture<TrackingToken> tailToken(@Nonnull String context);
 
     /**
      * Creates a {@link TrackingToken} tracking all {@link EventMessage events} after the given {@code at} from an
@@ -95,8 +94,8 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the very first event before the given
      * {@code at} of the {@link MessageStream event stream} for the given {@code context}.
      */
-    CompletableFuture<TrackingToken> tokenAt(@NotEmpty String context,
-                                             @NotNull Instant at);
+    CompletableFuture<TrackingToken> tokenAt(@Nonnull String context,
+                                             @Nonnull Instant at);
 
     /**
      * Creates a {@link TrackingToken} tracking all {@link EventMessage events} since the given {@code since} from an
@@ -111,8 +110,8 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at a position before the given
      * {@code duration} of the {@link MessageStream event stream} for the given {@code context}.
      */
-    default CompletableFuture<TrackingToken> tokenSince(@NotEmpty String context,
-                                                        @NotNull Duration since) {
+    default CompletableFuture<TrackingToken> tokenSince(@Nonnull String context,
+                                                        @Nonnull Duration since) {
         return tokenAt(context, Instant.now().minus(since));
     }
 }
