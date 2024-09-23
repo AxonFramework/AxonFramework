@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.axonframework.common.infra.DescribableComponent;
@@ -33,7 +34,17 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @author Steven van Beelen
  * @since 0.1
  */ // TODO Rename to EventStore once fully integrated
-public interface AsyncEventStore extends DescribableComponent {
+public interface AsyncEventStore extends EventSink, DescribableComponent {
+
+    @Override
+    default void publish(@Nonnull ProcessingContext processingContext,
+                         @Nonnull String context,
+                         EventMessage<?>... events) {
+        EventStoreTransaction transaction = transaction(processingContext, context);
+        for (EventMessage<?> event : events) {
+            transaction.appendEvent(event);
+        }
+    }
 
     /**
      * Retrieves the {@link EventStoreTransaction transaction for appending events} for the given
