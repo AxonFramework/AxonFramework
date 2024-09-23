@@ -1,5 +1,5 @@
 = Major Releases
-:navtitle: Release Notes
+:navtitle: Major Releases
 
 All the enhancements and features which have been introduced to our major releases of the Axon Framework are noted here.
 
