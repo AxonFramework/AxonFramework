@@ -107,7 +107,7 @@
         <dropwizard.metrics.version>4.2.27</dropwizard.metrics.version>
         <micrometer.version>1.13.4</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.15.1</byte-buddy.version>
+        <byte-buddy.version>1.15.3</byte-buddy.version>
         <commons-io.version>2.17.0</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
@@ -119,7 +119,7 @@
         <!-- Serialization -->
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.11.0</gson.version>
-        <jackson.version>2.17.2</jackson.version>
+        <jackson.version>2.18.0</jackson.version>
         <xstream.version>1.4.20</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
@@ -133,7 +133,7 @@
         <awaitility.version>4.2.2</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.11.0</junit.jupiter.version>
+        <junit.jupiter.version>5.11.1</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.3</testcontainers.version>
         <!-- Validation -->
@@ -149,7 +149,7 @@
         <maven-deploy.version>3.1.3</maven-deploy.version>
         <maven-enforcer.version>3.5.0</maven-enforcer.version>
         <maven-failsafe.version>3.5.0</maven-failsafe.version>
-        <maven-gpg.version>3.2.6</maven-gpg.version>
+        <maven-gpg.version>3.2.7</maven-gpg.version>
         <maven-install.version>3.1.3</maven-install.version>
         <maven-jar.version>3.4.2</maven-jar.version>
         <maven-javadoc.version>3.10.0</maven-javadoc.version>
