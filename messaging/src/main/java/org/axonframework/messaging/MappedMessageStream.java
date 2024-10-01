@@ -24,12 +24,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Implementation of the {@link MessageStream} that maps the {@link Message Messages} from type {@code M} to type
- * {@code R}.
+ * Implementation of the {@link MessageStream} that maps the entries of type {@code E} to type {@code RE}.
  *
- * @param <E>  The type of {@link Message} carried as input to this stream.
- * @param <RE> The type of {@link Message} carried as output to this stream as a result of the provided mapper
- *             operation.
+ * @param <E>  The type of entry carried in this {@link MessageStream stream}.
+ * @param <RE> The type of entry carried as output to this stream as a result of the provided mapper operation.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -40,12 +38,12 @@ class MappedMessageStream<E, RE> implements MessageStream<RE> {
     private final Function<E, RE> mapper;
 
     /**
-     * Construct a {@link MappedMessageStream} mapping the {@link Message Messages} of the given {@code delegate}
-     * {@link MessageStream} to type {@code M}.
+     * Construct a {@link MessageStream stream} mapping the entries of type {@code E} of the given {@code delegate}
+     * {@code MessageStream} to type {@code RE}.
      *
-     * @param delegate The {@link MessageStream} from which its {@link Message Messages} are mapped with the given
+     * @param delegate The {@link MessageStream stream} who's entries of type {@code E} are mapped with the given
      *                 {@code mapper}.
-     * @param mapper   The {@link Function} mapping {@link Message Messages} of type {@code R} to {@code M}.
+     * @param mapper   The {@link Function} mapping entries of type {@code E} to {@code RE}.
      */
     MappedMessageStream(@NotNull MessageStream<E> delegate,
                         @NotNull Function<E, RE> mapper) {

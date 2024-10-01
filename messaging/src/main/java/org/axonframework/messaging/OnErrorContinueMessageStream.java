@@ -29,7 +29,7 @@ import javax.annotation.Nonnull;
  * Implementation of the {@link MessageStream} that when the stream completes exceptionally will continue on a
  * {@code MessageStream} returned by the given {@code onError} {@link Function}.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -40,13 +40,13 @@ class OnErrorContinueMessageStream<E> implements MessageStream<E> {
     private final Function<Throwable, MessageStream<E>> onError;
 
     /**
-     * Construct an {@link OnErrorContinueMessageStream} that will proceed on the resulting {@link MessageStream} from
-     * the given {@code onError} when the {@code delegate} completes exceptionally
+     * Construct an {@link MessageStream stream} that will proceed on the resulting {@code MessageStream} from the given
+     * {@code onError} when the {@code delegate} completes exceptionally
      *
-     * @param delegate The delegate {@link MessageStream} to proceed from with the result of {@code onError} <em>if</em>
-     *                 it completes exceptionally.
-     * @param onError  A {@link Function} providing the replacement {@link MessageStream} to continue from if the given
-     *                 {@code delegate} completes exceptionally.
+     * @param delegate The delegate {@link MessageStream stream} to proceed from with the result of {@code onError}
+     *                 <em>if</em> it completes exceptionally.
+     * @param onError  A {@link Function} providing the replacement {@link MessageStream stream} to continue from if the
+     *                 given {@code delegate} completes exceptionally.
      */
     OnErrorContinueMessageStream(@NotNull MessageStream<E> delegate,
                                  @NotNull Function<Throwable, MessageStream<E>> onError) {

@@ -26,7 +26,7 @@ import java.util.function.BiFunction;
  * Implementation of the {@link MessageStream} that invokes the given {@code completeHandler} once the
  * {@code delegate MessageStream} completes.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -37,11 +37,11 @@ class CompletionCallbackMessageStream<E> implements MessageStream<E> {
     private final Runnable completeHandler;
 
     /**
-     * Construct a {@link CompletionCallbackMessageStream} invoking the given {@code completeHandler} when the given
+     * Construct a {@link MessageStream stream} invoking the given {@code completeHandler} when the given
      * {@code delegate} completes.
      *
-     * @param delegate        The {@link MessageStream} that once completed results in the invocation of the given
-     *                        {@code completeHandler}.
+     * @param delegate        The {@link MessageStream stream} that once completed results in the invocation of the
+     *                        given {@code completeHandler}.
      * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
      */
     CompletionCallbackMessageStream(@NotNull MessageStream<E> delegate,

@@ -27,9 +27,12 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
- * Represents a stream of {@link Message Messages} that can be consumed as they become available.
+ * Represents a stream of entries of type {@code E} that can be consumed as they become available.
+ * <p>
+ * In most cases, the entry is an implementation of {@link Message}, making this {@link MessageStream stream} useful as
+ * a result from method invocations on the buses, the stores, and message handlers.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -39,12 +42,12 @@ public interface MessageStream<E> {
     /**
      * Create a {@link MessageStream stream} that provides the items returned by the given {@code iterable}.
      * <p>
-     * Note that each separate consumer of the stream will receive each item of the given {@code iterable} if the
+     * Note that each separate consumer of the stream will receive each entry of the given {@code iterable} if the
      * iterable does so.
      *
      * @param iterable The {@link Iterable} providing the {@link Message Messages} to stream.
-     * @param <E>      The declared type of {@link Message} in this stream.
-     * @return A {@link MessageStream stream} of {@link Message Messages} that returns the messages provided by the
+     * @param <E>      The type of entry carried in this {@link MessageStream stream}.
+     * @return A {@link MessageStream stream} of entries of type {@code E} that returns the entires provided by the
      * given {@code iterable}.
      */
     static <E> MessageStream<E> fromIterable(@NotNull Iterable<E> iterable) {
@@ -52,14 +55,14 @@ public interface MessageStream<E> {
     }
 
     /**
-     * Create a {@link MessageStream stream} that provides the items returned by the given {@code stream}.
+     * Create a {@link MessageStream stream} that provides the entries returned by the given {@code stream}.
      * <p>
-     * Note that each separate consumer of the stream will receive each item of the given {@code stream}, if the stream
+     * Note that each separate consumer of the stream will receive each entry of the given {@code stream}, if the stream
      * does so.
      *
      * @param stream The {@link Stream} providing the {@link Message Messages} to stream.
-     * @param <E>    The declared type of {@link Message} in this stream.
-     * @return A {@link MessageStream stream} of {@link Message Messages} that returns the messages provided by the
+     * @param <E>    The type of entry carried in this {@link MessageStream stream}.
+     * @return A {@link MessageStream stream} of entries of type {@code E} that returns the entries provided by the
      * given {@code stream}.
      */
     static <E> MessageStream<E> fromStream(@NotNull Stream<E> stream) {
@@ -67,11 +70,11 @@ public interface MessageStream<E> {
     }
 
     /**
-     * Create a {@link MessageStream stream} that provides the items returned by the given {@code flux}.
+     * Create a {@link MessageStream stream} that provides the entry returned by the given {@code flux}.
      *
-     * @param flux The {@link Flux} providing the {@link Message Messages} to stream.
-     * @param <E>  The declared type of {@link Message} in this stream.
-     * @return A {@link MessageStream stream} of {@link Message Messages} that returns the messages provided by the
+     * @param flux The {@link Flux} providing the entries of type {@code E} to stream.
+     * @param <E>  The type of entry carried in this {@link MessageStream stream}.
+     * @return A {@link MessageStream stream} of entries of type {@code E} that returns the entries provided by the
      * given {@code flux}.
      */
     static <E> MessageStream<E> fromFlux(@NotNull Flux<E> flux) {
@@ -79,27 +82,27 @@ public interface MessageStream<E> {
     }
 
     /**
-     * Create a {@link MessageStream stream} that returns the message when the given {@code future} completes.
+     * Create a {@link MessageStream stream} that returns the entry when the given {@code future} completes.
      * <p>
-     * The stream will contain at most a single item. It may also contain no items if the future returns {@code null}.
-     * The stream will complete with an exception when the given {@code future} completes exceptionally.
+     * The stream will contain at most a single entry. It may also contain no entries if the future returns
+     * {@code null}. The stream will complete with an exception when the given {@code future} completes exceptionally.
      *
-     * @param future The {@link CompletableFuture} providing the {@link Message} to contain in the stream.
-     * @param <E>    The declared type of {@link Message} in this stream.
-     * @return A {@link MessageStream stream} containing at most one {@link Message}.
+     * @param future The {@link CompletableFuture} providing the entry of type {@code E} to contain in the stream.
+     * @param <E>    The type of entry carried in this {@link MessageStream stream}.
+     * @return A {@link MessageStream stream} containing at most one entry of type {@code E}.
      */
     static <E> MessageStream<E> fromFuture(@NotNull CompletableFuture<E> future) {
         return new SingleValueMessageStream<>(future);
     }
 
     /**
-     * Create a {@link MessageStream stream} consisting of given {@code instance} as the only {@link Message}.
+     * Create a {@link MessageStream stream} consisting of given {@code instance} as the only entry.
      * <p>
-     * Once the {@code Message} is consumer, the stream is considered completed.
+     * Once the entry of type {@code E} is consumed, the stream is considered completed.
      *
-     * @param instance The {@link Message} to return in the stream.
-     * @param <E>      The declared type of {@link Message} in this stream.
-     * @return A {@link MessageStream stream} consisting of a single {@link Message}.
+     * @param instance The entry of type {@code E} to return in the stream.
+     * @param <E>      The type of entry carried in this {@link MessageStream stream}.
+     * @return A {@link MessageStream stream} consisting of a single entry of type {@code E}.
      */
     static <E> MessageStream<E> just(E instance) {
         return new SingleValueMessageStream<>(instance);
@@ -111,7 +114,7 @@ public interface MessageStream<E> {
      * All attempts to read from this stream will propagate this error.
      *
      * @param failure The {@link Throwable} to propagate to consumers of the stream.
-     * @param <E>     The declared type of {@link Message} in this stream.
+     * @param <E>     The type of entry carried in this {@link MessageStream stream}.
      * @return A {@link MessageStream stream} that is completed exceptionally.
      */
     static <E> MessageStream<E> failed(@NotNull Throwable failure) {
@@ -119,13 +122,13 @@ public interface MessageStream<E> {
     }
 
     /**
-     * Create a {@link MessageStream stream} that carries no {@link Message Messages} and is considered to be
+     * Create a {@link MessageStream stream} that carries no entries of type {@code E} and is considered to be
      * successfully completed.
      * <p>
-     * Any attempt to convert this stream to a component that requires an item to be returned (such as
+     * Any attempt to convert this stream to a component that requires an entry to be returned (such as
      * {@link CompletableFuture}), will have it return {@code null}.
      *
-     * @param <E> The declared type of {@link Message} in this stream.
+     * @param <E> The type of entry carried in this {@link MessageStream stream}.
      * @return An empty {@link MessageStream stream}.
      */
     static <E> MessageStream<E> empty() {
@@ -133,37 +136,37 @@ public interface MessageStream<E> {
     }
 
     /**
-     * Returns a {@link CompletableFuture} that completes with the first item contained in this {@link MessageStream},
-     * or exceptionally if the stream completes with an error before returning any {@link Message Messages}.
+     * Returns a {@link CompletableFuture} that completes with the first entry contained in this {@link MessageStream},
+     * or exceptionally if the stream completes with an error before returning any entries of type {@code E}.
      * <p>
-     * If the stream completes successfully before returning any items, the {@code CompletableFuture} completes with a
+     * If the stream completes successfully before returning any entries, the {@code CompletableFuture} completes with a
      * {@code null} value.
      *
-     * @return A {@link CompletableFuture} that completes with the first item, {@code null} if it is empty, or
+     * @return A {@link CompletableFuture} that completes with the first entry, {@code null} if it is empty, or
      * exceptionally if the {@link MessageStream stream} propagates an error.
      */
     CompletableFuture<E> asCompletableFuture();
 
     /**
-     * Creates a {@link Flux} that consumes the {@link Message Messages} from this {@link MessageStream stream}.
+     * Creates a {@link Flux} that consumes the entries of type {@code E} from this {@link MessageStream stream}.
      * <p>
      * The returned {@code Flux} will complete successfully if the stream does so, and exceptionally if the stream
      * completed with an error.
      *
-     * @return A {@link Flux} carrying the {@link Message Messages} of this {@link MessageStream stream}.
+     * @return A {@link Flux} carrying the entries of type {@code E} of this {@link MessageStream stream}.
      */
     Flux<E> asFlux();
 
     /**
-     * Returns a {@link MessageStream stream} that maps each {@link Message} from this stream using given {@code mapper}
-     * function into a {@code Message} of type {@code R}.
+     * Returns a {@link MessageStream stream} that maps each entry of type {@code E} from this stream using given
+     * {@code mapper} function into an entry of type {@code R}.
      * <p>
      * The returned stream completes the same way {@code this} stream completes.
      *
-     * @param mapper The function converting {@link Message Messages} from this {@link MessageStream stream} from type
-     *               {@code M} to {@code R}.
-     * @param <R>    The declared type of {@link Message} returned in the mapped {@link MessageStream}.
-     * @return A {@link MessageStream stream} with all {@link Message Messages} mapped according to the {@code mapper}
+     * @param mapper The function converting entries from this {@link MessageStream stream} from type {@code E} to
+     *               {@code R}.
+     * @param <R>    The declared type of entry returned in the mapped {@link MessageStream}.
+     * @return A {@link MessageStream stream} with all entries of type {@code E} mapped according to the {@code mapper}
      * function.
      */
     default <R> MessageStream<R> map(@NotNull Function<E, R> mapper) {
@@ -174,15 +177,15 @@ public interface MessageStream<E> {
      * Returns a {@link CompletableFuture} of type {@code R}, using the given {@code identity} as the initial value for
      * the given {@code accumulator}.
      * <p>
-     * The {@code accumulator} will process all {@link Message Messages} within this {@link MessageStream stream} until
+     * The {@code accumulator} will process all entries of type {@code E} within this {@link MessageStream stream} until
      * a single value of type {@code R} is left.
      * <p>
-     * Note that parallel processes <b>are not</b> supported!
+     * Note that parallel processing <b>is not</b> supported!
      *
      * @param identity    The initial value given to the {@code accumulator}.
-     * @param accumulator The {@link BiFunction} accumulating all {@link Message Messages} from this
+     * @param accumulator The {@link BiFunction} accumulating all entries of type {@code E} from this
      *                    {@link MessageStream stream} into a return value of type {@code R}.
-     * @param <R>         The result of the {@code accumulator} after reducing all {@link Message Messages} from this
+     * @param <R>         The result of the {@code accumulator} after reducing all entries of type {@code E} from this
      *                    {@link MessageStream stream}.
      * @return A {@link CompletableFuture} carrying the result of the given {@code accumulator} that reduced the entire
      * {@link MessageStream stream}.
@@ -191,14 +194,15 @@ public interface MessageStream<E> {
                                     @NotNull BiFunction<R, E, R> accumulator);
 
     /**
-     * Invokes the given {@code onNext} each time a {@link Message} is consumed from this {@link MessageStream stream}.
+     * Invokes the given {@code onNext} each time an entry of type {@code E} is consumed from this
+     * {@link MessageStream stream}.
      * <p>
-     * Depending on the stream's implementation, the function may be invoked when the item is provided to the
+     * Depending on the stream's implementation, the function may be invoked when the entry is provided to the
      * {@link Consumer}, or at the moment it's available for reading on the stream. Subscribing multiple times to the
-     * resulting stream may cause the given {@code onNext} to be invoked more than once for an item.
+     * resulting stream may cause the given {@code onNext} to be invoked more than once for an entry.
      *
-     * @param onNext The {@link Consumer} to invoke for each item.
-     * @return A {@link MessageStream stream} that will invoke the given {@code onNext} for each item.
+     * @param onNext The {@link Consumer} to invoke for each entry.
+     * @return A {@link MessageStream stream} that will invoke the given {@code onNext} for each entry.
      */
     default MessageStream<E> onNextItem(@NotNull Consumer<E> onNext) {
         return new OnNextMessageStream<>(this, onNext);

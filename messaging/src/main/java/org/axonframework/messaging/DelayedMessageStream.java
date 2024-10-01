@@ -27,7 +27,7 @@ import java.util.function.BiFunction;
 /**
  * An implementation of the {@link MessageStream} that wraps a stream that will become available asynchronously.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -41,16 +41,17 @@ public class DelayedMessageStream<E> implements MessageStream<E> {
     }
 
     /**
-     * Creates a {@link MessageStream} that delays actions to its {@code delegate} when it becomes available.
+     * Creates a {@link MessageStream stream} that delays actions to its {@code delegate} when it becomes available.
      * <p>
      * If the given {@code delegate} has already {@link CompletableFuture#isDone() completed}, it returns the
      * {@code MessageStream} immediately from it. Otherwise, it returns a {@link DelayedMessageStream} instance wrapping
      * the given {@code delegate}.
      *
-     * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream} to delegate to when it
-     *                 becomes available.
-     * @param <E>      The type of {@link Message} carried in this stream.
-     * @return A {@link MessageStream} that delegates all actions to the {@code delegate} when it becomes available.
+     * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream stream} to delegate to
+     *                 when it becomes available.
+     * @param <E>      The type of entry carried in this {@link MessageStream stream}.
+     * @return A {@link MessageStream stream} that delegates all actions to the {@code delegate} when it becomes
+     * available.
      */
     public static <E> MessageStream<E> create(CompletableFuture<MessageStream<E>> delegate) {
         if (delegate.isDone()) {

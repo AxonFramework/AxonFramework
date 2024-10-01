@@ -25,9 +25,9 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * A {@link MessageStream} implementation using a {@link Stream} as the {@link Message} source.
+ * A {@link MessageStream} implementation using a {@link Stream} as the source.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -37,9 +37,10 @@ class StreamMessageStream<E> implements MessageStream<E> {
     private final Stream<E> source;
 
     /**
-     * Constructs a {@link MessageStream} using the given {@code source} to provide the {@link Message Messages}.
+     * Constructs a {@link MessageStream stream} using the given {@code source} to provide the entries of type
+     * {@code E}.
      *
-     * @param source The {@link Stream} sourcing the {@link Message Messages} for this {@link MessageStream}.
+     * @param source The {@link Stream} providing the entries of type {@code E} for this {@link MessageStream stream}.
      */
     StreamMessageStream(@NotNull Stream<E> source) {
         this.source = source;

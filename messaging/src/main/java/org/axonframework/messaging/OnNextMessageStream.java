@@ -25,9 +25,9 @@ import java.util.function.Consumer;
 
 /**
  * An implementation of the {@link MessageStream} that invokes the given {@code onNext} {@link Consumer} each time a new
- * {@link Message} is consumed from this {@code MessageStream}.
+ * entry of type {@code E} is consumed from this {@code MessageStream}.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -38,12 +38,13 @@ class OnNextMessageStream<E> implements MessageStream<E> {
     private final Consumer<E> onNext;
 
     /**
-     * Construct an {@link OnNextMessageStream} that invokes the given {@code onNext} {@link Consumer} each time a
-     * new {@link Message} is consumed by the given {@code delegate}.
+     * Construct an {@link MessageStream stream} that invokes the given {@code onNext} {@link Consumer} each time a new
+     * entry of type {@code E} is consumed by the given {@code delegate}.
      *
-     * @param delegate The delegate {@link MessageStream} from which each consumed {@link Message} is given to the
-     *                 {@code onNext} {@link Consumer}.
-     * @param onNext   The {@link Consumer} to handle each consumed {@link Message} from the given {@code delegate}.
+     * @param delegate The delegate {@link MessageStream stream} from which each consumed entry of type {@code E} is
+     *                 given to the {@code onNext} {@link Consumer}.
+     * @param onNext   The {@link Consumer} to handle each consumed entry of type {@code E} from the given
+     *                 {@code delegate}.
      */
     OnNextMessageStream(@NotNull MessageStream<E> delegate,
                         @NotNull Consumer<E> onNext) {

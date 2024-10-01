@@ -24,9 +24,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * A {@link MessageStream} implementation using a {@link Flux} as the {@link Message} source.
+ * A {@link MessageStream} implementation using a {@link Flux} as the source.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -36,9 +36,10 @@ class FluxMessageStream<E> implements MessageStream<E> {
     private final Flux<E> source;
 
     /**
-     * Constructs a {@link MessageStream} using the given {@code source} to provide the {@link Message Messages}.
+     * Constructs a {@link MessageStream stream} using the given {@code source} to provide the entries of type
+     * {@code E}.
      *
-     * @param source The {@link Flux} sourcing the {@link Message Messages} for this {@link MessageStream}.
+     * @param source The {@link Flux} providing the entries of type {@code E} for this {@link MessageStream stream}.
      */
     FluxMessageStream(@NotNull Flux<E> source) {
         this.source = source;

@@ -25,10 +25,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * A {@link MessageStream} implementation using a single {@link Message} or {@link CompletableFuture} completing to a
- * {@code Message} as the source.
+ * A {@link MessageStream} implementation using a single entry of type {@code E} or {@link CompletableFuture} completing
+ * to an entry of type {@code E} as the source.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -38,23 +38,23 @@ class SingleValueMessageStream<E> implements MessageStream<E> {
     private final CompletableFuture<E> source;
 
     /**
-     * Constructs a {@link MessageStream} wrapping the given {@code message} into a
+     * Constructs a {@link MessageStream stream} wrapping the given {@code entry} into a
      * {@link CompletableFuture#completedFuture(Object) completed CompletableFuture} as the single value in this
      * stream.
      *
-     * @param message The {@link Message} of type {@code M} which is the singular value contained in this
-     *                {@link MessageStream}.
+     * @param entry The entry of type {@code E} which is the singular value contained in this
+     *              {@link MessageStream stream}.
      */
-    SingleValueMessageStream(E message) {
-        this(CompletableFuture.completedFuture(message));
+    SingleValueMessageStream(E entry) {
+        this(CompletableFuture.completedFuture(entry));
     }
 
     /**
-     * Constructs a {@link MessageStream} with the given {@code source} as the provider of the single {@link Message} in
-     * this stream.
+     * Constructs a {@link MessageStream stream} with the given {@code source} as the provider of the single entry of
+     * type {@code E} in this stream.
      *
-     * @param source The {@link CompletableFuture} resulting in the singular {@link Message} contained in this
-     *               {@link MessageStream}.
+     * @param source The {@link CompletableFuture} resulting in the singular entry of type {@code E} contained in this
+     *               {@link MessageStream stream}.
      */
     SingleValueMessageStream(@NotNull CompletableFuture<E> source) {
         this.source = source;

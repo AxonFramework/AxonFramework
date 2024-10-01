@@ -26,7 +26,7 @@ import java.util.function.Function;
 /**
  * A {@link MessageStream} implementation that completes exceptionally through the given {@code error}.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -36,9 +36,9 @@ class FailedMessageStream<E> implements MessageStream<E> {
     private final Throwable error;
 
     /**
-     * Constructs a {@link FailedMessageStream} that will complete exceptionally with the given {@code error}.
+     * Constructs a {@link MessageStream stream} that will complete exceptionally with the given {@code error}.
      *
-     * @param error The {@link Throwable} that caused this {@link MessageStream} to complete exceptionally.
+     * @param error The {@link Throwable} that caused this {@link MessageStream stream} to complete exceptionally.
      */
     FailedMessageStream(@NotNull Throwable error) {
         this.error = error;

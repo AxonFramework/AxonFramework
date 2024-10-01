@@ -27,9 +27,9 @@ import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
 /**
- * A {@link MessageStream} implementation using an {@link Iterable} as the {@link Message} source.
+ * A {@link MessageStream} implementation using an {@link Iterable} as the source.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -41,9 +41,11 @@ class IterableMessageStream<E> implements MessageStream<E> {
     private final Iterable<E> source;
 
     /**
-     * Constructs a {@link MessageStream} using the given {@code source} to provide the {@link Message Messages}.
+     * Constructs a {@link MessageStream stream} using the given {@code source} to provide the entries of type
+     * {@code E}.
      *
-     * @param source The {@link Iterable} sourcing the {@link Message Messages} for this {@link MessageStream}.
+     * @param source The {@link Iterable} providing the entries of type {@code E} for this
+     *               {@link MessageStream stream}.
      */
     IterableMessageStream(@NotNull Iterable<E> source) {
         this.source = source;

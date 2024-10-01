@@ -26,9 +26,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * A {@link MessageStream} implementation that contains no {@link Message Messages} at all.
+ * A {@link MessageStream stream} implementation that contains no entries at all.
  *
- * @param <E> The type of {@link Message} carried in this stream.
+ * @param <E> The type of entry carried in this {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -39,15 +39,16 @@ class EmptyMessageStream<E> implements MessageStream<E> {
     private static final EmptyMessageStream INSTANCE = new EmptyMessageStream<>();
 
     private EmptyMessageStream() {
+        // No-arg constructor to enforce use of INSTANCE constant.
     }
 
     /**
      * Return a singular instance of the {@link EmptyMessageStream} to be used throughout.
      *
-     * @param <T> The type of {@link Message} carried in this stream.
+     * @param <E> The type of entry carried in this {@link MessageStream stream}.
      * @return A singular instance of the {@link EmptyMessageStream} to be used throughout.
      */
-    public static <T> EmptyMessageStream<T> instance() {
+    public static <E> EmptyMessageStream<E> instance() {
         //noinspection unchecked
         return INSTANCE;
     }
