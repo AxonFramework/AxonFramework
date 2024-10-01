@@ -31,19 +31,19 @@ class CompletionCallbackMessageStreamTest extends MessageStreamTest<String> {
     };
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages), NO_OP_COMPLETION_CALLBACK);
+    MessageStream<String> testSubject(List<String> entries) {
+        return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(entries), NO_OP_COMPLETION_CALLBACK);
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
-        return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages)
+    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
+        return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(entries)
                                                                   .concatWith(MessageStream.failed(failure)),
                                                      NO_OP_COMPLETION_CALLBACK);
     }
 
     @Override
-    String createRandomValidEntry() {
+    String createRandomEntry() {
         return "test-" + ThreadLocalRandom.current().nextInt(10000);
     }
 }

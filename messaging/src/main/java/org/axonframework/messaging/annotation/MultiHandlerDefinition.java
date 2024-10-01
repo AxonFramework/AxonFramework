@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 
 import java.lang.reflect.Method;
@@ -175,10 +176,12 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     }
 
     @Override
-    public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
-                                                                @Nonnull Method method,
-                                                                @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                                Function<Object, MessageStream<?>> returnTypeConverter) {
+    public <T> Optional<MessageHandlingMember<T>> createHandler(
+            @Nonnull Class<T> declaringType,
+            @Nonnull Method method,
+            @Nonnull ParameterResolverFactory parameterResolverFactory,
+            Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+    ) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {
             handler = handlerDefinition.createHandler(declaringType,

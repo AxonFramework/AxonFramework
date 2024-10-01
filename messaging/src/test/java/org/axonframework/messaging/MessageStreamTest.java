@@ -26,51 +26,50 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.messaging.GenericMessage.asMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite used to validate implementations of the {@link MessageStream}
  *
- * @param <P> The payload type contained in the {@link Message Messages} carried in the {@link MessageStream}.
+ * @param <E> The type of entry carried in the {@link MessageStream stream}.
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-public abstract class MessageStreamTest<P> {
+public abstract class MessageStreamTest<E> {
 
     /**
-     * Construct a test subject using the given {@code messages} as the message source.
+     * Construct a test subject using the given {@code entries} as the source.
      *
-     * @param messages The {@link Message Messages} acting as the source for the {@link MessageStream} under
-     *                 construction.
-     * @return A {@link MessageStream} to use for testing.
+     * @param entries The entries of type {@code E} acting as the source for the {@link MessageStream stream} under
+     *                construction.
+     * @return A {@link MessageStream stream} to use for testing.
      */
-    abstract MessageStream<Message<P>> testSubject(List<Message<P>> messages);
+    abstract MessageStream<E> testSubject(List<E> entries);
 
     /**
-     * Construct a test subject using the given {@code messages} as the message source, which will fail due to the given
+     * Construct a test subject using the given {@code entries} as the source, which will fail due to the given
      * {@code failure}.
      *
-     * @param messages The {@link Message Messages} acting as the source for the {@link MessageStream} under
-     *                 construction.
-     * @param failure  The {@link Exception} causing the {@link MessageStream} under construction to fail.
-     * @return A {@link MessageStream} that will complete exceptionally to use for testing.
+     * @param entries The entries of type {@code E} acting as the source for the {@link MessageStream stream} under
+     *                construction.
+     * @param failure The {@link Exception} causing the {@link MessageStream stream} under construction to fail.
+     * @return A {@link MessageStream stream} that will complete exceptionally to use for testing.
      */
-    abstract MessageStream<Message<P>> failingTestSubject(List<Message<P>> messages,
-                                                          Exception failure);
+    abstract MessageStream<E> failingTestSubject(List<E> entries,
+                                                 Exception failure);
 
     /**
-     * Constructs a random payload of type {@code P} for the {@link Message Messages} used use during testing.
+     * Constructs a random entry of type {@code E} to be used during testing.
      *
-     * @return A random payload of type {@code P} for the {@link Message Messages} used use during testing.
+     * @return A random entry of type {@code E} to be used during testing.
      */
-    abstract P createRandomValidEntry();
+    abstract E createRandomEntry();
 
     @Test
     void shouldEmitOriginalExceptionAsFailure() {
-        MessageStream<Message<P>> testSubject = failingTestSubject(List.of(), new MockException());
+        MessageStream<E> testSubject = failingTestSubject(List.of(), new MockException());
 
-        CompletableFuture<Message<P>> actual = testSubject.asCompletableFuture();
+        CompletableFuture<E> actual = testSubject.asCompletableFuture();
 
         assertTrue(actual.isCompletedExceptionally());
         assertInstanceOf(MockException.class, actual.exceptionNow());
@@ -78,19 +77,19 @@ public abstract class MessageStreamTest<P> {
 
     @Test
     void shouldCompleteWithNullOnEmptyList() {
-        MessageStream<Message<P>> testSubject = testSubject(Collections.emptyList());
+        MessageStream<E> testSubject = testSubject(Collections.emptyList());
 
-        CompletableFuture<Message<P>> actual = testSubject.asCompletableFuture();
+        CompletableFuture<E> actual = testSubject.asCompletableFuture();
 
         assertNull(actual.resultNow());
     }
 
     @Test
     void shouldMapSingleValue_asCompletableFuture() {
-        Message<P> in = asMessage(createRandomValidEntry());
-        Message<P> out = asMessage(createRandomValidEntry());
+        E in = createRandomEntry();
+        E out = createRandomEntry();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of(in));
+        MessageStream<E> testSubject = testSubject(List.of(in));
 
         var actual = testSubject.map(input -> out).asCompletableFuture().join();
 
@@ -99,10 +98,10 @@ public abstract class MessageStreamTest<P> {
 
     @Test
     void shouldMapSingleValue_asFlux() {
-        Message<P> in = asMessage(createRandomValidEntry());
-        Message<P> out = asMessage(createRandomValidEntry());
+        E in = createRandomEntry();
+        E out = createRandomEntry();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of(in));
+        MessageStream<E> testSubject = testSubject(List.of(in));
 
         StepVerifier.create(testSubject.map(input -> out).asFlux())
                     .expectNext(out)
@@ -111,12 +110,12 @@ public abstract class MessageStreamTest<P> {
 
     @Test
     void shouldMapMultipleValues_asFlux() {
-        Message<P> in1 = asMessage(createRandomValidEntry());
-        Message<P> out1 = asMessage(createRandomValidEntry());
-        Message<P> in2 = asMessage(createRandomValidEntry());
-        Message<P> out2 = asMessage(createRandomValidEntry());
+        E in1 = createRandomEntry();
+        E out1 = createRandomEntry();
+        E in2 = createRandomEntry();
+        E out2 = createRandomEntry();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of(in1, in2));
+        MessageStream<E> testSubject = testSubject(List.of(in1, in2));
 
         StepVerifier.create(testSubject.map(input -> input == in1 ? out1 : out2).asFlux())
                     .expectNext(out1, out2)
@@ -125,10 +124,10 @@ public abstract class MessageStreamTest<P> {
 
     @Test
     void shouldMapValuesUntilFailure_asFlux() {
-        Message<P> in = asMessage(createRandomValidEntry());
-        Message<P> out = asMessage(createRandomValidEntry());
+        E in = createRandomEntry();
+        E out = createRandomEntry();
 
-        MessageStream<Message<P>> testSubject = failingTestSubject(List.of(in), new MockException())
+        MessageStream<E> testSubject = failingTestSubject(List.of(in), new MockException())
                 .map(input -> out)
                 .onErrorContinue(MessageStream::failed);
 
@@ -142,7 +141,7 @@ public abstract class MessageStreamTest<P> {
     void shouldNotCallMapperForEmptyStream_asCompletableFuture() {
         AtomicBoolean invoked = new AtomicBoolean();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of())
+        MessageStream<E> testSubject = testSubject(List.of())
                 .map(i -> {
                     invoked.set(true);
                     return i;
@@ -158,7 +157,7 @@ public abstract class MessageStreamTest<P> {
     void shouldNotCallMapperForEmptyStream_asFlux() {
         AtomicBoolean invoked = new AtomicBoolean();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of())
+        MessageStream<E> testSubject = testSubject(List.of())
                 .map(i -> {
                     invoked.set(true);
                     return i;
@@ -173,7 +172,7 @@ public abstract class MessageStreamTest<P> {
     void shouldNotCallMapperForFailedStream() {
         AtomicBoolean invoked = new AtomicBoolean();
 
-        MessageStream<Message<P>> testSubject = failingTestSubject(List.of(), new MockException())
+        MessageStream<E> testSubject = failingTestSubject(List.of(), new MockException())
                 .map(i -> {
                     invoked.set(true);
                     return i;
@@ -185,15 +184,12 @@ public abstract class MessageStreamTest<P> {
 
     @Test
     void shouldReduceToExpectedResult() {
-        P randomPayload = createRandomValidEntry();
+        E randomPayload = createRandomEntry();
         String expected = randomPayload.toString() + randomPayload;
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of(asMessage(randomPayload),
-                                                                    asMessage(randomPayload)));
+        MessageStream<E> testSubject = testSubject(List.of(randomPayload, randomPayload));
 
-        CompletableFuture<String> result = testSubject.reduce(
-                "", (base, message) -> message.getPayload().toString() + message.getPayload().toString()
-        );
+        CompletableFuture<String> result = testSubject.reduce("", (base, entry) -> entry.toString() + entry);
 
         assertTrue(result.isDone());
         assertEquals(expected, result.join());
@@ -204,13 +200,13 @@ public abstract class MessageStreamTest<P> {
         String expected = "42";
         AtomicBoolean invoked = new AtomicBoolean();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of());
+        MessageStream<E> testSubject = testSubject(List.of());
 
         CompletableFuture<String> result = testSubject.reduce(
                 expected,
-                (base, message) -> {
+                (base, entry) -> {
                     invoked.set(true);
-                    return message.getPayload().toString() + message.getPayload().toString();
+                    return entry.toString() + entry;
                 }
         );
 
@@ -224,13 +220,13 @@ public abstract class MessageStreamTest<P> {
         AtomicBoolean invoked = new AtomicBoolean();
         RuntimeException expected = new RuntimeException("oops");
 
-        MessageStream<Message<P>> testSubject = failingTestSubject(List.of(), expected);
+        MessageStream<E> testSubject = failingTestSubject(List.of(), expected);
 
         CompletableFuture<String> result = testSubject.reduce(
                 "",
-                (base, message) -> {
+                (base, entry) -> {
                     invoked.set(true);
-                    return message.getPayload().toString() + message.getPayload().toString();
+                    return entry.toString() + entry;
                 }
         );
 
@@ -244,17 +240,17 @@ public abstract class MessageStreamTest<P> {
         AtomicBoolean invoked = new AtomicBoolean();
         RuntimeException expected = new RuntimeException("oops");
 
-        MessageStream<Message<P>> testSubject = failingTestSubject(
-                List.of(asMessage(createRandomValidEntry()),
-                        asMessage(createRandomValidEntry())),
+        MessageStream<E> testSubject = failingTestSubject(
+                List.of(createRandomEntry(),
+                        createRandomEntry()),
                 expected
         );
 
         CompletableFuture<String> result = testSubject.reduce(
                 "",
-                (base, message) -> {
+                (base, entry) -> {
                     invoked.set(true);
-                    return message.getPayload().toString() + message.getPayload().toString();
+                    return entry.toString() + entry;
                 }
         );
 
@@ -266,12 +262,12 @@ public abstract class MessageStreamTest<P> {
     @Test
     void shouldInvokeOnNextHandler_asCompletableFuture() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        Message<P> expected = asMessage(createRandomValidEntry());
+        E expected = createRandomEntry();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of(expected));
+        MessageStream<E> testSubject = testSubject(List.of(expected));
 
-        CompletableFuture<Message<P>> result = testSubject.onNextItem((message) -> invoked.set(true))
-                                                          .asCompletableFuture();
+        CompletableFuture<E> result = testSubject.onNextItem((entry) -> invoked.set(true))
+                                                 .asCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join());
         assertTrue(invoked.get());
@@ -280,11 +276,11 @@ public abstract class MessageStreamTest<P> {
     @Test
     void shouldInvokeOnNextHandler_asFlux() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        Message<P> expected = asMessage(createRandomValidEntry());
+        E expected = createRandomEntry();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of(expected));
+        MessageStream<E> testSubject = testSubject(List.of(expected));
 
-        StepVerifier.create(testSubject.onNextItem((message) -> invoked.set(true))
+        StepVerifier.create(testSubject.onNextItem((entry) -> invoked.set(true))
                                        .asFlux())
                     .expectNext(expected)
                     .verifyComplete();
@@ -294,16 +290,16 @@ public abstract class MessageStreamTest<P> {
     @Test
     void shouldReturnFirstEntryFromOnErrorStream_asCompletableFuture() {
         Exception expectedError = new RuntimeException("oops");
-        Message<P> expected = asMessage(createRandomValidEntry());
-        MessageStream<Message<P>> onErrorStream = testSubject(List.of(expected));
+        E expected = createRandomEntry();
+        MessageStream<E> onErrorStream = testSubject(List.of(expected));
 
-        MessageStream<Message<P>> testSubject = failingTestSubject(List.of(), expectedError);
+        MessageStream<E> testSubject = failingTestSubject(List.of(), expectedError);
 
-        CompletableFuture<Message<P>> result = testSubject.onErrorContinue(error -> {
-                                                              assertEquals(expectedError, FutureUtils.unwrap(error));
-                                                              return onErrorStream;
-                                                          })
-                                                          .asCompletableFuture();
+        CompletableFuture<E> result = testSubject.onErrorContinue(error -> {
+                                                     assertEquals(expectedError, FutureUtils.unwrap(error));
+                                                     return onErrorStream;
+                                                 })
+                                                 .asCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join());
     }
@@ -311,11 +307,11 @@ public abstract class MessageStreamTest<P> {
     @Test
     void shouldContinueOnSecondStreamOnError_asFlux() {
         Exception expectedError = new RuntimeException("oops");
-        Message<P> expectedFirst = asMessage(createRandomValidEntry());
-        Message<P> expectedSecond = asMessage(createRandomValidEntry());
-        MessageStream<Message<P>> onErrorStream = testSubject(List.of(expectedSecond));
+        E expectedFirst = createRandomEntry();
+        E expectedSecond = createRandomEntry();
+        MessageStream<E> onErrorStream = testSubject(List.of(expectedSecond));
 
-        MessageStream<Message<P>> testSubject = failingTestSubject(List.of(expectedFirst), expectedError);
+        MessageStream<E> testSubject = failingTestSubject(List.of(expectedFirst), expectedError);
 
         StepVerifier.create(testSubject.onErrorContinue(error -> {
                                            assertEquals(expectedError, FutureUtils.unwrap(error));
@@ -329,37 +325,37 @@ public abstract class MessageStreamTest<P> {
 
     @Test
     void shouldMoveToConcatWithStream_asCompletableFuture_returnFirstEntryFromFirstStream() {
-        Message<P> expected = asMessage(createRandomValidEntry());
-        MessageStream<Message<P>> secondStream = testSubject(List.of());
+        E expected = createRandomEntry();
+        MessageStream<E> secondStream = testSubject(List.of());
 
-        MessageStream<Message<P>> firstStream = testSubject(List.of(expected));
+        MessageStream<E> firstStream = testSubject(List.of(expected));
 
-        CompletableFuture<Message<P>> result = firstStream.concatWith(secondStream)
-                                                          .asCompletableFuture();
+        CompletableFuture<E> result = firstStream.concatWith(secondStream)
+                                                 .asCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join());
     }
 
     @Test
     void shouldMoveToConcatWithStream_asCompletableFuture_returnFirstEntryFromSecondStream() {
-        Message<P> expected = asMessage(createRandomValidEntry());
-        MessageStream<Message<P>> secondStream = testSubject(List.of(expected));
+        E expected = createRandomEntry();
+        MessageStream<E> secondStream = testSubject(List.of(expected));
 
-        MessageStream<Message<P>> firstStream = testSubject(List.of());
+        MessageStream<E> firstStream = testSubject(List.of());
 
-        CompletableFuture<Message<P>> result = firstStream.concatWith(secondStream)
-                                                          .asCompletableFuture();
+        CompletableFuture<E> result = firstStream.concatWith(secondStream)
+                                                 .asCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join());
     }
 
     @Test
     void shouldMoveToConcatWithStream_asFlux() {
-        Message<P> expectedFirst = asMessage(createRandomValidEntry());
-        Message<P> expectedSecond = asMessage(createRandomValidEntry());
-        MessageStream<Message<P>> secondStream = testSubject(List.of(expectedSecond));
+        E expectedFirst = createRandomEntry();
+        E expectedSecond = createRandomEntry();
+        MessageStream<E> secondStream = testSubject(List.of(expectedSecond));
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of(expectedFirst));
+        MessageStream<E> testSubject = testSubject(List.of(expectedFirst));
 
         StepVerifier.create(testSubject.concatWith(secondStream).asFlux())
                     .expectNext(expectedFirst)
@@ -371,7 +367,7 @@ public abstract class MessageStreamTest<P> {
     void shouldInvokeCompletionCallback_asCompletableFuture() {
         AtomicBoolean invoked = new AtomicBoolean();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of());
+        MessageStream<E> testSubject = testSubject(List.of());
 
         testSubject.whenComplete(() -> invoked.set(true))
                    .asCompletableFuture()
@@ -385,10 +381,10 @@ public abstract class MessageStreamTest<P> {
         AtomicBoolean invoked = new AtomicBoolean();
         RuntimeException expected = new RuntimeException("oops");
 
-        MessageStream<Message<P>> testSubject = failingTestSubject(List.of(), expected);
+        MessageStream<E> testSubject = failingTestSubject(List.of(), expected);
 
-        CompletableFuture<Message<P>> result = testSubject.whenComplete(() -> invoked.set(true))
-                                                          .asCompletableFuture();
+        CompletableFuture<E> result = testSubject.whenComplete(() -> invoked.set(true))
+                                                 .asCompletableFuture();
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());
         assertFalse(invoked.get());
@@ -398,7 +394,7 @@ public abstract class MessageStreamTest<P> {
     void shouldInvokeCompletionCallback_asFlux() {
         AtomicBoolean invoked = new AtomicBoolean();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of());
+        MessageStream<E> testSubject = testSubject(List.of());
 
         StepVerifier.create(testSubject.whenComplete(() -> invoked.set(true))
                                        .asFlux())
@@ -410,7 +406,7 @@ public abstract class MessageStreamTest<P> {
     void shouldNotInvokeCompletionCallbackForFailedStream_asFlux() {
         AtomicBoolean invoked = new AtomicBoolean();
 
-        MessageStream<Message<P>> testSubject = failingTestSubject(List.of(), new RuntimeException("oops"));
+        MessageStream<E> testSubject = failingTestSubject(List.of(), new RuntimeException("oops"));
 
         StepVerifier.create(testSubject.whenComplete(() -> invoked.set(true))
                                        .asFlux())
@@ -422,12 +418,12 @@ public abstract class MessageStreamTest<P> {
     void shouldResultInFailedStreamWhenCompletionCallbackThrowsAnException_asCompletableFuture() {
         RuntimeException expected = new RuntimeException("oops");
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of(asMessage(createRandomValidEntry())));
+        MessageStream<E> testSubject = testSubject(List.of(createRandomEntry()));
 
-        CompletableFuture<Message<P>> result = testSubject.whenComplete(() -> {
-                                                              throw expected;
-                                                          })
-                                                          .asCompletableFuture();
+        CompletableFuture<E> result = testSubject.whenComplete(() -> {
+                                                     throw expected;
+                                                 })
+                                                 .asCompletableFuture();
 
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());
@@ -436,15 +432,15 @@ public abstract class MessageStreamTest<P> {
     @Test
     void shouldResultInFailedStreamWhenCompletionCallbackThrowsAnException_asFlux() {
         RuntimeException expected = new RuntimeException("oops");
-        Message<P> expectedMessage = asMessage(createRandomValidEntry());
+        E expectedEntry = createRandomEntry();
 
-        MessageStream<Message<P>> testSubject = testSubject(List.of(expectedMessage));
+        MessageStream<E> testSubject = testSubject(List.of(expectedEntry));
 
         StepVerifier.create(testSubject.whenComplete(() -> {
                                            throw expected;
                                        })
                                        .asFlux())
-                    .expectNext(expectedMessage)
+                    .expectNext(expectedEntry)
                     .verifyErrorMatches(expected::equals);
     }
 }

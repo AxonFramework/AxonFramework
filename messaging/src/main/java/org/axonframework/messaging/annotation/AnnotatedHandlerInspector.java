@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,7 +204,7 @@ public class AnnotatedHandlerInspector<T> {
 
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<?> returnTypeConverter(Object result) {
+    private static MessageStream<? extends Message<?>> returnTypeConverter(Object result) {
         return result instanceof CompletableFuture<?>
                 ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
                 : MessageStream.just(GenericMessage.asMessage(result));
@@ -362,26 +362,22 @@ public class AnnotatedHandlerInspector<T> {
         @Override
         public Object handleSync(@Nonnull Message<?> message, @Nonnull T target,
                                  @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
-            return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(() -> next.handleSync(message,
-                                                                                                               target,
-                                                                                                               handler),
-                                                                                         () -> doHandleSync(message,
-                                                                                                            target,
-                                                                                                            handler));
+            return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(
+                    () -> next.handleSync(message, target, handler),
+                    () -> doHandleSync(message, target, handler)
+            );
         }
 
         @Override
-        public MessageStream<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
-                                       @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
-            return InterceptorChainParameterResolverFactory.callWithInterceptorChain(processingContext,
-                                                                                     () -> next.handle(message,
-                                                                                                       processingContext,
-                                                                                                       target,
-                                                                                                       handler),
-                                                                                     (pc) -> doHandle(message,
-                                                                                                      pc,
-                                                                                                      target,
-                                                                                                      handler));
+        public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
+                                                          @Nonnull ProcessingContext processingContext,
+                                                          @Nonnull T target,
+                                                          @Nonnull MessageHandlingMember<? super T> handler) {
+            return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
+                    processingContext,
+                    () -> next.handle(message, processingContext, target, handler),
+                    (pc) -> doHandle(message, pc, target, handler)
+            );
         }
 
         private Object doHandleSync(Message<?> message, T target, MessageHandlingMember<? super T> handler)
@@ -392,12 +388,13 @@ public class AnnotatedHandlerInspector<T> {
             return next.handleSync(message, target, handler);
         }
 
-        private MessageStream<?> doHandle(Message<?> message, ProcessingContext processingContext, T target,
-                                          MessageHandlingMember<? super T> handler) {
-            if (delegate.canHandle(message, processingContext)) {
-                return delegate.handle(message, processingContext, target);
-            }
-            return next.handle(message, processingContext, target, handler);
+        private MessageStream<? extends Message<?>> doHandle(Message<?> message,
+                                                             ProcessingContext processingContext,
+                                                             T target,
+                                                             MessageHandlingMember<? super T> handler) {
+            return delegate.canHandle(message, processingContext)
+                    ? delegate.handle(message, processingContext, target)
+                    : next.handle(message, processingContext, target, handler);
         }
     }
 }

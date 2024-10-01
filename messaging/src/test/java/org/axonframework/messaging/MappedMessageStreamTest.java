@@ -28,22 +28,22 @@ import java.util.function.Function;
  */
 class MappedMessageStreamTest extends MessageStreamTest<String> {
 
-    private static final Function<Message<String>, Message<String>> NO_OP_MAPPER = message -> message;
+    private static final Function<String, String> NO_OP_MAPPER = message -> message;
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new MappedMessageStream<>(MessageStream.fromIterable(messages), NO_OP_MAPPER);
+    MessageStream<String> testSubject(List<String> entries) {
+        return new MappedMessageStream<>(MessageStream.fromIterable(entries), NO_OP_MAPPER);
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
-        return new MappedMessageStream<>(MessageStream.fromIterable(messages)
+    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
+        return new MappedMessageStream<>(MessageStream.fromIterable(entries)
                                                       .concatWith(MessageStream.failed(failure)),
                                          NO_OP_MAPPER);
     }
 
     @Override
-    String createRandomValidEntry() {
+    String createRandomEntry() {
         return "test-" + ThreadLocalRandom.current().nextInt(10000);
     }
 }
