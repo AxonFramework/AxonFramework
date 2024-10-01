@@ -128,13 +128,6 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         }
     }
 
-    // TODO #3129 - MessageStream allows Pair<TrackingToken, EventMessage> type - Remove this method.
-    private static <P> TrackedEventMessage<P> asTrackedEventMessage(EventMessage<P> event, TrackingToken token) {
-        return event instanceof IndexedEventMessage<P> taggedEvent
-                ? new GenericTrackedAndIndexedEventMessage<>(event, token, taggedEvent.indices())
-                : new GenericTrackedEventMessage<>(token, event);
-    }
-
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
         if (logger.isDebugEnabled()) {
