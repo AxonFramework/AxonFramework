@@ -37,23 +37,23 @@ import static org.mockito.Mockito.*;
  */
 class OnNextMessageStreamTest extends MessageStreamTest<String> {
 
-    private static final @NotNull Consumer<Message<String>> NO_OP_ON_NEXT = message -> {
+    private static final Consumer<String> NO_OP_ON_NEXT = message -> {
     };
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new OnNextMessageStream<>(MessageStream.fromIterable(messages), NO_OP_ON_NEXT);
+    MessageStream<String> testSubject(List<String> entries) {
+        return new OnNextMessageStream<>(MessageStream.fromIterable(entries), NO_OP_ON_NEXT);
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
-        return new OnNextMessageStream<>(MessageStream.fromIterable(messages)
+    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
+        return new OnNextMessageStream<>(MessageStream.fromIterable(entries)
                                                       .concatWith(MessageStream.failed(failure)),
                                          NO_OP_ON_NEXT);
     }
 
     @Override
-    String createRandomValidEntry() {
+    String createRandomEntry() {
         return "test-" + ThreadLocalRandom.current().nextInt(10000);
     }
 
@@ -69,21 +69,21 @@ class OnNextMessageStreamTest extends MessageStreamTest<String> {
 
     @Test
     void verifyOnNextInvokedForFirstElementWhenUsingOnCompletableFuture() {
-        List<Message<?>> seen = new ArrayList<>();
-        List<Message<?>> items = List.of(GenericMessage.asMessage("first"), GenericMessage.asMessage("second"));
-        CompletableFuture<Message<?>> actual = MessageStream.fromIterable(items)
-                                                            .onNextItem(seen::add)
-                                                            .asCompletableFuture();
+        List<String> seen = new ArrayList<>();
+        List<String> items = List.of("first", "second");
+        CompletableFuture<String> actual = MessageStream.fromIterable(items)
+                                                        .onNextItem(seen::add)
+                                                        .asCompletableFuture();
 
         assertTrue(actual.isDone());
         assertEquals(1, seen.size());
-        assertEquals("first", seen.getFirst().getPayload());
+        assertEquals("first", seen.getFirst());
     }
 
     @Test
     void verifyOnNextInvokedForAllElementsWhenUsingAsFlux() {
-        List<Message<?>> seen = new ArrayList<>();
-        List<Message<?>> items = List.of(GenericMessage.asMessage("first"), GenericMessage.asMessage("second"));
+        List<String> seen = new ArrayList<>();
+        List<String> items = List.of("first", "second");
         StepVerifier.create(MessageStream.fromIterable(items)
                                          .onNextItem(seen::add)
                                          .asFlux())
@@ -91,7 +91,7 @@ class OnNextMessageStreamTest extends MessageStreamTest<String> {
                     .verifyComplete();
 
         assertEquals(2, seen.size());
-        assertEquals("first", seen.getFirst().getPayload());
-        assertEquals("second", seen.get(1).getPayload());
+        assertEquals("first", seen.getFirst());
+        assertEquals("second", seen.get(1));
     }
 }

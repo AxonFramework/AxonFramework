@@ -30,18 +30,18 @@ import java.util.concurrent.ThreadLocalRandom;
 class IterableMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return MessageStream.fromIterable(messages);
+    MessageStream<String> testSubject(List<String> entries) {
+        return MessageStream.fromIterable(entries);
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
+    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
         Assumptions.abort("IterableMessageStream doesn't support failures");
         return null;
     }
 
     @Override
-    String createRandomValidEntry() {
+    String createRandomEntry() {
         return "test-" + ThreadLocalRandom.current().nextInt(10000);
     }
 }
