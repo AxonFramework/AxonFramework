@@ -42,10 +42,11 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
 
     /**
      * Open an {@link MessageStream event stream} containing all {@link EventMessage events} of the given
-     * {@code context} matching the given {@code condition}.
+     * {@code context} matching the given {@code condition}}.
      * <p>
-     * Note that the returned stream is <em>infinite</em>, so beware of applying terminal operations to the returned
-     * stream.
+     * Events are wrapped in the {@link TrackedEntry}, combining the {@code EventMessage} together with the
+     * {@link TrackingToken} defining the event's position in this source. Note that the returned stream is
+     * <em>infinite</em>, so beware of applying terminal operations to the returned stream.
      *
      * @param context   The context for which to open an {@link MessageStream event stream}.
      * @param condition The {@link StreamingCondition} defining the
@@ -53,8 +54,7 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      *                  {@link StreamingCondition#criteria() event criteria} to filter the stream with.
      * @return An {@link MessageStream event stream} of the given {@code context} matching the given {@code condition}.
      */
-    MessageStream<E> open(@Nonnull String context,
-                          @Nonnull StreamingCondition condition);
+    MessageStream<TrackedEntry<E>> open(String context, StreamingCondition condition);
 
     /**
      * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream} for the given
@@ -113,5 +113,19 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
     default CompletableFuture<TrackingToken> tokenSince(@Nonnull String context,
                                                         @Nonnull Duration since) {
         return tokenAt(context, Instant.now().minus(since));
+    }
+
+    /**
+     * The entries contained in the {@link MessageStream} returned by {@link #open(String, StreamingCondition)}.
+     * <p>
+     * Each entry contains an {@code event} of type {@code E} and the {@code token} at which the given {@code event} is
+     * positioned.
+     *
+     * @param token The {@link TrackingToken} defining the position of the given {@code event}.
+     * @param event The {@link EventMessage} implementation returned by this source.
+     * @param <E>   The type of {@link EventMessage} streamed by this source.
+     */
+    record TrackedEntry<E>(TrackingToken token, E event) {
+
     }
 }
