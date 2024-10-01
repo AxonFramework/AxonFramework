@@ -28,14 +28,14 @@ import java.util.function.Function;
  * A {@link MessageStream} implementation using a single {@link Message} or {@link CompletableFuture} completing to a
  * {@code Message} as the source.
  *
- * @param <M> The type of {@link Message} carried in this stream.
+ * @param <E> The type of {@link Message} carried in this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M> {
+class SingleValueMessageStream<E> implements MessageStream<E> {
 
-    private final CompletableFuture<M> source;
+    private final CompletableFuture<E> source;
 
     /**
      * Constructs a {@link MessageStream} wrapping the given {@code message} into a
@@ -45,7 +45,7 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M>
      * @param message The {@link Message} of type {@code M} which is the singular value contained in this
      *                {@link MessageStream}.
      */
-    SingleValueMessageStream(M message) {
+    SingleValueMessageStream(E message) {
         this(CompletableFuture.completedFuture(message));
     }
 
@@ -56,28 +56,28 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M>
      * @param source The {@link CompletableFuture} resulting in the singular {@link Message} contained in this
      *               {@link MessageStream}.
      */
-    SingleValueMessageStream(@NotNull CompletableFuture<M> source) {
+    SingleValueMessageStream(@NotNull CompletableFuture<E> source) {
         this.source = source;
     }
 
     @Override
-    public CompletableFuture<M> asCompletableFuture() {
+    public CompletableFuture<E> asCompletableFuture() {
         return source;
     }
 
     @Override
-    public Flux<M> asFlux() {
+    public Flux<E> asFlux() {
         return Flux.from(Mono.fromFuture(source));
     }
 
     @Override
-    public <R extends Message<?>> MessageStream<R> map(Function<M, R> mapper) {
+    public <R> MessageStream<R> map(Function<E, R> mapper) {
         return new SingleValueMessageStream<>(source.thenApply(mapper));
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, M, R> accumulator) {
+                                           @NotNull BiFunction<R, E, R> accumulator) {
         return source.thenApply(message -> accumulator.apply(identity, message));
     }
 }

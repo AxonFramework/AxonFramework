@@ -29,12 +29,12 @@ import java.util.stream.Stream;
 /**
  * Represents a stream of {@link Message Messages} that can be consumed as they become available.
  *
- * @param <M> The type of {@link Message} carried in this stream.
+ * @param <E> The type of {@link Message} carried in this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface MessageStream<M extends Message<?>> {
+public interface MessageStream<E> {
 
     /**
      * Create a {@link MessageStream stream} that provides the items returned by the given {@code iterable}.
@@ -43,11 +43,11 @@ public interface MessageStream<M extends Message<?>> {
      * iterable does so.
      *
      * @param iterable The {@link Iterable} providing the {@link Message Messages} to stream.
-     * @param <M>      The declared type of {@link Message} in this stream.
+     * @param <E>      The declared type of {@link Message} in this stream.
      * @return A {@link MessageStream stream} of {@link Message Messages} that returns the messages provided by the
      * given {@code iterable}.
      */
-    static <M extends Message<?>> MessageStream<M> fromIterable(@NotNull Iterable<M> iterable) {
+    static <E> MessageStream<E> fromIterable(@NotNull Iterable<E> iterable) {
         return new IterableMessageStream<>(iterable);
     }
 
@@ -58,11 +58,11 @@ public interface MessageStream<M extends Message<?>> {
      * does so.
      *
      * @param stream The {@link Stream} providing the {@link Message Messages} to stream.
-     * @param <M>    The declared type of {@link Message} in this stream.
+     * @param <E>    The declared type of {@link Message} in this stream.
      * @return A {@link MessageStream stream} of {@link Message Messages} that returns the messages provided by the
      * given {@code stream}.
      */
-    static <M extends Message<?>> MessageStream<M> fromStream(@NotNull Stream<M> stream) {
+    static <E> MessageStream<E> fromStream(@NotNull Stream<E> stream) {
         return new StreamMessageStream<>(stream);
     }
 
@@ -70,11 +70,11 @@ public interface MessageStream<M extends Message<?>> {
      * Create a {@link MessageStream stream} that provides the items returned by the given {@code flux}.
      *
      * @param flux The {@link Flux} providing the {@link Message Messages} to stream.
-     * @param <M>  The declared type of {@link Message} in this stream.
+     * @param <E>  The declared type of {@link Message} in this stream.
      * @return A {@link MessageStream stream} of {@link Message Messages} that returns the messages provided by the
      * given {@code flux}.
      */
-    static <M extends Message<?>> MessageStream<M> fromFlux(@NotNull Flux<M> flux) {
+    static <E> MessageStream<E> fromFlux(@NotNull Flux<E> flux) {
         return new FluxMessageStream<>(flux);
     }
 
@@ -85,10 +85,10 @@ public interface MessageStream<M extends Message<?>> {
      * The stream will complete with an exception when the given {@code future} completes exceptionally.
      *
      * @param future The {@link CompletableFuture} providing the {@link Message} to contain in the stream.
-     * @param <M>    The declared type of {@link Message} in this stream.
+     * @param <E>    The declared type of {@link Message} in this stream.
      * @return A {@link MessageStream stream} containing at most one {@link Message}.
      */
-    static <M extends Message<?>> MessageStream<M> fromFuture(@NotNull CompletableFuture<M> future) {
+    static <E> MessageStream<E> fromFuture(@NotNull CompletableFuture<E> future) {
         return new SingleValueMessageStream<>(future);
     }
 
@@ -98,10 +98,10 @@ public interface MessageStream<M extends Message<?>> {
      * Once the {@code Message} is consumer, the stream is considered completed.
      *
      * @param instance The {@link Message} to return in the stream.
-     * @param <M>      The declared type of {@link Message} in this stream.
+     * @param <E>      The declared type of {@link Message} in this stream.
      * @return A {@link MessageStream stream} consisting of a single {@link Message}.
      */
-    static <M extends Message<?>> MessageStream<M> just(M instance) {
+    static <E> MessageStream<E> just(E instance) {
         return new SingleValueMessageStream<>(instance);
     }
 
@@ -111,10 +111,10 @@ public interface MessageStream<M extends Message<?>> {
      * All attempts to read from this stream will propagate this error.
      *
      * @param failure The {@link Throwable} to propagate to consumers of the stream.
-     * @param <M>     The declared type of {@link Message} in this stream.
+     * @param <E>     The declared type of {@link Message} in this stream.
      * @return A {@link MessageStream stream} that is completed exceptionally.
      */
-    static <M extends Message<?>> MessageStream<M> failed(@NotNull Throwable failure) {
+    static <E> MessageStream<E> failed(@NotNull Throwable failure) {
         return new FailedMessageStream<>(failure);
     }
 
@@ -125,10 +125,10 @@ public interface MessageStream<M extends Message<?>> {
      * Any attempt to convert this stream to a component that requires an item to be returned (such as
      * {@link CompletableFuture}), will have it return {@code null}.
      *
-     * @param <M> The declared type of {@link Message} in this stream.
+     * @param <E> The declared type of {@link Message} in this stream.
      * @return An empty {@link MessageStream stream}.
      */
-    static <M extends Message<?>> MessageStream<M> empty() {
+    static <E> MessageStream<E> empty() {
         return EmptyMessageStream.instance();
     }
 
@@ -142,7 +142,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return A {@link CompletableFuture} that completes with the first item, {@code null} if it is empty, or
      * exceptionally if the {@link MessageStream stream} propagates an error.
      */
-    CompletableFuture<M> asCompletableFuture();
+    CompletableFuture<E> asCompletableFuture();
 
     /**
      * Creates a {@link Flux} that consumes the {@link Message Messages} from this {@link MessageStream stream}.
@@ -152,7 +152,7 @@ public interface MessageStream<M extends Message<?>> {
      *
      * @return A {@link Flux} carrying the {@link Message Messages} of this {@link MessageStream stream}.
      */
-    Flux<M> asFlux();
+    Flux<E> asFlux();
 
     /**
      * Returns a {@link MessageStream stream} that maps each {@link Message} from this stream using given {@code mapper}
@@ -166,7 +166,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return A {@link MessageStream stream} with all {@link Message Messages} mapped according to the {@code mapper}
      * function.
      */
-    default <R extends Message<?>> MessageStream<R> map(@NotNull Function<M, R> mapper) {
+    default <R> MessageStream<R> map(@NotNull Function<E, R> mapper) {
         return new MappedMessageStream<>(this, mapper);
     }
 
@@ -188,7 +188,7 @@ public interface MessageStream<M extends Message<?>> {
      * {@link MessageStream stream}.
      */
     <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                    @NotNull BiFunction<R, M, R> accumulator);
+                                    @NotNull BiFunction<R, E, R> accumulator);
 
     /**
      * Invokes the given {@code onNext} each time a {@link Message} is consumed from this {@link MessageStream stream}.
@@ -200,7 +200,7 @@ public interface MessageStream<M extends Message<?>> {
      * @param onNext The {@link Consumer} to invoke for each item.
      * @return A {@link MessageStream stream} that will invoke the given {@code onNext} for each item.
      */
-    default MessageStream<M> onNextItem(@NotNull Consumer<M> onNext) {
+    default MessageStream<E> onNextItem(@NotNull Consumer<E> onNext) {
         return new OnNextMessageStream<>(this, onNext);
     }
 
@@ -210,7 +210,7 @@ public interface MessageStream<M extends Message<?>> {
      * @param consumer
      * @return
      */
-    default MessageStream<M> consume(@NotNull Predicate<M> consumer) {
+    default MessageStream<E> consume(@NotNull Predicate<E> consumer) {
         asFlux().takeWhile(consumer).subscribe().dispose();
         return this;
     }
@@ -224,7 +224,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return A {@link MessageStream stream} that continues onto another stream when {@code this} stream completes with
      * an error.
      */
-    default MessageStream<M> onErrorContinue(@NotNull Function<Throwable, MessageStream<M>> onError) {
+    default MessageStream<E> onErrorContinue(@NotNull Function<Throwable, MessageStream<E>> onError) {
         return new OnErrorContinueMessageStream<>(this, onError);
     }
 
@@ -237,7 +237,7 @@ public interface MessageStream<M extends Message<?>> {
      * @param other The {@link MessageStream} to append to this stream.
      * @return A {@link MessageStream stream} concatenating this stream with given {@code other}.
      */
-    default MessageStream<M> concatWith(@NotNull MessageStream<M> other) {
+    default MessageStream<E> concatWith(@NotNull MessageStream<E> other) {
         return new ConcatenatingMessageStream<>(this, other);
     }
 
@@ -248,7 +248,7 @@ public interface MessageStream<M extends Message<?>> {
      * @param completeHandler The {@link Runnable} to invoke when the {@link MessageStream stream} completes normally.
      * @return A {@link MessageStream stream} that invokes the {@code completeHandler} upon normal completion.
      */
-    default MessageStream<M> whenComplete(@NotNull Runnable completeHandler) {
+    default MessageStream<E> whenComplete(@NotNull Runnable completeHandler) {
         return new CompletionCallbackMessageStream<>(this, completeHandler);
     }
 }

@@ -26,12 +26,12 @@ import java.util.function.Function;
 /**
  * A {@link MessageStream} implementation that completes exceptionally through the given {@code error}.
  *
- * @param <M> The type of {@link Message} carried in this stream.
+ * @param <E> The type of {@link Message} carried in this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
+class FailedMessageStream<E> implements MessageStream<E> {
 
     private final Throwable error;
 
@@ -45,29 +45,29 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public CompletableFuture<M> asCompletableFuture() {
+    public CompletableFuture<E> asCompletableFuture() {
         return CompletableFuture.failedFuture(error);
     }
 
     @Override
-    public Flux<M> asFlux() {
+    public Flux<E> asFlux() {
         return Flux.error(error);
     }
 
     @Override
-    public <R extends Message<?>> MessageStream<R> map(@NotNull Function<M, R> mapper) {
+    public <R> MessageStream<R> map(@NotNull Function<E, R> mapper) {
         //noinspection unchecked
         return (FailedMessageStream<R>) this;
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, M, R> accumulator) {
+                                           @NotNull BiFunction<R, E, R> accumulator) {
         return CompletableFuture.failedFuture(error);
     }
 
     @Override
-    public MessageStream<M> whenComplete(Runnable completeHandler) {
+    public MessageStream<E> whenComplete(Runnable completeHandler) {
         return this;
     }
 }

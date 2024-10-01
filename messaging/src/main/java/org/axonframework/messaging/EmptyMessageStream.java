@@ -28,12 +28,12 @@ import java.util.function.Function;
 /**
  * A {@link MessageStream} implementation that contains no {@link Message Messages} at all.
  *
- * @param <M> The type of {@link Message} carried in this stream.
+ * @param <E> The type of {@link Message} carried in this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class EmptyMessageStream<M extends Message<?>> implements MessageStream<M> {
+class EmptyMessageStream<E> implements MessageStream<E> {
 
     @SuppressWarnings("rawtypes")
     private static final EmptyMessageStream INSTANCE = new EmptyMessageStream<>();
@@ -44,48 +44,48 @@ class EmptyMessageStream<M extends Message<?>> implements MessageStream<M> {
     /**
      * Return a singular instance of the {@link EmptyMessageStream} to be used throughout.
      *
-     * @param <M> The type of {@link Message} carried in this stream.
+     * @param <T> The type of {@link Message} carried in this stream.
      * @return A singular instance of the {@link EmptyMessageStream} to be used throughout.
      */
-    public static <M extends Message<?>> EmptyMessageStream<M> instance() {
+    public static <T> EmptyMessageStream<T> instance() {
         //noinspection unchecked
         return INSTANCE;
     }
 
     @Override
-    public CompletableFuture<M> asCompletableFuture() {
+    public CompletableFuture<E> asCompletableFuture() {
         return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
-    public Flux<M> asFlux() {
+    public Flux<E> asFlux() {
         return Flux.empty();
     }
 
     @Override
-    public <R extends Message<?>> MessageStream<R> map(@NotNull Function<M, R> mapper) {
+    public <R> MessageStream<R> map(@NotNull Function<E, R> mapper) {
         //noinspection unchecked
         return (MessageStream<R>) this;
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, M, R> accumulator) {
+                                           @NotNull BiFunction<R, E, R> accumulator) {
         return CompletableFuture.completedFuture(identity);
     }
 
     @Override
-    public MessageStream<M> onNextItem(Consumer<M> onNext) {
+    public MessageStream<E> onNextItem(Consumer<E> onNext) {
         return this;
     }
 
     @Override
-    public MessageStream<M> onErrorContinue(Function<Throwable, MessageStream<M>> onError) {
+    public MessageStream<E> onErrorContinue(Function<Throwable, MessageStream<E>> onError) {
         return this;
     }
 
     @Override
-    public MessageStream<M> whenComplete(Runnable completeHandler) {
+    public MessageStream<E> whenComplete(Runnable completeHandler) {
         try {
             completeHandler.run();
             return this;

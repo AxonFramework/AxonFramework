@@ -27,17 +27,17 @@ import java.util.function.Function;
  * Implementation of the {@link MessageStream} that maps the {@link Message Messages} from type {@code M} to type
  * {@code R}.
  *
- * @param <M>  The type of {@link Message} carried as input to this stream.
- * @param <RM> The type of {@link Message} carried as output to this stream as a result of the provided mapper
+ * @param <E>  The type of {@link Message} carried as input to this stream.
+ * @param <RE> The type of {@link Message} carried as output to this stream as a result of the provided mapper
  *             operation.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class MappedMessageStream<M extends Message<?>, RM extends Message<?>> implements MessageStream<RM> {
+class MappedMessageStream<E, RE> implements MessageStream<RE> {
 
-    private final MessageStream<M> delegate;
-    private final Function<M, RM> mapper;
+    private final MessageStream<E> delegate;
+    private final Function<E, RE> mapper;
 
     /**
      * Construct a {@link MappedMessageStream} mapping the {@link Message Messages} of the given {@code delegate}
@@ -47,28 +47,28 @@ class MappedMessageStream<M extends Message<?>, RM extends Message<?>> implement
      *                 {@code mapper}.
      * @param mapper   The {@link Function} mapping {@link Message Messages} of type {@code R} to {@code M}.
      */
-    MappedMessageStream(@NotNull MessageStream<M> delegate,
-                        @NotNull Function<M, RM> mapper) {
+    MappedMessageStream(@NotNull MessageStream<E> delegate,
+                        @NotNull Function<E, RE> mapper) {
         this.delegate = delegate;
         this.mapper = mapper;
     }
 
     @Override
-    public CompletableFuture<RM> asCompletableFuture() {
+    public CompletableFuture<RE> asCompletableFuture() {
         // CompletableFuture doesn't support empty completions, so null is used as placeholder
         return delegate.asCompletableFuture()
                        .thenApply(message -> message == null ? null : mapper.apply(message));
     }
 
     @Override
-    public Flux<RM> asFlux() {
+    public Flux<RE> asFlux() {
         return delegate.asFlux()
                        .map(mapper);
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, RM, R> accumulator) {
+                                           @NotNull BiFunction<R, RE, R> accumulator) {
         return delegate.reduce(
                 identity,
                 (base, message) -> accumulator.apply(base, mapper.apply(message))

@@ -60,8 +60,8 @@ class OnNextMessageStreamTest extends MessageStreamTest<String> {
     @Test
     void onNextNotInvokedOnEmptyStream() {
         //noinspection unchecked
-        Consumer<Message<?>> handler = mock();
-        MessageStream<Message<?>> testSubject = MessageStream.empty().onNextItem(handler);
+        Consumer<Object> handler = mock();
+        MessageStream<Object> testSubject = MessageStream.empty().onNextItem(handler);
 
         testSubject.asCompletableFuture().isDone();
         verify(handler, never()).accept(any());

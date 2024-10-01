@@ -26,14 +26,14 @@ import java.util.function.BiFunction;
  * Implementation of the {@link MessageStream} that invokes the given {@code completeHandler} once the
  * {@code delegate MessageStream} completes.
  *
- * @param <M> The type of {@link Message} carried in this stream.
+ * @param <E> The type of {@link Message} carried in this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class CompletionCallbackMessageStream<M extends Message<?>> implements MessageStream<M> {
+class CompletionCallbackMessageStream<E> implements MessageStream<E> {
 
-    private final MessageStream<M> delegate;
+    private final MessageStream<E> delegate;
     private final Runnable completeHandler;
 
     /**
@@ -44,14 +44,14 @@ class CompletionCallbackMessageStream<M extends Message<?>> implements MessageSt
      *                        {@code completeHandler}.
      * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
      */
-    CompletionCallbackMessageStream(@NotNull MessageStream<M> delegate,
+    CompletionCallbackMessageStream(@NotNull MessageStream<E> delegate,
                                     @NotNull Runnable completeHandler) {
         this.delegate = delegate;
         this.completeHandler = completeHandler;
     }
 
     @Override
-    public CompletableFuture<M> asCompletableFuture() {
+    public CompletableFuture<E> asCompletableFuture() {
         return delegate.asCompletableFuture()
                        .whenComplete((result, exception) -> {
                            if (exception == null) {
@@ -61,14 +61,14 @@ class CompletionCallbackMessageStream<M extends Message<?>> implements MessageSt
     }
 
     @Override
-    public Flux<M> asFlux() {
+    public Flux<E> asFlux() {
         return delegate.asFlux()
                        .doOnComplete(completeHandler);
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, M, R> accumulator) {
+                                           @NotNull BiFunction<R, E, R> accumulator) {
         return delegate.reduce(identity, accumulator)
                        .whenComplete((result, exception) -> {
                            if (exception == null) {

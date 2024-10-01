@@ -58,8 +58,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<String> {
     void createForExecutionExceptionReturnsFailedMessageStreamWithCause() {
         RuntimeException expected = new RuntimeException("oops");
 
-        CompletableFuture<Message<?>> result = DelayedMessageStream.create(CompletableFuture.failedFuture(expected))
-                                                                   .asCompletableFuture();
+        CompletableFuture<Object> result = DelayedMessageStream.create(CompletableFuture.failedFuture(expected))
+                                                               .asCompletableFuture();
 
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());

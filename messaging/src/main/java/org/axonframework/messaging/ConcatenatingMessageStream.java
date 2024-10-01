@@ -28,15 +28,15 @@ import java.util.function.BiFunction;
  * Will only start streaming {@link Message Messages} from the {@code second MessageStream} when the
  * {@code first MessageStream} completes successfully.
  *
- * @param <M> The type of {@link Message} carried in this stream.
+ * @param <E> The type of {@link Message} carried in this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<M> {
+class ConcatenatingMessageStream<E> implements MessageStream<E> {
 
-    private final MessageStream<M> first;
-    private final MessageStream<M> second;
+    private final MessageStream<E> first;
+    private final MessageStream<E> second;
 
     /**
      * Construct a {@link ConcatenatingMessageStream} that initially consume from the {@code first MessageStream},
@@ -46,14 +46,14 @@ class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<
      * @param second The second {@link MessageStream} to start consuming from once the {@code first} stream completes
      *               successfully.
      */
-    ConcatenatingMessageStream(@NotNull MessageStream<M> first,
-                               @NotNull MessageStream<M> second) {
+    ConcatenatingMessageStream(@NotNull MessageStream<E> first,
+                               @NotNull MessageStream<E> second) {
         this.first = first;
         this.second = second;
     }
 
     @Override
-    public CompletableFuture<M> asCompletableFuture() {
+    public CompletableFuture<E> asCompletableFuture() {
         return first.asCompletableFuture()
                     .thenCompose(message -> message == null
                             ? second.asCompletableFuture()
@@ -62,14 +62,14 @@ class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<
     }
 
     @Override
-    public Flux<M> asFlux() {
+    public Flux<E> asFlux() {
         return first.asFlux()
                     .concatWith(second.asFlux());
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, M, R> accumulator) {
+                                           @NotNull BiFunction<R, E, R> accumulator) {
         return first.reduce(identity, accumulator)
                     .thenCompose(intermediate -> second.reduce(intermediate, accumulator));
     }

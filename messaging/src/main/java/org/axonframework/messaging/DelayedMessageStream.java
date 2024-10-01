@@ -27,16 +27,16 @@ import java.util.function.BiFunction;
 /**
  * An implementation of the {@link MessageStream} that wraps a stream that will become available asynchronously.
  *
- * @param <M> The type of {@link Message} carried in this stream.
+ * @param <E> The type of {@link Message} carried in this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class DelayedMessageStream<M extends Message<?>> implements MessageStream<M> {
+public class DelayedMessageStream<E> implements MessageStream<E> {
 
-    private final CompletableFuture<MessageStream<M>> delegate;
+    private final CompletableFuture<MessageStream<E>> delegate;
 
-    private DelayedMessageStream(@NotNull CompletableFuture<MessageStream<M>> delegate) {
+    private DelayedMessageStream(@NotNull CompletableFuture<MessageStream<E>> delegate) {
         this.delegate = delegate;
     }
 
@@ -49,10 +49,10 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      *
      * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream} to delegate to when it
      *                 becomes available.
-     * @param <M>      The type of {@link Message} carried in this stream.
+     * @param <E>      The type of {@link Message} carried in this stream.
      * @return A {@link MessageStream} that delegates all actions to the {@code delegate} when it becomes available.
      */
-    public static <M extends Message<?>> MessageStream<M> create(CompletableFuture<MessageStream<M>> delegate) {
+    public static <E> MessageStream<E> create(CompletableFuture<MessageStream<E>> delegate) {
         if (delegate.isDone()) {
             try {
                 return delegate.get();
@@ -66,19 +66,19 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
     }
 
     @Override
-    public CompletableFuture<M> asCompletableFuture() {
+    public CompletableFuture<E> asCompletableFuture() {
         return delegate.thenCompose(MessageStream::asCompletableFuture);
     }
 
     @Override
-    public Flux<M> asFlux() {
+    public Flux<E> asFlux() {
         return Mono.fromFuture(delegate)
                    .flatMapMany(MessageStream::asFlux);
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, M, R> accumulator) {
+                                           @NotNull BiFunction<R, E, R> accumulator) {
         return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
     }
 }

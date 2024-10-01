@@ -29,41 +29,41 @@ import java.util.stream.StreamSupport;
 /**
  * A {@link MessageStream} implementation using an {@link Iterable} as the {@link Message} source.
  *
- * @param <M> The type of {@link Message} carried in this stream.
+ * @param <E> The type of {@link Message} carried in this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class IterableMessageStream<M extends Message<?>> implements MessageStream<M> {
+class IterableMessageStream<E> implements MessageStream<E> {
 
     private static final boolean NOT_PARALLEL = false;
 
-    private final Iterable<M> source;
+    private final Iterable<E> source;
 
     /**
      * Constructs a {@link MessageStream} using the given {@code source} to provide the {@link Message Messages}.
      *
      * @param source The {@link Iterable} sourcing the {@link Message Messages} for this {@link MessageStream}.
      */
-    IterableMessageStream(@NotNull Iterable<M> source) {
+    IterableMessageStream(@NotNull Iterable<E> source) {
         this.source = source;
     }
 
     @Override
-    public CompletableFuture<M> asCompletableFuture() {
-        Iterator<M> iterator = source.iterator();
+    public CompletableFuture<E> asCompletableFuture() {
+        Iterator<E> iterator = source.iterator();
         return iterator.hasNext()
                 ? CompletableFuture.completedFuture(iterator.next())
                 : FutureUtils.emptyCompletedFuture();
     }
 
     @Override
-    public Flux<M> asFlux() {
+    public Flux<E> asFlux() {
         return Flux.fromIterable(source);
     }
 
     @Override
-    public <R extends Message<?>> MessageStream<R> map(Function<M, R> mapper) {
+    public <R> MessageStream<R> map(Function<E, R> mapper) {
         return new IterableMessageStream<>(
                 StreamSupport.stream(source.spliterator(), NOT_PARALLEL)
                              .map(mapper)
@@ -73,7 +73,7 @@ class IterableMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, M, R> accumulator) {
+                                           @NotNull BiFunction<R, E, R> accumulator) {
         return CompletableFuture.completedFuture(
                 StreamSupport.stream(source.spliterator(), NOT_PARALLEL)
                              .reduce(identity, accumulator, (thisResult, thatResult) -> {
