@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -40,7 +40,7 @@ class FailedMessageStream<E> implements MessageStream<E> {
      *
      * @param error The {@link Throwable} that caused this {@link MessageStream stream} to complete exceptionally.
      */
-    FailedMessageStream(@NotNull Throwable error) {
+    FailedMessageStream(@Nonnull Throwable error) {
         this.error = error;
     }
 
@@ -55,19 +55,19 @@ class FailedMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> MessageStream<R> map(@NotNull Function<E, R> mapper) {
+    public <R> MessageStream<R> map(@Nonnull Function<E, R> mapper) {
         //noinspection unchecked
         return (FailedMessageStream<R>) this;
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, E, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, E, R> accumulator) {
         return CompletableFuture.failedFuture(error);
     }
 
     @Override
-    public MessageStream<E> whenComplete(Runnable completeHandler) {
+    public MessageStream<E> whenComplete(@Nonnull Runnable completeHandler) {
         return this;
     }
 }

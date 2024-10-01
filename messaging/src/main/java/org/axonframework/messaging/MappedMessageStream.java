@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -45,8 +45,8 @@ class MappedMessageStream<E, RE> implements MessageStream<RE> {
      *                 {@code mapper}.
      * @param mapper   The {@link Function} mapping entries of type {@code E} to {@code RE}.
      */
-    MappedMessageStream(@NotNull MessageStream<E> delegate,
-                        @NotNull Function<E, RE> mapper) {
+    MappedMessageStream(@Nonnull MessageStream<E> delegate,
+                        @Nonnull Function<E, RE> mapper) {
         this.delegate = delegate;
         this.mapper = mapper;
     }
@@ -65,8 +65,8 @@ class MappedMessageStream<E, RE> implements MessageStream<RE> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, RE, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, RE, R> accumulator) {
         return delegate.reduce(
                 identity,
                 (base, message) -> accumulator.apply(base, mapper.apply(message))

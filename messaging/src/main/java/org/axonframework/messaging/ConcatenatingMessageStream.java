@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -46,8 +46,8 @@ class ConcatenatingMessageStream<E> implements MessageStream<E> {
      * @param second The second {@link MessageStream stream} to start consuming from once the {@code first} stream
      *               completes successfully.
      */
-    ConcatenatingMessageStream(@NotNull MessageStream<E> first,
-                               @NotNull MessageStream<E> second) {
+    ConcatenatingMessageStream(@Nonnull MessageStream<E> first,
+                               @Nonnull MessageStream<E> second) {
         this.first = first;
         this.second = second;
     }
@@ -68,8 +68,8 @@ class ConcatenatingMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, E, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, E, R> accumulator) {
         return first.reduce(identity, accumulator)
                     .thenCompose(intermediate -> second.reduce(intermediate, accumulator));
     }

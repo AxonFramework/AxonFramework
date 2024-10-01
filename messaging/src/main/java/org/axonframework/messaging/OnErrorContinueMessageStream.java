@@ -16,14 +16,13 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 /**
  * Implementation of the {@link MessageStream} that when the stream completes exceptionally will continue on a
@@ -48,8 +47,8 @@ class OnErrorContinueMessageStream<E> implements MessageStream<E> {
      * @param onError  A {@link Function} providing the replacement {@link MessageStream stream} to continue from if the
      *                 given {@code delegate} completes exceptionally.
      */
-    OnErrorContinueMessageStream(@NotNull MessageStream<E> delegate,
-                                 @NotNull Function<Throwable, MessageStream<E>> onError) {
+    OnErrorContinueMessageStream(@Nonnull MessageStream<E> delegate,
+                                 @Nonnull Function<Throwable, MessageStream<E>> onError) {
         this.delegate = delegate;
         this.onError = onError;
     }

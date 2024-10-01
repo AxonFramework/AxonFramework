@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -46,8 +46,8 @@ class OnNextMessageStream<E> implements MessageStream<E> {
      * @param onNext   The {@link Consumer} to handle each consumed entry of type {@code E} from the given
      *                 {@code delegate}.
      */
-    OnNextMessageStream(@NotNull MessageStream<E> delegate,
-                        @NotNull Consumer<E> onNext) {
+    OnNextMessageStream(@Nonnull MessageStream<E> delegate,
+                        @Nonnull Consumer<E> onNext) {
         this.delegate = delegate;
         this.onNext = onNext;
     }
@@ -68,8 +68,8 @@ class OnNextMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, E, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, E, R> accumulator) {
         return delegate.reduce(identity, (base, message) -> {
             onNext.accept(message);
             return accumulator.apply(base, message);

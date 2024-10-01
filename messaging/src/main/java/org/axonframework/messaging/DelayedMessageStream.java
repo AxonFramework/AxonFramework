@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -36,7 +36,7 @@ public class DelayedMessageStream<E> implements MessageStream<E> {
 
     private final CompletableFuture<MessageStream<E>> delegate;
 
-    private DelayedMessageStream(@NotNull CompletableFuture<MessageStream<E>> delegate) {
+    private DelayedMessageStream(@Nonnull CompletableFuture<MessageStream<E>> delegate) {
         this.delegate = delegate;
     }
 
@@ -53,7 +53,7 @@ public class DelayedMessageStream<E> implements MessageStream<E> {
      * @return A {@link MessageStream stream} that delegates all actions to the {@code delegate} when it becomes
      * available.
      */
-    public static <E> MessageStream<E> create(CompletableFuture<MessageStream<E>> delegate) {
+    public static <E> MessageStream<E> create(@Nonnull CompletableFuture<MessageStream<E>> delegate) {
         if (delegate.isDone()) {
             try {
                 return delegate.get();
@@ -78,8 +78,8 @@ public class DelayedMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, E, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, E, R> accumulator) {
         return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
     }
 }

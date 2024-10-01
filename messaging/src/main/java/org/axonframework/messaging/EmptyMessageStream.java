@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import reactor.core.publisher.Flux;
 
@@ -64,29 +64,29 @@ class EmptyMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> MessageStream<R> map(@NotNull Function<E, R> mapper) {
+    public <R> MessageStream<R> map(@Nonnull Function<E, R> mapper) {
         //noinspection unchecked
         return (MessageStream<R>) this;
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, E, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, E, R> accumulator) {
         return CompletableFuture.completedFuture(identity);
     }
 
     @Override
-    public MessageStream<E> onNextItem(Consumer<E> onNext) {
+    public MessageStream<E> onNextItem(@Nonnull Consumer<E> onNext) {
         return this;
     }
 
     @Override
-    public MessageStream<E> onErrorContinue(Function<Throwable, MessageStream<E>> onError) {
+    public MessageStream<E> onErrorContinue(@Nonnull Function<Throwable, MessageStream<E>> onError) {
         return this;
     }
 
     @Override
-    public MessageStream<E> whenComplete(Runnable completeHandler) {
+    public MessageStream<E> whenComplete(@Nonnull Runnable completeHandler) {
         try {
             completeHandler.run();
             return this;

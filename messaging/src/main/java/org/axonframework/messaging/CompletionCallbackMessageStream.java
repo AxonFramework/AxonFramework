@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -44,8 +44,8 @@ class CompletionCallbackMessageStream<E> implements MessageStream<E> {
      *                        given {@code completeHandler}.
      * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
      */
-    CompletionCallbackMessageStream(@NotNull MessageStream<E> delegate,
-                                    @NotNull Runnable completeHandler) {
+    CompletionCallbackMessageStream(@Nonnull MessageStream<E> delegate,
+                                    @Nonnull Runnable completeHandler) {
         this.delegate = delegate;
         this.completeHandler = completeHandler;
     }
@@ -67,8 +67,8 @@ class CompletionCallbackMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, E, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, E, R> accumulator) {
         return delegate.reduce(identity, accumulator)
                        .whenComplete((result, exception) -> {
                            if (exception == null) {

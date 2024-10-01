@@ -16,7 +16,8 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -50,7 +51,7 @@ public interface MessageStream<E> {
      * @return A {@link MessageStream stream} of entries of type {@code E} that returns the entires provided by the
      * given {@code iterable}.
      */
-    static <E> MessageStream<E> fromIterable(@NotNull Iterable<E> iterable) {
+    static <E> MessageStream<E> fromIterable(@Nonnull Iterable<E> iterable) {
         return new IterableMessageStream<>(iterable);
     }
 
@@ -65,7 +66,7 @@ public interface MessageStream<E> {
      * @return A {@link MessageStream stream} of entries of type {@code E} that returns the entries provided by the
      * given {@code stream}.
      */
-    static <E> MessageStream<E> fromStream(@NotNull Stream<E> stream) {
+    static <E> MessageStream<E> fromStream(@Nonnull Stream<E> stream) {
         return new StreamMessageStream<>(stream);
     }
 
@@ -77,7 +78,7 @@ public interface MessageStream<E> {
      * @return A {@link MessageStream stream} of entries of type {@code E} that returns the entries provided by the
      * given {@code flux}.
      */
-    static <E> MessageStream<E> fromFlux(@NotNull Flux<E> flux) {
+    static <E> MessageStream<E> fromFlux(@Nonnull Flux<E> flux) {
         return new FluxMessageStream<>(flux);
     }
 
@@ -91,7 +92,7 @@ public interface MessageStream<E> {
      * @param <E>    The type of entry carried in this {@link MessageStream stream}.
      * @return A {@link MessageStream stream} containing at most one entry of type {@code E}.
      */
-    static <E> MessageStream<E> fromFuture(@NotNull CompletableFuture<E> future) {
+    static <E> MessageStream<E> fromFuture(@Nonnull CompletableFuture<E> future) {
         return new SingleValueMessageStream<>(future);
     }
 
@@ -104,7 +105,7 @@ public interface MessageStream<E> {
      * @param <E>      The type of entry carried in this {@link MessageStream stream}.
      * @return A {@link MessageStream stream} consisting of a single entry of type {@code E}.
      */
-    static <E> MessageStream<E> just(E instance) {
+    static <E> MessageStream<E> just(@Nullable E instance) {
         return new SingleValueMessageStream<>(instance);
     }
 
@@ -117,7 +118,7 @@ public interface MessageStream<E> {
      * @param <E>     The type of entry carried in this {@link MessageStream stream}.
      * @return A {@link MessageStream stream} that is completed exceptionally.
      */
-    static <E> MessageStream<E> failed(@NotNull Throwable failure) {
+    static <E> MessageStream<E> failed(@Nonnull Throwable failure) {
         return new FailedMessageStream<>(failure);
     }
 
@@ -169,7 +170,7 @@ public interface MessageStream<E> {
      * @return A {@link MessageStream stream} with all entries of type {@code E} mapped according to the {@code mapper}
      * function.
      */
-    default <R> MessageStream<R> map(@NotNull Function<E, R> mapper) {
+    default <R> MessageStream<R> map(@Nonnull Function<E, R> mapper) {
         return new MappedMessageStream<>(this, mapper);
     }
 
@@ -190,8 +191,8 @@ public interface MessageStream<E> {
      * @return A {@link CompletableFuture} carrying the result of the given {@code accumulator} that reduced the entire
      * {@link MessageStream stream}.
      */
-    <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                    @NotNull BiFunction<R, E, R> accumulator);
+    <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                    @Nonnull BiFunction<R, E, R> accumulator);
 
     /**
      * Invokes the given {@code onNext} each time an entry of type {@code E} is consumed from this
@@ -204,7 +205,7 @@ public interface MessageStream<E> {
      * @param onNext The {@link Consumer} to invoke for each entry.
      * @return A {@link MessageStream stream} that will invoke the given {@code onNext} for each entry.
      */
-    default MessageStream<E> onNextItem(@NotNull Consumer<E> onNext) {
+    default MessageStream<E> onNextItem(@Nonnull Consumer<E> onNext) {
         return new OnNextMessageStream<>(this, onNext);
     }
 
@@ -214,7 +215,7 @@ public interface MessageStream<E> {
      * @param consumer
      * @return
      */
-    default MessageStream<E> consume(@NotNull Predicate<E> consumer) {
+    default MessageStream<E> consume(@Nonnull Predicate<E> consumer) {
         asFlux().takeWhile(consumer).subscribe().dispose();
         return this;
     }
@@ -228,7 +229,7 @@ public interface MessageStream<E> {
      * @return A {@link MessageStream stream} that continues onto another stream when {@code this} stream completes with
      * an error.
      */
-    default MessageStream<E> onErrorContinue(@NotNull Function<Throwable, MessageStream<E>> onError) {
+    default MessageStream<E> onErrorContinue(@Nonnull Function<Throwable, MessageStream<E>> onError) {
         return new OnErrorContinueMessageStream<>(this, onError);
     }
 
@@ -241,7 +242,7 @@ public interface MessageStream<E> {
      * @param other The {@link MessageStream} to append to this stream.
      * @return A {@link MessageStream stream} concatenating this stream with given {@code other}.
      */
-    default MessageStream<E> concatWith(@NotNull MessageStream<E> other) {
+    default MessageStream<E> concatWith(@Nonnull MessageStream<E> other) {
         return new ConcatenatingMessageStream<>(this, other);
     }
 
@@ -252,7 +253,7 @@ public interface MessageStream<E> {
      * @param completeHandler The {@link Runnable} to invoke when the {@link MessageStream stream} completes normally.
      * @return A {@link MessageStream stream} that invokes the {@code completeHandler} upon normal completion.
      */
-    default MessageStream<E> whenComplete(@NotNull Runnable completeHandler) {
+    default MessageStream<E> whenComplete(@Nonnull Runnable completeHandler) {
         return new CompletionCallbackMessageStream<>(this, completeHandler);
     }
 }

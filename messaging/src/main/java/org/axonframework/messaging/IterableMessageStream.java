@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import reactor.core.publisher.Flux;
 
@@ -47,7 +47,7 @@ class IterableMessageStream<E> implements MessageStream<E> {
      * @param source The {@link Iterable} providing the entries of type {@code E} for this
      *               {@link MessageStream stream}.
      */
-    IterableMessageStream(@NotNull Iterable<E> source) {
+    IterableMessageStream(@Nonnull Iterable<E> source) {
         this.source = source;
     }
 
@@ -65,7 +65,7 @@ class IterableMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> MessageStream<R> map(Function<E, R> mapper) {
+    public <R> MessageStream<R> map(@Nonnull Function<E, R> mapper) {
         return new IterableMessageStream<>(
                 StreamSupport.stream(source.spliterator(), NOT_PARALLEL)
                              .map(mapper)
@@ -74,8 +74,8 @@ class IterableMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, E, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, E, R> accumulator) {
         return CompletableFuture.completedFuture(
                 StreamSupport.stream(source.spliterator(), NOT_PARALLEL)
                              .reduce(identity, accumulator, (thisResult, thatResult) -> {

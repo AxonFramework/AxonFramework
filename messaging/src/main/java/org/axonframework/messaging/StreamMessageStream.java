@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +42,7 @@ class StreamMessageStream<E> implements MessageStream<E> {
      *
      * @param source The {@link Stream} providing the entries of type {@code E} for this {@link MessageStream stream}.
      */
-    StreamMessageStream(@NotNull Stream<E> source) {
+    StreamMessageStream(@Nonnull Stream<E> source) {
         this.source = source;
     }
 
@@ -58,12 +58,13 @@ class StreamMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> MessageStream<R> map(Function<E, R> mapper) {
+    public <R> MessageStream<R> map(@Nonnull Function<E, R> mapper) {
         return new StreamMessageStream<>(source.map(mapper));
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, E, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, E, R> accumulator) {
         return CompletableFuture.completedFuture(
                 source.sequential()
                       .reduce(identity, accumulator, (thisResult, thatResult) -> {

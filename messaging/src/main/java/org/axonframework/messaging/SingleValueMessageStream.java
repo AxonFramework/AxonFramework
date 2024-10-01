@@ -16,7 +16,8 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -45,7 +46,7 @@ class SingleValueMessageStream<E> implements MessageStream<E> {
      * @param entry The entry of type {@code E} which is the singular value contained in this
      *              {@link MessageStream stream}.
      */
-    SingleValueMessageStream(E entry) {
+    SingleValueMessageStream(@Nullable E entry) {
         this(CompletableFuture.completedFuture(entry));
     }
 
@@ -56,7 +57,7 @@ class SingleValueMessageStream<E> implements MessageStream<E> {
      * @param source The {@link CompletableFuture} resulting in the singular entry of type {@code E} contained in this
      *               {@link MessageStream stream}.
      */
-    SingleValueMessageStream(@NotNull CompletableFuture<E> source) {
+    SingleValueMessageStream(@Nonnull CompletableFuture<E> source) {
         this.source = source;
     }
 
@@ -71,13 +72,13 @@ class SingleValueMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> MessageStream<R> map(Function<E, R> mapper) {
+    public <R> MessageStream<R> map(@Nonnull Function<E, R> mapper) {
         return new SingleValueMessageStream<>(source.thenApply(mapper));
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, E, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, E, R> accumulator) {
         return source.thenApply(message -> accumulator.apply(identity, message));
     }
 }

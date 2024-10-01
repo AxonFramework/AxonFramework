@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +41,7 @@ class FluxMessageStream<E> implements MessageStream<E> {
      *
      * @param source The {@link Flux} providing the entries of type {@code E} for this {@link MessageStream stream}.
      */
-    FluxMessageStream(@NotNull Flux<E> source) {
+    FluxMessageStream(@Nonnull Flux<E> source) {
         this.source = source;
     }
 
@@ -57,19 +57,19 @@ class FluxMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public <R> MessageStream<R> map(@NotNull Function<E, R> mapper) {
+    public <R> MessageStream<R> map(@Nonnull Function<E, R> mapper) {
         return new FluxMessageStream<>(source.map(mapper));
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, E, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, E, R> accumulator) {
         return source.reduce(identity, accumulator)
                      .toFuture();
     }
 
     @Override
-    public MessageStream<E> onErrorContinue(@NotNull Function<Throwable, MessageStream<E>> onError) {
+    public MessageStream<E> onErrorContinue(@Nonnull Function<Throwable, MessageStream<E>> onError) {
         return new FluxMessageStream<>(source.onErrorResume(
                 exception -> onError.apply(exception)
                                     .asFlux()
@@ -77,7 +77,7 @@ class FluxMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public MessageStream<E> whenComplete(@NotNull Runnable completeHandler) {
+    public MessageStream<E> whenComplete(@Nonnull Runnable completeHandler) {
         return new FluxMessageStream<>(source.doOnComplete(completeHandler));
     }
 }
