@@ -48,7 +48,7 @@ public interface MessageStream<E> {
      *
      * @param iterable The {@link Iterable} providing the {@link Message Messages} to stream.
      * @param <E>      The type of entry carried in this {@link MessageStream stream}.
-     * @return A {@link MessageStream stream} of entries of type {@code E} that returns the entires provided by the
+     * @return A {@link MessageStream stream} of entries of type {@code E} that returns the entries provided by the
      * given {@code iterable}.
      */
     static <E> MessageStream<E> fromIterable(@Nonnull Iterable<E> iterable) {
