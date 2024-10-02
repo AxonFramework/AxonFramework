@@ -7,7 +7,7 @@ The following are the current documentation sources (folders):
 - `af-fundamentals-tutorial`: [A tutorial covering Axon Framework's fundamental components and features.](https://docs.axoniq.io/axon_framework_fundamentals/index.html)
 - `identifier-generation-guide` : [Guide that covers several considerations in regards to identifier generation in Axon Framework-based applications.](https://docs.axoniq.io/identifier-generation-guide/index.html)
 - `message-handler-tunning-guide` : [Guide that covers the message handler tuning in your Axon Framework applications.](https://docs.axoniq.io/message-handler-tuning-guide/index.html)
-- `meta-annotations-guide` : [Guide that covers several considerations in regards to creating Meta Annotations for Axon Framework-based applications.]()
+- `meta-annotations-guide` : [Guide that covers several considerations in regards to creating Meta Annotations for Axon Framework-based applications.](https://docs.axoniq.io/meta-annotations-guide/index.html)
 - `old-reference-guide` : [The Axon Framework former reference guide migrated from former docs.axoniq.io](https://docs.axoniq.io/axon-framework-reference/introduction.html)
 - `rdbms-tunning-guide` : [Guide that covers several considerations in regards to tuning the database for events.](https://docs.axoniq.io/rdbms-tuning-guide/index.html)
 
