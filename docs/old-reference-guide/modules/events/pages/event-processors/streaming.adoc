@@ -425,7 +425,7 @@ This so-called "claim extension" is, just as updating and saving of tokens, dele
 Hence, the Streaming Processors achieves collaboration among instances/threads through token claims.
 
 In the absence of a claim, a processor will actively try to retrieve one.
-If a token claim is not extended for a configurable amount of time, other processor threads can <<Token stealing,"steal">> the claim.
+If a token claim is not extended for a configurable amount of time, other processor threads can <<token-stealing,"steal">> the claim.
 Token stealing can, for example, happen if event processing is slow or encountered some exceptions.
 
 ____
@@ -669,6 +669,7 @@ public class AxonConfig {
 }
 ----
 
+[[token-stealing]]
 ==== Token stealing
 
 As described at the <<tracking-tokens,start>>, streaming processor threads can "steal" tokens from one another.
