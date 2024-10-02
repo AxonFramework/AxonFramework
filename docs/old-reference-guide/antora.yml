@@ -1,4 +1,4 @@
-name: axon-framework-references
+name: axon-framework-reference
 title: Axon Framework
 version:
   axon-(?<version>+({0..9}).+({0..9})).*: $<version>
