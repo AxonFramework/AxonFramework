@@ -1,7 +1,7 @@
 :navtitle: Queries
 = Queries
 
-This section describes the additional functionality attached to Axon's xref:axon_framework_ref:queries:README.adoc[query dispatching and handling] logic.
+This section describes the additional functionality attached to Axon's xref:axon-framework-reference:queries:README.adoc[query dispatching and handling] logic.
 
 [[querygateway]]
 == `QueryGateway`

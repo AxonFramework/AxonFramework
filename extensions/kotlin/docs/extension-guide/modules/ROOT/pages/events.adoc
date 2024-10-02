@@ -5,7 +5,7 @@ This section describes the additional functionality attached to Axon's xref:axon
 
 == Event upcasters
 
-A simplified implementation of the xref:axon_framework_ref:events:event-versioning.adoc#event-upcasting[Single Event Upcaster] is given, which allows for a shorter implementation cycle. Making an upcaster to upcast the `CardIssuedEvent` from revision `0` to `1` can be written as follows:
+A simplified implementation of the xref:axon-framework-reference:events:event-versioning.adoc#event-upcasting[Single Event Upcaster] is given, which allows for a shorter implementation cycle. Making an upcaster to upcast the `CardIssuedEvent` from revision `0` to `1` can be written as follows:
 
 [source,kotlin]
 ----
