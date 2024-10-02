@@ -1,7 +1,7 @@
 :navtitle: Events
 = Events
 
-This section describes the additional functionality attached to Axon's xref:axon_framework_ref:events:README.adoc[event publication and handling] logic.
+This section describes the additional functionality attached to Axon's xref:axon-framework-reference:events:README.adoc[event publication and handling] logic.
 
 == Event upcasters
 
