@@ -1,5 +1,8 @@
 name: axon_framework_ref
 title: Axon Framework
+version:
+  axon-(?<version>+({0..9}).+({0..9})).*: $<version>
+  master: development
 start_page: ROOT:introduction.adoc
 
 asciidoc:
