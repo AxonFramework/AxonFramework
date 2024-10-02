@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,12 +38,16 @@ class AnnotatedMessageHandlingMemberTest {
 
     @BeforeEach
     void setUp() {
-        testSubject = new AnnotatedMessageHandlingMember<>(
-                AnnotatedHandler.class.getMethods()[0],
-                EventMessage.class,
-                String.class,
-                ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class)
-        );
+        try {
+            testSubject = new AnnotatedMessageHandlingMember<>(
+                    AnnotatedHandler.class.getMethod("handlingMethod", String.class),
+                    EventMessage.class,
+                    String.class,
+                    ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class)
+            );
+        } catch (NoSuchMethodException e) {
+            fail(e.getMessage());
+        }
     }
 
     @Test
