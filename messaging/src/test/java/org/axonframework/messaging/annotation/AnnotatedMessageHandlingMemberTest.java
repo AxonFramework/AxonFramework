@@ -44,7 +44,8 @@ class AnnotatedMessageHandlingMemberTest {
                 EventMessage.class,
                 String.class,
                 ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class)
-        ); }
+        ); 
+        }
         catch (NoSuchMethodException e){
             fail(e.getMessage());
         }
