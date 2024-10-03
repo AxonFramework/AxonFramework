@@ -574,7 +574,7 @@ Then, you can open a stream to another context through the `AxonServerEventStore
 With this source in hand, you can configure a xref:event-processors/streaming.adoc[Streaming Processor] to start reading from it.
 
 Alternatively, you can use a message broker to distribute events between contexts.
-Axon provides a good bunch of these as extension modules, for example xref:amqp_extension_guide::index.adoc[Spring AMQP] or  xref:kafka_extension_guide::index.adoc[Kafka].
+Axon provides a good bunch of these as extension modules, for example xref:amqp-extension-reference::index.adoc[Spring AMQP] or  xref:kafka_extension_guide::index.adoc[Kafka].
 
 Although this allows further event distribution, we still recommend consciously sharing _the correct_ events.
 Ideally, we add a form of context mapping, like an anti-corruption layer, between the contexts.
