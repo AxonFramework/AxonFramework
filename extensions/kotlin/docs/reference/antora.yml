@@ -1,0 +1,14 @@
+name: kotlin-extension-reference
+title: Kotlin Extension Reference
+version: true
+prerelease: true
+start_page: ROOT:index.adoc
+
+asciidoc:
+  attributes:
+    component_description: Extension enhancing the development experience when using Kotlin
+    type: extension-reference
+    group: axon-framework
+
+nav:
+  - modules/nav.adoc

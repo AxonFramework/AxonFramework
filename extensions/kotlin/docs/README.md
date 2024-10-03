@@ -4,7 +4,7 @@ This folder contains the docs related to the Kotlin Extension for Axon Framework
 
 The following are the current documentation sources (folders):
 
-- `extension-guide` : [The Kotlin Extension Guide](https://library.axoniq.io/kotlin_extension_guide/index.html)
+- `extension-guide` : [The Kotlin Extension Guide](https://library.axoniq.io/kotlin-extension-reference/index.html)
 
 ## Contributing to the docs.
 
