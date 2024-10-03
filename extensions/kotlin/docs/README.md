@@ -1,6 +1,6 @@
 # Documentation For Axon Framework - Kotlin Extension.
 
-This folder contains the docs related to the Kotlin Extension for Axon Framework. The docs in this folder are written as part of the [AxonIQ Library](https://library.axoniq.io), and are [written in Ascii and built with Antora.](https://library.axoniq.io/contribution_guide/overview/platform.html)
+This folder contains the docs related to the Kotlin Extension for Axon Framework. The docs in this folder are written as part of the [AxonIQ Library](https://library.axoniq.io), and are [written in Ascii and built with Antora.](https://library.axoniq.io/contibution-guide/overview/platform.html)
 
 The following are the current documentation sources (folders):
 
@@ -8,13 +8,13 @@ The following are the current documentation sources (folders):
 
 ## Contributing to the docs.
 
-You are welcome to contribute to these docs. Whether you want to fix a typo, or you find something missing, something that is not clear or can be improved, or even if you want to write an entire piece of docs to illustrate something that could help others to understand the use of the Bike Rental App, you are more than welcome to send a Pull Request to this GitHub repository. Just make sure you follow the guidelines explained in [AxonIQ Library Contribution Guide](https://library.axoniq.io/contribution_guide/index.html)
+You are welcome to contribute to these docs. Whether you want to fix a typo, or you find something missing, something that is not clear or can be improved, or even if you want to write an entire piece of docs to illustrate something that could help others to understand the use of the Bike Rental App, you are more than welcome to send a Pull Request to this GitHub repository. Just make sure you follow the guidelines explained in [AxonIQ Library Contribution Guide](https://library.axoniq.io/contibution-guide/index.html)
 
 ## Building and testing these docs locally.
 
 If you want to build and explore the docs locally (because you have made changes or before contributing), you can use the Antora's build file in `docs/_playbook` folder.
 
-You can check the [detailed information on how the process to build the docs works](https://library.axoniq.io/contribution_guide/overview/build.html), but in short, all you have to do is:
+You can check the [detailed information on how the process to build the docs works](https://library.axoniq.io/contibution-guide/overview/build.html), but in short, all you have to do is:
 
 1. Make sure you have Node (a LTS version is preferred), Antora and Vale installed in your system.
 2. CD to the `docs/_playbook` folder.
