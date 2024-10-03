@@ -103,9 +103,9 @@ ____
 
 *Duplicate Command Handling Functions*
 
-As specified in the xref:messaging-concepts:README.adoc[Messaging Concepts] section, a command always has exactly one destination. That means there should only be a single Command Handler method for any given command.
+As specified in the xref:messaging-concepts:index.adoc[Messaging Concepts] section, a command always has exactly one destination. That means there should only be a single Command Handler method for any given command.
 
-By default, when a duplicate Command Handler method is registered, the last registration will be kept and a warning is logged. This behaviour can be adjusted by specifying a different `DuplicateCommandHandlerResolver`, as is described in the xref:tuning:README.adoc[Runtime Tuning] section.
+By default, when a duplicate Command Handler method is registered, the last registration will be kept and a warning is logged. This behaviour can be adjusted by specifying a different `DuplicateCommandHandlerResolver`, as is described in the xref:tuning:index.adoc[Runtime Tuning] section.
 
 ____
 
@@ -119,7 +119,7 @@ Depending on your underlying persistence storage and auditing needs, there are a
 
 Note that the Repository interface does not prescribe a `delete(identifier)` method. Deleting aggregates is done by invoking the `AggregateLifecycle.markDeleted()` method from within an aggregate. Deleting an aggregate is a state migration like any other, with the only difference that it is irreversible in many cases. You should create your own meaningful method on your aggregate which sets the aggregate's state to "deleted". This also allows you to register any events that you would like to have published.
 
-==== Axon Configuration API
+=== Axon Configuration API
 
 [source,java]
 ----
@@ -132,7 +132,7 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration()
         );
 ----
 
-==== Spring Boot auto configuration
+=== Spring Boot auto configuration
 
 To fully customize the repository used, you can define one in the application context. For Axon Framework to use this repository for the intended aggregate, define the bean name of the repository in the `repository` attribute on `@Aggregate` Annotation. Alternatively, specify the bean name of the repository to be the aggregate's name, (first character lowercase), suffixed with `Repository`. So on a class of type `GiftCard`, the default repository name is `giftCardRepository`. If no bean with that name is found, Axon will define an `EventSourcingRepository` (which fails if no `EventStore` is available).
 

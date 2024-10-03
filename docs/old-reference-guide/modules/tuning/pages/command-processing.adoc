@@ -4,7 +4,7 @@ This page provides specifics around tuning the command processing within an Axon
 
 == Duplicate command handler registration
 
-As described in the xref:messaging-concepts:README.adoc[Messaging Concepts] page, a command is always routed to a single destination. This means that during the xref:axon-framework-commands:configuration.adoc#registering-a-command-handler[registration of a command handler] within a given JVM, a second registration of an identical command handler method should be dealt with in a desirable manner.
+As described in the xref:messaging-concepts:index.adoc[Messaging Concepts] page, a command is always routed to a single destination. This means that during the xref:axon-framework-commands:configuration.adoc#registering-a-command-handler[registration of a command handler] within a given JVM, a second registration of an identical command handler method should be dealt with in a desirable manner.
 
 How an Axon application reacts to such a duplicate registration is defined by the `DuplicateCommandHandlerResolver`. This resolver is a functional interface ingesting a command name and a registered candidate command handler method; a single command handler method is the return value. By default, the `LoggingDuplicateCommandHandlerResolver` is used, which will log a warning and returns the candidate handler.
 

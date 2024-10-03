@@ -167,7 +167,7 @@ The successful resolution of command handling intentionally _should not_ provide
 Thus, if the `CommandBus`/`CommandGateway` provides a response (either directly or through the `CommandResultMessage)`, then you should assume the result of successful command handling to return `null`.
 
 While it is possible to return results from command handlers, this should be used sparsely.
-The intent of the Command should never be to retrieve a value, as that would be an indication that the message should be designed as a xref:queries:README.adoc[Query Message].
+The intent of the Command should never be to retrieve a value, as that would be an indication that the message should be designed as a xref:queries:index.adoc[Query Message].
 Exceptions to this would be the identifier of the Aggregate Root, or identifiers of entities the Aggregate Root has instantiated.
 The framework has one such exception build in, on the `@CommandHandler` annotated constructor of an Aggregate.
 In case the 'command handling constructor' has executed successfully, instead of the Aggregate itself, the value of the `@AggregateIdentifier` annotated field will be returned.
