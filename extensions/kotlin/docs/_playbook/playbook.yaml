@@ -1,6 +1,6 @@
 site:
   title: Kotlin Extension docs PREVIEW
-  start_page: kotlin_extension_guide::index.adoc
+  start_page: kotlin-extension-reference::index.adoc
 
 content:
   sources:
