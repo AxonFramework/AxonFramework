@@ -77,6 +77,17 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
     }
 
     @Override
+    public void publish(@Nonnull ProcessingContext processingContext,
+                        @Nonnull String context,
+                        EventMessage<?>... events) {
+        validate(context);
+        EventStoreTransaction transaction = transaction(processingContext, context);
+        for (EventMessage<?> event : events) {
+            transaction.appendEvent(event);
+        }
+    }
+
+    @Override
     public CompletableFuture<Void> publish(@Nonnull String context,
                                            EventMessage<?>... events) {
         throw new UnsupportedOperationException(
