@@ -155,7 +155,7 @@ An Aggregate *cannot* handle events from other sources then itself.
 This is intentional as the Event Sourcing Handlers are used to recreate the state of the Aggregate.
 For this it only needs it's own events as those represent it's state changes.
 
-To make an Aggregate react on events from other Aggregate instances, xref:sagas:README.adoc[Sagas] or xref:events:event-handlers.adoc[Event Handling Components] should be leveraged
+To make an Aggregate react on events from other Aggregate instances, xref:sagas:index.adoc[Sagas] or xref:events:event-handlers.adoc[Event Handling Components] should be leveraged
 
 ____
 

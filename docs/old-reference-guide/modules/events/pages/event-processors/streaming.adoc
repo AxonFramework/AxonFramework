@@ -1,6 +1,6 @@
 = Streaming Event Processor
 
-The `StreamingEventProcessor`, or Streaming Processor for short, is a type of xref:event-processors/README.adoc[Event Processor].
+The `StreamingEventProcessor`, or Streaming Processor for short, is a type of xref:event-processors/index.adoc[Event Processor].
 As any Event Processor, it serves as the technical aspect to handle events by invoking the event handlers written in an Axon application.
 
 The Streaming Processor defines itself by receiving the events from a `StreamableMessageSource`.
@@ -62,7 +62,7 @@ They diverge on their threading approach and work separation, as discussed in mo
 [[configuring]]
 == Configuring
 
-The Streaming Processors have several additional components that you can configure, next to the xref:event-processors/README.adoc#general_processor_configuration[base options].
+The Streaming Processors have several additional components that you can configure, next to the xref:event-processors/index.adoc#general_processor_configuration[base options].
 For other streaming processor features that are configurable, we refer to their respective sections for more details.
 This chapter will cover how to configure a <<Configuring a tracking processor,Tracking>> or <<Configuring a pooled streaming processor,Pooled Streaming>> Processor respectively.
 
@@ -386,7 +386,7 @@ public class AxonConfig {
 
 The error mode differs between the Tracking- and Pooled Streaming Event Processor.
 
-Whenever the xref:event-processors/README.adoc#event-processor--error-handler[error handler] rethrows an exception, a `TrackingEventProcessor` will retry processing the event using an incremental back-off period.
+Whenever the xref:event-processors/index.adoc#event-processor--error-handler[error handler] rethrows an exception, a `TrackingEventProcessor` will retry processing the event using an incremental back-off period.
 It will start at 1 second and double after each attempt until it reaches the maximum wait time of 60 seconds per attempt.
 This back-off time ensures that in a distributed environment, when another node is able to process events, it will have the opportunity to claim the <<tracking-tokens,token>> required to process the event.
 
@@ -455,7 +455,7 @@ ____
 
 *A Saga's Streaming Processor initial position*
 
-A Streaming Processor dedicated to a xref:sagas:README.adoc[Saga] will default the initial token to the head of the stream.
+A Streaming Processor dedicated to a xref:sagas:index.adoc[Saga] will default the initial token to the head of the stream.
 The default initial token position ensures that the Saga does not react to events from the past, as in most cases, this would introduce unwanted side effects.
 
 ____
@@ -1022,7 +1022,7 @@ ____
 
 **Parallel Processing and Sagas**
 
-A xref:sagas:README.adoc[saga] instance is *never* invoked concurrently by multiple threads.
+A xref:sagas:index.adoc[saga] instance is *never* invoked concurrently by multiple threads.
 Therefore, the `SequencingPolicy` is irrelevant for a saga.
 Axon will ensure each saga instance receives the events it needs to process in the order they have been published on the event bus.
 
@@ -1342,7 +1342,7 @@ In a multi-node scenario, a fair distribution of the segments is often desired.
 Otherwise, the event processing load could be distributed unequally over the active instances.
 There are roughly three approaches to balancing the number of segments claimed per node:
 
-. Through the xref:axon_server_ref:ROOT:index.adoc[Axon Server] Dashboard's load balancing feature.
+. Through the xref:axon-server-reference:ROOT:index.adoc[Axon Server] Dashboard's load balancing feature.
 . For Axon Server and Spring Boot users, you can use the `axon.axonserver.eventhandling.processors.[processor-name].load-balancing-strategy` application property.
 . Directly on a `StreamingEventProcessor`, with the `releaseSegment(int segmentId)` or `releaseSegment(int segmentId, long releaseDuration, TimeUnit unit)` method.
 
@@ -1396,7 +1396,7 @@ Splitting and merging allow you to control the number of segments dynamically.
 
 There are roughly two approaches to adjust the number of segments for a streaming processor:
 
-. Through the xref:axon_server_ref:ROOT:index.adoc[Axon Server] Dashboard with the split and merge buttons
+. Through the xref:axon-server-reference:ROOT:index.adoc[Axon Server] Dashboard with the split and merge buttons
 . Directly on a `StreamingEventProcessor`, with the `splitSegment(int segmentId)` and `mergeSegment(int segmentId)` methods
 
 When Axon Server is in place, we recommend using option one since it is easiest to use.
@@ -1560,7 +1560,7 @@ ____
 If you are in a <<Multi-node processing,multi-node>> scenario, that means _all_ nodes should shut down the `StreamingEventProcessor`.
 Otherwise, another node will pick up the segments released by the inactive processor instance.
 
-Being able to shut down or start up all streaming processor instances is most easily achieved through the xref:axon_server_ref:ROOT:index.adoc[Axon Server] Dashboard.
+Being able to shut down or start up all streaming processor instances is most easily achieved through the xref:axon-server-reference:ROOT:index.adoc[Axon Server] Dashboard.
 The application's dashboard provides a "start" and "stop" button, which will start/stop the processor on every node.
 
 When Axon Server is not used, you should construct a custom endpoint in your application.
@@ -1650,7 +1650,7 @@ When required to process events from several sources, we can configure a specifi
 The `MultiStreamableMessageSource` is useful when a streaming processor should act on the events from:
 
 * several event stores,
-* xref:axon_server_ref:ROOT:axon-server/administration/multi-context.adoc[multiple-contexts], or
+* xref:axon-server-reference:ROOT:axon-server/administration/multi-context.adoc[multiple-contexts], or
 * from different storage types (for example, an Event Store and a Kafka Stream)
 
 Having multiple sources means that there might be a choice of multiple events that the processor could consume at any given instant.

@@ -7,7 +7,7 @@ ____
 
 *OpenTracing deprecation warning*
 
-The xref:tracing_extension_guide::index.adoc[OpenTracing extension] works in a different way than described on this page.
+The xref:tracing-extension-reference::index.adoc[OpenTracing extension] works in a different way than described on this page.
 Its functionality is limited and will not be updated to include the additional functionality described on this page.
 The OpenTracing standard itself is deprecated, please consider moving to OpenTelemetry instead.
 
@@ -27,7 +27,7 @@ The following standards are currently supported:
 |Tracing standard |Supported |Description
 
 |OpenTelemetry |Yes |https://opentelemetry.io/docs/concepts/what-is-opentelemetry/[OpenTelemetry] is the successor of OpenTracing, with auto-instrumentation being its most prominent feature.
-|OpenTracing |Limited |https://opentracing.io/[OpenTracing] is supported xref:tracing_extension_guide::index.adoc[by an extension with limited functionality]. Usage of OpenTelemetry is recommended instead.
+|OpenTracing |Limited |https://opentracing.io/[OpenTracing] is supported xref:tracing-extension-reference::index.adoc[by an extension with limited functionality]. Usage of OpenTelemetry is recommended instead.
 |SLF4j |Yes |If you have no monitoring system in place but want to trace through logging, the framework provides a `LoggingSpanFactory`.
 |===
 
@@ -195,7 +195,7 @@ The following `SpanAttributesProvider` implementations are included in Axon Fram
 |`MessageNameSpanAttributesProvider` |`axon_message_name` |The name of the message for Commands and Queries
 |`MessageTypeSpanAttributesProvider` |`axon_message_type` |The class of the message, such as `DomainEventMessage` or `GenericQueryMessage`
 |`PayloadTypeSpanAttributesProvider` |`axon_payload_type` |The class of the payload in the message
-|`MetadataSpanAttributesProvider` |`axon_metadata_{key}` |All metadata of the message is also added to the span with its corresponding key
+|`MetadataSpanAttributesProvider` |`axon_metadata_\{key\}` |All metadata of the message is also added to the span with its corresponding key
 |===
 
 In addition to the ones provided by the framework, you can also create a custom `SpanAttributesProvider`.
@@ -338,7 +338,7 @@ Note that when not using Spring boot, tracing each message handler invocation is
 == OpenTracing
 
 The OpenTracing standard is deprecated.
-If necessary, you can still use xref:tracing_extension_guide::index.adoc[the OpenTracing extension of Axon Framework].
+If necessary, you can still use xref:tracing-extension-reference::index.adoc[the OpenTracing extension of Axon Framework].
 
 Note that the functionality of this extension is rather limited compared to the OpenTelemetry integration.
 Because of this, it's recommended to switch to OpenTelemetry if possible.
@@ -400,11 +400,11 @@ In addition, you can see the gRPC-call to Axon Server and the time it took to ha
 |===
 |Trace name |Description
 
-|`AxonServerCommandBus.dispatch(${commandName})` |The bus is dispatching the command to Axon Server.
-|`AxonServerCommandBus.handle(${commandName})` |The bus has received a command and is handling it.
-|`${CommandBusClass}.dispatch(${commandName})` |The localSegment invocation, dispatching the command locally.
-|`${CommandBusClass}.handle(${commandName})` |The localSegment is handling the command.
-|`${RepositoryClass}.load ${identifier}` |The aggregate is being loaded by the repository. During this time Axon Framework will obtain a lock, fetch snapshots and events from the event store to hydrate the aggregate.
+|`AxonServerCommandBus.dispatch($\{commandName\})` |The bus is dispatching the command to Axon Server.
+|`AxonServerCommandBus.handle($\{commandName\})` |The bus has received a command and is handling it.
+|`$\{CommandBusClass\}.dispatch($\{commandName\})` |The localSegment invocation, dispatching the command locally.
+|`$\{CommandBusClass\}.handle($\{commandName\})` |The localSegment is handling the command.
+|`$\{RepositoryClass\}.load $\{identifier\}` |The aggregate is being loaded by the repository. During this time Axon Framework will obtain a lock, fetch snapshots and events from the event store to hydrate the aggregate.
 |`LockingRepository.obtainLock` |The repository is obtaining a lock for the aggregate. This taking some time indicates that the command was queued due to another command being handled for the same aggregate.
 |===
 
@@ -413,9 +413,9 @@ In addition, you can see the gRPC-call to Axon Server and the time it took to ha
 |===
 |Trace name |Description
 
-|`${CommandBusClass}.dispatch(${commandName})` |The bus is dispatching the command locally.
-|`${CommandBusClass}.handle(${commandName})` |The bus is invoking the handler locally.
-|`${RepositoryClass}.load ${identifier}` |The aggregate is being loaded by the repository. During this time Axon Framework will obtain a lock, fetch snapshots and events from the event store to hydrate the aggregate.
+|`$\{CommandBusClass\}.dispatch($\{commandName\})` |The bus is dispatching the command locally.
+|`$\{CommandBusClass\}.handle($\{commandName\})` |The bus is invoking the handler locally.
+|`$\{RepositoryClass\}.load $\{identifier\}` |The aggregate is being loaded by the repository. During this time Axon Framework will obtain a lock, fetch snapshots and events from the event store to hydrate the aggregate.
 |`LockingRepository.obtainLock` |The repository is obtaining a lock for the aggregate. This taking some time indicates that the command was queued due to another command being handled for the same aggregate.
 |===
 
@@ -431,8 +431,8 @@ Any streaming event processor or saga handling the event in the future will be l
 |===
 |Trace name |Description
 
-|`${EventBusClass}.publish(${EventClass})` |For each event, a short span is created to indicate that an event was published.
-|`${EventBusClass}.commit` |Indicates events being committed to the event store.
+|`$\{EventBusClass\}.publish($\{EventClass\})` |For each event, a short span is created to indicate that an event was published.
+|`$\{EventBusClass\}.commit` |Indicates events being committed to the event store.
 |===
 
 === Event processors
@@ -446,8 +446,8 @@ Subscribing event processors, on the other hand, will become part of the current
 |===
 |Trace name |Description
 
-|`${ProcessorType}[${processorName}](${EventClass})` |Root trace of handling the event, includes all interceptor invocations.
-|`${ProcessorType}[${processorName}].process(${EventClass})` |Inner span of handling the event, after all interceptors have been invoked.
+|`$\{ProcessorType\}[$\{processorName\}]($\{EventClass\})` |Root trace of handling the event, includes all interceptor invocations.
+|`$\{ProcessorType\}[$\{processorName\}].process($\{EventClass\})` |Inner span of handling the event, after all interceptors have been invoked.
 |===
 
 ==== Subscribing event processors
@@ -455,7 +455,7 @@ Subscribing event processors, on the other hand, will become part of the current
 |===
 |Trace name |Description
 
-|`${ProcessorType}[${processorName}].process(${EventClass})` |The event is being handled by the subscribing event processor.
+|`$\{ProcessorType\}[$\{processorName\}].process($\{EventClass\})` |The event is being handled by the subscribing event processor.
 |===
 
 === Deadlines
@@ -467,11 +467,11 @@ The handling span of a deadline will be linked to the scheduling span for easy n
 |===
 |Trace name |Description
 
-|`${DeadlineManagerClass}.schedule(${deadlineName})` |A deadline was scheduled.
-|`${DeadlineManagerClass}.cancelSchedule(${deadlineName}, ${scheduleId})` |A deadline was cancelled based on name and `scheduleId`.
-|`${DeadlineManagerClass}.cancelAll(${deadlineName})` |All deadlines with a specific name were cancelled.
-|`${DeadlineManagerClass}.cancelAllWithinScope(${deadlineName})` |All deadlines within a specific scope with a specific name were cancelled.
-|`DeadlineJob.execute(${deadlineName},${DeadlinePayloadClass})` |Root trace of a deadline firing, containing the name and payload class.
+|`$\{DeadlineManagerClass\}.schedule($\{deadlineName\})` |A deadline was scheduled.
+|`$\{DeadlineManagerClass\}.cancelSchedule($\{deadlineName\}, $\{scheduleId\})` |A deadline was cancelled based on name and `scheduleId`.
+|`$\{DeadlineManagerClass\}.cancelAll($\{deadlineName\})` |All deadlines with a specific name were cancelled.
+|`$\{DeadlineManagerClass\}.cancelAllWithinScope($\{deadlineName\})` |All deadlines within a specific scope with a specific name were cancelled.
+|`DeadlineJob.execute($\{deadlineName\},$\{DeadlinePayloadClass\})` |Root trace of a deadline firing, containing the name and payload class.
 |===
 
 === Snapshotting
@@ -483,8 +483,8 @@ The root trace of the `Snapshotter` invocation will be linked to the command han
 |===
 |Trace name |Description
 
-|`${SnapshotterClass}.createSnapshot($aggregateClass)` |A snapshot creation task is being submitted. Depending on performance, the executor might take a while to pick it up.
-|`${SnapshotterClass}.createSnapshot($aggregateClass, $aggregateIdentifier)` |The `Snapshotter` is now creating the snapshot.
+|`$\{SnapshotterClass\}.createSnapshot($aggregateClass)` |A snapshot creation task is being submitted. Depending on performance, the executor might take a while to pick it up.
+|`$\{SnapshotterClass\}.createSnapshot($aggregateClass, $aggregateIdentifier)` |The `Snapshotter` is now creating the snapshot.
 |===
 
 The root trace does not contain the aggregate identifier so the APM tool groups any `Snapshotter` calls of the same aggregate type together.
@@ -498,8 +498,8 @@ These spans are descendants of an event processor span that invokes the manager.
 |===
 |Trace name |Description
 
-|`SagaManager[${SagaTypeName}].invokeSaga ${sagaIdentifier}` |A matching saga has been found and is being invoked.
-|`SagaManager[${SagaTypeName}].startNewSaga` |The manager is constructing a new saga.
+|`SagaManager[$\{SagaTypeName\}].invokeSaga $\{sagaIdentifier\}` |A matching saga has been found and is being invoked.
+|`SagaManager[$\{SagaTypeName\}].startNewSaga` |The manager is constructing a new saga.
 |===
 
 === Queries
@@ -520,10 +520,10 @@ The following tabs show the possible traces.
 |===
 |Trace name |Description
 
-|`AxonServerQueryBus.query(${queryName})` |The requesting service is dispatching the query.
-|`QueryProcessingTask(${queryName})` |The handling service is handling the query request in a task.
-|`SimpleQueryBus.query(${queryName})` |The handling service is handling the query.
-|`AxonServerQueryBus.ResponseProcessingTask(${queryName})` |The requesting service is processing the response.
+|`AxonServerQueryBus.query($\{queryName\})` |The requesting service is dispatching the query.
+|`QueryProcessingTask($\{queryName\})` |The handling service is handling the query request in a task.
+|`SimpleQueryBus.query($\{queryName\})` |The handling service is handling the query.
+|`AxonServerQueryBus.ResponseProcessingTask($\{queryName\})` |The requesting service is processing the response.
 |===
 
 ===== Without Axon Server
@@ -531,7 +531,7 @@ The following tabs show the possible traces.
 |===
 |Trace name |Description
 
-|`SimpleQueryBus.query(${queryName})` |The `QueryBus` is handling the query locally.
+|`SimpleQueryBus.query($\{queryName\})` |The `QueryBus` is handling the query locally.
 |===
 
 ==== Streaming queries
@@ -546,9 +546,9 @@ The following tabs show the possible traces.
 |===
 |Trace name |Description
 
-|`AxonServerQueryBus.streamingQuery(${queryName})` |The requesting service is dispatching the query.
-|`QueryProcessingTask(${queryName})` |The handling service is handling the query request in a task.
-|`SimpleQueryBus.streamingQuery(${queryName})` |The handling service is handling the streaming query.
+|`AxonServerQueryBus.streamingQuery($\{queryName\})` |The requesting service is dispatching the query.
+|`QueryProcessingTask($\{queryName\})` |The handling service is handling the query request in a task.
+|`SimpleQueryBus.streamingQuery($\{queryName\})` |The handling service is handling the streaming query.
 |===
 
 ===== Without Axon Server
@@ -556,7 +556,7 @@ The following tabs show the possible traces.
 |===
 |Trace name |Description
 
-|`SimpleQueryBus.streamingQuery(${queryName})` |The `QueryBus` is handling the query locally.
+|`SimpleQueryBus.streamingQuery($\{queryName\})` |The `QueryBus` is handling the query locally.
 |===
 
 ==== Scatter-gather queries
@@ -571,9 +571,9 @@ The following tabs show the possible traces.
 |===
 |Trace name |Description
 
-|`AxonServerQueryBus.scatterGather(${queryName})` |The requesting service is dispatching the query.
-|`QueryProcessingTask(${queryName})` |The handling service is handling the query request in a task.
-|`SimpleQueryBus.scatterGather(${queryName})` |Each handling service is handling the query. Each handler within the same service has its own index.
+|`AxonServerQueryBus.scatterGather($\{queryName\})` |The requesting service is dispatching the query.
+|`QueryProcessingTask($\{queryName\})` |The handling service is handling the query request in a task.
+|`SimpleQueryBus.scatterGather($\{queryName\})` |Each handling service is handling the query. Each handler within the same service has its own index.
 |===
 
 ===== Without Axon Server
@@ -581,7 +581,7 @@ The following tabs show the possible traces.
 |===
 |Trace name |Description
 
-|`SimpleQueryBus.scatterGather(${queryName})` |The `QueryBus` is handling the query locally. Each handler within the same service has its own index.
+|`SimpleQueryBus.scatterGather($\{queryName\})` |The `QueryBus` is handling the query locally. Each handler within the same service has its own index.
 |===
 
 ==== Subscription queries
@@ -598,8 +598,8 @@ The `QueryUpdateEmitter` traces will look like the following table:
 |===
 |Trace name |Description
 
-|`SimpleQueryUpdateEmitter.emit(${PayloadClass})` |A new update is emitted.
-|`SimpleQueryUpdateEmitter.emit ${queryName} (${PayloadClass})` |A new update is emitted for a specific consumer.
+|`SimpleQueryUpdateEmitter.emit($\{PayloadClass\})` |A new update is emitted.
+|`SimpleQueryUpdateEmitter.emit $\{queryName\} ($\{PayloadClass\})` |A new update is emitted for a specific consumer.
 |===
 
 In addition to this, the spans of the <<Direct queries,direct queries section>> apply as well.

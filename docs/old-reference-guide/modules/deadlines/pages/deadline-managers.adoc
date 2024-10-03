@@ -138,7 +138,7 @@ public void on() {
 == Using time in your application
 
 In cases where applications need to access the clock, they can take advantage of the clock used in the EventMessage, by accessing `GenericEventMessage.clock`.
-This clock is set to Clock.systemUTC at runtime, and manipulated to simulate time during xref:testing:README.adoc[testing].
+This clock is set to Clock.systemUTC at runtime, and manipulated to simulate time during xref:testing:index.adoc[testing].
 
 [source,java]
 ----

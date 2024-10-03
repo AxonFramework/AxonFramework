@@ -1,4 +1,4 @@
-* xref:sagas:README.adoc[]
+* xref:sagas:index.adoc[]
 ** xref:sagas:implementation.adoc[]
 ** xref:sagas:associations.adoc[]
 ** xref:sagas:infrastructure.adoc[]

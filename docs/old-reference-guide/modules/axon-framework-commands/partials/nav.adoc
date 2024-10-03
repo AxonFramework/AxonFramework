@@ -1,4 +1,4 @@
-* xref:axon-framework-commands:README.adoc[]
+* xref:axon-framework-commands:index.adoc[]
 
 ** Modelling
 *** xref:axon-framework-commands:modeling/aggregate.adoc[]

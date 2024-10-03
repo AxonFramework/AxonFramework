@@ -1,9 +1,9 @@
 
-* xref:events:README.adoc[]
+* xref:events:index.adoc[]
 ** xref:events:event-dispatchers.adoc[]
 ** xref:events:event-handlers.adoc[]
 
-** xref:events:event-processors/README.adoc[]
+** xref:events:event-processors/index.adoc[]
 *** xref:events:event-processors/subscribing.adoc[]
 *** xref:events:event-processors/streaming.adoc[]
 
