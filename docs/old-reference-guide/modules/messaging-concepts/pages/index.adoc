@@ -13,15 +13,13 @@ The metadata allows you to describe the context in which a message is being sent
 You can, for example, store tracing information, to allow the origin or cause of messages to be tracked.
 You can also store information to describe the security context under which a command is being executed.
 
-____
-
-**Types of Messages**
-
+[NOTE]
+.All messages are immutable
+====
 Note that all messages are immutable.
 Storing data in a message actually means creating a new message based on the previous one, with extra information added to it.
 This guarantees that messages are safe to use in a multi-threaded and distributed environment.
-
-____
+====
 
 == Commands
 

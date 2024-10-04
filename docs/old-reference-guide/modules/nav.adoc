@@ -1,4 +1,4 @@
-* xref::introduction.adoc[]]
+* xref::index.adoc[]]
 * xref::upgrading-to-4-7.adoc[]
 
 include::messaging-concepts:partial$nav.adoc[]

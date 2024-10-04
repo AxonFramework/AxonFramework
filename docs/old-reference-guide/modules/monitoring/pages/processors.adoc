@@ -1,6 +1,6 @@
 = Event Processor Monitoring
 
-xref:events:event-processors/README.adoc[Event processors] should be kept an eye on when determining the health and status of your application.
+xref:events:event-processors/index.adoc[Event processors] should be kept an eye on when determining the health and status of your application.
 You can achieve this by checking the Event Tracker Status, or monitoring the event processors through metrics.
 
 [[event-tracker-status]]
