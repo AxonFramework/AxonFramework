@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @author Rene de Waele
- */ // TODO Remove once AsyncEventStore is fully integrated
+ */ // TODO Replace for AsyncEventStore once fully integrated.
 @Deprecated
 public interface EventStore
         extends EventBus, StreamableMessageSource<TrackedEventMessage<?>>, DomainEventSequenceAware {

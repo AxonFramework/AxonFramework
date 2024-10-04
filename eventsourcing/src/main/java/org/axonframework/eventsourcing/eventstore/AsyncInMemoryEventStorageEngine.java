@@ -54,7 +54,7 @@ import static org.axonframework.eventsourcing.eventstore.IndexedEventMessage.asI
  * @author Milan Savić
  * @author Steven van Beelen
  * @since 3.0.0
- */
+ */ // TODO Rename to InMemoryEventStorageEngine once fully integrated
 public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
