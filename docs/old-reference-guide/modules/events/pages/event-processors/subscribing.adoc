@@ -1,13 +1,13 @@
 = Subscribing Event Processor
 
-The `SubscribingEventProcessor`, or Subscribing Processor for short, is a type of xref:event-processors/README.adoc[Event Processor].
+The `SubscribingEventProcessor`, or Subscribing Processor for short, is a type of xref:event-processors/index.adoc[Event Processor].
 As any Event Processor, it serves as the technical aspect to handle events by invoking the event handlers written in an Axon application.
 
 The Subscribing Processor defines itself by receiving the events from a `SubscribableMessageSource`.
 The `SubscribableMessageSource` is an infrastructure component to register a Subscribing Processor too.
 
 After registration to the `SubscribableMessageSource`, the message source gives the events to the `SubscribingEventProcessor` in the order they are received.
-Examples of a `SubscribableMessageSource` are the `EventBus` or the xref:amqp_extension_guide::index.adoc[AMQP Extension].
+Examples of a `SubscribableMessageSource` are the `EventBus` or the xref:amqp-extension-reference::index.adoc[AMQP Extension].
 Both the `EventBus` and AMQP Extension are simple message bus solutions for events.
 
 The simple bus solution makes the `SubscribableMessageSource` and thus the Subscribing Processor an approach to only receive _current_ events.
@@ -30,14 +30,14 @@ ____
 Although the `SubscribingEventProcessor` does not support easy parallelization or replays, there are still scenarios when it is beneficial.
 
 When a model, for example, should be updated within the same thread that published the event, the Subscribing Processor becomes a reasonable solution.
-In combination with Axon's xref:amqp_extension_guide::index.adoc[AMQP] or xref:kafka_extension_guide::index.adoc[Kafka] extension, some of these concerns are alleviated too, making it a viable option.
+In combination with Axon's xref:amqp-extension-reference::index.adoc[AMQP] or xref:kafka-extension-reference::index.adoc[Kafka] extension, some of these concerns are alleviated too, making it a viable option.
 
 ____
 
 [[configuring]]
 == Configuring
 
-Other than configuring that an app uses a Subscribing Event Processor, everything is covered xref:event-processors/README.adoc#general_processor_configuration[here].
+Other than configuring that an app uses a Subscribing Event Processor, everything is covered xref:event-processors/index.adoc#general_processor_configuration[here].
 Firstly, to specify that a new Event Processors should default to a `SubscribingEventProcessor`, you can use the `usingSubscribingEventProcessors` method:
 
 ==== Axon Configuration API
@@ -129,7 +129,7 @@ axon.eventhandling.processors[my.processor].source=eventBus
 [[error-mode]]
 == Error mode
 
-Whenever the xref:event-processors/README.adoc#event-processor-error-handler[error handler] rethrows an exception, the `SubscribingEventProcessor` will have it bubble up to the publishing component of the event.
+Whenever the xref:event-processors/index.adoc#event-processor-error-handler[error handler] rethrows an exception, the `SubscribingEventProcessor` will have it bubble up to the publishing component of the event.
 Providing the exception to the event publisher allows the publishing component to deal with it accordingly.
 
 == Persistent streams
