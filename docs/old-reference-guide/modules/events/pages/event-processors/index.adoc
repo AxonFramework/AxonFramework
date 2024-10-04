@@ -1,5 +1,5 @@
 = Event Processors
-:page-aliases: README.adoc
+:page-aliases: event-processors/README.adoc
 
 xref:event-handlers.adoc[Event handlers] define the business logic to be performed when an event is received.
 _Event Processors_ are the components that take care of the technical aspects of that processing.
