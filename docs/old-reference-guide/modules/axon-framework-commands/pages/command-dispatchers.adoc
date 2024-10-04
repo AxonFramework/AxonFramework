@@ -14,7 +14,7 @@ How to configure and specifics on the command gateway and bus implementations ar
 == The `CommandBus`
 
 The 'Command Bus' is the mechanism that dispatches commands to their respective command handlers.
-As such it is the infrastructure component that is aware which component can handle which command.
+As such, it is the infrastructure component that is aware of which component can handle which command.
 
 Each command is always sent to exactly one command handler.
 If no command handler is available for the dispatched command, a `NoHandlerForCommandException` exception is thrown.
@@ -73,16 +73,14 @@ As such, `commandBus.dispatch(commandMessage, (cmdMsg, commandResultMessage) -&g
 If `CommandResultMessage#isExceptional` returns true, you can assume that the `CommandResultMessage#exceptionResult` will return a `Throwable` instance containing the actual exception.
 Otherwise, the `CommandResultMessage#getPayload` method _may_ provide you with an actual result or `null`, as further specified here.
 
-____
-
-*Command Callback consideration*
-
+[NOTE]
+.Command Callback consideration
+====
 In the case that `dispatch(CommandMessage, CommandCallback)` is used, the calling component may _not_ assume that the callback is invoked in the same thread that dispatched the command.
 If the calling thread depends on the result before continuing, you can use the `FutureCallback`.
 The `FutureCallback` is a combination of a `Future` (as defined in the java.concurrent package) and Axon's `CommandCallback`.
 Alternatively, consider using a `CommandGateway`.
-
-____
+====
 
 == The `CommandGateway`
 
@@ -119,13 +117,11 @@ This is an asynchronous approach to dispatching commands.
 As such the response of the `send` method is a `CompletableFuture`.
 This allows for chaining of follow-up operations _after_ the command <<Command dispatching results,result>> has been returned.
 
-____
-
-*Callback when using `send(Object)`*
-
+[NOTE]
+.Callback when using `send(Object)`
+====
 The `CommandGateway#send(Object)` method uses the `FutureCallback` under the hood to unblock the command dispatching thread from the command handling thread.
-
-____
+====
 
 A synchronous approach to sending messages can also be achieved, by using the `sendAndWait` methods:
 
@@ -161,7 +157,7 @@ Dispatching commands will, generally speaking, have two possible outcomes:
 . command handled exceptionally
 
 The outcome to some extent depends on the dispatching process, but more so on the implementation of the command handler.
-Thus if the `@CommandHandler` annotated function throws an exception due to some business logic, it will be that exception which will be the result of dispatching the command.
+Thus, if the `@CommandHandler` annotated function throws an exception due to some business logic, it will be that exception which will be the result of dispatching the command.
 
 The successful resolution of command handling intentionally _should not_ provide any return objects.
 Thus, if the `CommandBus`/`CommandGateway` provides a response (either directly or through the `CommandResultMessage)`, then you should assume the result of successful command handling to return `null`.

@@ -14,16 +14,14 @@ To be able to handle those correctly, the `String commandName` value can be spec
 In order for Axon to know which instance of an Aggregate type should handle the Command Message, the property carrying the Aggregate Identifier in the command object *must* be annotated with `@TargetAggregateIdentifier`.
 The annotation may be placed on either the field or an accessor method (for example, a getter) in the Command object.
 
-____
-
-*Routing in a distributed environment*
-
+[NOTE]
+.Routing in a distributed environment
+====
 Regardless of the type of command, as soon as you start distributing your application (through Axon Server, for example), it is recommended to specify a routing key on the command.
 This is the job of the `@TargetAggregateIdentifier`, but in absence of a field worthy of the annotation, the `@RoutingKey` annotation should be added to ensure the command can be routed.
 
 If neither annotation works for your use case, a different `RoutingStrategy` can be configured, as is explained in the xref:infrastructure.adoc#routing-strategy[Routing Strategy] section.
-
-____
+====
 
 Taking the `GiftCard` Aggregate as an example, we can identify two Command Handlers on the Aggregate:
 
@@ -103,16 +101,14 @@ It is nonetheless recommended for consistency to annotate the Aggregate Identifi
 If you prefer to use another mechanism for routing commands, the behavior can be overridden by supplying a custom `CommandTargetResolver`.
 This class should return the Aggregate Identifier and expected version (if any) based on a given command.
 
-____
-
-*Aggregate Creation Command Handlers*
-
+[TIP]
+.Aggregate Creation Command Handlers
+====
 When the `@CommandHandler` annotation is placed on an aggregate's constructor, the respective command will create a new instance of that aggregate and add it to the repository.
-Those commands do not require to target a specific aggregate instance.
+Those commands do not require targeting a specific aggregate instance.
 Therefore, those commands need neither the `@TargetAggregateIdentifier` nor the `@TargetAggregateVersion` annotation.
 Furthermore, a custom `CommandTargetResolver` will not be invoked for these commands.
-
-____
+====
 
 === Business logic and state changes
 
@@ -125,7 +121,7 @@ State changes should *not* occur in _any_ Command Handling function.
 The Event Sourcing Handlers should be the only methods where the Aggregate's state is updated.
 Failing to do so means the Aggregate would miss state changes when it is being sourced from its events.
 
-The xref:testing:commands-events.adoc[ Aggregate Test Fixture] will guard against unintentional state changes in Command Handling functions.
+The xref:testing:commands-events.adoc[Aggregate Test Fixture] will guard against unintentional state changes in Command Handling functions.
 It is thus advised to provide thorough test cases for _any_ Aggregate implementation.
 
 ____
@@ -216,8 +212,8 @@ This effectively works like any regular command handler annotated method.
 == External command handlers
 
 Command handling functions are most often directly placed on the Aggregate (as described in more detail <<Aggregate command handlers,here>>).
-There are situations however where it is not possible nor desired to route a command directly to an Aggregate instance.
-Message handling functions, like Command Handlers, can however be placed on any object.
+There are situations, however, where it is not possible nor desired to route a command directly to an Aggregate instance.
+Message handling functions, like Command Handlers, can, however, be placed on any object.
 It is thus possible to instantiate a 'Command Handling Object'.
 
 A Command Handling Object is a simple (regular) object, which has `@CommandHandler` annotated methods.
@@ -248,7 +244,7 @@ Instead, we load the `GiftCard` manually and execute the desired method on it:
 
 . The `Repository` for the `GiftCard` Aggregate, used for retrieval and storage of an Aggregate.
 If `@CommandHandler` methods are placed directly on the Aggregate, Axon will automatically know to call the `Repository` to load a given instance.
-It is thus _not_ mandatory to directly access the `Repository`, but a link:../../architecture-overview/#separation-of-business-logic-and-infrastructure[design choice].
+It is thus _not_ mandatory to directly access the `Repository`, but a design choice.
 
 . To load the intended `GiftCard` Aggregate instance, the `Repository#load(String)` method is used.
 The provided parameter should be the Aggregate identifier.

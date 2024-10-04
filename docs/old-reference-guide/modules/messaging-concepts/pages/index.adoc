@@ -1,4 +1,5 @@
 = Messaging Concepts
+:page-aliases: README.adoc
 
 One of the core concepts in Axon is messaging.
 All communication between components is done using message objects.

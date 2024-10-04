@@ -1,4 +1,5 @@
 = Event Processors
+:page-aliases: event-processors/README.adoc
 
 xref:event-handlers.adoc[Event handlers] define the business logic to be performed when an event is received.
 _Event Processors_ are the components that take care of the technical aspects of that processing.
@@ -16,7 +17,7 @@ The Processing Group provides a level of configurable non-functional requirement
 
 The Event Processors, in turn, is in charge of the Processing Group.
 An Event Processor will control 1 to N Processing Groups, although there will be a one-to-one mapping in most cases.
-Similar to the Event Handling Component, a Processing Group will belong to a single Event Processor.
+Similar to the Event Handling Co`mponent, a Processing Group will belong to a single Event Processor.
 This last layer allows the definition of the type of Event Processor used and concepts like the threading model and a more fine-grained degree of <<Event processor - error handler,error handling>>.
 
 Event Processors come in roughly two forms: xref:event-processors/subscribing.adoc[Subscribing] and xref:event-processors/streaming.adoc[Streaming].

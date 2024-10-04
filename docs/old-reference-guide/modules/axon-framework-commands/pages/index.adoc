@@ -1,4 +1,5 @@
 = Commands
+:page-aliases: README.adoc
 
 The first type of "Messages" that an Axon application is associated with are _*Command Messages (or simply Commands).*_ This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help facilitate Command Message Development.
 
