@@ -38,12 +38,17 @@ class AnnotatedMessageHandlingMemberTest {
 
     @BeforeEach
     void setUp() {
+        try {
         testSubject = new AnnotatedMessageHandlingMember<>(
-                AnnotatedHandler.class.getMethods()[0],
+                AnnotatedHandler.class.getMethod("handlingMethod", String.class),
                 EventMessage.class,
                 String.class,
                 ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class)
-        );
+        ); 
+        }
+        catch (NoSuchMethodException e){
+            fail(e.getMessage());
+        }
     }
 
     @Test
