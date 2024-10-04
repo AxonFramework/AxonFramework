@@ -26,6 +26,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -79,7 +80,7 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
     @Override
     public void publish(@Nonnull ProcessingContext processingContext,
                         @Nonnull String context,
-                        EventMessage<?>... events) {
+                        @Nonnull List<EventMessage<?>> events) {
         validate(context);
         EventStoreTransaction transaction = transaction(processingContext, context);
         for (EventMessage<?> event : events) {
@@ -89,7 +90,7 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
 
     @Override
     public CompletableFuture<Void> publish(@Nonnull String context,
-                                           EventMessage<?>... events) {
+                                           @Nonnull List<EventMessage<?>> events) {
         throw new UnsupportedOperationException(
                 """
                         Publishing events with the SimpleEventStore requires a ProcessingContext at all times.

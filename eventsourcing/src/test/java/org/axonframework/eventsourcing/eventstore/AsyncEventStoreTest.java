@@ -16,13 +16,15 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +32,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class validating the {@code default} methods of the {@link AsyncEventStore}.
@@ -90,7 +93,8 @@ class AsyncEventStoreTest {
         }
 
         @Override
-        public CompletableFuture<Void> publish(@NotNull String context, EventMessage<?>... events) {
+        public CompletableFuture<Void> publish(@NotNull String context,
+                                               @Nonnull List<EventMessage<?>> events) {
             throw new UnsupportedOperationException("We don't need this method to test the defaulted methods.");
         }
 

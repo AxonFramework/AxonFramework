@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -51,6 +53,22 @@ public interface EventSink {
     default void publish(@Nonnull ProcessingContext processingContext,
                          @Nonnull String context,
                          EventMessage<?>... events) {
+        publish(processingContext, context, Arrays.asList(events));
+    }
+
+    /**
+     * Publishes the given {@code events} as part of a phase on the given {@code processingContext} in this event sink.
+     * <p>
+     * Typically, the {@link ProcessingContext#onPostInvocation(Function) post invocation} phase is used for this
+     * purpose. As a consequence, the result of publication will be made apparent in the {@code ProcessingContext}.
+     *
+     * @param processingContext The {@link ProcessingContext} to attach the publication step into.
+     * @param context           The (bounded) context within which to publish the given {@code events}.
+     * @param events            The {@link EventMessage events} to publish in this sink.
+     */
+    default void publish(@Nonnull ProcessingContext processingContext,
+                         @Nonnull String context,
+                         @Nonnull List<EventMessage<?>> events) {
         processingContext.onPostInvocation(c -> publish(context, events));
     }
 
@@ -62,6 +80,19 @@ public interface EventSink {
      * @return A {@link CompletableFuture} of {@link Void}. Publication succeeded when the returned
      * {@code CompletableFuture} completes successfully.
      */
+    default CompletableFuture<Void> publish(@Nonnull String context,
+                                            EventMessage<?>... events) {
+        return publish(context, Arrays.asList(events));
+    }
+
+    /**
+     * Publishes the given {@code events} in this event sink.
+     *
+     * @param context The (bounded) context within which to publish the given {@code events}.
+     * @param events  The {@link EventMessage events} to publish in this sink.
+     * @return A {@link CompletableFuture} of {@link Void}. Publication succeeded when the returned
+     * {@code CompletableFuture} completes successfully.
+     */
     CompletableFuture<Void> publish(@Nonnull String context,
-                                    EventMessage<?>... events);
+                                    @Nonnull List<EventMessage<?>> events);
 }

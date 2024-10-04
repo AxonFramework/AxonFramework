@@ -20,7 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -83,9 +84,9 @@ class EventSinkTest {
 
         @Override
         public CompletableFuture<Void> publish(@Nonnull String context,
-                                               EventMessage<?>... events) {
+                                               @Nonnull List<EventMessage<?>> events) {
             contextReference.set(context);
-            publishedEventsReference.set(Arrays.stream(events).toList());
+            publishedEventsReference.set(events);
             return CompletableFuture.completedFuture(null);
         }
     }

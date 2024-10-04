@@ -21,6 +21,8 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.List;
+
 /**
  * Infrastructure component providing the means to start an {@link EventStoreTransaction} to
  * {@link EventStoreTransaction#appendEvent(EventMessage) append events} and
@@ -37,7 +39,7 @@ public interface AsyncEventStore extends EventSink, DescribableComponent {
     @Override
     default void publish(@Nonnull ProcessingContext processingContext,
                          @Nonnull String context,
-                         EventMessage<?>... events) {
+                         @Nonnull List<EventMessage<?>> events) {
         EventStoreTransaction transaction = transaction(processingContext, context);
         for (EventMessage<?> event : events) {
             transaction.appendEvent(event);
