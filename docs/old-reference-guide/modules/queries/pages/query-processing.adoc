@@ -1,6 +1,6 @@
 = Query Processing
 
-Processing xref:README.adoc[queries] as a dedicated type of message is in line with separating the query models when following CQRS. Although creating a query handling layer is fairly straight-forward, using Axon Framework for this part of the application has a number of benefits.
+Processing xref:index.adoc[queries] as a dedicated type of message is in line with separating the query models when following CQRS. Although creating a query handling layer is fairly straight-forward, using Axon Framework for this part of the application has a number of benefits.
 
 Through providing the functionality to describe query handling methods (as further explained in xref:query-handlers.adoc[this] section) and a dedicated bus for query messages, common message features such xref:messaging-concepts:message-intercepting.adoc[interceptors] and xref:monitoring:metrics.adoc[message monitoring] can be used.
 

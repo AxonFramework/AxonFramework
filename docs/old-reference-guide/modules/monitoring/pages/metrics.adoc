@@ -2,7 +2,7 @@
 
 Interesting metrics in a message centric system come in several forms and flavors, like count, capacity and latency for example.
 Axon Framework allows you to retrieve such measurements through the use of the `axon-metrics` or `axon-micrometer` module.
-With these modules you can register a number of `MessageMonitor` implementations to your messaging components, like the xref:axon-framework-commands:command-dispatchers.adoc#the-command-bus[`CommandBus`], xref:events:event-bus-and-event-store.adoc#_event_bus[`EventBus`], xref:queries:query-dispatchers.adoc#_the_query_bus_and_query_gateway[`QueryBus`] and xref:events:event-processors/README.adoc[`EventProcessors`].
+With these modules you can register a number of `MessageMonitor` implementations to your messaging components, like the xref:axon-framework-commands:command-dispatchers.adoc#the-command-bus[`CommandBus`], xref:events:event-bus-and-event-store.adoc#_event_bus[`EventBus`], xref:queries:query-dispatchers.adoc#_the_query_bus_and_query_gateway[`QueryBus`] and xref:events:event-processors/index.adoc[`EventProcessors`].
 
 `axon-metrics` module uses https://metrics.dropwizard.io/[Dropwizard Metrics] for registering the measurements correctly.
 That means that `MessageMonitors` are registered against the Dropwizard `MetricRegistry`.
@@ -15,7 +15,7 @@ The following monitor implementations are currently provided:
 . `CapacityMonitor` - Measures message capacity by keeping track of the total time spent on message handling compared to total time it is active.
 This returns a number between 0 and n number of threads.
 Thus, if there are 4 threads working, the maximum capacity is 4 if every thread is active 100% of the time.
-. `EventProcessorLatencyMonitor` - Measures the difference between an event's timestamp and the current time, showing how far behind an xref:events:event-processors/README.adoc[event processor] is.
+. `EventProcessorLatencyMonitor` - Measures the difference between an event's timestamp and the current time, showing how far behind an xref:events:event-processors/index.adoc[event processor] is.
 Note that xref:events:event-processors/streaming.adoc#replaying-events[triggering a reset] will impact this metric!
 . `MessageCountingMonitor` - Counts the number of ingested, successful, failed, ignored and processed messages.
 . `MessageTimerMonitor` - Keeps a timer for all successful, failed and ignored messages, as well as an overall timer for all three combined.
@@ -94,7 +94,7 @@ public class MetricsConfiguration {
 
 ==== Spring Boot auto configuration - without tags
 
-[source,text]
+[source,properties]
 ----
 # The default value is `true`. 
 # Thus you will have Metrics configured if `axon-micrometer` and 
@@ -111,7 +111,7 @@ management.endpoint.prometheus.enabled=true
 
 ==== Spring Boot auto configuration - with tags
 
-[source,text]
+[source,properties]
 ----
 # The default value is `true`. 
 # Thus you will have Metrics configured if `axon-micrometer` and 

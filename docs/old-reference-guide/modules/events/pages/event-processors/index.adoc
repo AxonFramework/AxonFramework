@@ -38,7 +38,7 @@ All event handlers are attached to a processor whose name by default is the pack
 Furthermore, the default processor implementation used by Axon is the xref:event-processors/streaming.adoc[Tracking Event Processor].
 The (default) event processor used can be adjusted, as is shown in the xref:event-processors/subscribing.adoc#configuring[subscribing] and xref:event-processors/streaming.adoc#_configuring[streaming] sections.
 
-Event handlers, or Event Handling Components, come in roughly two flavors: "regular" (singleton, stateless) event handlers and xref:sagas:README.adoc[sagas].
+Event handlers, or Event Handling Components, come in roughly two flavors: "regular" (singleton, stateless) event handlers and xref:sagas:index.adoc[sagas].
 xref:event-handlers.adoc#registering-event-handlers[This] section describes the process to register an event handler, whereas xref:sagas:implementation.adoc#configuring-a-saga[this] page describes the saga registration process.
 
 Now let us consider that the following event handlers have been registered:
@@ -310,7 +310,7 @@ ____
 
 *Is there support for Sagas?*
 
-Currently, there is _no_ support for using a dead-letter queue for xref:sagas:README.adoc[sagas].
+Currently, there is _no_ support for using a dead-letter queue for xref:sagas:index.adoc[sagas].
 We've taken this decision as we cannot support a sequenced dead lettering approach as we do for regular event handling.
 
 Furthermore, we cannot do this, as a saga's associations can vary widely between events.
@@ -335,7 +335,7 @@ The JPA dead-letter queue is a suitable option for production environments by pe
 It constructs a `dead_letter_entry` table where it persists failed-events in.
 The JDBC dead-letter queue is a suitable option for production environments by persisting the dead letters.
 
-* `MongoSequencedDeadLetterQueue` - Mongo variant of the dead-letter queue, available via the xref:mongodb_extension_guide::index.adoc[Mongo Extension].
+* `MongoSequencedDeadLetterQueue` - Mongo variant of the dead-letter queue, available via the xref:mongodb-extension-reference::index.adoc[Mongo Extension].
 
 It constructs a `deadletters` collection where it persists failed-events in.
 The MongoDB dead-letter queue is a suitable option for production environments by persisting the dead letters.

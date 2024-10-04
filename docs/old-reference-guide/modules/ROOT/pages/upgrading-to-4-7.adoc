@@ -18,24 +18,20 @@ This is what you will want if you have already moved to the optional `[module-na
 Next to the full scenario descriptions, you are also able to use https://github.com/openrewrite[OpenRewrite] migration recipes provided by the Framework.
 Please go to the <<Migration automation>> section for more details.
 
-____
-
-*From `jakarta` to `javax`*
-
+[NOTE]
+.From `jakarta` to `javax`
+====
 While technically possible, the `jakarta` to `javax` migration is not something you should do.
 If you have already made an effort to switch to the new packages, it makes no sense to go back.
-
-____
+====
 
 == Steps to upgrade from `javax` to `javax`
 
-____
-
-*Zero Axon configuration*
-
+[NOTE]
+.Zero Axon configuration
+====
 If you don't have _any_ manual configuration and use the framework's `axon-spring-boot-starter`, than the upgrade to 4.7 is seamless.
-
-____
+====
 
 === Step 1
 
@@ -94,8 +90,10 @@ However, Hibernate 6 will construct dedicated sequences per table using a sequen
 
 Although we strongly recommend that you use a dedicated sequence generator per table, the easiest way forward to switch back this new default of Hibernate:
 
-===== `persistence.xml` configuration
-
+[tabs]
+====
+persistence.xml configuration::
++
 [source,xml]
 ----
 <persistence>
@@ -110,13 +108,15 @@ Although we strongly recommend that you use a dedicated sequence generator per t
 </persistence>
 ----
 
-===== Spring Boot - properties file
-
-[source,text]
+Spring Boot - properties file::
++
+[source,properties]
 ----
 spring.jpa.properties.hibernate.id.db_structure_naming_strategy=legacy
 #omitting other properties for simplicity...
 ----
+
+====
 
 == Steps to upgrade from `jakarta` to `jakarta`
 
@@ -141,7 +141,7 @@ If you want to automate some of these steps, there are two https://github.com/op
 
 For example, if you want to upgrade to 4.7 and stick with Javax, you can run the following command:
 
-[source,text]
+[source,shell]
 ----
 mvn -U org.openrewrite.maven:rewrite-maven-plugin:4.40.0:run \
   -Drewrite.recipeArtifactCoordinates=org.axonframework:axon-migration:LATEST \
@@ -150,18 +150,16 @@ mvn -U org.openrewrite.maven:rewrite-maven-plugin:4.40.0:run \
 
 If you prefer https://gradle.org/[Gradle] over https://maven.apache.org/[Maven], refer to the OpenRewrite https://docs.openrewrite.org/running-recipes/running-rewrite-on-a-gradle-project-without-modifying-the-build[documentation] to resolve this.
 
-____
-
-*Can I combine recipes?*
-
+[TIP]
+.Combining recipes
+====
 The mentioned recipes above only allow you to upgrade Axon Framework-specific code.
 However, you can combine recipes into a single command to, for example, upgrade to Spring Boot 3 and Axon Framework 4.7 in one go:
 
-[source,text]
+[source,shell]
 ----
 mvn -U org.openrewrite.maven:rewrite-maven-plugin:4.40.0:run \
  -Drewrite.recipeArtifactCoordinates=org.openrewrite.recipe:rewrite-spring:4.33.0,org.axonframework:axon-migration:LATEST \  
  -DactiveRecipes=org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_0,org.axonframework.migration.UpgradeAxonFramework_4_7_Jakarta
 ----
-
-____
+====
