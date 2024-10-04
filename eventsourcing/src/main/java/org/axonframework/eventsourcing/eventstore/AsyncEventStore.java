@@ -29,6 +29,10 @@ import java.util.List;
  * {@link EventStoreTransaction#appendEvent(EventMessage) append events} and
  * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) event source} models from the underlying
  * storage solution.
+ * <p>
+ * As an implementation of the {@link EventSink}, this {@code EventStore} will initiate a
+ * {@link #transaction(ProcessingContext, String)} when {@link #publish(ProcessingContext, String, List)} is triggered
+ * to append events.
  *
  * @author Allard Buijze
  * @author Rene de Waele
