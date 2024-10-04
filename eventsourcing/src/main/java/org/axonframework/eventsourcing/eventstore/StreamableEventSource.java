@@ -110,8 +110,6 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at a position before the given
      * {@code duration} of the {@link MessageStream event stream} for the given {@code context}.
      */
-    default CompletableFuture<TrackingToken> tokenSince(@Nonnull String context,
-                                                        @Nonnull Duration since) {
-        return tokenAt(context, Instant.now().minus(since));
-    }
+    CompletableFuture<TrackingToken> tokenSince(@Nonnull String context,
+                                                @Nonnull Duration since);
 }
