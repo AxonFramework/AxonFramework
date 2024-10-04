@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Arrays;

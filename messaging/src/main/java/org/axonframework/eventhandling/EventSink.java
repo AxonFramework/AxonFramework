@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Arrays;
