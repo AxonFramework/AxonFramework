@@ -21,6 +21,7 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -35,6 +36,13 @@ import java.util.List;
  * @since 0.1
  */ // TODO Rename to EventStore once fully integrated
 public interface AsyncEventStore extends EventSink, DescribableComponent {
+
+    @Override
+    default void publish(@Nonnull ProcessingContext processingContext,
+                         @Nonnull String context,
+                         EventMessage<?>... events) {
+        this.publish(processingContext, context, Arrays.asList(events));
+    }
 
     @Override
     default void publish(@Nonnull ProcessingContext processingContext,
