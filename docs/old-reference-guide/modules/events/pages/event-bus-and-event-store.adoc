@@ -557,7 +557,7 @@ If no explicit `eventSerializer` is configured, events are serialized using the 
 
 == Distributing events
 
-To distribute events between applications, it is important to know whether the applications belong to the same link:../../architecture-overview/ddd-cqrs-concepts.md#bounded-context[bounded context].
+To distribute events between applications, it is important to know whether the applications belong to the same bounded context. If you don't recognize this concept, we recommend reading the link:https://www.axoniq.io/concepts/domain-driven-design[Bounded Context] section first.
 Applications within the same context "speak the same language." In other words, they communicate using the same set of messages and thus events.
 
 As such, we can share the `EventStore's` data source between these applications.

@@ -59,7 +59,7 @@ ____
 *Caveats for the JobRunr implementation.*
 
 Since the non-Pro version of JobRunr has no way to search for deadlines, besides by id, all of the `cancelAll` methods are not implemented for the `JobRunrDeadlineManager`.
-The link:../../../extensions/jobrunrpro.md[JobRunr Pro extension] does support those but requires the Pro version of JobRunr.
+The xref:jobrunr-pro-extension-reference:ROOT:index.adoc[JobRunr Pro extension] does support those but requires the Pro version of JobRunr.
 
 *Caveats for the DbScheduler implementation.*
 

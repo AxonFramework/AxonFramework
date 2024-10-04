@@ -1466,6 +1466,7 @@ Whenever some event handling components misbehaved, and the view models they upd
 Handling events again by adjusting the position on the stream is what's called "a replay," a feature supported by the `StreamingEventProcessor`.
 The following sections describe how to <<Triggering a reset,initiate a replay>> and what <<Replay API,replay API>> the framework provides.
 
+[#_triggering_a_reset]
 === Triggering a reset
 
 The reset API revolves around the `resetTokens()` method and provides a couple of options:
@@ -1644,6 +1645,7 @@ This information is stored in the `ReplayToken` and will be available until the 
 The type of the `resetContext` is up to the user and is the same context as is used for the `@ResetHandler` (see 4.).
 The type of the `resetContext` has to match the parameter's, or it will be null.
 
+[#_multiple_event_sources]
 == Multiple event sources
 
 You can configure a Streaming Event Processor to use multiple sources to process events from.

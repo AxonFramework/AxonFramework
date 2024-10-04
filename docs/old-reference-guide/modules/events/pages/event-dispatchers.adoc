@@ -44,7 +44,7 @@ The `AggregateLifecycle#apply(Object)` will go through a number of steps:
 The `EventMessage` will also receive the `sequenceNumber` from the previous step, as well as the Aggregate its identifier.
 . The Event Message will be published from here on.
 The event will first be sent to all the Event Handlers in the Aggregate which are interested.
-This is necessary for link:../../architecture-overview/event-sourcing.md[Event Sourcing], to update the Aggregate's state accordingly.
+This is necessary for Event Sourcing, to update the Aggregate's state accordingly.
 . After the Aggregate itself has handled the event, it will be published on the `EventBus`.
 
 ____
