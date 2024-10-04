@@ -7,6 +7,7 @@ How to handle a query message has been covered in more detail in the link:query-
 
 This page will show how and when to use the query gateway and bus. How to configure and specifics on the the query gateway and bus implementations are discussed xref:implementations.adoc[here]
 
+[#_the_query_bus_and_query_gateway]
 == The query bus and query gateway
 
 The `QueryBus` is the mechanism that dispatches queries to query handlers. Queries are registered using the combination of the query request name and query response type. It is possible to register multiple handlers for the same request-response combination, which can be used to implement the scatter-gather pattern. When dispatching queries, the client must indicate whether it wants a response from a single handler or from all handlers.

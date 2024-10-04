@@ -23,7 +23,8 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -49,13 +50,17 @@ class MethodInvokingMessageHandlingMemberTest {
 
     @BeforeEach
     void setUp() {
-        testSubject = new MethodInvokingMessageHandlingMember<>(
-                AnnotatedHandler.class.getMethods()[0],
-                EventMessage.class,
-                String.class,
-                ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class),
-                MethodInvokingMessageHandlingMemberTest::returnTypeConverter
-        );
+        try {
+            testSubject = new MethodInvokingMessageHandlingMember<>(
+                    AnnotatedHandler.class.getMethod("handlingMethod", String.class), ,
+                    EventMessage.class,
+                    String.class,
+                    ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class),
+                    MethodInvokingMessageHandlingMemberTest::returnTypeConverter
+            );
+        } catch (NoSuchMethodException e) {
+            fail(e.getMessage());
+        }
     }
 
     @Test
