@@ -1,7 +1,8 @@
 name: dead-letter-queue-guide
 title: Dead-Letter Queues
-version: true
-prerelease: true
+version:
+  axon-(?<version>+({0..9}).+({0..9})).*: $<version>
+  master: development
 
 asciidoc:
   attributes:
