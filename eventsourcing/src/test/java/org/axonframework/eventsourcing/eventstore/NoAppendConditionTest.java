@@ -31,12 +31,12 @@ class NoAppendConditionTest {
 
     @Test
     void consistencyMarkerFixedToMinusOne() {
-        assertEquals(-1, NoAppendCondition.INSTANCE.consistencyMarker());
+        assertEquals(-1, AppendCondition.none().consistencyMarker());
     }
 
     @Test
     void criteriaFixedToNoCriteria() {
-        assertEquals(EventCriteria.noCriteria(), NoAppendCondition.INSTANCE.criteria());
+        assertEquals(EventCriteria.noCriteria(), AppendCondition.none().criteria());
     }
 
     @Test
@@ -44,7 +44,7 @@ class NoAppendConditionTest {
         long testEnd = 20L;
         SourcingCondition testSourcingCondition = conditionFor(new Index("key", "value"), 10L, testEnd);
 
-        AppendCondition result = NoAppendCondition.INSTANCE.with(testSourcingCondition);
+        AppendCondition result = AppendCondition.none().with(testSourcingCondition);
 
         assertEquals(testEnd, result.consistencyMarker());
         assertEquals(testSourcingCondition.criteria(), result.criteria());
@@ -52,6 +52,6 @@ class NoAppendConditionTest {
 
     @Test
     void withMarkerThrowsUnsupportedOperationException() {
-        assertThrows(UnsupportedOperationException.class, () -> NoAppendCondition.INSTANCE.withMarker(42L));
+        assertThrows(UnsupportedOperationException.class, () -> AppendCondition.none().withMarker(42L));
     }
 }
