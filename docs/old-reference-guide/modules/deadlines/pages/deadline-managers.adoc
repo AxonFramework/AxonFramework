@@ -84,6 +84,7 @@ class DeadlineSchedulingWithPayloadComponent {
 }
 ----
 
+[#_handling_a_deadline]
 == Handling a deadline
 
 We have now seen how to schedule a deadline.

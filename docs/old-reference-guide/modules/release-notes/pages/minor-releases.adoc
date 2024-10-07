@@ -663,7 +663,7 @@ For an exhaustive list of all the changes, check out the https://github.com/Axon
 === Release 4.5.3
 
 * One new feature has been introduced in 4.5.3: the `PropertySequencingPolicy` by contributor `nils-christian`.
- This link:../../axon-framework/events/event-processors.md#sequential-processing[sequencing policy] can be configured to look for a common property in the events.
+ This xref:axon-framework-reference:events:event-processors/streaming.adoc#sequential-processing[sequencing policy] can be configured to look for a common property in the events.
 
 * The version of the `axonserver-connector-java` has been updated to 4.5.2.
  This update resolves a troublesome issue around permit updates for subscription queries, which exhausted the number of queries an application could have running.
@@ -673,7 +673,7 @@ For an exhaustive list of all the changes, check out the https://github.com/Axon
  As a consequence, it could start new segment operations while `shutdown` already completed "successfully."
  Pull request https://github.com/AxonFramework/AxonFramework/pull/1866[1866] resolves this problem, ensuring a tracking processor shuts down as intended.
 
-* Issue https://github.com/AxonFramework/AxonFramework/issues/1853[1853] describes an issue where the link:../../axon-framework/axon-framework-commands/command-handlers.md#aggregate-command-handler-creation-policy[creation policy] `always`.
+* Issue https://github.com/AxonFramework/AxonFramework/issues/1853[1853] describes an issue where the xref:axon-framework-reference:axon-framework-commands:command-handlers.adoc#_aggregate_command_handler_creation_policy[creation policy] `always`.
  Exceptions thrown from within a command handler annotated with `@CreationPolicy(ALWAYS)` weren't correctly propagated.
  Pull request https://github.com/AxonFramework/AxonFramework/pull/1854[1854] solves this issue.
 
@@ -698,14 +698,14 @@ For a detailed perspective on the release notes, please check https://github.com
 
 * Some internals have changed concerning command handling exceptions.
  Within a single JVM, Axon Framework knows whether the exception is transient or not.
- This piece of information allows the link:../../axon-framework/axon-framework-commands/infrastructure.md#configuring-the-command-gateway[`RetryScheduler`] to retry a non-transient exception since those are retryable.
+ This piece of information allows the xref:axon-framework-reference:axon-framework-commands:infrastructure.adoc#_configuring_the_commandgateway[`RetryScheduler`] to retry a non-transient exception since those are retryable.
  With the move towards distributed environments, the information whether an exception is transient was lost when we moved to the dedicated `CommandHandlingException` containing a details object.
  Pull request https://github.com/AxonFramework/AxonFramework/pull/1743[#1742] reintroduces this functionality in this release.
 
 * The new `RevisionSnapshotFilter` introduced in release 4.5 sneaked in a bug by not validating the aggregate type upon filtering.
  Pull request https://github.com/AxonFramework/AxonFramework/pull/1771[#1771] describes and solves the problem by introducing the aggregate type to the `RevisionSnapshotFilter`.
 
-* By enabling the link:../../axon-framework/axon-framework-commands/command-handlers.md#aggregate-command-handler-creation-policy[`CreationPolicy`] for the link:../../axon-framework/axon-framework-commands/infrastructure.md#disruptorcommandbus[`DisruptorCommandBus`], a timing issue was introduced with handling events.
+* By enabling the xref:axon-framework-reference:axon-framework-commands:command-handlers.adoc#_aggregate_command_handler_creation_policy[`CreationPolicy`] for the xref:axon-framework-reference:axon-framework-commands:infrastructure.adoc#DisruptorCommandBus[`DisruptorCommandBus`], a timing issue was introduced with handling events.
  Contributor "junkdog" marked the problem in issue https://github.com/AxonFramework/AxonFramework/issues/1778[#1778], after which pull request https://github.com/AxonFramework/AxonFramework/pull/1792[#1792] solved it.
 
 * Contributor "michaelbub" noted in issue https://github.com/AxonFramework/AxonFramework/issues/1786[#1786] that resetting a `StreamingEventProcessor` to a point in the future reacted differently when no token was stored yet.
@@ -910,7 +910,7 @@ For a complete list of all resolved bugs we refer to the https://github.com/Axon
 
 === Release 4.3.1
 
-* Through the new link:../../axon-framework/axon-framework-commands/command-handlers.md#aggregate-command-handler-creation-policy[Create-or-Update]
+* Through the new xref:axon-framework-reference:axon-framework-commands:command-handlers.adoc#_aggregate_command_handler_creation_policy[Create-or-Update]
 
 feature a bug was introduced which didn't allow non-String aggregate identifiers.
 
@@ -996,7 +996,7 @@ For a complete list of all resolved bugs we refer to the https://github.com/Axon
 
 === Release 4.1.1
 
-* Query Dispatch Interceptors were not called correctly when a link:../../axon-framework/queries/query-dispatchers.md#subscription-queries[subscription query] was performed when Axon Server was used as the `QueryBus`.
+* Query Dispatch Interceptors were not called correctly when a xref:axon-framework-reference:queries:query-dispatchers.adoc#subscription-queries[subscription query] was performed when Axon Server was used as the `QueryBus`.
 
 This issue was marked https://github.com/AxonFramework/AxonFramework/issues/1013[here] and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1042[#1042].
 

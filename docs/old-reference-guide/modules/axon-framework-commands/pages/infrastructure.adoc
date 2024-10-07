@@ -3,7 +3,7 @@
 Command dispatching, as exemplified in the xref:command-dispatchers.adoc[Dispatching Commands] page, has a number of advantages.
 Firstly, it constructs an object that clearly describes the intent of the client.
 By logging the command, you store both the intent and the related data for future reference.
-Command handling also makes it easy to expose your command processing components to remote clients, via web services for example. 
+Command handling also makes it easy to expose your command processing components to remote clients, via web services for example.
 
 Testing also becomes a lot easier.
 You could define test scripts by just defining the starting situation (given), command to execute (when) and expected results (then) by listing a number of events and commands (see xref:testing:commands-events.adoc[Testing] for more on this).
@@ -29,6 +29,7 @@ You can turn almost any interface into a command gateway using the `CommandGatew
 This allows you to define your application's interface using strong typing and declaring your own (checked) business exceptions.
 Axon will automatically generate an implementation for that interface at runtime.
 
+[#_configuring_the_commandgateway]
 === Configuring the `CommandGateway`
 
 Both your custom Command Gateway and the one provided by Axon need to at least be configured with a Command Bus.
