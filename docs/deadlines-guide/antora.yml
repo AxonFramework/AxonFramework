@@ -1,15 +1,15 @@
-name: identifier-generation-guide
-title: Changing Identifier generation
+name: deadlines-guide
+title: Deadlines guide
 version:
   axon-(?<version>+({0..9}).+({0..9})).*: $<version>
   master: development
-start_page: ROOT:index.adoc
 
 asciidoc:
   attributes:
-    component_description: How to change the generated identifiers
+    component_description: How to use Deadlines to implement time-based constraints
     type: guide
     group: axon-framework
+
 
 nav:
   - modules/nav.adoc

@@ -3,7 +3,7 @@
 In the xref:modeling/aggregate.adoc[Aggregate] main page we have seen how to create an Aggregate backed by Event Sourcing.
 In other words, the storage method for an Event Sourced Aggregate is by replaying the events which constitute the changes on the Aggregate.
 
-An Aggregate can however be stored as-is too.
+An Aggregate can, however, be stored as-is too.
 When doing so, the `Repository` used to save and load the Aggregate, is the `GenericJpaRepository`.
 The structure of a state-stored Aggregate is a little different from an Event Sourced Aggregate:
 
@@ -77,7 +77,7 @@ public class GiftCard {
 }
 ----
 
-The above exert shows an state stored Aggregate from a 'Gift Card Service'.
+The above code shows a state-stored Aggregate from a 'Gift Card Service'.
 The numbered comments in the snippet point out Axon specifics which are explained here:
 
 . As the Aggregate is stored in a JPA repository, it is required to annotated the class with `@Entity`.
@@ -104,11 +104,9 @@ These methods will be invoked when an Event Message is published prior to being 
 . A no-arg constructor, which is required by JPA.
 Failure to provide this constructor will result in an exception when loading the Aggregate.
 
-____
-
-*Adjusting state in Command Handlers*
-
+[NOTE]
+.Adjusting state in Command Handlers
+====
 Differently from xref:modeling/aggregate.adoc[Event Sourced Aggregates], State-Stored Aggregates can pair the decission making logic and state changes in a Command Handler.
 There are no consequences for State-Stored Aggregates in following this paradigm as there are no Event Sourcing Handlers which drive it's state.
-
-____
+====

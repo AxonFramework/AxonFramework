@@ -1,5 +1,5 @@
-name: relational-database-guide
-title: Relational databases and Axon Framework
+name: message-handler-customization-guide
+title: Customizing message handlers
 version:
   axon-(?<version>+({0..9}).+({0..9})).*: $<version>
   master: development
@@ -7,7 +7,7 @@ start_page: ROOT:index.adoc
 
 asciidoc:
   attributes:
-    component_description: How to use relational databases with Axon Framework
+    component_description: How to customize message handlers
     type: guide
     group: axon-framework
 

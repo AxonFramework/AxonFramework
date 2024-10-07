@@ -1,0 +1,13 @@
+name: dead-letter-queue-guide
+title: Dead-Letter Queues
+version: true
+prerelease: true
+
+asciidoc:
+  attributes:
+    component_description: How to use Dead-Letter queues to ensure your system stays operational during failures
+    type: tutorial
+    group: beginner
+
+nav:
+  - modules/nav.adoc
