@@ -110,6 +110,7 @@ ____
 
 Axon provides a special type of snapshot event: the `AggregateSnapshot`, which stores an entire aggregate as a snapshot. The motivation is simple: your aggregate should only contain the state relevant to take business decisions. This is exactly the information you want captured in a snapshot. All event sourcing repositories provided by Axon recognize the `AggregateSnapshot`, and will extract the aggregate from it. Beware that using this snapshot event requires that the event serialization mechanism needs to be able to serialize the aggregate.
 
+[#_filtering_snapshot_events]
 === Filtering snapshot events
 
 When enabling snapshotting, several snapshots would be stored per Aggregate instance in the event store.
@@ -124,7 +125,7 @@ The `SnapshotFilter` is a functional interface, providing two main operations: `
 The former provides the `DomainEventData` which reflects the snapshot events.
 The latter allows combining several `SnapshotFilter`s together.
 
-The following snippets show how to configure a `SnapshotFilter`: 
+The following snippets show how to configure a `SnapshotFilter`:
 
 ==== Axon Configuration API
 
