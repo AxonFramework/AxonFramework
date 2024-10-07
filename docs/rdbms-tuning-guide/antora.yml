@@ -1,5 +1,5 @@
 name: relational-database-guide
-title: Relational databases and Axon Framework
+title: Relational Databases And Axon Framework
 version:
   axon-(?<version>+({0..9}).+({0..9})).*: $<version>
   master: development

@@ -1,5 +1,5 @@
-:navtitle: Relational databases
-= Relational databases
+:navtitle: Relational Databases
+= Relational Databases
 
 When using Axon Framework together with a relational database,
 there are several considerations to take into account when tuning the database for optimal performance:
