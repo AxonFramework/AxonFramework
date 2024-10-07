@@ -155,6 +155,7 @@ To make an Aggregate react on events from other Aggregate instances, xref:sagas:
 
 ____
 
+[#_aggregate_command_handler_creation_policy]
 === Aggregate command handler creation policy
 
 Up until now, we have depicted the `GiftCard` aggregate with roughly two types of command handlers:
