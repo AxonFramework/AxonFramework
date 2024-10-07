@@ -1,5 +1,5 @@
-:navtitle: Important indices
-= Important indices
+:navtitle: Important Indices
+= Important Indices
 
 If you have generated the tables automatically using your JPA implementation (for example, Hibernate), you probably do not have all the right indexes set on your tables. Different usages of the event store require different indexes to be set for optimal performance. This list suggests the indexes that should be added for the different types of queries used by the default `EventStorageEngine` implementation:
 

@@ -1,5 +1,5 @@
-:navtitle: Customizing message handlers
-= Customizing message handlers
+:navtitle: Customizing Message Handlers
+= Customizing Message Handlers
 
 Customization of message handling can become a desired tweak in your application. Think of changing how messages are handled or what parameters will be injected into your message handling functions.
 

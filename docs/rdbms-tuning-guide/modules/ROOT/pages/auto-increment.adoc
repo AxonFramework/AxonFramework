@@ -1,4 +1,4 @@
-= Auto-increments and sequences
+= Auto-Increment and Sequences
 
 When using a relational database as an event store, Axon relies on an auto-increment value to allow tracking processors to read all events roughly in the order they were inserted. We say "roughly", because "insert-order" and "commit-order" are different things.
 
