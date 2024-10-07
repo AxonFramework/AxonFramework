@@ -108,7 +108,7 @@ However, if you want to be able to reconstruct an aggregate state prior to the m
 
 ____
 
-Axon provides a special type of snapshot event: the `AggregateSnapshot`, which stores an entire aggregate as a snapshot.The motivation is simple: your aggregate should only contain the state relevant to take business decisions.This is exactly the information you want captured in a snapshot.All event sourcing repositories provided by Axon recognize the `AggregateSnapshot`, and will extract the aggregate from it.Beware that using this snapshot event requires that the event serialization mechanism needs to be able to serialize the aggregate.
+Axon provides a special type of snapshot event: the `AggregateSnapshot`, which stores an entire aggregate as a snapshot. The motivation is simple: your aggregate should only contain the state relevant to take business decisions. This is exactly the information you want captured in a snapshot. All event sourcing repositories provided by Axon recognize the `AggregateSnapshot`, and will extract the aggregate from it. Beware that using this snapshot event requires that the event serialization mechanism needs to be able to serialize the aggregate.
 
 [#_filtering_snapshot_events]
 === Filtering snapshot events
