@@ -1,7 +1,5 @@
-= Deadlines in Axon Framework
+= Deadlines
 :navtitle: Deadlines
-
-== Introduction
 
 Sometimes, you don't want to trigger an aggregate or saga directly, but only after some time has passed.
 When this is the case, you can use a Deadline.

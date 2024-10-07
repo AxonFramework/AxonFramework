@@ -1,5 +1,0 @@
-// `dlq` module navigation
-* xref:dlq:index.adoc[]
-** xref:dlq:implementing.adoc[]
-** xref:dlq:retrying.adoc[]
-** xref:dlq:advanced.adoc[]
