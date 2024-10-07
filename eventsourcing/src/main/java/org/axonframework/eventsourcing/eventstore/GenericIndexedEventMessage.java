@@ -90,7 +90,7 @@ public class GenericIndexedEventMessage<P> implements IndexedEventMessage<P> {
 
     @Override
     public EventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
-        return metaData.isEmpty() || getMetaData().equals(metaData)
+        return getMetaData().equals(metaData)
                 ? this
                 : new GenericIndexedEventMessage<>(this.delegate.andMetaData(metaData), this.indices);
     }
