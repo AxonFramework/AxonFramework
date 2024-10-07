@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -48,5 +49,22 @@ class SingleIndexCriteria implements EventCriteria {
     @Override
     public Set<Index> indices() {
         return Set.of(index);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SingleIndexCriteria that = (SingleIndexCriteria) o;
+        return Objects.equals(index, that.index);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(index);
     }
 }

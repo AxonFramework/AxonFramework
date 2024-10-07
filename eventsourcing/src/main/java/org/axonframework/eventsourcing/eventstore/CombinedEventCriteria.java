@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -57,5 +58,22 @@ class CombinedEventCriteria implements EventCriteria {
     @Override
     public Set<Index> indices() {
         return Set.copyOf(indices);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CombinedEventCriteria that = (CombinedEventCriteria) o;
+        return Objects.equals(types, that.types) && Objects.equals(indices, that.indices);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(types, indices);
     }
 }

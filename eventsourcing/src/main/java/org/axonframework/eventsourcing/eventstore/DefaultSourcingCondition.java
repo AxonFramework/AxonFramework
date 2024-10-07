@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Objects;
 import java.util.OptionalLong;
 
 /**
@@ -72,5 +73,23 @@ class DefaultSourcingCondition implements SourcingCondition {
                 Math.min(this.start, other.start()),
                 Math.max(this.end, other.end().orElse(this.end))
         );
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        DefaultSourcingCondition that = (DefaultSourcingCondition) o;
+        return Objects.equals(criteria, that.criteria) && Objects.equals(start, that.start)
+                && Objects.equals(end, that.end);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(criteria, start, end);
     }
 }
