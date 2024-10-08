@@ -108,6 +108,69 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
                                       @Nonnull ResponseType<R> responseType);
 
     /**
+     * Sends the specified {@code query} over the {@link QueryBus} and waits for a response synchronously.
+     * This method derives the query name from the provided {@code query} object.
+     *
+     * @param query        The query object containing the details of the request.
+     * @param responseType The {@link ResponseType} describing the expected response type.
+     * @param <R>          The response class contained in the given {@code responseType}.
+     * @param <Q>          The query class.
+     * @return The result of the query of type {@code R}.
+     * @throws QueryExecutionException if an exception occurs during query execution, with the root cause wrapped in the exception.
+     */
+    default <R, Q> R queryAndWait(@Nonnull Q query, @Nonnull ResponseType<R> responseType) {
+        return queryAndWait(queryName(query), query, responseType);
+    }
+
+    /**
+     * Sends the specified {@code query} with a {@code queryName} over the {@link QueryBus} and waits for a response
+     * synchronously.
+     *
+     * @param queryName    A {@link String} describing the query to be executed.
+     * @param query        The query object containing the details of the request.
+     * @param responseType The {@link ResponseType} describing the expected response type.
+     * @param <R>          The response class contained in the given {@code responseType}.
+     * @param <Q>          The query class.
+     * @return The result of the query of type {@code R}.
+     * @throws QueryExecutionException if an exception occurs during query execution, with the root cause wrapped in the exception.
+     */
+    <R, Q> R queryAndWait(@Nonnull String queryName, @Nonnull Q query, @Nonnull ResponseType<R> responseType);
+
+    /**
+     * Sends the specified {@code query} over the {@link QueryBus} and waits for a response synchronously, up to a
+     * maximum period defined by {@code timeout} and {@code unit}. This method derives the query name from the provided
+     * {@code query} object.
+     *
+     * @param query        The query object containing the details of the request.
+     * @param responseType The {@link ResponseType} describing the expected response type.
+     * @param timeout      The maximum time to wait for the response.
+     * @param unit         The {@link TimeUnit} of the timeout value.
+     * @param <R>          The response class contained in the given {@code responseType}.
+     * @param <Q>          The query class.
+     * @return The result of the query of type {@code R}.
+     * @throws QueryExecutionException if an exception occurs during query execution, including cases where a timeout is reached.
+     */
+    default <R, Q> R queryAndWait(@Nonnull Q query, @Nonnull ResponseType<R> responseType, long timeout, @Nonnull TimeUnit unit) {
+        return queryAndWait(queryName(query), query, responseType, timeout, unit);
+    }
+
+    /**
+     * Sends the specified {@code query} with a {@code queryName} over the {@link QueryBus} and waits for a response
+     * synchronously, up to a maximum period defined by {@code timeout} and {@code unit}.
+     *
+     * @param queryName    A {@link String} describing the query to be executed.
+     * @param query        The query object containing the details of the request.
+     * @param responseType The {@link ResponseType} describing the expected response type.
+     * @param timeout      The maximum time to wait for the response.
+     * @param unit         The {@link TimeUnit} of the timeout value.
+     * @param <R>          The response class contained in the given {@code responseType}.
+     * @param <Q>          The query class.
+     * @return The result of the query of type {@code R}.
+     * @throws QueryExecutionException if an exception occurs during query execution, including cases where a timeout is reached.
+     */
+    <R, Q> R queryAndWait(String queryName, Q query, ResponseType<R> responseType, long timeout, TimeUnit unit);
+
+    /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response
      * as {@link org.reactivestreams.Publisher} of {@code responseType}.
      * Query is sent once {@link org.reactivestreams.Publisher} is subscribed to.

@@ -178,6 +178,87 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
+    void queryAndWaitReturnsExpectedResponse() {
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
+
+        String result = testSubject.queryAndWait("queryName", "query", instanceOf(String.class));
+        assertEquals("answer", result);
+
+        //noinspection unchecked
+        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+        verify(mockBus).query(queryMessageCaptor.capture());
+
+        QueryMessage<String, String> queryMessage = queryMessageCaptor.getValue();
+        assertEquals("query", queryMessage.getPayload());
+        assertEquals("queryName", queryMessage.getQueryName());
+        assertEquals(String.class, queryMessage.getResponseType().getExpectedResponseType());
+    }
+
+    @Test
+    void queryAndWaitWithTimeoutReturnsExpectedResponse() {
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
+
+        String result = testSubject.queryAndWait("queryName", "query", instanceOf(String.class), 1, TimeUnit.SECONDS);
+        assertEquals("answer", result);
+
+        //noinspection unchecked
+        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+        verify(mockBus).query(queryMessageCaptor.capture());
+
+        QueryMessage<String, String> queryMessage = queryMessageCaptor.getValue();
+        assertEquals("query", queryMessage.getPayload());
+        assertEquals("queryName", queryMessage.getQueryName());
+        assertEquals(String.class, queryMessage.getResponseType().getExpectedResponseType());
+    }
+
+    @Test
+    void queryAndWaitThrowsRuntimeExceptionWhenQueryResponseIsExceptional() {
+        QueryResponseMessage<String> exceptionalResponse = new GenericQueryResponseMessage<>(String.class, new MockException("query response exception"));
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(exceptionalResponse));
+
+        assertThrows(MockException.class,
+                () -> testSubject.queryAndWait("queryName", "query", instanceOf(String.class)));
+    }
+
+    @Test
+    void queryAndWaitWithTimeoutThrowsRuntimeExceptionWhenQueryResponseIsExceptional() {
+        QueryResponseMessage<String> exceptionalResponse = new GenericQueryResponseMessage<>(String.class, new MockException("query response exception"));
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(exceptionalResponse));
+
+        assertThrows(MockException.class,
+                () -> testSubject.queryAndWait("queryName", "query", instanceOf(String.class), 1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void queryAndWaitThrowsRuntimeExceptionWhenQueryBusReturnsException() {
+        CompletableFuture<QueryResponseMessage<String>> future = new CompletableFuture<>();
+        future.completeExceptionally(new MockException("error in query bus"));
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(future);
+
+        assertThrows(QueryExecutionException.class,
+                () -> testSubject.queryAndWait("queryName", "query", instanceOf(String.class)));
+    }
+
+    @Test
+    void queryAndWaitWithTimeoutThrowsRuntimeExceptionWhenQueryBusReturnsException() {
+        CompletableFuture<QueryResponseMessage<String>> future = new CompletableFuture<>();
+        future.completeExceptionally(new MockException("error in query bus"));
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(future);
+
+        assertThrows(QueryExecutionException.class,
+                () -> testSubject.queryAndWait("queryName", "query", instanceOf(String.class), 1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void queryAndWaitThrowsTimeoutExceptionWhenQueryBusTimesOut() {
+        CompletableFuture<QueryResponseMessage<String>> future = new CompletableFuture<>();
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(future);
+
+        assertThrows(QueryExecutionException.class,
+                () -> testSubject.queryAndWait("queryName", "query", instanceOf(String.class), 1, TimeUnit.SECONDS));
+    }
+
+    @Test
     void scatterGatherQuery() {
         long expectedTimeout = 1L;
         TimeUnit expectedTimeUnit = TimeUnit.SECONDS;

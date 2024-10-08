@@ -26,9 +26,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -101,6 +99,58 @@ public class DefaultQueryGateway implements QueryGateway {
                          }
                      });
         return result;
+    }
+
+    static private RuntimeException asRuntime(@Nonnull Throwable e) {
+        if (e instanceof Error) {
+            throw (Error) e;
+        } else if (e instanceof RuntimeException) {
+            return (RuntimeException) e;
+        } else {
+            return new QueryExecutionException("An exception occurred while executing a query", e);
+        }
+    }
+
+    @Override
+    public <R, Q> R queryAndWait(@Nonnull String queryName, @Nonnull Q query, @Nonnull ResponseType<R> responseType) {
+        CompletableFuture<QueryResponseMessage<R>> queryResponse =
+                queryBus.query(
+                        processInterceptors(
+                                new GenericQueryMessage<>(asMessage(query), queryName, responseType)));
+
+        QueryResponseMessage<R> queryResponseMessage;
+        try {
+            queryResponseMessage = queryResponse.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new QueryExecutionException("An exception occurred while executing a query", e);
+        }
+
+        if (queryResponseMessage.isExceptional()) {
+            throw asRuntime(queryResponseMessage.exceptionResult());
+        }
+
+        return queryResponseMessage.getPayload();
+    }
+
+    @Override
+    public <R, Q> R queryAndWait(@Nonnull String queryName, @Nonnull Q query, @Nonnull ResponseType<R> responseType, long timeout, @Nonnull TimeUnit unit) {
+        CompletableFuture<QueryResponseMessage<R>> queryResponse =
+                queryBus.query(
+                        processInterceptors(
+                                new GenericQueryMessage<>(asMessage(query), queryName, responseType)));
+
+        QueryResponseMessage<R> queryResponseMessage;
+        try {
+            queryResponseMessage = queryResponse.get(timeout, unit);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new QueryExecutionException("An exception occurred while executing a query", e);
+        }
+
+        if (queryResponseMessage.isExceptional()) {
+            throw asRuntime(queryResponseMessage.exceptionResult());
+        }
+
+        return queryResponseMessage.getPayload();
     }
 
     @Override
