@@ -264,6 +264,43 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
     }
 
     @Test
+    void publishWithProcessingContextEventsAreGivenCombinedToTheEventStorageEngine() {
+        EventMessage<?> testEventOne = eventMessage(0);
+        EventMessage<?> testEventTwo = eventMessage(1);
+        EventMessage<?> testEventThree = eventMessage(2);
+
+        AppendCondition expectedCondition = AppendCondition.none();
+
+        AsyncUnitOfWork uow = new AsyncUnitOfWork();
+        uow.runOnPreInvocation(context -> testSubject.publish(context,
+                                                              TEST_CONTEXT,
+                                                              testEventOne, testEventTwo, testEventThree));
+        awaitCompletion(uow.execute());
+
+        verify(storageEngine).appendEvents(eq(expectedCondition), eventsCaptor.capture());
+        List<EventMessage<?>> resultEvents = eventsCaptor.getValue();
+        assertTrue(resultEvents.contains(testEventOne));
+        assertTrue(resultEvents.contains(testEventTwo));
+        assertTrue(resultEvents.contains(testEventThree));
+    }
+
+    @Test
+    void publishWithProcessingContextForAnotherContextThrowsIllegalArgumentException() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> testSubject.publish(StubProcessingContext.NONE, NOT_MATCHING_CONTEXT, eventMessage(0))
+        );
+    }
+
+    @Test
+    void publishWithoutProcessingContextThrowsUnsupportedOperationException() {
+        assertThrows(
+                UnsupportedOperationException.class,
+                () -> testSubject.publish(NOT_MATCHING_CONTEXT, eventMessage(0))
+        );
+    }
+
+    @Test
     void streamForEmptyStoreReturnsEmptyMessageStream() {
         MessageStream<TrackedEventMessage<?>> result =
                 testSubject.open(TEST_CONTEXT, StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(0)));

@@ -81,7 +81,10 @@ list of the latter, please check [here](#removed).
 Other API changes
 =================
 
-TODO
+* The `EventBus` has been renamed to `EventSink`, with adjusted APIs. All publish methods now expect a `String context`
+  to define in which (bounded-)context an event should be published. Furthermore, either the method holding the
+  `ProcessingContext` or the `publish` returning a `CompletableFuture<Void>` should be used, as these make it possible
+  to perform the publication asynchronously.
 
 Moved / Remove Classes
 ======================
@@ -92,6 +95,7 @@ Moved / Remove Classes
 |--------------------------------------------------------------|--------------------------------------------------------------|
 | org.axonframework.common.caching.EhCache3Adapter             | org.axonframework.common.caching.EhCacheAdapter              |
 | org.axonframework.eventsourcing.MultiStreamableMessageSource | org.axonframework.eventhandling.MultiStreamableMessageSource |
+| org.axonframework.eventhandling.EventBus                     | org.axonframework.eventhandling.EventSink                    |
 
 ### Removed
 
