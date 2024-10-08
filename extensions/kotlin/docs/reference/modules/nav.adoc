@@ -2,3 +2,4 @@
 ** xref:ROOT:commands.adoc[]
 ** xref:ROOT:events.adoc[]
 ** xref:ROOT:queries.adoc[]
+** xref:ROOT:release-notes.adoc[]

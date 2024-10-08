@@ -1,0 +1,12 @@
+= Release Notes Kotlin Extension
+:navtitle: Release notes
+
+You can find the release notes for the Kotlin Extension of version 4.10.0 below.
+For earlier releases, please go to the link:https://legacydocs.axoniq.io/reference-guide/release-notes/rn-extensions/rn-kotlin[legacy documentation].
+
+== Release 4.10
+
+. Upgrades the Kotlin Extension to be compatible with Axon Framework 4.10.0
+. Adds a serializer with `kotlin.serialization` support
+
+See the link:https://github.com/AxonFramework/extension-kotlin/releases/tag/axon-kotlin-4.10.0[GitHub release notes] for an exhaustive list of all changes.
