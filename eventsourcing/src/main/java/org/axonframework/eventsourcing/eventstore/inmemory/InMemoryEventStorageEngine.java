@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
  *
  * @author Rene de Waele
  * @since 3.0
- */
+ */ // TODO Replace for AsyncInMemoryEventStorageEngine once the latter is fully integrated
 public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     @SuppressWarnings("SortedCollectionWithNonComparableKeys")
