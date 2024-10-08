@@ -168,7 +168,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @return The result of the query of type {@code R}.
      * @throws QueryExecutionException if an exception occurs during query execution, including cases where a timeout is reached.
      */
-    <R, Q> R queryAndWait(String queryName, Q query, ResponseType<R> responseType, long timeout, TimeUnit unit);
+    <R, Q> R queryAndWait(@Nonnull String queryName, @Nonnull Q query, ResponseType<R> responseType, long timeout, @Nonnull TimeUnit unit);
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response
