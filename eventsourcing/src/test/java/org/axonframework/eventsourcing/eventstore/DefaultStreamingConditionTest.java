@@ -16,11 +16,13 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test class validating the {@link DefaultStreamingCondition}.
@@ -37,6 +39,18 @@ class DefaultStreamingConditionTest {
     @BeforeEach
     void setUp() {
         testSubject = new DefaultStreamingCondition(TEST_POSITION, TEST_CRITERIA);
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionWhenConstructingWithNullPosition() {
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> new DefaultStreamingCondition(null, TEST_CRITERIA));
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionWhenConstructingWithNullCriteria() {
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> new DefaultStreamingCondition(TEST_POSITION, null));
     }
 
     @Test

@@ -16,13 +16,13 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link CombinedEventCriteria}.
@@ -43,6 +43,16 @@ class CombinedEventCriteriaTest {
 
         testSubject = new CombinedEventCriteria(new SingleIndexCriteria(testIndexOne),
                                                 new SingleIndexCriteria(testIndexTwo));
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionWhenConstructingWithNullFirstOrSecondEventCriteria() {
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class,
+                     () -> new CombinedEventCriteria(null, new SingleIndexCriteria(testIndexTwo)));
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class,
+                     () -> new CombinedEventCriteria(new SingleIndexCriteria(testIndexOne), null));
     }
 
     @Test

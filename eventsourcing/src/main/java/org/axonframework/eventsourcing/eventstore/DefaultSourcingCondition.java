@@ -21,13 +21,15 @@ import jakarta.annotation.Nonnull;
 import java.util.Objects;
 import java.util.OptionalLong;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * The default {@link SourcingCondition} implementation.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class DefaultSourcingCondition implements SourcingCondition {
+final class DefaultSourcingCondition implements SourcingCondition {
 
     private final EventCriteria criteria;
     private final Long start;
@@ -46,6 +48,8 @@ class DefaultSourcingCondition implements SourcingCondition {
     DefaultSourcingCondition(@Nonnull EventCriteria criteria,
                              Long start,
                              Long end) {
+        assertNonNull(criteria, "The EventCriteria cannot be null");
+
         this.criteria = criteria;
         this.start = start != null ? start : -1;
         this.end = end;
@@ -84,7 +88,8 @@ class DefaultSourcingCondition implements SourcingCondition {
             return false;
         }
         DefaultSourcingCondition that = (DefaultSourcingCondition) o;
-        return Objects.equals(criteria, that.criteria) && Objects.equals(start, that.start)
+        return Objects.equals(criteria, that.criteria)
+                && Objects.equals(start, that.start)
                 && Objects.equals(end, that.end);
     }
 

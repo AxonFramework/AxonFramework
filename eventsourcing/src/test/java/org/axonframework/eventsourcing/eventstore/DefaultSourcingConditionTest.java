@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +40,12 @@ class DefaultSourcingConditionTest {
     @BeforeEach
     void setUp() {
         testSubject = new DefaultSourcingCondition(TEST_CRITERIA, TEST_START, TEST_END);
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionWhenConstructingWithNullEventCriteria() {
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> new DefaultSourcingCondition(null, TEST_START, TEST_END));
     }
 
     @Test

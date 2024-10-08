@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.EventMessage;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface AppendCondition {
+public sealed interface AppendCondition permits NoAppendCondition, DefaultAppendCondition {
 
     /**
      * Returns an {@link AppendCondition} that has no criteria nor consistency marker.

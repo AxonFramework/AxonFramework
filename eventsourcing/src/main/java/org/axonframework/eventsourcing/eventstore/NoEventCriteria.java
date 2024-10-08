@@ -34,7 +34,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class NoEventCriteria implements EventCriteria {
+final class NoEventCriteria implements EventCriteria {
 
     /**
      * Default instance of the {@link NoEventCriteria}.

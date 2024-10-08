@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
@@ -65,28 +64,5 @@ class SourcingConditionTest {
         assertEquals(TEST_START, result.start());
         assertTrue(result.end().isPresent());
         assertEquals(testEnd, result.end().getAsLong());
-    }
-
-    @Test
-    void startDefaultValue() {
-        assertEquals(-1, new TestSourcingCondition().start());
-    }
-
-    @Test
-    void endDefaultValue() {
-        assertTrue(new TestSourcingCondition().end().isEmpty());
-    }
-
-    static class TestSourcingCondition implements SourcingCondition {
-
-        @Override
-        public EventCriteria criteria() {
-            throw new UnsupportedOperationException("Not needed for testing");
-        }
-
-        @Override
-        public SourcingCondition combine(@NotNull SourcingCondition other) {
-            throw new UnsupportedOperationException("Not needed for testing");
-        }
     }
 }

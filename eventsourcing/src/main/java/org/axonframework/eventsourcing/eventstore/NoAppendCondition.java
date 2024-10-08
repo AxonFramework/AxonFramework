@@ -27,7 +27,7 @@ import jakarta.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class NoAppendCondition implements AppendCondition {
+final class NoAppendCondition implements AppendCondition {
 
     /**
      * Default instance of the {@link NoAppendCondition}.

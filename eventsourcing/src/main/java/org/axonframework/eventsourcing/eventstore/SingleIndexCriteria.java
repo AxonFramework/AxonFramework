@@ -21,13 +21,15 @@ import jakarta.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * An {@link EventCriteria} implementation dedicated towards a single {@link Index}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SingleIndexCriteria implements EventCriteria {
+final class SingleIndexCriteria implements EventCriteria {
 
     private final Index index;
 
@@ -38,6 +40,8 @@ class SingleIndexCriteria implements EventCriteria {
      * @param index The singular {@link Index} of this {@link EventCriteria}.
      */
     SingleIndexCriteria(@Nonnull Index index) {
+        assertNonNull(index, "The Index cannot be null");
+
         this.index = index;
     }
 
