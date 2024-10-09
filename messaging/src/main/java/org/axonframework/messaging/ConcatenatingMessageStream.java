@@ -25,18 +25,18 @@ import java.util.function.BiFunction;
 /**
  * Implementation of the {@link MessageStream} that concatenates two {@code MessageStreams}.
  * <p>
- * Will only start streaming entries of type {@code E} from the {@code second MessageStream} when the
+ * Will only start streaming {@link MessageEntry entries} from the {@code second MessageStream} when the
  * {@code first MessageStream} completes successfully.
  *
- * @param <E> The type of entry carried in this {@link MessageStream stream}.
+ * @param <M> The type of {@link Message} contained in the {@link MessageEntry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class ConcatenatingMessageStream<E> implements MessageStream<E> {
+class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final MessageStream<E> first;
-    private final MessageStream<E> second;
+    private final MessageStream<M> first;
+    private final MessageStream<M> second;
 
     /**
      * Construct a {@link MessageStream stream} that initially consume from the {@code first MessageStream}, followed by
@@ -46,14 +46,14 @@ class ConcatenatingMessageStream<E> implements MessageStream<E> {
      * @param second The second {@link MessageStream stream} to start consuming from once the {@code first} stream
      *               completes successfully.
      */
-    ConcatenatingMessageStream(@Nonnull MessageStream<E> first,
-                               @Nonnull MessageStream<E> second) {
+    ConcatenatingMessageStream(@Nonnull MessageStream<M> first,
+                               @Nonnull MessageStream<M> second) {
         this.first = first;
         this.second = second;
     }
 
     @Override
-    public CompletableFuture<E> asCompletableFuture() {
+    public CompletableFuture<MessageEntry<M>> asCompletableFuture() {
         return first.asCompletableFuture()
                     .thenCompose(message -> message == null
                             ? second.asCompletableFuture()
@@ -62,14 +62,14 @@ class ConcatenatingMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public Flux<E> asFlux() {
+    public Flux<MessageEntry<M>> asFlux() {
         return first.asFlux()
                     .concatWith(second.asFlux());
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, E, R> accumulator) {
+                                           @Nonnull BiFunction<R, MessageEntry<M>, R> accumulator) {
         return first.reduce(identity, accumulator)
                     .thenCompose(intermediate -> second.reduce(intermediate, accumulator));
     }

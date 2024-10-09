@@ -25,35 +25,35 @@ import java.util.function.Consumer;
 
 /**
  * An implementation of the {@link MessageStream} that invokes the given {@code onNext} {@link Consumer} each time a new
- * entry of type {@code E} is consumed from this {@code MessageStream}.
+ * {@link MessageEntry entry} is consumed from this {@code MessageStream}.
  *
- * @param <E> The type of entry carried in this {@link MessageStream stream}.
+ * @param <M> The type of {@link Message} contained in the {@link MessageEntry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class OnNextMessageStream<E> implements MessageStream<E> {
+class OnNextMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final MessageStream<E> delegate;
-    private final Consumer<E> onNext;
+    private final MessageStream<M> delegate;
+    private final Consumer<MessageEntry<M>> onNext;
 
     /**
      * Construct an {@link MessageStream stream} that invokes the given {@code onNext} {@link Consumer} each time a new
-     * entry of type {@code E} is consumed by the given {@code delegate}.
+     * {@link MessageEntry entry} is consumed by the given {@code delegate}.
      *
-     * @param delegate The delegate {@link MessageStream stream} from which each consumed entry of type {@code E} is
+     * @param delegate The delegate {@link MessageStream stream} from which each consumed {@link MessageEntry entry} is
      *                 given to the {@code onNext} {@link Consumer}.
-     * @param onNext   The {@link Consumer} to handle each consumed entry of type {@code E} from the given
+     * @param onNext   The {@link Consumer} to handle each consumed {@link MessageEntry entry} from the given
      *                 {@code delegate}.
      */
-    OnNextMessageStream(@Nonnull MessageStream<E> delegate,
-                        @Nonnull Consumer<E> onNext) {
+    OnNextMessageStream(@Nonnull MessageStream<M> delegate,
+                        @Nonnull Consumer<MessageEntry<M>> onNext) {
         this.delegate = delegate;
         this.onNext = onNext;
     }
 
     @Override
-    public CompletableFuture<E> asCompletableFuture() {
+    public CompletableFuture<MessageEntry<M>> asCompletableFuture() {
         return delegate.asCompletableFuture()
                        .thenApply(message -> {
                            onNext.accept(message);
@@ -62,14 +62,14 @@ class OnNextMessageStream<E> implements MessageStream<E> {
     }
 
     @Override
-    public Flux<E> asFlux() {
+    public Flux<MessageEntry<M>> asFlux() {
         return delegate.asFlux()
                        .doOnNext(onNext);
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, E, R> accumulator) {
+                                           @Nonnull BiFunction<R, MessageEntry<M>, R> accumulator) {
         return delegate.reduce(identity, (base, message) -> {
             onNext.accept(message);
             return accumulator.apply(base, message);
