@@ -17,26 +17,22 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -164,7 +160,7 @@ class InterceptingCommandBusTest {
                      "Expected command interceptors to be invoked in registered order");
 
         assertEquals(Map.of("handler1", "value-1", "handler2", "value-0"),
-                     result.asCompletableFuture().get().getMetaData(),
+                     result.asCompletableFuture().get().message().getMetaData(),
                      "Expected result interceptors to be invoked in reverse order");
     }
 
@@ -213,7 +209,7 @@ class InterceptingCommandBusTest {
         assertEquals(Map.of("handler1", "value-0", "handler2", "value-1"),
                      handledMessages.get(1).getMetaData());
         assertEquals(Map.of("handler1", "value-1", "handler2", "value-0"),
-                     result.asCompletableFuture().join().getMetaData());
+                     result.asCompletableFuture().join().message().getMetaData());
     }
 
     @Test
@@ -267,8 +263,9 @@ class InterceptingCommandBusTest {
                                                                                                    @Nullable ProcessingContext context,
                                                                                                    @Nonnull InterceptorChain<M1, R> interceptorChain) {
             return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
-                                   .map(m -> (R) ((Message<?>) m)
-                                           .andMetaData(Map.of(key, buildValue(((Message<?>) m)))));
+                                   .map(entry -> entry.map(
+                                           m -> (R) ((Message<?>) m).andMetaData(Map.of(key, buildValue(m))))
+                                   );
         }
 
         @SuppressWarnings("unchecked")
@@ -277,7 +274,7 @@ class InterceptingCommandBusTest {
                                                                                                  @Nonnull ProcessingContext context,
                                                                                                  @Nonnull InterceptorChain<M1, R> interceptorChain) {
             return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
-                                   .map(m -> (R) m.andMetaData(Map.of(key, buildValue(m))));
+                                   .map(entry -> entry.map(m -> (R) m.andMetaData(Map.of(key, buildValue(m)))));
         }
 
         private String buildValue(Message<?> message) {

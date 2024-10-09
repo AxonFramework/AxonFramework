@@ -19,14 +19,12 @@ package org.axonframework.test.saga;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -35,15 +33,15 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 import static org.axonframework.test.matchers.Matchers.listWithAnyOf;
 import static org.axonframework.test.matchers.Matchers.predicate;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test class is intended to test whether the registration of a {@link org.axonframework.messaging.annotation.HandlerDefinition}
- * and a {@link org.axonframework.messaging.annotation.HandlerEnhancerDefinition} go according to plan.
+ * This test class is intended to test whether the registration of a
+ * {@link org.axonframework.messaging.annotation.HandlerDefinition} and a
+ * {@link org.axonframework.messaging.annotation.HandlerEnhancerDefinition} go according to plan.
  *
  * @author Steven van Beelen
  */
@@ -77,10 +75,12 @@ public class FixtureTest_RegisteringMethodEnhancements {
     void testRegisterParameterResolverFactoryStillCallsMetadataValue() {
         testSubject.registerParameterResolverFactory(new TestParameterResolverFactory(new AtomicBoolean(false)))
                    .givenAggregate(TEST_AGGREGATE_IDENTIFIER)
-                   .published(GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER)).withMetaData(
-                           Collections.singletonMap("extraIdentifier", "myExtraIdentifier")))
+                   .published(GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
+                                                 .withMetaData(
+                                                         Collections.singletonMap("extraIdentifier",
+                                                                                  "myExtraIdentifier")))
                    .whenPublishingA(new ParameterResolvedEvent(TEST_AGGREGATE_IDENTIFIER))
-                .expectAssociationWith("extraIdentifier", "myExtraIdentifier");
+                   .expectAssociationWith("extraIdentifier", "myExtraIdentifier");
     }
 
     @Test
@@ -147,7 +147,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
                 @Nonnull Class<T> declaringType,
                 @Nonnull Method method,
                 @Nonnull ParameterResolverFactory parameterResolverFactory,
-                Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+                @Nonnull Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
         ) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,

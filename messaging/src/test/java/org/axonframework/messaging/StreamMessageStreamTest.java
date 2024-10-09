@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assumptions;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -27,21 +27,22 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class StreamMessageStreamTest extends MessageStreamTest<String> {
+class StreamMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<String> testSubject(List<String> entries) {
-        return MessageStream.fromStream(entries.stream());
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        return MessageStream.fromStream(messages.stream(), SimpleMessageEntry::new);
     }
 
     @Override
-    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+                                                      Exception failure) {
         Assumptions.abort("StreamMessageStream doesn't support failures");
         return null;
     }
 
     @Override
-    String createRandomEntry() {
-        return "test--" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

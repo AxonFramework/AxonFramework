@@ -16,22 +16,11 @@
 
 package org.axonframework.commandhandling.annotation;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayDeque;
@@ -141,7 +130,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
                     .filter(ch -> ch.canHandle(command, processingContext))
                     .findFirst()
                     .map(handler -> handler.handle(command, processingContext, target)
-                                           .map(GenericCommandResultMessage::asCommandResultMessage))
+                                           .map(entry -> entry.map(GenericCommandResultMessage::asCommandResultMessage)))
                     .orElseGet(() -> MessageStream.failed(new NoHandlerForCommandException(command)));
     }
 

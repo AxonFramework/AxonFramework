@@ -24,6 +24,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -32,8 +34,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Implementation of a {@link MessageHandlingMember} that is used to invoke message handler methods on the target type.
@@ -151,7 +151,8 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     @Override
     public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
         try {
-            return handle(message, ProcessingContext.NONE, target).asCompletableFuture().get().getPayload();
+            return handle(message, ProcessingContext.NONE, target).asCompletableFuture().get()
+                                                                  .message().getPayload();
         } catch (ExecutionException e) {
             if (e.getCause() instanceof Exception ex) {
                 throw ex;

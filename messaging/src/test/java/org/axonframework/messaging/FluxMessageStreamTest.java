@@ -28,21 +28,23 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class FluxMessageStreamTest extends MessageStreamTest<String> {
+class FluxMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<String> testSubject(List<String> entries) {
-        return MessageStream.fromFlux(Flux.fromIterable(entries));
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        return MessageStream.fromFlux(Flux.fromIterable(messages), SimpleMessageEntry::new);
     }
 
     @Override
-    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
-        return MessageStream.fromFlux(Flux.fromIterable(entries)
-                                          .concatWith(Mono.error(failure)));
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+                                                      Exception failure) {
+        return MessageStream.fromFlux(Flux.fromIterable(messages)
+                                          .concatWith(Mono.error(failure)),
+                                      SimpleMessageEntry::new);
     }
 
     @Override
-    String createRandomEntry() {
-        return "test-" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

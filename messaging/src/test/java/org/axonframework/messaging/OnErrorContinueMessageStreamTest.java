@@ -25,22 +25,24 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class OnErrorContinueMessageStreamTest extends MessageStreamTest<String> {
+class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<String> testSubject(List<String> entries) {
-        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(entries), error -> MessageStream.empty());
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages, SimpleMessageEntry::new),
+                                                  error -> MessageStream.empty());
     }
 
     @Override
-    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
-        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(entries)
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+                                                      Exception failure) {
+        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages, SimpleMessageEntry::new)
                                                                .concatWith(MessageStream.failed(failure)),
                                                   error -> MessageStream.failed(failure));
     }
 
     @Override
-    String createRandomEntry() {
-        return "test-" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

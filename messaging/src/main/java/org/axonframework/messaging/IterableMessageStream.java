@@ -27,45 +27,45 @@ import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
 /**
- * A {@link MessageStream} implementation using an {@link Iterable} as the source.
+ * A {@link MessageStream} implementation using an {@link Iterable} as the source for {@link MessageEntry entries}.
  *
- * @param <E> The type of entry carried in this {@link MessageStream stream}.
+ * @param <M> The type of {@link Message} contained in the {@link MessageEntry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class IterableMessageStream<E> implements MessageStream<E> {
+class IterableMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private static final boolean NOT_PARALLEL = false;
 
-    private final Iterable<E> source;
+    private final Iterable<MessageEntry<M>> source;
 
     /**
-     * Constructs a {@link MessageStream stream} using the given {@code source} to provide the entries of type
-     * {@code E}.
+     * Constructs a {@link MessageStream stream} using the given {@code source} to provide the
+     * {@link MessageEntry entries}.
      *
-     * @param source The {@link Iterable} providing the entries of type {@code E} for this
+     * @param source The {@link Iterable} providing the {@link MessageEntry entries} for this
      *               {@link MessageStream stream}.
      */
-    IterableMessageStream(@Nonnull Iterable<E> source) {
+    IterableMessageStream(@Nonnull Iterable<MessageEntry<M>> source) {
         this.source = source;
     }
 
     @Override
-    public CompletableFuture<E> asCompletableFuture() {
-        Iterator<E> iterator = source.iterator();
+    public CompletableFuture<MessageEntry<M>> asCompletableFuture() {
+        Iterator<MessageEntry<M>> iterator = source.iterator();
         return iterator.hasNext()
                 ? CompletableFuture.completedFuture(iterator.next())
                 : FutureUtils.emptyCompletedFuture();
     }
 
     @Override
-    public Flux<E> asFlux() {
+    public Flux<MessageEntry<M>> asFlux() {
         return Flux.fromIterable(source);
     }
 
     @Override
-    public <R> MessageStream<R> map(@Nonnull Function<E, R> mapper) {
+    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<MessageEntry<M>, MessageEntry<RM>> mapper) {
         return new IterableMessageStream<>(
                 StreamSupport.stream(source.spliterator(), NOT_PARALLEL)
                              .map(mapper)
@@ -75,7 +75,7 @@ class IterableMessageStream<E> implements MessageStream<E> {
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, E, R> accumulator) {
+                                           @Nonnull BiFunction<R, MessageEntry<M>, R> accumulator) {
         return CompletableFuture.completedFuture(
                 StreamSupport.stream(source.spliterator(), NOT_PARALLEL)
                              .reduce(identity, accumulator, (thisResult, thatResult) -> {
