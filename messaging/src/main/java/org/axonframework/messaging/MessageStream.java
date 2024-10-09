@@ -256,4 +256,37 @@ public interface MessageStream<E> {
     default MessageStream<E> whenComplete(@Nonnull Runnable completeHandler) {
         return new CompletionCallbackMessageStream<>(this, completeHandler);
     }
+
+    /**
+     * A {@link MessageStream}-specific container of {@link Message} implementations.
+     * <p>
+     * May be implemented to support {@link MessageEntry entries} that contain several objects. As such, this interface
+     * may be regarded as a tuple.
+     *
+     * @param <M> The type of {@link Message} contained in this {@link MessageEntry} implementation.
+     * @author Allard Buijze
+     * @author Mitchell Herrijgers
+     * @author Steven van Beelen
+     * @since 5.0.0
+     */
+    interface MessageEntry<M extends Message<?>> {
+
+        /**
+         * Returns the {@link Message} implementation contained by this {@link MessageEntry}.
+         *
+         * @return The {@link Message} implementation contained by this {@link MessageEntry}
+         */
+        M message();
+
+        /**
+         * Maps the {@link #message()} by running it through the given {@code mapper}. This adjusts the contained
+         * {@link #message()} into a {@link Message} implementation of type {@code RM}.
+         *
+         * @param mapper A {@link Function} mapping the {@link #message()} of type {@code M} to a {@link Message} of
+         *               type {@code RM}.
+         * @param <RM>   The declared type of {@link Message} resulting from the given {@code mapper}.
+         * @return The result of running the current {@link #message()} through the given {@code mapper}.
+         */
+        <RM extends Message<?>> MessageEntry<RM> map(@Nonnull Function<M, RM> mapper);
+    }
 }
