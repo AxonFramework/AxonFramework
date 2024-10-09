@@ -18,22 +18,18 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.*;
+import org.axonframework.messaging.MessageStream.MessageEntry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class InterceptingCommandBus implements CommandBus {
 
@@ -49,8 +45,10 @@ public class InterceptingCommandBus implements CommandBus {
         this.handlerInterceptors = new LinkedList<>(handlerInterceptors);
         this.dispatchInterceptors = new ArrayList<>(dispatchInterceptors);
         Iterator<MessageDispatchInterceptor<? super CommandMessage<?>>> di = new LinkedList<>(dispatchInterceptors).descendingIterator();
-        BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dis = (c, p) -> MessageStream.fromFuture(
-                delegate.dispatch(c, p));
+        BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dis =
+                (command, processingContext) -> MessageStream.fromFuture(delegate.dispatch(command, processingContext)
+                                                                                 .thenApply(SimpleMessageEntry::new));
+
         while (di.hasNext()) {
             dis = new Dispatcher(di.next(), dis);
         }
@@ -59,8 +57,10 @@ public class InterceptingCommandBus implements CommandBus {
 
     @Override
     public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                                         @Nullable ProcessingContext processingContext) {
-        return dispatcher.apply(command, processingContext).asCompletableFuture();
+                                                            @Nullable ProcessingContext processingContext) {
+        return dispatcher.apply(command, processingContext)
+                         .asCompletableFuture()
+                         .thenApply(MessageEntry::message);
     }
 
     @Override

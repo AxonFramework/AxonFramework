@@ -23,13 +23,15 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStream.MessageEntry;
+import org.axonframework.messaging.SimpleMessageEntry;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 import static org.axonframework.common.FutureUtils.unwrap;
 
@@ -70,11 +72,12 @@ public class RetryingCommandBus implements CommandBus {
                                                        ProcessingContext processingContext,
                                                        Throwable e) {
         return retryScheduler.scheduleRetry(command, processingContext, e, this::redispatch)
-                             .asCompletableFuture();
+                             .asCompletableFuture()
+                             .thenApply(MessageEntry::message);
     }
 
     private MessageStream<Message<?>> redispatch(CommandMessage<?> cmd, ProcessingContext ctx) {
-        return MessageStream.fromFuture(dispatchToDelegate(cmd, ctx));
+        return MessageStream.fromFuture(dispatchToDelegate(cmd, ctx), SimpleMessageEntry::new);
     }
 
     @Override
