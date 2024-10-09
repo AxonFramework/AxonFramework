@@ -31,18 +31,18 @@ import java.util.concurrent.ThreadLocalRandom;
 class FluxMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return MessageStream.fromFlux(Flux.fromIterable(messages));
+    MessageStream<String> testSubject(List<String> entries) {
+        return MessageStream.fromFlux(Flux.fromIterable(entries));
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
-        return MessageStream.fromFlux(Flux.fromIterable(messages)
+    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
+        return MessageStream.fromFlux(Flux.fromIterable(entries)
                                           .concatWith(Mono.error(failure)));
     }
 
     @Override
-    String createRandomValidEntry() {
+    String createRandomEntry() {
         return "test-" + ThreadLocalRandom.current().nextInt(10000);
     }
 }

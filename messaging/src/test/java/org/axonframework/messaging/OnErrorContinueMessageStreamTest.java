@@ -28,19 +28,19 @@ import java.util.concurrent.ThreadLocalRandom;
 class OnErrorContinueMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages), error -> MessageStream.empty());
+    MessageStream<String> testSubject(List<String> entries) {
+        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(entries), error -> MessageStream.empty());
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
-        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages)
+    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
+        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(entries)
                                                                .concatWith(MessageStream.failed(failure)),
                                                   error -> MessageStream.failed(failure));
     }
 
     @Override
-    String createRandomValidEntry() {
+    String createRandomEntry() {
         return "test-" + ThreadLocalRandom.current().nextInt(10000);
     }
 }

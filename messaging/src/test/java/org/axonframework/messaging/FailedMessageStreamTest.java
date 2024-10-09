@@ -29,19 +29,19 @@ import java.util.List;
 class FailedMessageStreamTest extends MessageStreamTest<Void> {
 
     @Override
-    MessageStream<Message<Void>> testSubject(List<Message<Void>> messages) {
+    MessageStream<Void> testSubject(List<Void> entries) {
         Assumptions.abort("FailedMessageStream doesn't support successful streams");
         return null;
     }
 
     @Override
-    MessageStream<Message<Void>> failingTestSubject(List<Message<Void>> messages, Exception failure) {
-        Assumptions.assumeTrue(messages.isEmpty(), "FailedMessageStream doesn't support content");
+    MessageStream<Void> failingTestSubject(List<Void> entries, Exception failure) {
+        Assumptions.assumeTrue(entries.isEmpty(), "FailedMessageStream doesn't support content");
         return MessageStream.failed(failure);
     }
 
     @Override
-    Void createRandomValidEntry() {
+    Void createRandomEntry() {
         Assumptions.abort("FailedMessageStream doesn't support content");
         return null;
     }

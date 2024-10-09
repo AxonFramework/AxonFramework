@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,10 +143,12 @@ public class FixtureTest_RegisteringMethodEnhancements {
         }
 
         @Override
-        public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
-                                                                    @Nonnull Method method,
-                                                                    @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                                    Function<Object, MessageStream<?>> returnTypeConverter) {
+        public <T> Optional<MessageHandlingMember<T>> createHandler(
+                @Nonnull Class<T> declaringType,
+                @Nonnull Method method,
+                @Nonnull ParameterResolverFactory parameterResolverFactory,
+                Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+        ) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,
             //  only that this method is called to ensure its part of the FixtureConfiguration.

@@ -19,9 +19,9 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.StubProcessingContext;
+import org.axonframework.eventsourcing.eventstore.StreamableEventSource.TrackedEntry;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.junit.jupiter.api.*;
@@ -102,9 +102,9 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         }));
 
         StepVerifier.create(result.asFlux())
-                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventOne, 0, expectedIndex))
-                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventTwo, 1, expectedIndex))
-                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventThree, 4, expectedIndex))
+                    .assertNext(event -> assertTagged(event, expectedEventOne, expectedIndex))
+                    .assertNext(event -> assertTagged(event, expectedEventTwo, expectedIndex))
+                    .assertNext(event -> assertTagged(event, expectedEventThree, expectedIndex))
                     .verifyComplete();
     }
 
@@ -141,20 +141,19 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         assertNull(initialStreamReference.get().asCompletableFuture().join());
 
         StepVerifier.create(finalStreamReference.get().asFlux())
-                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventOne, 0, expectedIndex))
-                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventTwo, 1, expectedIndex))
-                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventThree, 2, expectedIndex))
+                    .assertNext(event -> assertTagged(event, expectedEventOne, expectedIndex))
+                    .assertNext(event -> assertTagged(event, expectedEventTwo, expectedIndex))
+                    .assertNext(event -> assertTagged(event, expectedEventThree, expectedIndex))
                     .verifyComplete();
     }
 
-    private static void assertTrackedAndTagged(EventMessage<?> actual,
-                                               EventMessage<?> expected,
-                                               int expectedPosition,
-                                               Index expectedIndex) {
-        assertInstanceOf(GenericTrackedAndIndexedEventMessage.class, actual);
-        GenericTrackedAndIndexedEventMessage<?> trackedAndTagged = (GenericTrackedAndIndexedEventMessage<?>) actual;
-        assertTrue(trackedAndTagged.indices().contains(expectedIndex));
-        assertTracked(trackedAndTagged, expected, expectedPosition);
+    private static void assertTagged(EventMessage<?> actual,
+                                     EventMessage<?> expected,
+                                     Index expectedIndex) {
+        assertInstanceOf(GenericIndexedEventMessage.class, actual);
+        GenericIndexedEventMessage<?> taggedEvent = (GenericIndexedEventMessage<?>) actual;
+        assertTrue(taggedEvent.indices().contains(expectedIndex));
+        assertEvent(taggedEvent, expected);
     }
 
     @Test
@@ -265,7 +264,7 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
 
     @Test
     void streamForEmptyStoreReturnsEmptyMessageStream() {
-        MessageStream<TrackedEventMessage<?>> result =
+        MessageStream<TrackedEntry<EventMessage<?>>> result =
                 testSubject.open(TEST_CONTEXT, StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(0)));
 
         StepVerifier.create(result.asFlux())
@@ -291,12 +290,12 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
                                            expectedEventTwo, expectedEventThree)
         ).join();
 
-        MessageStream<TrackedEventMessage<?>> result = testSubject.open(TEST_CONTEXT, testStreamingCondition);
+        MessageStream<TrackedEntry<EventMessage<?>>> result = testSubject.open(TEST_CONTEXT, testStreamingCondition);
 
         StepVerifier.create(result.asFlux())
-                    .assertNext(trackedEvent -> assertTracked(trackedEvent, expectedEventOne, 4))
-                    .assertNext(trackedEvent -> assertTracked(trackedEvent, expectedEventTwo, 5))
-                    .assertNext(trackedEvent -> assertTracked(trackedEvent, expectedEventThree, 6))
+                    .assertNext(trackedEvent -> assertTrackedEvent(trackedEvent, expectedEventOne, 4))
+                    .assertNext(trackedEvent -> assertTrackedEvent(trackedEvent, expectedEventTwo, 5))
+                    .assertNext(trackedEvent -> assertTrackedEvent(trackedEvent, expectedEventThree, 6))
                     .verifyComplete();
     }
 
@@ -321,19 +320,24 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
                                            eventMessage(5), eventMessage(6))
         ).join();
 
-        MessageStream<TrackedEventMessage<?>> result = testSubject.open(TEST_CONTEXT, testStreamingCondition);
+        MessageStream<TrackedEntry<EventMessage<?>>> result = testSubject.open(TEST_CONTEXT, testStreamingCondition);
 
         StepVerifier.create(result.asFlux())
-                    .assertNext(trackedEvent -> assertTracked(trackedEvent, expectedEventOne, 0))
-                    .assertNext(trackedEvent -> assertTracked(trackedEvent, expectedEventTwo, 1))
-                    .assertNext(trackedEvent -> assertTracked(trackedEvent, expectedEventThree, 4))
+                    .assertNext(trackedEvent -> assertTrackedEvent(trackedEvent, expectedEventOne, 0))
+                    .assertNext(trackedEvent -> assertTrackedEvent(trackedEvent, expectedEventTwo, 1))
+                    .assertNext(trackedEvent -> assertTrackedEvent(trackedEvent, expectedEventThree, 4))
                     .verifyComplete();
     }
 
-    private static void assertTracked(TrackedEventMessage<?> actual,
-                                      EventMessage<?> expected,
-                                      int expectedPosition) {
-        assertEquals(expectedPosition, actual.trackingToken().position().orElse(-1));
+    private static void assertTrackedEvent(TrackedEntry<EventMessage<?>> actual,
+                                           EventMessage<?> expected,
+                                           int expectedPosition) {
+        assertEquals(expectedPosition, actual.token().position().orElse(-1));
+        assertEvent(actual.event(), expected);
+    }
+
+    private static void assertEvent(EventMessage<?> actual,
+                                    EventMessage<?> expected) {
         assertEquals(expected.getIdentifier(), actual.getIdentifier());
         assertEquals(expected.getPayload(), actual.getPayload());
         assertEquals(expected.getTimestamp(), actual.getTimestamp());

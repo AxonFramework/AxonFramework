@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,22 +35,25 @@ public class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberCha
     /**
      * Creates and returns a new instance
      *
-     * @return a new {@link NoMoreInterceptors} instance
      * @param <T> the type of the handlers
+     * @return a new {@link NoMoreInterceptors} instance
      */
     public static <T> MessageHandlerInterceptorMemberChain<T> instance() {
         return new NoMoreInterceptors<>();
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message, @Nonnull T target,
+    public Object handleSync(@Nonnull Message<?> message,
+                             @Nonnull T target,
                              @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
         return handler.handleSync(message, target);
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
-                                   @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
+    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
+                                                      @Nonnull ProcessingContext processingContext,
+                                                      @Nonnull T target,
+                                                      @Nonnull MessageHandlingMember<? super T> handler) {
         return handler.handle(message, processingContext, target);
     }
 }

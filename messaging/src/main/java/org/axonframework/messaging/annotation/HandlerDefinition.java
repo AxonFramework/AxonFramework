@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 
 import java.lang.reflect.Method;
@@ -44,8 +45,10 @@ public interface HandlerDefinition {
      * @param returnTypeConverter
      * @return An optional containing the handler if the method is suitable, or an empty Nullable otherwise
      */
-    <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
-                                                         @Nonnull Method method,
-                                                         @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                         Function<Object, MessageStream<?>> returnTypeConverter);
+    <T> Optional<MessageHandlingMember<T>> createHandler(
+            @Nonnull Class<T> declaringType,
+            @Nonnull Method method,
+            @Nonnull ParameterResolverFactory parameterResolverFactory,
+            Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+    );
 }

@@ -28,23 +28,23 @@ import java.util.concurrent.ThreadLocalRandom;
 class ConcatenatingMessageStreamTest extends MessageStreamTest<String> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        if (messages.isEmpty()) {
+    MessageStream<String> testSubject(List<String> entries) {
+        if (entries.isEmpty()) {
             return new ConcatenatingMessageStream<>(MessageStream.empty(), MessageStream.empty());
-        } else if (messages.size() == 1) {
-            return new ConcatenatingMessageStream<>(MessageStream.just(messages.getFirst()), MessageStream.empty());
+        } else if (entries.size() == 1) {
+            return new ConcatenatingMessageStream<>(MessageStream.just(entries.getFirst()), MessageStream.empty());
         }
-        return new ConcatenatingMessageStream<>(MessageStream.just(messages.getFirst()),
-                                                MessageStream.fromIterable(messages.subList(1, messages.size())));
+        return new ConcatenatingMessageStream<>(MessageStream.just(entries.getFirst()),
+                                                MessageStream.fromIterable(entries.subList(1, entries.size())));
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
-        return testSubject(messages).concatWith(MessageStream.failed(failure));
+    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
+        return testSubject(entries).concatWith(MessageStream.failed(failure));
     }
 
     @Override
-    String createRandomValidEntry() {
+    String createRandomEntry() {
         return "test-" + ThreadLocalRandom.current().nextInt(10000);
     }
 }

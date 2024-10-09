@@ -19,8 +19,8 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.StreamableEventSource.TrackedEntry;
 import org.axonframework.messaging.MessageStream;
 
 import java.time.Duration;
@@ -111,7 +111,7 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * @return An <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<TrackedEventMessage<?>> stream(@Nonnull StreamingCondition condition);
+    MessageStream<TrackedEntry<EventMessage<?>>> stream(@Nonnull StreamingCondition condition);
 
     /**
      * Creates a {@link TrackingToken} that is at the tail of an event stream.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     private final Class<?> payloadType;
     private final int parameterCount;
     private final ParameterResolver<?>[] parameterResolvers;
-    private final Function<Object, MessageStream<?>> returnTypeConverter;
+    private final Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter;
     private final Method method;
     private final Class<? extends Message> messageType;
     private final HandlerAttributes attributes;
@@ -67,7 +67,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                                Class<? extends Message> messageType,
                                                Class<?> explicitPayloadType,
                                                ParameterResolverFactory parameterResolverFactory,
-                                               Function<Object, MessageStream<?>> returnTypeConverter) {
+                                               Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter) {
         this.messageType = messageType;
         this.method = ReflectionUtils.ensureAccessible(method);
         this.returnTypeConverter = returnTypeConverter;
@@ -150,10 +150,8 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
 
     @Override
     public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
-        // FIXME - null processingContext should not be allowed here
-        //noinspection DataFlowIssue
         try {
-            return handle(message, null, target).asCompletableFuture().get().getPayload();
+            return handle(message, ProcessingContext.NONE, target).asCompletableFuture().get().getPayload();
         } catch (ExecutionException e) {
             if (e.getCause() instanceof Exception ex) {
                 throw ex;
@@ -164,9 +162,9 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message<?> message,
-                                   @Nonnull ProcessingContext processingContext,
-                                   @Nullable T target) {
+    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
+                                                      @Nonnull ProcessingContext processingContext,
+                                                      @Nullable T target) {
         Object invocationResult;
         try {
             invocationResult = method.invoke(target, resolveParameterValues(message, processingContext));
