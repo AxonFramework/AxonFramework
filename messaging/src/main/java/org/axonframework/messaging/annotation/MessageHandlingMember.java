@@ -21,11 +21,11 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Interface describing a handler for specific messages targeting entities of a specific type.
@@ -105,6 +105,9 @@ public interface MessageHandlingMember<T> {
     @Deprecated
     Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception;
 
+    /**
+     * TODO add documentation
+     */
     default MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
                                                        @Nonnull ProcessingContext processingContext,
                                                        @Nullable T target) {

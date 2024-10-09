@@ -20,14 +20,10 @@ import org.axonframework.common.annotation.PriorityAnnotationComparator;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.function.Function;
 
 /**
  * HandlerDefinition instance that delegates to multiple other instances, in the order provided. Also, it wraps the
@@ -180,7 +176,7 @@ public class MultiHandlerDefinition implements HandlerDefinition {
             @Nonnull Class<T> declaringType,
             @Nonnull Method method,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+            @Nonnull Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
     ) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {

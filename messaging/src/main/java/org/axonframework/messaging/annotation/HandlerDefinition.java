@@ -19,10 +19,10 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 /**
  * Interface that describes an object capable of inspecting a method to determine if the method is suitable for message
@@ -39,16 +39,16 @@ public interface HandlerDefinition {
      * {@code parameterResolverFactory} to resolve the method's parameters.
      *
      * @param <T>                      The type of the declaring object
-     * @param declaringType            The type of object declaring the given method method
+     * @param declaringType            The type of object declaring the given method
      * @param method                   The method to inspect
      * @param parameterResolverFactory Factory for a {@link ParameterResolver} of the method
-     * @param returnTypeConverter
+     * @param returnTypeConverter      TODO provide documentation
      * @return An optional containing the handler if the method is suitable, or an empty Nullable otherwise
      */
     <T> Optional<MessageHandlingMember<T>> createHandler(
             @Nonnull Class<T> declaringType,
             @Nonnull Method method,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+            @Nonnull Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
     );
 }

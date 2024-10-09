@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,17 @@ import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStream.MessageEntry;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.ResultHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * {@link HandlerEnhancerDefinition} that marks methods (meta-)annotated with {@link MessageHandlerInterceptor} as
@@ -115,12 +116,12 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
                                                           @Nonnull ProcessingContext processingContext,
                                                           @Nullable T target) {
-            InterceptorChain<Message<?>, ?> chain = InterceptorChainParameterResolverFactory.currentInterceptorChain(
-                    processingContext);
+            InterceptorChain<Message<?>, ?> chain =
+                    InterceptorChainParameterResolverFactory.currentInterceptorChain(processingContext);
             // TODO - Provide implementation that handles exceptions in streams with more than one item
             return MessageStream.fromFuture(
                     chain.proceed(message, processingContext)
-                         .map(r -> (Message<Object>) r)
+                         .map(r -> (MessageEntry<Message<?>>) r)
                          .asCompletableFuture()
                          .exceptionallyCompose(error -> {
                              if (expectedResultType.isInstance(error)) {
@@ -132,7 +133,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                                      pc -> {
                                          if (super.canHandle(message, pc)) {
                                              return super.handle(message, pc, target)
-                                                         .map(r -> (Message<Object>) r)
+                                                         .map(r -> (MessageEntry<Message<?>>) r)
                                                          .asCompletableFuture();
                                          }
                                          return CompletableFuture.failedFuture(error);

@@ -19,12 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.HandlerAttributes;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,17 +39,19 @@ class MethodInvokingMessageHandlingMemberTest {
 
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<Message<Object>> returnTypeConverter(Object result) {
-        return result instanceof CompletableFuture<?>
-                ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
-                : MessageStream.just(GenericMessage.asMessage(result));
+    private static MessageStream<? extends Message<?>> returnTypeConverter(Object result) {
+        if (result instanceof CompletableFuture<?>) {
+            return MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage),
+                                            SimpleMessageEntry::new);
+        }
+        return MessageStream.just(GenericMessage.asMessage(result));
     }
 
     @BeforeEach
     void setUp() {
         try {
             testSubject = new MethodInvokingMessageHandlingMember<>(
-                    AnnotatedHandler.class.getMethod("handlingMethod", String.class), ,
+                    AnnotatedHandler.class.getMethod("handlingMethod", String.class),
                     EventMessage.class,
                     String.class,
                     ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class),
