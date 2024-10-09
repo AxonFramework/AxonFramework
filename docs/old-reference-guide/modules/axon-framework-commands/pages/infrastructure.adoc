@@ -461,7 +461,7 @@ The configuration changes slightly per distributed implementation and as such wi
 [[routing-strategy]]
 === Routing strategy
 
-Commands should be link:../../architecture-overview/README.adoc#explicit-messaging[routed consistently] to the same application, especially those targeted towards a specific Aggregate.
+Commands should be link:../../architecture-overview/index.adoc#explicit-messaging[routed consistently] to the same application, especially those targeted towards a specific Aggregate.
 This ensures a single instance is in charge of the targeted aggregate, resolving the concurrent access issue and allowing for optimization like caching to work as designed.
 The component dealing with the consistent routing in an Axon application is the `RoutingStrategy`.
 
@@ -696,8 +696,8 @@ It defines which segment of the `DistributedCommandBus` should be given a comman
 You can choose different flavors of these components that are available as extension modules.
 Currently, Axon provides two extensions to that end, which are:
 
-. The xref:springcloud_extension_guide::index.adoc[SpringCloud] extension
-. The xref:jgroups_extension_guide::index.adoc[JGroups] extension
+. The xref:spring-cloud-extension-reference::index.adoc[SpringCloud] extension
+. The xref:jgroups-extension-reference::index.adoc[JGroups] extension
 
 Configuring a distributed command bus can (mostly) be done without any modifications in configuration files.
 The most straightforward approach to this is to include the Spring Boot starter dependency of either the Spring Cloud or JGroups extension.

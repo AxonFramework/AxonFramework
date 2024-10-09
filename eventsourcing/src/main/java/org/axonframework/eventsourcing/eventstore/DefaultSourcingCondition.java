@@ -18,7 +18,10 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Objects;
 import java.util.OptionalLong;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * The default {@link SourcingCondition} implementation.
@@ -26,7 +29,7 @@ import java.util.OptionalLong;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class DefaultSourcingCondition implements SourcingCondition {
+final class DefaultSourcingCondition implements SourcingCondition {
 
     private final EventCriteria criteria;
     private final Long start;
@@ -45,6 +48,8 @@ class DefaultSourcingCondition implements SourcingCondition {
     DefaultSourcingCondition(@Nonnull EventCriteria criteria,
                              Long start,
                              Long end) {
+        assertNonNull(criteria, "The EventCriteria cannot be null");
+
         this.criteria = criteria;
         this.start = start != null ? start : -1;
         this.end = end;
@@ -72,5 +77,24 @@ class DefaultSourcingCondition implements SourcingCondition {
                 Math.min(this.start, other.start()),
                 Math.max(this.end, other.end().orElse(this.end))
         );
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        DefaultSourcingCondition that = (DefaultSourcingCondition) o;
+        return Objects.equals(criteria, that.criteria)
+                && Objects.equals(start, that.start)
+                && Objects.equals(end, that.end);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(criteria, start, end);
     }
 }

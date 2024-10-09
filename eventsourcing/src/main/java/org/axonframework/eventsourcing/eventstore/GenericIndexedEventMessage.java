@@ -22,6 +22,7 @@ import org.axonframework.messaging.MetaData;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -89,7 +90,7 @@ public class GenericIndexedEventMessage<P> implements IndexedEventMessage<P> {
 
     @Override
     public EventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
-        return metaData.isEmpty() || getMetaData().equals(metaData)
+        return getMetaData().equals(metaData)
                 ? this
                 : new GenericIndexedEventMessage<>(this.delegate.andMetaData(metaData), this.indices);
     }
@@ -97,5 +98,22 @@ public class GenericIndexedEventMessage<P> implements IndexedEventMessage<P> {
     @Override
     public IndexedEventMessage<P> updateIndices(@Nonnull Function<Set<Index>, Set<Index>> updater) {
         return new GenericIndexedEventMessage<>(this, updater.apply(this.indices));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        GenericIndexedEventMessage<?> that = (GenericIndexedEventMessage<?>) o;
+        return Objects.equals(delegate, that.delegate) && Objects.equals(indices, that.indices);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(delegate, indices);
     }
 }

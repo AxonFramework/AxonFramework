@@ -101,7 +101,10 @@ If you are using the Axon Configuration API, make sure to call `Configuration#co
 If you are relying on Spring Boot Autoconfiguration, just provide a factory method exposing the Spring Bean, or multiple if you need more than one provider.
 The following snippets shows some possible approaches of registration:
 
-==== Axon Configuration API
+[tabs]
+====
+Axon Configuration API::
++
 
 [source,java]
 ----
@@ -118,8 +121,8 @@ public class Configuration {
 }
 ----
 
-==== Spring Boot auto configuration
-
+Spring Boot auto configuration::
++
 [source,java]
 ----
 @Configuration
@@ -137,3 +140,4 @@ public class CorrelationDataProviderConfiguration {
     }
 }
 ----
+====

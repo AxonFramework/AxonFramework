@@ -9,6 +9,6 @@ A summary of the various subsections is given below.
 |Sub-Section |Purpose
 
 |xref:event-dispatchers.adoc[Event Dispatchers] / xref:event-handlers.adoc[Event Handlers] |Functional development for Event Messages using the Axon Framework
-|xref:event-processors/README.adoc[Event Processors] / xref:event-bus-and-event-store.adoc[Event Bus &amp; Event Store] |Non-Functional development for Event Messages using the Axon Framework
+|xref:event-processors/index.adoc[Event Processors] / xref:event-bus-and-event-store.adoc[Event Bus &amp; Event Store] |Non-Functional development for Event Messages using the Axon Framework
 |xref:event-versioning.adoc[Event Versioning] |Details on Event versioning capabilities provided by the Axon Framework
 |===

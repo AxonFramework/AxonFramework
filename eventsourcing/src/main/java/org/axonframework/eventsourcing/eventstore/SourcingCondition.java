@@ -36,7 +36,7 @@ import java.util.OptionalLong;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface SourcingCondition {
+public sealed interface SourcingCondition permits DefaultSourcingCondition {
 
     /**
      * Construct a {@link SourcingCondition} used to source a model based on the given {@code index}.

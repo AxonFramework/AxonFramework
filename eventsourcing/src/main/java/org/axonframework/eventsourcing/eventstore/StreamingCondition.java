@@ -35,7 +35,7 @@ import org.axonframework.eventhandling.TrackingToken;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface StreamingCondition {
+public sealed interface StreamingCondition permits DefaultStreamingCondition, StartingFrom {
 
     /**
      * Constructs a simple {@link StreamingCondition} that starts streaming from the given {@code position}. When the

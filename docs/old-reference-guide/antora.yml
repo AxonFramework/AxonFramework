@@ -1,8 +1,10 @@
-name: axon_framework_ref
+name: axon-framework-reference
 title: Axon Framework
-version: true
+version:
+  axon-(?<version>+({0..9}).+({0..9})).*: $<version>
+  master: development
 prerelease: true
-start_page: ROOT:introduction.adoc
+start_page: ROOT:index.adoc
 
 asciidoc:
   attributes:
