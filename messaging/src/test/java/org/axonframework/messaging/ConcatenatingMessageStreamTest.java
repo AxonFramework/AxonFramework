@@ -25,26 +25,30 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class ConcatenatingMessageStreamTest extends MessageStreamTest<String> {
+class ConcatenatingMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<String> testSubject(List<String> entries) {
-        if (entries.isEmpty()) {
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        if (messages.isEmpty()) {
             return new ConcatenatingMessageStream<>(MessageStream.empty(), MessageStream.empty());
-        } else if (entries.size() == 1) {
-            return new ConcatenatingMessageStream<>(MessageStream.just(entries.getFirst()), MessageStream.empty());
+        } else if (messages.size() == 1) {
+            return new ConcatenatingMessageStream<>(MessageStream.just(messages.getFirst()),
+                                                    MessageStream.empty());
         }
-        return new ConcatenatingMessageStream<>(MessageStream.just(entries.getFirst()),
-                                                MessageStream.fromIterable(entries.subList(1, entries.size())));
+        return new ConcatenatingMessageStream<>(
+                MessageStream.just(messages.getFirst()),
+                MessageStream.fromIterable(messages.subList(1, messages.size()), SimpleMessageEntry::new)
+        );
     }
 
     @Override
-    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
-        return testSubject(entries).concatWith(MessageStream.failed(failure));
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+                                                      Exception failure) {
+        return testSubject(messages).concatWith(MessageStream.failed(failure));
     }
 
     @Override
-    String createRandomEntry() {
-        return "test-" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

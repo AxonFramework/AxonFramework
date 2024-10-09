@@ -28,23 +28,24 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class SingleValueMessageStreamTest extends MessageStreamTest<String> {
+class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<String> testSubject(List<String> entries) {
-        Assumptions.assumeTrue(entries.size() == 1, "SingleValueMessageStream only supports a single value");
-        return MessageStream.just(entries.getFirst());
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        Assumptions.assumeTrue(messages.size() == 1, "SingleValueMessageStream only supports a single value");
+        return MessageStream.just(messages.getFirst());
     }
 
     @Override
-    MessageStream<String> failingTestSubject(List<String> entries, Exception failure) {
-        Assumptions.assumeTrue(entries.isEmpty(),
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+            Exception failure) {
+        Assumptions.assumeTrue(messages.isEmpty(),
                                "SingleValueMessageStream only supports failures without regular values");
         return MessageStream.fromFuture(CompletableFuture.failedFuture(failure));
     }
 
     @Override
-    String createRandomEntry() {
-        return "test-" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }
