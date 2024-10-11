@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,19 +71,27 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
     }
 
     private Sinks.EmitResult performWithBusyWaitSpin(Supplier<Sinks.EmitResult> action) {
-        int i=0;
+        int i = 0;
         Sinks.EmitResult result;
         while ((result = action.get()) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
-            // for 100 iterations, just busy-spin. Will resolve most conditions
+            // For 100 iterations, just busy-spin. Will resolve most conditions.
             if (i < 100) {
                 i++;
-                // busy spin
+                // Busy spin...
             } else if (i < 200) {
-                // for the next 100 iterations, yield, to force other threads to have a chance
+                // For the next 100 iterations, sleep for 5ms, to force other threads to have a chance.
                 i++;
-                Thread.yield();
+                try {
+                    // Ignoring the BusyWait warning, as this sleep-loop is cut off after 100 * 5ms.
+                    //noinspection BusyWait
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(
+                            "Thread interrupted during busy-sleep for emitting updates. Please try again.", e
+                    );
+                }
             } else {
-                // then after, park the thread to force other threads to perform their work
+                // Then after, park the thread to force other threads to perform their work.
                 LockSupport.parkNanos(100);
             }
         }
