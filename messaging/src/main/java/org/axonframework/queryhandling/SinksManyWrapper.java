@@ -79,17 +79,9 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
                 i++;
                 // Busy spin...
             } else if (i < 200) {
-                // For the next 100 iterations, sleep for 5ms, to force other threads to have a chance.
+                // For the next 100 iterations, yield, to force other threads to have a chance.
                 i++;
-                try {
-                    // Ignoring the BusyWait warning, as this sleep-loop is cut off after 100 * 5ms.
-                    //noinspection BusyWait
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(
-                            "Thread interrupted during busy-sleep for emitting updates. Please try again.", e
-                    );
-                }
+                Thread.yield();
             } else {
                 // Then after, park the thread to force other threads to perform their work.
                 LockSupport.parkNanos(100);
