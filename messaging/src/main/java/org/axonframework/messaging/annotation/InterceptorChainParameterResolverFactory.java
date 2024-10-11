@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ public class InterceptorChainParameterResolverFactory
         implements ParameterResolverFactory, ParameterResolver<InterceptorChain> {
 
     private static final ThreadLocal<InterceptorChain<?, ?>> CURRENT = new ThreadLocal<>();
-    private static final ProcessingContext.ResourceKey<InterceptorChain<?, ?>> INTERCEPTOR_CHAIN_KEY = ProcessingContext.ResourceKey.create(
-            "InterceptorChain");
+    private static final ProcessingContext.ResourceKey<InterceptorChain<?, ?>> INTERCEPTOR_CHAIN_KEY =
+            ProcessingContext.ResourceKey.create("InterceptorChain");
 
     /**
      * Invoke the given {@code action} with the given {@code interceptorChain} being available for parameter injection.
@@ -53,8 +53,8 @@ public class InterceptorChainParameterResolverFactory
      * @return The response from the invocation of given {@code action}
      * @throws Exception any exception that occurs while invoking given {@code action}
      */
-    public static <R> R callWithInterceptorChainSync(InterceptorChain interceptorChain, Callable<R> action)
-            throws Exception {
+    public static <R> R callWithInterceptorChainSync(InterceptorChain interceptorChain,
+                                                     Callable<R> action) throws Exception {
         InterceptorChain previous = CURRENT.get();
         CURRENT.set(interceptorChain);
         try {
@@ -79,7 +79,8 @@ public class InterceptorChainParameterResolverFactory
     public static <M extends Message<?>, T extends Message<?>> MessageStream<? extends T> callWithInterceptorChain(
             ProcessingContext processingContext,
             InterceptorChain<M, T> interceptorChain,
-            Function<ProcessingContext, MessageStream<? extends T>> action) {
+            Function<ProcessingContext, MessageStream<? extends T>> action
+    ) {
         ProcessingContext newProcessingContext = new ResourceOverridingProcessingContext<>(processingContext,
                                                                                            INTERCEPTOR_CHAIN_KEY,
                                                                                            interceptorChain);
@@ -98,14 +99,17 @@ public class InterceptorChainParameterResolverFactory
     }
 
     public static <M extends Message<?>, R extends Message<?>> InterceptorChain<M, R> currentInterceptorChain(
-            ProcessingContext processingContext) {
+            ProcessingContext processingContext
+    ) {
         //noinspection unchecked
         return (InterceptorChain<M, R>) processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
     }
 
     @Override
     public InterceptorChain resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
-        InterceptorChain interceptorChain = processingContext == null ? null : processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
+        InterceptorChain interceptorChain = processingContext == null
+                ? null
+                : processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
         if (interceptorChain == null) {
             interceptorChain = CURRENT.get();
         }
@@ -122,7 +126,8 @@ public class InterceptorChainParameterResolverFactory
     }
 
     @Override
-    public ParameterResolver<InterceptorChain> createInstance(Executable executable, Parameter[] parameters,
+    public ParameterResolver<InterceptorChain> createInstance(Executable executable,
+                                                              Parameter[] parameters,
                                                               int parameterIndex) {
         if (InterceptorChain.class.equals(parameters[parameterIndex].getType())) {
             return this;
