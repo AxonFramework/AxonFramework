@@ -24,45 +24,45 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * A {@link MessageStream} implementation using a {@link Flux} as the source for {@link MessageEntry entries}.
+ * A {@link MessageStream} implementation using a {@link Flux} as the source for {@link Entry entries}.
  *
- * @param <M> The type of {@link Message} contained in the {@link MessageEntry entries} of this stream.
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
 class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final Flux<MessageEntry<M>> source;
+    private final Flux<Entry<M>> source;
 
     /**
      * Constructs a {@link MessageStream stream} using the given {@code source} to provide the
-     * {@link MessageEntry entries}.
+     * {@link Entry entries}.
      *
-     * @param source The {@link Flux} providing the {@link MessageEntry entries} for this {@link MessageStream stream}.
+     * @param source The {@link Flux} providing the {@link Entry entries} for this {@link MessageStream stream}.
      */
-    FluxMessageStream(@Nonnull Flux<MessageEntry<M>> source) {
+    FluxMessageStream(@Nonnull Flux<Entry<M>> source) {
         this.source = source;
     }
 
     @Override
-    public CompletableFuture<MessageEntry<M>> asCompletableFuture() {
+    public CompletableFuture<Entry<M>> asCompletableFuture() {
         return source.singleOrEmpty().toFuture();
     }
 
     @Override
-    public Flux<MessageEntry<M>> asFlux() {
+    public Flux<Entry<M>> asFlux() {
         return source;
     }
 
     @Override
-    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<MessageEntry<M>, MessageEntry<RM>> mapper) {
+    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new FluxMessageStream<>(source.map(mapper));
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, MessageEntry<M>, R> accumulator) {
+                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return source.reduce(identity, accumulator).toFuture();
     }
 

@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.*;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream.MessageEntry;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.spring.config.annotation.SpringBeanDependencyResolverFactory;
@@ -112,7 +112,7 @@ class SpringBeanResolverFactoryTest {
                     new AnnotationEventHandlerAdapter(bean, parameterResolver)
                             .handle(EVENT_MESSAGE, processingContext)
                             .asCompletableFuture()
-                            .thenApply(MessageEntry::message);
+                            .thenApply(Entry::message);
             assertTrue(result.isCompletedExceptionally());
             assertThrows(FixtureExecutionException.class, () -> {
                 try {
@@ -148,7 +148,7 @@ class SpringBeanResolverFactoryTest {
                     new AnnotationEventHandlerAdapter(bean, parameterResolver)
                             .handle(EVENT_MESSAGE, processingContext)
                             .asCompletableFuture()
-                            .thenApply(MessageEntry::message);
+                            .thenApply(Entry::message);
             assertTrue(result.isCompletedExceptionally());
             assertThrows(FixtureExecutionException.class, () -> {
                 try {
@@ -210,7 +210,7 @@ class SpringBeanResolverFactoryTest {
             // Spring dependency resolution will resolve at time of execution
             CompletableFuture<Message<Void>> result = adapter.handle(EVENT_MESSAGE, processingContext)
                                                              .asCompletableFuture()
-                                                             .thenApply(MessageEntry::message);
+                                                             .thenApply(Entry::message);
             assertTrue(result.isCompletedExceptionally());
             assertThrows(NoUniqueBeanDefinitionException.class, () -> {
                 try {

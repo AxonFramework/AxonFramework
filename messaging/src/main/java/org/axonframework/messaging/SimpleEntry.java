@@ -17,23 +17,23 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.MessageStream.MessageEntry;
+import org.axonframework.messaging.MessageStream.Entry;
 
 import java.util.function.Function;
 
 /**
- * Simple implementation of the {@link MessageEntry} that only contains a single {@link Message} implementation of type
+ * Simple implementation of the {@link Entry} that only contains a single {@link Message} implementation of type
  * {@code M}
  *
- * @param <M>     The type of {@link Message} contained in this {@link MessageEntry} implementation.
- * @param message The {@link Message} of type {@code M} contained in this {@link MessageEntry}.
+ * @param <M>     The type of {@link Message} contained in this {@link Entry} implementation.
+ * @param message The {@link Message} of type {@code M} contained in this {@link Entry}.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public record SimpleMessageEntry<M extends Message<?>>(M message) implements MessageEntry<M> {
+public record SimpleEntry<M extends Message<?>>(M message) implements Entry<M> {
 
     @Override
-    public <RM extends Message<?>> MessageEntry<RM> map(@Nonnull Function<M, RM> mapper) {
-        return new SimpleMessageEntry<>(mapper.apply(message()));
+    public <RM extends Message<?>> Entry<RM> map(@Nonnull Function<M, RM> mapper) {
+        return new SimpleEntry<>(mapper.apply(message()));
     }
 }

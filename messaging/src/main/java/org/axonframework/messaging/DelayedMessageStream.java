@@ -27,7 +27,7 @@ import java.util.function.BiFunction;
 /**
  * An implementation of the {@link MessageStream} that wraps a stream that will become available asynchronously.
  *
- * @param <M> The type of {@link Message} contained in the {@link MessageEntry entries} of this stream.
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -49,7 +49,7 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      *
      * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream stream} to delegate to
      *                 when it becomes available.
-     * @param <M>      The type of {@link Message} contained in the {@link MessageEntry entries} of this stream.
+     * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A {@link MessageStream stream} that delegates all actions to the {@code delegate} when it becomes
      * available.
      */
@@ -69,19 +69,19 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
     }
 
     @Override
-    public CompletableFuture<MessageEntry<M>> asCompletableFuture() {
+    public CompletableFuture<Entry<M>> asCompletableFuture() {
         return delegate.thenCompose(MessageStream::asCompletableFuture);
     }
 
     @Override
-    public Flux<MessageEntry<M>> asFlux() {
+    public Flux<Entry<M>> asFlux() {
         return Mono.fromFuture(delegate)
                    .flatMapMany(MessageStream::asFlux);
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, MessageEntry<M>, R> accumulator) {
+                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
     }
 }

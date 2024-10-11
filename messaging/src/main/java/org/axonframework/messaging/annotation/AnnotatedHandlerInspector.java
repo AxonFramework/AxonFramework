@@ -19,7 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.SimpleMessageEntry;
+import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import javax.annotation.Nonnull;
@@ -198,7 +198,7 @@ public class AnnotatedHandlerInspector<T> {
     private static MessageStream<? extends Message<?>> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?>) {
             return MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage),
-                                            SimpleMessageEntry::new);
+                                            SimpleEntry::new);
         }
         return MessageStream.just(GenericMessage.asMessage(result));
     }

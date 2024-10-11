@@ -24,10 +24,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Implementation of the {@link MessageStream} that maps the {@link MessageEntry entries}.
+ * Implementation of the {@link MessageStream} that maps the {@link Entry entries}.
  *
- * @param <M>  The type of {@link Message} contained in the {@link MessageEntry entries} of this stream.
- * @param <RM> The type of {@link Message} contained in the {@link MessageEntry} as a result of mapping.
+ * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
+ * @param <RM> The type of {@link Message} contained in the {@link Entry} as a result of mapping.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -35,38 +35,38 @@ import java.util.function.Function;
 class MappedMessageStream<M extends Message<?>, RM extends Message<?>> implements MessageStream<RM> {
 
     private final MessageStream<M> delegate;
-    private final Function<MessageEntry<M>, MessageEntry<RM>> mapper;
+    private final Function<Entry<M>, Entry<RM>> mapper;
 
     /**
-     * Construct a {@link MessageStream stream} mapping the {@link MessageEntry entries} of the given
+     * Construct a {@link MessageStream stream} mapping the {@link Entry entries} of the given
      * {@code delegate MessageStream} to entries containing {@link Message Messages} of type {@code RM}.
      *
-     * @param delegate The {@link MessageStream stream} who's {@link MessageEntry entries} are mapped with the given
+     * @param delegate The {@link MessageStream stream} who's {@link Entry entries} are mapped with the given
      *                 {@code mapper}.
-     * @param mapper   The {@link Function} mapping {@link MessageEntry entries}.
+     * @param mapper   The {@link Function} mapping {@link Entry entries}.
      */
     MappedMessageStream(@Nonnull MessageStream<M> delegate,
-                        @Nonnull Function<MessageEntry<M>, MessageEntry<RM>> mapper) {
+                        @Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         this.delegate = delegate;
         this.mapper = mapper;
     }
 
     @Override
-    public CompletableFuture<MessageEntry<RM>> asCompletableFuture() {
+    public CompletableFuture<Entry<RM>> asCompletableFuture() {
         // CompletableFuture doesn't support empty completions, so null is used as placeholder
         return delegate.asCompletableFuture()
                        .thenApply(entry -> entry == null ? null : mapper.apply(entry));
     }
 
     @Override
-    public Flux<MessageEntry<RM>> asFlux() {
+    public Flux<Entry<RM>> asFlux() {
         return delegate.asFlux()
                        .map(mapper);
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, MessageEntry<RM>, R> accumulator) {
+                                           @Nonnull BiFunction<R, Entry<RM>, R> accumulator) {
         return delegate.reduce(
                 identity,
                 (base, message) -> accumulator.apply(base, mapper.apply(message))

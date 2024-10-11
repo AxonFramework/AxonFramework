@@ -21,7 +21,7 @@ import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageStream.MessageEntry;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.ResultHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -121,7 +121,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
             // TODO - Provide implementation that handles exceptions in streams with more than one item
             return MessageStream.fromFuture(
                     chain.proceed(message, processingContext)
-                         .map(r -> (MessageEntry<Message<?>>) r)
+                         .map(r -> (Entry<Message<?>>) r)
                          .asCompletableFuture()
                          .exceptionallyCompose(error -> {
                              if (expectedResultType.isInstance(error)) {
@@ -133,7 +133,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                                      pc -> {
                                          if (super.canHandle(message, pc)) {
                                              return super.handle(message, pc, target)
-                                                         .map(r -> (MessageEntry<Message<?>>) r)
+                                                         .map(r -> (Entry<Message<?>>) r)
                                                          .asCompletableFuture();
                                          }
                                          return CompletableFuture.failedFuture(error);

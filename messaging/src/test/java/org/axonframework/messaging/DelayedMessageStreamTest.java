@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.messaging.MessageStream.MessageEntry;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 
@@ -38,7 +38,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        MessageStream<Message<String>> testStream = MessageStream.fromIterable(messages, SimpleMessageEntry::new);
+        MessageStream<Message<String>> testStream = MessageStream.fromIterable(messages, SimpleEntry::new);
         return DelayedMessageStream.create(CompletableFuture.completedFuture(testStream));
     }
 
@@ -46,7 +46,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
         return DelayedMessageStream.create(CompletableFuture.completedFuture(
-                MessageStream.fromIterable(messages, SimpleMessageEntry::new)
+                MessageStream.fromIterable(messages, SimpleEntry::new)
                              .concatWith(MessageStream.failed(failure)))
         );
     }
@@ -62,7 +62,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         CompletableFuture<Object> result = DelayedMessageStream.create(CompletableFuture.failedFuture(expected))
                                                                .asCompletableFuture()
-                                                               .thenApply(MessageEntry::message);
+                                                               .thenApply(Entry::message);
 
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());

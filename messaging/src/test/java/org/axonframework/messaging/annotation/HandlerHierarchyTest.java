@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.SimpleMessageEntry;
+import org.axonframework.messaging.SimpleEntry;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -105,7 +105,7 @@ class HandlerHierarchyTest {
     private static MessageStream<? extends Message<?>> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?>) {
             return MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage),
-                                            SimpleMessageEntry::new);
+                                            SimpleEntry::new);
         }
         return MessageStream.just(GenericMessage.asMessage(result));
     }

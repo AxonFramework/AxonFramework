@@ -313,7 +313,7 @@ class SimpleCommandBusTest {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> futureResult) {
                 return MessageStream.fromFuture(futureResult.thenApply(GenericMessage::asMessage),
-                                                SimpleMessageEntry::new);
+                                                SimpleEntry::new);
             } else {
                 return MessageStream.just(GenericMessage.asMessage(result));
             }

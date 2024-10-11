@@ -32,7 +32,7 @@ class FluxMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return MessageStream.fromFlux(Flux.fromIterable(messages), SimpleMessageEntry::new);
+        return MessageStream.fromFlux(Flux.fromIterable(messages), SimpleEntry::new);
     }
 
     @Override
@@ -40,7 +40,7 @@ class FluxMessageStreamTest extends MessageStreamTest<Message<String>> {
                                                       Exception failure) {
         return MessageStream.fromFlux(Flux.fromIterable(messages)
                                           .concatWith(Mono.error(failure)),
-                                      SimpleMessageEntry::new);
+                                      SimpleEntry::new);
     }
 
     @Override

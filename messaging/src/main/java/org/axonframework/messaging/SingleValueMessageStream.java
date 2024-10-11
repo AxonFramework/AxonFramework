@@ -26,59 +26,59 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * A {@link MessageStream} implementation using a single {@link MessageEntry entry} or {@link CompletableFuture}
+ * A {@link MessageStream} implementation using a single {@link Entry entry} or {@link CompletableFuture}
  * completing to an entry as the source.
  *
- * @param <M> The type of {@link Message} contained in the {@link MessageEntry entries} of this stream.
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
 class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final CompletableFuture<MessageEntry<M>> source;
+    private final CompletableFuture<Entry<M>> source;
 
     /**
-     * Constructs a {@link MessageStream stream} wrapping the given {@link MessageEntry entry} into a
+     * Constructs a {@link MessageStream stream} wrapping the given {@link Entry entry} into a
      * {@link CompletableFuture#completedFuture(Object) completed CompletableFuture} as the single entry in this
      * stream.
      *
-     * @param entry The {@link MessageEntry entry} which is the singular value contained in this
+     * @param entry The {@link Entry entry} which is the singular value contained in this
      *              {@link MessageStream stream}.
      */
-    SingleValueMessageStream(@Nullable MessageEntry<M> entry) {
+    SingleValueMessageStream(@Nullable Entry<M> entry) {
         this(CompletableFuture.completedFuture(entry));
     }
 
     /**
      * Constructs a {@link MessageStream stream} with the given {@code source} as the provider of the single
-     * {@link MessageEntry entry} in this stream.
+     * {@link Entry entry} in this stream.
      *
-     * @param source The {@link CompletableFuture} resulting in the singular {@link MessageEntry entry} contained in
+     * @param source The {@link CompletableFuture} resulting in the singular {@link Entry entry} contained in
      *               this {@link MessageStream stream}.
      */
-    SingleValueMessageStream(@Nonnull CompletableFuture<MessageEntry<M>> source) {
+    SingleValueMessageStream(@Nonnull CompletableFuture<Entry<M>> source) {
         this.source = source;
     }
 
     @Override
-    public CompletableFuture<MessageEntry<M>> asCompletableFuture() {
+    public CompletableFuture<Entry<M>> asCompletableFuture() {
         return source;
     }
 
     @Override
-    public Flux<MessageEntry<M>> asFlux() {
+    public Flux<Entry<M>> asFlux() {
         return Flux.from(Mono.fromFuture(source));
     }
 
     @Override
-    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<MessageEntry<M>, MessageEntry<RM>> mapper) {
+    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new SingleValueMessageStream<>(source.thenApply(mapper));
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, MessageEntry<M>, R> accumulator) {
+                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return source.thenApply(message -> accumulator.apply(identity, message));
     }
 }

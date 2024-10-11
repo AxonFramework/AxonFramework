@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.messaging.MessageStream.MessageEntry;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -25,17 +25,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
- * Test class validating the {@link SimpleMessageEntry}.
+ * Test class validating the {@link SimpleEntry}.
  *
  * @author Steven van Beelen
  */
-class SimpleMessageEntryTest {
+class SimpleEntryTest {
 
     @Test
     void containsExpectedData() {
         Message<Object> expected = GenericMessage.asMessage("some-payload");
 
-        MessageEntry<Message<Object>> testSubject = new SimpleMessageEntry<>(expected);
+        Entry<Message<Object>> testSubject = new SimpleEntry<>(expected);
 
         assertEquals(expected, testSubject.message());
     }
@@ -45,9 +45,9 @@ class SimpleMessageEntryTest {
         Message<Object> expected = GenericMessage.asMessage("some-payload");
         MetaData expectedMetaData = MetaData.from(Map.of("key", "value"));
 
-        MessageEntry<Message<Object>> testSubject = new SimpleMessageEntry<>(expected);
+        Entry<Message<Object>> testSubject = new SimpleEntry<>(expected);
 
-        MessageEntry<Message<Object>> result = testSubject.map(message -> message.withMetaData(expectedMetaData));
+        Entry<Message<Object>> result = testSubject.map(message -> message.withMetaData(expectedMetaData));
 
         assertNotEquals(expected, result.message());
         assertEquals(expectedMetaData, result.message().getMetaData());

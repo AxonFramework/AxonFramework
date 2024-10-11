@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.messaging.MessageStream.MessageEntry;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 
@@ -38,18 +38,18 @@ import static org.mockito.Mockito.*;
  */
 class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
-    private static final Consumer<MessageEntry<Message<String>>> NO_OP_ON_NEXT = message -> {
+    private static final Consumer<Entry<Message<String>>> NO_OP_ON_NEXT = message -> {
     };
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new OnNextMessageStream<>(MessageStream.fromIterable(messages, SimpleMessageEntry::new), NO_OP_ON_NEXT);
+        return new OnNextMessageStream<>(MessageStream.fromIterable(messages, SimpleEntry::new), NO_OP_ON_NEXT);
     }
 
     @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
-        return new OnNextMessageStream<>(MessageStream.fromIterable(messages, SimpleMessageEntry::new)
+        return new OnNextMessageStream<>(MessageStream.fromIterable(messages, SimpleEntry::new)
                                                       .concatWith(MessageStream.failed(failure)),
                                          NO_OP_ON_NEXT);
     }
@@ -62,7 +62,7 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
     @Test
     void onNextNotInvokedOnEmptyStream() {
         //noinspection unchecked
-        Consumer<MessageEntry<Message<?>>> handler = mock();
+        Consumer<Entry<Message<?>>> handler = mock();
         MessageStream<Message<?>> testSubject = MessageStream.empty().onNextItem(handler);
 
         testSubject.asCompletableFuture().isDone();
@@ -71,15 +71,15 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Test
     void verifyOnNextInvokedForFirstElementWhenUsingOnCompletableFuture() {
-        List<MessageEntry<Message<String>>> seen = new ArrayList<>();
+        List<Entry<Message<String>>> seen = new ArrayList<>();
         Message<String> first = createRandomMessage();
-        List<MessageEntry<Message<String>>> items = List.of(new SimpleMessageEntry<>(first),
-                                                            new SimpleMessageEntry<>(createRandomMessage()));
+        List<Entry<Message<String>>> items = List.of(new SimpleEntry<>(first),
+                                                     new SimpleEntry<>(createRandomMessage()));
 
         CompletableFuture<Message<String>> actual = MessageStream.fromIterable(items)
                                                                  .onNextItem(seen::add)
                                                                  .asCompletableFuture()
-                                                                 .thenApply(MessageEntry::message);
+                                                                 .thenApply(Entry::message);
 
         assertTrue(actual.isDone());
         assertEquals(1, seen.size());
@@ -88,11 +88,11 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Test
     void verifyOnNextInvokedForAllElementsWhenUsingAsFlux() {
-        List<MessageEntry<Message<String>>> seen = new ArrayList<>();
+        List<Entry<Message<String>>> seen = new ArrayList<>();
         Message<String> first = createRandomMessage();
         Message<String> second = createRandomMessage();
-        List<MessageEntry<Message<String>>> items = List.of(new SimpleMessageEntry<>(first),
-                                                            new SimpleMessageEntry<>(second));
+        List<Entry<Message<String>>> items = List.of(new SimpleEntry<>(first),
+                                                     new SimpleEntry<>(second));
 
         StepVerifier.create(MessageStream.fromIterable(items)
                                          .onNextItem(seen::add)

@@ -42,7 +42,7 @@ class MethodInvokingMessageHandlingMemberTest {
     private static MessageStream<? extends Message<?>> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?>) {
             return MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage),
-                                            SimpleMessageEntry::new);
+                                            SimpleEntry::new);
         }
         return MessageStream.just(GenericMessage.asMessage(result));
     }

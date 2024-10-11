@@ -37,7 +37,7 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message<String>> 
         }
         return new ConcatenatingMessageStream<>(
                 MessageStream.just(messages.getFirst()),
-                MessageStream.fromIterable(messages.subList(1, messages.size()), SimpleMessageEntry::new)
+                MessageStream.fromIterable(messages.subList(1, messages.size()), SimpleEntry::new)
         );
     }
 

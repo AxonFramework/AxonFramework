@@ -26,7 +26,7 @@ import java.util.function.BiFunction;
  * Implementation of the {@link MessageStream} that invokes the given {@code completeHandler} once the
  * {@code delegate MessageStream} completes.
  *
- * @param <M> The type of {@link Message} contained in the {@link MessageEntry entries} of this stream.
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -51,7 +51,7 @@ class CompletionCallbackMessageStream<M extends Message<?>> implements MessageSt
     }
 
     @Override
-    public CompletableFuture<MessageEntry<M>> asCompletableFuture() {
+    public CompletableFuture<Entry<M>> asCompletableFuture() {
         return delegate.asCompletableFuture()
                        .whenComplete((result, exception) -> {
                            if (exception == null) {
@@ -61,14 +61,14 @@ class CompletionCallbackMessageStream<M extends Message<?>> implements MessageSt
     }
 
     @Override
-    public Flux<MessageEntry<M>> asFlux() {
+    public Flux<Entry<M>> asFlux() {
         return delegate.asFlux()
                        .doOnComplete(completeHandler);
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, MessageEntry<M>, R> accumulator) {
+                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return delegate.reduce(identity, accumulator)
                        .whenComplete((result, exception) -> {
                            if (exception == null) {

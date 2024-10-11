@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.messaging.MessageStream.MessageEntry;
+import org.axonframework.messaging.MessageStream.Entry;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -30,16 +30,16 @@ import java.util.function.Function;
  */
 class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
-    private static final Function<MessageEntry<Message<String>>, MessageEntry<Message<String>>> NO_OP_MAPPER = entry -> entry;
+    private static final Function<Entry<Message<String>>, Entry<Message<String>>> NO_OP_MAPPER = entry -> entry;
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new MappedMessageStream<>(MessageStream.fromIterable(messages, SimpleMessageEntry::new), NO_OP_MAPPER);
+        return new MappedMessageStream<>(MessageStream.fromIterable(messages, SimpleEntry::new), NO_OP_MAPPER);
     }
 
     @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> entries, Exception failure) {
-        return new MappedMessageStream<>(MessageStream.fromIterable(entries, SimpleMessageEntry::new)
+        return new MappedMessageStream<>(MessageStream.fromIterable(entries, SimpleEntry::new)
                                                       .concatWith(MessageStream.failed(failure)), NO_OP_MAPPER);
     }
 

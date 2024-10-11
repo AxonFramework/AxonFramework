@@ -31,7 +31,7 @@ class IterableMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return MessageStream.fromIterable(messages, SimpleMessageEntry::new);
+        return MessageStream.fromIterable(messages, SimpleEntry::new);
     }
 
     @Override
