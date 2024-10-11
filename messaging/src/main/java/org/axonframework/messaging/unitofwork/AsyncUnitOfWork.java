@@ -1,5 +1,22 @@
+/*
+ * Copyright (c) 2010-2024. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.AbstractContext;
 import org.axonframework.common.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,19 +24,10 @@ import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * This class represents a Unit of Work that monitors the processing of a task.
@@ -168,7 +176,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         return "UnitOfWork{" + "identifier='" + identifier + '\'' + "phase='" + context.currentPhase.get() + '\'' + '}';
     }
 
-    private static class UnitOfWorkProcessingContext implements ProcessingContext {
+    private static class UnitOfWorkProcessingContext extends AbstractContext implements ProcessingContext {
 
         private final AtomicReference<Status> status = new AtomicReference<>(Status.NOT_STARTED);
         private final AtomicReference<Phase> currentPhase = new AtomicReference<>(null);
@@ -178,8 +186,6 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         private final Queue<Consumer<ProcessingContext>> completeHandlers = new ConcurrentLinkedQueue<>();
         private final Queue<ErrorHandler> errorHandlers = new ConcurrentLinkedQueue<>();
         private final AtomicReference<CauseAndPhase> errorCause = new AtomicReference<>();
-
-        private final ConcurrentMap<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
 
         private final String identifier;
         private final Executor workScheduler;
@@ -384,52 +390,6 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
                                                          .thenAccept(FutureUtils::ignoreResult))
                               .reduce(CompletableFuture::allOf)
                               .orElseGet(FutureUtils::emptyCompletedFuture);
-        }
-
-        @Override
-        public boolean containsResource(ResourceKey<?> key) {
-            return resources.containsKey(key);
-        }
-
-        @Override
-        public <T> T getResource(ResourceKey<T> key) {
-            //noinspection unchecked
-            return (T) resources.get(key);
-        }
-
-        @Override
-        public <T> T putResource(ResourceKey<T> key, T resource) {
-            //noinspection unchecked
-            return (T) resources.put(key, resource);
-        }
-
-        @Override
-        public <T> T updateResource(ResourceKey<T> key, Function<T, T> resourceUpdater) {
-            //noinspection unchecked
-            return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
-        }
-
-        @Override
-        public <T> T putResourceIfAbsent(ResourceKey<T> key, T resource) {
-            //noinspection unchecked
-            return (T) resources.putIfAbsent(key, resource);
-        }
-
-        @Override
-        public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> resourceSupplier) {
-            //noinspection unchecked
-            return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
-        }
-
-        @Override
-        public <T> T removeResource(ResourceKey<T> key) {
-            //noinspection unchecked
-            return (T) resources.remove(key);
-        }
-
-        @Override
-        public <T> boolean removeResource(ResourceKey<T> key, T expectedResource) {
-            return resources.remove(key, expectedResource);
         }
 
         @Override
