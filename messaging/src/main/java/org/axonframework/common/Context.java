@@ -16,6 +16,8 @@
 
 package org.axonframework.common;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -42,7 +44,7 @@ public interface Context {
      * @param key The key of the resource to check.
      * @return {@code true} if a resource is registered with this {@code key}, otherwise {@code false}.
      */
-    boolean containsResource(ResourceKey<?> key);
+    boolean containsResource(@Nonnull ResourceKey<?> key);
 
     /**
      * Returns the resource currently registered under the given {@code key}, or {@code null} if no resource is
@@ -52,7 +54,7 @@ public interface Context {
      * @param <T> The type of resource registered under the given {@code key}.
      * @return The resource currently registered under given {@code key}, or {@code null} if not present.
      */
-    <T> T getResource(ResourceKey<T> key);
+    <T> T getResource(@Nonnull ResourceKey<T> key);
 
     /**
      * Register the given {@code resource} under the given {@code key}.
@@ -62,7 +64,7 @@ public interface Context {
      * @param <T>      The type of {@code resource} to register under given @code.
      * @return The previously registered {@code resource}, or {@code null} if none was present.
      */
-    <T> T putResource(ResourceKey<T> key, T resource);
+    <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource);
 
     /**
      * Update the resource with given {@code key} using the given {@code resourceUpdater} to describe the update. If no
@@ -79,7 +81,7 @@ public interface Context {
      * @param <T>             The type of resource to update.
      * @return The new value associated with the {@code key}, or {@code null} when removed.
      */
-    <T> T updateResource(ResourceKey<T> key, Function<T, T> resourceUpdater);
+    <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater);
 
     /**
      * Register the given {@code instance} under the given {@code key} if no value is currently present.
@@ -89,7 +91,7 @@ public interface Context {
      * @param <T>      The type of {@code resource} to register under given {@code key}.
      * @return The resource previously associated with given {@code key}.
      */
-    <T> T putResourceIfAbsent(ResourceKey<T> key, T resource);
+    <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource);
 
     /**
      * If no resource is present for the given {@code key}, the given {@code resourceSupplier} is used to supply the
@@ -100,7 +102,7 @@ public interface Context {
      * @param <T>              The type of resource registered under given {@code key}.
      * @return The resource associated with the {@code key}.
      */
-    <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> resourceSupplier);
+    <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier);
 
     /**
      * Removes the resource registered under given {@code key}.
@@ -109,7 +111,7 @@ public interface Context {
      * @param <T> The type of resource associated with the {@code key}.
      * @return The value previously associated with the {@code key}.
      */
-    <T> T removeResource(ResourceKey<T> key);
+    <T> T removeResource(@Nonnull ResourceKey<T> key);
 
     /**
      * Remove the resource associated with given {@code key} if the given {@code expectedResource} is the currently
@@ -120,7 +122,7 @@ public interface Context {
      * @param <T>              The type of resource associated with the {@code key}.
      * @return {@code true} if the resource has been removed, otherwise {@code false}.
      */
-    <T> boolean removeResource(ResourceKey<T> key, T expectedResource);
+    <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource);
 
     /**
      * Object that is used as a key to retrieve and register resources of a given type in a processing context.

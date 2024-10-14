@@ -16,6 +16,9 @@
 
 package org.axonframework.common;
 
+import jakarta.annotation.Nonnull;
+
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -28,53 +31,77 @@ import java.util.function.Supplier;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public abstract class AbstractContext implements Context {
+public class SimpleContext implements Context {
 
     private final ConcurrentMap<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
 
     @Override
-    public boolean containsResource(ResourceKey<?> key) {
+    public boolean containsResource(@Nonnull ResourceKey<?> key) {
         return resources.containsKey(key);
     }
 
     @Override
-    public <T> T getResource(ResourceKey<T> key) {
+    public <T> T getResource(@Nonnull ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.get(key);
     }
 
     @Override
-    public <T> T putResource(ResourceKey<T> key, T resource) {
+    public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         //noinspection unchecked
         return (T) resources.put(key, resource);
     }
 
     @Override
-    public <T> T updateResource(ResourceKey<T> key, Function<T, T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
     }
 
     @Override
-    public <T> T putResourceIfAbsent(ResourceKey<T> key, T resource) {
+    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         //noinspection unchecked
         return (T) resources.putIfAbsent(key, resource);
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
         //noinspection unchecked
         return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
     }
 
     @Override
-    public <T> T removeResource(ResourceKey<T> key) {
+    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.remove(key);
     }
 
     @Override
-    public <T> boolean removeResource(ResourceKey<T> key, T expectedResource) {
+    public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
         return resources.remove(key, expectedResource);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SimpleContext that = (SimpleContext) o;
+        return Objects.equals(resources, that.resources);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(resources);
+    }
+
+    @Override
+    public String toString() {
+        return "SimpleContext{" +
+                "resources=" + resources +
+                '}';
     }
 }

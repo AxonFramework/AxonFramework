@@ -16,8 +16,10 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.common.AbstractContext;
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.SimpleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +30,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * This class represents a Unit of Work that monitors the processing of a task.
@@ -189,10 +192,12 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
 
         private final String identifier;
         private final Executor workScheduler;
+        private final Context context;
 
         private UnitOfWorkProcessingContext(String identifier, Executor workScheduler) {
             this.identifier = identifier;
             this.workScheduler = workScheduler;
+            this.context = new SimpleContext();
         }
 
         @Override
@@ -397,6 +402,46 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
             return "UnitOfWorkProcessingContext{"
                     + "identifier='" + identifier + '\'' + ", currentPhase=" + currentPhase.get()
                     + '}';
+        }
+
+        @Override
+        public boolean containsResource(@Nonnull ResourceKey<?> key) {
+            return this.context.containsResource(key);
+        }
+
+        @Override
+        public <T> T getResource(@Nonnull ResourceKey<T> key) {
+            return this.context.getResource(key);
+        }
+
+        @Override
+        public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+            return this.context.putResource(key, resource);
+        }
+
+        @Override
+        public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater) {
+            return this.context.updateResource(key, resourceUpdater);
+        }
+
+        @Override
+        public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+            return this.context.putResourceIfAbsent(key, resource);
+        }
+
+        @Override
+        public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
+            return this.context.computeResourceIfAbsent(key, resourceSupplier);
+        }
+
+        @Override
+        public <T> T removeResource(@Nonnull ResourceKey<T> key) {
+            return this.context.removeResource(key);
+        }
+
+        @Override
+        public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
+            return this.context.removeResource(key, expectedResource);
         }
 
         private enum Status {
