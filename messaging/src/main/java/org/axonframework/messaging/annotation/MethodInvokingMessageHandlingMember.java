@@ -49,7 +49,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     private final Class<?> payloadType;
     private final int parameterCount;
     private final ParameterResolver<?>[] parameterResolvers;
-    private final Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter;
+    private final Function<Object, MessageStream<?>> returnTypeConverter;
     private final Method method;
     private final Class<? extends Message> messageType;
     private final HandlerAttributes attributes;
@@ -67,7 +67,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                                Class<? extends Message> messageType,
                                                Class<?> explicitPayloadType,
                                                ParameterResolverFactory parameterResolverFactory,
-                                               Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter) {
+                                               Function<Object, MessageStream<?>> returnTypeConverter) {
         this.messageType = messageType;
         this.method = ReflectionUtils.ensureAccessible(method);
         this.returnTypeConverter = returnTypeConverter;

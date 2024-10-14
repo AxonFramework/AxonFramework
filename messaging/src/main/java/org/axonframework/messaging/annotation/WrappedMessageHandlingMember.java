@@ -66,9 +66,9 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                      @Nonnull ProcessingContext processingContext,
-                                                      @Nullable T target) {
+    public MessageStream<?> handle(@Nonnull Message<?> message,
+                                   @Nonnull ProcessingContext processingContext,
+                                   @Nullable T target) {
         return delegate.handle(message, processingContext, target);
     }
 

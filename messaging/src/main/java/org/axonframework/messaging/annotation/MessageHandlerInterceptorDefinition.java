@@ -113,9 +113,9 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                          @Nonnull ProcessingContext processingContext,
-                                                          @Nullable T target) {
+        public MessageStream<?> handle(@Nonnull Message<?> message,
+                                       @Nonnull ProcessingContext processingContext,
+                                       @Nullable T target) {
             InterceptorChain<Message<?>, ?> chain =
                     InterceptorChainParameterResolverFactory.currentInterceptorChain(processingContext);
             // TODO - Provide implementation that handles exceptions in streams with more than one item
