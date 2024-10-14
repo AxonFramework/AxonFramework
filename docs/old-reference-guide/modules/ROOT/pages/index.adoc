@@ -3,6 +3,16 @@
 
 This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help build applications based on link:https://www.axoniq.io/concepts/domain-driven-design[Domain-Driven Design], link:https://www.axoniq.io/concepts/cqrs-and-event-sourcing[CQRS, and Event-Sourcing].
 
+[[console]]
+== New: Easy monitoring and management
+AxonIQ Console is the platform to monitor and manage your Axon Framework applications. It provides insights into the performance and behavior of your application, and allows you to manage your application's event processors.
+You can also get scalable xref:axon-server-reference::index.adoc[Axon Server] licenses with scalable pricing, and manage your Axon Server instances.
+
+image::axoniq-console-teaser.png[alt="Statistics measured in AxonIQ Console"]
+
+For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console Reference Guide] or link:https://console.axoniq.io[sign up directly].
+
+== Reference sections
 A summary of the various subsections is given below.
 
 [cols="<,<"]

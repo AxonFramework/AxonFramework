@@ -8,7 +8,7 @@ The `SubscribableMessageSource` is an infrastructure component to register a Sub
 
 After registration to the `SubscribableMessageSource`, the message source gives the events to the `SubscribingEventProcessor` in the order they are received.
 Examples of a `SubscribableMessageSource` are the `EventBus` or the xref:amqp-extension-reference::index.adoc[AMQP Extension].
-Both the `EventBus` and AMQP Extension are simple message bus solutions for events.
+Both the `EventBus` and the AMQP Extension are simple message bus solutions for events.
 
 The simple bus solution makes the `SubscribableMessageSource` and thus the Subscribing Processor an approach to only receive _current_ events.
 Operations like xref:event-processors/streaming.adoc#replaying-events[replaying] are, therefore, not an option for any Subscribing Processor as long as the `SubscribableMessageSource` follows this paradigm.

@@ -46,14 +46,13 @@ All other events are wrapped in an `EventMessage` . Aside from common `Message` 
 The `DomainEventMessage` additionally contains the type and identifier of the aggregate that raised the event.
 It also contains the sequence number of the event in the aggregate's event stream, which allows the order of events to be reproduced.
 
-____
-
-*Aggregate Identifiers in Events*
+[TIP]
+.Include aggregate identifiers in tyour events
+====
 
 Even though the `DomainEventMessage` contains a reference to the Aggregate Identifier, you should always include the identifier in the actual Event itself as well.
 The identifier in the DomainEventMessage is used by the `EventStore` to store events and may not always provide a reliable value for other purposes.
-
-____
+====
 
 The original event object is stored as the payload of an `EventMessage`.
 Next to the payload, you can store information in the metadata of an event message.
@@ -62,23 +61,23 @@ Auditing information is a typical example.
 It allows you to see under which circumstances an Event was raised.
 Such as the user account that triggered the processing, or the name of the machine that processed the event.
 
-____
-
-**Message Metadata**
+[TIP]
+.Do not base business decisions on metadata
+====
 
 In general, you should not base business decisions on information in the metadata of event messages.
 If that is the case, you might have information attached that should really be part of the event itself instead.
 Metadata is typically used for reporting, auditing and tracing.
-
-____
+====
 
 Although not enforced, it is good practice to make domain events immutable, preferably by making all fields final and by initializing the event within the constructor.
 Consider using a Builder pattern if event construction is too cumbersome.
 
-____
 
-**Event Structure Recommendation**
 
+[TIP]
+.Capture intent in your events
+====
 Although domain events technically indicate a state change, you should try to capture the intention of the state in the event, too.
 A good practice is to use an abstract implementation of a domain event to capture the fact that certain state has changed, and use a concrete sub-implementation of that abstract class that indicates the intention of the change.
 For example, you could have an abstract `AddressChangedEvent`, and two implementations `ContactMovedEvent` and `AddressCorrectedEvent` that capture the intent of the state change.
@@ -88,7 +87,7 @@ Other listeners do care about the intent and these will listen to the concrete s
 
 image::state-change-intent.png[Adding intent to events]
 
-____
+====
 
 When dispatching an Event on the Event Bus, you will need to wrap it in an Event Message.
 The `GenericEventMessage` is an implementation that allows you to wrap your Event in a Message.
@@ -102,3 +101,16 @@ If an Event is applied (published) by an Aggregate Axon will automatically wrap 
 Queries describe a request for information or state.
 A query can have multiple handlers.
 When dispatching queries, the client indicates whether he wants a result from one or from all available query handlers.
+
+== Message Flow
+When building Axon Framework applications, you will typically see a flow of messages.
+Commands are sent to the Command Bus, which dispatches them to the appropriate Command Handler.
+The command handler will apply events that will be published and handled by Event Handlers.
+These handlers can update the read model, which can be queried using Query Messages.
+
+Using xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console],
+you can monitor the flow of messages in your application as you can see in the image below.
+
+image::axoniq-console-flow.gif[alt="Animated graphic of message flow in AxonIQ Console"]
+
+Besides seeing the flow, every message handler is individually monitored, providing deep insight into the performance and behavior of your application. For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console Reference Guide] or link:https://console.axoniq.io[sign up directly].
