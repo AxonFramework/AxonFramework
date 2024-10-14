@@ -102,7 +102,7 @@ Queries describe a request for information or state.
 A query can have multiple handlers.
 When dispatching queries, the client indicates whether he wants a result from one or from all available query handlers.
 
-== Message Flow
+== Message flow
 When building Axon Framework applications, you will typically see a flow of messages.
 Commands are sent to the Command Bus, which dispatches them to the appropriate Command Handler.
 The command handler will apply events that will be published and handled by Event Handlers.

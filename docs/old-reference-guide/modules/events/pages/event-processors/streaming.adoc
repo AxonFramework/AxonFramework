@@ -74,10 +74,10 @@ Configuration API::
 --
 [source,java]
 ----
-public class AxonConfig { 
+public class AxonConfig {
     // omitting other configuration methods...
-    public void configureProcessorDefault(EventProcessingConfigurer processingConfigurer) { 
-        processingConfigurer.usingTrackingEventProcessors();  
+    public void configureProcessorDefault(EventProcessingConfigurer processingConfigurer) {
+        processingConfigurer.usingTrackingEventProcessors();
     }
 }
 ----
@@ -117,7 +117,7 @@ public class AxonConfig {
         // This configuration object allows for fine-grained control over the Tracking Processor
         TrackingEventProcessorConfiguration tepConfig =
               TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
-        
+
         // To configure a processor to be tracking ...
         processingConfigurer
             .registerTrackingEventProcessor("my-processor")
@@ -216,7 +216,7 @@ public class AxonConfig {
     public void registerTrackingProcessorConfig(EventProcessingConfigurer processingConfigurer) {
         TrackingEventProcessorConfiguration tepConfig =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
-            
+
         // To register a default tracking config ...
         processingConfigurer.registerTrackingEventProcessorConfiguration(config -> tepConfig)
                             // ... to register a config for a specific processor.
@@ -266,10 +266,10 @@ Axon Configuration API::
 
 [source,java]
 ----
-public class AxonConfig { 
+public class AxonConfig {
     // omitting other configuration methods...
-    public void configureProcessorDefault(EventProcessingConfigurer processingConfigurer) { 
-        processingConfigurer.usingPooledStreamingEventProcessors();  
+    public void configureProcessorDefault(EventProcessingConfigurer processingConfigurer) {
+        processingConfigurer.usingPooledStreamingEventProcessors();
     }
 }
 ----
@@ -306,12 +306,12 @@ public class AxonConfig {
     // omitting other configuration methods...
     public void configurePooledStreamingProcessors(EventProcessingConfigurer processingConfigurer) {
           // This configuration object allows for fine-grained control over the Pooled Streaming Processor
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig = 
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
                 (config, builder) -> builder/* ... */;
-          
+
         // To configure a processor to be pooled streaming ...
         processingConfigurer.registerPooledStreamingEventProcessor("my-processor")
-                            // ... to define a specific StreamableMessageSource ... 
+                            // ... to define a specific StreamableMessageSource ...
                             .registerPooledStreamingEventProcessor(
                                     "my-processor", conf -> {}/* create/return StreamableMessageSource */
                             )
@@ -342,7 +342,7 @@ public class AxonConfig {
         return configurer -> configurer.eventProcessing(
               // To configure a processor to be pooled streaming ...
               processingConfigurer -> processingConfigurer.registerPooledStreamingEventProcessor("my-processor")
-                                                          // ... to define a specific StreamableMessageSource ... 
+                                                          // ... to define a specific StreamableMessageSource ...
                                                           .registerPooledStreamingEventProcessor(
                                                                   "my-processor",
                                                                   conf -> {} /* create/return StreamableMessageSource */
@@ -395,9 +395,9 @@ Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void registerPooledStreamingProcessorConfig(EventProcessingConfigurer processingConfigurer) {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig = 
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
                 (config, builder) -> builder/* ... */;
-          
+
         // To register a default pooled streaming config ...
         processingConfigurer.registerPooledStreamingEventProcessorConfiguration(psepConfig)
                             // ... to register a config for a specific processor.
@@ -553,10 +553,10 @@ Tracking: Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureInitialTrackingToken(EventProcessingConfigurer processingConfigurer) {
-        TrackingEventProcessorConfiguration tepConfig = 
+        TrackingEventProcessorConfiguration tepConfig =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                    .andInitialTrackingToken(StreamableMessageSource::createHeadToken);
-        
+
         processingConfigurer.registerTrackingEventProcessorConfiguration("my-processor", config -> tepConfig);
     }
 }
@@ -596,11 +596,11 @@ Pooled streaming: Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureInitialTrackingToken(EventProcessingConfigurer processingConfigurer) {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig = 
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
                 (config, builder) -> builder.initialToken(messageSource -> messageSource.createTokenSince(
                         messageSource -> messageSource.createTokenAt(Instant.parse("20020-12-01T10:15:30.00Z"))
                 ));
-        
+
         processingConfigurer.registerPooledStreamingEventProcessorConfiguration("my-processor", psepConfig);
     }
 }
@@ -666,11 +666,11 @@ Tracking: Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureTokenClaimValues(EventProcessingConfigurer processingConfigurer) {
-        TrackingEventProcessorConfiguration tepConfig = 
+        TrackingEventProcessorConfiguration tepConfig =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                    .andTokenClaimInterval(1000, TimeUnit.MILLISECONDS)
                                                    .andEventAvailabilityTimeout(2000, TimeUnit.MILLISECONDS);
-        
+
         processingConfigurer.registerTrackingEventProcessorConfiguration("my-processor", config -> tepConfig);
     }
 }
@@ -711,10 +711,10 @@ Pooled streaming: Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureTokenClaimValues(EventProcessingConfigurer processingConfigurer) {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig = 
+        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
                 (config, builder) -> builder.tokenClaimInterval(2000)
                                             .claimExtensionThreshold(3000);
-        
+
         processingConfigurer.registerPooledStreamingEventProcessorConfiguration("my-processor", psepConfig);
     }
 }
@@ -858,13 +858,13 @@ To configure a `TokenStore` for all processors:
 
 [source,java]
 ----
-public class AxonConfig { 
+public class AxonConfig {
     // omitting other configuration methods...
     public void registerTokenStore(EventProcessingConfigurer processingConfigurer) {
         TokenStore tokenStore = JpaTokenStore.builder()
                                              // …
                                              .build();
-    
+
         processingConfigurer.registerTokenStore(config -> tokenStore);
     }
 }
@@ -874,13 +874,13 @@ Alternatively, to configure a `TokenStore` for a specific processor, use:
 
 [source,java]
 ----
-public class AxonConfig { 
+public class AxonConfig {
     // omitting other configuration methods...
     public void registerTokenStore(EventProcessingConfigurer processingConfigurer, String processorName) {
         TokenStore tokenStore = JdbcTokenStore.builder()
                                               // …
                                               .build();
-    
+
         processingConfigurer.registerTokenStore(processorName, config -> tokenStore);
     }
 }
@@ -981,10 +981,10 @@ The default number of segments of a `TrackingEventProcessor` is one.
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureSegmentCount(EventProcessingConfigurer processingConfigurer) {
-        TrackingEventProcessorConfiguration tepConfig = 
+        TrackingEventProcessorConfiguration tepConfig =
                 TrackingEventProcessorConfiguration.forParallelProcessing(2)
                                                    .andInitialSegmentsCount(2);
-        
+
         processingConfigurer.registerTrackingEventProcessorConfiguration("my-processor", config -> tepConfig);
     }
 }
@@ -1030,7 +1030,7 @@ public class AxonConfig {
     public void configureSegmentCount(EventProcessingConfigurer processingConfigurer) {
         EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
                 (config, builder) -> builder.initialSegmentCount(32);
-        
+
         processingConfigurer.registerPooledStreamingEventProcessorConfiguration("my-processor", psepConfig);
     }
 }
@@ -1155,11 +1155,11 @@ Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureSequencingPolicy(EventProcessingConfigurer processingConfigurer) {
-          PropertySequencingPolicy<SomeEvent, String> mySequencingPolicy = 
+          PropertySequencingPolicy<SomeEvent, String> mySequencingPolicy =
                   PropertySequencingPolicy.builder(SomeEvent.class, String.class)
                                           .propertyName("myProperty")
                                           .build();
-          
+
           processingConfigurer.registerDefaultSequencingPolicy(config -> mySequencingPolicy)
                               // or, to define one for a specific processor:
                               .registerSequencingPolicy("my-processor", config -> mySequencingPolicy);
@@ -1228,7 +1228,7 @@ This interface defines a single method, `getSequenceIdentifierFor(T)`, that retu
 [source,java]
 ----
 public interface SequencingPolicy<T> {
-    
+
     Object getSequenceIdentifierFor(T event);
 }
 ----
@@ -1475,7 +1475,7 @@ For those looking to configure load balancing through option 2, please consider 
 ----
 # Enables automatic balancing for event processor "my-processor."
 # Setting automatic balancing to true causes Axon Server to periodically check whether the segments are balanced.
-# Note that automatic balancing is an Enterprise feature of Axon Server. 
+# Note that automatic balancing is an Enterprise feature of Axon Server.
 axon.axonserver.eventhandling.processors.my-processor.automatic-balancing=true
 # Set the load balancing strategy to, for example, "threadNumber."
 # Note that this task is executed only once, on the start up of the Axon Framework application.
@@ -1489,7 +1489,7 @@ When invoking `releaseSegment`, the `StreamingEventProcessor` will "let go of" t
 [source,java]
 ----
 class StreamingProcessorService {
-    
+
     // The EventProcessingConfiguration allows access to all the configured EventProcessors
     private EventProcessingConfiguration processingConfiguration;
 
@@ -1521,7 +1521,7 @@ Through xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console]'s processo
 ==== 2. Axon Server
 The xref:axon-server-reference:ROOT:index.adoc[Axon Server] Dashboard contains split and merge buttons to adjust the number of segments. While it's straightforward to use as well, it does not support automatic scaling based on the number of replicas.
 
-==== 3. Manual Programming
+==== 3. Manual programming
 If none of the other two options are available, you can adjust the number of segments through the Axon Framework API. The `StreamingEventProcessor` exposes the `splitSegment(int segmentId)` and `mergeSegment(int segmentId)` methods. To obtain the `StreamingEventProcessor`, you can use the `EventProcessingConfiguration` to retrieve the processor by name.
 
 For those taking this approach, consider the following snippet as a form of guidance:
@@ -1529,7 +1529,7 @@ For those taking this approach, consider the following snippet as a form of guid
 [source,java]
 ----
 class StreamingProcessorService {
-    
+
     // The EventProcessingConfiguration allows access to all the configured EventProcessors
     private EventProcessingConfiguration processingConfiguration;
 
@@ -1587,7 +1587,7 @@ Handling events again by adjusting the position on the stream is what's called "
 You can trigger a reset using xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console], or programmatically through the Axon Framework API.
 
 [#reset-console]
-=== Triggering a Reset with Console
+=== Triggering a reset with Console
 
 Triggering a reset through the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console] is straightforward.
 It will make sure all processors are stopped, the tokens reset, and the replay is started, without any need for manual intervention.
@@ -1604,7 +1604,7 @@ After resetting the processor, the replay will start immediately. You can track 
 
 image::console-processor-replaying-segments.png[alt="AxonIQ Console segments view during a replay"]
 
-During this time, it's normal to see the latency of the processor at a very high value, because it's processing events from a long time ago. This will slowly decrease until it's back at the head position.
+During this time, it's normal to see the latency of the processor at a high value, because it's processing events from a long time ago. This will slowly decrease until it's back at the head position.
 
 
 
@@ -1640,9 +1640,9 @@ Reset without reset context::
 [source,java]
 ----
 class StreamingProcessorController {
-  
+
     private EventProcessingConfiguration processingConfiguration;
-  
+
     // ...
     void resetTokensFor(String processorName) {
         // EventProcessingConfiguration#eventProcessor(String, Class) returns an optional of the event processor
@@ -1666,7 +1666,7 @@ Reset with reset context::
 [source,java]
 ----
 class StreamingProcessorController {
-    
+
     private EventProcessingConfiguration processingConfiguration;
 
     // ...
@@ -1679,7 +1679,7 @@ class StreamingProcessorController {
                                    // reset the tokens to prepare the processor
                                    streamingProcessor.resetTokens(resetContext);
                                    // start the processor to initiate the replay
-                                   streamingProcessor.start(); 
+                                   streamingProcessor.start();
                                });
   }
 }
@@ -1738,8 +1738,8 @@ public class CardSummaryProjection {
     public void on(CardIssuedEvent event) {
         // This event handler performs a "side effect",
         //  like sending an e-mail or a sms.
-        // Neither, is something we want to reoccur when a 
-        //  replay happens, hence we disallow this method 
+        // Neither, is something we want to reoccur when a
+        //  replay happens, hence we disallow this method
         //  to be replayed
     }
 
@@ -1749,19 +1749,19 @@ public class CardSummaryProjection {
         // event is delivered to our handler as a 'REGULAR' event or
         // a 'REPLAY' event
         // Perform event handling
-    }    
+    }
 
     @ResetHandler // <4>
     public void onReset(ResetContext resetContext) {
         // Do pre-reset logic, like clearing out the projection table for a
-        // clean slate. The given resetContext is [optional], allowing the 
+        // clean slate. The given resetContext is [optional], allowing the
         // user to specify in what context a reset was executed.
     }
-    
+
     @EventHandler
     public void on(CardCancelledEvent event, @ReplayContext CardReplayContext context) { // <5>
         // During replays, this method will get the CardReplayContext injected that was providing during the reset call.
-        // If there is no replay, no context was supplied or the context type does not match, the parameter is null. 
+        // If there is no replay, no context was supplied or the context type does not match, the parameter is null.
     }
     //...
 }
