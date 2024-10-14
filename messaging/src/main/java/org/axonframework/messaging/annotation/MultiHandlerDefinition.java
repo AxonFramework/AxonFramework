@@ -16,11 +16,10 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;

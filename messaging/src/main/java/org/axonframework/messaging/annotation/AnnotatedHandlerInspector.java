@@ -16,12 +16,12 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -361,9 +361,9 @@ public class AnnotatedHandlerInspector<T> {
 
         @Override
         public MessageStream<?> handle(@Nonnull Message<?> message,
-                                                          @Nonnull ProcessingContext processingContext,
-                                                          @Nonnull T target,
-                                                          @Nonnull MessageHandlingMember<? super T> handler) {
+                                       @Nonnull ProcessingContext processingContext,
+                                       @Nonnull T target,
+                                       @Nonnull MessageHandlingMember<? super T> handler) {
             return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                     processingContext,
                     () -> next.handle(message, processingContext, target, handler),
@@ -380,9 +380,9 @@ public class AnnotatedHandlerInspector<T> {
         }
 
         private MessageStream<?> doHandle(Message<?> message,
-                                                             ProcessingContext processingContext,
-                                                             T target,
-                                                             MessageHandlingMember<? super T> handler) {
+                                          ProcessingContext processingContext,
+                                          T target,
+                                          MessageHandlingMember<? super T> handler) {
             return delegate.canHandle(message, processingContext)
                     ? delegate.handle(message, processingContext, target)
                     : next.handle(message, processingContext, target, handler);

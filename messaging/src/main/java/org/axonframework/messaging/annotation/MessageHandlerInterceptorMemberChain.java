@@ -16,12 +16,11 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import javax.annotation.Nonnull;
 
 /**
  * Interface to interact with a MessageHandlingMember instance through a chain of interceptors, which were used to build

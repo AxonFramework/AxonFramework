@@ -30,10 +30,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Represents a stream of entries of type {@code E} that can be consumed as they become available.
- * <p>
- * In most cases, the entry is an implementation of {@link Message}, making this {@link MessageStream stream} useful as
- * a result from method invocations on the buses, the stores, and message handlers.
+ * Represents a stream of {@link Entry entries} containing {@link Message Messages} of type {@code M} that can be
+ * consumed as they become available.
  *
  * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
@@ -70,8 +68,8 @@ public interface MessageStream<M extends Message<?>> {
      */
     static <M extends Message<?>> MessageStream<M> fromIterable(@Nonnull Iterable<M> iterable) {
         return fromEntryIterable(StreamSupport.stream(iterable.spliterator(), false)
-                                         .map(MessageStream::entryFor)
-                                         .toList());
+                                              .map(MessageStream::entryFor)
+                                              .toList());
     }
 
     /**
@@ -83,8 +81,8 @@ public interface MessageStream<M extends Message<?>> {
      *
      * @param iterable The {@link Iterable} providing the {@link Entry entries} to stream.
      * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the entries provided by the
-     * given {@code iterable}.
+     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the entries provided by the given
+     * {@code iterable}.
      */
     static <M extends Message<?>> MessageStream<M> fromEntryIterable(@Nonnull Iterable<Entry<M>> iterable) {
         return new IterableMessageStream<>(iterable);
@@ -115,8 +113,8 @@ public interface MessageStream<M extends Message<?>> {
      *
      * @param stream The {@link Stream} providing the {@link Entry entries} to stream.
      * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the entries provided by the
-     * given {@code stream}.
+     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the entries provided by the given
+     * {@code stream}.
      */
     static <M extends Message<?>> MessageStream<M> fromEntryStream(@Nonnull Stream<Entry<M>> stream) {
         return new StreamMessageStream<>(stream);
@@ -141,8 +139,8 @@ public interface MessageStream<M extends Message<?>> {
      *
      * @param flux The {@link Flux} providing the {@link Entry entries} to stream.
      * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the entries provided by the
-     * given {@code flux}.
+     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the entries provided by the given
+     * {@code flux}.
      */
     static <M extends Message<?>> MessageStream<M> fromEntryFlux(@Nonnull Flux<Entry<M>> flux) {
         return new FluxMessageStream<>(flux);
@@ -182,8 +180,8 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Create a {@link MessageStream stream} consisting of a {@link SimpleEntry} containing the given
-     * {@code message} as the sole {@link Entry}.
+     * Create a {@link MessageStream stream} consisting of a {@link SimpleEntry} containing the given {@code message} as
+     * the sole {@link Entry}.
      * <p>
      * Once the {@code SimpleMessageEntry} is consumed, the stream is considered completed.
      *
@@ -222,8 +220,8 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Create a {@link MessageStream stream} that carries no {@link Entry entries} and is considered to be
-     * successfully completed.
+     * Create a {@link MessageStream stream} that carries no {@link Entry entries} and is considered to be successfully
+     * completed.
      * <p>
      * Any attempt to convert this stream to a component that requires an entry to be returned (such as
      * {@link CompletableFuture}), will have it return {@code null}.
@@ -242,8 +240,8 @@ public interface MessageStream<M extends Message<?>> {
      * If the stream completes successfully before returning any entries, the {@code CompletableFuture} completes with a
      * {@code null} value.
      *
-     * @return A {@link CompletableFuture} that completes with the first {@link Entry entry}, {@code null} if it
-     * is empty, or exceptionally if the {@link MessageStream stream} propagates an error.
+     * @return A {@link CompletableFuture} that completes with the first {@link Entry entry}, {@code null} if it is
+     * empty, or exceptionally if the {@link MessageStream stream} propagates an error.
      */
     CompletableFuture<Entry<M>> asCompletableFuture();
 
@@ -263,11 +261,11 @@ public interface MessageStream<M extends Message<?>> {
      * <p>
      * The returned stream completes the same way {@code this} stream completes.
      *
-     * @param mapper The function converting {@link Entry entries} from this {@link MessageStream stream} from
-     *               entries containing {@link Message message} of type {@code M} to {@code RM}.
+     * @param mapper The function converting {@link Entry entries} from this {@link MessageStream stream} from entries
+     *               containing {@link Message message} of type {@code M} to {@code RM}.
      * @param <RM>   The declared type of {@link Message} contained in the returned {@link Entry entry}.
-     * @return A {@link MessageStream stream} with all {@link Entry entries} mapped according to the
-     * {@code mapper} function.
+     * @return A {@link MessageStream stream} with all {@link Entry entries} mapped according to the {@code mapper}
+     * function.
      */
     default <RM extends Message<?>> MessageStream<RM> map(
             @Nonnull Function<Entry<M>, Entry<RM>> mapper
@@ -296,16 +294,16 @@ public interface MessageStream<M extends Message<?>> {
      * Returns a {@link CompletableFuture} of type {@code R}, using the given {@code identity} as the initial value for
      * the given {@code accumulator}.
      * <p>
-     * The {@code accumulator} will process all {@link Entry entries} within this {@link MessageStream stream}
-     * until a single value of type {@code R} is left.
+     * The {@code accumulator} will process all {@link Entry entries} within this {@link MessageStream stream} until a
+     * single value of type {@code R} is left.
      * <p>
      * Note that parallel processing <b>is not</b> supported!
      *
      * @param identity    The initial value given to the {@code accumulator}.
      * @param accumulator The {@link BiFunction} accumulating all {@link Entry entries} from this
      *                    {@link MessageStream stream} into a return value of type {@code R}.
-     * @param <R>         The result of the {@code accumulator} after reducing all {@link Entry entries} from
-     *                    this {@link MessageStream stream}.
+     * @param <R>         The result of the {@code accumulator} after reducing all {@link Entry entries} from this
+     *                    {@link MessageStream stream}.
      * @return A {@link CompletableFuture} carrying the result of the given {@code accumulator} that reduced the entire
      * {@link MessageStream stream}.
      */
@@ -321,8 +319,7 @@ public interface MessageStream<M extends Message<?>> {
      * resulting stream may cause the given {@code onNext} to be invoked more than once for an entry.
      *
      * @param onNext The {@link Consumer} to invoke for each {@link Entry entry}.
-     * @return A {@link MessageStream stream} that will invoke the given {@code onNext} for each
-     * {@link Entry entry}.
+     * @return A {@link MessageStream stream} that will invoke the given {@code onNext} for each {@link Entry entry}.
      */
     default MessageStream<M> onNextItem(@Nonnull Consumer<Entry<M>> onNext) {
         return new OnNextMessageStream<>(this, onNext);
@@ -376,11 +373,12 @@ public interface MessageStream<M extends Message<?>> {
     /**
      * A {@link MessageStream}-specific container of {@link Message} implementations.
      * <p>
-     * May be implemented to support {@link Entry entries} that contain several objects. As such, this interface
-     * may be regarded as a tuple.
+     * May be implemented to support {@link Entry entries} that contain several objects. As such, this interface may be
+     * regarded as a tuple.
      *
      * @param <M> The type of {@link Message} contained in this {@link Entry} implementation.
      * @author Allard Buijze
+     * @author Milan Savić
      * @author Mitchell Herrijgers
      * @author Steven van Beelen
      * @since 5.0.0

@@ -16,10 +16,9 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.messaging.Message;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.MessageStream;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
