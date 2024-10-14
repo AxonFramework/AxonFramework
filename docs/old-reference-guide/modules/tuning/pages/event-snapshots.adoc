@@ -9,7 +9,7 @@ For example, items in stock tend to change quite often. Each time an item is sol
 [TIP]
 .To measure it to know!
 ====
-xref:axoniq-console-reference:ROOT:features/metrics.adoc#aggregate_metrics[AxonIQ Console] can measure the number of events that were loaded during command handling, so you know if you need to create snapshots or not!. It's also able to track many more interesting metrics, such as the load time of the aggregate, and the time it took to store the events.
+xref:axoniq-console-reference:ROOT:features/metrics.adoc#aggregate_metrics[AxonIQ Console] can measure the number of events that were loaded during command handling, so you know if you need to create snapshots or not. It's also able to track many more interesting metrics, such as the load time of the aggregate, and the time it took to store the events.
 ====
 
 === Creating a snapshot

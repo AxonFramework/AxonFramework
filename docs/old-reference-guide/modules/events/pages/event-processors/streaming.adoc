@@ -1602,7 +1602,7 @@ image::console-processor-reset-dialog.png[alt="AxonIQ Console reset dialog", wid
 
 After resetting the processor, the replay will start immediately. You can track its progress under the "Segments" tab. During a replay, each segment has its own pace.
 
-image::console-processor-replay-segments.png[alt="AxonIQ Console segments view during a replay"]
+image::console-processor-replaying-segments.png[alt="AxonIQ Console segments view during a replay"]
 
 During this time, it's normal to see the latency of the processor at a very high value, because it's processing events from a long time ago. This will slowly decrease until it's back at the head position.
 
