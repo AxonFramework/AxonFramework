@@ -50,7 +50,7 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
             @Nonnull Class<T> declaringType,
             @Nonnull Method method,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+            @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
     ) {
         return findAnnotationAttributes(method, MessageHandler.class)
                 .map(attr -> new MethodInvokingMessageHandlingMember<>(

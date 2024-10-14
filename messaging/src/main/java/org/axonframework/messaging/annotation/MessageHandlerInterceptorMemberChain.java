@@ -49,10 +49,10 @@ public interface MessageHandlerInterceptorMemberChain<T> {
     Object handleSync(@Nonnull Message<?> message, @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler)
             throws Exception;
 
-    default MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                       @Nonnull ProcessingContext processingContext,
-                                                       @Nonnull T target,
-                                                       @Nonnull MessageHandlingMember<? super T> handler) {
+    default MessageStream<?> handle(@Nonnull Message<?> message,
+                                    @Nonnull ProcessingContext processingContext,
+                                    @Nonnull T target,
+                                    @Nonnull MessageHandlingMember<? super T> handler) {
         try {
             return MessageStream.just(GenericMessage.asMessage(handleSync(message, target, handler)));
         } catch (Exception e) {

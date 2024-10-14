@@ -194,7 +194,7 @@ public class AnnotatedHandlerInspector<T> {
 
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<? extends Message<?>> returnTypeConverter(Object result) {
+    private static MessageStream<?> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?>) {
             return MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage));
         }
@@ -360,7 +360,7 @@ public class AnnotatedHandlerInspector<T> {
         }
 
         @Override
-        public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
+        public MessageStream<?> handle(@Nonnull Message<?> message,
                                                           @Nonnull ProcessingContext processingContext,
                                                           @Nonnull T target,
                                                           @Nonnull MessageHandlingMember<? super T> handler) {
@@ -379,7 +379,7 @@ public class AnnotatedHandlerInspector<T> {
             return next.handleSync(message, target, handler);
         }
 
-        private MessageStream<? extends Message<?>> doHandle(Message<?> message,
+        private MessageStream<?> doHandle(Message<?> message,
                                                              ProcessingContext processingContext,
                                                              T target,
                                                              MessageHandlingMember<? super T> handler) {

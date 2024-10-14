@@ -101,7 +101,7 @@ class HandlerHierarchyTest {
 
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<? extends Message<?>> returnTypeConverter(Object result) {
+    private static MessageStream<?> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?>) {
             return MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage));
         }

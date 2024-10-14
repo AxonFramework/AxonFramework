@@ -176,7 +176,7 @@ public class MultiHandlerDefinition implements HandlerDefinition {
             @Nonnull Class<T> declaringType,
             @Nonnull Method method,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+            @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
     ) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {

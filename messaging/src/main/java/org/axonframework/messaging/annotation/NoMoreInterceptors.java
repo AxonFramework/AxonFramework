@@ -50,10 +50,10 @@ public class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberCha
     }
 
     @Override
-    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                      @Nonnull ProcessingContext processingContext,
-                                                      @Nonnull T target,
-                                                      @Nonnull MessageHandlingMember<? super T> handler) {
+    public MessageStream<?> handle(@Nonnull Message<?> message,
+                                   @Nonnull ProcessingContext processingContext,
+                                   @Nonnull T target,
+                                   @Nonnull MessageHandlingMember<? super T> handler) {
         return handler.handle(message, processingContext, target);
     }
 }

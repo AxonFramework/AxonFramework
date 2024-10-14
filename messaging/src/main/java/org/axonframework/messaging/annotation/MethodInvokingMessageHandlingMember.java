@@ -163,9 +163,9 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                      @Nonnull ProcessingContext processingContext,
-                                                      @Nullable T target) {
+    public MessageStream<?> handle(@Nonnull Message<?> message,
+                                   @Nonnull ProcessingContext processingContext,
+                                   @Nullable T target) {
         Object invocationResult;
         try {
             invocationResult = method.invoke(target, resolveParameterValues(message, processingContext));
