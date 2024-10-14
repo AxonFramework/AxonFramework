@@ -101,3 +101,16 @@ If an Event is applied (published) by an Aggregate Axon will automatically wrap 
 Queries describe a request for information or state.
 A query can have multiple handlers.
 When dispatching queries, the client indicates whether he wants a result from one or from all available query handlers.
+
+== Message Flow
+When building Axon Framework applications, you will typically see a flow of messages.
+Commands are sent to the Command Bus, which dispatches them to the appropriate Command Handler.
+The command handler will apply events that will be published and handled by Event Handlers.
+These handlers can update the read model, which can be queried using Query Messages.
+
+Using xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console],
+you can monitor the flow of messages in your application as you can see in the image below.
+
+image::axoniq-console-flow.gif[alt="Animated graphic of message flow in AxonIQ Console"]
+
+Besides seeing the flow, every message handler is individually monitored, providing deep insight into the performance and behavior of your application. For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console Reference Guide] or link:https://console.axoniq.io[sign up directly].
