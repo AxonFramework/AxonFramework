@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -26,7 +27,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
-import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
