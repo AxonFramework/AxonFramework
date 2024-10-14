@@ -1,21 +1,26 @@
 = Configuration
 
-This page aims to describe the suite of options for configuring the Command Model.
+This page describes how you can configure your Aggregate model.
 
 == Aggregate configuration
 
-Core concepts within the Command Model are the xref:modeling/aggregate.adoc[Aggregates] which are implemented. To instantiate a default Aggregate configuration you simply do the following:
+Core concepts within the Command Model are the xref:modeling/aggregate.adoc[Aggregates] that are implemented.
+To instantiate a default Aggregate configuration, you do the following:
 
-==== Axon Configuration API
-
+[tabs]
+====
+Configuration API::
++
+--
 [source,java]
 ----
 Configurer configurer = DefaultConfigurer.defaultConfiguration()
        .configureAggregate(GiftCard.class);
 ----
-
-==== Spring Boot auto configuration
-
+--
+Spring Boot::
++
+--
 The `@Aggregate` annotation (in the `org.axonframework.spring.stereotype` package) triggers auto configuration to set up the necessary components to use the annotated type as an aggregate. Note that only the aggregate root needs to be annotated.
 
 Axon will automatically register all the `@CommandHandler` annotated methods with the command bus and set up a repository if none is present.
@@ -36,16 +41,22 @@ public class GiftCard {
     }
 }
 ----
+--
+====
 
 [[registering-a-command-handler]]
 == Registering a command handler
 
-Often times the command handler functions are placed directly on the xref:modeling/aggregate.adoc[aggregate]. When this approach is taken, simply registering the Aggregate as described above is sufficient for all its command handler methods to be registered too.
+Often the command handler functions are placed directly on the xref:modeling/aggregate.adoc[aggregate]. When this approach is taken, simply registering the Aggregate as described above is sufficient for all its command handler methods to be registered too.
 
 xref:command-handlers.adoc#external_command_handlers[External Command Handlers] however do require direct registration as being a command handler, which is shown in the following sample:
 
-==== Axon Configuration API
 
+[tabs]
+====
+Configuration API::
++
+--
 Given the existence of the following Command Handler:
 
 [source,java]
@@ -78,9 +89,11 @@ Or, a more general approach to registering _all_ types of message handlers in a 
 Configurer axonConfigurer = DefaultConfigurer.defaultConfiguration()
     .registerMessageHandler(conf -> new GiftCardCommandHandler());
 ----
+--
 
-==== Spring Boot auto configuration
-
+Spring Boot::
++
+--
 When using Spring Boot, simply specifying the Command Handler as a bean is sufficient:
 
 [source,java]
@@ -98,16 +111,17 @@ public class GiftCardCommandHandler {
     // omitted constructor
 }
 ----
+--
+====
 
-____
-
-*Duplicate Command Handling Functions*
+[NOTE]
+====
+.Duplicate Command Handlers
 
 As specified in the xref:messaging-concepts:index.adoc[Messaging Concepts] section, a command always has exactly one destination. That means there should only be a single Command Handler method for any given command.
 
-By default, when a duplicate Command Handler method is registered, the last registration will be kept and a warning is logged. This behaviour can be adjusted by specifying a different `DuplicateCommandHandlerResolver`, as is described in the xref:tuning:index.adoc[Runtime Tuning] section.
-
-____
+By default, when a duplicate Command Handler method is registered, the last registration will be kept and a warning is logged. This behavior can be adjusted by specifying a different `DuplicateCommandHandlerResolver`, as is described in the xref:tuning:index.adoc[Runtime Tuning] section.
+====
 
 == Command model repositories
 
@@ -119,7 +133,12 @@ Depending on your underlying persistence storage and auditing needs, there are a
 
 Note that the Repository interface does not prescribe a `delete(identifier)` method. Deleting aggregates is done by invoking the `AggregateLifecycle.markDeleted()` method from within an aggregate. Deleting an aggregate is a state migration like any other, with the only difference that it is irreversible in many cases. You should create your own meaningful method on your aggregate which sets the aggregate's state to "deleted". This also allows you to register any events that you would like to have published.
 
-=== Axon Configuration API
+
+[tabs]
+====
+Configuration API::
++
+--
 
 [source,java]
 ----
@@ -131,9 +150,11 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration()
                 .build())
         );
 ----
+--
 
-=== Spring Boot auto configuration
-
+Spring Boot::
++
+--
 To fully customize the repository used, you can define one in the application context. For Axon Framework to use this repository for the intended aggregate, define the bean name of the repository in the `repository` attribute on `@Aggregate` Annotation. Alternatively, specify the bean name of the repository to be the aggregate's name, (first character lowercase), suffixed with `Repository`. So on a class of type `GiftCard`, the default repository name is `giftCardRepository`. If no bean with that name is found, Axon will define an `EventSourcingRepository` (which fails if no `EventStore` is available).
 
 [source,java]
@@ -148,6 +169,8 @@ public class GiftCard { /*...*/ }
 ----
 
 Note that this requires full configuration of the Repository, including any `SnapshotTriggerDefinition` or `AggregateFactory` that may otherwise have been configured automatically.
+--
+====
 
 [[standard-repositories]]
 === Standard repositories
