@@ -15,7 +15,7 @@ This interface provides `detectConflicts` methods that allow you to define the t
 
 
 [NOTE]
-.Expected Aggregate Version*
+.Expected Aggregate Version
 ====
 The `ConflictResolver` will only contain any potentially conflicting events if the Aggregate was loaded with an expected version.
 Use `@TargetAggregateVersion` on a field of a command to indicate the expected version of the Aggregate.

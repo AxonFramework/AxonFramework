@@ -21,7 +21,7 @@ public class GiftCard {
     @AggregateIdentifier
     private String id;
 
-    @AggregateMember // 1.
+    @AggregateMember // <1>
     private List<GiftCardTransaction> transactions = new ArrayList<>();
 
     private int remainingValue;
@@ -31,7 +31,7 @@ public class GiftCard {
 
 public class GiftCardTransaction {
 
-    @EntityId // 2.
+    @EntityId // <2>
     private String transactionId;
 
     private int transactionValue;
@@ -53,13 +53,13 @@ public class GiftCardTransaction {
 
 Entities are, just like the aggregate root, simple objects, as is shown with the new `GiftCardTransaction` entity. The snippet above shows two important concepts of multi-entity aggregates:
 
-. The field that declares the child entity/entities must be annotated with `@AggregateMember`.
+<1> The field that declares the child entity/entities must be annotated with `@AggregateMember`.
  This annotation tells Axon that the annotated field contains a class that should be inspected for message handlers.
  This example shows the annotation on an implementation of `Iterable`, but it can also be placed on a single Object or a `Map`.
  In the latter case, the values of the `Map` are expected to contain the entities, while the key contains a value that is used as their reference.
  Note that this annotation can be placed on a field and a method.
 
-. The `@EntityId` annotation specifying the identifying field of an Entity.
+<2> The `@EntityId` annotation specifying the identifying field of an Entity.
  Required to be able to route a command (or <<Event Sourcing handlers in entities,event>>) message to the correct entity instance.
  The property on the payload that will be used to find the entity that the message should be routed to, defaults to the name of the `@EntityId` annotated field.
  For example, when annotating the field `transactionId`, the command must define a property with that same name, which means either a `transactionId` or a `getTransactionId()` method must be present.

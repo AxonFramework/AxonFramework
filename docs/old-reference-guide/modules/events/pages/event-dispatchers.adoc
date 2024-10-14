@@ -1,4 +1,5 @@
 = Event Dispatchers
+:navtitle: Dispatching
 
 Event publication can originate from a couple of locations within your Axon Framework application.
 In general, these can be grouped in two major areas:
@@ -11,7 +12,7 @@ For more specifics regarding event publication and storage implementations in Ax
 
 == Dispatching events from an Aggregate
 
-The xref:axon-framework-commands:modeling/aggregate.adoc[Aggregate] or it's xref:axon-framework-commands:modeling/multi-entity-aggregates.adoc[Entities] are typically the starting point of all event messages.
+The xref:axon-framework-commands:modeling/aggregate.adoc[Aggregate] or its xref:axon-framework-commands:modeling/multi-entity-aggregates.adoc[Entities] are typically the starting point of all event messages.
 The Event Message simply is the notification that a decision has been made; a successful resolution of handling a command message.
 
 To publish an event from an Aggregate, it is required to do this from the lifecycle of the Aggregate instance.
@@ -29,7 +30,7 @@ public class GiftCard {
 
     @CommandHandler
     public GiftCard(IssueCardCommand cmd) {
-        AggregateLifecycle.apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
+        apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
     }
     // omitted state, command and event sourcing handlers
 }
@@ -47,14 +48,13 @@ The event will first be sent to all the Event Handlers in the Aggregate which ar
 This is necessary for Event Sourcing, to update the Aggregate's state accordingly.
 . After the Aggregate itself has handled the event, it will be published on the `EventBus`.
 
-____
 
-*MetaData in Aggregate Event Messages*
-
+[TIP]
+.Adding Meta Data to an Event
+====
 The `AggregateLifecycle` also provides an `apply(Object, MetaData)` function.
 This can be used to attach command-handler specific MetaData.
-
-____
+====
 
 The `AggregateLifecycle#apply` method returns an implementation of the `ApplyMore` interface.
 This interface provides the following methods:
