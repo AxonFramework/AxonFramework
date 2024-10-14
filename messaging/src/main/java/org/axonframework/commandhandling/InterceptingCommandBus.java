@@ -47,7 +47,6 @@ public class InterceptingCommandBus implements CommandBus {
         Iterator<MessageDispatchInterceptor<? super CommandMessage<?>>> di = new LinkedList<>(dispatchInterceptors).descendingIterator();
         BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dis = (c, p) -> MessageStream.fromFuture(
                 delegate.dispatch(c, p));
-
         while (di.hasNext()) {
             dis = new Dispatcher(di.next(), dis);
         }

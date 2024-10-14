@@ -398,13 +398,6 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public String toString() {
-            return "UnitOfWorkProcessingContext{"
-                    + "identifier='" + identifier + '\'' + ", currentPhase=" + currentPhase.get()
-                    + '}';
-        }
-
-        @Override
         public boolean containsResource(@Nonnull ResourceKey<?> key) {
             return this.context.containsResource(key);
         }
@@ -442,6 +435,13 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         @Override
         public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
             return this.context.removeResource(key, expectedResource);
+        }
+
+        @Override
+        public String toString() {
+            return "UnitOfWorkProcessingContext{"
+                    + "identifier='" + identifier + '\'' + ", currentPhase=" + currentPhase.get()
+                    + '}';
         }
 
         private enum Status {
