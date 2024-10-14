@@ -25,7 +25,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Abstract implementation of the {@link Context} providing a sane implementation for context-specific resource
+ * Simple implementation of the {@link Context} providing a sane implementation for context-specific resource
  * management.
  *
  * @author Steven van Beelen
