@@ -16,20 +16,31 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ContextTestSuite;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link SimpleEntry}.
  *
  * @author Steven van Beelen
  */
-class SimpleEntryTest {
+class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
+
+    @Override
+    public SimpleEntry<Message<?>> testSubject() {
+        return new SimpleEntry<>(GenericMessage.asMessage("some-payload"));
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionForNullContext() {
+        assertThrows(AxonConfigurationException.class, () -> new SimpleEntry<>(null, null));
+    }
 
     @Test
     void containsExpectedData() {
