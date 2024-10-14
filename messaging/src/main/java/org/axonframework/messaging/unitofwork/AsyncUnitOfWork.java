@@ -179,7 +179,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         return "UnitOfWork{" + "identifier='" + identifier + '\'' + "phase='" + context.currentPhase.get() + '\'' + '}';
     }
 
-    private static class UnitOfWorkProcessingContext extends AbstractContext implements ProcessingContext {
+    private static class UnitOfWorkProcessingContext implements ProcessingContext {
 
         private final AtomicReference<Status> status = new AtomicReference<>(Status.NOT_STARTED);
         private final AtomicReference<Phase> currentPhase = new AtomicReference<>(null);
