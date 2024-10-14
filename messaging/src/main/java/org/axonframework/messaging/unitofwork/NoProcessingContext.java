@@ -16,6 +16,9 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -74,42 +77,42 @@ public class NoProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public boolean containsResource(ResourceKey<?> key) {
+    public boolean containsResource(@Nonnull ResourceKey<?> key) {
         return false;
     }
 
     @Override
-    public <T> T getResource(ResourceKey<T> key) {
+    public <T> T getResource(@Nonnull ResourceKey<T> key) {
         return null;
     }
 
     @Override
-    public <T> T putResource(ResourceKey<T> key, T resource) {
+    public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         throw new IllegalArgumentException("Cannot put resources in this ProcessingContext");
     }
 
     @Override
-    public <T> T updateResource(ResourceKey<T> key, Function<T, T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater) {
         throw new IllegalArgumentException("Cannot update resources in this ProcessingContext");
     }
 
     @Override
-    public <T> T putResourceIfAbsent(ResourceKey<T> key, T resource) {
+    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         throw new IllegalArgumentException("Cannot put resources in this ProcessingContext");
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
         throw new IllegalArgumentException("Cannot compute resources in this ProcessingContext");
     }
 
     @Override
-    public <T> T removeResource(ResourceKey<T> key) {
+    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
         return null;
     }
 
     @Override
-    public <T> boolean removeResource(ResourceKey<T> key, T expectedResource) {
+    public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nullable T expectedResource) {
         return expectedResource == null;
     }
 }

@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -165,13 +167,13 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T getResource(ResourceKey<T> key) {
+    public <T> T getResource(@Nonnull ResourceKey<T> key) {
         //noinspection unchecked
         return this.key.equals(key) ? (T) resource.get() : delegate.getResource(key);
     }
 
     @Override
-    public <T> T putResource(ResourceKey<T> key, T resource) {
+    public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? (T) this.resource.getAndSet((R) resource)
@@ -179,7 +181,7 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T updateResource(ResourceKey<T> key, Function<T, T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? (T) resource.updateAndGet((UnaryOperator<R>) resourceUpdater)
@@ -187,7 +189,7 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? (T) resource.updateAndGet(current -> current == null
@@ -195,7 +197,7 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T putResourceIfAbsent(ResourceKey<T> key, T resource) {
+    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? (T) this.resource.getAndUpdate(current -> current == null ? (R) resource : current)
@@ -203,7 +205,7 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T removeResource(ResourceKey<T> key) {
+    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
         if (!this.key.equals(key)) {
             return delegate.removeResource(key);
         }
@@ -212,7 +214,7 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> boolean removeResource(ResourceKey<T> key, T expectedResource) {
+    public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? resource.compareAndSet((R) expectedResource, null)
