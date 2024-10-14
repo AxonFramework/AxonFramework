@@ -32,14 +32,13 @@ class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message<Stri
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages, SimpleEntry::new),
-                                                     NO_OP_COMPLETION_CALLBACK);
+        return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages), NO_OP_COMPLETION_CALLBACK);
     }
 
     @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
-        return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages, SimpleEntry::new)
+        return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages)
                                                                   .concatWith(MessageStream.failed(failure)),
                                                      NO_OP_COMPLETION_CALLBACK);
     }

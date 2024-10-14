@@ -119,7 +119,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
             InterceptorChain<Message<?>, ?> chain =
                     InterceptorChainParameterResolverFactory.currentInterceptorChain(processingContext);
             // TODO - Provide implementation that handles exceptions in streams with more than one item
-            return MessageStream.fromFuture(
+            return MessageStream.fromFutureEntry(
                     chain.proceed(message, processingContext)
                          .map(r -> (Entry<Message<?>>) r)
                          .asCompletableFuture()

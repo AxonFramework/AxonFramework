@@ -43,13 +43,13 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new OnNextMessageStream<>(MessageStream.fromIterable(messages, SimpleEntry::new), NO_OP_ON_NEXT);
+        return new OnNextMessageStream<>(MessageStream.fromIterable(messages), NO_OP_ON_NEXT);
     }
 
     @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
-        return new OnNextMessageStream<>(MessageStream.fromIterable(messages, SimpleEntry::new)
+        return new OnNextMessageStream<>(MessageStream.fromIterable(messages)
                                                       .concatWith(MessageStream.failed(failure)),
                                          NO_OP_ON_NEXT);
     }
@@ -73,10 +73,9 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
     void verifyOnNextInvokedForFirstElementWhenUsingOnCompletableFuture() {
         List<Entry<Message<String>>> seen = new ArrayList<>();
         Message<String> first = createRandomMessage();
-        List<Entry<Message<String>>> items = List.of(new SimpleEntry<>(first),
-                                                     new SimpleEntry<>(createRandomMessage()));
+        List<Message<String>> messages = List.of(first, createRandomMessage());
 
-        CompletableFuture<Message<String>> actual = MessageStream.fromIterable(items)
+        CompletableFuture<Message<String>> actual = MessageStream.fromIterable(messages)
                                                                  .onNextItem(seen::add)
                                                                  .asCompletableFuture()
                                                                  .thenApply(Entry::message);
@@ -91,10 +90,9 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
         List<Entry<Message<String>>> seen = new ArrayList<>();
         Message<String> first = createRandomMessage();
         Message<String> second = createRandomMessage();
-        List<Entry<Message<String>>> items = List.of(new SimpleEntry<>(first),
-                                                     new SimpleEntry<>(second));
+        List<Message<String>> messages = List.of(first, second);
 
-        StepVerifier.create(MessageStream.fromIterable(items)
+        StepVerifier.create(MessageStream.fromIterable(messages)
                                          .onNextItem(seen::add)
                                          .asFlux())
                     .expectNextCount(2)

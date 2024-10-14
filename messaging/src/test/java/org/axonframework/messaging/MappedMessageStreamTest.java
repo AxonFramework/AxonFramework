@@ -34,12 +34,12 @@ class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new MappedMessageStream<>(MessageStream.fromIterable(messages, SimpleEntry::new), NO_OP_MAPPER);
+        return new MappedMessageStream<>(MessageStream.fromIterable(messages), NO_OP_MAPPER);
     }
 
     @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> entries, Exception failure) {
-        return new MappedMessageStream<>(MessageStream.fromIterable(entries, SimpleEntry::new)
+        return new MappedMessageStream<>(MessageStream.fromIterable(entries)
                                                       .concatWith(MessageStream.failed(failure)), NO_OP_MAPPER);
     }
 

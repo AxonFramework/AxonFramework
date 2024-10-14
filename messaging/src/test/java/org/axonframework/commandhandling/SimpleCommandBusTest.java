@@ -312,8 +312,7 @@ class SimpleCommandBusTest {
             if (result instanceof Throwable error) {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> futureResult) {
-                return MessageStream.fromFuture(futureResult.thenApply(GenericMessage::asMessage),
-                                                SimpleEntry::new);
+                return MessageStream.fromFuture(futureResult.thenApply(GenericMessage::asMessage));
             } else {
                 return MessageStream.just(GenericMessage.asMessage(result));
             }

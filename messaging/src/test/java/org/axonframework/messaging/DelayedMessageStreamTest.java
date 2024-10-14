@@ -38,7 +38,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        MessageStream<Message<String>> testStream = MessageStream.fromIterable(messages, SimpleEntry::new);
+        MessageStream<Message<String>> testStream = MessageStream.fromIterable(messages);
         return DelayedMessageStream.create(CompletableFuture.completedFuture(testStream));
     }
 
@@ -46,7 +46,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
         return DelayedMessageStream.create(CompletableFuture.completedFuture(
-                MessageStream.fromIterable(messages, SimpleEntry::new)
+                MessageStream.fromIterable(messages)
                              .concatWith(MessageStream.failed(failure)))
         );
     }

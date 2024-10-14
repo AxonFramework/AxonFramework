@@ -19,7 +19,6 @@ package org.axonframework.queryhandling.annotation;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -99,8 +98,7 @@ class MethodQueryMessageHandlerDefinitionTest {
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
     private static MessageStream<? extends Message<?>> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?>) {
-            return MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage),
-                                            SimpleEntry::new);
+            return MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage));
         }
         return MessageStream.just(GenericMessage.asMessage(result));
     }
