@@ -32,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test suite used to validate implementations of the {@link MessageStream}.
  *
- * @param <M> The type of {@link Message} contained in the {@link Entry entries} of the
- *            {@link MessageStream stream} under test.
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of the {@link MessageStream stream}
+ *            under test.
  * @author Allard Buijze
  * @author Steven van Beelen
  */
@@ -42,8 +42,8 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     /**
      * Construct a test subject using the given {@code messages} as the source.
      * <p>
-     * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entires} for
-     * the {@link MessageStream stream} under test.
+     * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entires} for the
+     * {@link MessageStream stream} under test.
      *
      * @param messages The {@link Message Message} of type {@code M} acting as the source for the
      *                 {@link MessageStream stream} under construction.
@@ -55,8 +55,8 @@ public abstract class MessageStreamTest<M extends Message<?>> {
      * Construct a test subject using the given {@code messages} as the source, which will fail due to the given
      * {@code failure}.
      * <p>
-     * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entires} for
-     * the {@link MessageStream stream} under test.
+     * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entires} for the
+     * {@link MessageStream stream} under test.
      *
      * @param messages The {@link Message Message} of type {@code M} acting as the source for the
      *                 {@link MessageStream stream} under construction.
@@ -93,7 +93,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
-    void shouldMapSingleValue_asCompletableFuture() {
+    void shouldMapSingleEntry_asCompletableFuture() {
         M in = createRandomMessage();
         M out = createRandomMessage();
 
@@ -108,7 +108,22 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
-    void shouldMapSingleValue_asFlux() {
+    void shouldMapSingleMessage_asCompletableFuture() {
+        M in = createRandomMessage();
+        M out = createRandomMessage();
+
+        MessageStream<M> testSubject = testSubject(List.of(in));
+
+        var actual = testSubject.mapMessage(input -> out)
+                                .asCompletableFuture()
+                                .join()
+                                .message();
+
+        assertSame(out, actual);
+    }
+
+    @Test
+    void shouldMapSingleEntry_asFlux() {
         M in = createRandomMessage();
         M out = createRandomMessage();
 
@@ -120,7 +135,19 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
-    void shouldMapMultipleValues_asFlux() {
+    void shouldMapSingleMessage_asFlux() {
+        M in = createRandomMessage();
+        M out = createRandomMessage();
+
+        MessageStream<M> testSubject = testSubject(List.of(in));
+
+        StepVerifier.create(testSubject.mapMessage(input -> out).asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(out))
+                    .verifyComplete();
+    }
+
+    @Test
+    void shouldMapMultipleEntries_asFlux() {
         M in1 = createRandomMessage();
         M out1 = createRandomMessage();
         M in2 = createRandomMessage();
@@ -135,12 +162,42 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
-    void shouldMapValuesUntilFailure_asFlux() {
+    void shouldMapMultipleMessages_asFlux() {
+        M in1 = createRandomMessage();
+        M out1 = createRandomMessage();
+        M in2 = createRandomMessage();
+        M out2 = createRandomMessage();
+
+        MessageStream<M> testSubject = testSubject(List.of(in1, in2));
+
+        StepVerifier.create(testSubject.mapMessage(input -> input == in1 ? out1 : out2).asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(out1))
+                    .expectNextMatches(entry -> entry.message().equals(out2))
+                    .verifyComplete();
+    }
+
+    @Test
+    void shouldMapEntriesUntilFailure_asFlux() {
         M in = createRandomMessage();
         M out = createRandomMessage();
 
         MessageStream<M> testSubject = failingTestSubject(List.of(in), new MockException())
                 .map(entry -> entry.map(input -> out))
+                .onErrorContinue(MessageStream::failed);
+
+        StepVerifier.create(testSubject.asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(out))
+                    .expectErrorMatches(MockException.class::isInstance)
+                    .verify();
+    }
+
+    @Test
+    void shouldMapMessagesUntilFailure_asFlux() {
+        M in = createRandomMessage();
+        M out = createRandomMessage();
+
+        MessageStream<M> testSubject = failingTestSubject(List.of(in), new MockException())
+                .mapMessage(input -> out)
                 .onErrorContinue(MessageStream::failed);
 
         StepVerifier.create(testSubject.asFlux())
@@ -166,6 +223,22 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
+    void shouldNotCallMessageMapperForEmptyStream_asCompletableFuture() {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        MessageStream<M> testSubject = testSubject(List.of())
+                .mapMessage(message -> {
+                    invoked.set(true);
+                    return message;
+                });
+
+        Entry<M> actual = testSubject.asCompletableFuture().join();
+
+        assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
+        assertNull(actual, "Expected null value from empty stream");
+    }
+
+    @Test
     void shouldNotCallMapperForEmptyStream_asFlux() {
         AtomicBoolean invoked = new AtomicBoolean();
 
@@ -181,6 +254,21 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
+    void shouldNotCallMessageMapperForEmptyStream_asFlux() {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        MessageStream<M> testSubject = testSubject(List.of())
+                .mapMessage(message -> {
+                    invoked.set(true);
+                    return message;
+                });
+
+        StepVerifier.create(testSubject.asFlux())
+                    .verifyComplete();
+        assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
+    }
+
+    @Test
     void shouldNotCallMapperForFailedStream() {
         AtomicBoolean invoked = new AtomicBoolean();
 
@@ -188,6 +276,20 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                 .map(entry -> {
                     invoked.set(true);
                     return entry;
+                });
+
+        assertTrue(testSubject.asCompletableFuture().isCompletedExceptionally());
+        assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
+    }
+
+    @Test
+    void shouldNotCallMessageMapperForFailedStream() {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        MessageStream<M> testSubject = failingTestSubject(List.of(), new MockException())
+                .mapMessage(message -> {
+                    invoked.set(true);
+                    return message;
                 });
 
         assertTrue(testSubject.asCompletableFuture().isCompletedExceptionally());
@@ -435,8 +537,8 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = testSubject(List.of(createRandomMessage()));
 
         CompletableFuture<Entry<M>> result = testSubject.whenComplete(() -> {
-                                                                   throw expected;
-                                                               })
+                                                            throw expected;
+                                                        })
                                                         .asCompletableFuture();
 
         assertTrue(result.isCompletedExceptionally());

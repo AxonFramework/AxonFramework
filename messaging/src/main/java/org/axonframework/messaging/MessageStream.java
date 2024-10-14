@@ -276,6 +276,23 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
+     * Returns a {@link MessageStream stream} that maps each {@link Entry#message() message} from the
+     * {@link Entry entries} in this stream using the given {@code mapper} function. This maps the
+     * {@link Message Messages} from type {@code M} to type {@code RM}.
+     * <p>
+     * The returned stream completes the same way {@code this} stream completes.
+     *
+     * @param mapper The function converting {@link Entry#message() message} from the {@link Entry entries} in this
+     *               {@link MessageStream stream} from type {@code M} to {@code RM}.
+     * @param <RM>   The declared type of {@link Message} contained in the returned {@link Entry entry}.
+     * @return A {@link MessageStream stream} with all {@link Entry entries} mapped according to the {@code mapper}
+     * function.
+     */
+    default <RM extends Message<?>> MessageStream<RM> mapMessage(@Nonnull Function<M, RM> mapper) {
+        return map(entry -> entry.map(mapper));
+    }
+
+    /**
      * Returns a {@link CompletableFuture} of type {@code R}, using the given {@code identity} as the initial value for
      * the given {@code accumulator}.
      * <p>
