@@ -263,9 +263,7 @@ class InterceptingCommandBusTest {
                                                                                                    @Nullable ProcessingContext context,
                                                                                                    @Nonnull InterceptorChain<M1, R> interceptorChain) {
             return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
-                                   .map(entry -> entry.map(
-                                           m -> (R) ((Message<?>) m).andMetaData(Map.of(key, buildValue(m))))
-                                   );
+                                   .mapMessage(m -> (R) ((Message<?>) m).andMetaData(Map.of(key, buildValue(m))));
         }
 
         @SuppressWarnings("unchecked")
@@ -274,7 +272,7 @@ class InterceptingCommandBusTest {
                                                                                                  @Nonnull ProcessingContext context,
                                                                                                  @Nonnull InterceptorChain<M1, R> interceptorChain) {
             return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
-                                   .map(entry -> entry.map(m -> (R) m.andMetaData(Map.of(key, buildValue(m)))));
+                                   .mapMessage(m -> (R) m.andMetaData(Map.of(key, buildValue(m))));
         }
 
         private String buildValue(Message<?> message) {
