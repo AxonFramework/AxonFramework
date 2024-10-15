@@ -81,7 +81,7 @@ public sealed interface AppendCondition permits NoAppendCondition, DefaultAppend
      * Combines the {@code this AppendCondition} with the given {@code condition}.
      * <p>
      * Typically attached the {@link SourcingCondition#criteria()} with {@code this} condition's {@link #criteria()} and
-     * picks the largest value among the {@link #consistencyMarker()} and {@link SourcingCondition#end()} values.
+     * picks the lowest value among the {@link #consistencyMarker()} and {@link SourcingCondition#end()} values.
      *
      * @param condition The {@link SourcingCondition} to combine with {@code this AppendCondition}.
      * @return An {@link AppendCondition} combined with the given {@code condition}.
