@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext.ResourceKey;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -39,14 +40,12 @@ import java.util.function.Consumer;
  */
 public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
-    private static final ProcessingContext.ResourceKey<AppendCondition> appendConditionKey =
-            ProcessingContext.ResourceKey.create("appendCondition");
-    private static final ProcessingContext.ResourceKey<List<EventMessage<?>>> eventQueueKey =
-            ProcessingContext.ResourceKey.create("eventQueue");
-
     private final AsyncEventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
-    private final List<Consumer<EventMessage<?>>> callbacks = new CopyOnWriteArrayList<>();
+    private final List<Consumer<EventMessage<?>>> callbacks;
+
+    private final ResourceKey<AppendCondition> appendConditionKey;
+    private final ResourceKey<List<EventMessage<?>>> eventQueueKey;
 
     /**
      * Constructs a {@link DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
@@ -62,6 +61,10 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                                         @Nonnull ProcessingContext processingContext) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
+        this.callbacks = new CopyOnWriteArrayList<>();
+
+        this.appendConditionKey = ResourceKey.create("appendCondition");
+        this.eventQueueKey = ResourceKey.create("eventQueue");
     }
 
     @Override
