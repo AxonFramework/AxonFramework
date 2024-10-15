@@ -56,7 +56,12 @@
             <artifactId>hibernate-validator</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <!-- Annotations -->
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <optional>true</optional>
+        </dependency>
         <!-- Event Handling -->
         <dependency>
             <groupId>org.quartz-scheduler</groupId>

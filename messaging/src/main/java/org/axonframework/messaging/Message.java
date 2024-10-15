@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -24,7 +25,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 /**
  * Representation of a Message, containing a Payload and MetaData. Typical examples of Messages are Commands, Events and

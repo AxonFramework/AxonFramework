@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -35,7 +34,8 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @author Rene de Waele
- */
+ */ // TODO Replace for AsyncEventStore once fully integrated.
+@Deprecated
 public interface EventStore
         extends EventBus, StreamableMessageSource<TrackedEventMessage<?>>, DomainEventSequenceAware {
 
@@ -73,8 +73,8 @@ public interface EventStore
     /**
      * Stores the given (temporary) {@code snapshot} event. This snapshot replaces the segment of the event stream
      * identified by the {@code snapshot}'s {@link DomainEventMessage#getAggregateIdentifier() Aggregate Identifier} up
-     * to (and including) the event with the {@code snapshot}'s {@link DomainEventMessage#getSequenceNumber() sequence
-     * number}.
+     * to (and including) the event with the {@code snapshot}'s
+     * {@link DomainEventMessage#getSequenceNumber() sequence number}.
      * <p>
      * These snapshots will only affect the {@link DomainEventStream} returned by the {@link #readEvents(String)}
      * method. They do not change the events returned by {@link EventStore#openStream(TrackingToken)} or those received
@@ -91,16 +91,5 @@ public interface EventStore
     default Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
         return readEvents(aggregateIdentifier).asStream().map(DomainEventMessage::getSequenceNumber)
                                               .max(Long::compareTo);
-    }
-
-    /**
-     * Retrieves the {@link AppendEventTransaction transaction for appending events} for the given
-     * {@code processingContext}. If no transaction is available, a new, empty transaction is created.
-     *
-     * @param processingContext The context for which to retrieve the {@link AppendEventTransaction}.
-     * @return The {@link AppendEventTransaction}, existing or newly created, for the given {@code processingContext}.
-     */
-    default AppendEventTransaction currentTransaction(ProcessingContext processingContext) {
-        throw new UnsupportedOperationException("Not implemented yet");
     }
 }
