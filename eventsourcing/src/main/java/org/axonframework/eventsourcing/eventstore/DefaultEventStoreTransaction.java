@@ -46,6 +46,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private final ResourceKey<AppendCondition> appendConditionKey;
     private final ResourceKey<List<EventMessage<?>>> eventQueueKey;
+    private final ResourceKey<Long> appendPositionKey;
 
     /**
      * Constructs a {@link DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
@@ -54,8 +55,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      * @param eventStorageEngine The {@link AsyncEventStorageEngine} used to
      *                           {@link #appendEvent(EventMessage) append events} with.
      * @param processingContext  The {@link ProcessingContext} from which to
-     *                           {@link #appendEvent(EventMessage) append events} and attach resources like the
-     *                           {@link EventStoreTransaction#APPEND_POSITION_KEY} to.
+     *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
      */
     public DefaultEventStoreTransaction(@Nonnull AsyncEventStorageEngine eventStorageEngine,
                                         @Nonnull ProcessingContext processingContext) {
@@ -65,6 +65,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
         this.appendConditionKey = ResourceKey.create("appendCondition");
         this.eventQueueKey = ResourceKey.create("eventQueue");
+        this.appendPositionKey = ResourceKey.create("appendPosition");
     }
 
     @Override
@@ -101,7 +102,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     List<EventMessage<?>> eventQueue = commitContext.getResource(eventQueueKey);
                     return eventStorageEngine.appendEvents(appendCondition, eventQueue)
                                              .whenComplete((position, exception) -> commitContext.putResource(
-                                                     APPEND_POSITION_KEY, position
+                                                     appendPositionKey, position
                                              ));
                 }
         );
@@ -110,5 +111,10 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     @Override
     public void onAppend(@Nonnull Consumer<EventMessage<?>> callback) {
         callbacks.add(callback);
+    }
+
+    @Override
+    public long appendPosition(@Nonnull ProcessingContext context) {
+        return context.computeResourceIfAbsent(appendPositionKey, () -> -1L);
     }
 }
