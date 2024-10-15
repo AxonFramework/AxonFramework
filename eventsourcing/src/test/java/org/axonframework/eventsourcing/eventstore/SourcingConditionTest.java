@@ -18,8 +18,6 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,36 +29,36 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class SourcingConditionTest {
 
-    private static final Index TEST_INDEX = new Index("key", "value");
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.hasIndex(new Index("key", "value"));
     private static final long TEST_START = 42L;
 
     @Test
-    void conditionForIndex() {
-        SourcingCondition result = SourcingCondition.conditionFor(TEST_INDEX);
+    void conditionForCriteria() {
+        SourcingCondition result = SourcingCondition.conditionFor(TEST_CRITERIA);
 
-        assertEquals(Set.of(TEST_INDEX), result.criteria().indices());
+        assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(-1L, result.start());
         assertTrue(result.end().isPresent());
         assertEquals(Long.MAX_VALUE, result.end().getAsLong());
     }
 
     @Test
-    void conditionForIndexAndStartPosition() {
-        SourcingCondition result = SourcingCondition.conditionFor(TEST_INDEX, TEST_START);
+    void conditionForCriteriaAndStartPosition() {
+        SourcingCondition result = SourcingCondition.conditionFor(TEST_CRITERIA, TEST_START);
 
-        assertEquals(Set.of(TEST_INDEX), result.criteria().indices());
+        assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(TEST_START, result.start());
         assertTrue(result.end().isPresent());
         assertEquals(Long.MAX_VALUE, result.end().getAsLong());
     }
 
     @Test
-    void conditionForIndexAndStartPositionAndEndPosition() {
+    void conditionForCriteriaAndStartPositionAndEndPosition() {
         long testEnd = 1337L;
 
-        SourcingCondition result = SourcingCondition.conditionFor(TEST_INDEX, TEST_START, testEnd);
+        SourcingCondition result = SourcingCondition.conditionFor(TEST_CRITERIA, TEST_START, testEnd);
 
-        assertEquals(Set.of(TEST_INDEX), result.criteria().indices());
+        assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(TEST_START, result.start());
         assertTrue(result.end().isPresent());
         assertEquals(testEnd, result.end().getAsLong());

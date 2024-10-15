@@ -54,9 +54,9 @@ class DefaultAppendConditionTest {
 
     @Test
     void withSourcingConditionSelectsSmallestConsistencyMarkerAndCombinesCriteria() {
-        Index testIndex = new Index("newKey", "newValue");
+        EventCriteria testCriteria = EventCriteria.hasIndex(new Index("newKey", "newValue"));
         long testEnd = TEST_CONSISTENCY_MARKER + 5;
-        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(testIndex, 0L, testEnd);
+        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(testCriteria, 0L, testEnd);
 
         EventCriteria expectedCriteria = testSourcingCondition.criteria().combine(TEST_CRITERIA);
 

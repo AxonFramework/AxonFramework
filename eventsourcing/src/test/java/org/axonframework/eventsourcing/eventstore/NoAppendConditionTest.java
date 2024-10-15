@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.junit.jupiter.api.Test;
 
+import static org.axonframework.eventsourcing.eventstore.EventCriteria.hasIndex;
 import static org.axonframework.eventsourcing.eventstore.SourcingCondition.conditionFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,7 +43,7 @@ class NoAppendConditionTest {
     @Test
     void withSourcingConditionSetsActualMarkerAndCriteria() {
         long testEnd = 20L;
-        SourcingCondition testSourcingCondition = conditionFor(new Index("key", "value"), 10L, testEnd);
+        SourcingCondition testSourcingCondition = conditionFor(hasIndex(new Index("key", "value")), 10L, testEnd);
 
         AppendCondition result = AppendCondition.none().with(testSourcingCondition);
 
