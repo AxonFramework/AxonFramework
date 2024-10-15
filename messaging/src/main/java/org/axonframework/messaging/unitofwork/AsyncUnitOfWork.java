@@ -154,7 +154,8 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
      */
     public <R> CompletableFuture<R> executeWithResult(Function<ProcessingContext, CompletableFuture<R>> action) {
         CompletableFuture<R> result = new CompletableFuture<>();
-        onInvocation(context -> safe(() -> action.apply(context)).whenComplete(FutureUtils.alsoComplete(result)));
+        onInvocation(processingContext -> safe(() -> action.apply(processingContext))
+                .whenComplete(FutureUtils.alsoComplete(result)));
         return execute().thenCombine(result, (executeResult, invocationResult) -> invocationResult);
     }
 
@@ -248,15 +249,15 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         private Function<ProcessingContext, CompletableFuture<?>> safe(
                 Phase phase, Function<ProcessingContext, CompletableFuture<?>> action
         ) {
-            return context -> {
+            return processingContext -> {
                 CompletableFuture<?> result;
                 try {
-                    result = action.apply(context);
+                    result = action.apply(processingContext);
                 } catch (Exception e) {
                     result = CompletableFuture.failedFuture(e);
                 }
 
-                return result.exceptionallyCompose((e) -> {
+                return result.exceptionallyCompose(e -> {
                     if (!errorCause.compareAndSet(null, new CauseAndPhase(phase, e))) {
                         errorCause.get().cause().addSuppressed(e);
                     }
@@ -285,8 +286,8 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
             return (context, phase, exception) -> {
                 try {
                     action.handle(context, phase, exception);
-                } catch (Throwable ex) {
-                    logger.warn("An onError handler threw an exception.", ex);
+                } catch (Exception e) {
+                    logger.warn("An onError handler threw an exception.", e);
                 }
             };
         }
@@ -307,10 +308,10 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         private Consumer<ProcessingContext> completeSilently(Consumer<ProcessingContext> action) {
-            return context -> {
+            return processingContext -> {
                 try {
-                    action.accept(context);
-                } catch (Throwable e) {
+                    action.accept(processingContext);
+                } catch (Exception e) {
                     logger.warn("A Completion handler threw an exception.", e);
                 }
             };

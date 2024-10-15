@@ -193,8 +193,8 @@ class AsyncRetrySchedulerTest {
     void shouldDescribeItsProperties() {
         ComponentDescriptor mock = mock();
         testSubject.describeTo(mock);
-        verify(mock).describeProperty(eq("retryPolicy"), eq(retryPolicy));
-        verify(mock).describeProperty(eq("executor"), eq(executor));
+        verify(mock).describeProperty("retryPolicy", retryPolicy);
+        verify(mock).describeProperty("executor", executor);
     }
 
     private static class TestRetryPolicy implements RetryPolicy {

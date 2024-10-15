@@ -67,7 +67,7 @@ class AsyncEventSourcingRepositoryTest {
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());
         verify(eventTransaction).onAppend(any());
-        verify(eventStore).readEvents(eq("id"));
+        verify(eventStore).readEvents("id");
 
         assertEquals("null-0-1", loaded.resultNow().entity());
     }
@@ -148,7 +148,7 @@ class AsyncEventSourcingRepositoryTest {
         assertFalse(loaded.isCompletedExceptionally());
         //noinspection unchecked
         ArgumentCaptor<Consumer<EventMessage<?>>> callback = ArgumentCaptor.forClass(Consumer.class);
-        verify(eventStore).readEvents(eq("id"));
+        verify(eventStore).readEvents("id");
         verify(eventTransaction).onAppend(callback.capture());
         assertEquals("null-0-1", loaded.resultNow().entity());
 
@@ -168,7 +168,7 @@ class AsyncEventSourcingRepositoryTest {
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());
         verify(eventTransaction).onAppend(any());
-        verify(eventStore).readEvents(eq("id"));
+        verify(eventStore).readEvents("id");
 
         assertEquals("null-0-1", loaded.resultNow().entity());
     }
@@ -184,7 +184,7 @@ class AsyncEventSourcingRepositoryTest {
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally(), () -> loaded.exceptionNow().getMessage());
         verify(eventTransaction).onAppend(any());
-        verify(eventStore).readEvents(eq("id"));
+        verify(eventStore).readEvents("id");
 
         assertEquals("created", loaded.resultNow().entity());
     }

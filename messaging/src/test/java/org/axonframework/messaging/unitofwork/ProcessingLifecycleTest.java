@@ -255,8 +255,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
         testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION))
                    .onError((context, phase, e) -> onErrorInvoked.set(true))
-                   .whenComplete((context) -> whenCompleteInvoked.set(true))
-                   .doFinally((context) -> doFinallyInvoked.set(true));
+                   .whenComplete(context -> whenCompleteInvoked.set(true))
+                   .doFinally(context -> doFinallyInvoked.set(true));
 
         CompletableFuture<?> result = execute(testSubject);
         assertTrue(result.isCompletedExceptionally());
@@ -278,8 +278,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
         testSubject.onInvocation(fixture.createExceptionThrower(COMMIT));
         testSubject.onError((context, phase, e) -> onErrorInvoked.set(true));
-        testSubject.whenComplete((context) -> whenCompleteInvoked.set(true));
-        testSubject.doFinally((context) -> doFinallyInvoked.set(true));
+        testSubject.whenComplete(context -> whenCompleteInvoked.set(true));
+        testSubject.doFinally(context -> doFinallyInvoked.set(true));
 
         CompletableFuture<?> result = execute(testSubject);
         assertTrue(result.isCompletedExceptionally());
