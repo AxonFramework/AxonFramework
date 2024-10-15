@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -292,11 +292,9 @@ class SimpleCommandBusTest {
         ComponentDescriptor mockComponentDescriptor = mock(ComponentDescriptor.class);
         testSubject.describeTo(mockComponentDescriptor);
 
-        verify(mockComponentDescriptor).describeProperty(eq("worker"), eq(executor));
-        verify(mockComponentDescriptor).describeProperty(eq("lifecycleRegistrars"),
-                                                         eq(List.of(lifecycleHandlerRegistrar)));
-        verify(mockComponentDescriptor).describeProperty(eq("subscriptions"), eq(Map.of("test1", handler1,
-                                                                                        "test2", handler2)));
+        verify(mockComponentDescriptor).describeProperty("worker", executor);
+        verify(mockComponentDescriptor).describeProperty("lifecycleRegistrars", List.of(lifecycleHandlerRegistrar));
+        verify(mockComponentDescriptor).describeProperty("subscriptions", Map.of("test1", handler1, "test2", handler2));
     }
 
     private static class StubCommandHandler implements MessageHandler<CommandMessage<?>, Message<?>> {

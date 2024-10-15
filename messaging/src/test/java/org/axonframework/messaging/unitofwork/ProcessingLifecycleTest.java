@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2024. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.FutureUtils;
@@ -249,8 +265,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
         testSubject.onInvocation(fixture.createExceptionThrower(INVOCATION))
                    .onError((context, phase, e) -> onErrorInvoked.set(true))
-                   .whenComplete((context) -> whenCompleteInvoked.set(true))
-                   .doFinally((context) -> doFinallyInvoked.set(true));
+                   .whenComplete(context -> whenCompleteInvoked.set(true))
+                   .doFinally(context -> doFinallyInvoked.set(true));
 
         CompletableFuture<?> result = execute(testSubject);
         assertTrue(result.isCompletedExceptionally());
@@ -272,8 +288,8 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
         testSubject.onInvocation(fixture.createExceptionThrower(COMMIT));
         testSubject.onError((context, phase, e) -> onErrorInvoked.set(true));
-        testSubject.whenComplete((context) -> whenCompleteInvoked.set(true));
-        testSubject.doFinally((context) -> doFinallyInvoked.set(true));
+        testSubject.whenComplete(context -> whenCompleteInvoked.set(true));
+        testSubject.doFinally(context -> doFinallyInvoked.set(true));
 
         CompletableFuture<?> result = execute(testSubject);
         assertTrue(result.isCompletedExceptionally());
