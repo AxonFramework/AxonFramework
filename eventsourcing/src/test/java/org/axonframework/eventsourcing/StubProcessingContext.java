@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Stubbed implementation of the {@link ProcessingContext} used for testing purposes.
@@ -89,7 +90,7 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (id, current) -> resourceUpdater.apply((T) current));
     }

@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * This class represents a Unit of Work that monitors the processing of a task.
@@ -414,7 +415,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater) {
+        public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
             return this.context.updateResource(key, resourceUpdater);
         }
 

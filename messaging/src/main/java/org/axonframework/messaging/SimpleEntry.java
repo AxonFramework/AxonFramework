@@ -24,6 +24,7 @@ import org.axonframework.messaging.MessageStream.Entry;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -74,7 +75,7 @@ record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context c
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
         return this.context.updateResource(key, resourceUpdater);
     }
 

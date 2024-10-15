@@ -162,7 +162,7 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public boolean containsResource(ResourceKey<?> key) {
+    public boolean containsResource(@Nonnull ResourceKey<?> key) {
         return this.key.equals(key) || delegate.containsResource(key);
     }
 
@@ -181,7 +181,7 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? (T) resource.updateAndGet((UnaryOperator<R>) resourceUpdater)
@@ -190,18 +190,20 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
 
     @Override
     public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
-        //noinspection unchecked
-        return this.key.equals(key)
-                ? (T) resource.updateAndGet(current -> current == null
-                ? (R) resourceSupplier.get() : current) : delegate.computeResourceIfAbsent(key, resourceSupplier);
+        if (this.key.equals(key)) {
+            //noinspection unchecked
+            return (T) resource.updateAndGet(current -> current == null ? (R) resourceSupplier.get() : current);
+        }
+        return delegate.computeResourceIfAbsent(key, resourceSupplier);
     }
 
     @Override
     public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-        //noinspection unchecked
-        return this.key.equals(key)
-                ? (T) this.resource.getAndUpdate(current -> current == null ? (R) resource : current)
-                : delegate.putResourceIfAbsent(key, resource);
+        if (this.key.equals(key)) {
+            //noinspection unchecked
+            return (T) this.resource.getAndUpdate(current -> current == null ? (R) resource : current);
+        }
+        return delegate.putResourceIfAbsent(key, resource);
     }
 
     @Override

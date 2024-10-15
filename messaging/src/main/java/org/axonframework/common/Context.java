@@ -18,8 +18,8 @@ package org.axonframework.common;
 
 import jakarta.annotation.Nonnull;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Interface describing operations for context-specific resource management.
@@ -81,7 +81,7 @@ public interface Context {
      * @param <T>             The type of resource to update.
      * @return The new value associated with the {@code key}, or {@code null} when removed.
      */
-    <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater);
+    <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater);
 
     /**
      * Register the given {@code instance} under the given {@code key} if no value is currently present.

@@ -21,8 +21,8 @@ import jakarta.annotation.Nonnull;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Simple implementation of the {@link Context} providing a sane implementation for context-specific resource
@@ -53,7 +53,7 @@ public class SimpleContext implements Context {
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
     }

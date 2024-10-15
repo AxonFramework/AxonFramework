@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * No-op implementation of the {@link ProcessingContext}.
@@ -36,6 +37,8 @@ public class NoProcessingContext implements ProcessingContext {
      * Constant of the {@link NoProcessingContext} to be used as a single reference.
      */
     public static final NoProcessingContext INSTANCE = new NoProcessingContext();
+
+    private static final String UNSUPPORTED_MESSAGE = "Cannot register lifecycle actions in this ProcessingContext";
 
     private NoProcessingContext() {
         // No-arg constructor
@@ -63,17 +66,17 @@ public class NoProcessingContext implements ProcessingContext {
 
     @Override
     public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
-        throw new UnsupportedOperationException("Cannot register lifecycle actions in this ProcessingContext");
+        throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
     public ProcessingLifecycle onError(ErrorHandler action) {
-        throw new UnsupportedOperationException("Cannot register lifecycle actions in this ProcessingContext");
+        throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
     public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
-        throw new UnsupportedOperationException("Cannot register lifecycle actions in this ProcessingContext");
+        throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
@@ -92,7 +95,7 @@ public class NoProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull Function<T, T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
         throw new IllegalArgumentException("Cannot update resources in this ProcessingContext");
     }
 
