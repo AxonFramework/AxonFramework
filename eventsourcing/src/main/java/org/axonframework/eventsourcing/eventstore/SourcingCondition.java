@@ -19,8 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.OptionalLong;
-
 /**
  * Interface describing the condition to
  * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) source} events from an Event Store.
@@ -59,7 +57,7 @@ public sealed interface SourcingCondition permits DefaultSourcingCondition {
      * starting at the given {@code start}.
      */
     static SourcingCondition conditionFor(@Nonnull EventCriteria criteria,
-                                          Long start) {
+                                          long start) {
         return conditionFor(criteria, start, Long.MAX_VALUE);
     }
 
@@ -75,8 +73,8 @@ public sealed interface SourcingCondition permits DefaultSourcingCondition {
      * starting at the given {@code start} and ending at the given {@code end}.
      */
     static SourcingCondition conditionFor(@Nonnull EventCriteria criteria,
-                                          Long start,
-                                          Long end) {
+                                          long start,
+                                          long end) {
         return new DefaultSourcingCondition(criteria, start, end);
     }
 
@@ -98,13 +96,13 @@ public sealed interface SourcingCondition permits DefaultSourcingCondition {
     }
 
     /**
-     * The end position in the event sequence to source. Defaults to an {@link OptionalLong#empty() empty optional} to
-     * ensure we take the entire event sequence complying to the {@link #criteria()}
+     * The end position in the event sequence to source. Defaults to {@link Long#MAX_VALUE} to ensure we take the entire
+     * event sequence complying to the {@link #criteria()}
      *
      * @return The end position in the event sequence to source.
      */
-    default OptionalLong end() {
-        return OptionalLong.empty();
+    default long end() {
+        return Long.MAX_VALUE;
     }
 
     /**

@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class validating the {@code static} factory methods and {@code default} methods of the
@@ -38,8 +37,7 @@ class SourcingConditionTest {
 
         assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(-1L, result.start());
-        assertTrue(result.end().isPresent());
-        assertEquals(Long.MAX_VALUE, result.end().getAsLong());
+        assertEquals(Long.MAX_VALUE, result.end());
     }
 
     @Test
@@ -48,8 +46,7 @@ class SourcingConditionTest {
 
         assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(TEST_START, result.start());
-        assertTrue(result.end().isPresent());
-        assertEquals(Long.MAX_VALUE, result.end().getAsLong());
+        assertEquals(Long.MAX_VALUE, result.end());
     }
 
     @Test
@@ -60,7 +57,6 @@ class SourcingConditionTest {
 
         assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(TEST_START, result.start());
-        assertTrue(result.end().isPresent());
-        assertEquals(testEnd, result.end().getAsLong());
+        assertEquals(testEnd, result.end());
     }
 }

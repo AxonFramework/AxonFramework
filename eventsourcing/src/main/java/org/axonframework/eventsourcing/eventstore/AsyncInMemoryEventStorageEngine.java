@@ -148,7 +148,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         return MessageStream.fromStream(
                 eventsToStream(
                         condition.start(),
-                        condition.end().orElse(Long.MAX_VALUE),
+                        condition.end(),
                         condition.criteria()
                 ).map(Function.identity())
         );

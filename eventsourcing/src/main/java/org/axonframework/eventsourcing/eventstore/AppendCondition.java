@@ -48,14 +48,14 @@ public sealed interface AppendCondition permits NoAppendCondition, DefaultAppend
     /**
      * Constructs a {@link AppendCondition} based on the given {@code condition}.
      * <p>
-     * Uses the {@link SourcingCondition#end()} as the {@link #consistencyMarker()} and defaults to {@code -1L} when it
-     * isn't present. The {@link SourcingCondition#criteria()} is taken as is for the {@link #criteria()} operation.
+     * Uses the {@link SourcingCondition#end()} as the {@link #consistencyMarker()}. The
+     * {@link SourcingCondition#criteria()} is taken as is for the {@link #criteria()} operation.
      *
      * @param condition The {@link SourcingCondition} to base an {@link AppendCondition}.
      * @return An {@link AppendCondition} based on the given {@code condition}.
      */
     static AppendCondition from(@Nonnull SourcingCondition condition) {
-        return new DefaultAppendCondition(condition.end().orElse(-1L), condition.criteria());
+        return new DefaultAppendCondition(condition.end(), condition.criteria());
     }
 
     /**
