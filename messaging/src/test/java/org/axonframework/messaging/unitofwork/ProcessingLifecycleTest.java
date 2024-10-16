@@ -16,24 +16,14 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.Context;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -587,10 +577,10 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void resourceRegisteredInOnePhaseAreAccessibleInAnother() {
         PL testSubject = createTestSubject();
-        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+        Context.ResourceKey<String> testKey = Context.ResourceKey.create("testKey");
 
         testSubject.runOnInvocation(pc -> pc.putResource(testKey, "testValue"));
-        testSubject.runOnInvocation(pc -> pc.putResource(ProcessingContext.ResourceKey.create("testKey"),
+        testSubject.runOnInvocation(pc -> pc.putResource(Context.ResourceKey.create("testKey"),
                                                          "anotherTestValue"));
         testSubject.runOnPostInvocation(pc -> assertEquals("testValue", pc.getResource(testKey)));
 
@@ -600,7 +590,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void putIfAbsentIgnoredWhenValueExists() {
         PL testSubject = createTestSubject();
-        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+        Context.ResourceKey<String> testKey = Context.ResourceKey.create("testKey");
 
         testSubject.runOnInvocation(pc -> pc.putResource(testKey, "testValue"));
         testSubject.runOnPostInvocation(pc -> pc.putResourceIfAbsent(testKey, "anotherTestValue"));
@@ -612,7 +602,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void putIfAbsentStoresValue() {
         PL testSubject = createTestSubject();
-        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+        Context.ResourceKey<String> testKey = Context.ResourceKey.create("testKey");
 
         testSubject.runOnInvocation(pc -> assertNull(pc.putResourceIfAbsent(testKey, "testValue")));
         testSubject.runOnPostInvocation(pc -> assertEquals("testValue", pc.getResource(testKey)));
@@ -623,7 +613,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void computeIfAbsentIgnoredWhenValueExists() {
         PL testSubject = createTestSubject();
-        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+        Context.ResourceKey<String> testKey = Context.ResourceKey.create("testKey");
 
         testSubject.runOnInvocation(pc -> pc.putResource(testKey, "testValue"));
         testSubject.runOnPostInvocation(pc -> assertEquals("testValue",
@@ -638,7 +628,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void computeIfAbsentStoresValue() {
         PL testSubject = createTestSubject();
-        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+        Context.ResourceKey<String> testKey = Context.ResourceKey.create("testKey");
 
         testSubject.runOnInvocation(pc -> assertEquals("testValue",
                                                        pc.computeResourceIfAbsent(testKey, () -> "testValue")));
@@ -650,7 +640,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void updateResourceStoresUpdatedResource() {
         PL testSubject = createTestSubject();
-        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+        Context.ResourceKey<String> testKey = Context.ResourceKey.create("testKey");
 
         testSubject.runOnPreInvocation(pc -> pc.putResource(testKey, "testValue"));
         testSubject.runOnInvocation(pc -> assertEquals("testValue2", pc.updateResource(testKey, s -> s + "2")));
@@ -662,11 +652,11 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void putResourceOverwritesExisting() {
         PL testSubject = createTestSubject();
-        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+        Context.ResourceKey<String> testKey = Context.ResourceKey.create("testKey");
 
         testSubject.runOnInvocation(pc -> pc.putResource(testKey, "testValue1"));
         testSubject.runOnPostInvocation(pc -> assertEquals("testValue1", pc.putResource(testKey, "testValue2")));
-        testSubject.runOnAfterCommit(pc -> pc.putResource(ProcessingContext.ResourceKey.create("testKey"),
+        testSubject.runOnAfterCommit(pc -> pc.putResource(Context.ResourceKey.create("testKey"),
                                                           "anotherTestValue"));
         testSubject.runOnAfterCommit(pc -> assertEquals("testValue2", pc.getResource(testKey)));
 
@@ -676,7 +666,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void removeResource() {
         PL testSubject = createTestSubject();
-        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+        Context.ResourceKey<String> testKey = Context.ResourceKey.create("testKey");
 
         testSubject.runOnPreInvocation(pc -> pc.putResource(testKey, "testValue"));
         testSubject.runOnInvocation(pc -> assertEquals("testValue", pc.removeResource(testKey)));
@@ -689,7 +679,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void removeResourceIgnoresWhenCurrentResourceDoesNotMatch() {
         PL testSubject = createTestSubject();
-        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+        Context.ResourceKey<String> testKey = Context.ResourceKey.create("testKey");
 
         testSubject.runOnPreInvocation(pc -> pc.putResource(testKey, "testValue"));
         testSubject.runOnInvocation(pc -> assertFalse(pc.removeResource(testKey, "anotherValue")));
@@ -702,7 +692,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
     @Test
     void removeResourceWhenCurrentResourceMatches() {
         PL testSubject = createTestSubject();
-        ProcessingContext.ResourceKey<String> testKey = ProcessingContext.ResourceKey.create("testKey");
+        Context.ResourceKey<String> testKey = Context.ResourceKey.create("testKey");
 
         testSubject.runOnPreInvocation(pc -> pc.putResource(testKey, "testValue"));
         testSubject.runOnInvocation(pc -> assertTrue(pc.removeResource(testKey, "testValue")));
@@ -714,7 +704,7 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
     @Test
     void resourceKeysShowDebugStringInOutput() {
-        ProcessingContext.ResourceKey<Object> resourceKey = ProcessingContext.ResourceKey.create(
+        Context.ResourceKey<Object> resourceKey = Context.ResourceKey.create(
                 "myRandomDebugStringValue");
 
         assertTrue(resourceKey.toString().contains("[myRandomDebugStringValue]"));
@@ -722,14 +712,14 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
 
     @Test
     void resourceKeysWithEmptyDebugKeyShowsKeyIdOnly() {
-        ProcessingContext.ResourceKey<Object> resourceKey = ProcessingContext.ResourceKey.create("");
+        Context.ResourceKey<Object> resourceKey = Context.ResourceKey.create("");
 
         assertFalse(resourceKey.toString().contains("["));
     }
 
     @Test
     void resourceKeysWithNullDebugKeyShowsKeyIdOnly() {
-        ProcessingContext.ResourceKey<Object> resourceKey = ProcessingContext.ResourceKey.create(null);
+        Context.ResourceKey<Object> resourceKey = Context.ResourceKey.create(null);
 
         assertFalse(resourceKey.toString().contains("["));
     }

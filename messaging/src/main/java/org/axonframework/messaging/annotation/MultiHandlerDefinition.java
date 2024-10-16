@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,13 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
 import org.axonframework.messaging.MessageStream;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 /**
  * HandlerDefinition instance that delegates to multiple other instances, in the order provided. Also, it wraps the
@@ -175,10 +171,12 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     }
 
     @Override
-    public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
-                                                                @Nonnull Method method,
-                                                                @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                                Function<Object, MessageStream<?>> returnTypeConverter) {
+    public <T> Optional<MessageHandlingMember<T>> createHandler(
+            @Nonnull Class<T> declaringType,
+            @Nonnull Method method,
+            @Nonnull ParameterResolverFactory parameterResolverFactory,
+            @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
+    ) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {
             handler = handlerDefinition.createHandler(declaringType,

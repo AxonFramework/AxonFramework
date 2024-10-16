@@ -14,63 +14,26 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.common;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
- * Stubbed implementation of the {@link ProcessingContext} used for testing purposes.
+ * Simple implementation of the {@link Context} providing a sane implementation for context-specific resource
+ * management.
  *
- * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
  */
-public class StubProcessingContext implements ProcessingContext {
+public class SimpleContext implements Context {
 
-    private final Map<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
-
-    @Override
-    public boolean isStarted() {
-        return false;
-    }
-
-    @Override
-    public boolean isError() {
-        return false;
-    }
-
-    @Override
-    public boolean isCommitted() {
-        return false;
-    }
-
-    @Override
-    public boolean isCompleted() {
-        return false;
-    }
-
-    @Override
-    public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
-        throw new UnsupportedOperationException("Lifecycle actions are not yet supported in the StubProcessingContext");
-    }
-
-    @Override
-    public ProcessingLifecycle onError(ErrorHandler action) {
-        throw new UnsupportedOperationException("Lifecycle actions are not yet supported in the StubProcessingContext");
-    }
-
-    @Override
-    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
-        throw new UnsupportedOperationException("Lifecycle actions are not yet supported in the StubProcessingContext");
-    }
+    private final ConcurrentMap<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
 
     @Override
     public boolean containsResource(@Nonnull ResourceKey<?> key) {
@@ -92,7 +55,7 @@ public class StubProcessingContext implements ProcessingContext {
     @Override
     public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
-        return (T) resources.compute(key, (id, current) -> resourceUpdater.apply((T) current));
+        return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
     }
 
     @Override
@@ -104,7 +67,7 @@ public class StubProcessingContext implements ProcessingContext {
     @Override
     public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
         //noinspection unchecked
-        return (T) resources.computeIfAbsent(key, k -> resourceSupplier.get());
+        return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
     }
 
     @Override
@@ -116,5 +79,29 @@ public class StubProcessingContext implements ProcessingContext {
     @Override
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
         return resources.remove(key, expectedResource);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SimpleContext that = (SimpleContext) o;
+        return Objects.equals(resources, that.resources);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(resources);
+    }
+
+    @Override
+    public String toString() {
+        return "SimpleContext{" +
+                "resources=" + resources +
+                '}';
     }
 }

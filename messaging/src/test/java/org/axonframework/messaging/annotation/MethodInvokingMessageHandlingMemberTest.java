@@ -21,8 +21,6 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.HandlerAttributes;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +42,7 @@ class MethodInvokingMessageHandlingMemberTest {
 
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<Message<Object>> returnTypeConverter(Object result) {
+    private static MessageStream<?> returnTypeConverter(Object result) {
         return result instanceof CompletableFuture<?>
                 ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
                 : MessageStream.just(GenericMessage.asMessage(result));
