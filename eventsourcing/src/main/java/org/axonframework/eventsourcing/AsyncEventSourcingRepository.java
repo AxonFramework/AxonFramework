@@ -26,6 +26,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext.ResourceKey;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +35,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import javax.annotation.Nonnull;
 
 /**
  * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an
@@ -52,29 +52,30 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
             ResourceKey.create("managedEntities");
 
     private final AsyncEventStore eventStore;
-    private final IndexResolver<ID> indexResolver;
+    private final CriteriaResolver<ID> criteriaResolver;
     private final EventStateApplier<M> eventStateApplier;
     private final String context;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
-     * apply state transitions to the entity based on the events received, and given {@code indexResolver} to resolve
-     * the {@link org.axonframework.eventsourcing.eventstore.Index} of the given identifier type.
+     * apply state transitions to the entity based on the events received, and given {@code criteriaResolver} to resolve
+     * the {@link org.axonframework.eventsourcing.eventstore.EventCriteria} of the given identifier type used to source
+     * a model.
      *
      * @param eventStore        The event store to load events from.
-     * @param indexResolver     Converts the given identifier to an
-     *                          {@link org.axonframework.eventsourcing.eventstore.Index} used to load a matching event
-     *                          stream.
+     * @param criteriaResolver  Converts the given identifier to an
+     *                          {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
+     *                          event stream.
      * @param eventStateApplier The function to apply event state changes to the loaded entities.
      * @param context           The (bounded) context this {@link AsyncEventSourcingRepository} provides access to
      *                          models for.
      */
     public AsyncEventSourcingRepository(AsyncEventStore eventStore,
-                                        IndexResolver<ID> indexResolver,
+                                        CriteriaResolver<ID> criteriaResolver,
                                         EventStateApplier<M> eventStateApplier,
                                         String context) {
         this.eventStore = eventStore;
-        this.indexResolver = indexResolver;
+        this.criteriaResolver = criteriaResolver;
         this.eventStateApplier = eventStateApplier;
         this.context = context;
     }
@@ -105,7 +106,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                 identifier,
                 id -> eventStore.transaction(processingContext, context)
                                 .source(
-                                        SourcingCondition.conditionFor(indexResolver.resolve(id), start, end),
+                                        SourcingCondition.conditionFor(criteriaResolver.resolve(id), start, end),
                                         processingContext
                                 )
                                 .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, em) -> {
@@ -164,7 +165,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStore", eventStore);
-        descriptor.describeProperty("indexResolver", indexResolver);
+        descriptor.describeProperty("criteriaResolver", criteriaResolver);
         descriptor.describeProperty("eventStateApplier", eventStateApplier);
         descriptor.describeProperty("context", context);
     }

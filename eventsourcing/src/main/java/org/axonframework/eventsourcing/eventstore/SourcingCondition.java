@@ -19,8 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.OptionalLong;
-
 /**
  * Interface describing the condition to
  * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) source} events from an Event Store.
@@ -39,45 +37,45 @@ import java.util.OptionalLong;
 public sealed interface SourcingCondition permits DefaultSourcingCondition {
 
     /**
-     * Construct a {@link SourcingCondition} used to source a model based on the given {@code index}.
+     * Construct a {@link SourcingCondition} used to source a model based on the given {@code criteria}.
      *
-     * @param index The {@link Index} used as part of the {@link SourcingCondition#criteria()}.
-     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code index}.
+     * @param criteria The {@link EventCriteria} used as the {@link SourcingCondition#criteria()}.
+     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code criteria}.
      */
-    static SourcingCondition conditionFor(@Nonnull Index index) {
-        return conditionFor(index, -1L);
+    static SourcingCondition conditionFor(@Nonnull EventCriteria criteria) {
+        return conditionFor(criteria, -1L);
     }
 
     /**
-     * Construct a {@link SourcingCondition} used to source a model based on the given {@code index}.
+     * Construct a {@link SourcingCondition} used to source a model based on the given {@code criteria}.
      * <p>
      * Will start the sequence at the given {@code start} value.
      *
-     * @param index The {@link Index} used as part of the {@link SourcingCondition#criteria()}.
-     * @param start The start position in the event sequence to retrieve of the model to source.
-     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code index},
+     * @param criteria The {@link EventCriteria} used as the {@link SourcingCondition#criteria()}.
+     * @param start    The start position in the event sequence to retrieve of the model to source.
+     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code criteria},
      * starting at the given {@code start}.
      */
-    static SourcingCondition conditionFor(@Nonnull Index index,
-                                          Long start) {
-        return conditionFor(index, start, Long.MAX_VALUE);
+    static SourcingCondition conditionFor(@Nonnull EventCriteria criteria,
+                                          long start) {
+        return conditionFor(criteria, start, Long.MAX_VALUE);
     }
 
     /**
-     * Construct a {@link SourcingCondition} used to source a model based on the given {@code index}.
+     * Construct a {@link SourcingCondition} used to source a model based on the given {@code criteria}.
      * <p>
      * Will start the sequence at the given {@code start} value and cut it off at the given {@code end} value.
      *
-     * @param index The {@link Index} used as part of the {@link SourcingCondition#criteria()}.
-     * @param start The start position in the event sequence to retrieve of the model to source.
-     * @param end   The end position in the event sequence to retrieve of the model to source.
-     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code index},
+     * @param criteria The {@link EventCriteria} used as the {@link SourcingCondition#criteria()}.
+     * @param start    The start position in the event sequence to retrieve of the model to source.
+     * @param end      The end position in the event sequence to retrieve of the model to source.
+     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code criteria},
      * starting at the given {@code start} and ending at the given {@code end}.
      */
-    static SourcingCondition conditionFor(@Nonnull Index index,
-                                          Long start,
-                                          Long end) {
-        return new DefaultSourcingCondition(EventCriteria.hasIndex(index), start, end);
+    static SourcingCondition conditionFor(@Nonnull EventCriteria criteria,
+                                          long start,
+                                          long end) {
+        return new DefaultSourcingCondition(criteria, start, end);
     }
 
     /**
@@ -98,13 +96,13 @@ public sealed interface SourcingCondition permits DefaultSourcingCondition {
     }
 
     /**
-     * The end position in the event sequence to source. Defaults to an {@link OptionalLong#empty() empty optional} to
-     * ensure we take the entire event sequence complying to the {@link #criteria()}
+     * The end position in the event sequence to source. Defaults to {@link Long#MAX_VALUE} to ensure we take the entire
+     * event sequence complying to the {@link #criteria()}
      *
      * @return The end position in the event sequence to source.
      */
-    default OptionalLong end() {
-        return OptionalLong.empty();
+    default long end() {
+        return Long.MAX_VALUE;
     }
 
     /**

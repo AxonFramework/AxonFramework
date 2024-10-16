@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 
 import java.time.Clock;
@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.eventsourcing.eventstore.EventCriteria.hasIndex;
 import static org.axonframework.eventsourcing.eventstore.SourcingCondition.conditionFor;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
@@ -50,8 +51,8 @@ class InMemorySimpleEventStoreTest extends SimpleEventStoreTestSuite<AsyncInMemo
      */
     @Test
     void appendEventsThrowsAppendConditionAssertionExceptionWhenToManyIndicesAreGiven() {
-        SourcingCondition firstCondition = conditionFor(TEST_AGGREGATE_INDEX);
-        SourcingCondition secondCondition = conditionFor(new Index("aggregateId", "other-aggregate-id"));
+        SourcingCondition firstCondition = conditionFor(TEST_AGGREGATE_CRITERIA);
+        SourcingCondition secondCondition = conditionFor(hasIndex(new Index("aggregateId", "other-aggregate-id")));
         AtomicReference<MessageStream<EventMessage<?>>> streamReference = new AtomicReference<>();
 
         EventMessage<?> testEvent = eventMessage(0);

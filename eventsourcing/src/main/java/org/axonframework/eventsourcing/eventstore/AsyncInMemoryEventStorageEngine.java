@@ -137,10 +137,11 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         long start = condition.start();
         EventCriteria criteria = condition.criteria();
         return MessageStream.fromStream(
-                events.subMap(start, condition.end().orElse(Long.MAX_VALUE))
-                      .values()
-                      .stream()
-                      .filter(event -> match(event, criteria))
+                eventsToStream(
+                        condition.start(),
+                        condition.end(),
+                        condition.criteria()
+                ).map(Function.identity())
         );
     }
 

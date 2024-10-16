@@ -37,12 +37,6 @@ import java.util.function.Consumer;
 public interface EventStoreTransaction {
 
     /**
-     * A {@link org.axonframework.messaging.unitofwork.ProcessingContext.ResourceKey} referring to the position of the
-     * last {@link #appendEvent(EventMessage) appended event}.
-     */
-    ProcessingContext.ResourceKey<Long> APPEND_POSITION_KEY = ProcessingContext.ResourceKey.create("appendPosition");
-
-    /**
      * Sources a {@link MessageStream} of type {@link EventMessage} based on the given {@code condition} that can be
      * used to rehydrate a model.
      * <p>
@@ -81,4 +75,16 @@ public interface EventStoreTransaction {
      * @param callback A {@link Consumer} to invoke when an event is appended in this transaction.
      */
     void onAppend(@Nonnull Consumer<EventMessage<?>> callback);
+
+    /**
+     * Returns the position in the event store of the last {@link #appendEvent(EventMessage) appended} event by this
+     * transaction.
+     * <p>
+     * Will return {@code -1L} if nothing has been appended yet.
+     *
+     * @param context The {@link ProcessingContext} for which to retrieve the last appended event for
+     * @return The position in the event store of the last {@link #appendEvent(EventMessage) appended} event by this
+     * transaction.
+     */
+    long appendPosition(@Nonnull ProcessingContext context);
 }

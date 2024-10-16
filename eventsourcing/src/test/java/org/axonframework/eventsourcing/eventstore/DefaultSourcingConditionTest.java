@@ -20,8 +20,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.OptionalLong;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -49,28 +47,6 @@ class DefaultSourcingConditionTest {
     }
 
     @Test
-    void defaultsStartToMinusOneWhenNullIsGiven() {
-        SourcingCondition testSubjectWithNullStart = new DefaultSourcingCondition(TEST_CRITERIA, null, null);
-
-        assertEquals(-1L, testSubjectWithNullStart.start());
-    }
-
-    @Test
-    void endReturnsEmptyOptionalForNullEndValue() {
-        SourcingCondition testSubjectWithNullEnd = new DefaultSourcingCondition(TEST_CRITERIA, TEST_START, null);
-
-        assertFalse(testSubjectWithNullEnd.end().isPresent());
-    }
-
-    @Test
-    void endReturnsFilledOptionalForActualEndValue() {
-        OptionalLong resultEnd = testSubject.end();
-
-        assertTrue(resultEnd.isPresent());
-        assertEquals(TEST_END, resultEnd.getAsLong());
-    }
-
-    @Test
     void combineUsesTheSmallestStartValue() {
         long biggerStart = testSubject.start() + 10;
         SourcingCondition testSubjectWithLargerStart =
@@ -84,18 +60,14 @@ class DefaultSourcingConditionTest {
 
     @Test
     void combineUsesTheLargestEndValue() {
-        //noinspection OptionalGetWithoutIsPresent
-        long smallerEnd = testSubject.end().getAsLong() - 5;
+        long smallerEnd = testSubject.end() - 5;
         SourcingCondition testSubjectWithSmallerEnd =
                 new DefaultSourcingCondition(TEST_CRITERIA, TEST_START, smallerEnd);
 
         SourcingCondition result = testSubject.combine(testSubjectWithSmallerEnd);
 
-        OptionalLong optionalEnd = result.end();
-        assertTrue(optionalEnd.isPresent());
-        long resultEnd = optionalEnd.getAsLong();
+        long resultEnd = result.end();
         assertNotEquals(smallerEnd, resultEnd);
-        //noinspection OptionalGetWithoutIsPresent
-        assertEquals(testSubject.end().getAsLong(), resultEnd);
+        assertEquals(testSubject.end(), resultEnd);
     }
 }

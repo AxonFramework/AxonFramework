@@ -41,11 +41,7 @@ record DefaultAppendCondition(
     @Override
     public AppendCondition with(@Nonnull SourcingCondition condition) {
         return new DefaultAppendCondition(
-                condition.end()
-                         .stream()
-                         .map(end -> Math.min(end, consistencyMarker))
-                         .findFirst()
-                         .orElse(consistencyMarker),
+                Math.min(condition.end(), consistencyMarker),
                 criteria.combine(condition.criteria())
         );
     }

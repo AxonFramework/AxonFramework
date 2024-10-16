@@ -20,12 +20,16 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.StubProcessingContext;
 import org.axonframework.eventsourcing.eventstore.StreamableEventSource.TrackedEntry;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -50,7 +54,8 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
     protected static final String TEST_CONTEXT = "some-context";
     protected static final String NOT_MATCHING_CONTEXT = "some-other-context";
     protected static final String TEST_AGGREGATE_ID = "someId";
-    protected static final Index TEST_AGGREGATE_INDEX = new Index("aggregateIdentifier", TEST_AGGREGATE_ID);
+    protected static final EventCriteria TEST_AGGREGATE_CRITERIA =
+            EventCriteria.hasIndex(new Index("aggregateIdentifier", TEST_AGGREGATE_ID));
 
     protected ESE storageEngine;
 
@@ -77,11 +82,11 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
 
     @Test
     void sourcingReturnsExpectedMessageStream() {
-        Index expectedIndex = TEST_AGGREGATE_INDEX;
+        EventCriteria expectedCriteria = TEST_AGGREGATE_CRITERIA;
         EventMessage<?> expectedEventOne = eventMessage(0);
         EventMessage<?> expectedEventTwo = eventMessage(1);
         EventMessage<?> expectedEventThree = eventMessage(4);
-        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(expectedIndex);
+        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(expectedCriteria);
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         CompletableFuture.allOf(
                 storageEngine.appendEvents(AppendCondition.from(testSourcingCondition),
@@ -102,19 +107,19 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         }));
 
         StepVerifier.create(result.asFlux())
-                    .assertNext(event -> assertTagged(event, expectedEventOne, expectedIndex))
-                    .assertNext(event -> assertTagged(event, expectedEventTwo, expectedIndex))
-                    .assertNext(event -> assertTagged(event, expectedEventThree, expectedIndex))
+                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventOne, 0, expectedCriteria))
+                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventTwo, 1, expectedCriteria))
+                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventThree, 4, expectedCriteria))
                     .verifyComplete();
     }
 
     @Test
     void sourcingConditionIsMappedToAppendConditionByEventStoreTransaction() {
-        Index expectedIndex = TEST_AGGREGATE_INDEX;
+        EventCriteria expectedCriteria = TEST_AGGREGATE_CRITERIA;
         EventMessage<?> expectedEventOne = eventMessage(0);
         EventMessage<?> expectedEventTwo = eventMessage(1);
         EventMessage<?> expectedEventThree = eventMessage(2);
-        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(expectedIndex);
+        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(expectedCriteria);
 
         AtomicReference<MessageStream<EventMessage<?>>> initialStreamReference = new AtomicReference<>();
         AtomicReference<MessageStream<EventMessage<?>>> finalStreamReference = new AtomicReference<>();
@@ -141,19 +146,20 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         assertNull(initialStreamReference.get().asCompletableFuture().join());
 
         StepVerifier.create(finalStreamReference.get().asFlux())
-                    .assertNext(event -> assertTagged(event, expectedEventOne, expectedIndex))
-                    .assertNext(event -> assertTagged(event, expectedEventTwo, expectedIndex))
-                    .assertNext(event -> assertTagged(event, expectedEventThree, expectedIndex))
+                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventOne, 0, expectedCriteria))
+                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventTwo, 1, expectedCriteria))
+                    .assertNext(event -> assertTrackedAndTagged(event, expectedEventThree, 2, expectedCriteria))
                     .verifyComplete();
     }
 
-    private static void assertTagged(EventMessage<?> actual,
-                                     EventMessage<?> expected,
-                                     Index expectedIndex) {
-        assertInstanceOf(GenericIndexedEventMessage.class, actual);
-        GenericIndexedEventMessage<?> taggedEvent = (GenericIndexedEventMessage<?>) actual;
-        assertTrue(taggedEvent.indices().contains(expectedIndex));
-        assertEvent(taggedEvent, expected);
+    private static void assertTrackedAndTagged(EventMessage<?> actual,
+                                               EventMessage<?> expected,
+                                               int expectedPosition,
+                                               EventCriteria expectedCriteria) {
+        assertInstanceOf(GenericTrackedAndIndexedEventMessage.class, actual);
+        GenericTrackedAndIndexedEventMessage<?> trackedAndTagged = (GenericTrackedAndIndexedEventMessage<?>) actual;
+        assertTrue(trackedAndTagged.indices().containsAll(expectedCriteria.indices()));
+        assertTracked(trackedAndTagged, expected, expectedPosition);
     }
 
     @Test
@@ -183,7 +189,7 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
 
     @Test
     void appendEventsThrowsAppendConditionAssertionExceptionWhenTheConsistencyMarkerIsSurpassedByMatchingEvents() {
-        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_INDEX);
+        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA);
         AtomicReference<MessageStream<EventMessage<?>>> fastStreamReference = new AtomicReference<>();
         AtomicReference<MessageStream<EventMessage<?>>> slowStreamReference = new AtomicReference<>();
 
@@ -279,11 +285,11 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         StreamingCondition testStreamingCondition = StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(4));
 
         CompletableFuture.allOf(
-                storageEngine.appendEvents(AppendCondition.from(SourcingCondition.conditionFor(TEST_AGGREGATE_INDEX)),
+                storageEngine.appendEvents(AppendCondition.from(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)),
                                            eventMessage(0), eventMessage(1)),
                 storageEngine.appendEvents(AppendCondition.none(),
                                            eventMessage(2), eventMessage(3)),
-                storageEngine.appendEvents(AppendCondition.from(SourcingCondition.conditionFor(TEST_AGGREGATE_INDEX))
+                storageEngine.appendEvents(AppendCondition.from(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA))
                                                           .withMarker(3),
                                            expectedEventOne),
                 storageEngine.appendEvents(AppendCondition.none(),
@@ -304,7 +310,7 @@ abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
         EventMessage<?> expectedEventOne = eventMessage(0);
         EventMessage<?> expectedEventTwo = eventMessage(1);
         EventMessage<?> expectedEventThree = eventMessage(4);
-        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_INDEX);
+        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA);
         StreamingCondition testStreamingCondition = StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(0))
                                                                       .with(testSourcingCondition.criteria());
 
