@@ -25,7 +25,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -321,7 +320,7 @@ public interface MessageStream<M extends Message<?>> {
      * @param onNext The {@link Consumer} to invoke for each {@link Entry entry}.
      * @return A {@link MessageStream stream} that will invoke the given {@code onNext} for each {@link Entry entry}.
      */
-    default MessageStream<M> onNextItem(@Nonnull Consumer<Entry<M>> onNext) {
+    default MessageStream<M> onNext(@Nonnull Consumer<Entry<M>> onNext) {
         return new OnNextMessageStream<>(this, onNext);
     }
 

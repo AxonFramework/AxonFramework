@@ -63,7 +63,7 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
     void onNextNotInvokedOnEmptyStream() {
         //noinspection unchecked
         Consumer<Entry<Message<?>>> handler = mock();
-        MessageStream<Message<?>> testSubject = MessageStream.empty().onNextItem(handler);
+        MessageStream<Message<?>> testSubject = MessageStream.empty().onNext(handler);
 
         testSubject.asCompletableFuture().isDone();
         verify(handler, never()).accept(any());
@@ -76,7 +76,7 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
         List<Message<String>> messages = List.of(first, createRandomMessage());
 
         CompletableFuture<Message<String>> actual = MessageStream.fromIterable(messages)
-                                                                 .onNextItem(seen::add)
+                                                                 .onNext(seen::add)
                                                                  .asCompletableFuture()
                                                                  .thenApply(Entry::message);
 
@@ -93,7 +93,7 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
         List<Message<String>> messages = List.of(first, second);
 
         StepVerifier.create(MessageStream.fromIterable(messages)
-                                         .onNextItem(seen::add)
+                                         .onNext(seen::add)
                                          .asFlux())
                     .expectNextCount(2)
                     .verifyComplete();

@@ -76,7 +76,7 @@ class EmptyMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public MessageStream<M> onNextItem(@Nonnull Consumer<Entry<M>> onNext) {
+    public MessageStream<M> onNext(@Nonnull Consumer<Entry<M>> onNext) {
         return this;
     }
 

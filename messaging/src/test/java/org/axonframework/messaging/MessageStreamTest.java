@@ -380,7 +380,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
 
         MessageStream<M> testSubject = testSubject(List.of(expected));
 
-        CompletableFuture<Entry<M>> result = testSubject.onNextItem(entry -> invoked.set(true))
+        CompletableFuture<Entry<M>> result = testSubject.onNext(entry -> invoked.set(true))
                                                         .asCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join().message());
@@ -394,7 +394,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
 
         MessageStream<M> testSubject = testSubject(List.of(expected));
 
-        StepVerifier.create(testSubject.onNextItem(entry -> invoked.set(true))
+        StepVerifier.create(testSubject.onNext(entry -> invoked.set(true))
                                        .asFlux())
                     .expectNextMatches(entry -> entry.message().equals(expected))
                     .verifyComplete();
