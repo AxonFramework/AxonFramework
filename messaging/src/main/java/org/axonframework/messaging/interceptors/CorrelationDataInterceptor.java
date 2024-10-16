@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.interceptors;
 
+import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -24,13 +25,9 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Message interceptor that registers {@link CorrelationDataProvider CorrelationDataProviders} with the Unit of Work.
@@ -44,8 +41,7 @@ import javax.annotation.Nonnull;
  */
 public class CorrelationDataInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
 
-    public static final ProcessingContext.ResourceKey<Map<String, Object>> CORRELATION_DATA = ProcessingContext.ResourceKey.create(
-            "CorrelationData");
+    public static final ResourceKey<Map<String, Object>> CORRELATION_DATA = ResourceKey.create("CorrelationData");
     private final List<CorrelationDataProvider> correlationDataProviders;
 
     /**

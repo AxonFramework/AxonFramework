@@ -217,7 +217,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(message))
                        .handle(message, processingContext)
-                       .map(entry -> entry.map(GenericCommandResultMessage::asCommandResultMessage));
+                       .mapMessage(GenericCommandResultMessage::asCommandResultMessage);
     }
 
     @Override

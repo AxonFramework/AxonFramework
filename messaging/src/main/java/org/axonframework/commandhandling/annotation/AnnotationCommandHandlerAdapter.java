@@ -130,7 +130,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
                     .filter(ch -> ch.canHandle(command, processingContext))
                     .findFirst()
                     .map(handler -> handler.handle(command, processingContext, target)
-                                           .map(entry -> entry.map(GenericCommandResultMessage::asCommandResultMessage)))
+                                           .mapMessage(GenericCommandResultMessage::asCommandResultMessage))
                     .orElseGet(() -> MessageStream.failed(new NoHandlerForCommandException(command)));
     }
 

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assumptions;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -38,7 +38,7 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
-            Exception failure) {
+                                                      Exception failure) {
         Assumptions.assumeTrue(messages.isEmpty(),
                                "SingleValueMessageStream only supports failures without regular values");
         return MessageStream.fromFuture(CompletableFuture.failedFuture(failure));

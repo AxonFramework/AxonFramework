@@ -16,12 +16,12 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
@@ -66,9 +66,9 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                      @Nonnull ProcessingContext processingContext,
-                                                      @Nullable T target) {
+    public MessageStream<?> handle(@Nonnull Message<?> message,
+                                   @Nonnull ProcessingContext processingContext,
+                                   @Nullable T target) {
         return delegate.handle(message, processingContext, target);
     }
 

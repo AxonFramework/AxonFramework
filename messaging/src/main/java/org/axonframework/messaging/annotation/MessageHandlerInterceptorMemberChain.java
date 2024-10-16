@@ -16,12 +16,11 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import javax.annotation.Nonnull;
 
 /**
  * Interface to interact with a MessageHandlingMember instance through a chain of interceptors, which were used to build
@@ -49,10 +48,10 @@ public interface MessageHandlerInterceptorMemberChain<T> {
     Object handleSync(@Nonnull Message<?> message, @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler)
             throws Exception;
 
-    default MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                       @Nonnull ProcessingContext processingContext,
-                                                       @Nonnull T target,
-                                                       @Nonnull MessageHandlingMember<? super T> handler) {
+    default MessageStream<?> handle(@Nonnull Message<?> message,
+                                    @Nonnull ProcessingContext processingContext,
+                                    @Nonnull T target,
+                                    @Nonnull MessageHandlingMember<? super T> handler) {
         try {
             return MessageStream.just(GenericMessage.asMessage(handleSync(message, target, handler)));
         } catch (Exception e) {

@@ -16,11 +16,10 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
@@ -176,7 +175,7 @@ public class MultiHandlerDefinition implements HandlerDefinition {
             @Nonnull Class<T> declaringType,
             @Nonnull Method method,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+            @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
     ) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {

@@ -16,13 +16,12 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.SimpleMessageEntry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -195,12 +194,10 @@ public class AnnotatedHandlerInspector<T> {
 
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<? extends Message<?>> returnTypeConverter(Object result) {
-        if (result instanceof CompletableFuture<?>) {
-            return MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage),
-                                            SimpleMessageEntry::new);
-        }
-        return MessageStream.just(GenericMessage.asMessage(result));
+    private static MessageStream<?> returnTypeConverter(Object result) {
+        return result instanceof CompletableFuture<?>
+                ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
+                : MessageStream.just(GenericMessage.asMessage(result));
     }
 
     @SuppressWarnings("unchecked")
@@ -362,10 +359,10 @@ public class AnnotatedHandlerInspector<T> {
         }
 
         @Override
-        public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                          @Nonnull ProcessingContext processingContext,
-                                                          @Nonnull T target,
-                                                          @Nonnull MessageHandlingMember<? super T> handler) {
+        public MessageStream<?> handle(@Nonnull Message<?> message,
+                                       @Nonnull ProcessingContext processingContext,
+                                       @Nonnull T target,
+                                       @Nonnull MessageHandlingMember<? super T> handler) {
             return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                     processingContext,
                     () -> next.handle(message, processingContext, target, handler),
@@ -381,10 +378,10 @@ public class AnnotatedHandlerInspector<T> {
             return next.handleSync(message, target, handler);
         }
 
-        private MessageStream<? extends Message<?>> doHandle(Message<?> message,
-                                                             ProcessingContext processingContext,
-                                                             T target,
-                                                             MessageHandlingMember<? super T> handler) {
+        private MessageStream<?> doHandle(Message<?> message,
+                                          ProcessingContext processingContext,
+                                          T target,
+                                          MessageHandlingMember<? super T> handler) {
             return delegate.canHandle(message, processingContext)
                     ? delegate.handle(message, processingContext, target)
                     : next.handle(message, processingContext, target, handler);

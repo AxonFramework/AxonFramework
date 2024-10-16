@@ -23,8 +23,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageStream.MessageEntry;
-import org.axonframework.messaging.SimpleMessageEntry;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -73,11 +72,11 @@ public class RetryingCommandBus implements CommandBus {
                                                        Throwable e) {
         return retryScheduler.scheduleRetry(command, processingContext, e, this::redispatch)
                              .asCompletableFuture()
-                             .thenApply(MessageEntry::message);
+                             .thenApply(Entry::message);
     }
 
     private MessageStream<Message<?>> redispatch(CommandMessage<?> cmd, ProcessingContext ctx) {
-        return MessageStream.fromFuture(dispatchToDelegate(cmd, ctx), SimpleMessageEntry::new);
+        return MessageStream.fromFuture(dispatchToDelegate(cmd, ctx));
     }
 
     @Override

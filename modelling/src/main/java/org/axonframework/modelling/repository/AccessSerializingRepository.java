@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.repository;
 
+import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -23,12 +24,12 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
 
 /**
  * Repository implementation that ensures safe concurrent access to entities stored in it. It delegates the actual
@@ -45,8 +46,8 @@ public class AccessSerializingRepository<ID, T>
 
     private static final Logger logger = LoggerFactory.getLogger(AccessSerializingRepository.class);
 
-    private final ProcessingContext.ResourceKey<ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>>> workingEntitiesKey =
-            ProcessingContext.ResourceKey.create("workingEntities");
+    private final ResourceKey<ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>>> workingEntitiesKey =
+            ResourceKey.create("workingEntities");
 
     private final AsyncRepository.LifecycleManagement<ID, T> delegate;
     private final ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> inProgress;

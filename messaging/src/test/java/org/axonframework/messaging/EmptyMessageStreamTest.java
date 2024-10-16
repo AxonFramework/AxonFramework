@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.messaging.MessageStream.MessageEntry;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
@@ -57,12 +57,12 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
     void doesNothingOnErrorContinue() {
         AtomicBoolean invoked = new AtomicBoolean(false);
 
-        CompletableFuture<MessageEntry<Message<?>>> result = MessageStream.empty()
-                                                                          .onErrorContinue(e -> {
+        CompletableFuture<Entry<Message<?>>> result = MessageStream.empty()
+                                                                   .onErrorContinue(e -> {
                                                                               invoked.set(true);
                                                                               return MessageStream.empty();
                                                                           })
-                                                                          .asCompletableFuture();
+                                                                   .asCompletableFuture();
         assertTrue(result.isDone());
         assertNull(result.join());
         assertFalse(invoked.get());
@@ -77,7 +77,7 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
                                                             throw expected;
                                                         })
                                                         .asCompletableFuture()
-                                                        .thenApply(MessageEntry::message);
+                                                        .thenApply(Entry::message);
 
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());

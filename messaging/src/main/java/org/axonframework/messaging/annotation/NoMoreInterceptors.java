@@ -16,11 +16,10 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import javax.annotation.Nonnull;
 
 /**
  * This will implement {@link MessageHandlerInterceptorMemberChain} with no more interceptors. It can be used a default
@@ -50,10 +49,10 @@ public class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberCha
     }
 
     @Override
-    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                      @Nonnull ProcessingContext processingContext,
-                                                      @Nonnull T target,
-                                                      @Nonnull MessageHandlingMember<? super T> handler) {
+    public MessageStream<?> handle(@Nonnull Message<?> message,
+                                   @Nonnull ProcessingContext processingContext,
+                                   @Nonnull T target,
+                                   @Nonnull MessageHandlingMember<? super T> handler) {
         return handler.handle(message, processingContext, target);
     }
 }

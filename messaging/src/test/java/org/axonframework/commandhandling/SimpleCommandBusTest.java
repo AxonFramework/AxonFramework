@@ -291,11 +291,9 @@ class SimpleCommandBusTest {
         ComponentDescriptor mockComponentDescriptor = mock(ComponentDescriptor.class);
         testSubject.describeTo(mockComponentDescriptor);
 
-        verify(mockComponentDescriptor).describeProperty(eq("worker"), eq(executor));
-        verify(mockComponentDescriptor).describeProperty(eq("lifecycleRegistrars"),
-                                                         eq(List.of(lifecycleHandlerRegistrar)));
-        verify(mockComponentDescriptor).describeProperty(eq("subscriptions"), eq(Map.of("test1", handler1,
-                                                                                        "test2", handler2)));
+        verify(mockComponentDescriptor).describeProperty("worker", executor);
+        verify(mockComponentDescriptor).describeProperty("lifecycleRegistrars", List.of(lifecycleHandlerRegistrar));
+        verify(mockComponentDescriptor).describeProperty("subscriptions", Map.of("test1", handler1, "test2", handler2));
     }
 
     private static class StubCommandHandler implements MessageHandler<CommandMessage<?>, Message<?>> {
@@ -312,8 +310,7 @@ class SimpleCommandBusTest {
             if (result instanceof Throwable error) {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> futureResult) {
-                return MessageStream.fromFuture(futureResult.thenApply(GenericMessage::asMessage),
-                                                SimpleMessageEntry::new);
+                return MessageStream.fromFuture(futureResult.thenApply(GenericMessage::asMessage));
             } else {
                 return MessageStream.just(GenericMessage.asMessage(result));
             }

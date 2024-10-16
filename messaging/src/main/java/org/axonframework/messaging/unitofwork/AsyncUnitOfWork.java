@@ -1,25 +1,37 @@
+/*
+ * Copyright (c) 2010-2024. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.messaging.unitofwork;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.SimpleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * This class represents a Unit of Work that monitors the processing of a task.
@@ -143,7 +155,8 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
      */
     public <R> CompletableFuture<R> executeWithResult(Function<ProcessingContext, CompletableFuture<R>> action) {
         CompletableFuture<R> result = new CompletableFuture<>();
-        onInvocation(context -> safe(() -> action.apply(context)).whenComplete(FutureUtils.alsoComplete(result)));
+        onInvocation(processingContext -> safe(() -> action.apply(processingContext))
+                .whenComplete(FutureUtils.alsoComplete(result)));
         return execute().thenCombine(result, (executeResult, invocationResult) -> invocationResult);
     }
 
@@ -179,14 +192,14 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         private final Queue<ErrorHandler> errorHandlers = new ConcurrentLinkedQueue<>();
         private final AtomicReference<CauseAndPhase> errorCause = new AtomicReference<>();
 
-        private final ConcurrentMap<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
-
         private final String identifier;
         private final Executor workScheduler;
+        private final Context context;
 
         private UnitOfWorkProcessingContext(String identifier, Executor workScheduler) {
             this.identifier = identifier;
             this.workScheduler = workScheduler;
+            this.context = new SimpleContext();
         }
 
         @Override
@@ -237,15 +250,15 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         private Function<ProcessingContext, CompletableFuture<?>> safe(
                 Phase phase, Function<ProcessingContext, CompletableFuture<?>> action
         ) {
-            return context -> {
+            return processingContext -> {
                 CompletableFuture<?> result;
                 try {
-                    result = action.apply(context);
+                    result = action.apply(processingContext);
                 } catch (Exception e) {
                     result = CompletableFuture.failedFuture(e);
                 }
 
-                return result.exceptionallyCompose((e) -> {
+                return result.exceptionallyCompose(e -> {
                     if (!errorCause.compareAndSet(null, new CauseAndPhase(phase, e))) {
                         errorCause.get().cause().addSuppressed(e);
                     }
@@ -274,8 +287,8 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
             return (context, phase, exception) -> {
                 try {
                     action.handle(context, phase, exception);
-                } catch (Throwable ex) {
-                    logger.warn("An onError handler threw an exception.", ex);
+                } catch (Exception e) {
+                    logger.warn("An onError handler threw an exception.", e);
                 }
             };
         }
@@ -296,10 +309,10 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         private Consumer<ProcessingContext> completeSilently(Consumer<ProcessingContext> action) {
-            return context -> {
+            return processingContext -> {
                 try {
-                    action.accept(context);
-                } catch (Throwable e) {
+                    action.accept(processingContext);
+                } catch (Exception e) {
                     logger.warn("A Completion handler threw an exception.", e);
                 }
             };
@@ -387,49 +400,43 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public boolean containsResource(ResourceKey<?> key) {
-            return resources.containsKey(key);
+        public boolean containsResource(@Nonnull ResourceKey<?> key) {
+            return this.context.containsResource(key);
         }
 
         @Override
-        public <T> T getResource(ResourceKey<T> key) {
-            //noinspection unchecked
-            return (T) resources.get(key);
+        public <T> T getResource(@Nonnull ResourceKey<T> key) {
+            return this.context.getResource(key);
         }
 
         @Override
-        public <T> T putResource(ResourceKey<T> key, T resource) {
-            //noinspection unchecked
-            return (T) resources.put(key, resource);
+        public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+            return this.context.putResource(key, resource);
         }
 
         @Override
-        public <T> T updateResource(ResourceKey<T> key, Function<T, T> resourceUpdater) {
-            //noinspection unchecked
-            return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
+        public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
+            return this.context.updateResource(key, resourceUpdater);
         }
 
         @Override
-        public <T> T putResourceIfAbsent(ResourceKey<T> key, T resource) {
-            //noinspection unchecked
-            return (T) resources.putIfAbsent(key, resource);
+        public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+            return this.context.putResourceIfAbsent(key, resource);
         }
 
         @Override
-        public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> resourceSupplier) {
-            //noinspection unchecked
-            return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
+        public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
+            return this.context.computeResourceIfAbsent(key, resourceSupplier);
         }
 
         @Override
-        public <T> T removeResource(ResourceKey<T> key) {
-            //noinspection unchecked
-            return (T) resources.remove(key);
+        public <T> T removeResource(@Nonnull ResourceKey<T> key) {
+            return this.context.removeResource(key);
         }
 
         @Override
-        public <T> boolean removeResource(ResourceKey<T> key, T expectedResource) {
-            return resources.remove(key, expectedResource);
+        public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
+            return this.context.removeResource(key, expectedResource);
         }
 
         @Override

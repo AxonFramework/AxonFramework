@@ -16,10 +16,10 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
@@ -50,7 +50,7 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
             @Nonnull Class<T> declaringType,
             @Nonnull Method method,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+            @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
     ) {
         return findAnnotationAttributes(method, MessageHandler.class)
                 .map(attr -> new MethodInvokingMessageHandlingMember<>(

@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
@@ -24,8 +26,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -49,7 +49,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     private final Class<?> payloadType;
     private final int parameterCount;
     private final ParameterResolver<?>[] parameterResolvers;
-    private final Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter;
+    private final Function<Object, MessageStream<?>> returnTypeConverter;
     private final Method method;
     private final Class<? extends Message> messageType;
     private final HandlerAttributes attributes;
@@ -67,7 +67,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                                Class<? extends Message> messageType,
                                                Class<?> explicitPayloadType,
                                                ParameterResolverFactory parameterResolverFactory,
-                                               Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter) {
+                                               Function<Object, MessageStream<?>> returnTypeConverter) {
         this.messageType = messageType;
         this.method = ReflectionUtils.ensureAccessible(method);
         this.returnTypeConverter = returnTypeConverter;
@@ -163,9 +163,9 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                      @Nonnull ProcessingContext processingContext,
-                                                      @Nullable T target) {
+    public MessageStream<?> handle(@Nonnull Message<?> message,
+                                   @Nonnull ProcessingContext processingContext,
+                                   @Nullable T target) {
         Object invocationResult;
         try {
             invocationResult = method.invoke(target, resolveParameterValues(message, processingContext));

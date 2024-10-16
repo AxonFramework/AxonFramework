@@ -16,10 +16,9 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.messaging.Message;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.MessageStream;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
@@ -49,6 +48,6 @@ public interface HandlerDefinition {
             @Nonnull Class<T> declaringType,
             @Nonnull Method method,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull Function<Object, MessageStream<? extends Message<?>>> returnTypeConverter
+            @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
     );
 }

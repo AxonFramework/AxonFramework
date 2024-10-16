@@ -29,14 +29,13 @@ class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message<String>
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages, SimpleMessageEntry::new),
-                                                  error -> MessageStream.empty());
+        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages), error -> MessageStream.empty());
     }
 
     @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
-        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages, SimpleMessageEntry::new)
+        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages)
                                                                .concatWith(MessageStream.failed(failure)),
                                                   error -> MessageStream.failed(failure));
     }

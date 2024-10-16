@@ -19,7 +19,7 @@ package org.axonframework.commandhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.*;
-import org.axonframework.messaging.MessageStream.MessageEntry;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import javax.annotation.Nonnull;
@@ -45,10 +45,8 @@ public class InterceptingCommandBus implements CommandBus {
         this.handlerInterceptors = new LinkedList<>(handlerInterceptors);
         this.dispatchInterceptors = new ArrayList<>(dispatchInterceptors);
         Iterator<MessageDispatchInterceptor<? super CommandMessage<?>>> di = new LinkedList<>(dispatchInterceptors).descendingIterator();
-        BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dis =
-                (command, processingContext) -> MessageStream.fromFuture(delegate.dispatch(command, processingContext)
-                                                                                 .thenApply(SimpleMessageEntry::new));
-
+        BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dis = (c, p) -> MessageStream.fromFuture(
+                delegate.dispatch(c, p));
         while (di.hasNext()) {
             dis = new Dispatcher(di.next(), dis);
         }
@@ -60,7 +58,7 @@ public class InterceptingCommandBus implements CommandBus {
                                                             @Nullable ProcessingContext processingContext) {
         return dispatcher.apply(command, processingContext)
                          .asCompletableFuture()
-                         .thenApply(MessageEntry::message);
+                         .thenApply(Entry::message);
     }
 
     @Override

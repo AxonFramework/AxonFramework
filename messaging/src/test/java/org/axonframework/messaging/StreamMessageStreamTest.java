@@ -31,7 +31,7 @@ class StreamMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return MessageStream.fromStream(messages.stream(), SimpleMessageEntry::new);
+        return MessageStream.fromStream(messages.stream());
     }
 
     @Override

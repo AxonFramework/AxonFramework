@@ -28,7 +28,7 @@ import java.util.function.Function;
  * Implementation of the {@link MessageStream} that when the stream completes exceptionally will continue on a
  * {@code MessageStream} returned by the given {@code onError} {@link Function}.
  *
- * @param <M> The type of {@link Message} contained in the {@link MessageEntry entries} of this stream.
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -54,14 +54,14 @@ class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStrea
     }
 
     @Override
-    public CompletableFuture<MessageEntry<M>> asCompletableFuture() {
+    public CompletableFuture<Entry<M>> asCompletableFuture() {
         return delegate.asCompletableFuture()
                        .exceptionallyCompose(exception -> onError.apply(exception)
                                                                  .asCompletableFuture());
     }
 
     @Override
-    public Flux<MessageEntry<M>> asFlux() {
+    public Flux<Entry<M>> asFlux() {
         return delegate.asFlux()
                        .onErrorResume(exception -> onError.apply(exception)
                                                           .asFlux());
@@ -69,26 +69,26 @@ class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStrea
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, MessageEntry<M>, R> accumulator) {
+                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         StatefulAccumulator<R> wrapped = new StatefulAccumulator<>(identity, accumulator);
         return delegate.reduce(identity, wrapped)
                        .exceptionallyCompose(exception -> onError.apply(exception)
                                                                  .reduce(wrapped.latest(), wrapped));
     }
 
-    private class StatefulAccumulator<R> implements BiFunction<R, MessageEntry<M>, R> {
+    private class StatefulAccumulator<R> implements BiFunction<R, Entry<M>, R> {
 
         private final AtomicReference<R> latest;
-        private final BiFunction<R, MessageEntry<M>, R> accumulator;
+        private final BiFunction<R, Entry<M>, R> accumulator;
 
         public StatefulAccumulator(R identity,
-                                   BiFunction<R, MessageEntry<M>, R> accumulator) {
+                                   BiFunction<R, Entry<M>, R> accumulator) {
             this.latest = new AtomicReference<>(identity);
             this.accumulator = accumulator;
         }
 
         @Override
-        public R apply(R initial, MessageEntry<M> entry) {
+        public R apply(R initial, Entry<M> entry) {
             R result = accumulator.apply(initial, entry);
             latest.set(result);
             return result;

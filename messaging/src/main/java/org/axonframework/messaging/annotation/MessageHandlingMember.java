@@ -16,13 +16,13 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.util.Optional;
@@ -108,9 +108,9 @@ public interface MessageHandlingMember<T> {
     /**
      * TODO add documentation
      */
-    default MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                       @Nonnull ProcessingContext processingContext,
-                                                       @Nullable T target) {
+    default MessageStream<?> handle(@Nonnull Message<?> message,
+                                    @Nonnull ProcessingContext processingContext,
+                                    @Nullable T target) {
         try {
             // TODO: 24-11-2023 proper impl
             return MessageStream.just(GenericMessage.asMessage(handleSync(message, target)));

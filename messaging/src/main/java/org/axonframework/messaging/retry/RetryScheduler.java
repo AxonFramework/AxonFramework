@@ -54,8 +54,7 @@ public interface RetryScheduler {
             @Nonnull M message,
             @Nullable ProcessingContext processingContext,
             @Nonnull Throwable cause,
-            @Nonnull Dispatcher<M, R> dispatcher
-    );
+            @Nonnull Dispatcher<M, R> dispatcher);
 
     /**
      * Represents the logic to dispatch a message and attempt to retrieve the result
