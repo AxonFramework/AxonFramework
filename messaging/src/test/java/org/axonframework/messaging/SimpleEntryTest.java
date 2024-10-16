@@ -17,7 +17,10 @@
 package org.axonframework.messaging;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Context;
+import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.ContextTestSuite;
+import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.junit.jupiter.api.Test;
 
@@ -52,15 +55,21 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
     }
 
     @Test
-    void mapsContainedMessageAsExpected() {
-        Message<Object> expected = GenericMessage.asMessage("some-payload");
+    void mapsContainedMessageAndContextAsExpected() {
+        Message<Object> expectedMessage = GenericMessage.asMessage("some-payload");
         MetaData expectedMetaData = MetaData.from(Map.of("key", "value"));
+        String expectedResourceValue = "test";
+        ResourceKey<String> expectedContextKey = ResourceKey.create(expectedResourceValue);
+        Context testContext = new SimpleContext();
+        testContext.putResource(expectedContextKey, expectedResourceValue);
 
-        Entry<Message<Object>> testSubject = new SimpleEntry<>(expected);
+        Entry<Message<Object>> testSubject = new SimpleEntry<>(expectedMessage, testContext);
 
         Entry<Message<Object>> result = testSubject.map(message -> message.withMetaData(expectedMetaData));
 
-        assertNotEquals(expected, result.message());
+        assertNotEquals(expectedMessage, result.message());
         assertEquals(expectedMetaData, result.message().getMetaData());
+        assertTrue(result.containsResource(expectedContextKey));
+        assertEquals(expectedResourceValue, result.getResource(expectedContextKey));
     }
 }
