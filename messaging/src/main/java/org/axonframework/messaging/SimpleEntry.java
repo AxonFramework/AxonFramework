@@ -56,7 +56,7 @@ record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context c
 
     @Override
     public <RM extends Message<?>> Entry<RM> map(@Nonnull Function<M, RM> mapper) {
-        return new SimpleEntry<>(mapper.apply(message()));
+        return new SimpleEntry<>(mapper.apply(message()), context);
     }
 
     @Override
