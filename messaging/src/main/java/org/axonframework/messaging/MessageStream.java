@@ -326,14 +326,6 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * TODO this is by no means done yet...please fix.
-     */
-    default MessageStream<M> consume(@Nonnull Predicate<Entry<M>> consumer) {
-        asFlux().takeWhile(consumer).subscribe().dispose();
-        return this;
-    }
-
-    /**
      * Returns a {@link MessageStream stream} that, when {@code this} stream completes with an error, continues reading
      * from the stream provided by given {@code onError} function.
      *
