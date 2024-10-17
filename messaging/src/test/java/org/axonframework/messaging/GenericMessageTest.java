@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,23 +72,21 @@ class GenericMessageTest {
 
     @Test
     void messageSerialization() throws IOException{
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-
-        GenericMessage<String> message = new GenericMessage<>("payload", metaDataMap);
-     
-        JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
-
+        GenericMessage<String> message = new GenericMessage<>("payload", Collections.singletonMap("key", "value"));
+        Serializer jacksonSerializer = JacksonSerializer.builder().build();
 
         SerializedObject<String> serializedPayload = message.serializePayload(jacksonSerializer, String.class);
         SerializedObject<String> serializedMetaData = message.serializeMetaData(jacksonSerializer, String.class);
 
         assertEquals("\"payload\"", serializedPayload.getData());
 
-    
-        ObjectMapper objectMapper = jacksonSerializer.getObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, String> expectedMetaData = new HashMap<>();
+        expectedMetaData.put("key", "value");
+        expectedMetaData.put("foo", "bar");
         Map<String, String> actualMetaData = objectMapper.readValue(serializedMetaData.getData(), Map.class);
 
-         assertTrue(actualMetaData.entrySet().containsAll(metaDataMap.entrySet()));
+        assertEquals(expectedMetaData, actualMetaData);
     }
 
     @Test
