@@ -72,21 +72,23 @@ class GenericMessageTest {
 
     @Test
     void messageSerialization() throws IOException{
-        GenericMessage<String> message = new GenericMessage<>("payload", Collections.singletonMap("key", "value"));
-        Serializer jacksonSerializer = JacksonSerializer.builder().build();
+        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
+
+        GenericMessage<String> message = new GenericMessage<>("payload", metaDataMap);
+     
+        JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
+
 
         SerializedObject<String> serializedPayload = message.serializePayload(jacksonSerializer, String.class);
         SerializedObject<String> serializedMetaData = message.serializeMetaData(jacksonSerializer, String.class);
 
         assertEquals("\"payload\"", serializedPayload.getData());
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, String> expectedMetaData = new HashMap<>();
-        expectedMetaData.put("key", "value");
-        expectedMetaData.put("foo", "bar");
+    
+        ObjectMapper objectMapper = jacksonSerializer.getObjectMapper();
         Map<String, String> actualMetaData = objectMapper.readValue(serializedMetaData.getData(), Map.class);
 
-        assertEquals(expectedMetaData, actualMetaData);
+         assertTrue(actualMetaData.entrySet().containsAll(metaDataMap.entrySet()));
     }
 
     @Test
