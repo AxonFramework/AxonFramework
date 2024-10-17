@@ -27,6 +27,9 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +71,7 @@ class GenericMessageTest {
     }
 
     @Test
-    void messageSerialization() {
+    void messageSerialization() throws IOException{
         GenericMessage<String> message = new GenericMessage<>("payload", Collections.singletonMap("key", "value"));
         Serializer jacksonSerializer = JacksonSerializer.builder().build();
 
@@ -76,7 +79,14 @@ class GenericMessageTest {
         SerializedObject<String> serializedMetaData = message.serializeMetaData(jacksonSerializer, String.class);
 
         assertEquals("\"payload\"", serializedPayload.getData());
-        assertEquals("{\"key\":\"value\",\"foo\":\"bar\"}", serializedMetaData.getData());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, String> expectedMetaData = new HashMap<>();
+        expectedMetaData.put("key", "value");
+        expectedMetaData.put("foo", "bar");
+        Map<String, String> actualMetaData = objectMapper.readValue(serializedMetaData.getData(), Map.class);
+
+        assertEquals(expectedMetaData, actualMetaData);
     }
 
     @Test
