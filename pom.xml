@@ -117,6 +117,7 @@
         <projectreactor.version>3.6.10</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
+        <avro.version>1.12.0</avro.version>
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.11.0</gson.version>
         <jackson.version>2.17.2</jackson.version>
@@ -431,6 +432,11 @@
                 <version>${dom4j.version}</version>
             </dependency>
             <!-- Serialization -->
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
