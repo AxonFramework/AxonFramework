@@ -7,6 +7,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.serialization.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -30,9 +31,12 @@ public class AvroSerializer implements Serializer {
         this.revisionResolver = builder.revisionResolver;
         this.serializerDelegate = builder().serializerDelegate;
         this.serializerStrategies.addAll(builder.serializerStrategies);
-        this.serializerStrategies.add(new SpecificRecordBaseSerializerStrategy(builder().schemaStore));
-
-        converter.registerConverter(new ByteArrayToGenericRecordConverter(builder().schemaStore));
+        this.serializerStrategies.add(new SpecificRecordBaseSerializerStrategy(
+                builder().schemaStore,
+                this.revisionResolver
+            )
+        );
+        this.converter.registerConverter(new ByteArrayToGenericRecordConverter(builder().schemaStore));
     }
 
     public static Builder builder() {
@@ -45,8 +49,10 @@ public class AvroSerializer implements Serializer {
         // assume: expectedRepresentation is byte[] (or possibly String), nothing else.
         Objects.requireNonNull(object, "Can't serialize a null object");
 
-        Optional<AvroSerializerStrategy> serializerStrategy = serializerStrategies.stream().filter(it -> it.test(object.getClass()))
-                .findFirst();
+        Optional<AvroSerializerStrategy> serializerStrategy = serializerStrategies
+            .stream()
+            .filter(it -> it.test(object.getClass()))
+            .findFirst();
 
         if (serializerStrategy.isPresent()) {
             if (byte[].class.equals(expectedRepresentation)) {
@@ -58,9 +64,6 @@ public class AvroSerializer implements Serializer {
         return serializerDelegate.serialize(object, expectedRepresentation);
     }
 
-    /**
-     *
-     */
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(@Nonnull SerializedObject<S> serializedObject) {
@@ -73,8 +76,10 @@ public class AvroSerializer implements Serializer {
             return (T) new UnknownSerializedType(this, serializedObject);
         }
 
-        Optional<AvroSerializerStrategy> serializerStrategy = serializerStrategies.stream().filter(it -> it.test(payloadType))
-                .findFirst();
+        Optional<AvroSerializerStrategy> serializerStrategy = serializerStrategies
+            .stream()
+            .filter(it -> it.test(payloadType))
+            .findFirst();
 
         if (serializerStrategy.isPresent()) {
 
@@ -82,7 +87,7 @@ public class AvroSerializer implements Serializer {
             // GenericRecord -> T
             if (serializedObject.getContentType().equals(GenericRecord.class)) {
                 return (T) serializerStrategy.get().deserializeFromGenericRecord(
-                        (SerializedObject<GenericRecord>) serializedObject, payloadType
+                    (SerializedObject<GenericRecord>) serializedObject, payloadType
                 );
             }
 
@@ -94,7 +99,6 @@ public class AvroSerializer implements Serializer {
             return (T) serializerStrategy.get().deserializeFromSingleObjectEncoded(bytesSerialized, payloadType);
         }
 
-
         // not an avro type, let delegate deal with it.
         return serializerDelegate.deserialize(serializedObject);
     }
@@ -103,8 +107,8 @@ public class AvroSerializer implements Serializer {
     @Override
     public <T> boolean canSerializeTo(@Nonnull Class<T> expectedRepresentation) {
         return GenericRecord.class.equals(expectedRepresentation)
-                || getConverter().canConvert(byte[].class, expectedRepresentation)
-                || serializerDelegate.canSerializeTo(expectedRepresentation);
+            || getConverter().canConvert(byte[].class, expectedRepresentation)
+            || serializerDelegate.canSerializeTo(expectedRepresentation);
     }
 
     @Override
@@ -123,7 +127,7 @@ public class AvroSerializer implements Serializer {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public SerializedType typeForClass(Class type) {
+    public SerializedType typeForClass(@Nullable Class type) {
         if (type == null || Void.TYPE.equals(type) || Void.class.equals(type)) {
             return SimpleSerializedType.emptyType();
         }
@@ -174,7 +178,6 @@ public class AvroSerializer implements Serializer {
             Objects.requireNonNull(schemaStore);
             Objects.requireNonNull(serializerDelegate);
         }
-
 
         public AvroSerializer build() {
             return new AvroSerializer(this);
