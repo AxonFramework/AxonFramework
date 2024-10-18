@@ -29,14 +29,14 @@ public class AvroSerializer implements Serializer {
     protected AvroSerializer(@Nonnull Builder builder) {
         builder.validate();
         this.revisionResolver = builder.revisionResolver;
-        this.serializerDelegate = builder().serializerDelegate;
+        this.serializerDelegate = builder.serializerDelegate;
         this.serializerStrategies.addAll(builder.serializerStrategies);
         this.serializerStrategies.add(new SpecificRecordBaseSerializerStrategy(
-                builder().schemaStore,
+                builder.schemaStore,
                 this.revisionResolver
             )
         );
-        this.converter.registerConverter(new ByteArrayToGenericRecordConverter(builder().schemaStore));
+        this.converter.registerConverter(new ByteArrayToGenericRecordConverter(builder.schemaStore));
     }
 
     public static Builder builder() {
@@ -174,9 +174,9 @@ public class AvroSerializer implements Serializer {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            Objects.requireNonNull(revisionResolver);
-            Objects.requireNonNull(schemaStore);
-            Objects.requireNonNull(serializerDelegate);
+            Objects.requireNonNull(revisionResolver, "RevisionResolver is mandatory");
+            Objects.requireNonNull(schemaStore, "SchemaStore is mandatory");
+            Objects.requireNonNull(serializerDelegate, "SerializerDelegate is mandatory");
         }
 
         public AvroSerializer build() {
