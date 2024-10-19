@@ -256,7 +256,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         if (localSegment instanceof SimpleQueryBus) {
             SimpleQueryBus qb = (SimpleQueryBus) localSegment;
             if (qb.hasHandlersForMessage(queryMessage)) {
-                logger.info("sending query to local segment");
                 return localSegment.query(queryMessage);
             }
         }
