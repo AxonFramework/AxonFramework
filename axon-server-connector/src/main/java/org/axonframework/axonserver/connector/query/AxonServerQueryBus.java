@@ -72,6 +72,7 @@ import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
@@ -249,8 +250,29 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         return new AxonServerRegistration(localRegistration, serverRegistration::cancel);
     }
 
+    private <Q, R> CompletableFuture<QueryResponseMessage<R>> tryToRunQueryLocally(
+            @Nonnull QueryMessage<Q, R> queryMessage) {
+
+        if (localSegment instanceof SimpleQueryBus) {
+            SimpleQueryBus qb = (SimpleQueryBus) localSegment;
+            if (qb.hasHandlersForMessage(queryMessage)) {
+                logger.info("sending query to local segment");
+                return localSegment.query(queryMessage);
+            }
+        }
+
+        return null;
+    }
+
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> queryMessage) {
+
+        CompletableFuture<QueryResponseMessage<R>> queryResult = tryToRunQueryLocally(queryMessage);
+
+        if (queryResult != null) {
+            return queryResult;
+        }
+
         Span span = spanFactory.createQuerySpan(queryMessage, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             QueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(queryMessage);
@@ -285,7 +307,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                 span.recordException(e).end();
             }
 
-           queryTransaction.whenComplete((r, e) -> {
+            queryTransaction.whenComplete((r, e) -> {
                 queryInTransit.end();
                 if (e != null) {
                     span.recordException(e);
@@ -400,8 +422,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
 
         Span span = spanFactory.createScatterGatherSpan(queryMessage, true).start();
-        try(SpanScope unused = span.makeCurrent()) {
-            QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(queryMessage));
+        try (SpanScope unused = span.makeCurrent()) {
+            QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(
+                    queryMessage));
             long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
             String targetContext = targetContextResolver.resolveContext(interceptedQuery);
             QueryRequest queryRequest =
@@ -416,7 +439,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
             AtomicBoolean closed = new AtomicBoolean(false);
             Runnable closeHandler = () -> {
-                if(closed.compareAndSet(false, true)) {
+                if (closed.compareAndSet(false, true)) {
                     queryInTransit.end();
                     span.end();
                 }

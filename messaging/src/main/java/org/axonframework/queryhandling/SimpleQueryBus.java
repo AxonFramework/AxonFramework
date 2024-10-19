@@ -121,6 +121,10 @@ public class SimpleQueryBus implements QueryBus {
         this.spanFactory = builder.spanFactory;
     }
 
+    public <Q,R> boolean hasHandlersForMessage(QueryMessage<Q, R> query){
+        return !getHandlersForMessage(query).isEmpty();
+    }
+
     /**
      * Instantiate a Builder to be able to create a {@link SimpleQueryBus}.
      * <p>
