@@ -81,11 +81,11 @@
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
         <hibernate-core.6.version>6.6.1.Final</hibernate-core.6.version>
-        <mysql-connector-java.version>9.0.0</mysql-connector-java.version>
+        <mysql-connector-java.version>9.1.0</mysql-connector-java.version>
         <postgresql.version>42.7.4</postgresql.version>
         <!-- Jakarta -->
-        <jakarta.annotation.version>2.1.1</jakarta.annotation.version><!-- Don't upgrade due to JDK8 -->
-        <jakarta.el.version>4.0.0</jakarta.el.version><!-- Don't upgrade due to JDK11 -->
+        <jakarta.annotation.version>3.0.0</jakarta.annotation.version><!-- Don't upgrade due to JDK8 -->
+        <jakarta.el.version>6.0.0</jakarta.el.version><!-- Don't upgrade due to JDK11 -->
         <jakarta.el-impl.version>4.0.2</jakarta.el-impl.version>
         <jakarta.inject.version>2.0.1.MR</jakarta.inject.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version><!-- Don't upgrade due to JDK8 -->
@@ -101,43 +101,43 @@
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <!-- Logging -->
-        <log4j.version>2.24.0</log4j.version>
+        <log4j.version>2.24.1</log4j.version>
         <slf4j.version>2.0.16</slf4j.version>
         <!-- Metrics -->
-        <dropwizard.metrics.version>4.2.27</dropwizard.metrics.version>
-        <micrometer.version>1.13.4</micrometer.version>
+        <dropwizard.metrics.version>4.2.28</dropwizard.metrics.version>
+        <micrometer.version>1.13.6</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.15.3</byte-buddy.version>
+        <byte-buddy.version>1.15.5</byte-buddy.version>
         <commons-io.version>2.17.0</commons-io.version>
-        <disruptor.version>3.4.4</disruptor.version>
+        <disruptor.version>4.0.0</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.6.10</projectreactor.version>
+        <projectreactor.version>3.6.11</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.11.0</gson.version>
-        <jackson.version>2.17.2</jackson.version>
+        <jackson.version>2.18.0</jackson.version>
         <xstream.version>1.4.20</xstream.version>
         <!-- Scheduling -->
-        <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
-        <jobrunr.version>7.2.3</jobrunr.version>
+        <db-scheduler.version>14.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
+        <jobrunr.version>7.3.1</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
-        <spring.version>5.3.39</spring.version>
-        <spring.boot.version>2.7.18</spring.boot.version>
-        <spring-security.version>5.8.14</spring-security.version>
+        <spring.version>6.0.0</spring.version>
+        <spring.boot.version>3.0.0</spring.boot.version>
+        <spring-security.version>6.0.0</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.2.2</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.11.1</junit.jupiter.version>
-        <mockito.version>4.11.0</mockito.version>
+        <junit.jupiter.version>5.11.2</junit.jupiter.version>
+        <mockito.version>5.0.0</mockito.version>
         <testcontainers.version>1.19.3</testcontainers.version>
         <!-- Validation -->
-        <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
+        <hibernate-validator.version>8.0.0.Final</hibernate-validator.version>
         <hibernate-validator.8.version>8.0.1.Final</hibernate-validator.8.version>
         <!-- Build / Plugin -->
         <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
@@ -148,14 +148,14 @@
         <maven-compiler.version>3.13.0</maven-compiler.version>
         <maven-deploy.version>3.1.3</maven-deploy.version>
         <maven-enforcer.version>3.5.0</maven-enforcer.version>
-        <maven-failsafe.version>3.5.0</maven-failsafe.version>
+        <maven-failsafe.version>3.5.1</maven-failsafe.version>
         <maven-gpg.version>3.2.7</maven-gpg.version>
         <maven-install.version>3.1.3</maven-install.version>
         <maven-jar.version>3.4.2</maven-jar.version>
-        <maven-javadoc.version>3.10.0</maven-javadoc.version>
+        <maven-javadoc.version>3.10.1</maven-javadoc.version>
         <maven-release.version>3.1.1</maven-release.version>
         <maven-source.version>3.3.1</maven-source.version>
-        <maven-surefire.version>3.5.0</maven-surefire.version>
+        <maven-surefire.version>3.5.1</maven-surefire.version>
         <maven-resources.version>3.3.1</maven-resources.version>
     </properties>
 
