@@ -77,6 +77,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
         int i = 0;
         Sinks.EmitResult result;
         try {
+            // The lock's in place to have a safe and efficient way to pause a thread before jumping in the while-loop.
             lock.lock();
             while ((result = action.get()) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
                 // For 100 iterations, just busy-spin. Will resolve most conditions.
