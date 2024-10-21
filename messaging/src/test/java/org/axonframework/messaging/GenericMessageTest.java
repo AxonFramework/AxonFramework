@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -26,8 +27,6 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -71,7 +70,7 @@ class GenericMessageTest {
     }
 
     @Test
-    void messageSerialization() throws IOException{
+    void messageSerialization() throws IOException {
         GenericMessage<String> message = new GenericMessage<>("payload", Collections.singletonMap("key", "value"));
         Serializer jacksonSerializer = JacksonSerializer.builder().build();
 
@@ -109,7 +108,7 @@ class GenericMessageTest {
     }
 
     @Test
-    void whenCorrelationDataProviderThrowsException_thenCatchException(){
+    void whenCorrelationDataProviderThrowsException_thenCatchException() {
         unitOfWork = new DefaultUnitOfWork<>(new GenericEventMessage<>("Input 1"));
         CurrentUnitOfWork.set(unitOfWork);
         unitOfWork.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
