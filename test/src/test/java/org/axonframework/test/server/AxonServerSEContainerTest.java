@@ -17,6 +17,7 @@
 package org.axonframework.test.server;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.testcontainers.utility.DockerImageName;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AxonServerSEContainerTest {
 
     @Test
+    @DisabledOnOs(architectures = {"aarch64"})
     void supportsAxonServer_4_4_X() {
         try (
                 final AxonServerSEContainer axonServerSEContainer =
