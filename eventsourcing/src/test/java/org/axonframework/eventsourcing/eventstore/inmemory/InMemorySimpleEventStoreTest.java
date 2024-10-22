@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.junit.jupiter.api.Test;
