@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.MessageStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
