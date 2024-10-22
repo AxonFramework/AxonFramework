@@ -21,8 +21,8 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.StreamableEventSource.TrackedEntry;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +38,7 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Stream;
 
 import static org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException.consistencyMarkerSurpassed;
 import static org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException.tooManyIndices;
@@ -134,34 +135,34 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
 
-        long start = condition.start();
-        EventCriteria criteria = condition.criteria();
-        return MessageStream.fromStream(
-                eventsToStream(
-                        condition.start(),
-                        condition.end(),
-                        condition.criteria()
-                ).map(Function.identity())
+        return MessageStream.fromEntryStream(eventsToEntryStream(
+                condition.start(),
+                condition.end(),
+                condition.criteria())
         );
     }
 
     @Override
-    public MessageStream<TrackedEntry<EventMessage<?>>> stream(
-            @Nonnull StreamingCondition condition
-    ) {
+    public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
 
-        EventCriteria criteria = condition.criteria();
-        return MessageStream.fromStream(
-                events.subMap(condition.position().position().orElse(-1), Long.MAX_VALUE)
-                      .entrySet()
-                      .stream()
-                      .filter(entry -> match(entry.getValue(), criteria))
-                      .map(entry -> new TrackedEntry<>(new GlobalSequenceTrackingToken(entry.getKey()),
-                                                       entry.getValue()))
-        );
+        return MessageStream.fromEntryStream(eventsToEntryStream(
+                condition.position().position().orElse(-1L),
+                Long.MAX_VALUE,
+                condition.criteria()
+        ));
+    }
+
+    private Stream<Entry<EventMessage<?>>> eventsToEntryStream(long start, long end, EventCriteria criteria) {
+        return events.subMap(start, end)
+                     .entrySet()
+                     .stream()
+                     .filter(entry -> match(entry.getValue(), criteria))
+                     .map(entry -> new TrackedEntry<>(
+                             entry.getValue(), new GlobalSequenceTrackingToken(entry.getKey())
+                     ));
     }
 
     private static boolean match(EventMessage<?> event, EventCriteria criteria) {

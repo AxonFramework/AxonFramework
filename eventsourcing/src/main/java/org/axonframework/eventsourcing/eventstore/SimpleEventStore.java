@@ -76,8 +76,8 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
     }
 
     @Override
-    public MessageStream<TrackedEntry<EventMessage<?>>> open(@Nonnull String context,
-                                                             @Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage<?>> open(@Nonnull String context,
+                                               @Nonnull StreamingCondition condition) {
         validate(context);
         return eventStorageEngine.stream(condition);
     }

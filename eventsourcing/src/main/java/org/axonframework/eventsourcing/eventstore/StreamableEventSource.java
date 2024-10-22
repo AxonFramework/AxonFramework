@@ -54,7 +54,7 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      *                  {@link StreamingCondition#criteria() event criteria} to filter the stream with.
      * @return An {@link MessageStream event stream} of the given {@code context} matching the given {@code condition}.
      */
-    MessageStream<TrackedEntry<E>> open(String context, StreamingCondition condition);
+    MessageStream<E> open(String context, StreamingCondition condition);
 
     /**
      * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream} for the given
@@ -112,18 +112,4 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      */
     CompletableFuture<TrackingToken> tokenSince(@Nonnull String context,
                                                 @Nonnull Duration since);
-
-    /**
-     * The entries contained in the {@link MessageStream} returned by {@link #open(String, StreamingCondition)}.
-     * <p>
-     * Each entry contains an {@code event} of type {@code E} and the {@code token} at which the given {@code event} is
-     * positioned.
-     *
-     * @param token The {@link TrackingToken} defining the position of the given {@code event}.
-     * @param event The {@link EventMessage} implementation returned by this source.
-     * @param <E>   The type of {@link EventMessage} streamed by this source.
-     */
-    record TrackedEntry<E>(TrackingToken token, E event) {
-
-    }
 }
