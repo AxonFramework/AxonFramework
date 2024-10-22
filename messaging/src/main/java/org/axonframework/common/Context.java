@@ -18,6 +18,7 @@ package org.axonframework.common;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -65,6 +66,13 @@ public interface Context {
      * @return The previously registered {@code resource}, or {@code null} if none was present.
      */
     <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource);
+
+    /**
+     * Add all the resources from the given {@code context} into {@code this} {@link Context}.
+     *
+     * @param context The {@link Context} for which to copy the contents over to {@code this} {@link Context}.
+     */
+    void putAll(@Nonnull Context context);
 
     /**
      * Update the resource with given {@code key} using the given {@code resourceUpdater} to describe the update. If no
@@ -123,6 +131,13 @@ public interface Context {
      * @return {@code true} if the resource has been removed, otherwise {@code false}.
      */
     <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource);
+
+    /**
+     * Return all the resources contained in this {@link Context} as a {@link Map}.
+     *
+     * @return All the resources contained in this {@link Context} as a {@link Map}.
+     */
+    Map<ResourceKey<?>, ?> asMap();
 
     /**
      * Object that is used as a key to retrieve and register resources of a given type in a processing context.

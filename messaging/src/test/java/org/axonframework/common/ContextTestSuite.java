@@ -17,8 +17,9 @@
 package org.axonframework.common;
 
 import org.axonframework.common.Context.ResourceKey;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -69,6 +70,20 @@ public abstract class ContextTestSuite<C extends Context> {
 
         testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
 
+        assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
+        assertEquals(EXPECTED_RESOURCE_VALUE, testSubject.getResource(TEST_RESOURCE_KEY));
+    }
+
+    @Test
+    void putAllAddsAllResourcesFromTheGivenContextToTheTestSubject() {
+        C testContext = testSubject();
+        testContext.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
+
+        C testSubject = testSubject();
+
+        testSubject.putAll(testContext);
+
+        assertFalse(testSubject.asMap().isEmpty());
         assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
         assertEquals(EXPECTED_RESOURCE_VALUE, testSubject.getResource(TEST_RESOURCE_KEY));
     }
@@ -223,5 +238,16 @@ public abstract class ContextTestSuite<C extends Context> {
         testSubject.removeResource(TEST_RESOURCE_KEY, "noneMatchingValue");
 
         assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
+    }
+
+    @Test
+    void asMapContainsInsertedResources() {
+        C testSubject = testSubject();
+        testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
+
+        Map<ResourceKey<?>, ?> result = testSubject.asMap();
+
+        assertFalse(result.isEmpty());
+        assertEquals(EXPECTED_RESOURCE_VALUE, result.get(TEST_RESOURCE_KEY));
     }
 }

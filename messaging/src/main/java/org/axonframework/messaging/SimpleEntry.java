@@ -22,6 +22,7 @@ import org.axonframework.common.Context;
 import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;
 
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -75,6 +76,11 @@ record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context c
     }
 
     @Override
+    public void putAll(@Nonnull Context context) {
+        this.context.putAll(context);
+    }
+
+    @Override
     public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
         return this.context.updateResource(key, resourceUpdater);
     }
@@ -97,5 +103,10 @@ record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context c
     @Override
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
         return this.context.removeResource(key, expectedResource);
+    }
+
+    @Override
+    public Map<ResourceKey<?>, ?> asMap() {
+        return this.context.asMap();
     }
 }

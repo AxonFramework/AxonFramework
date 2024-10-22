@@ -17,9 +17,12 @@
 package org.axonframework.eventsourcing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,6 +93,11 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
+    public void putAll(@NotNull Context context) {
+        resources.putAll(context.asMap());
+    }
+
+    @Override
     public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (id, current) -> resourceUpdater.apply((T) current));
@@ -116,5 +124,10 @@ public class StubProcessingContext implements ProcessingContext {
     @Override
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
         return resources.remove(key, expectedResource);
+    }
+
+    @Override
+    public Map<ResourceKey<?>, ?> asMap() {
+        return Collections.unmodifiableMap(resources);
     }
 }

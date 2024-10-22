@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -415,6 +416,11 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
+        public void putAll(@Nonnull Context context) {
+            this.context.putAll(context);
+        }
+
+        @Override
         public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
             return this.context.updateResource(key, resourceUpdater);
         }
@@ -437,6 +443,11 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         @Override
         public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
             return this.context.removeResource(key, expectedResource);
+        }
+
+        @Override
+        public Map<ResourceKey<?>, ?> asMap() {
+            return this.context.asMap();
         }
 
         @Override

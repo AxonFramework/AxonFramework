@@ -18,7 +18,10 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.Context;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -95,6 +98,11 @@ public class NoProcessingContext implements ProcessingContext {
     }
 
     @Override
+    public void putAll(@Nonnull Context context) {
+        throw new IllegalArgumentException("Cannot put resources in this ProcessingContext");
+    }
+
+    @Override
     public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
         throw new IllegalArgumentException("Cannot update resources in this ProcessingContext");
     }
@@ -117,5 +125,10 @@ public class NoProcessingContext implements ProcessingContext {
     @Override
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nullable T expectedResource) {
         return expectedResource == null;
+    }
+
+    @Override
+    public Map<ResourceKey<?>, ?> asMap() {
+        return Collections.emptyMap();
     }
 }

@@ -18,6 +18,8 @@ package org.axonframework.common;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -53,6 +55,11 @@ public class SimpleContext implements Context {
     }
 
     @Override
+    public void putAll(@Nonnull Context context) {
+        resources.putAll(context.asMap());
+    }
+
+    @Override
     public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
@@ -79,6 +86,11 @@ public class SimpleContext implements Context {
     @Override
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
         return resources.remove(key, expectedResource);
+    }
+
+    @Override
+    public Map<ResourceKey<?>, ?> asMap() {
+        return Collections.unmodifiableMap(this.resources);
     }
 
     @Override
