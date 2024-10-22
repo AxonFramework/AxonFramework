@@ -54,7 +54,8 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      *                  {@link StreamingCondition#criteria() event criteria} to filter the stream with.
      * @return An {@link MessageStream event stream} of the given {@code context} matching the given {@code condition}.
      */
-    MessageStream<E> open(String context, StreamingCondition condition);
+    MessageStream<E> open(@Nonnull String context,
+                          @Nonnull StreamingCondition condition);
 
     /**
      * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream} for the given
