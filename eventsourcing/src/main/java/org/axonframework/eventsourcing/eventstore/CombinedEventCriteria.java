@@ -19,7 +19,10 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of the {@link EventCriteria} combining two different {@code EventCriteria} instances into a single
@@ -28,7 +31,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class CombinedEventCriteria implements EventCriteria {
+final class CombinedEventCriteria implements EventCriteria {
 
     private final Set<String> types;
     private final Set<Index> indices;
@@ -42,9 +45,11 @@ class CombinedEventCriteria implements EventCriteria {
      */
     CombinedEventCriteria(@Nonnull EventCriteria first,
                           @Nonnull EventCriteria second) {
+        assertNonNull(first, "The first EventCriteria cannot be null");
+        assertNonNull(second, "The second EventCriteria cannot be null");
+
         this.types = new HashSet<>(first.types());
         this.types.addAll(second.types());
-
         this.indices = new HashSet<>(first.indices());
         this.indices.addAll(second.indices());
     }
@@ -57,5 +62,22 @@ class CombinedEventCriteria implements EventCriteria {
     @Override
     public Set<Index> indices() {
         return Set.copyOf(indices);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CombinedEventCriteria that = (CombinedEventCriteria) o;
+        return Objects.equals(types, that.types) && Objects.equals(indices, that.indices);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(types, indices);
     }
 }

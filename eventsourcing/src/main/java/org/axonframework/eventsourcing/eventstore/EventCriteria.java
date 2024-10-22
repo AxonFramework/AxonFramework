@@ -39,7 +39,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface EventCriteria {
+public sealed interface EventCriteria permits NoEventCriteria, SingleIndexCriteria, CombinedEventCriteria {
 
     /**
      * Construct a {@link EventCriteria} that contains no criteria at all.

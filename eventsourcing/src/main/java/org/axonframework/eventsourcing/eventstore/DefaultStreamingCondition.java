@@ -19,6 +19,8 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.TrackingToken;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * Default implementation of the {@link StreamingCondition}.
  *
@@ -31,6 +33,11 @@ record DefaultStreamingCondition(
         @Nonnull TrackingToken position,
         @Nonnull EventCriteria criteria
 ) implements StreamingCondition {
+
+    DefaultStreamingCondition {
+        assertNonNull(position, "The position cannot be null");
+        assertNonNull(criteria, "The EventCriteria cannot be null");
+    }
 
     @Override
     public StreamingCondition with(@Nonnull EventCriteria criteria) {

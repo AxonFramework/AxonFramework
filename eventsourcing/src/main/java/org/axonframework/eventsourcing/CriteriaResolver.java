@@ -16,29 +16,27 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventsourcing.eventstore.Index;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
 
 import java.util.function.Function;
 
 /**
- * Functional interface describing a resolver of an {@link Index} based on an identifier of type {@code ID}.
+ * Functional interface describing a resolver of an {@link EventCriteria} based on an identifier of type {@code ID}.
  *
- * @param <ID> The type of identifier to resolve to an {@link Index}.
+ * @param <ID> The type of identifier to resolve to an {@link EventCriteria}.
  * @author Steven van Beelen
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface IndexResolver<ID> extends Function<ID, Index> {
-    // TODO - Discuss: Does ID fit the bill or is this the model we inject here?
-    // TODO - Discuss: Should we return a Set<Index> instead of a single Index?
+public interface CriteriaResolver<ID> extends Function<ID, EventCriteria> {
 
     /**
-     * Resolves the given {@code identifier} to an {@link Index}.
+     * Resolves the given {@code identifier} to an {@link EventCriteria}.
      *
-     * @param identifier The instance to resolve to an {@link Index} representation.
-     * @return The given {@code identifier} resolved to an {@link Index}.
+     * @param identifier The instance to resolve to an {@link EventCriteria}.
+     * @return The given {@code identifier} resolved to an {@link EventCriteria}.
      */
-    default Index resolve(ID identifier) {
+    default EventCriteria resolve(ID identifier) {
         return apply(identifier);
     }
 }

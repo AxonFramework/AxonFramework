@@ -54,7 +54,7 @@ class MethodInvokingMessageHandlingMemberTest {
     void setUp() {
         try {
             testSubject = new MethodInvokingMessageHandlingMember<>(
-                    AnnotatedHandler.class.getMethod("handlingMethod", String.class), ,
+                    AnnotatedHandler.class.getMethod("handlingMethod", String.class),
                     EventMessage.class,
                     String.class,
                     ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class),

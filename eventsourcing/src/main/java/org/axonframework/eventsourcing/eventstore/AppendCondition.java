@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.EventMessage;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface AppendCondition {
+public sealed interface AppendCondition permits NoAppendCondition, DefaultAppendCondition {
 
     /**
      * Returns an {@link AppendCondition} that has no criteria nor consistency marker.
@@ -48,14 +48,14 @@ public interface AppendCondition {
     /**
      * Constructs a {@link AppendCondition} based on the given {@code condition}.
      * <p>
-     * Uses the {@link SourcingCondition#end()} as the {@link #consistencyMarker()} and defaults to {@code -1L} when it
-     * isn't present. The {@link SourcingCondition#criteria()} is taken as is for the {@link #criteria()} operation.
+     * Uses the {@link SourcingCondition#end()} as the {@link #consistencyMarker()}. The
+     * {@link SourcingCondition#criteria()} is taken as is for the {@link #criteria()} operation.
      *
      * @param condition The {@link SourcingCondition} to base an {@link AppendCondition}.
      * @return An {@link AppendCondition} based on the given {@code condition}.
      */
     static AppendCondition from(@Nonnull SourcingCondition condition) {
-        return new DefaultAppendCondition(condition.end().orElse(-1L), condition.criteria());
+        return new DefaultAppendCondition(condition.end(), condition.criteria());
     }
 
     /**
@@ -81,7 +81,7 @@ public interface AppendCondition {
      * Combines the {@code this AppendCondition} with the given {@code condition}.
      * <p>
      * Typically attached the {@link SourcingCondition#criteria()} with {@code this} condition's {@link #criteria()} and
-     * picks the largest value among the {@link #consistencyMarker()} and {@link SourcingCondition#end()} values.
+     * picks the lowest value among the {@link #consistencyMarker()} and {@link SourcingCondition#end()} values.
      *
      * @param condition The {@link SourcingCondition} to combine with {@code this AppendCondition}.
      * @return An {@link AppendCondition} combined with the given {@code condition}.

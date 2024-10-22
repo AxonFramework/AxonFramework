@@ -20,15 +20,13 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
-import org.axonframework.eventsourcing.eventstore.Index;
-import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -44,7 +42,7 @@ import static org.mockito.Mockito.*;
 class AsyncEventSourcingRepositoryTest {
 
     private static final String TEST_CONTEXT = "DEFAULT_CONTEXT";
-    private static final Index TEST_MODEL_INDEX = new Index("aggregateId", "id");
+    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.hasIndex(new Index("aggregateId", "id"));
 
     private AsyncEventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
@@ -59,7 +57,7 @@ class AsyncEventSourcingRepositoryTest {
 
         testSubject = new AsyncEventSourcingRepository<>(
                 eventStore,
-                identifier -> TEST_MODEL_INDEX,
+                identifier -> TEST_MODEL_CRITERIA,
                 (currentState, event) -> currentState + "-" + event.getPayload(),
                 TEST_CONTEXT
         );
@@ -212,7 +210,7 @@ class AsyncEventSourcingRepositoryTest {
     }
 
     private static boolean conditionPredicate(SourcingCondition condition) {
-        return condition.criteria().indices().contains(TEST_MODEL_INDEX);
+        return condition.criteria().indices().containsAll(TEST_MODEL_CRITERIA.indices());
     }
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?

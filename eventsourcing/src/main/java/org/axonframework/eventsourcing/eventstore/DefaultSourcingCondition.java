@@ -18,51 +18,26 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
-import java.util.OptionalLong;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * The default {@link SourcingCondition} implementation.
+ * <p>
+ * The {@code start} and {@code end} refer to the window of events that is of interest to this
+ * {@link SourcingCondition}.
  *
+ * @param criteria The {@link EventCriteria} of the model to source.
+ * @param start    The start position in the event sequence to retrieve of the model to source.
+ * @param end      The end position in the event sequence to retrieve of the model to source.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class DefaultSourcingCondition implements SourcingCondition {
+record DefaultSourcingCondition(@Nonnull EventCriteria criteria,
+                                long start,
+                                long end) implements SourcingCondition {
 
-    private final EventCriteria criteria;
-    private final Long start;
-    private final Long end;
-
-    /**
-     * Constructs a {@link DefaultSourcingCondition} using the given {@code criteria} to source through.
-     * <p>
-     * The {@code start} and {@code end} refer to the window of events that is of interest to this
-     * {@link SourcingCondition}.
-     *
-     * @param criteria The {@link EventCriteria} of the model to source.
-     * @param start    The start position in the event sequence to retrieve of the model to source.
-     * @param end      The end position in the event sequence to retrieve of the model to source.
-     */
-    DefaultSourcingCondition(@Nonnull EventCriteria criteria,
-                             Long start,
-                             Long end) {
-        this.criteria = criteria;
-        this.start = start != null ? start : -1;
-        this.end = end;
-    }
-
-    @Override
-    public EventCriteria criteria() {
-        return criteria;
-    }
-
-    @Override
-    public long start() {
-        return start;
-    }
-
-    @Override
-    public OptionalLong end() {
-        return this.end == null ? OptionalLong.empty() : OptionalLong.of(this.end);
+    DefaultSourcingCondition {
+        assertNonNull(criteria, "The EventCriteria cannot be null");
     }
 
     @Override
@@ -70,7 +45,7 @@ class DefaultSourcingCondition implements SourcingCondition {
         return new DefaultSourcingCondition(
                 criteria().combine(other.criteria()),
                 Math.min(this.start, other.start()),
-                Math.max(this.end, other.end().orElse(this.end))
+                Math.max(this.end, other.end())
         );
     }
 }
