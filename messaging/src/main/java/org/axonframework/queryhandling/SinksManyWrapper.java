@@ -19,6 +19,7 @@ package org.axonframework.queryhandling;
 import reactor.core.publisher.Sinks;
 
 import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
@@ -32,6 +33,7 @@ import java.util.function.Supplier;
 class SinksManyWrapper<T> implements SinkWrapper<T> {
 
     private final Sinks.Many<T> fluxSink;
+    private final ReentrantLock lock;
 
     /**
      * Initializes this wrapper with delegate sink.
@@ -40,6 +42,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
      */
     SinksManyWrapper(Sinks.Many<T> fluxSink) {
         this.fluxSink = fluxSink;
+        this.lock = new ReentrantLock();
     }
 
     /**
@@ -73,19 +76,25 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
     private Sinks.EmitResult performWithBusyWaitSpin(Supplier<Sinks.EmitResult> action) {
         int i = 0;
         Sinks.EmitResult result;
-        while ((result = action.get()) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
-            // For 100 iterations, just busy-spin. Will resolve most conditions.
-            if (i < 100) {
-                i++;
-                // Busy spin...
-            } else if (i < 200) {
-                // For the next 100 iterations, yield, to force other threads to have a chance.
-                i++;
-                Thread.yield();
-            } else {
-                // Then after, park the thread to force other threads to perform their work.
-                LockSupport.parkNanos(100);
+        try {
+            // The lock's in place to have a safe and efficient way to pause a thread before jumping in the while-loop.
+            lock.lock();
+            while ((result = action.get()) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
+                // For 100 iterations, just busy-spin. Will resolve most conditions.
+                if (i < 100) {
+                    i++;
+                    // Busy spin...
+                } else if (i < 200) {
+                    // For the next 100 iterations, yield, to force other threads to have a chance.
+                    i++;
+                    Thread.yield();
+                } else {
+                    // Then after, park the thread to force other threads to perform their work.
+                    LockSupport.parkNanos(100);
+                }
             }
+        } finally {
+            lock.unlock();
         }
         return result;
     }
