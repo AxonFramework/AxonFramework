@@ -53,7 +53,8 @@ public interface ProcessingContext extends ProcessingLifecycle, Context {
      * @param <T>      The type of {@code resource} to register under given @code.
      * @return The previously registered {@code resource}, or {@code null} if none was present.
      */
-    <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource);
+    <T> T putResource(@Nonnull ResourceKey<T> key,
+                      @Nonnull T resource);
 
     /**
      * Update the resource with given {@code key} using the given {@code resourceUpdater} to describe the update. If no
@@ -70,7 +71,8 @@ public interface ProcessingContext extends ProcessingLifecycle, Context {
      * @param <T>             The type of resource to update.
      * @return The new value associated with the {@code key}, or {@code null} when removed.
      */
-    <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater);
+    <T> T updateResource(@Nonnull ResourceKey<T> key,
+                         @Nonnull UnaryOperator<T> resourceUpdater);
 
     /**
      * Register the given {@code instance} under the given {@code key} if no value is currently present.
@@ -80,7 +82,8 @@ public interface ProcessingContext extends ProcessingLifecycle, Context {
      * @param <T>      The type of {@code resource} to register under given {@code key}.
      * @return The resource previously associated with given {@code key}.
      */
-    <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource);
+    <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                              @Nonnull T resource);
 
     /**
      * If no resource is present for the given {@code key}, the given {@code resourceSupplier} is used to supply the
@@ -91,7 +94,8 @@ public interface ProcessingContext extends ProcessingLifecycle, Context {
      * @param <T>              The type of resource registered under given {@code key}.
      * @return The resource associated with the {@code key}.
      */
-    <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier);
+    <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                  @Nonnull Supplier<T> resourceSupplier);
 
     /**
      * Removes the resource registered under given {@code key}.
@@ -111,7 +115,8 @@ public interface ProcessingContext extends ProcessingLifecycle, Context {
      * @param <T>              The type of resource associated with the {@code key}.
      * @return {@code true} if the resource has been removed, otherwise {@code false}.
      */
-    <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource);
+    <T> boolean removeResource(@Nonnull ResourceKey<T> key,
+                               @Nonnull T expectedResource);
 
     /**
      * Constructs a new {@link ProcessingContext}, branching off from {@code this} {@code ProcessingContext}. The given
@@ -122,7 +127,8 @@ public interface ProcessingContext extends ProcessingLifecycle, Context {
      * @param <T>      The type of resource associated with the {@code key}.
      * @return A new {@link ProcessingContext}, branched off from {@code this} {@code ProcessingContext}.
      */
-    default <T> ProcessingContext branchedWithResource(ResourceKey<T> key, T resource) {
+    default <T> ProcessingContext branchedWithResource(@Nonnull ResourceKey<T> key,
+                                                       @Nonnull T resource) {
         return new ResourceOverridingProcessingContext<>(this, key, resource);
     }
 }
