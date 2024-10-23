@@ -47,7 +47,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  *
  * @author Steven van Beelen
  */
-abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
+public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEngine> {
 
     protected static final String TEST_CONTEXT = "some-context";
     protected static final String NOT_MATCHING_CONTEXT = "some-other-context";
