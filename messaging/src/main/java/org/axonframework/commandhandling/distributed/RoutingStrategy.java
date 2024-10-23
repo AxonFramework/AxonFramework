@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.common.Context.ResourceKey;
 
 import javax.annotation.Nonnull;
 
@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
  */
 public interface RoutingStrategy {
 
-    ProcessingContext.ResourceKey<String> ROUTING_KEY = ProcessingContext.ResourceKey.create("RoutingKey");
+    ResourceKey<String> ROUTING_KEY = ResourceKey.create("RoutingKey");
 
     /**
      * Generates a routing key for the given {@code command}. Commands that should be handled by the same segment,

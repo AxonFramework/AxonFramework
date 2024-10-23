@@ -16,18 +16,18 @@
 
 package org.axonframework.eventsourcing;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingContext.ResourceKey;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,7 +35,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import javax.annotation.Nonnull;
 
 /**
  * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an

@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
-import org.junit.jupiter.api.*;
+import org.axonframework.messaging.MessageStream.Entry;
+import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
@@ -26,7 +26,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -35,9 +36,9 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class OnNextMessageStreamTest extends MessageStreamTest<String> {
+class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
-    private static final @NotNull Consumer<Message<String>> NO_OP_ON_NEXT = message -> {
+    private static final Consumer<Entry<Message<String>>> NO_OP_ON_NEXT = message -> {
     };
 
     @Override
@@ -46,52 +47,59 @@ class OnNextMessageStreamTest extends MessageStreamTest<String> {
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+                                                      Exception failure) {
         return new OnNextMessageStream<>(MessageStream.fromIterable(messages)
                                                       .concatWith(MessageStream.failed(failure)),
                                          NO_OP_ON_NEXT);
     }
 
     @Override
-    String createRandomValidEntry() {
-        return "test-" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test
     void onNextNotInvokedOnEmptyStream() {
         //noinspection unchecked
-        Consumer<Message<?>> handler = mock();
-        MessageStream<Message<?>> testSubject = MessageStream.empty().onNextItem(handler);
+        Consumer<Entry<Message<?>>> handler = mock();
+        MessageStream<Message<?>> testSubject = MessageStream.empty().onNext(handler);
 
-        testSubject.asCompletableFuture().isDone();
+        testSubject.firstAsCompletableFuture().isDone();
         verify(handler, never()).accept(any());
     }
 
     @Test
     void verifyOnNextInvokedForFirstElementWhenUsingOnCompletableFuture() {
-        List<Message<?>> seen = new ArrayList<>();
-        List<Message<?>> items = List.of(GenericMessage.asMessage("first"), GenericMessage.asMessage("second"));
-        CompletableFuture<Message<?>> actual = MessageStream.fromIterable(items)
-                                                            .onNextItem(seen::add)
-                                                            .asCompletableFuture();
+        List<Entry<Message<String>>> seen = new ArrayList<>();
+        Message<String> first = createRandomMessage();
+        List<Message<String>> messages = List.of(first, createRandomMessage());
+
+        CompletableFuture<Message<String>> actual = MessageStream.fromIterable(messages)
+                                                                 .onNext(seen::add)
+                                                                 .firstAsCompletableFuture()
+                                                                 .thenApply(Entry::message);
 
         assertTrue(actual.isDone());
         assertEquals(1, seen.size());
-        assertEquals("first", seen.getFirst().getPayload());
+        assertEquals(first, seen.getFirst().message());
     }
 
     @Test
     void verifyOnNextInvokedForAllElementsWhenUsingAsFlux() {
-        List<Message<?>> seen = new ArrayList<>();
-        List<Message<?>> items = List.of(GenericMessage.asMessage("first"), GenericMessage.asMessage("second"));
-        StepVerifier.create(MessageStream.fromIterable(items)
-                                         .onNextItem(seen::add)
+        List<Entry<Message<String>>> seen = new ArrayList<>();
+        Message<String> first = createRandomMessage();
+        Message<String> second = createRandomMessage();
+        List<Message<String>> messages = List.of(first, second);
+
+        StepVerifier.create(MessageStream.fromIterable(messages)
+                                         .onNext(seen::add)
                                          .asFlux())
                     .expectNextCount(2)
                     .verifyComplete();
 
         assertEquals(2, seen.size());
-        assertEquals("first", seen.getFirst().getPayload());
-        assertEquals("second", seen.get(1).getPayload());
+        assertEquals(first, seen.getFirst().message());
+        assertEquals(second, seen.get(1).message());
     }
 }
