@@ -254,9 +254,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return A {@link MessageStream stream} with all {@link Entry entries} mapped according to the {@code mapper}
      * function.
      */
-    default <RM extends Message<?>> MessageStream<RM> map(
-            @Nonnull Function<Entry<M>, Entry<RM>> mapper
-    ) {
+    default <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new MappedMessageStream<>(this, mapper);
     }
 
