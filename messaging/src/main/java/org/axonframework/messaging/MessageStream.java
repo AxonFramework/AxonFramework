@@ -365,7 +365,7 @@ public interface MessageStream<M extends Message<?>> {
         /**
          * Returns the {@link Message} implementation contained by this {@link Entry}.
          *
-         * @return The {@link Message} implementation contained by this {@link Entry}
+         * @return The {@link Message} implementation contained by this {@link Entry}.
          */
         M message();
 
