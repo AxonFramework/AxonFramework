@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,14 @@ package org.axonframework.commandhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -292,11 +291,9 @@ class SimpleCommandBusTest {
         ComponentDescriptor mockComponentDescriptor = mock(ComponentDescriptor.class);
         testSubject.describeTo(mockComponentDescriptor);
 
-        verify(mockComponentDescriptor).describeProperty(eq("worker"), eq(executor));
-        verify(mockComponentDescriptor).describeProperty(eq("lifecycleRegistrars"),
-                                                         eq(List.of(lifecycleHandlerRegistrar)));
-        verify(mockComponentDescriptor).describeProperty(eq("subscriptions"), eq(Map.of("test1", handler1,
-                                                                                        "test2", handler2)));
+        verify(mockComponentDescriptor).describeProperty("worker", executor);
+        verify(mockComponentDescriptor).describeProperty("lifecycleRegistrars", List.of(lifecycleHandlerRegistrar));
+        verify(mockComponentDescriptor).describeProperty("subscriptions", Map.of("test1", handler1, "test2", handler2));
     }
 
     private static class StubCommandHandler implements MessageHandler<CommandMessage<?>, Message<?>> {

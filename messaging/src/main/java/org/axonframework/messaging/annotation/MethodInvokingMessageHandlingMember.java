@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
@@ -32,8 +34,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Implementation of a {@link MessageHandlingMember} that is used to invoke message handler methods on the target type.
@@ -150,10 +150,9 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
 
     @Override
     public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
-        // FIXME - null processingContext should not be allowed here
-        //noinspection DataFlowIssue
         try {
-            return handle(message, null, target).asCompletableFuture().get().getPayload();
+            return handle(message, ProcessingContext.NONE, target).firstAsCompletableFuture().get()
+                                                                  .message().getPayload();
         } catch (ExecutionException e) {
             if (e.getCause() instanceof Exception ex) {
                 throw ex;

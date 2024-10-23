@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.messaging.MessageStream.Entry;
+
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
@@ -26,9 +28,9 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class MappedMessageStreamTest extends MessageStreamTest<String> {
+class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
-    private static final Function<Message<String>, Message<String>> NO_OP_MAPPER = message -> message;
+    private static final Function<Entry<Message<String>>, Entry<Message<String>>> NO_OP_MAPPER = entry -> entry;
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
@@ -36,14 +38,13 @@ class MappedMessageStreamTest extends MessageStreamTest<String> {
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
-        return new MappedMessageStream<>(MessageStream.fromIterable(messages)
-                                                      .concatWith(MessageStream.failed(failure)),
-                                         NO_OP_MAPPER);
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> entries, Exception failure) {
+        return new MappedMessageStream<>(MessageStream.fromIterable(entries)
+                                                      .concatWith(MessageStream.failed(failure)), NO_OP_MAPPER);
     }
 
     @Override
-    String createRandomValidEntry() {
-        return "test-" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

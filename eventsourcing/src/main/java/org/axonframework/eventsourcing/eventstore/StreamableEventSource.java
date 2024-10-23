@@ -42,10 +42,11 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
 
     /**
      * Open an {@link MessageStream event stream} containing all {@link EventMessage events} of the given
-     * {@code context} matching the given {@code condition}.
+     * {@code context} matching the given {@code condition}}.
      * <p>
-     * Note that the returned stream is <em>infinite</em>, so beware of applying terminal operations to the returned
-     * stream.
+     * Events are wrapped in the {@link TrackedEntry}, combining the {@code EventMessage} together with the
+     * {@link TrackingToken} defining the event's position in this source. Note that the returned stream is
+     * <em>infinite</em>, so beware of applying terminal operations to the returned stream.
      *
      * @param context   The context for which to open an {@link MessageStream event stream}.
      * @param condition The {@link StreamingCondition} defining the

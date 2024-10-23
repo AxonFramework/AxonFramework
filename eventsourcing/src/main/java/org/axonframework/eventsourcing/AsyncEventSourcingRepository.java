@@ -16,17 +16,17 @@
 
 package org.axonframework.eventsourcing;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingContext.ResourceKey;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
-import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -109,8 +109,8 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                                         SourcingCondition.conditionFor(criteriaResolver.resolve(id), start, end),
                                         processingContext
                                 )
-                                .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, em) -> {
-                                    entity.applyStateChange(em, eventStateApplier);
+                                .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, entry) -> {
+                                    entity.applyStateChange(entry.message(), eventStateApplier);
                                     return entity;
                                 })
                                 .whenComplete((entity, exception) -> {

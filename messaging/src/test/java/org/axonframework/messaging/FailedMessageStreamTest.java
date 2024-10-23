@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assumptions;
 
 import java.util.List;
 
@@ -26,7 +26,7 @@ import java.util.List;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class FailedMessageStreamTest extends MessageStreamTest<Void> {
+class FailedMessageStreamTest extends MessageStreamTest<Message<Void>> {
 
     @Override
     MessageStream<Message<Void>> testSubject(List<Message<Void>> messages) {
@@ -35,13 +35,14 @@ class FailedMessageStreamTest extends MessageStreamTest<Void> {
     }
 
     @Override
-    MessageStream<Message<Void>> failingTestSubject(List<Message<Void>> messages, Exception failure) {
+    MessageStream<Message<Void>> failingTestSubject(List<Message<Void>> messages,
+                                                    Exception failure) {
         Assumptions.assumeTrue(messages.isEmpty(), "FailedMessageStream doesn't support content");
         return MessageStream.failed(failure);
     }
 
     @Override
-    Void createRandomValidEntry() {
+    Message<Void> createRandomMessage() {
         Assumptions.abort("FailedMessageStream doesn't support content");
         return null;
     }

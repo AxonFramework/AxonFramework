@@ -14,14 +14,28 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
+package org.axonframework.common;
 
-import org.axonframework.common.Context.ResourceKey;
-import org.axonframework.messaging.Message;
+import org.junit.jupiter.api.*;
 
-public interface PriorityResolver<M extends Message<?>> {
+import static org.junit.jupiter.api.Assertions.*;
 
-    ResourceKey<Integer> PRIORITY_KEY = ResourceKey.create("Priority");
+/**
+ * Test class validating the {@link SimpleContext}.
+ *
+ * @author Steven van Beelen
+ */
+public class SimpleContextTest extends ContextTestSuite<SimpleContext> {
 
-    int priorityFor(M message);
+    @Override
+    public SimpleContext testSubject() {
+        return new SimpleContext();
+    }
+
+    @Test
+    void asMapIsEmptyForNewContext() {
+        SimpleContext testSubject = testSubject();
+
+        assertTrue(testSubject.asMap().isEmpty());
+    }
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -26,7 +26,7 @@ import java.util.function.Function;
 /**
  * A {@link MessageStream} implementation that completes exceptionally through the given {@code error}.
  *
- * @param <M> The type of {@link Message} carried in this stream.
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -36,38 +36,38 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
     private final Throwable error;
 
     /**
-     * Constructs a {@link FailedMessageStream} that will complete exceptionally with the given {@code error}.
+     * Constructs a {@link MessageStream stream} that will complete exceptionally with the given {@code error}.
      *
-     * @param error The {@link Throwable} that caused this {@link MessageStream} to complete exceptionally.
+     * @param error The {@link Throwable} that caused this {@link MessageStream stream} to complete exceptionally.
      */
-    FailedMessageStream(@NotNull Throwable error) {
+    FailedMessageStream(@Nonnull Throwable error) {
         this.error = error;
     }
 
     @Override
-    public CompletableFuture<M> asCompletableFuture() {
+    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
         return CompletableFuture.failedFuture(error);
     }
 
     @Override
-    public Flux<M> asFlux() {
+    public Flux<Entry<M>> asFlux() {
         return Flux.error(error);
     }
 
     @Override
-    public <R extends Message<?>> MessageStream<R> map(@NotNull Function<M, R> mapper) {
+    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         //noinspection unchecked
-        return (FailedMessageStream<R>) this;
+        return (FailedMessageStream<RM>) this;
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, M, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return CompletableFuture.failedFuture(error);
     }
 
     @Override
-    public MessageStream<M> whenComplete(Runnable completeHandler) {
+    public MessageStream<M> whenComplete(@Nonnull Runnable completeHandler) {
         return this;
     }
 }

@@ -19,12 +19,11 @@ package org.axonframework.eventsourcing.eventstore.inmemory;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +39,6 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException.consistencyMarkerSurpassed;
@@ -60,7 +58,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final NavigableMap<Long, TrackedEventMessage<?>> events = new ConcurrentSkipListMap<>();
+    private final NavigableMap<Long, EventMessage<?>> events = new ConcurrentSkipListMap<>();
 
     private final Clock clock;
     private final long offset;
@@ -106,9 +104,10 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                 if (this.events.tailMap(condition.consistencyMarker() + 1)
                                .values()
                                .stream()
-                               .filter(trackedEvent -> trackedEvent instanceof IndexedEventMessage<?>)
-                               .map(trackedEvent -> (IndexedEventMessage<?>) trackedEvent)
-                               .anyMatch(taggedEvent -> condition.criteria().matchingIndices(taggedEvent.indices()))) {
+                               .filter(event -> event instanceof IndexedEventMessage<?>)
+                               .map(event -> (IndexedEventMessage<?>) event)
+                               .anyMatch(indexedEvent -> condition.criteria()
+                                                                  .matchingIndices(indexedEvent.indices()))) {
                     return CompletableFuture.failedFuture(consistencyMarkerSurpassed(condition.consistencyMarker()));
                 }
                 eventsToAppend = events.stream()
@@ -120,24 +119,15 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
 
             for (EventMessage<?> event : eventsToAppend) {
                 head++;
-                TrackingToken token = new GlobalSequenceTrackingToken(head);
-                TrackedEventMessage<?> trackedEvent = asTrackedEventMessage(event, token);
-                this.events.put(head, trackedEvent);
+                this.events.put(head, event);
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Appended tracked event [{}] with position [{}] and timestamp [{}].",
-                                 trackedEvent.getIdentifier(), head, trackedEvent.getTimestamp());
+                    logger.debug("Appended event [{}] with position [{}] and timestamp [{}].",
+                                 event.getIdentifier(), head, event.getTimestamp());
                 }
             }
             return CompletableFuture.completedFuture(head);
         }
-    }
-
-    // TODO #3129 - MessageStream allows Pair<TrackingToken, EventMessage> type - Remove this method.
-    private static <P> TrackedEventMessage<P> asTrackedEventMessage(EventMessage<P> event, TrackingToken token) {
-        return event instanceof IndexedEventMessage<P> taggedEvent
-                ? new GenericTrackedAndIndexedEventMessage<>(event, token, taggedEvent.indices())
-                : new GenericTrackedEventMessage<>(token, event);
     }
 
     @Override
@@ -146,38 +136,37 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
 
-        return MessageStream.fromStream(
-                eventsToStream(
-                        condition.start(),
-                        condition.end(),
-                        condition.criteria()
-                ).map(Function.identity())
+        return MessageStream.fromEntryStream(eventsToEntryStream(
+                condition.start(),
+                condition.end(),
+                condition.criteria())
         );
     }
 
     @Override
-    public MessageStream<TrackedEventMessage<?>> stream(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
 
-        return MessageStream.fromStream(
-                eventsToStream(condition.position().position().orElse(-1),
-                               Long.MAX_VALUE,
-                               condition.criteria())
-        );
+        return MessageStream.fromEntryStream(eventsToEntryStream(
+                condition.position().position().orElse(-1L),
+                Long.MAX_VALUE,
+                condition.criteria()
+        ));
     }
 
-    private Stream<TrackedEventMessage<?>> eventsToStream(long start,
-                                                          long end,
-                                                          EventCriteria criteria) {
+    private Stream<Entry<EventMessage<?>>> eventsToEntryStream(long start, long end, EventCriteria criteria) {
         return events.subMap(start, end)
-                     .values()
+                     .entrySet()
                      .stream()
-                     .filter(event -> match(event, criteria));
+                     .filter(entry -> match(entry.getValue(), criteria))
+                     .map(entry -> new TrackedEntry<>(
+                             entry.getValue(), new GlobalSequenceTrackingToken(entry.getKey())
+                     ));
     }
 
-    private static boolean match(TrackedEventMessage<?> event, EventCriteria criteria) {
+    private static boolean match(EventMessage<?> event, EventCriteria criteria) {
         // TODO #3085 Remove usage of getPayloadType in favor of QualifiedName solution
         return matchingType(event.getPayloadType().getName(), criteria.types())
                 && matchingIndices(event, criteria);
@@ -187,13 +176,13 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         return types.isEmpty() || types.contains(eventName);
     }
 
-    private static boolean matchingIndices(TrackedEventMessage<?> trackedEvent, EventCriteria criteria) {
+    private static boolean matchingIndices(EventMessage<?> event, EventCriteria criteria) {
         if (criteria.indices().isEmpty()) {
             // No criteria are present, so we match successfully.
             return true;
         }
-        if (trackedEvent instanceof IndexedEventMessage<?> taggedEvent) {
-            return criteria.matchingIndices(taggedEvent.indices());
+        if (event instanceof IndexedEventMessage<?> indexedEvent) {
+            return criteria.matchingIndices(indexedEvent.indices());
         }
         return false;
     }
@@ -233,7 +222,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         return events.entrySet()
                      .stream()
                      .filter(positionToEventEntry -> {
-                         TrackedEventMessage<?> event = positionToEventEntry.getValue();
+                         EventMessage<?> event = positionToEventEntry.getValue();
                          Instant eventTimestamp = event.getTimestamp();
                          logger.debug("instant [{}]", eventTimestamp);
                          return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
