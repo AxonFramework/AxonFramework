@@ -72,7 +72,6 @@ import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
@@ -265,12 +264,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         return result;
     }
 
+    private <Q, R> boolean shouldRunQueryLocally(QueryMessage<Q, R> queryMessage) {
+        return localSegmentShortCut && queryHandlersNames.contains(queryMessage.getQueryName());
+    }
+
     private <Q, R> CompletableFuture<QueryResponseMessage<R>> tryToRunQueryLocally(
             @Nonnull QueryMessage<Q, R> queryMessage) {
-        if(localSegmentShortCut){
-            if(queryHandlersNames.contains(queryMessage.getQueryName())){
-                return localSegment.query(queryMessage);
-            }
+        if (shouldRunQueryLocally(queryMessage)) {
+            return localSegment.query(queryMessage);
         }
         return null;
     }
@@ -643,7 +644,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             return this;
         }
 
-        public Builder localSegmentShortCut(boolean localSegmentShortCut){
+        public Builder localSegmentShortCut(boolean localSegmentShortCut) {
             this.localSegmentShortCut = localSegmentShortCut;
             return this;
         }
