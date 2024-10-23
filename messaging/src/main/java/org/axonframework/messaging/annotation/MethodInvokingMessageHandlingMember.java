@@ -151,7 +151,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     @Override
     public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
         try {
-            return handle(message, ProcessingContext.NONE, target).asCompletableFuture().get()
+            return handle(message, ProcessingContext.NONE, target).firstAsCompletableFuture().get()
                                                                   .message().getPayload();
         } catch (ExecutionException e) {
             if (e.getCause() instanceof Exception ex) {

@@ -51,8 +51,8 @@ class CompletionCallbackMessageStream<M extends Message<?>> implements MessageSt
     }
 
     @Override
-    public CompletableFuture<Entry<M>> asCompletableFuture() {
-        return delegate.asCompletableFuture()
+    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
+        return delegate.firstAsCompletableFuture()
                        .whenComplete((result, exception) -> {
                            if (exception == null) {
                                completeHandler.run();

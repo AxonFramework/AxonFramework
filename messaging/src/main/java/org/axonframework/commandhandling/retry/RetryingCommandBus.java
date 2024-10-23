@@ -71,7 +71,7 @@ public class RetryingCommandBus implements CommandBus {
                                                        ProcessingContext processingContext,
                                                        Throwable e) {
         return retryScheduler.scheduleRetry(command, processingContext, e, this::redispatch)
-                             .asCompletableFuture()
+                             .firstAsCompletableFuture()
                              .thenApply(Entry::message);
     }
 

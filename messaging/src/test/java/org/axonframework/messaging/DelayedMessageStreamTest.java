@@ -61,7 +61,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
         RuntimeException expected = new RuntimeException("oops");
 
         CompletableFuture<Object> result = DelayedMessageStream.create(CompletableFuture.failedFuture(expected))
-                                                               .asCompletableFuture()
+                                                               .firstAsCompletableFuture()
                                                                .thenApply(Entry::message);
 
         assertTrue(result.isCompletedExceptionally());
@@ -76,13 +76,13 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
         MessageStream<?> testSubject = DelayedMessageStream.create(testFuture)
                                                            .whenComplete(() -> invoked.set(true));
 
-        CompletableFuture<?> result = testSubject.asCompletableFuture();
+        CompletableFuture<?> result = testSubject.firstAsCompletableFuture();
         assertFalse(result.isDone());
         assertFalse(invoked.get());
 
         testFuture.complete(MessageStream.just(createRandomMessage()));
 
-        result = testSubject.asCompletableFuture();
+        result = testSubject.firstAsCompletableFuture();
         assertTrue(result.isDone());
         assertTrue(invoked.get());
     }

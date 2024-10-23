@@ -65,7 +65,7 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
         Consumer<Entry<Message<?>>> handler = mock();
         MessageStream<Message<?>> testSubject = MessageStream.empty().onNext(handler);
 
-        testSubject.asCompletableFuture().isDone();
+        testSubject.firstAsCompletableFuture().isDone();
         verify(handler, never()).accept(any());
     }
 
@@ -77,7 +77,7 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         CompletableFuture<Message<String>> actual = MessageStream.fromIterable(messages)
                                                                  .onNext(seen::add)
-                                                                 .asCompletableFuture()
+                                                                 .firstAsCompletableFuture()
                                                                  .thenApply(Entry::message);
 
         assertTrue(actual.isDone());

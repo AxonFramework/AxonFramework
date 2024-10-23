@@ -57,7 +57,7 @@ public class InterceptingCommandBus implements CommandBus {
     public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                             @Nullable ProcessingContext processingContext) {
         return dispatcher.apply(command, processingContext)
-                         .asCompletableFuture()
+                         .firstAsCompletableFuture()
                          .thenApply(Entry::message);
     }
 

@@ -53,10 +53,10 @@ class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<
     }
 
     @Override
-    public CompletableFuture<Entry<M>> asCompletableFuture() {
-        return first.asCompletableFuture()
+    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
+        return first.firstAsCompletableFuture()
                     .thenCompose(message -> message == null
-                            ? second.asCompletableFuture()
+                            ? second.firstAsCompletableFuture()
                             : CompletableFuture.completedFuture(message)
                     );
     }

@@ -160,7 +160,7 @@ class InterceptingCommandBusTest {
                      "Expected command interceptors to be invoked in registered order");
 
         assertEquals(Map.of("handler1", "value-1", "handler2", "value-0"),
-                     result.asCompletableFuture().get().message().getMetaData(),
+                     result.firstAsCompletableFuture().get().message().getMetaData(),
                      "Expected result interceptors to be invoked in reverse order");
     }
 
@@ -174,8 +174,8 @@ class InterceptingCommandBusTest {
 
         ProcessingContext context = mock(ProcessingContext.class);
         var result = actualHandler.handle(GenericCommandMessage.asCommandMessage("Request"), context);
-        assertTrue(result.asCompletableFuture().isCompletedExceptionally());
-        assertInstanceOf(MockException.class, result.asCompletableFuture().exceptionNow());
+        assertTrue(result.firstAsCompletableFuture().isCompletedExceptionally());
+        assertInstanceOf(MockException.class, result.firstAsCompletableFuture().exceptionNow());
 
         verify(handlerInterceptor1).interceptOnHandle(any(), eq(context), any());
         verify(handlerInterceptor2).interceptOnHandle(any(), eq(context), any());
@@ -199,7 +199,7 @@ class InterceptingCommandBusTest {
         ProcessingContext processingContext = mock(ProcessingContext.class);
         var result = actualHandler.handle(GenericCommandMessage.asCommandMessage("test"), processingContext);
 
-        assertTrue(result.asCompletableFuture().isDone());
+        assertTrue(result.firstAsCompletableFuture().isDone());
         verify(handlerInterceptor1).interceptOnHandle(any(), any(), any());
         verify(handlerInterceptor2, times(2)).interceptOnHandle(any(), any(), any());
         assertEquals(2, handledMessages.size());
@@ -209,7 +209,7 @@ class InterceptingCommandBusTest {
         assertEquals(Map.of("handler1", "value-0", "handler2", "value-1"),
                      handledMessages.get(1).getMetaData());
         assertEquals(Map.of("handler1", "value-1", "handler2", "value-0"),
-                     result.asCompletableFuture().join().message().getMetaData());
+                     result.firstAsCompletableFuture().join().message().getMetaData());
     }
 
     @Test

@@ -52,7 +52,7 @@ class IterableMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public CompletableFuture<Entry<M>> asCompletableFuture() {
+    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
         Iterator<Entry<M>> iterator = source.iterator();
         return iterator.hasNext()
                 ? CompletableFuture.completedFuture(iterator.next())
