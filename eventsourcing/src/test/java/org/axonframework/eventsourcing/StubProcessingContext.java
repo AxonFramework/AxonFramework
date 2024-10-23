@@ -87,6 +87,11 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
+    public <T> Context withResource(@NotNull Context.ResourceKey<T> key, @NotNull T resource) {
+        return branchedWithResource(key, resource);
+    }
+
+    @Override
     public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         //noinspection unchecked
         return (T) resources.put(key, resource);

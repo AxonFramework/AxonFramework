@@ -43,18 +43,6 @@ import java.util.stream.StreamSupport;
 public interface MessageStream<M extends Message<?>> {
 
     /**
-     * Construct an {@link Entry} based on the given {@code message} of type {@code M}. The result of this method can be
-     * used as input for a {@link MessageStream}.
-     *
-     * @param message The {@link Message} of type {@code M} to be wrapped in an {@link Entry}.
-     * @param <M>     The type of {@link Message} contained in the resulting {@link Entry}.
-     * @return An {@link Entry} containing the given {@code message} of type {@code M}
-     */
-    static <M extends Message<?>> Entry<M> entryFor(M message) {
-        return new SimpleEntry<>(message);
-    }
-
-    /**
      * Create a {@link MessageStream stream} that provides the {@link Message Messages} returned by the given
      * {@code iterable} once they have been mapped to {@link Entry entries} by the given {@code mapper}.
      * <p>
@@ -67,7 +55,7 @@ public interface MessageStream<M extends Message<?>> {
      */
     static <M extends Message<?>> MessageStream<M> fromIterable(@Nonnull Iterable<M> iterable) {
         return fromEntryIterable(StreamSupport.stream(iterable.spliterator(), false)
-                                              .map(MessageStream::entryFor)
+                                              .<Entry<M>>map(SimpleEntry::new)
                                               .toList());
     }
 
@@ -100,7 +88,7 @@ public interface MessageStream<M extends Message<?>> {
      * provided by the given {@code stream} after mapping them with the given {@code mapper}.
      */
     static <M extends Message<?>> MessageStream<M> fromStream(@Nonnull Stream<M> stream) {
-        return fromEntryStream(stream.map(MessageStream::entryFor));
+        return fromEntryStream(stream.map(SimpleEntry::new));
     }
 
     /**
@@ -129,7 +117,7 @@ public interface MessageStream<M extends Message<?>> {
      * provided by the given {@code flux} after mapping them with the given {@code mapper}.
      */
     static <M extends Message<?>> MessageStream<M> fromFlux(@Nonnull Flux<M> flux) {
-        return fromEntryFlux(flux.map(MessageStream::entryFor));
+        return fromEntryFlux(flux.map(SimpleEntry::new));
     }
 
     /**
@@ -160,7 +148,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return A {@link MessageStream stream} containing at most one {@link Entry entry}.
      */
     static <M extends Message<?>> MessageStream<M> fromFuture(@Nonnull CompletableFuture<M> future) {
-        return fromFutureEntry(future.thenApply(MessageStream::entryFor));
+        return fromFutureEntry(future.thenApply(SimpleEntry::new));
     }
 
     /**
@@ -266,9 +254,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return A {@link MessageStream stream} with all {@link Entry entries} mapped according to the {@code mapper}
      * function.
      */
-    default <RM extends Message<?>> MessageStream<RM> map(
-            @Nonnull Function<Entry<M>, Entry<RM>> mapper
-    ) {
+    default <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new MappedMessageStream<>(this, mapper);
     }
 
@@ -379,7 +365,7 @@ public interface MessageStream<M extends Message<?>> {
         /**
          * Returns the {@link Message} implementation contained by this {@link Entry}.
          *
-         * @return The {@link Message} implementation contained by this {@link Entry}
+         * @return The {@link Message} implementation contained by this {@link Entry}.
          */
         M message();
 

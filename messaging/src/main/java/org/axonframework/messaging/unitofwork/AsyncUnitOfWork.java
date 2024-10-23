@@ -19,7 +19,6 @@ package org.axonframework.messaging.unitofwork;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Context;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.common.SimpleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -195,12 +194,12 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
 
         private final String identifier;
         private final Executor workScheduler;
-        private final Context context;
+        private final ConcurrentMap<ResourceKey<?>, Object> resources;
 
         private UnitOfWorkProcessingContext(String identifier, Executor workScheduler) {
             this.identifier = identifier;
             this.workScheduler = workScheduler;
-            this.context = new SimpleContext();
+            this.resources = new ConcurrentHashMap<>();
         }
 
         @Override
@@ -402,17 +401,19 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
 
         @Override
         public boolean containsResource(@Nonnull ResourceKey<?> key) {
-            return this.context.containsResource(key);
+            return resources.containsKey(key);
         }
 
         @Override
         public <T> T getResource(@Nonnull ResourceKey<T> key) {
-            return this.context.getResource(key);
+            //noinspection unchecked
+            return (T) resources.get(key);
         }
 
         @Override
-        public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-            return this.context.putResource(key, resource);
+        public <T> Context withResource(@Nonnull ResourceKey<T> key,
+                                        @Nonnull T resource) {
+            return branchedWithResource(key, resource);
         }
 
         @Override
@@ -421,28 +422,43 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
-            return this.context.updateResource(key, resourceUpdater);
+        public <T> T putResource(@Nonnull ResourceKey<T> key,
+                                 @Nonnull T resource) {
+            //noinspection unchecked
+            return (T) resources.put(key, resource);
         }
 
         @Override
-        public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-            return this.context.putResourceIfAbsent(key, resource);
+        public <T> T updateResource(@Nonnull ResourceKey<T> key,
+                                    @Nonnull UnaryOperator<T> resourceUpdater) {
+            //noinspection unchecked
+            return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
         }
 
         @Override
-        public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
-            return this.context.computeResourceIfAbsent(key, resourceSupplier);
+        public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                         @Nonnull T resource) {
+            //noinspection unchecked
+            return (T) resources.putIfAbsent(key, resource);
+        }
+
+        @Override
+        public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                             @Nonnull Supplier<T> resourceSupplier) {
+            //noinspection unchecked
+            return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
         }
 
         @Override
         public <T> T removeResource(@Nonnull ResourceKey<T> key) {
-            return this.context.removeResource(key);
+            //noinspection unchecked
+            return (T) resources.remove(key);
         }
 
         @Override
-        public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
-            return this.context.removeResource(key, expectedResource);
+        public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
+                                          @Nonnull T expectedResource) {
+            return resources.remove(key, expectedResource);
         }
 
         @Override

@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 /**
  * Simple implementation of the {@link Context} providing a sane implementation for context-specific resource
@@ -35,7 +33,18 @@ import java.util.function.UnaryOperator;
  */
 public class SimpleContext implements Context {
 
-    private final ConcurrentMap<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ResourceKey<?>, Object> resources;
+
+    /**
+     * Constructs a {@link SimpleContext} without any resources.
+     */
+    public SimpleContext() {
+        this(new ConcurrentHashMap<>());
+    }
+
+    private SimpleContext(ConcurrentMap<ResourceKey<?>, Object> resources) {
+        this.resources = resources;
+    }
 
     @Override
     public boolean containsResource(@Nonnull ResourceKey<?> key) {
@@ -49,43 +58,15 @@ public class SimpleContext implements Context {
     }
 
     @Override
-    public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-        //noinspection unchecked
-        return (T) resources.put(key, resource);
+    public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+        ConcurrentHashMap<ResourceKey<?>, Object> newResources = new ConcurrentHashMap<>(this.resources);
+        newResources.put(key, resource);
+        return new SimpleContext(newResources);
     }
 
     @Override
     public void putAll(@Nonnull Context context) {
         resources.putAll(context.asMap());
-    }
-
-    @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
-        //noinspection unchecked
-        return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
-    }
-
-    @Override
-    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-        //noinspection unchecked
-        return (T) resources.putIfAbsent(key, resource);
-    }
-
-    @Override
-    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
-        //noinspection unchecked
-        return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
-    }
-
-    @Override
-    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
-        //noinspection unchecked
-        return (T) resources.remove(key);
-    }
-
-    @Override
-    public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
-        return resources.remove(key, expectedResource);
     }
 
     @Override

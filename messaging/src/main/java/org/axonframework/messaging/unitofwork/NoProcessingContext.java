@@ -93,6 +93,11 @@ public class NoProcessingContext implements ProcessingContext {
     }
 
     @Override
+    public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+        return this;
+    }
+
+    @Override
     public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         throw new IllegalArgumentException("Cannot put resources in this ProcessingContext");
     }
