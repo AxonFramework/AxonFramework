@@ -24,23 +24,25 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
+import org.axonframework.messaging.SimpleEntry;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 /**
  * A tracking-specific {@link Entry} implementation, combining an {@link EventMessage} and {@link TrackingToken}.
  * <p>
- * The {@code token} refers to the position of the given {@code message} in the {@link MessageStream} it originates from.
+ * The {@code token} refers to the position of the given {@code message} in the {@link MessageStream} it originates
+ * from.
  *
  * @param <E> The type of {@link EventMessage} contained in this entry.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class TrackedEntry<E extends EventMessage<?>> implements Entry<E> {
+public class TrackedEntry<E extends EventMessage<?>> implements Entry<E> {
+    // TODO look into JDK9 modularity to ensure TrackedEntry is not exposed outside AF
+    // Class ia made public since the inmemory package needs to access it to construct entries
 
     private final E event;
     private final Context context;
@@ -51,7 +53,8 @@ class TrackedEntry<E extends EventMessage<?>> implements Entry<E> {
      * @param event The {@link EventMessage} contained in this entry.
      * @param token The {@link TrackingToken} defining the position of the given {@code event}.
      */
-    TrackedEntry(E event, TrackingToken token) {
+    public TrackedEntry(@Nonnull E event,
+                        @Nonnull TrackingToken token) {
         this.event = event;
         this.context = new SimpleContext();
         TrackingToken.addToContext(context, token);
@@ -64,9 +67,9 @@ class TrackedEntry<E extends EventMessage<?>> implements Entry<E> {
 
     @Override
     public <RM extends Message<?>> Entry<RM> map(@Nonnull Function<E, RM> mapper) {
-        Entry<RM> mappedMessageEntry = MessageStream.entryFor(mapper.apply(event));
-        mappedMessageEntry.putAll(context);
-        return mappedMessageEntry;
+        Context contextCopy = new SimpleContext();
+        contextCopy.putAll(context);
+        return new SimpleEntry<>(mapper.apply(event), contextCopy);
     }
 
     @Override
@@ -80,38 +83,14 @@ class TrackedEntry<E extends EventMessage<?>> implements Entry<E> {
     }
 
     @Override
-    public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-        return this.context.putResource(key, resource);
+    public <T> Context withResource(@Nonnull ResourceKey<T> key,
+                                    @Nonnull T resource) {
+        return this.context.withResource(key, resource);
     }
 
     @Override
     public void putAll(@Nonnull Context context) {
         this.context.putAll(context);
-    }
-
-    @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
-        return this.context.updateResource(key, resourceUpdater);
-    }
-
-    @Override
-    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-        return this.context.putResourceIfAbsent(key, resource);
-    }
-
-    @Override
-    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
-        return this.context.computeResourceIfAbsent(key, resourceSupplier);
-    }
-
-    @Override
-    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
-        return this.context.removeResource(key);
-    }
-
-    @Override
-    public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
-        return this.context.removeResource(key, expectedResource);
     }
 
     @Override

@@ -22,10 +22,7 @@ import org.axonframework.common.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Queue;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -418,7 +415,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
 
         @Override
         public void putAll(@Nonnull Context context) {
-            this.context.putAll(context);
+            this.resources.putAll(context.asMap());
         }
 
         @Override
@@ -463,7 +460,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
 
         @Override
         public Map<ResourceKey<?>, ?> asMap() {
-            return this.context.asMap();
+            return new HashMap<>(resources);
         }
 
         @Override

@@ -41,8 +41,8 @@ public interface TrackingToken {
      * @param context The {@link Context} to add the given {@code token} to.
      * @param token   The {@link TrackingToken} to add to the given {@code context} using the {@link #RESOURCE_KEY}.
      */
-    static void addToContext(Context context, TrackingToken token) {
-        context.putResource(RESOURCE_KEY, token);
+    static Context addToContext(Context context, TrackingToken token) {
+        return context.withResource(RESOURCE_KEY, token);
     }
 
     /**
