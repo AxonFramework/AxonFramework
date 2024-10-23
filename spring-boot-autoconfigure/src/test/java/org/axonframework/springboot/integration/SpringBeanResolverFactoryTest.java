@@ -111,7 +111,7 @@ class SpringBeanResolverFactoryTest {
             CompletableFuture<Message<Void>> result =
                     new AnnotationEventHandlerAdapter(bean, parameterResolver)
                             .handle(EVENT_MESSAGE, processingContext)
-                            .asCompletableFuture()
+                            .firstAsCompletableFuture()
                             .thenApply(Entry::message);
             assertTrue(result.isCompletedExceptionally());
             assertThrows(FixtureExecutionException.class, () -> {
@@ -147,7 +147,7 @@ class SpringBeanResolverFactoryTest {
             CompletableFuture<Message<Void>> result =
                     new AnnotationEventHandlerAdapter(bean, parameterResolver)
                             .handle(EVENT_MESSAGE, processingContext)
-                            .asCompletableFuture()
+                            .firstAsCompletableFuture()
                             .thenApply(Entry::message);
             assertTrue(result.isCompletedExceptionally());
             assertThrows(FixtureExecutionException.class, () -> {
@@ -209,7 +209,7 @@ class SpringBeanResolverFactoryTest {
 
             // Spring dependency resolution will resolve at time of execution
             CompletableFuture<Message<Void>> result = adapter.handle(EVENT_MESSAGE, processingContext)
-                                                             .asCompletableFuture()
+                                                             .firstAsCompletableFuture()
                                                              .thenApply(Entry::message);
             assertTrue(result.isCompletedExceptionally());
             assertThrows(NoUniqueBeanDefinitionException.class, () -> {

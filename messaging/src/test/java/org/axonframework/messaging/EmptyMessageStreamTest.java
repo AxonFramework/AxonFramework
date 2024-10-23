@@ -62,7 +62,7 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
                                                                               invoked.set(true);
                                                                               return MessageStream.empty();
                                                                           })
-                                                                   .asCompletableFuture();
+                                                                   .firstAsCompletableFuture();
         assertTrue(result.isDone());
         assertNull(result.join());
         assertFalse(invoked.get());
@@ -76,7 +76,7 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
                                                         .whenComplete(() -> {
                                                             throw expected;
                                                         })
-                                                        .asCompletableFuture()
+                                                        .firstAsCompletableFuture()
                                                         .thenApply(Entry::message);
 
         assertTrue(result.isCompletedExceptionally());

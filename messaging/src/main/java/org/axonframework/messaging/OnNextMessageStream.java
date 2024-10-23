@@ -53,8 +53,8 @@ class OnNextMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public CompletableFuture<Entry<M>> asCompletableFuture() {
-        return delegate.asCompletableFuture()
+    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
+        return delegate.firstAsCompletableFuture()
                        .thenApply(message -> {
                            onNext.accept(message);
                            return message;

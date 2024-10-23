@@ -54,10 +54,10 @@ class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStrea
     }
 
     @Override
-    public CompletableFuture<Entry<M>> asCompletableFuture() {
-        return delegate.asCompletableFuture()
+    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
+        return delegate.firstAsCompletableFuture()
                        .exceptionallyCompose(exception -> onError.apply(exception)
-                                                                 .asCompletableFuture());
+                                                                 .firstAsCompletableFuture());
     }
 
     @Override

@@ -108,7 +108,7 @@ public class SimpleCommandBus implements CommandBus {
         AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork(command.getIdentifier(), worker);
         processingLifecycleHandlerRegistrars.forEach(it -> it.registerHandlers(unitOfWork));
 
-        var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).asCompletableFuture());
+        var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).firstAsCompletableFuture());
         if (logger.isDebugEnabled()) {
             result = result.whenComplete((r, e) -> {
                 if (e == null) {

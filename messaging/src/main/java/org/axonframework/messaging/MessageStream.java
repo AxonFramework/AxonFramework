@@ -221,7 +221,7 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Returns a {@link CompletableFuture} that completes with the first {@link Entry entry} contained in this
+     * Returns a {@link CompletableFuture} that completes with the <b>first</b> {@link Entry entry} contained in this
      * {@link MessageStream}, or exceptionally if the stream completes with an error before returning any entries.
      * <p>
      * If the stream completes successfully before returning any entries, the {@code CompletableFuture} completes with a
@@ -230,7 +230,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return A {@link CompletableFuture} that completes with the first {@link Entry entry}, {@code null} if it is
      * empty, or exceptionally if the {@link MessageStream stream} propagates an error.
      */
-    CompletableFuture<Entry<M>> asCompletableFuture();
+    CompletableFuture<Entry<M>> firstAsCompletableFuture();
 
     /**
      * Creates a {@link Flux} that consumes the {@link Entry entries} from this {@link MessageStream stream}.

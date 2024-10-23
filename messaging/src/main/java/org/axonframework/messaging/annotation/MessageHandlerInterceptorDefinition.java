@@ -122,7 +122,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
             return MessageStream.fromFutureEntry(
                     chain.proceed(message, processingContext)
                          .map(r -> (Entry<Message<?>>) r)
-                         .asCompletableFuture()
+                         .firstAsCompletableFuture()
                          .exceptionallyCompose(error -> {
                              if (expectedResultType.isInstance(error)) {
                                  return CompletableFuture.failedFuture(error);
@@ -134,7 +134,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                                          if (super.canHandle(message, pc)) {
                                              return super.handle(message, pc, target)
                                                          .map(r -> (Entry<Message<?>>) r)
-                                                         .asCompletableFuture();
+                                                         .firstAsCompletableFuture();
                                          }
                                          return CompletableFuture.failedFuture(error);
                                      });

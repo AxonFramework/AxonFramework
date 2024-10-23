@@ -52,9 +52,9 @@ class MappedMessageStream<M extends Message<?>, RM extends Message<?>> implement
     }
 
     @Override
-    public CompletableFuture<Entry<RM>> asCompletableFuture() {
+    public CompletableFuture<Entry<RM>> firstAsCompletableFuture() {
         // CompletableFuture doesn't support empty completions, so null is used as placeholder
-        return delegate.asCompletableFuture()
+        return delegate.firstAsCompletableFuture()
                        .thenApply(entry -> entry == null ? null : mapper.apply(entry));
     }
 

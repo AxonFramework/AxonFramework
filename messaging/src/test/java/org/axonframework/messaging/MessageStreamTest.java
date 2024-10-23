@@ -77,7 +77,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     void shouldEmitOriginalExceptionAsFailure() {
         MessageStream<M> testSubject = failingTestSubject(List.of(), new MockException());
 
-        CompletableFuture<Entry<M>> actual = testSubject.asCompletableFuture();
+        CompletableFuture<Entry<M>> actual = testSubject.firstAsCompletableFuture();
 
         assertTrue(actual.isCompletedExceptionally());
         assertInstanceOf(MockException.class, actual.exceptionNow());
@@ -87,7 +87,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     void shouldCompleteWithNullOnEmptyList() {
         MessageStream<M> testSubject = testSubject(Collections.emptyList());
 
-        CompletableFuture<Entry<M>> actual = testSubject.asCompletableFuture();
+        CompletableFuture<Entry<M>> actual = testSubject.firstAsCompletableFuture();
 
         assertNull(actual.resultNow());
     }
@@ -100,7 +100,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = testSubject(List.of(in));
 
         var actual = testSubject.map(entry -> entry.map(input -> out))
-                                .asCompletableFuture()
+                                .firstAsCompletableFuture()
                                 .join()
                                 .message();
 
@@ -115,7 +115,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = testSubject(List.of(in));
 
         var actual = testSubject.mapMessage(input -> out)
-                                .asCompletableFuture()
+                                .firstAsCompletableFuture()
                                 .join()
                                 .message();
 
@@ -216,7 +216,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                     return entry;
                 });
 
-        Entry<M> actual = testSubject.asCompletableFuture().join();
+        Entry<M> actual = testSubject.firstAsCompletableFuture().join();
 
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
         assertNull(actual, "Expected null value from empty stream");
@@ -232,7 +232,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                     return message;
                 });
 
-        Entry<M> actual = testSubject.asCompletableFuture().join();
+        Entry<M> actual = testSubject.firstAsCompletableFuture().join();
 
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
         assertNull(actual, "Expected null value from empty stream");
@@ -278,7 +278,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                     return entry;
                 });
 
-        assertTrue(testSubject.asCompletableFuture().isCompletedExceptionally());
+        assertTrue(testSubject.firstAsCompletableFuture().isCompletedExceptionally());
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
 
@@ -292,7 +292,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                     return message;
                 });
 
-        assertTrue(testSubject.asCompletableFuture().isCompletedExceptionally());
+        assertTrue(testSubject.firstAsCompletableFuture().isCompletedExceptionally());
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
 
@@ -381,7 +381,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = testSubject(List.of(expected));
 
         CompletableFuture<Entry<M>> result = testSubject.onNext(entry -> invoked.set(true))
-                                                        .asCompletableFuture();
+                                                        .firstAsCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join().message());
         assertTrue(invoked.get());
@@ -414,7 +414,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                                assertEquals(expectedError, FutureUtils.unwrap(error));
                                return onErrorStream;
                            })
-                           .asCompletableFuture();
+                           .firstAsCompletableFuture();
 
         assertTrue(result.isDone());
         assertEquals(expected, result.join().message());
@@ -447,7 +447,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> firstStream = testSubject(List.of(expected));
 
         CompletableFuture<Entry<M>> result = firstStream.concatWith(secondStream)
-                                                        .asCompletableFuture();
+                                                        .firstAsCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join().message());
     }
@@ -460,7 +460,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> firstStream = testSubject(List.of());
 
         CompletableFuture<Entry<M>> result = firstStream.concatWith(secondStream)
-                                                        .asCompletableFuture();
+                                                        .firstAsCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join().message());
     }
@@ -486,7 +486,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = testSubject(List.of());
 
         testSubject.whenComplete(() -> invoked.set(true))
-                   .asCompletableFuture()
+                   .firstAsCompletableFuture()
                    .join();
 
         assertTrue(invoked.get());
@@ -500,7 +500,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = failingTestSubject(List.of(), expected);
 
         CompletableFuture<Entry<M>> result = testSubject.whenComplete(() -> invoked.set(true))
-                                                        .asCompletableFuture();
+                                                        .firstAsCompletableFuture();
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());
         assertFalse(invoked.get());
@@ -539,7 +539,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         CompletableFuture<Entry<M>> result = testSubject.whenComplete(() -> {
                                                             throw expected;
                                                         })
-                                                        .asCompletableFuture();
+                                                        .firstAsCompletableFuture();
 
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());

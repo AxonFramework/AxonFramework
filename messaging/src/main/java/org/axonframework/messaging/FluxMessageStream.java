@@ -46,7 +46,7 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public CompletableFuture<Entry<M>> asCompletableFuture() {
+    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
         return source.singleOrEmpty().toFuture();
     }
 

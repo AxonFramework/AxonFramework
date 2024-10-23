@@ -69,8 +69,8 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
     }
 
     @Override
-    public CompletableFuture<Entry<M>> asCompletableFuture() {
-        return delegate.thenCompose(MessageStream::asCompletableFuture);
+    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
+        return delegate.thenCompose(MessageStream::firstAsCompletableFuture);
     }
 
     @Override
