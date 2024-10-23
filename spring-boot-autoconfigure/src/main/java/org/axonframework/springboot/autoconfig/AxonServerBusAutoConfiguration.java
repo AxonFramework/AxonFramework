@@ -43,7 +43,6 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
-import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -126,6 +125,7 @@ public class AxonServerBusAutoConfiguration {
                                  .priorityCalculator(priorityCalculator)
                                  .targetContextResolver(targetContextResolver)
                                  .spanFactory(axonConfiguration.getComponent(QueryBusSpanFactory.class))
+                                 .localSegmentShortCut(true)
                                  .build();
     }
 
