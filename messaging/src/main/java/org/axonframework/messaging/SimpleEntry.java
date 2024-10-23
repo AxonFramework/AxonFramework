@@ -23,8 +23,6 @@ import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -70,32 +68,7 @@ record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context c
     }
 
     @Override
-    public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-        return this.context.putResource(key, resource);
-    }
-
-    @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
-        return this.context.updateResource(key, resourceUpdater);
-    }
-
-    @Override
-    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-        return this.context.putResourceIfAbsent(key, resource);
-    }
-
-    @Override
-    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
-        return this.context.computeResourceIfAbsent(key, resourceSupplier);
-    }
-
-    @Override
-    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
-        return this.context.removeResource(key);
-    }
-
-    @Override
-    public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
-        return this.context.removeResource(key, expectedResource);
+    public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+        return this.context.withResource(key, resource);
     }
 }

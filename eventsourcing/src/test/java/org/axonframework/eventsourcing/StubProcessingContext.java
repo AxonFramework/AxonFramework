@@ -17,8 +17,10 @@
 package org.axonframework.eventsourcing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -81,6 +83,11 @@ public class StubProcessingContext implements ProcessingContext {
     public <T> T getResource(@Nonnull ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.get(key);
+    }
+
+    @Override
+    public <T> Context withResource(@NotNull Context.ResourceKey<T> key, @NotNull T resource) {
+        return branchedWithResource(key, resource);
     }
 
     @Override

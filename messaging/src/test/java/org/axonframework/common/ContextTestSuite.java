@@ -19,20 +19,18 @@ package org.axonframework.common;
 import org.axonframework.common.Context.ResourceKey;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test suite validating implementation of the {@link Context}.
+ * Test suite validating implementations of the {@link Context}.
  *
  * @param <C> The {@link Context} implementation under test.
  * @author Steven van Beelen
  */
 public abstract class ContextTestSuite<C extends Context> {
 
-    private static final String EXPECTED_RESOURCE_VALUE = "testContext";
-    private static final ResourceKey<String> TEST_RESOURCE_KEY = ResourceKey.create(EXPECTED_RESOURCE_VALUE);
+    protected static final String EXPECTED_RESOURCE_VALUE = "testContext";
+    protected static final ResourceKey<String> TEST_RESOURCE_KEY = ResourceKey.create(EXPECTED_RESOURCE_VALUE);
 
     /**
      * Build a test subject of type {@code C} for this suite.
@@ -47,7 +45,8 @@ public abstract class ContextTestSuite<C extends Context> {
 
         assertFalse(testSubject.containsResource(TEST_RESOURCE_KEY));
 
-        testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
+        //noinspection unchecked
+        testSubject = (C) testSubject.withResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
 
         assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
     }
@@ -58,170 +57,33 @@ public abstract class ContextTestSuite<C extends Context> {
 
         assertNull(testSubject.getResource(TEST_RESOURCE_KEY));
 
-        testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
+        //noinspection unchecked
+        testSubject = (C) testSubject.withResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
 
         assertEquals(EXPECTED_RESOURCE_VALUE, testSubject.getResource(TEST_RESOURCE_KEY));
     }
 
     @Test
-    void putResourceAddsResources() {
-        C testSubject = testSubject();
-
-        testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
-
-        assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
-        assertEquals(EXPECTED_RESOURCE_VALUE, testSubject.getResource(TEST_RESOURCE_KEY));
-    }
-
-    @Test
-    void updateResourceInsertsResourcesForNonExistingResource() {
-        AtomicBoolean invoked = new AtomicBoolean(false);
+    void withResourceReturnsNewContextInstanceWithTheExpectedResources() {
+        String expectedResourceValueTwo = "resourceTwo";
+        ResourceKey<String> testResourceKeyTwo = ResourceKey.create(expectedResourceValueTwo);
 
         C testSubject = testSubject();
 
-        assertFalse(testSubject.containsResource(TEST_RESOURCE_KEY));
-
-        String result = testSubject.updateResource(TEST_RESOURCE_KEY, resource -> {
-            invoked.set(true);
-            return EXPECTED_RESOURCE_VALUE;
-        });
-
-        assertEquals(EXPECTED_RESOURCE_VALUE, result);
-        assertTrue(invoked.get());
-    }
-
-    @Test
-    void updateResourceUpdatesResources() {
-        AtomicBoolean invoked = new AtomicBoolean(false);
-
-        C testSubject = testSubject();
-        testSubject.putResource(TEST_RESOURCE_KEY, "previousResource");
-
-        String result = testSubject.updateResource(TEST_RESOURCE_KEY, resource -> {
-            invoked.set(true);
-            return EXPECTED_RESOURCE_VALUE;
-        });
-
-        assertNotEquals("previousResource", result);
-        assertEquals(EXPECTED_RESOURCE_VALUE, result);
-        assertTrue(invoked.get());
-    }
-
-    @Test
-    void updateResourceRemovesResourcesWhenMappingResultsInNull() {
-        AtomicBoolean invoked = new AtomicBoolean(false);
-
-        C testSubject = testSubject();
-        testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
-
-        String result = testSubject.updateResource(TEST_RESOURCE_KEY, resource -> {
-            invoked.set(true);
-            return null;
-        });
-
-        assertNull(result);
         assertNull(testSubject.getResource(TEST_RESOURCE_KEY));
-        assertTrue(invoked.get());
-    }
 
-    @Test
-    void putResourceIfAbsentDoesNothingWhenResourceAlreadyExists() {
-        String unusedResourceValue = "someOtherValue";
+        //noinspection unchecked
+        C resultOne = (C) testSubject.withResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
 
-        C testSubject = testSubject();
+        assertNotEquals(testSubject, resultOne);
+        assertEquals(EXPECTED_RESOURCE_VALUE, resultOne.getResource(TEST_RESOURCE_KEY));
 
-        testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
-        testSubject.putResourceIfAbsent(TEST_RESOURCE_KEY, unusedResourceValue);
+        //noinspection unchecked
+        C resultTwo = (C) resultOne.withResource(testResourceKeyTwo, expectedResourceValueTwo);
 
-        assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
-        assertNotEquals(unusedResourceValue, testSubject.getResource(TEST_RESOURCE_KEY));
-        assertEquals(EXPECTED_RESOURCE_VALUE, testSubject.getResource(TEST_RESOURCE_KEY));
-    }
-
-    @Test
-    void putResourceIfAbsentAddsResource() {
-        C testSubject = testSubject();
-
-        assertFalse(testSubject.containsResource(TEST_RESOURCE_KEY));
-
-        testSubject.putResourceIfAbsent(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
-
-        assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
-        assertEquals(EXPECTED_RESOURCE_VALUE, testSubject.getResource(TEST_RESOURCE_KEY));
-    }
-
-    @Test
-    void computeResourceIfAbsentDoesNothingWhenResourceAlreadyExists() {
-        String unusedResourceValue = "someOtherValue";
-        AtomicBoolean invoked = new AtomicBoolean(false);
-
-        C testSubject = testSubject();
-
-        testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
-
-        testSubject.computeResourceIfAbsent(TEST_RESOURCE_KEY, () -> {
-            invoked.set(true);
-            return unusedResourceValue;
-        });
-
-        assertFalse(invoked.get());
-        assertNotEquals(unusedResourceValue, testSubject.getResource(TEST_RESOURCE_KEY));
-        assertEquals(EXPECTED_RESOURCE_VALUE, testSubject.getResource(TEST_RESOURCE_KEY));
-    }
-
-    @Test
-    void computeResourceIfAbsentAddsResource() {
-        AtomicBoolean invoked = new AtomicBoolean(false);
-
-        C testSubject = testSubject();
-
-        assertFalse(testSubject.containsResource(TEST_RESOURCE_KEY));
-
-        testSubject.computeResourceIfAbsent(TEST_RESOURCE_KEY, () -> {
-            invoked.set(true);
-            return EXPECTED_RESOURCE_VALUE;
-        });
-
-        assertTrue(invoked.get());
-        assertEquals(EXPECTED_RESOURCE_VALUE, testSubject.getResource(TEST_RESOURCE_KEY));
-    }
-
-    @Test
-    void removeResourceRemovesResources() {
-        C testSubject = testSubject();
-
-        testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
-
-        assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
-
-        testSubject.removeResource(TEST_RESOURCE_KEY);
-
-        assertFalse(testSubject.containsResource(TEST_RESOURCE_KEY));
-    }
-
-    @Test
-    void removeMatchingValueResourceRemovesMatchingResource() {
-        C testSubject = testSubject();
-
-        testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
-
-        assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
-
-        testSubject.removeResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
-
-        assertFalse(testSubject.containsResource(TEST_RESOURCE_KEY));
-    }
-
-    @Test
-    void removeMatchingValueResourceRemovesNothingWhenNoResourceMatches() {
-        C testSubject = testSubject();
-
-        testSubject.putResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
-
-        assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
-
-        testSubject.removeResource(TEST_RESOURCE_KEY, "noneMatchingValue");
-
-        assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
+        assertNotEquals(testSubject, resultTwo);
+        assertNotEquals(resultOne, resultTwo);
+        assertEquals(EXPECTED_RESOURCE_VALUE, resultTwo.getResource(TEST_RESOURCE_KEY));
+        assertEquals(expectedResourceValueTwo, resultTwo.getResource(testResourceKeyTwo));
     }
 }

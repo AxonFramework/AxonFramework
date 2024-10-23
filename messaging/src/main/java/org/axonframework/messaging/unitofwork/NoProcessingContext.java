@@ -18,6 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.Context;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -87,6 +88,11 @@ public class NoProcessingContext implements ProcessingContext {
     @Override
     public <T> T getResource(@Nonnull ResourceKey<T> key) {
         return null;
+    }
+
+    @Override
+    public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+        return this;
     }
 
     @Override

@@ -17,6 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,7 +39,6 @@ import java.util.function.UnaryOperator;
 public class ResourceOverridingProcessingContext<R> implements ProcessingContext {
 
     private final ProcessingContext delegate;
-
     private final ResourceKey<R> key;
     private final AtomicReference<R> resource;
 
@@ -50,7 +50,8 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
      *                 {@link ProcessingContext}.
      * @param resource The resource of type {@code R} that's overridden with the given {@code key}.
      */
-    public ResourceOverridingProcessingContext(ProcessingContext delegate, ResourceKey<R> key, R resource) {
+    public ResourceOverridingProcessingContext(@Nonnull ProcessingContext delegate,
+                                               @Nonnull ResourceKey<R> key, R resource) {
         this.delegate = delegate;
         this.key = key;
         this.resource = new AtomicReference<>(resource);
@@ -173,7 +174,14 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+    public <T> Context withResource(@Nonnull ResourceKey<T> key,
+                                    @Nonnull T resource) {
+        return new ResourceOverridingProcessingContext<>(this, key, resource);
+    }
+
+    @Override
+    public <T> T putResource(@Nonnull ResourceKey<T> key,
+                             @Nonnull T resource) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? (T) this.resource.getAndSet((R) resource)
@@ -181,7 +189,8 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key,
+                                @Nonnull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? (T) resource.updateAndGet((UnaryOperator<R>) resourceUpdater)
@@ -189,7 +198,8 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                         @Nonnull Supplier<T> resourceSupplier) {
         if (this.key.equals(key)) {
             //noinspection unchecked
             return (T) resource.updateAndGet(current -> current == null ? (R) resourceSupplier.get() : current);
@@ -198,7 +208,8 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                     @Nonnull T resource) {
         if (this.key.equals(key)) {
             //noinspection unchecked
             return (T) this.resource.getAndUpdate(current -> current == null ? (R) resource : current);
@@ -216,7 +227,8 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
+    public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
+                                      @Nonnull T expectedResource) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? resource.compareAndSet((R) expectedResource, null)
