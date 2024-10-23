@@ -153,7 +153,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     private final String context;
     private final QueryBusSpanFactory spanFactory;
 
-    private final Set<String> queryHandlersNames = new CopyOnWriteArraySet<>();
+    private final Set<String> queryHandlerNames = new CopyOnWriteArraySet<>();
     private final boolean localSegmentShortCut;
 
     /**
@@ -252,20 +252,20 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                            .queryChannel()
                                            .registerQueryHandler(localSegmentAdapter, queryDefinition);
 
-        queryHandlersNames.add(queryName);
+        queryHandlerNames.add(queryName);
         return new AxonServerRegistration(() -> unsubscribe(queryName, localRegistration), serverRegistration::cancel);
     }
 
     private boolean unsubscribe(String queryName, Registration localSegmentRegistration) {
         boolean result = localSegmentRegistration.cancel();
         if (result) {
-            queryHandlersNames.remove(queryName);
+            queryHandlerNames.remove(queryName);
         }
         return result;
     }
 
     private <Q, R> boolean shouldRunQueryLocally(QueryMessage<Q, R> queryMessage) {
-        return localSegmentShortCut && queryHandlersNames.contains(queryMessage.getQueryName());
+        return localSegmentShortCut && queryHandlerNames.contains(queryMessage.getQueryName());
     }
 
     private <Q, R> CompletableFuture<QueryResponseMessage<R>> tryToRunQueryLocally(
