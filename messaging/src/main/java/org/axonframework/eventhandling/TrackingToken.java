@@ -30,6 +30,7 @@ import java.util.OptionalLong;
  */
 public interface TrackingToken {
 
+    // TODO Discuss if we see away around having the ResourceKey here, assuming we want the add/from methods to reside here.
     /**
      * The {@link ResourceKey} used whenever a {@link Context} would contain a {@link TrackingToken}.
      */
