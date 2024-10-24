@@ -12,7 +12,7 @@
   <a href="https://www.axoniq.io/"><strong>Learn more at our website »</strong></a>
   <br>
   <br>
-  <a href="https://www.axoniq.io/products/axon-server">Axon Framework</a>
+  <a href="https://www.axoniq.io/products/axon-framework">Axon Framework</a>
   ·
   <a href="https://www.axoniq.io/products/axon-server">Axon Server</a>
   ·
@@ -38,11 +38,11 @@ For Java developers working with microservices, the Axon Framework offers tools 
 We highly recommend all developers to get started by going to the [AxonIQ Documentation Portal](https://docs.axoniq.io/home/), which provides links to our tutorials, guides, and reference documentation.
 
 Furthermore, below are several other helpful resources:
-* [Go to the Axon Framework Github repo](https://github.com/AxonFramework/AxonFramework) to view the source code and follow the project 
-* [Read the tutorial](https://docs.axoniq.io/bikerental-demo/main/) on building a Bike Rental application from scratch
-* [Watch our in-depth video training courses](https://academy.axoniq.io/) in the AxonIQ Academy
-* [Ask questions](https://discuss.axoniq.io/) in our help forum, Discuss.
-* [See additional code samples](https://github.com/AxonIQ/code-samples) in our code samples repository 
+* 👨‍💻 [Go to the Axon Framework Github repo](https://github.com/AxonFramework/AxonFramework) to view the source code and follow the project 
+* 📖 [Read the tutorial](https://docs.axoniq.io/bikerental-demo/main/) on building a Bike Rental application from scratch
+* 📺 [Watch our in-depth video training courses](https://academy.axoniq.io/) in the AxonIQ Academy
+* 🙋 [Ask questions](https://discuss.axoniq.io/) in our help forum, Discuss.
+* ⬇️ [See additional code samples](https://github.com/AxonIQ/code-samples) in our code samples repository 
 
 
 <p><br/></p>
@@ -63,9 +63,10 @@ If you're getting started with the Axon Server, then we recommend that you go to
 
 Furthermore, below are several other helpful resources:
 * ⬇️ [Download the latest release](https://www.axoniq.io/download) of Axon Server. It's free and easy to install and customize
+* 📖 [Read the lateast release notes](https://docs.axoniq.io/axon-server-reference/v2024.1/release-notes/) to see the latest features 
 * 📖 [Read the tutorial](https://docs.axoniq.io/bikerental-demo/main/) on building a Bike Rental application from scratch
-* [Watch our in-depth video training courses](https://academy.axoniq.io/) in the AxonIQ Academy
-* [Ask questions](https://discuss.axoniq.io/) in our help forum, Discuss.
+* 📺 [Watch our in-depth video training courses](https://academy.axoniq.io/) in the AxonIQ Academy
+* 🙋 [Ask questions](https://discuss.axoniq.io/) in our help forum, Discuss
 
 
 
@@ -88,9 +89,8 @@ A good starting point is [AxonIQ Documentation Portal](https://docs.axoniq.io/ho
 </p>
 
 Furthermore, below are several other helpful resources:
-* [Read the tutorial](https://docs.axoniq.io/bikerental-demo/main/) on building a Bike Rental application from scratch.
-* [Watch our in-depth video training courses](https://academy.axoniq.io/)s in the AxonIQ Academy
-* [Ask questions](https://discuss.axoniq.io/) in our help forum, Discuss.
-* [See additional code samples](https://github.com/AxonIQ/code-samples) in our code samples repository 
+* 👨‍💻 [Go to the AxonIQ Console](https://console.axoniq.io/) to try it out for yourself with a FREE account
+* 📖 [Read the Getting Started Guide](https://docs.axoniq.io/bikerental-demo/main/) to learn how to connect the AxonIQ Console to your application
+* 🙋 [Ask questions](https://discuss.axoniq.io/) in our help forum, Discuss
 
 
