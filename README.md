@@ -77,16 +77,18 @@ Furthermore, below are several other helpful resources:
 
 The AxonIQ Console is a management tool designed to maximize the effectiveness of applications developed with Axon Framework and supported through Axon Server. It facilitates near-zero configuration and provides a single platform for insight, management, control, and reporting of your application infrastructure.
 
-## How to Get Started with AxonIQ Console
-
-Numerous resources can help you on your journey in using Axon Framework.
-A good starting point is [AxonIQ Documentation Portal](https://docs.axoniq.io/home/), which provides links to our tutorials, guides, and reference documentation.
 
 <p align="center">
   <a href="https://axoniq.io/">
     <img src="https://docs.axoniq.io/axoniq-console-getting-started/main/ac-monitor-axon-framework-applications/_images/ac-message-dependency-diagram.png" alt="Axon Framework logo" width="600">
   </a>
 </p>
+
+## How to Get Started with AxonIQ Console
+
+Numerous resources can help you on your journey in using Axon Framework.
+A good starting point is [AxonIQ Documentation Portal](https://docs.axoniq.io/home/), which provides links to our tutorials, guides, and reference documentation.
+
 
 Furthermore, below are several other helpful resources:
 * 👨‍💻 [Go to the AxonIQ Console](https://console.axoniq.io/) to try it out for yourself with a FREE account
