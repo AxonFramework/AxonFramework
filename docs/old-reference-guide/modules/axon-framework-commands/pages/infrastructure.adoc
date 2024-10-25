@@ -3,7 +3,7 @@
 Command dispatching, as exemplified in the xref:command-dispatchers.adoc[Dispatching Commands] page, has a number of advantages.
 Firstly, it constructs an object that clearly describes the intent of the client.
 By logging the command, you store both the intent and the related data for future reference.
-Command handling also makes it easy to expose your command processing components to remote clients, via web services for example. 
+Command handling also makes it easy to expose your command processing components to remote clients, via web services for example.
 
 Testing also becomes a lot easier.
 You could define test scripts by just defining the starting situation (given), command to execute (when) and expected results (then) by listing a number of events and commands (see xref:testing:commands-events.adoc[Testing] for more on this).
@@ -29,6 +29,7 @@ You can turn almost any interface into a command gateway using the `CommandGatew
 This allows you to define your application's interface using strong typing and declaring your own (checked) business exceptions.
 Axon will automatically generate an implementation for that interface at runtime.
 
+[#_configuring_the_commandgateway]
 === Configuring the `CommandGateway`
 
 Both your custom Command Gateway and the one provided by Axon need to at least be configured with a Command Bus.
@@ -150,7 +151,7 @@ public class AxonConfig {
 == The command bus - local
 
 The local command bus is the mechanism that dispatches commands to their respective command handlers within an Axon application.
-Suggestions on how to use the `CommandBus` can be found xref:command-dispatchers.adoc#the-command-bus[here].
+Suggestions on how to use the `CommandBus` can be found xref:command-dispatchers.adoc#command-bus[here].
 Several flavors of the command bus, with differing characteristics, exist within the framework.
 
 [[SimpleCommandBus]]
@@ -170,34 +171,36 @@ Since all command processing is done in the same thread, this implementation is 
 The performance of this implementation is good, but not extraordinary.
 To cross JVM boundaries, or to get the most out of your CPU cycles, check out the other `CommandBus` implementations.
 
-==== Axon Configuration API
-
+[tabs]
+====
+Configuration API::
++
+--
 [source,java]
 ----
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureSimpleCommandBus(Configurer configurer) {
-        configurer.configureCommandBus(
-                config -> {
-                    CommandBus commandBus =
-                            SimpleCommandBus.builder()
-                                            .transactionManager(config.getComponent(TransactionManager.class))
-                                            .spanFactory(config.spanFactory())
-                                            .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
-                                            // ...
-                                            .build();
-                    commandBus.registerHandlerInterceptor(
-                            new CorrelationDataInterceptor<>(config.correlationDataProviders())
-                    );
-                return commandBus;
-              }
-        );
+        configurer.configureCommandBus(config -> {
+              CommandBus commandBus = SimpleCommandBus
+                  .builder()
+                  .transactionManager(config.getComponent(TransactionManager.class))
+                  .spanFactory(config.spanFactory())
+                  .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
+                  // ...
+                  .build();
+              commandBus.registerHandlerInterceptor(
+                      new CorrelationDataInterceptor<>(config.correlationDataProviders())
+              );
+              return commandBus;
+        });
     }
 }
 ----
-
-==== Spring Boot auto configuration
-
+--
+Spring Boot::
++
+--
 [source,java]
 ----
 @Configuration
@@ -225,11 +228,13 @@ public class AxonConfig {
     }
 }
 ----
+--
+====
 
 [[AsynchronousCommandBus]]
 === `AsynchronousCommandBus`
 
-As the name suggest, the `AsynchronousCommandBus` implementation executes commands asynchronously from the thread that dispatches them.
+As the name suggests, the `AsynchronousCommandBus` implementation executes commands asynchronously from the thread that dispatches them.
 It uses an `Executor` to perform the actual handling logic on a different Thread.
 
 By default, the `AsynchronousCommandBus` uses an unbounded cached thread pool.
@@ -243,36 +248,38 @@ Note that the `AsynchronousCommandBus` should be shut down when stopping the app
 To shut down, call the `shutdown()` method.
 This will also shut down any provided `Executor` instance, if it implements the `ExecutorService` interface.
 
-==== Axon Configuration API
-
+[tabs]
+====
+Configuration API::
++
+--
 [source,java]
 ----
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureAsynchronousCommandBus(Configurer configurer) {
-      configurer.configureCommandBus(
-              config -> {
-                CommandBus commandBus =
-                        AsynchronousCommandBus.builder()
-                                              .transactionManager(config.getComponent(TransactionManager.class))
-                                              .spanFactory(config.spanFactory())
-                                              .messageMonitor(config.messageMonitor(
-                                                      AsynchronousCommandBus.class, "commandBus"
-                                              ))
-                                              // ...
-                                              .build();
-                commandBus.registerHandlerInterceptor(
-                        new CorrelationDataInterceptor<>(config.correlationDataProviders())
-                );
-                return commandBus;
-              }
-      );
+        configurer.configureCommandBus(config -> {
+            CommandBus commandBus = AsynchronousCommandBus
+                .builder()
+                .transactionManager(config.getComponent(TransactionManager.class))
+                .spanFactory(config.spanFactory())
+                .messageMonitor(config.messageMonitor(
+                    AsynchronousCommandBus.class, "commandBus"
+                ))
+                // ...
+                .build();
+            commandBus.registerHandlerInterceptor(
+                    new CorrelationDataInterceptor<>(config.correlationDataProviders())
+            );
+            return commandBus;
+        });
     }
 }
 ----
-
-==== Spring Boot auto configuration
-
+--
+Spring Boot::
++
+--
 [source,java]
 ----
 @Configuration
@@ -282,12 +289,13 @@ public class AxonConfig {
     public CommandBus asynchronousCommandBus(TransactionManager transactionManager,
                                              GlobalMetricRegistry metricRegistry,
                                              SpanFactory spanFactory) {
-        return AsynchronousCommandBus.builder()
-                                     .transactionManager(transactionManager)
-                                     .messageMonitor(metricRegistry.registerCommandBus("commandBus"))
-                                     .spanFactory(spanFactory)
-                                     // ...
-                                     .build();
+        return AsynchronousCommandBus
+            .builder()
+            .transactionManager(transactionManager)
+            .messageMonitor(metricRegistry.registerCommandBus("commandBus"))
+            .spanFactory(spanFactory)
+            // ...
+            .build();
     }
     
     @Bean
@@ -300,6 +308,8 @@ public class AxonConfig {
     }
 }
 ----
+--
+====
 
 [[DisruptorCommandBus]]
 === `DisruptorCommandBus`
@@ -376,7 +386,11 @@ Optionally, you can provide a `DisruptorConfiguration` instance, which allows yo
  When a serializer is configured, the `DisruptorCommandBus` will wrap all generated events in a `SerializationAware` message.
  The serialized form of the payload and metadata is attached before they are published to the Event Store.
 
-==== Axon Configuration API
+[tabs]
+====
+Configuration API::
++
+--
 
 [source,java]
 ----
@@ -384,22 +398,26 @@ public class AxonConfig {
     // omitting other configuration methods...
     public void configureDisruptorCommandBus(Configurer configurer) {
         configurer.configureCommandBus(config -> {
-            CommandBus commandBus = DisruptorCommandBus.builder()
-                                                       .transactionManager(config.getComponent(TransactionManager.class))
-                                                       .messageMonitor(config.messageMonitor(
-                                                               DisruptorCommandBus.class, "commandBus"
-                                                       ))
-                                                       .bufferSize(4096)
-                                                       // ...
-                                                       .build();
+            CommandBus commandBus = DisruptorCommandBus
+                .builder()
+                    .transactionManager(config.getComponent(TransactionManager.class))
+                    .messageMonitor(config.messageMonitor(
+                            DisruptorCommandBus.class, "commandBus"
+                    ))
+                    .bufferSize(4096)
+                    // ...
+                    .build();
             commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
             return commandBus;
         });
     }
 }
 ----
+--
 
-==== Spring Boot auto configuration
+Spring Boot::
++
+--
 
 [source,java]
 ----
@@ -409,24 +427,27 @@ public class AxonConfig {
     @Bean
     public CommandBus disruptorCommandBus(TransactionManager transactionManager,
                                           GlobalMetricRegistry metricRegistry) {
-        return DisruptorCommandBus.builder()
-                                  .transactionManager(transactionManager)
-                                  .messageMonitor(metricRegistry.registerCommandBus("commandBus"))
-                                  .bufferSize(4096)
-                                  // ...
-                                  .build();
+        return DisruptorCommandBus
+            .builder()
+            .transactionManager(transactionManager)
+            .messageMonitor(metricRegistry.registerCommandBus("commandBus"))
+            .bufferSize(4096)
+            // ...
+            .build();
     }
 
     @Bean
     public ConfigurerModule commandBusCorrelationConfigurerModule() {
-        return configurer -> configurer.onInitialize(
-                  config -> config.commandBus().registerHandlerInterceptor(
-                            new CorrelationDataInterceptor<>(config.correlationDataProviders())
-                  )
+        return configurer -> configurer.onInitialize(config -> config
+            .commandBus().registerHandlerInterceptor(
+                new CorrelationDataInterceptor<>(config.correlationDataProviders())
+            )
         );
     }
 }
 ----
+--
+====
 
 [[the-command-bus-distributed]]
 == The command bus - distributed
@@ -461,7 +482,7 @@ The configuration changes slightly per distributed implementation and as such wi
 [[routing-strategy]]
 === Routing strategy
 
-Commands should be link:../../architecture-overview/index.adoc#explicit-messaging[routed consistently] to the same application, especially those targeted towards a specific Aggregate.
+Commands should be routed consistently to the same application, especially those targeted towards a specific Aggregate.
 This ensures a single instance is in charge of the targeted aggregate, resolving the concurrent access issue and allowing for optimization like caching to work as designed.
 The component dealing with the consistent routing in an Axon application is the `RoutingStrategy`.
 
@@ -484,8 +505,11 @@ The `AnnotationRoutingStrategy` and `MetaDataRoutingStrategy` are considered the
 The `ERROR`, `RANDOM_KEY` and `STATIC_KEY` are _fallback routing strategies_ that should be configured on the annotation or meta-data implementations.
 To get a grasp how these are constructed, consider the following sample:
 
-[[AnnotationRoutingStrategy]]
-==== `AnnotationRoutingStrategy`
+[tabs]
+====
+`AnnotationRoutingStrategy`::
++
+--
 
 [source,java]
 ----
@@ -496,34 +520,44 @@ To get a grasp how these are constructed, consider the following sample:
 public class AxonConfig {
     // omitting other configuration methods...
     public RoutingStrategy routingStrategy() {
-      return AnnotationRoutingStrategy.builder()
-                                      .annotationType(CustomRoutingAnnotation.class)
-                                      .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.STATIC_KEY)
-                                      .build();
+      return AnnotationRoutingStrategy
+          .builder()
+          .annotationType(CustomRoutingAnnotation.class)
+          .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.STATIC_KEY)
+          .build();
     }
 }
 ----
+--
 
-[[MetaDataRoutingStrategy]]
-==== `MetaDataRoutingStrategy`
+`MetaDataRoutingStrategy`::
++
+--
 
 [source,java]
 ----
 public class AxonConfig {
     // omitting other configuration methods...
     public RoutingStrategy routingStrategy() {
-        return MetaDataRoutingStrategy.builder()
-                                      .metaDataKey("my-routing-key")
-                                      .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY)
-                                      .build();
+        return MetaDataRoutingStrategy
+            .builder()
+            .metaDataKey("my-routing-key")
+            .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY)
+            .build();
     }
 }
 ----
+--
+====
 
 Of course, a custom implementation of the `RoutingStrategy` can also be provided when necessary.
 When we need to deviate from the default `AnnotationRoutingStrategy`, we should configure it like so: 
 
-==== Axon Configuration API
+[tabs]
+====
+Configuration API::
++
+--
 
 [source,java]
 ----
@@ -534,9 +568,10 @@ public class AxonConfig {
     }
 }
 ----
-
-==== Spring Boot auto configuration
-
+--
+Spring Boot::
++
+--
 [source,java]
 ----
 @Configuration
@@ -548,6 +583,8 @@ public class AxonConfig {
     }
 }
 ----
+--
+====
 
 [[AxonServerCommandBus]]
 === `AxonServerCommandBus`
@@ -557,11 +594,15 @@ It connects to link:https://www.axoniq.io/products/axon-server[AxonServer,window
 
 As it is the default, configuring it is relatively straightforward:
 
-==== Axon Configuration API
+[tabs]
+====
+Configuration API::
++
+--
 
 Declare dependencies:
 
-[source,text]
+[source,xml]
 ----
 <!-- somewhere in the POM file... -->
 <dependencyManagement>
@@ -605,12 +646,14 @@ public class AxonConfig {
 }
 
 ----
+--
 
-==== Spring Boot auto configuration
-
+Spring Boot::
++
+--
 By simply including the `axon-spring-boot-starter` dependency, Axon will automatically configure the `AxonServerCommandBus`:
 
-[source,text]
+[source,xml]
 ----
 <!--somewhere in the POM file-->
 <dependency>
@@ -619,19 +662,20 @@ By simply including the `axon-spring-boot-starter` dependency, Axon will automat
     <version>${axon.version}</version>
 </dependency>
 ----
+--
+====
 
-____
 
-*Disabling Axon Server*
-
+[NOTE]
+====
+.Disabling Axon Server
 There are two options to disable Axon Framework's default of using the `AxonServerCommandBus`:
 
 . By setting `axon.server.enabled` to `false` when Spring Boot is used.
 . By excluding the `axon-server-connector` dependency.
 
-When doing any of these, Axon will fall back to the *un*distributed <<SimpleCommandBus,`SimpleCommandBus`>>, unless configured otherwise.
-
-____
+When doing any of these, Axon will fall back to the <<SimpleCommandBus,`SimpleCommandBus`>> that dispatches commands in the local instance, unless configured otherwise.
+====
 
 ==== Local segment and load factor configuration
 
@@ -641,24 +685,34 @@ This might be useful if some commands are routed more often towards one instance
 
 The following should be done to configure a custom <<Local segment,local segment>> and/or load factor:
 
-==== Axon Configuration API
+[tabs]
+====
+Configuration API::
++
+--
 
 [source,java]
 ----
 public class AxonConfig {
     // omitting other configuration methods...
-    public CommandBus axonServerCommandBus(CommandBus localSegment,
-                                           CommandLoadFactorProvider loadFactorProvider) {
-        return AxonServerCommandBus.builder()
-                                   .localSegment(localSegment)
-                                   .targetContextResolver(targetContextResolver)
-                                   // All required configuration components are specified in the JavaDoc of the Builder
-                                   .build();
+    public CommandBus axonServerCommandBus(
+        CommandBus localSegment,
+        CommandLoadFactorProvider loadFactorProvider
+    ) {
+        return AxonServerCommandBus
+            .builder()
+            .localSegment(localSegment)
+            .targetContextResolver(targetContextResolver)
+            // All required configuration components are specified in the JavaDoc of the Builder
+            .build();
     }
 }
 ----
+--
 
-==== Spring Boot auto configuration
+Spring Boot::
++
+--
 
 [source,java]
 ----
@@ -668,7 +722,6 @@ public class AxonConfig {
     @Bean
     @Qualifier("localSegment")
     public CommandBus localSegment() {
-        
         return /* construct your local segment */;
     }
     
@@ -678,6 +731,8 @@ public class AxonConfig {
     }
 }
 ----
+--
+====
 
 [[DistributedCommandBus]]
 === `DistributedCommandBus`
@@ -703,9 +758,9 @@ Configuring a distributed command bus can (mostly) be done without any modificat
 The most straightforward approach to this is to include the Spring Boot starter dependency of either the Spring Cloud or JGroups extension.
 With that in place, a single property needs to be added to the application context, to enable the `DistributedCommandBus`:
 
-[source,text]
+[source,properties]
 ----
 axon.distributed.enabled=true
 ----
 
-It is recommended to visit the respective extension pages on how to configure JGroups or Spring Cloud for the `DistributedCommandBus`.
+It is recommended to visit the respective extension pages on how to configure xref:jgroups-extension-reference:ROOT:index.adoc[JGroups] or xref:spring-cloud-extension-reference:ROOT:index.adoc[Spring Cloud] for the `DistributedCommandBus`.

@@ -15,15 +15,16 @@ The query bus is the mechanism that dispatches queries to query handlers. Querie
 [[AxonServerQueryBus]]
 === `AxonServerQueryBus`
 
-Axon provides a query bus out of the box, the `AxonServerQueryBus`. It connects to the AxonServer to send and receive Queries.
+Axon provides a query bus out of the box, the `AxonServerQueryBus`. It connects to the AxonServer to send and receive Queries in a distributed way.
 
-`AxonServerQueryBus` is a 'distributed query bus'. It uses a `SimpleQueryBus` to handle incoming queries on different JVM's by default.
-
-==== Axon Configuration API
-
+[tabs]
+====
+Configuration API::
++
+--
 Declare dependencies:
 
-[source,text]
+[source,xml]
 ----
 <!--somewhere in the POM file-->
 <dependency>
@@ -48,12 +49,14 @@ Configure your application:
 Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
 ----
+--
 
+Spring Boot::
++
+--
+By simply declaring dependency to `axon-spring-boot-starter`, Axon will automatically configure the `AxonServerQueryBus`:
 
-==== Spring Boot auto-configuration
-By simply declaring dependency to `axon-spring-boot-starter`, Axon will automatically configure the Axon Server Query Bus:
-
-[source,text]
+[source,xml]
 ----
 <!--somewhere in the POM file-->
 <dependency>
@@ -62,22 +65,25 @@ By simply declaring dependency to `axon-spring-boot-starter`, Axon will automati
     <version>${axon.version}</version>
 </dependency>
 ----
+--
+====
 
-____
-
-*Excluding the Axon Server Connector*
-
-If you exclude the `axon-server-connector` dependency you will fallback to 'non-axon-server' query bus option, the `SimpleQueryBus` (see below).
-
-____
+[NOTE]
+.Excluding the Axon Server Connector
+====
+If you exclude the `axon-server-connector` dependency you will fall back to the non-AxonServer query bus option, the `SimpleQueryBus` (see below).
+====
 
 [[SimpleQueryBus]]
 === `SimpleQueryBus`
 
 The `SimpleQueryBus` does straightforward processing of queries in the thread that dispatches them. To configure a `SimpleQueryBus` (instead of an `AxonServerQueryBus`):
 
-==== Axon Configuration API
-
+[tabs]
+====
+Configuration API::
++
+--
 [source,java]
 ----
 public class AxonConfig {
@@ -92,9 +98,11 @@ public class AxonConfig {
     }
 }
 ----
+--
 
-
-==== Spring Boot auto-configuration
+Spring Boot::
++
+--
 
 [source,java]
 ----
@@ -116,3 +124,5 @@ public class AxonConfig {
     }
 }
 ----
+--
+====

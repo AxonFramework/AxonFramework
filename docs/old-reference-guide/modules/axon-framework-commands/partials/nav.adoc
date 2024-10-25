@@ -1,14 +1,14 @@
 * xref:axon-framework-commands:index.adoc[]
 
-** Modelling
-*** xref:axon-framework-commands:modeling/aggregate.adoc[]
+** xref:axon-framework-commands:command-handlers.adoc[]
+** xref:axon-framework-commands:command-dispatchers.adoc[]
+** xref:axon-framework-commands:modeling/aggregate.adoc[]
 *** xref:axon-framework-commands:modeling/multi-entity-aggregates.adoc[]
 *** xref:axon-framework-commands:modeling/state-stored-aggregates.adoc[]
 *** xref:axon-framework-commands:modeling/aggregate-creation-from-another-aggregate.adoc[]
 *** xref:axon-framework-commands:modeling/aggregate-polymorphism.adoc[]
 *** xref:axon-framework-commands:modeling/conflict-resolution.adoc[]
 
-** xref:axon-framework-commands:command-dispatchers.adoc[]
-** xref:axon-framework-commands:command-handlers.adoc[]
+
 ** xref:axon-framework-commands:infrastructure.adoc[]
 ** xref:axon-framework-commands:configuration.adoc[]

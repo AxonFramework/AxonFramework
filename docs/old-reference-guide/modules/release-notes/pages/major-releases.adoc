@@ -184,7 +184,7 @@ Furthermore, it required us to duplicate the Javax Persistence and Javax Validat
 In doing so, we provided support for both Javax and Jakarta, as well as Spring Boot 2 and Spring Boot 3.
 
 However, this required us to introduce breaking changes in 4.7 compared to 4.6.
-To help you upgrade towards Axon Framework 4.7, we provide a dedicated link:../../axon-framework/upgrading-to-4-7.md[Upgrading to Axon Framework 4.7] page describing the scenarios you may be in and the steps to take for upgrading.
+To help you upgrade towards Axon Framework 4.7, we provide a dedicated xref:axon-framework-reference::upgrading-to-4-7.adoc[Upgrading to Axon Framework 4.7] page describing the scenarios you may be in and the steps to take for upgrading.
 
 Next to the Javax-to-Jakarta adjustments and the Spring Boot 3 support, we've added an https://github.com/AxonFramework/AxonFramework/pull/2509[Event Scheduler] and https://github.com/AxonFramework/AxonFramework/pull/2499[Deadline Manager] based on https://www.jobrunr.io/[JobRunr].
 
@@ -461,14 +461,14 @@ For an exhaustive list of all adjustments made for release 4.5 you can check out
 * A new type of `EventProcessor` has been introduced in pull request https://github.com/AxonFramework/AxonFramework/pull/1712[#1712], called the `PooledStreamingEventProcessor`.
  This `EventProcessor` allows the same set of operations as the `TrackingEventProcessor`, but uses a different threading approach for handling events and processing operations.
  In all, this solution provides a more straightforward processor implementation and configuration, allowing for enhanced event processing in general.
- For specifics on how to configure it, check out link:../../axon-framework/events/event-processors/streaming.md#pooled-streaming-event-processor[this] section.
+ For specifics on how to configure it, check out xref:axon-framework-reference:events:event-processors/streaming.adoc[this] section.
 
-* Sagas support the use of link:../../axon-framework/deadlines/deadline-managers.md#handling-a-deadline[Deadline Handlers], but an `@DeadlineHandler` annotated method couldn't automatically close a Saga with the `@EndSaga` annotation.
+* Sagas support the use of xref:axon-framework-reference:deadlines:deadline-managers.adoc#_handling_a_deadline[Deadline Handlers], but an `@DeadlineHandler` annotated method couldn't automatically close a Saga with the `@EndSaga` annotation.
  This enhancement has been described in https://github.com/AxonFramework/AxonFramework/issues/1469[#1469] and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1656[#1656].
  As such, as of Axon 4.5, an `@DeadlineHandler` annotated can also be annotated with `@EndSaga`, to automatically close the Saga whenever the given deadline is handled.
 
 * Whenever an application uses snapshots, the point arises that old snapshot versions need to be invalidated when loading an Aggregate.
- To that end the link:../../axon-framework/tuning/event-snapshots.md#filtering-snapshot-events[`SnapshotFilter`] can be configured.
+ To that end the xref:axon-framework-reference:tuning:event-snapshots.adoc#_filtering_snapshot_events[`SnapshotFilter`] can be configured.
  As a simplified solution, the `@Revision` annotation can now be placed on the Aggregate class to automatically configure a revision based `SnapshotFilter`.
  Due to this, old snapshots will be filtered out automatically when an Aggregate is reconstructed from the `EventStore`.
  For those interested, the implementation of this feature can be found https://github.com/AxonFramework/AxonFramework/pull/1657[here].
@@ -506,7 +506,7 @@ For an exhaustive list of all adjustments made for release 4.5 you can check out
  This annotation allows you to introduce a specific bit of logic to be invoked _prior_ to entering the message handling function or after invocation.
  It for example allows the additional introduction of a `@ExceptionHandler` annotation, allowing you to specifically deal with the exceptions thrown from your message handlers.
  The original pull request can be found under https://github.com/AxonFramework/AxonFramework/pull/1394[#1394].
- For more specifics on using this annotation, check ou the link:../../axon-framework/messaging-concepts/message-intercepting.md#messagehandlerinterceptor[@MessageHandlerInterceptor] section.
+ For more specifics on using this annotation, check out the xref:axon-framework-reference:messaging-concepts:message-intercepting.adoc#annotated-MessageHandlerInterceptor[@MessageHandlerInterceptor] section.
 
 * Configuring a `Snapshotter` and `SnapshotFilter` have been simplified in this release.
  Pull request https://github.com/AxonFramework/AxonFramework/pull/1447[#1447] shares the load of allowing for distinct `Snapshotter` configuration.
@@ -530,7 +530,7 @@ For a full list of all the feature request and enhancements done for release 4.4
 * Aggregate Polymorphism has been introduced, allowing for an aggregate hierarchy to come naturally from a domain model.
  To set this up, the `AggregateConfigurer#withSubtypes(Class... aggregates)` method can be used.
  In a Spring environment, an aggregate class hierarchy will be detected automatically.
- For more details on this feature, read up on it link:../../axon-framework/axon-framework-commands/modeling/aggregate-polymorphism.md[here].
+ For more details on this feature, read up on it xref:axon-framework-reference:axon-framework-commands:modeling/aggregate-polymorphism.adoc[here].
 
 * An Axon application will now shutdown more gracefully than it did in the previous releases.
  This is achieved by marking specific methods in Axon's infrastructure components as a `@StartHandler` or `@ShutdownHandler`.
@@ -539,17 +539,17 @@ For a full list of all the feature request and enhancements done for release 4.4
 
 * We have introduced the `@CreationPolicy` annotation which you can add to `@CommandHandler` annotated methods in your aggregate.
  Through this, it is possible to define if such a command handler should 'never', 'always' or 'create' an aggregate 'if-missing'.
- For further explanation read the link:../../axon-framework/axon-framework-commands/command-handlers.md#aggregate-command-handler-creation-policy[Aggregate Command Handler Creation Policy] section.
+ For further explanation read the xref:axon-framework-reference:axon-framework-commands:command-handlers.adoc#_aggregate_command_handler_creation_policy[Aggregate Command Handler Creation Policy] section.
 
 * Both the `XStreamSerializer` and `JacksonSerializer` provide a means to toggle on "lenient serialization" through their builders.
 
 * Various test fixture improvements have been made, such as options to register a `HandlerEnhancerDefinition`, a `ParameterResolverFactory` and a `ListenerInvocationErrorHandler`.
  Additional validations have been added too, revolving around asserting scheduled events and deadline message.
- The link:../../axon-framework/testing/commands-events.md[Test Fixture] page has been updated to define these new operations accordingly.
+ The xref:axon-framework-reference:testing:commands-events.adoc[Test Fixture] page has been updated to define these new operations accordingly.
 
 * The `TrackingEventProcessor#processingStatus` method as of 4.3 exposes more status information.
  The current token position, token-at-reset, is-merging and merge-completed position have been added to the set.
- Read the link:../../axon-framework/monitoring/processors.md#event-tracker-status-a-idevent-tracker-statusa[Event Tracker Status] section for more specifics on this.
+ Read the xref:axon-framework-reference:monitoring:processors.adoc#event-tracker-status[Event Tracker Status] section for more specifics on this.
 
 === _Bug fixes_
 
@@ -570,7 +570,7 @@ For a complete list of all the changes made in 4.3 you can check out https://git
 === _Enhancements_
 
 * Axon Framework applications can now use tags to support a level of 'location awareness' between Axon clients and Axon Server instances.
- This feature is further described link:../../axon-server/administration/tagging.md[here].
+ This feature is further described xref:axon-server-reference::axon-server/administration/tagging.adoc[here].
 
 * Axon Server already supported several contexts, but Axon Framework application could not specify to which context message should be dispatched.
  The Axon Server Connector has been expanded with a `TargetContextResolver` to allow just this.
@@ -589,7 +589,7 @@ For a complete list of all the changes made in 4.3 you can check out https://git
 
 * An Aggregate's `Snapshotter` was not auto configured when Spring Boot is being used, as was filed under https://github.com/AxonFramework/AxonFramework/issues/932[#932].
 
-* The `CommandResultMessage` was returned as `null` when using the link:./[`DisruptorCommandBus`].
+* The `CommandResultMessage` was returned as `null` when using the `DisruptorCommandBus`.
  This was solved in pull request https://github.com/AxonFramework/AxonFramework/pull/1169[#1169].
 
 * The `ScopeDescriptor` used by the `DeadlineManager` had serialization issue when a user would migrate from an Axon 3.x application to Axon 4.x.
