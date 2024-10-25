@@ -121,6 +121,38 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
+     * Create a {@link MessageStream stream} that provides the items of type {@code T} returned by the given
+     * {@code stream}, automatically wrapped in an {@link Entry} with the resulting {@link Message} and {@link Context}
+     * from the {@code messageSupplier} and the {@code contextSupplier} respectively.
+     * <p>
+     * Note that each separate consumer of the stream will receive each message of the given {@code stream}, if the
+     * stream does so.
+     *
+     * @param stream          The {@link Stream} providing the items of type {@code T} to map to a {@link Message} and
+     *                        {@link Context}.
+     * @param messageSupplier A {@link Function} ingesting each item of type {@code T} from the given {@code stream}
+     *                        returning the {@link Message} to set for the {@link Entry} to add in the resulting
+     *                        {@link MessageStream}.
+     * @param contextSupplier A {@link Function} ingesting each item of type {@code T} from the given {@code stream}
+     *                        returning the {@link Context} to set for the {@link Entry} to add in the resulting
+     *                        {@link MessageStream}.
+     * @param <T>             The type of item contained in the given {@code stream} that will be mapped to a
+     *                        {@link Message} and {@link Context} by the {@code messageSupplier} and
+     *                        {@code contextSupplier} respectively.
+     * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A {@link MessageStream stream} of {@link Entry entries} that return the {@link Message Messages}
+     * resulting from the the given {@code messageSupplier} with a {@link Context} provided by the
+     * {@code contextSupplier}.
+     */
+    static <T, M extends Message<?>> MessageStream<M> fromStream(@Nonnull Stream<T> stream,
+                                                                 @Nonnull Function<T, M> messageSupplier,
+                                                                 @Nonnull Function<T, Context> contextSupplier) {
+        return new StreamMessageStream<>(
+                stream.map(item -> new SimpleEntry<>(messageSupplier.apply(item), contextSupplier.apply(item)))
+        );
+    }
+
+    /**
      * Create a {@link MessageStream stream} that provides the {@link Message Messages} returned by the given
      * {@code flux}, automatically wrapped in an {@link Entry}.
      *
