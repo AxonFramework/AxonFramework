@@ -24,8 +24,11 @@ import org.axonframework.eventsourcing.StubProcessingContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -144,12 +147,9 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
         assertNull(initialStreamReference.get().firstAsCompletableFuture().join());
 
         StepVerifier.create(finalStreamReference.get().asFlux())
-                    .assertNext(entry -> assertTrackedAndTagged(entry.message(), expectedEventOne, 0, expectedCriteria))
-                    .assertNext(entry -> assertTrackedAndTagged(entry.message(), expectedEventTwo, 1, expectedCriteria))
-                    .assertNext(entry -> assertTrackedAndTagged(entry.message(),
-                                                                expectedEventThree,
-                                                                2,
-                                                                expectedCriteria))
+                    .assertNext(entry -> assertTrackedAndTagged(entry, expectedEventOne, 0, expectedCriteria))
+                    .assertNext(entry -> assertTrackedAndTagged(entry, expectedEventTwo, 1, expectedCriteria))
+                    .assertNext(entry -> assertTrackedAndTagged(entry, expectedEventThree, 2, expectedCriteria))
                     .verifyComplete();
     }
 
