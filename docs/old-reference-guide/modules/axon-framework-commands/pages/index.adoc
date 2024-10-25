@@ -1,8 +1,10 @@
 = Commands
+:page-aliases: README.adoc
 
-The first type of "Messages" that an Axon application is associated with are _*Command Messages (or simply Commands).*_ This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help facilitate Command Message Development.
+The first type of Message that an Axon application is associated with is the Command Message, or simply Commands.
+These are messages with the intent to change the state of the application in one way or another.
 
-A summary of the various sub-sections is given below.
+This section of the reference guide covers in detail the capabilities that Axon Framework provides for Command messages. A summary of the various sections is given below.
 
 [cols="<,<"]
 |===
