@@ -18,8 +18,6 @@ package org.axonframework.common;
 
 import jakarta.annotation.Nonnull;
 
-import java.util.Map;
-
 /**
  * Interface describing operations for context-specific, <b>immutable</b>, resource management.
  * <p>
@@ -67,20 +65,6 @@ public interface Context {
      */
     <T> Context withResource(@Nonnull ResourceKey<T> key,
                              @Nonnull T resource);
-
-    /**
-     * Add all the resources from the given {@code context} into {@code this} {@link Context}.
-     *
-     * @param context The {@link Context} for which to copy the contents over to {@code this} {@link Context}.
-     */
-    void putAll(@Nonnull Context context);
-
-    /**
-     * Return all the resources contained in this {@link Context} as a {@link Map}.
-     *
-     * @return All the resources contained in this {@link Context} as a {@link Map}.
-     */
-    Map<ResourceKey<?>, ?> asMap();
 
     /**
      * Object that is used as a key to retrieve and register resources of a given type in a processing context.

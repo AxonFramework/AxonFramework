@@ -22,7 +22,7 @@ import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.ContextTestSuite;
 import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
@@ -70,12 +70,5 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
         assertEquals(expectedMetaData, result.message().getMetaData());
         assertTrue(result.containsResource(expectedContextKey));
         assertEquals(expectedResourceValue, result.getResource(expectedContextKey));
-    }
-
-    @Test
-    void asMapIsEmptyForNewEntry() {
-        SimpleEntry<Message<?>> testSubject = testSubject();
-
-        assertTrue(testSubject.asMap().isEmpty());
     }
 }

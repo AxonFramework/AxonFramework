@@ -16,10 +16,6 @@
 
 package org.axonframework.common;
 
-import org.junit.jupiter.api.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * Test class validating the {@link SimpleContext}.
  *
@@ -30,12 +26,5 @@ public class SimpleContextTest extends ContextTestSuite<SimpleContext> {
     @Override
     public SimpleContext testSubject() {
         return new SimpleContext();
-    }
-
-    @Test
-    void asMapIsEmptyForNewContext() {
-        SimpleContext testSubject = testSubject();
-
-        assertTrue(testSubject.asMap().isEmpty());
     }
 }

@@ -19,8 +19,6 @@ package org.axonframework.common;
 import org.axonframework.common.Context.ResourceKey;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -89,16 +87,5 @@ public abstract class ContextTestSuite<C extends Context> {
         assertNotEquals(resultOne, resultTwo);
         assertEquals(EXPECTED_RESOURCE_VALUE, resultTwo.getResource(TEST_RESOURCE_KEY));
         assertEquals(expectedResourceValueTwo, resultTwo.getResource(testResourceKeyTwo));
-    }
-
-    @Test
-    void asMapContainsInsertedResources() {
-        //noinspection unchecked
-        C testSubject = (C) testSubject().withResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
-
-        Map<ResourceKey<?>, ?> result = testSubject.asMap();
-
-        assertFalse(result.isEmpty());
-        assertEquals(EXPECTED_RESOURCE_VALUE, result.get(TEST_RESOURCE_KEY));
     }
 }

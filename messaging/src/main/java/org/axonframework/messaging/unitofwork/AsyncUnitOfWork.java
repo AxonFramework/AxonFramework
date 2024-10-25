@@ -17,12 +17,13 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Context;
 import org.axonframework.common.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -408,11 +409,6 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public void putAll(@Nonnull Context context) {
-
-        }
-
-        @Override
         public <T> T putResource(@Nonnull ResourceKey<T> key,
                                  @Nonnull T resource) {
             //noinspection unchecked
@@ -450,11 +446,6 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
                                           @Nonnull T expectedResource) {
             return resources.remove(key, expectedResource);
-        }
-
-        @Override
-        public Map<ResourceKey<?>, ?> asMap() {
-            return new HashMap<>(resources);
         }
 
         @Override

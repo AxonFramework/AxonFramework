@@ -22,7 +22,6 @@ import org.axonframework.common.Context;
 import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;
 
-import java.util.Map;
 import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -71,15 +70,5 @@ record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context c
     @Override
     public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         return this.context.withResource(key, resource);
-    }
-
-    @Override
-    public void putAll(@Nonnull Context context) {
-        this.context.putAll(context);
-    }
-
-    @Override
-    public Map<ResourceKey<?>, ?> asMap() {
-        return this.context.asMap();
     }
 }

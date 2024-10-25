@@ -18,8 +18,6 @@ package org.axonframework.common;
 
 import jakarta.annotation.Nonnull;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -62,16 +60,6 @@ public class SimpleContext implements Context {
         ConcurrentHashMap<ResourceKey<?>, Object> newResources = new ConcurrentHashMap<>(this.resources);
         newResources.put(key, resource);
         return new SimpleContext(newResources);
-    }
-
-    @Override
-    public void putAll(@Nonnull Context context) {
-        resources.putAll(context.asMap());
-    }
-
-    @Override
-    public Map<ResourceKey<?>, ?> asMap() {
-        return Collections.unmodifiableMap(this.resources);
     }
 
     @Override
