@@ -37,8 +37,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context context) implements Entry<M> {
-    // TODO I need to make this public to be able to make a Entry implementation that allows non-EventMessage instances in the TrackedEntry.
+record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context context) implements Entry<M> {
 
     /**
      * Construct a {@link SimpleEntry} with the given {@code message}, setting the {@link Context} to a
