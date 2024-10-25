@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
@@ -107,7 +108,7 @@ public class SimpleCommandBus implements CommandBus {
         AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork(command.getIdentifier(), worker);
         processingLifecycleHandlerRegistrars.forEach(it -> it.registerHandlers(unitOfWork));
 
-        var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).asCompletableFuture());
+        var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).firstAsCompletableFuture());
         if (logger.isDebugEnabled()) {
             result = result.whenComplete((r, e) -> {
                 if (e == null) {
@@ -122,7 +123,7 @@ public class SimpleCommandBus implements CommandBus {
                 }
             });
         }
-        return result;
+        return result.thenApply(Entry::message);
     }
 
     /**

@@ -2,13 +2,11 @@
 
 Regularly, instantiating a new Aggregate is done by issuing a creation command which is handled by a `@CommandHandler` annotated Aggregate constructor. Such commands could for example be published by a simple REST endpoint or an xref:events:event-handlers.adoc[Event Handling Component] as a reaction to a certain event. Sometimes the Domain however describes certain Entities to be created from another Entity. In this scenario it would thus be more faithful to the domain to instantiate an Aggregate from its parent Aggregate.
 
-____
-
-*Aggregate-from-Aggregate Use Case*
-
+[TIP]
+.Aggregate-from-Aggregate Use Case
+====
 The most suitable scenario to create a "child" Aggregate from a "parent" Aggregate, is when the decision to create the child lies within the context of a parent Aggregate. This can for example manifest itself if the parent Aggregate contains the necessary state which can drive this child-creation decision.
-
-____
+====
 
 == How to create an aggregate from another aggregate
 
@@ -53,12 +51,10 @@ public class ChildAggregate {
 
 Note that a `ChildAggregateCreatedEvent` is explicitly applied to notify the `ChildAggregate` was created, as this knowledge would otherwise be enclosed in the `SomeParentCommand` command handler of the `ParentAggregate`.
 
-____
-
-*Creating Aggregates from Event Sourcing Handlers?*
-
+[WARNING]
+.Creating Aggregates from Event Sourcing Handlers
+====
 Creation of a new Aggregate should be done in a command handler rather than in an event sourcing handler. The rationale behind this is that you do not want to create new child Aggregates when a parent Aggregate is sourced from its events, as this would undesirably create new child Aggregate instances
 
 If the `createNew` method is however accidentally called within an event sourcing handler, an `UnsupportedOperationException` will be thrown as stop gap solution.
-
-____
+====

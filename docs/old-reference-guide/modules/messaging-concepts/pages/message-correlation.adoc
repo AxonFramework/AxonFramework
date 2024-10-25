@@ -6,10 +6,10 @@ Usually, correlation is implemented using a specific message property, a so-call
 
 == Correlation data provider
 
-Messages in Axon Framework use the xref:anatomy-message.adoc#meta-data[`MetaData`] property to transport meta information about the message.
+Messages in Axon Framework use the xref:anatomy-message.adoc#meta-data[`MetaData`] property to transport meta-information about the message.
 The `MetaData` object is of type `Map<String, Object>` and is passed around with the message.
-In order to fill the `MetaData` of a new message produced within a xref:unit-of-work.adoc[Unit of Work], a so called `CorrelationDataProvider` can be used.
-It is the Unit of Work which is in charge of populating the `MetaData` of a new message based on this `CorrelationDataProvider`.
+To fill the `MetaData` of a new message produced within a xref:unit-of-work.adoc[Unit of Work], a so called `CorrelationDataProvider` can be used.
+It is the Unit of Work that is in charge of populating the `MetaData` of a new message based on this `CorrelationDataProvider`.
 Axon Framework currently provides a couple of implementations of this functional interface:
 
 [[MessageOriginProvider]]
@@ -19,7 +19,7 @@ By default, the `MessageOriginProvider` is registered as the correlation data pr
 It is responsible for two values to be passed around from one `Message` to another, namely the `correlationId` and `traceId`.
 The `correlationId` of a message always references the identifier of the message it originates from (that is, the parent message).
 The `traceId` on the other hand references to the message identifier which started the chain of messages (that is, the root message).
-When neither of these fields are present in the parent message when a new message is created, the message identifier will be used for both.
+When neither of these fields is present in the parent message when a new message is created, the message identifier will be used for both.
 To place this in an example, if you would handle a `Command` message which in turn publishes an `Event` message, the `Event` message's `MetaData` will be populated based on:
 
 * The `Command` message's identifier for the `correlationId`.
@@ -99,11 +99,11 @@ public class AuthCorrelationDataProvider implements CorrelationDataProvider {
 When the default `MessageOriginProvider` isn't sufficient for your use case, the (custom) correlation data providers need to be registered inside you application.
 If you are using the Axon Configuration API, make sure to call `Configuration#configureCorrelationDataProviders` method to register the correlated data providers.
 If you are relying on Spring Boot Autoconfiguration, just provide a factory method exposing the Spring Bean, or multiple if you need more than one provider.
-The following snippets shows some possible approaches of registration:
+The following snippets show some possible approaches of registration:
 
 [tabs]
 ====
-Axon Configuration API::
+Configuration API::
 +
 
 [source,java]
@@ -111,17 +111,17 @@ Axon Configuration API::
 public class Configuration {
     
     public void configuring() {
-        Configurer configurer = 
-            DefaultConfigurer.defaultConfiguration()
-                             .configureCorrelationDataProviders(config -> Arrays.asList(
-                                new SimpleCorrelationDataProvider("someKey"),
-                                new MessageOriginProvider()
-                             ));
+        Configurer configurer = DefaultConfigurer
+            .defaultConfiguration()
+            .configureCorrelationDataProviders(config -> Arrays.asList(
+               new SimpleCorrelationDataProvider("someKey"),
+               new MessageOriginProvider()
+            ));
     }
 }
 ----
 
-Spring Boot auto configuration::
+Spring Boot::
 +
 [source,java]
 ----

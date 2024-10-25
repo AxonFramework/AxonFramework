@@ -1,4 +1,5 @@
 = Deadlines
+:page-aliases: README.adoc
 
 The 'Deadline' concept in Axon Framework is a mechanism which enables certain actions to be executed after a certain amount of time.
 The context of this execution is an _*aggregate or a saga*_ in which the deadline was scheduled.

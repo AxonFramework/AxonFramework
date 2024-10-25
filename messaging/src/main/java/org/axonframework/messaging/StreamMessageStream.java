@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -25,44 +25,47 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * A {@link MessageStream} implementation using a {@link Stream} as the {@link Message} source.
+ * A {@link MessageStream} implementation using a {@link Stream} as the source for {@link Entry entries}.
  *
- * @param <M> The type of {@link Message} carried in this stream.
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
 class StreamMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final Stream<M> source;
+    private final Stream<Entry<M>> source;
 
     /**
-     * Constructs a {@link MessageStream} using the given {@code source} to provide the {@link Message Messages}.
+     * Constructs a {@link MessageStream stream} using the given {@code source} to provide the
+     * {@link Entry entries}.
      *
-     * @param source The {@link Stream} sourcing the {@link Message Messages} for this {@link MessageStream}.
+     * @param source The {@link Stream} providing the {@link Entry entries} for this
+     *               {@link MessageStream stream}.
      */
-    StreamMessageStream(@NotNull Stream<M> source) {
+    StreamMessageStream(@Nonnull Stream<Entry<M>> source) {
         this.source = source;
     }
 
     @Override
-    public CompletableFuture<M> asCompletableFuture() {
+    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
         return CompletableFuture.completedFuture(source.findFirst()
                                                        .orElse(null));
     }
 
     @Override
-    public Flux<M> asFlux() {
+    public Flux<Entry<M>> asFlux() {
         return Flux.fromStream(source);
     }
 
     @Override
-    public <R extends Message<?>> MessageStream<R> map(Function<M, R> mapper) {
+    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new StreamMessageStream<>(source.map(mapper));
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity, @NotNull BiFunction<R, M, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return CompletableFuture.completedFuture(
                 source.sequential()
                       .reduce(identity, accumulator, (thisResult, thatResult) -> {

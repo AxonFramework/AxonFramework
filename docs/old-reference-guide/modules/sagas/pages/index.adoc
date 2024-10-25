@@ -1,4 +1,5 @@
 = Sagas
+:page-aliases: README.adoc
 
 The Axon Framework provides first-class support for long running business transactions or `Sagas`. This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help facilitate Saga development‌.
 

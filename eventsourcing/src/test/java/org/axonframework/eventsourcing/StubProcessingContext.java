@@ -16,8 +16,10 @@
 
 package org.axonframework.eventsourcing;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -25,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Stubbed implementation of the {@link ProcessingContext} used for testing purposes.
@@ -71,48 +74,60 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public boolean containsResource(ResourceKey<?> key) {
+    public boolean containsResource(@Nonnull ResourceKey<?> key) {
         return resources.containsKey(key);
     }
 
     @Override
-    public <T> T getResource(ResourceKey<T> key) {
+    public <T> T getResource(@Nonnull ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.get(key);
     }
 
     @Override
-    public <T> T putResource(ResourceKey<T> key, T resource) {
+    public <T> ProcessingContext withResource(@NotNull ResourceKey<T> key,
+                                              @NotNull T resource) {
+        resources.put(key, resource);
+        return this;
+    }
+
+    @Override
+    public <T> T putResource(@Nonnull ResourceKey<T> key,
+                             @Nonnull T resource) {
         //noinspection unchecked
         return (T) resources.put(key, resource);
     }
 
     @Override
-    public <T> T updateResource(ResourceKey<T> key, Function<T, T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key,
+                                @Nonnull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (id, current) -> resourceUpdater.apply((T) current));
     }
 
     @Override
-    public <T> T putResourceIfAbsent(ResourceKey<T> key, T resource) {
+    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                     @Nonnull T resource) {
         //noinspection unchecked
         return (T) resources.putIfAbsent(key, resource);
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(ResourceKey<T> key, Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                         @Nonnull Supplier<T> resourceSupplier) {
         //noinspection unchecked
         return (T) resources.computeIfAbsent(key, k -> resourceSupplier.get());
     }
 
     @Override
-    public <T> T removeResource(ResourceKey<T> key) {
+    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.remove(key);
     }
 
     @Override
-    public <T> boolean removeResource(ResourceKey<T> key, T expectedResource) {
+    public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
+                                      @Nonnull T expectedResource) {
         return resources.remove(key, expectedResource);
     }
 }

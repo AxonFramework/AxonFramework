@@ -2,13 +2,11 @@
 
 Complex business logic often requires more than what an Aggregate with only an Aggregate Root can provide. In that case, it is important that the complexity is spread over a number of 'Entities' within the aggregate. In this chapter we will discuss the specifics around creating entities in your aggregates and how they can handle message.
 
-____
-
-*State among Entities*
-
-A common misinterpretation of the rule that aggregates should not expose state, is that none of the entities should contain any property accessor methods. This is not the case. In fact, an aggregate will probably benefit a lot if the entities _within_ the aggregate expose state to the other entities in that same aggregate. However, is is recommended not to expose the state _outside_ of the aggregate.
-
-____
+[TIP]
+.State among Entities
+====
+A common misinterpretation of the rule that aggregates should not expose state, is that none of the entities should contain any property accessor methods. This is not the case. In fact, an aggregate will probably benefit a lot if the entities _within_ the aggregate expose state to the other entities in that same aggregate. However, is is recommended not to expose the state _outside_ the aggregate.
+====
 
 Within the 'Gift Card' domain, the `GiftCard` aggregate root was defined in xref:modeling/aggregate.adoc[this] section. Let's leverage this domain to introduce entities:
 
@@ -23,7 +21,7 @@ public class GiftCard {
     @AggregateIdentifier
     private String id;
 
-    @AggregateMember // 1.
+    @AggregateMember // <1>
     private List<GiftCardTransaction> transactions = new ArrayList<>();
 
     private int remainingValue;
@@ -33,7 +31,7 @@ public class GiftCard {
 
 public class GiftCardTransaction {
 
-    @EntityId // 2.
+    @EntityId // <2>
     private String transactionId;
 
     private int transactionValue;
@@ -55,13 +53,13 @@ public class GiftCardTransaction {
 
 Entities are, just like the aggregate root, simple objects, as is shown with the new `GiftCardTransaction` entity. The snippet above shows two important concepts of multi-entity aggregates:
 
-. The field that declares the child entity/entities must be annotated with `@AggregateMember`.
+<1> The field that declares the child entity/entities must be annotated with `@AggregateMember`.
  This annotation tells Axon that the annotated field contains a class that should be inspected for message handlers.
  This example shows the annotation on an implementation of `Iterable`, but it can also be placed on a single Object or a `Map`.
  In the latter case, the values of the `Map` are expected to contain the entities, while the key contains a value that is used as their reference.
  Note that this annotation can be placed on a field and a method.
 
-. The `@EntityId` annotation specifying the identifying field of an Entity.
+<2> The `@EntityId` annotation specifying the identifying field of an Entity.
  Required to be able to route a command (or <<Event Sourcing handlers in entities,event>>) message to the correct entity instance.
  The property on the payload that will be used to find the entity that the message should be routed to, defaults to the name of the `@EntityId` annotated field.
  For example, when annotating the field `transactionId`, the command must define a property with that same name, which means either a `transactionId` or a `getTransactionId()` method must be present.
@@ -69,15 +67,13 @@ Entities are, just like the aggregate root, simple objects, as is shown with the
  This annotation is *mandatory* on the Entity implementation if it will be part of a `Collection` or `Map` of child entities.
  Note that this annotation can be placed on a field and a method.
 
-____
-
-*Defining the Entity type*
-
+[NOTE]
+.Defining the Entity type
+====
 The field declaration for both the `Collection` or `Map` should contain proper generics to allow Axon to identify the type of Entity contained in the collection or map. If it is not possible to add the generics in the declaration (for example, because you're using a custom implementation which already defines generic types), you must specify the entity type by specifying the `type` field in the `@AggregateMember` annotation:
 
 `@AggregateMember(type = GiftCardTransaction.class)`
-
-____
+====
 
 == Command handling in entities
 
@@ -133,15 +129,13 @@ public class GiftCardTransaction {
 
 Note that only the declared type of the annotated field is inspected for command handlers. If a field value is null at the time an incoming command arrives for that entity, an exception is thrown. If there is a `Collection` or `Map` of child entities and none entity can be found which matches the routing key of the command, Axon throws an `IllegalStateException` as apparently the aggregate is not capable of processing the command at that point in time.
 
-____
-
-*Command Handler considerations*
-
-Note that each command must have exactly one handler in the aggregate. This means that you cannot annotate multiple entities (either root nor not) with `@CommandHandler` which handle the same command type. In case you need to conditionally route a command to an entity, the parent of these entities should handle the command, and forward it based on the conditions that apply.
+[NOTE]
+.Command Handler considerations
+====
+Each command must have exactly one handler in the aggregate. This means that you cannot annotate multiple entities (either root nor not) with `@CommandHandler` which handle the same command type. In case you need to conditionally route a command to an entity, the parent of these entities should handle the command, and forward it based on the conditions that apply.
 
 The runtime type of the field does not have to be exactly the declared type. However, only the declared type of the `@AggregateMember` annotated field is inspected for `@CommandHandler` methods.
-
-____
+====
 
 == Event Sourcing handlers in entities
 

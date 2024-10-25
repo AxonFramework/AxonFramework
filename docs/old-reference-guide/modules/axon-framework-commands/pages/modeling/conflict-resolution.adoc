@@ -13,14 +13,13 @@ Instead of simply rejecting all incoming commands when aggregates have been modi
 To detect conflict, pass a parameter of type `ConflictResolver` to the `@CommandHandler` method of your aggregate.
 This interface provides `detectConflicts` methods that allow you to define the types of events that are considered a conflict when executing that specific type of command.
 
-____
 
-*Expected Aggregate Version*
-
-Note that the `ConflictResolver` will only contain any potentially conflicting events if the Aggregate was loaded with an expected version.
+[NOTE]
+.Expected Aggregate Version
+====
+The `ConflictResolver` will only contain any potentially conflicting events if the Aggregate was loaded with an expected version.
 Use `@TargetAggregateVersion` on a field of a command to indicate the expected version of the Aggregate.
-
-____
+====
 
 If events matching the predicate are found, an exception is thrown (the optional second parameter of `detectConflicts` allows you to define the exception to throw).
 If none are found, processing continues as normal.

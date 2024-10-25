@@ -97,7 +97,7 @@ This module contains components that enable migration of older Axon projects to 
 
 === Axon Tracing OpenTelemetry
 
-This module contains the components needed to link:monitoring/tracing.adoc[enable tracing] with OpenTelemetry.
+This module contains the components needed to xref:axon-framework-reference:monitoring:tracing.adoc[enable tracing with OpenTelemetry].
 
 == Extension modules
 
@@ -243,7 +243,11 @@ As such, it is the recommended approach towards defining the overall Axon versio
 
 For using the BOM, you would add the `axon-bom` dependency to your dependency management system:
 
-===== Maven
+[tabs]
+====
+Maven::
++
+--
 
 [source,xml]
 ----
@@ -264,8 +268,11 @@ For using the BOM, you would add the `axon-bom` dependency to your dependency ma
 </dependencyManagement>
 <!--...-->
 ----
+--
 
-===== Gradle
+Gradle::
++
+--
 
 For usage with *Gradle Version 4.x* and below, apply the dependency-management-plugin like so:
 
@@ -297,8 +304,8 @@ dependencyManagement {
 Beginning with *https://docs.gradle.org/5.0/userguide/managing_transitive_dependencies.html#sec:bom_import[Gradle version 5.0]*, you can also omit the dependency-management plugin and instead use the `platform` dependency DSL to import maven BOMs:
 
 `implementation(platform("org.axonframework:axon-bom:<VERSION>"))`
-
-'''
+--
+====
 
 After that is in place, you can add any of the mentioned dependencies from <<Main modules,framework>> and the <<Extension modules,extensions>> without specifying versions.
 Furthermore, you will be guaranteed that the provided versions in the BOM are compatible with one another.

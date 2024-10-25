@@ -16,7 +16,8 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.*;
+import org.axonframework.messaging.MessageStream.Entry;
+import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -25,7 +26,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.messaging.GenericMessage.asMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -34,15 +34,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class DelayedMessageStreamTest extends MessageStreamTest<String> {
+class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
-        return DelayedMessageStream.create(CompletableFuture.completedFuture(MessageStream.fromIterable(messages)));
+        MessageStream<Message<String>> testStream = MessageStream.fromIterable(messages);
+        return DelayedMessageStream.create(CompletableFuture.completedFuture(testStream));
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+                                                      Exception failure) {
         return DelayedMessageStream.create(CompletableFuture.completedFuture(
                 MessageStream.fromIterable(messages)
                              .concatWith(MessageStream.failed(failure)))
@@ -50,78 +52,83 @@ class DelayedMessageStreamTest extends MessageStreamTest<String> {
     }
 
     @Override
-    String createRandomValidEntry() {
-        return "test--" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test
     void createForExecutionExceptionReturnsFailedMessageStreamWithCause() {
         RuntimeException expected = new RuntimeException("oops");
 
-        CompletableFuture<Message<?>> result = DelayedMessageStream.create(CompletableFuture.failedFuture(expected))
-                                                                   .asCompletableFuture();
+        CompletableFuture<Object> result = DelayedMessageStream.create(CompletableFuture.failedFuture(expected))
+                                                               .firstAsCompletableFuture()
+                                                               .thenApply(Entry::message);
 
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());
     }
 
     @Test
-    void messageBecomeVisibleWhenFutureCompletes_asCompletableFuture() {
+    void entryBecomeVisibleWhenFutureCompletes_asCompletableFuture() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        CompletableFuture<MessageStream<Message<?>>> testFuture = new CompletableFuture<>();
+        CompletableFuture<MessageStream<Message<String>>> testFuture = new CompletableFuture<>();
 
-        MessageStream<Message<?>> testSubject = DelayedMessageStream.create(testFuture)
-                                                                    .whenComplete(() -> invoked.set(true));
+        MessageStream<?> testSubject = DelayedMessageStream.create(testFuture)
+                                                           .whenComplete(() -> invoked.set(true));
 
-        CompletableFuture<Message<?>> result = testSubject.asCompletableFuture();
+        CompletableFuture<?> result = testSubject.firstAsCompletableFuture();
         assertFalse(result.isDone());
         assertFalse(invoked.get());
 
-        testFuture.complete(MessageStream.just(asMessage(createRandomValidEntry())));
+        testFuture.complete(MessageStream.just(createRandomMessage()));
 
-        result = testSubject.asCompletableFuture();
+        result = testSubject.firstAsCompletableFuture();
         assertTrue(result.isDone());
         assertTrue(invoked.get());
     }
 
     @Test
-    void messageBecomeVisibleWhenFutureCompletes_asFlux() {
+    void entryBecomeVisibleWhenFutureCompletes_asFlux() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        Message<Object> expected = asMessage(createRandomValidEntry());
-        CompletableFuture<MessageStream<Message<?>>> testFuture = new CompletableFuture<>();
+        Message<String> expected = createRandomMessage();
+        CompletableFuture<MessageStream<Message<String>>> testFuture = new CompletableFuture<>();
 
-        MessageStream<Message<?>> testSubject = DelayedMessageStream.create(testFuture)
-                                                                    .whenComplete(() -> invoked.set(true));
+        MessageStream<Message<String>> testSubject = DelayedMessageStream.create(testFuture)
+                                                                         .whenComplete(() -> invoked.set(true));
 
         StepVerifier.create(testSubject.asFlux())
-                    .expectNoEvent(Duration.ofMillis(250));
+                    .verifyTimeout(Duration.ofMillis(250));
+        // Verify timeout cancels the Flux, so we need to create the test subject again after this.
         assertFalse(invoked.get());
 
         testFuture.complete(MessageStream.just(expected));
+        testSubject = DelayedMessageStream.create(testFuture)
+                                          .whenComplete(() -> invoked.set(true));
 
         StepVerifier.create(testSubject.asFlux())
-                    .expectNext(expected)
+                    .expectNextMatches(entry -> entry.message().equals(expected))
                     .verifyComplete();
         assertTrue(invoked.get());
     }
 
     @Test
     void reduceResultBecomesVisibleWhenFutureCompletes() {
-        String randomPayload = createRandomValidEntry();
-        String expected = randomPayload + randomPayload;
-        MessageStream<Message<String>> futureStream = testSubject(List.of(asMessage(randomPayload),
-                                                                          asMessage(randomPayload)));
+        Message<String> randomMessage = createRandomMessage();
+        String expected = randomMessage.getPayload() + randomMessage.getPayload();
+        MessageStream<Message<String>> futureStream = testSubject(List.of(randomMessage, randomMessage));
         CompletableFuture<MessageStream<Message<String>>> testFuture = new CompletableFuture<>();
 
         MessageStream<Message<String>> testSubject = DelayedMessageStream.create(testFuture);
 
-        CompletableFuture<String> result =
-                testSubject.reduce("", (base, message) -> message.getPayload() + message.getPayload());
+        CompletableFuture<String> result = testSubject.reduce(
+                "",
+                (base, entry) -> entry.message().getPayload() + entry.message().getPayload()
+        );
         assertFalse(result.isDone());
 
         testFuture.complete(futureStream);
 
-        result = testSubject.reduce("", (base, message) -> message.getPayload() + message.getPayload());
+        result = testSubject.reduce("", (base, entry) -> entry.message().getPayload() + entry.message().getPayload());
         assertTrue(result.isDone());
         assertEquals(expected, result.join());
     }
