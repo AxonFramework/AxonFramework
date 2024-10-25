@@ -135,6 +135,11 @@ class AsyncEventStoreTest {
         public void onAppend(@NotNull Consumer<EventMessage<?>> callback) {
             throw new UnsupportedOperationException("We don't need this method to test the defaulted methods.");
         }
+
+        @Override
+        public long appendPosition(@NotNull ProcessingContext context) {
+            throw new UnsupportedOperationException("We don't need this method to test the defaulted methods.");
+        }
     }
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?
