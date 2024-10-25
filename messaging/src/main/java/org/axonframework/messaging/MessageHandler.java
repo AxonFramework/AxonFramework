@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,9 @@ public interface MessageHandler<T extends Message<?>, R extends Message<?>> {
     @Deprecated
     Object handleSync(T message) throws Exception;
 
+    /**
+     * TODO Add documentation
+     */
     default MessageStream<? extends R> handle(T message, ProcessingContext processingContext) {
         try {
             return MessageStream.just((R) GenericResultMessage.asResultMessage(handleSync(message)));

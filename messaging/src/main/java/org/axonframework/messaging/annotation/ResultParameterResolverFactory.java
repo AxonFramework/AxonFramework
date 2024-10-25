@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.interceptors.ResultHandler;
@@ -43,8 +44,7 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
 
     private static final ThreadLocal<Object> REGISTERED_RESULT = new ThreadLocal<>();
     private static final Object IGNORE_RESULT_PARAMETER_MARKER = new Object();
-    public static final ProcessingContext.ResourceKey<Object> RESOURCE_KEY = ProcessingContext.ResourceKey.create(
-            "Invocation result for interceptors");
+    public static final ResourceKey<Object> RESOURCE_KEY = ResourceKey.create("Invocation result for interceptors");
 
 
     public static <R> R callWithResult(Object result, ProcessingContext processingContext,

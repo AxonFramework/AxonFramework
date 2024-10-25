@@ -117,15 +117,15 @@ public class AsyncRetryScheduler implements RetryScheduler, DescribableComponent
 
         @Override
         public void run() {
-            AtomicBoolean itemSeen = new AtomicBoolean(false);
+            AtomicBoolean entrySeen = new AtomicBoolean(false);
             AtomicReference<MessageStream<T>> retryResult = new AtomicReference<>();
             finalResult.complete(
                     dispatcher.get()
-                              .onNextItem(i -> itemSeen.set(true))
+                              .onNext(entry -> entrySeen.set(true))
                               .onErrorContinue(failure -> {
                                   Throwable unwrapped = unwrap(failure);
                                   // When we've read items successfully before, we will simply propagate the failure
-                                  if (itemSeen.get()) {
+                                  if (entrySeen.get()) {
                                       return MessageStream.failed(unwrapped);
                                   }
                                   // we only want to schedule once, and repeat the previous result on next invocations

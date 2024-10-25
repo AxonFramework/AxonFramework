@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import javax.annotation.Nonnull;
 
 /**
  * Interface to interact with a MessageHandlingMember instance through a chain of interceptors, which were used to build
@@ -49,8 +48,10 @@ public interface MessageHandlerInterceptorMemberChain<T> {
     Object handleSync(@Nonnull Message<?> message, @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler)
             throws Exception;
 
-    default MessageStream<?> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext processingContext,
-                                    @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler) {
+    default MessageStream<?> handle(@Nonnull Message<?> message,
+                                    @Nonnull ProcessingContext processingContext,
+                                    @Nonnull T target,
+                                    @Nonnull MessageHandlingMember<? super T> handler) {
         try {
             return MessageStream.just(GenericMessage.asMessage(handleSync(message, target, handler)));
         } catch (Exception e) {

@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
+package org.axonframework.common;
 
-import org.axonframework.common.Context.ResourceKey;
-import org.axonframework.messaging.Message;
+/**
+ * Test class validating the {@link SimpleContext}.
+ *
+ * @author Steven van Beelen
+ */
+public class SimpleContextTest extends ContextTestSuite<SimpleContext> {
 
-public interface PriorityResolver<M extends Message<?>> {
-
-    ResourceKey<Integer> PRIORITY_KEY = ResourceKey.create("Priority");
-
-    int priorityFor(M message);
+    @Override
+    public SimpleContext testSubject() {
+        return new SimpleContext();
+    }
 }

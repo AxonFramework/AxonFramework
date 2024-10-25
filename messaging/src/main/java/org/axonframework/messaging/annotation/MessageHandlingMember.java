@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -24,8 +26,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Interface describing a handler for specific messages targeting entities of a specific type.
@@ -105,6 +105,9 @@ public interface MessageHandlingMember<T> {
     @Deprecated
     Object handleSync(@Nonnull Message<?> message, @Nullable T target) throws Exception;
 
+    /**
+     * TODO add documentation
+     */
     default MessageStream<?> handle(@Nonnull Message<?> message,
                                     @Nonnull ProcessingContext processingContext,
                                     @Nullable T target) {
