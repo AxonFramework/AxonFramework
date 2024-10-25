@@ -17,6 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -174,6 +175,11 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
+    public void putAll(@Nonnull Context context) {
+        delegate.putAll(context);
+    }
+
+    @Override
     public <T> T putResource(@Nonnull ResourceKey<T> key,
                              @Nonnull T resource) {
         //noinspection unchecked
@@ -182,10 +188,6 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
                 : delegate.putResource(key, resource);
     }
 
-    @Override
-    public void putAll(@Nonnull Context context) {
-        delegate.putAll(context);
-    }
 
     @Override
     public <T> T updateResource(@Nonnull ResourceKey<T> key,

@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.jetbrains.annotations.NotNull;

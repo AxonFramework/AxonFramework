@@ -17,6 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context;
 import org.axonframework.common.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -404,6 +405,11 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
         public <T> T getResource(@Nonnull ResourceKey<T> key) {
             //noinspection unchecked
             return (T) resources.get(key);
+        }
+
+        @Override
+        public void putAll(@Nonnull Context context) {
+
         }
 
         @Override

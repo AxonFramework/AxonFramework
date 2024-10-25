@@ -141,7 +141,7 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
            });
         awaitCompletion(uow.execute());
 
-        assertNull(initialStreamReference.get().asCompletableFuture().join());
+        assertNull(initialStreamReference.get().firstAsCompletableFuture().join());
 
         StepVerifier.create(finalStreamReference.get().asFlux())
                     .assertNext(event -> assertTrackedAndTagged(event, expectedEventOne, 0, expectedCriteria))

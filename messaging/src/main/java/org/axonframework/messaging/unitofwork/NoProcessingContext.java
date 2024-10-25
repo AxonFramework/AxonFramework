@@ -18,6 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.Context;
 
 import java.util.Collections;
 import java.util.Map;
