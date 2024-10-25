@@ -43,7 +43,7 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
 
     /**
      * Open an {@link MessageStream event stream} containing all {@link EventMessage events} of the given
-     * {@code context} matching the given {@code condition}}.
+     * {@code context} matching the given {@code condition}.
      * <p>
      * To retrieve the {@link TrackingToken position} of the returned events, the
      * {@link TrackingToken#fromContext(Context)} operation should be used by providing the entire
