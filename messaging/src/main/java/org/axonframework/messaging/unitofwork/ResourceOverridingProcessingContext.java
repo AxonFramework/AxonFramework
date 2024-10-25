@@ -17,7 +17,6 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Context;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -172,12 +171,6 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     public <T> T getResource(@Nonnull ResourceKey<T> key) {
         //noinspection unchecked
         return this.key.equals(key) ? (T) resource.get() : delegate.getResource(key);
-    }
-
-    @Override
-    public <T> Context withResource(@Nonnull ResourceKey<T> key,
-                                    @Nonnull T resource) {
-        return new ResourceOverridingProcessingContext<>(this, key, resource);
     }
 
     @Override

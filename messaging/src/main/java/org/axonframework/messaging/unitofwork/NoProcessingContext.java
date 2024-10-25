@@ -18,7 +18,6 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.Context;
 
 import java.util.Collections;
 import java.util.Map;
@@ -93,12 +92,14 @@ public class NoProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+    public <T> ProcessingContext withResource(@Nonnull ResourceKey<T> key,
+                                              @Nonnull T resource) {
         return this;
     }
 
     @Override
-    public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+    public <T> T putResource(@Nonnull ResourceKey<T> key,
+                             @Nonnull T resource) {
         throw new IllegalArgumentException("Cannot put resources in this ProcessingContext");
     }
 
@@ -108,17 +109,20 @@ public class NoProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key,
+                                @Nonnull UnaryOperator<T> resourceUpdater) {
         throw new IllegalArgumentException("Cannot update resources in this ProcessingContext");
     }
 
     @Override
-    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                     @Nonnull T resource) {
         throw new IllegalArgumentException("Cannot put resources in this ProcessingContext");
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                         @Nonnull Supplier<T> resourceSupplier) {
         throw new IllegalArgumentException("Cannot compute resources in this ProcessingContext");
     }
 
@@ -128,7 +132,8 @@ public class NoProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nullable T expectedResource) {
+    public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
+                                      @Nullable T expectedResource) {
         return expectedResource == null;
     }
 

@@ -48,9 +48,10 @@ public abstract class ContextTestSuite<C extends Context> {
         assertFalse(testSubject.containsResource(TEST_RESOURCE_KEY));
 
         //noinspection unchecked
-        testSubject = (C) testSubject.withResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
+        C testSubjectWithResources = (C) testSubject.withResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
 
-        assertTrue(testSubject.containsResource(TEST_RESOURCE_KEY));
+        assertFalse(testSubject.containsResource(TEST_RESOURCE_KEY));
+        assertTrue(testSubjectWithResources.containsResource(TEST_RESOURCE_KEY));
     }
 
     @Test
@@ -60,9 +61,10 @@ public abstract class ContextTestSuite<C extends Context> {
         assertNull(testSubject.getResource(TEST_RESOURCE_KEY));
 
         //noinspection unchecked
-        testSubject = (C) testSubject.withResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
+        C testSubjectWithResources = (C) testSubject.withResource(TEST_RESOURCE_KEY, EXPECTED_RESOURCE_VALUE);
 
-        assertEquals(EXPECTED_RESOURCE_VALUE, testSubject.getResource(TEST_RESOURCE_KEY));
+        assertNull(testSubject.getResource(TEST_RESOURCE_KEY));
+        assertEquals(EXPECTED_RESOURCE_VALUE, testSubjectWithResources.getResource(TEST_RESOURCE_KEY));
     }
 
     @Test

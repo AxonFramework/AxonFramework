@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Context;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.jetbrains.annotations.NotNull;
@@ -87,12 +86,15 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> Context withResource(@NotNull Context.ResourceKey<T> key, @NotNull T resource) {
-        return branchedWithResource(key, resource);
+    public <T> ProcessingContext withResource(@NotNull ResourceKey<T> key,
+                                              @NotNull T resource) {
+        resources.put(key, resource);
+        return this;
     }
 
     @Override
-    public <T> T putResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+    public <T> T putResource(@Nonnull ResourceKey<T> key,
+                             @Nonnull T resource) {
         //noinspection unchecked
         return (T) resources.put(key, resource);
     }
@@ -103,19 +105,22 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key, @Nonnull UnaryOperator<T> resourceUpdater) {
+    public <T> T updateResource(@Nonnull ResourceKey<T> key,
+                                @Nonnull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (id, current) -> resourceUpdater.apply((T) current));
     }
 
     @Override
-    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                     @Nonnull T resource) {
         //noinspection unchecked
         return (T) resources.putIfAbsent(key, resource);
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key, @Nonnull Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                         @Nonnull Supplier<T> resourceSupplier) {
         //noinspection unchecked
         return (T) resources.computeIfAbsent(key, k -> resourceSupplier.get());
     }
@@ -127,7 +132,8 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> boolean removeResource(@Nonnull ResourceKey<T> key, @Nonnull T expectedResource) {
+    public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
+                                      @Nonnull T expectedResource) {
         return resources.remove(key, expectedResource);
     }
 

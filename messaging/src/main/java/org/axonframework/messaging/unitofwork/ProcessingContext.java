@@ -46,6 +46,22 @@ public interface ProcessingContext extends ProcessingLifecycle, Context {
     ProcessingContext NONE = NoProcessingContext.INSTANCE;
 
     /**
+     * Constructs a new {@link ProcessingContext}, branching off from {@code this} {@code ProcessingContext}.
+     * <p>
+     * The given {@code resource} as added to the branched {@code ProcessingContext} under the given {@code key}.
+     *
+     * @param key      The key under which to register the {@code resource} in the branched {@link ProcessingContext}.
+     * @param resource The resource to register in the branched {@link ProcessingContext}.
+     * @param <T>      The type of resource associated with the {@code key}.
+     * @return A new {@link ProcessingContext}, branched off from {@code this} {@code ProcessingContext}.
+     */
+    @Override
+    default <T> ProcessingContext withResource(@Nonnull ResourceKey<T> key,
+                                               @Nonnull T resource) {
+        return new ResourceOverridingProcessingContext<>(this, key, resource);
+    }
+
+    /**
      * Register the given {@code resource} under the given {@code key}.
      *
      * @param key      The key under which to register the {@code resource}.
@@ -117,18 +133,4 @@ public interface ProcessingContext extends ProcessingLifecycle, Context {
      */
     <T> boolean removeResource(@Nonnull ResourceKey<T> key,
                                @Nonnull T expectedResource);
-
-    /**
-     * Constructs a new {@link ProcessingContext}, branching off from {@code this} {@code ProcessingContext}. The given
-     * {@code resource} as added to the branched {@code ProcessingContext} under the given {@code key}.
-     *
-     * @param key      The key under which to register the {@code resource} in the branched {@link ProcessingContext}.
-     * @param resource The resource to register in the branched {@link ProcessingContext}.
-     * @param <T>      The type of resource associated with the {@code key}.
-     * @return A new {@link ProcessingContext}, branched off from {@code this} {@code ProcessingContext}.
-     */
-    default <T> ProcessingContext branchedWithResource(@Nonnull ResourceKey<T> key,
-                                                       @Nonnull T resource) {
-        return new ResourceOverridingProcessingContext<>(this, key, resource);
-    }
 }
