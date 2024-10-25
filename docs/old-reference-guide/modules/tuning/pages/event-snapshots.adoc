@@ -6,6 +6,12 @@ When aggregates live for a long time, and their state constantly changes, they w
 
 For example, items in stock tend to change quite often. Each time an item is sold, an event reduces the stock by one. Every time a shipment of new items comes in, the stock is incremented by some larger number. If you sell a hundred items each day, you will produce at least 100 events per day. After a few days, your system will spend too much time reading in all these events just to find out whether it should raise an "ItemOutOfStockEvent". A single snapshot event could replace a lot of these events, just by storing the current number of items in stock.
 
+[TIP]
+.To measure it to know!
+====
+xref:axoniq-console-reference:ROOT:features/metrics.adoc#aggregate_metrics[AxonIQ Console] can measure the number of events that were loaded during command handling, so you know if you need to create snapshots or not. It's also able to track many more interesting metrics, such as the load time of the aggregate, and the time it took to store the events.
+====
+
 === Creating a snapshot
 
 Snapshot creation can be triggered by a number of factors, for example: the number of events created since the last snapshot, the time to initialize an aggregate exceeds a certain threshold, time-based, etc. Currently, Axon provides a mechanism that allows you to trigger snapshots based on an event count threshold.
@@ -110,6 +116,7 @@ ____
 
 Axon provides a special type of snapshot event: the `AggregateSnapshot`, which stores an entire aggregate as a snapshot. The motivation is simple: your aggregate should only contain the state relevant to take business decisions. This is exactly the information you want captured in a snapshot. All event sourcing repositories provided by Axon recognize the `AggregateSnapshot`, and will extract the aggregate from it. Beware that using this snapshot event requires that the event serialization mechanism needs to be able to serialize the aggregate.
 
+[#_filtering_snapshot_events]
 === Filtering snapshot events
 
 When enabling snapshotting, several snapshots would be stored per Aggregate instance in the event store.
@@ -124,7 +131,7 @@ The `SnapshotFilter` is a functional interface, providing two main operations: `
 The former provides the `DomainEventData` which reflects the snapshot events.
 The latter allows combining several `SnapshotFilter`s together.
 
-The following snippets show how to configure a `SnapshotFilter`: 
+The following snippets show how to configure a `SnapshotFilter`:
 
 ==== Axon Configuration API
 

@@ -1,14 +1,14 @@
 = Event Versioning
 
-In the lifecycle of an Axon application events _will_ typically change their format.
-As events are stored indefinitely the application should be able to cope with several versions of an event.
+In the lifecycle of an Axon application, their events _will_ typically change their format.
+As events are stored indefinitely, the application should be able to cope with several versions of an event.
 This chapter will discuss what to keep in mind when creating your events, for backwards (and forwards) compatibility.
 It will also explain the upcasting process.
 
 [[event-upcasting]]
 == Event Upcasting
 
-Due to the ever-changing nature of software applications it is likely that event definitions will also change over time.
+Due to the ever-changing nature of software applications, it is likely that event definitions will also change over time.
 Since the Event Store is considered a read and append-only data source, your application must be able to read all events, regardless of when they were added.
 This is where upcasting comes in.
 
@@ -21,14 +21,12 @@ Upcasters are classes that take one input event of revision `x` and output zero 
 Moreover, upcasters are processed in a chain, meaning that the output of one upcaster is sent to the input of the next.
 This allows you to update events in an incremental manner, writing an upcaster for each new event revision, making them small, isolated, and easy to understand.
 
-____
-
-*Upcasting Benefit*
-
+[TIP]
+.Benefits if Upcasters
+====
 Perhaps the greatest benefit of upcasting is that it allows you to do non-destructive refactoring.
 In other words, the complete event history remains intact.
-
-____
+====
 
 In this section we'll explain how to write an upcaster, describe the different (abstract) implementations of the Upcaster that come with Axon, and explain how the serialized representations of events affects how upcasters are written.
 
@@ -58,16 +56,14 @@ The basic `Upcaster` interface for events in the Axon Framework works on a `Stre
 The upcasting process thus does not directly return the end result of the introduced upcast functions, but chains every upcasting function from one revision to another together by stacking `IntermediateEventRepresentations`.
 Once this process has taken place and the end result is pulled from them, that is when the actual upcasting function is performed on the serialized event.
 
-____
-
-*Conversion Notice*
-
+[NOTE]
+.Different serialization formats
+====
 Sometimes the event store can contain events in different serialized formats, since differing `Serializer` implementations where used.
 
 During upcasting it is important to note what the format is of the `IntermediateEventRepresentation`, as it influences the upcaster solution provided.
 To validate if the intermediate representation supports a given type, you can invoke `IntermediateEventRepresentation#canConvertDataTo(Class<?>)`.
-
-____
+====
 
 === Provided abstract Upcaster implementations
 
@@ -97,19 +93,17 @@ The `EventTypeUpcaster` is an implementation of the `SingleEventUpcaster` with p
 This can be used to for example change the class or package name of an event with ease.
 To create an `EventTypeUpcaster`, it is recommended to use the `EventTypeUpcaster#from(String expectedPayloadType, expectedRevision)` and `EventTypeUpcaster.Builder#to(upcastedPayloadType, upcastedRevision)` methods.
 
-____
-
-*What's a part of the context in a Context-Aware Upcasters?*
-
+[NOTE]
+.What's part of the context in a Context-Aware Upcasters?
+====
 A context-aware upcaster allows you to collect state from previous events.
-As upcasters work on a stream of events, all that can ever belong to the context, is the state from that stream.
+As upcasters work on a stream of events, all that can ever belong to the context is the state of that stream.
 
 However, this "stream of events" is not identical at all times.
 For example, when an aggregate is event-sourced, the event stream consists of aggregate instance-specific events.
 Furthermore, the stream of events starts from the xref:event-processors/streaming.adoc#tracking-tokens[tracking token's] position for a xref:event-processors/streaming.adoc[Streaming Event Processor].
-Hence, the context contains different state depending on what's included in the event stream.
-
-____
+Hence, the context contains different states depending on what's included in the event stream.
+====
 
 === Writing an Upcaster
 
@@ -146,8 +140,11 @@ public class ComplaintEvent {
 
 Upcaster from 1.0 revision to 2.0 revision:
 
-==== Event serialized with XStream
-
+[tabs]
+====
+Event with XStream::
++
+--
 [source,java]
 ----
 public class ComplaintEvent1_to_2Upcaster extends SingleEventUpcaster {
@@ -177,8 +174,10 @@ public class ComplaintEvent1_to_2Upcaster extends SingleEventUpcaster {
    }
 }
 ----
-
-==== Event serialized with Jackson
+--
+Event with Jackson::
++
+--
 
 [source,java]
 ----
@@ -208,6 +207,8 @@ public class ComplaintEvent1_to_2Upcaster extends SingleEventUpcaster {
    }
 }
 ----
+--
+====
 
 === Configuring an Upcaster
 
@@ -221,7 +222,11 @@ The upcaster chain is what the `EventStore` uses to attach all the upcast functi
 When configuring your upcasters, most scenarios will not require you to touch the `EventUpcasterChain` directly.
 Instead, consider the following snippets when it comes to registering upcasters:
 
-==== Axon Configuration API
+[tabs]
+====
+Configuration API::
++
+--
 
 [source,java]
 ----
@@ -235,9 +240,11 @@ public class AxonConfig {
     }
 }
 ----
+--
 
-==== Spring Boot auto configuration - `@Order` annotation
-
+Spring Boot with `@Order` annotation::
++
+--
 Axon honors Spring's `Order` annotation on upcasters.
 The numbers used in the annotation will dictate the ordering.
 The lower the number, the earlier it is registered to the upcaster chain:
@@ -279,8 +286,11 @@ public class AxonConfig {
     }
 }
 ----
+--
 
-==== Spring Boot auto configuration - `EventUpcasterChain` bean
+Spring Boot with `EventUpcasterChain` bean::
++
+--
 
 Adding an `EventUpcasterChain` bean to the Application Context will tell Axon to configure it for your event source:
 
@@ -298,3 +308,5 @@ public class AxonConfig {
     }
 }
 ----
+--
+====

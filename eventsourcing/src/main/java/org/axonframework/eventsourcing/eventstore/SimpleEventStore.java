@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -41,7 +41,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Steven van Beelen
  * @since 3.0
  */
-public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<TrackedEventMessage<?>> {
+public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<EventMessage<?>> {
 
     private final ProcessingContext.ResourceKey<EventStoreTransaction> eventStoreTransactionKey =
             ProcessingContext.ResourceKey.create("eventStoreTransaction");
@@ -100,8 +100,8 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
     }
 
     @Override
-    public MessageStream<TrackedEventMessage<?>> open(@Nonnull String context,
-                                                      @Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage<?>> open(@Nonnull String context,
+                                               @Nonnull StreamingCondition condition) {
         validate(context);
         return eventStorageEngine.stream(condition);
     }

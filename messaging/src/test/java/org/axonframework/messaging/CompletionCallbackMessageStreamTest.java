@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class CompletionCallbackMessageStreamTest extends MessageStreamTest<String> {
+class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     private static final Runnable NO_OP_COMPLETION_CALLBACK = () -> {
     };
@@ -36,14 +36,15 @@ class CompletionCallbackMessageStreamTest extends MessageStreamTest<String> {
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+                                                      Exception failure) {
         return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages)
                                                                   .concatWith(MessageStream.failed(failure)),
                                                      NO_OP_COMPLETION_CALLBACK);
     }
 
     @Override
-    String createRandomValidEntry() {
-        return "test-" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

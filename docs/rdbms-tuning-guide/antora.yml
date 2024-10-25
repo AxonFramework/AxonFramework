@@ -1,12 +1,13 @@
-name: rdbms-tuning-guide
-title: Axon Framework RDBMS tuning Guide
-version: true
-prerelease: true
+name: relational-database-guide
+title: Relational Databases And Axon Framework
+version:
+  axon-(?<version>+({0..9}).+({0..9})).*: $<version>
+  master: development
 start_page: ROOT:index.adoc
 
 asciidoc:
   attributes:
-    component_description: Guide that covers several considerations in regards to tuning the database for events.
+    component_description: How to use relational databases with Axon Framework
     type: guide
     group: axon-framework
 

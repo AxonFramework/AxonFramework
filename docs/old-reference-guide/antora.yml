@@ -8,7 +8,7 @@ start_page: ROOT:index.adoc
 
 asciidoc:
   attributes:
-    component_description: The Axon Framework former reference guide
+    component_description: The Axon Framework reference guide
     type: reference
     group: product
 

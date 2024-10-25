@@ -22,8 +22,9 @@ package org.axonframework.eventhandling;
  *
  * @param <T> The type of payload contained in this Message
  * @author Rene de Waele
+ * @deprecated In favor of returning entries that contain a token and event message separately
  */
-// TODO #3129 - MessageStream allows Pair<TrackingToken, EventMessage> type - Deprecate this class and implementations.
+@Deprecated
 public interface TrackedEventMessage<T> extends EventMessage<T> {
 
     /**

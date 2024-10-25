@@ -18,10 +18,17 @@ Major API Changes
   imperative and reactive style of programming, (2) eliminate the use of `ThreadLocal`, and (3) protect users from
   internals APIs. This does mean that any direct interaction with the `UnitOfWork` has become a breaking change. Please
   check the [Unit of Work](#unit-of-work) section for more details if you are facing this predicament.
+* All message-based infrastructure in Axon Framework will return the `MessageStream` interface. The `MessageStream` is
+  intended to support empty results, results of one entry, and results of N entries, thus mirroring Event Handlers (no
+  results), Command Handlers (one result), and Query Handlers (N results). Added, the `MessageStream` will function as a
+  replacement for components like the `DomainEventStream` and `BlockingStream` on the `EventStore`. As such, the
+  `MessageStream` changes **a lot** of (public) APIs within Axon Framework. Please check
+  the [Message Stream](#message-stream) section for more details, like an exhaustive list of all the adjusted
+  interfaces.
 * We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
   longer contain the `@CommandHandler` annotation. Instead, the `@CreationPolicy` should be used.
 
-#### Unit of Work
+## Unit of Work
 
 The `UnitOfWork` interface has been rewritten with roughly three goals in mind:
 
@@ -77,6 +84,15 @@ To conclude, here is a list of changes to take into account concerning the `Unit
 
 Note that the rewrite of the `UnitOfWork` has caused _a lot_ of API changes and numerous removals. For an exhaustive
 list of the latter, please check [here](#removed).
+
+## Message Stream
+
+TODO - provide description once the `MessageStream` generics discussion has been finalized.
+
+### Adjusted APIs
+
+TODO - Start filling adjusted operation once the `MessageStream` generics discussion has been finalized.
+* 
 
 Other API changes
 =================

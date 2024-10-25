@@ -1,6 +1,7 @@
 = Query Dispatchers
+:navtitle: Dispatching
 
-How to handle a query message has been covered in more detail in the link:query-handlers.adoc[Query Handling section]. Queries have to be dispatched, just like any type of message, before they can be handled. To that end Axon provides two interfaces:
+How to handle a query message has been covered in more detail in the xref:axon-framework-reference:queries:query-handlers.adoc[Query Handling section]. Queries have to be dispatched, just like any type of message, before they can be handled. To that end Axon provides two interfaces:
 
 . The Query Bus, and
 . The Query Gateway
@@ -28,14 +29,14 @@ The direct query represents a query request to a single query handler. If no han
 
 [source,java]
 ----
-@QueryHandler // 1.
+@QueryHandler // <1>
 public List<String> query(String criteria) {
     // return the query result based on given criteria
 }
 
 ----
 
-. By default the name of the query is fully qualified class name of query payload (`java.lang.String` in our case).
+<1> By default the name of the query is fully qualified class name of query payload (`java.lang.String` in our case).
 
 However, this behavior can be overridden by stating the `queryName` attribute of the `@QueryHandler` annotation.
 
@@ -43,19 +44,19 @@ If we want to query our view model, the `List&lt;String&gt;`, we would do someth
 
 [source,java]
 ----
-// 1.
+// <1>
 GenericQueryMessage<String, List<String>> query =
         new GenericQueryMessage<>("criteria", ResponseTypes.multipleInstancesOf(String.class));
-// 2. send a query message and print query response
+// <2> send a query message and print query response
 queryBus.query(query).thenAccept(System.out::println);
 
 ----
 
-. It is also possible to state the query name when we are building the query message,
+<1> It is also possible to state the query name when we are building the query message,
 
 by default this is the fully qualified class name of the query payload.
 
-. The response of sending a query is a Java `CompletableFuture`,
+<2> The response of sending a query is a Java `CompletableFuture`,
 
 which depending on the type of the query bus may be resolved immediately.
 
@@ -127,125 +128,78 @@ This query handler will provide us with the list of GiftCard states. Once our Gi
 ----
 @EventHandler
 public void on(RedeemedEvt event) {
-    // 1.
+    // <1>
     CardSummary summary = entityManager.find(CardSummary.class, event.getId());
     summary.setRemainingValue(summary.getRemainingValue() - event.getAmount());
-    // 2.
-    queryUpdateEmitter.emit(FetchCardSummariesQuery.class,
-                            query -> event.getId().startsWith(query.getFilter().getIdStartsWith()),
-                            summary);
+    // <2>
+    queryUpdateEmitter.emit(
+            FetchCardSummariesQuery.class, // <3>
+            query -> event.getId().startsWith(query.getFilter().getIdStartsWith()), // <4>
+            summary // <5>
+    );
 }
 ----
 
-. First, we update our view model by updating the existing card.
-. If there is a subscription query interested in updates about this specific GiftCard we emit an update.
-
-The first parameter of the emission is the type of the query (`FetchCardSummariesQuery` in our case)
-
-which corresponds to the query type in a previously defined query handler.
-
-The second parameter is a predicate which will select the subscription query to be updated.
-
-In our case we will only update subscription queries interested in the GiftCard which has been updated.
-
-The third parameter is the actual update, which in our case is the card summary.
-
-There are several overloads of the emit method present, feel free to take a look at JavaDoc for more specifics on that.
-
-The important thing to underline here is that an update is a message and that some overloads take
-
-the update message as a parameter (in our case we just sent the payload which was wrapped in the message)
-
-which enables us to attach meta-data for example.
+<1> First, we update our view model by updating the existing card.
+<2> If there is a subscription query interested in updates about this specific GiftCard we emit an update.
+<3> The first parameter of the emission is the type of the query (`FetchCardSummariesQuery` in our case) which corresponds to the query type in a previously defined query handler.
+<4> The second parameter is a predicate that will select the subscription query to be updated. In our case, we will only update subscription queries interested in the GiftCard which has been updated.
+<5> The third parameter is the actual update, which in our case is the card summary.
+There are several overloads of the emit method present, feel free to take a look at Javadoc for more specifics on that.
 
 Once we have the query handling and the emitting side implemented, we can issue a subscription query to get the initial state of the GiftCard and be updated once this GiftCard is redeemed:
 
 [source,java]
 ----
-// 1.
+// <1>
 commandGateway.sendAndWait(new IssueCmd("gc1", amount)); 
-// 2.
+// <2>
 FetchCardSummariesQuery fetchCardSummariesQuery =
                 new FetchCardSummariesQuery(offset, limit, filter);
-// 3.
+// <3>
 SubscriptionQueryResult<List<CardSummary>, CardSummary> fetchQueryResult = queryGateway.subscriptionQuery(
                 fetchCardSummariesQuery,
                 ResponseTypes.multipleInstancesOf(CardSummary.class),
                 ResponseTypes.instanceOf(CardSummary.class));
 
 fetchQueryResult
-//4.
+// <4>
                 .handle(cs -> cs.forEach(System.out::println), System.out::println)
-//5.
+// <5>
                 .doFinally(it -> fetchQueryResult.close());
 
-// 6.
+// <6>
 commandGateway.sendAndWait(new RedeemCmd("gc1", amount));
 ----
 
-. Issuing a GiftCard with `gc1` id and initial value of `amount`.
-. Creating a subscription query message to get the list of GiftCards
+<1> Issuing a GiftCard with `gc1` id and initial value of `amount`.
 
-(this initial state is multiple instances of `CardSummary`)
-
+<2> Creating a subscription query message to get the list of GiftCards (this initial state is multiple instances of `CardSummary`)
 and to be updated once the state of GiftCard with id `gc1` is changed (in our case an update means the card is redeemed).
-
 The type of the update is a single instance of `CardSummary`.
-
 Do note that the type of the update must match the type of the emission side.
 
-. Once the message is created, we are sending it via the `QueryGateway`.
-
+<3> Once the message is created, we are sending it via the `QueryGateway`.
 We receive a query result which contains two components: one is `initialResult` and the other is `updates`.
+In order to achieve 'reactiveness' we use https://projectreactor.io/[Project Reactor]'s `Mono` for `initialResult` and `Flux` for `updates`.
 
-In order to achieve 'reactiveness' we use https://projectreactor.io/[Project Reactor]'s `Mono` for `initialResult`
 
-and `Flux` for `updates`.
+<4> The `SubscriptionQueryResult#handle(Consumer&lt;? super I&gt;, Consumer&lt;? super U&gt;)` method gives us the possibility to subscribe to the `initialResult` and the `updates` in one go. If we want more granular control over the results, we can use the `initialResult()` and `updates()` methods on the query result.
 
-____
-
-*Note*
-
-Once the subscription query is issued, all updates are queued until the subscription to the `Flux` of `updates` is done. This behavior prevents the losing of updates.
-
-*Note*
-
-The Framework prevents issuing more than one query message with the same id. If it is necessary to be updated in several different places, create a new query message.
-
-*Note*
-
-The `reactor-core` dependency is mandatory for usage of subscription queries. However, it is a compile time dependency and it is not required for other Axon features.
-
-____
-
-. The `SubscriptionQueryResult#handle(Consumer&lt;? super I&gt;, Consumer&lt;? super U&gt;)`
-
-method gives us the possibility to subscribe to the `initialResult` and the `updates` in one go.
-
-If we want more granular control over the results, we can use the `initialResult()` and `updates()` methods on the query result.
-
-. As the `queryUpdateEmitter` will continue to emit updates even when there are no subscribers, we need to notify the emitting side once we are no longer interested in receiving updates.
-
+<5> As the `queryUpdateEmitter` will continue to emit updates even when there are no subscribers, we need to notify the emitting side once we are no longer interested in receiving updates.
 Failing to do so can result in hanging infinitive streams and eventually a memory leak.
+Once we are done with using the subscription query, we need to close the used resource.
 
-Once we are done with using subscription query, we need to close the used resource. We can do that in `doFinally` hook.
-
-As an alternative to the `doFinally` hook, there is the `Flux#using` API. This is synonymous
-
-to the try-with-resource Java API:
-
-`text
-   Flux.using( () -&gt; fetchQueryResult, 
-            queryResult -&gt; queryResult.handle(..., ...), 
-            SubscriptionQueryResult::close
-        );
-`
-
-. When we issue a `RedeemCmd`, our event handler in the projection will eventually be triggered,
-
+<6> When we issue a `RedeemCmd`, our event handler in the projection will eventually be triggered,
 which will result in the emission of an update.
-
 Since we subscribed to updates with the `println()` method, the update will be printed out once it is received.
+
+[NOTE]
+.Mandatory dependency
+====
+The `reactor-core` dependency is mandatory for usage of subscription queries. However, it is a compile time dependency, and it is not required for other Axon features.
+====
+
 
 [[streaming-queries]]
 === Streaming queries
@@ -268,18 +222,18 @@ Let's see how to use the `streamingQuery` method:
 @QueryHandler
 public List<CardSummary> handle(FetchCardSummariesQuery query) {
         ...
-    return cardRepository.findAll(); //1
+    return cardRepository.findAll(); // <1>
 }
         ...
 
 public Publisher<CardSummary> consumer() {
-        return queryGateway.streamingQuery(query, CardSummary.class); //2
+        return queryGateway.streamingQuery(query, CardSummary.class); // <2>
 }
 ----
 
-. We are querying the `cardRepository` for all the cards. The repository can potentially return a result set containing
+<1> We are querying the `cardRepository` for all the cards. The repository can potentially return a result set containing
 thousands of items.
-. We are using the `queryGateway` to issue the streaming query. If we used a point-to-point query with
+<2> We are using the `queryGateway` to issue the streaming query. If we used a point-to-point query with
 `multipleInstanceOf(CardSummary.class)` response type, we would get an extensive list transferred as a single result
 message over the network. This result can potentially cause a buffer overflow or maximum message size violation.
 Instead of the multiple-instance-of approach, we use the `streamingQuery(query, CardSummary.class)`. This method will
@@ -299,18 +253,16 @@ public Flux<CardSummary> handle(FetchCardSummariesQuery query) {
 When using a `Flux` as the return type, we can control backpressure, stream cancellation and implement more complex
 features like pagination.
 
-____
-
-*Transaction Leaking Concerns*
-
+[NOTE]
+.Transaction Leaking Concerns
+====
 Once a consumer of the streaming query receives the `Publisher` to subscribe to, the transaction will be considered
 completed successfully. That means that any subsequent messages on the stream will not be part of the transaction,
 including errors. As the transaction is already over an error will not be propagated to the parent transaction to
 invoke any rollback method. This has the implication that the streaming query should not be used within a Unit Of Work
 (within message handlers or any other transactional methods) to chain other transactional actions (like sending a
 command or query).
-
-____
+====
 
 ==== Streaming back-pressure
 
@@ -362,13 +314,12 @@ public Flux<CardSummary> handle(FetchCardSummariesQuery query) {
 The example above shows how the `timeout` operator is used to cancel a request if no responses have been observed during
 a five-second timespan.
 
-____
-
-*Reactor dependency*
+[NOTE]
+.Mandatory dependency
+====
 
 The `reactor-core` dependency is mandatory for usage of streaming queries. However, it is a compile time dependency
 and it is not required for other Axon features.
-
-____
+====
 
 link:https://youtu.be/lxonQnu1txQ[Axon Coding Tutorial #5: - Connecting the UI]

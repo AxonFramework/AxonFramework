@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -24,12 +24,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Implementation of the {@link MessageStream} that maps the {@link Message Messages} from type {@code M} to type
- * {@code R}.
+ * Implementation of the {@link MessageStream} that maps the {@link Entry entries}.
  *
- * @param <M>  The type of {@link Message} carried as input to this stream.
- * @param <RM> The type of {@link Message} carried as output to this stream as a result of the provided mapper
- *             operation.
+ * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
+ * @param <RM> The type of {@link Message} contained in the {@link Entry} as a result of mapping.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -37,38 +35,38 @@ import java.util.function.Function;
 class MappedMessageStream<M extends Message<?>, RM extends Message<?>> implements MessageStream<RM> {
 
     private final MessageStream<M> delegate;
-    private final Function<M, RM> mapper;
+    private final Function<Entry<M>, Entry<RM>> mapper;
 
     /**
-     * Construct a {@link MappedMessageStream} mapping the {@link Message Messages} of the given {@code delegate}
-     * {@link MessageStream} to type {@code M}.
+     * Construct a {@link MessageStream stream} mapping the {@link Entry entries} of the given
+     * {@code delegate MessageStream} to entries containing {@link Message Messages} of type {@code RM}.
      *
-     * @param delegate The {@link MessageStream} from which its {@link Message Messages} are mapped with the given
+     * @param delegate The {@link MessageStream stream} who's {@link Entry entries} are mapped with the given
      *                 {@code mapper}.
-     * @param mapper   The {@link Function} mapping {@link Message Messages} of type {@code R} to {@code M}.
+     * @param mapper   The {@link Function} mapping {@link Entry entries}.
      */
-    MappedMessageStream(@NotNull MessageStream<M> delegate,
-                        @NotNull Function<M, RM> mapper) {
+    MappedMessageStream(@Nonnull MessageStream<M> delegate,
+                        @Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         this.delegate = delegate;
         this.mapper = mapper;
     }
 
     @Override
-    public CompletableFuture<RM> asCompletableFuture() {
+    public CompletableFuture<Entry<RM>> firstAsCompletableFuture() {
         // CompletableFuture doesn't support empty completions, so null is used as placeholder
-        return delegate.asCompletableFuture()
-                       .thenApply(message -> message == null ? null : mapper.apply(message));
+        return delegate.firstAsCompletableFuture()
+                       .thenApply(entry -> entry == null ? null : mapper.apply(entry));
     }
 
     @Override
-    public Flux<RM> asFlux() {
+    public Flux<Entry<RM>> asFlux() {
         return delegate.asFlux()
                        .map(mapper);
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NotNull R identity,
-                                           @NotNull BiFunction<R, RM, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, Entry<RM>, R> accumulator) {
         return delegate.reduce(
                 identity,
                 (base, message) -> accumulator.apply(base, mapper.apply(message))

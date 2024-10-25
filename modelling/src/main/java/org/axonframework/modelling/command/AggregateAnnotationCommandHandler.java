@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
@@ -41,14 +35,7 @@ import org.axonframework.modelling.command.inspection.CreationPolicyMember;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -230,7 +217,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(message))
                        .handle(message, processingContext)
-                       .map(GenericCommandResultMessage::asCommandResultMessage);
+                       .mapMessage(GenericCommandResultMessage::asCommandResultMessage);
     }
 
     @Override
