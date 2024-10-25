@@ -19,6 +19,7 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Context;
+import org.axonframework.common.SimpleContext;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -44,153 +45,180 @@ public interface MessageStream<M extends Message<?>> {
 
     /**
      * Create a {@link MessageStream stream} that provides the {@link Message Messages} returned by the given
-     * {@code iterable} once they have been mapped to {@link Entry entries} by the given {@code mapper}.
+     * {@code iterable}, automatically wrapped in an {@link Entry}.
      * <p>
-     * Note that each separate consumer of the stream will receive each entry if the iterable does so.
+     * Note that each separate consumer of the stream will receive each message if the iterable does so.
      *
      * @param iterable The {@link Iterable} providing the {@link Message Messages} to stream.
      * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the {@link Message Messages}
-     * provided by the given {@code iterable} after mapping them with the given {@code mapper}.
+     * @return A {@link MessageStream stream} of {@link Entry entries} that return the {@link Message Messages} provided
+     * by the given {@code iterable}.
      */
     static <M extends Message<?>> MessageStream<M> fromIterable(@Nonnull Iterable<M> iterable) {
-        return fromEntryIterable(StreamSupport.stream(iterable.spliterator(), false)
-                                              .<Entry<M>>map(SimpleEntry::new)
-                                              .toList());
-    }
-
-    /**
-     * Create a {@link MessageStream stream} that provides the {@link Entry entries} returned by the given
-     * {@code iterable}.
-     * <p>
-     * Note that each separate consumer of the stream will receive each entry of the given {@code iterable} if the
-     * iterable does so.
-     *
-     * @param iterable The {@link Iterable} providing the {@link Entry entries} to stream.
-     * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the entries provided by the given
-     * {@code iterable}.
-     */
-    static <M extends Message<?>> MessageStream<M> fromEntryIterable(@Nonnull Iterable<Entry<M>> iterable) {
-        return new IterableMessageStream<>(iterable);
+        return fromIterable(iterable, message -> new SimpleContext());
     }
 
     /**
      * Create a {@link MessageStream stream} that provides the {@link Message Messages} returned by the given
-     * {@code stream} once they have been mapped to {@link Entry entries} by the given {@code mapper}.
+     * {@code iterable}, automatically wrapped in an {@link Entry} with the resulting {@link Context} from the
+     * {@code contextSupplier}.
      * <p>
-     * Note that each separate consumer of the stream will receive each entry of the given {@code stream}, if the stream
-     * does so.
+     * Note that each separate consumer of the stream will receive each message if the iterable does so.
      *
-     * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @param iterable        The {@link Iterable} providing the {@link Message Messages} to stream.
+     * @param contextSupplier A {@link Function} ingesting each {@link Message} from the given {@code iterable}
+     *                        returning the {@link Context} to set for the {@link Entry} the {@code Message} is wrapped
+     *                        in.
+     * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A {@link MessageStream stream} of {@link Entry entries} that return the {@link Message Messages} provided
+     * by the given {@code iterable} with a {@link Context} provided by the {@code contextSupplier}.
+     */
+    static <M extends Message<?>> MessageStream<M> fromIterable(@Nonnull Iterable<M> iterable,
+                                                                @Nonnull Function<M, Context> contextSupplier) {
+        return new IterableMessageStream<>(
+                StreamSupport.stream(iterable.spliterator(), false)
+                             .<Entry<M>>map(message -> new SimpleEntry<>(message, contextSupplier.apply(message)))
+                             .toList()
+        );
+    }
+
+    /**
+     * Create a {@link MessageStream stream} that provides the {@link Message Messages} returned by the given
+     * {@code stream}, automatically wrapped in an {@link Entry}.
+     * <p>
+     * Note that each separate consumer of the stream will receive each message of the given {@code stream}, if the
+     * stream does so.
+     *
      * @param stream The {@link Stream} providing the {@link Message Messages} to stream.
-     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the {@link Message Messages}
-     * provided by the given {@code stream} after mapping them with the given {@code mapper}.
+     * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A {@link MessageStream stream} of {@link Entry entries} that return the {@link Message Messages} provided
+     * by the given {@code stream}.
      */
     static <M extends Message<?>> MessageStream<M> fromStream(@Nonnull Stream<M> stream) {
-        return fromEntryStream(stream.map(SimpleEntry::new));
-    }
-
-    /**
-     * Create a {@link MessageStream stream} that provides the {@link Entry entries} returned by the given
-     * {@code stream}.
-     * <p>
-     * Note that each separate consumer of the stream will receive each entry of the given {@code stream}, if the stream
-     * does so.
-     *
-     * @param stream The {@link Stream} providing the {@link Entry entries} to stream.
-     * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the entries provided by the given
-     * {@code stream}.
-     */
-    static <M extends Message<?>> MessageStream<M> fromEntryStream(@Nonnull Stream<Entry<M>> stream) {
-        return new StreamMessageStream<>(stream);
+        return fromStream(stream, message -> new SimpleContext());
     }
 
     /**
      * Create a {@link MessageStream stream} that provides the {@link Message Messages} returned by the given
-     * {@code flux} once they have been mapped to {@link Entry entries} by the given {@code mapper}.
+     * {@code stream}, automatically wrapped in an {@link Entry} with the resulting {@link Context} from the
+     * {@code contextSupplier}.
+     * <p>
+     * Note that each separate consumer of the stream will receive each message of the given {@code stream}, if the
+     * stream does so.
      *
-     * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @param stream          The {@link Stream} providing the {@link Message Messages} to stream.
+     * @param contextSupplier A {@link Function} ingesting each {@link Message} from the given {@code stream} returning
+     *                        the {@link Context} to set for the {@link Entry} the {@code Message} is wrapped in.
+     * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A {@link MessageStream stream} of {@link Entry entries} that return the {@link Message Messages} provided
+     * by the given {@code stream} with a {@link Context} provided by the {@code contextSupplier}.
+     */
+    static <M extends Message<?>> MessageStream<M> fromStream(@Nonnull Stream<M> stream,
+                                                              @Nonnull Function<M, Context> contextSupplier) {
+        return new StreamMessageStream<>(
+                stream.map(message -> new SimpleEntry<>(message, contextSupplier.apply(message)))
+        );
+    }
+
+    /**
+     * Create a {@link MessageStream stream} that provides the {@link Message Messages} returned by the given
+     * {@code flux}, automatically wrapped in an {@link Entry}.
+     *
      * @param flux The {@link Flux} providing the {@link Message Messages} to stream.
+     * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A {@link MessageStream stream} of {@link Entry entries} that returns the {@link Message Messages}
-     * provided by the given {@code flux} after mapping them with the given {@code mapper}.
+     * provided by the given {@code flux}.
      */
     static <M extends Message<?>> MessageStream<M> fromFlux(@Nonnull Flux<M> flux) {
-        return fromEntryFlux(flux.map(SimpleEntry::new));
+        return fromFlux(flux, message -> new SimpleContext());
     }
 
     /**
-     * Create a {@link MessageStream stream} that provides the {@link Entry entries} returned by the given
-     * {@code flux}.
+     * Create a {@link MessageStream stream} that provides the {@link Message Messages} returned by the given
+     * {@code flux}, automatically wrapped in an {@link Entry} with the resulting {@link Context} from the
+     * {@code contextSupplier}.
      *
-     * @param flux The {@link Flux} providing the {@link Entry entries} to stream.
-     * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the entries provided by the given
-     * {@code flux}.
+     * @param flux            The {@link Flux} providing the {@link Message Messages} to stream.
+     * @param contextSupplier A {@link Function} ingesting each {@link Message} from the given {@code flux} returning
+     *                        the {@link Context} to set for the {@link Entry} the {@code Message} is wrapped in.
+     * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A {@link MessageStream stream} of {@link Entry entries} that returns the {@link Message Messages}
+     * provided by the given {@code flux} with a {@link Context} provided by the {@code contextSupplier}.
      */
-    static <M extends Message<?>> MessageStream<M> fromEntryFlux(@Nonnull Flux<Entry<M>> flux) {
-        return new FluxMessageStream<>(flux);
+    static <M extends Message<?>> MessageStream<M> fromFlux(@Nonnull Flux<M> flux,
+                                                            @Nonnull Function<M, Context> contextSupplier) {
+        return new FluxMessageStream<>(flux.map(message -> new SimpleEntry<>(message, contextSupplier.apply(message))));
     }
 
     /**
-     * Create a {@link MessageStream stream} that returns a {@link Entry entry} when the given {@code future}
-     * completes.
-     * <p>
-     * The resulting {@link Message} of the {@code future} is mapped with the given {@code mapper} into a
-     * {@code MessageEntry}.
+     * Create a {@link MessageStream stream} that returns an {@link Entry entry} wrapping the {@link Message} from the
+     * given {@code future}, once the given {@code future} completes.
      * <p>
      * The stream will contain at most a single entry. It may also contain no entries if the future returns
      * {@code null}. The stream will complete with an exception when the given {@code future} completes exceptionally.
      *
+     * @param future The {@link CompletableFuture} providing the {@link Message} to contain in the stream.
      * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @param future The {@link CompletableFuture} providing the {@link Entry entry} to contain in the stream.
-     * @return A {@link MessageStream stream} containing at most one {@link Entry entry}.
+     * @return A {@link MessageStream stream} containing at most one {@link Entry entry} from the given {@code future}.
      */
     static <M extends Message<?>> MessageStream<M> fromFuture(@Nonnull CompletableFuture<M> future) {
-        return fromFutureEntry(future.thenApply(SimpleEntry::new));
+        return fromFuture(future, message -> new SimpleContext());
     }
 
     /**
-     * Create a {@link MessageStream stream} that returns the {@link Entry entry} when the given {@code future}
-     * completes.
+     * Create a {@link MessageStream stream} that returns an {@link Entry entry} wrapping the {@link Message} from the
+     * given {@code future}, once the given {@code future} completes.
+     * <p>
+     * The automatically generated {@code Entry} will have the {@link Context} as given by the {@code contextSupplier}.
      * <p>
      * The stream will contain at most a single entry. It may also contain no entries if the future returns
      * {@code null}. The stream will complete with an exception when the given {@code future} completes exceptionally.
      *
-     * @param future The {@link CompletableFuture} providing the {@link Entry entry} to contain in the stream.
-     * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A {@link MessageStream stream} containing at most one {@link Entry entry}.
+     * @param future          The {@link CompletableFuture} providing the {@link Message} to contain in the stream.
+     * @param contextSupplier A {@link Function} ingesting the {@link Message} from the given {@code future} returning
+     *                        the {@link Context} to set for the {@link Entry} the {@code Message} is wrapped in.
+     * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A {@link MessageStream stream} containing at most one {@link Entry entry} from the given {@code future}
+     * with a {@link Context} provided by the {@code contextSupplier}.
      */
-    static <M extends Message<?>> MessageStream<M> fromFutureEntry(@Nonnull CompletableFuture<Entry<M>> future) {
-        return new SingleValueMessageStream<>(future);
+    static <M extends Message<?>> MessageStream<M> fromFuture(@Nonnull CompletableFuture<M> future,
+                                                              @Nonnull Function<M, Context> contextSupplier) {
+        return new SingleValueMessageStream<>(
+                future.thenApply(message -> new SimpleEntry<>(message, contextSupplier.apply(message)))
+        );
     }
 
     /**
-     * Create a {@link MessageStream stream} consisting of a {@link SimpleEntry} containing the given {@code message} as
-     * the sole {@link Entry}.
+     * Create a {@link MessageStream stream} containing the given {@code message} automatically wrapped in an
+     * {@link Entry}.
      * <p>
-     * Once the {@code SimpleMessageEntry} is consumed, the stream is considered completed.
+     * Once the {@code Entry} is consumed, the stream is considered completed.
      *
-     * @param message The {@link Message} to wrap in a {@link SimpleEntry} and return in the stream.
+     * @param message The {@link Message} to wrap in an {@link Entry} and return in the stream.
      * @param <M>     The type of {@link Message} given.
-     * @return A {@link MessageStream stream} consisting of a single {@link Entry entry}.
+     * @return A {@link MessageStream stream} consisting of a single {@link Entry entry} wrapping the given
+     * {@code message}.
      */
     static <M extends Message<?>> MessageStream<M> just(@Nullable M message) {
-        return just(new SimpleEntry<>(message));
+        return just(message, m -> new SimpleContext());
     }
 
     /**
-     * Create a {@link MessageStream stream} consisting of given {@code entry} as the sole {@link Entry}.
+     * Create a {@link MessageStream stream} containing the given {@code message} automatically wrapped in an
+     * {@link Entry}.
      * <p>
-     * Once the {@code entry} is consumed, the stream is considered completed.
+     * Once the {@code Entry} is consumed, the stream is considered completed.
      *
-     * @param entry The {@link Entry} to return in the stream.
-     * @param <M>   The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A {@link MessageStream stream} consisting of a single {@link Entry entry}.
+     * @param message         The {@link Message} to wrap in an {@link Entry} and return in the stream.
+     * @param contextSupplier A {@link Function} ingesting the given {@code message} returning the {@link Context} to
+     *                        set for the {@link Entry} the {@code message} is wrapped in.
+     * @param <M>             The type of {@link Message} given.
+     * @return A {@link MessageStream stream} consisting of a single {@link Entry entry} wrapping the given
+     * {@code message} with a {@link Context} provided by the {@code contextSupplier}.
      */
-    static <M extends Message<?>> MessageStream<M> just(@Nullable Entry<M> entry) {
-        return new SingleValueMessageStream<>(entry);
+    static <M extends Message<?>> MessageStream<M> just(@Nullable M message,
+                                                        @Nonnull Function<M, Context> contextSupplier) {
+        return new SingleValueMessageStream<>(new SimpleEntry<>(message, contextSupplier.apply(message)));
     }
 
     /**

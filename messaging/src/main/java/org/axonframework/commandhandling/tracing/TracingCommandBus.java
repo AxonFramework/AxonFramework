@@ -81,10 +81,8 @@ public class TracingCommandBus implements CommandBus {
         @Override
         public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
                                                           ProcessingContext processingContext) {
-            return MessageStream.fromFutureEntry(spanFactory.createHandleCommandSpan(message, false)
-                                                            .runSupplierAsync(() -> handler.handle(message,
-                                                                                                   processingContext)
-                                                                                           .firstAsCompletableFuture()));
+            return spanFactory.createHandleCommandSpan(message, false)
+                              .runSupplier(() -> handler.handle(message, processingContext));
         }
 
         @Override

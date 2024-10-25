@@ -28,13 +28,15 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
 class TracingCommandBusTest {
@@ -104,7 +106,6 @@ class TracingCommandBusTest {
             public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
                                                               ProcessingContext processingContext) {
                 spanFactory.verifySpanActive("CommandBus.handleCommand");
-
                 return MessageStream.just(new GenericMessage<>("ok"));
             }
         });
@@ -129,14 +130,17 @@ class TracingCommandBusTest {
             public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
                                                               ProcessingContext processingContext) {
                 spanFactory.verifySpanActive("CommandBus.handleCommand");
-                return MessageStream.failed(new MockException("Simulating failure"));
+                throw new MockException("Simulating failure");
             }
         });
 
-        captor.getValue().handle(GenericCommandMessage.asCommandMessage("Test"), ProcessingContext.NONE);
-
-        spanFactory.verifySpanCompleted("CommandBus.handleCommand");
-        spanFactory.verifySpanHasException("CommandBus.handleCommand", MockException.class);
+        try {
+            captor.getValue().handle(GenericCommandMessage.asCommandMessage("Test"), ProcessingContext.NONE);
+            fail("Expected a MockException to be thrown from handling a command!");
+        } catch (MockException e) {
+            spanFactory.verifySpanCompleted("CommandBus.handleCommand");
+            spanFactory.verifySpanHasException("CommandBus.handleCommand", MockException.class);
+        }
     }
 
     @Test
