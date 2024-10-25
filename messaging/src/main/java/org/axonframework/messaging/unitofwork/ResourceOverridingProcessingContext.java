@@ -181,7 +181,6 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
                 : delegate.putResource(key, resource);
     }
 
-
     @Override
     public <T> T updateResource(@Nonnull ResourceKey<T> key,
                                 @Nonnull UnaryOperator<T> resourceUpdater) {
