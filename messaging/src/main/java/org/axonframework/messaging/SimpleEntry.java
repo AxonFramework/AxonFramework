@@ -44,11 +44,11 @@ record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context c
      *
      * @param message The {@link Message} of type {@code M} contained in this {@link Entry}.
      */
-    public SimpleEntry(@Nullable M message) {
+    SimpleEntry(@Nullable M message) {
         this(message, new SimpleContext());
     }
 
-    public SimpleEntry {
+    SimpleEntry {
         assertNonNull(context, "The context cannot be null");
     }
 
