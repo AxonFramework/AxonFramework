@@ -182,8 +182,21 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         this.localSegmentShortCut = builder.localSegmentShortCut;
     }
 
+    private <Q, R> Publisher<QueryResponseMessage<R>> tryToRunStreamingQueryLocally(StreamingQueryMessage<Q, R> query) {
+        if (shouldRunQueryLocally(query.getQueryName())) {
+            return localSegment.streamingQuery(query);
+        }
+        return null;
+    }
+
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
+
+        Publisher<QueryResponseMessage<R>> queryResult = tryToRunStreamingQueryLocally(query);
+        if (queryResult != null) {
+            return queryResult;
+        }
+
         Span span = spanFactory.createStreamingQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             StreamingQueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(query);
@@ -264,13 +277,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         return result;
     }
 
-    private <Q, R> boolean shouldRunQueryLocally(QueryMessage<Q, R> queryMessage) {
-        return localSegmentShortCut && queryHandlerNames.contains(queryMessage.getQueryName());
+    private boolean shouldRunQueryLocally(String queryName) {
+        return localSegmentShortCut && queryHandlerNames.contains(queryName);
     }
 
     private <Q, R> CompletableFuture<QueryResponseMessage<R>> tryToRunQueryLocally(
             @Nonnull QueryMessage<Q, R> queryMessage) {
-        if (shouldRunQueryLocally(queryMessage)) {
+        if (shouldRunQueryLocally(queryMessage.getQueryName())) {
             return localSegment.query(queryMessage);
         }
         return null;
