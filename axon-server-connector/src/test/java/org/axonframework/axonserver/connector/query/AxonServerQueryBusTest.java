@@ -196,8 +196,78 @@ class AxonServerQueryBusTest {
         assertEquals("test", testSubject.query(testQuery).get().getPayload());
 
         verify(targetContextResolver).resolveContext(testQuery);
+        verify(localSegment, never()).query(testQuery);
         spanFactory.verifySpanCompleted("QueryBus.queryDistributed");
         spanFactory.verifySpanPropagated("QueryBus.queryDistributed", testQuery);
+    }
+
+    @Nested
+    class LocalSegmentShortCutEnabled {
+
+        private Registration registration;
+        private final QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World",
+                                                                                         TEST_QUERY,
+                                                                                         instanceOf(String.class));
+
+        private final StreamingQueryMessage<String, String> testStreamingQuery =
+                new GenericStreamingQueryMessage<>("Hello, World", TEST_QUERY, String.class);
+
+        @BeforeEach
+        void setUp() {
+            testSubject = AxonServerQueryBus.builder()
+                                            .axonServerConnectionManager(axonServerConnectionManager)
+                                            .configuration(configuration)
+                                            .localSegment(localSegment)
+                                            .updateEmitter(SimpleQueryUpdateEmitter.builder().build())
+                                            .messageSerializer(serializer)
+                                            .genericSerializer(serializer)
+                                            .targetContextResolver(targetContextResolver)
+                                            .enabledLocalSegmentShortCut()
+                                            .spanFactory(
+                                                    DefaultQueryBusSpanFactory.builder()
+                                                                              .spanFactory(spanFactory)
+                                                                              .build()
+                                            )
+                                            .build();
+
+            registration = testSubject.subscribe(TEST_QUERY, String.class, q -> "test");
+        }
+
+        @Test
+        void queryWhenLocalHandlerIsPresent() {
+            when(localSegment.query(testQuery)).thenReturn(CompletableFuture.completedFuture(new GenericQueryResponseMessage<>(
+                    "ok")));
+
+            testSubject.query(testQuery);
+
+            verify(localSegment).query(testQuery);
+            verify(mockQueryChannel, never()).query(any());
+        }
+
+        @Test
+        void queryWhenRegistrationIsCancel() {
+            registration.cancel();
+
+            testSubject.query(testQuery);
+
+            verify(localSegment, never()).query(testQuery);
+        }
+
+        @Test
+        void streamingQueryWhenLocalHandlerIsPresent() {
+            testSubject.streamingQuery(testStreamingQuery);
+
+            verify(localSegment).streamingQuery(testStreamingQuery);
+            verify(mockQueryChannel, never()).query(any());
+        }
+
+        @Test
+        void streamingQueryWhenRegistrationIsCancel() {
+            registration.cancel();
+            testSubject.streamingQuery(testStreamingQuery);
+
+            verify(localSegment, never()).streamingQuery(testStreamingQuery);
+        }
     }
 
     @Test
@@ -338,8 +408,8 @@ class AxonServerQueryBusTest {
                                                                               stubResponse("<string>3</string>")));
 
         Stream<QueryResponseMessage<String>> stream = testSubject.scatterGather(testQuery,
-                                                                                                    12,
-                                                                                                    TimeUnit.SECONDS);
+                                                                                12,
+                                                                                TimeUnit.SECONDS);
         assertEquals(3, stream.count());
         stream.close();
     }
@@ -362,6 +432,7 @@ class AxonServerQueryBusTest {
                     .verifyComplete();
 
         verify(targetContextResolver).resolveContext(testQuery);
+        verify(localSegment, never()).streamingQuery(testQuery);
         //noinspection resource
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")

@@ -115,18 +115,22 @@ public class AxonServerBusAutoConfiguration {
                 new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
         );
 
-        return AxonServerQueryBus.builder()
-                                 .axonServerConnectionManager(axonServerConnectionManager)
-                                 .configuration(axonServerConfiguration)
-                                 .localSegment(simpleQueryBus)
-                                 .updateEmitter(simpleQueryBus.queryUpdateEmitter())
-                                 .messageSerializer(messageSerializer)
-                                 .genericSerializer(genericSerializer)
-                                 .priorityCalculator(priorityCalculator)
-                                 .targetContextResolver(targetContextResolver)
-                                 .spanFactory(axonConfiguration.getComponent(QueryBusSpanFactory.class))
-                                 .localSegmentShortCut(true)
-                                 .build();
+        AxonServerQueryBus.Builder axonQueryBuilder = AxonServerQueryBus.builder()
+                                                                        .axonServerConnectionManager(
+                                                                                axonServerConnectionManager)
+                                                                        .configuration(axonServerConfiguration)
+                                                                        .localSegment(simpleQueryBus)
+                                                                        .updateEmitter(simpleQueryBus.queryUpdateEmitter())
+                                                                        .messageSerializer(messageSerializer)
+                                                                        .genericSerializer(genericSerializer)
+                                                                        .priorityCalculator(priorityCalculator)
+                                                                        .targetContextResolver(targetContextResolver)
+                                                                        .spanFactory(axonConfiguration.getComponent(
+                                                                                QueryBusSpanFactory.class));
+        if (axonServerConfiguration.getLocalSegmentShortCut()) {
+            axonQueryBuilder.enabledLocalSegmentShortCut();
+        }
+        return axonQueryBuilder.build();
     }
 
     @Bean

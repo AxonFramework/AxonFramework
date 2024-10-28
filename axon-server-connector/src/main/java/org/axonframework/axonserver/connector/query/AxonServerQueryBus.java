@@ -258,6 +258,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     public <R> Registration subscribe(@Nonnull String queryName,
                                       @Nonnull Type responseType,
                                       @Nonnull MessageHandler<? super QueryMessage<?, R>> handler) {
+        logger.info("subscribing new query " + queryName);
         Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
         QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType);
         io.axoniq.axonserver.connector.Registration serverRegistration =
@@ -284,6 +285,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     private <Q, R> CompletableFuture<QueryResponseMessage<R>> tryToRunQueryLocally(
             @Nonnull QueryMessage<Q, R> queryMessage) {
         if (shouldRunQueryLocally(queryMessage.getQueryName())) {
+            logger.info("running query locally");
             return localSegment.query(queryMessage);
         }
         return null;
@@ -291,7 +293,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> queryMessage) {
-
+        logger.info("running query " + queryMessage.getQueryName());
         CompletableFuture<QueryResponseMessage<R>> queryResult = tryToRunQueryLocally(queryMessage);
 
         if (queryResult != null) {
@@ -505,6 +507,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             @Nonnull SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
     ) {
+
         Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
                        () -> "The subscription Query query does not support Flux as a return type.");
         Assert.isFalse(Publisher.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
@@ -657,8 +660,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             return this;
         }
 
-        public Builder localSegmentShortCut(boolean localSegmentShortCut) {
-            this.localSegmentShortCut = localSegmentShortCut;
+        public Builder enabledLocalSegmentShortCut() {
+            this.localSegmentShortCut = true;
             return this;
         }
 
