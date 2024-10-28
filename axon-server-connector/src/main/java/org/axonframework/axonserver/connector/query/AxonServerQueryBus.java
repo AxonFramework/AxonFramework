@@ -182,19 +182,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         this.localSegmentShortCut = builder.localSegmentShortCut;
     }
 
-    private <Q, R> Publisher<QueryResponseMessage<R>> tryToRunStreamingQueryLocally(StreamingQueryMessage<Q, R> query) {
-        if (shouldRunQueryLocally(query.getQueryName())) {
-            return localSegment.streamingQuery(query);
-        }
-        return null;
-    }
-
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
 
-        Publisher<QueryResponseMessage<R>> queryResult = tryToRunStreamingQueryLocally(query);
-        if (queryResult != null) {
-            return queryResult;
+        if (shouldRunQueryLocally(query.getQueryName())) {
+            return localSegment.streamingQuery(query);
         }
 
         Span span = spanFactory.createStreamingQuerySpan(query, true).start();
@@ -258,7 +250,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     public <R> Registration subscribe(@Nonnull String queryName,
                                       @Nonnull Type responseType,
                                       @Nonnull MessageHandler<? super QueryMessage<?, R>> handler) {
-        logger.info("subscribing new query " + queryName);
         Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
         QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType);
         io.axoniq.axonserver.connector.Registration serverRegistration =
@@ -282,22 +273,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         return localSegmentShortCut && queryHandlerNames.contains(queryName);
     }
 
-    private <Q, R> CompletableFuture<QueryResponseMessage<R>> tryToRunQueryLocally(
-            @Nonnull QueryMessage<Q, R> queryMessage) {
-        if (shouldRunQueryLocally(queryMessage.getQueryName())) {
-            logger.info("running query locally");
-            return localSegment.query(queryMessage);
-        }
-        return null;
-    }
-
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> queryMessage) {
-        logger.info("running query " + queryMessage.getQueryName());
-        CompletableFuture<QueryResponseMessage<R>> queryResult = tryToRunQueryLocally(queryMessage);
 
-        if (queryResult != null) {
-            return queryResult;
+        if (shouldRunQueryLocally(queryMessage.getQueryName())) {
+            return localSegment.query(queryMessage);
         }
 
         Span span = spanFactory.createQuerySpan(queryMessage, true).start();
