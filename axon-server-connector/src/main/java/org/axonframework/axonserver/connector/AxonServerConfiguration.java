@@ -151,6 +151,10 @@ public class AxonServerConfiguration {
      */
     private FlowControlConfiguration commandFlowControl;
 
+    /**
+     * A toggle dictating whether to invoke query handlers directly if they are registered in the local environment.
+     * Defaults to {@code false}
+     */
     private boolean localSegmentShortCut = false;
 
     /**
