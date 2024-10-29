@@ -255,7 +255,13 @@ class AxonServerQueryBusTest {
 
         @Test
         void streamingQueryWhenLocalHandlerIsPresent() {
-            testSubject.streamingQuery(testStreamingQuery);
+            when(localSegment.streamingQuery(testStreamingQuery)).thenReturn(Flux.fromIterable(List.of(new GenericQueryResponseMessage<>(
+                    "ok"))));
+            
+            StepVerifier.create(Flux.from(testSubject.streamingQuery(testStreamingQuery))
+                                    .map(Message::getPayload))
+                        .expectNext("ok")
+                        .verifyComplete();
 
             verify(localSegment).streamingQuery(testStreamingQuery);
             verify(mockQueryChannel, never()).query(any());

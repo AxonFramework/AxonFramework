@@ -185,26 +185,27 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
 
-        if (shouldRunQueryLocally(query.getQueryName())) {
-            return localSegment.streamingQuery(query);
-        }
-
         Span span = spanFactory.createStreamingQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             StreamingQueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(query);
             int priority = priorityCalculator.determinePriority(queryWithContext);
+
             AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(
                     queryExecutor,
                     priority,
                     TASK_SEQUENCE));
             return Mono.fromSupplier(this::registerStreamingQueryActivity).flatMapMany(
                     activity -> Mono.just(dispatchInterceptors.intercept(queryWithContext))
-                                    .flatMapMany(intercepted ->
-                                                         Mono.just(serializeStreaming(intercepted, priority))
-                                                             .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
-                                                                     () -> sendRequest(intercepted, queryRequest)))
-                                                             .concatMap(queryResponse -> deserialize(intercepted,
-                                                                                                     queryResponse))
+                                    .flatMapMany(intercepted -> {
+                                                     if (shouldRunQueryLocally(intercepted.getQueryName())) {
+                                                         return localSegment.streamingQuery(intercepted);
+                                                     }
+                                                     return Mono.just(serializeStreaming(intercepted, priority))
+                                                                .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
+                                                                        () -> sendRequest(intercepted, queryRequest)))
+                                                                .concatMap(queryResponse -> deserialize(intercepted,
+                                                                                                        queryResponse));
+                                                 }
                                     )
                                     .publishOn(scheduler.get())
                                     .doOnError(span::recordException)
@@ -276,10 +277,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> queryMessage) {
 
-        if (shouldRunQueryLocally(queryMessage.getQueryName())) {
-            return localSegment.query(queryMessage);
-        }
-
         Span span = spanFactory.createQuerySpan(queryMessage, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             QueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(queryMessage);
@@ -288,30 +285,37 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
             QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryWithContext);
+
+            CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
             //noinspection resource
             ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
-            CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
-            try {
-                int priority = priorityCalculator.determinePriority(interceptedQuery);
-                QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
-                ResultStream<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
-                queryTransaction.whenComplete((r, e) -> result.close());
-                Span responseTaskSpan = spanFactory.createResponseProcessingSpan(interceptedQuery);
-                Runnable responseProcessingTask = new ResponseProcessingTask<>(result,
-                                                                               serializer,
-                                                                               queryTransaction,
-                                                                               queryMessage.getResponseType(),
-                                                                               responseTaskSpan);
 
-                result.onAvailable(() -> queryExecutor.execute(new PriorityRunnable(
-                        responseProcessingTask,
-                        priority,
-                        TASK_SEQUENCE.incrementAndGet())));
-            } catch (Exception e) {
-                logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
-                AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
-                queryTransaction.completeExceptionally(exception);
-                span.recordException(e).end();
+            if (shouldRunQueryLocally(interceptedQuery.getQueryName())) {
+                queryTransaction = localSegment.query(interceptedQuery);
+            } else {
+
+                try {
+                    int priority = priorityCalculator.determinePriority(interceptedQuery);
+                    QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
+                    ResultStream<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
+                    queryTransaction.whenComplete((r, e) -> result.close());
+                    Span responseTaskSpan = spanFactory.createResponseProcessingSpan(interceptedQuery);
+                    Runnable responseProcessingTask = new ResponseProcessingTask<>(result,
+                                                                                   serializer,
+                                                                                   queryTransaction,
+                                                                                   queryMessage.getResponseType(),
+                                                                                   responseTaskSpan);
+
+                    result.onAvailable(() -> queryExecutor.execute(new PriorityRunnable(
+                            responseProcessingTask,
+                            priority,
+                            TASK_SEQUENCE.incrementAndGet())));
+                } catch (Exception e) {
+                    logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
+                    AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
+                    queryTransaction.completeExceptionally(exception);
+                    span.recordException(e).end();
+                }
             }
 
             queryTransaction.whenComplete((r, e) -> {
@@ -978,6 +982,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
         @Override
         public FlowControl stream(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
+            logger.info("stream query " + Thread.currentThread());
             Runnable onClose = () -> queriesInProgress.remove(query.getMessageIdentifier());
             CloseAwareReplyChannel<QueryResponse> closeAwareReplyChannel =
                     new CloseAwareReplyChannel<>(responseHandler, onClose);
