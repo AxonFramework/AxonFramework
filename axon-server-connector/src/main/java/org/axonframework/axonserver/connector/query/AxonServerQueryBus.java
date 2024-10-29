@@ -184,12 +184,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
-
         Span span = spanFactory.createStreamingQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             StreamingQueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(query);
             int priority = priorityCalculator.determinePriority(queryWithContext);
-
             AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(
                     queryExecutor,
                     priority,
@@ -285,15 +283,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
             QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryWithContext);
-
-            CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
             //noinspection resource
             ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
-
+            CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
             if (shouldRunQueryLocally(interceptedQuery.getQueryName())) {
                 queryTransaction = localSegment.query(interceptedQuery);
             } else {
-
                 try {
                     int priority = priorityCalculator.determinePriority(interceptedQuery);
                     QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
@@ -491,7 +486,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             @Nonnull SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
     ) {
-
         Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
                        () -> "The subscription Query query does not support Flux as a return type.");
         Assert.isFalse(Publisher.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
@@ -644,6 +638,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             return this;
         }
 
+        /**
+         * Enables shortcut to local {@link QueryBus}. If query handlers are registered in the local environment they
+         * will be invoked directly instead of sending request to axon server.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder enabledLocalSegmentShortCut() {
             this.localSegmentShortCut = true;
             return this;
@@ -982,7 +982,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
         @Override
         public FlowControl stream(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
-            logger.info("stream query " + Thread.currentThread());
             Runnable onClose = () -> queriesInProgress.remove(query.getMessageIdentifier());
             CloseAwareReplyChannel<QueryResponse> closeAwareReplyChannel =
                     new CloseAwareReplyChannel<>(responseHandler, onClose);
