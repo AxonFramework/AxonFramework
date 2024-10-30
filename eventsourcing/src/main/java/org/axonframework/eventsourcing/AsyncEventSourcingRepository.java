@@ -19,10 +19,10 @@ package org.axonframework.eventsourcing;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
+import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
@@ -38,11 +38,12 @@ import java.util.function.UnaryOperator;
 
 /**
  * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an
- * {@link EventStore}.
+ * {@link AsyncEventStore}.
  *
  * @param <ID> The type of identifier used to identify the entity.
  * @param <M>  The type of the model to load.
  * @author Allard Buijze
+ * @author Steven van Beelen
  * @since 0.1
  */
 public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.LifecycleManagement<ID, M> {
@@ -50,31 +51,33 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, M>>>> managedEntitiesKey =
             ResourceKey.create("managedEntities");
 
-    private final EventStore eventStore;
-    private final IdentifierResolver<ID> identifierResolver;
+    private final AsyncEventStore eventStore;
+    private final CriteriaResolver<ID> criteriaResolver;
     private final EventStateApplier<M> eventStateApplier;
-    // TODO #3093 - This should be a revamp of the AggregateFactory. IF this is the way to go.
-    private final Supplier<M> modelFactory;
+    private final String context;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
-     * apply state transitions to the entity based on the events received, and given {@code identifierResolver} to
-     * resolve the aggregate identifier from the given identifier type.
+     * apply state transitions to the entity based on the events received, and given {@code criteriaResolver} to resolve
+     * the {@link org.axonframework.eventsourcing.eventstore.EventCriteria} of the given identifier type used to source
+     * a model.
      *
-     * @param eventStore         The event store to load events from.
-     * @param identifierResolver Converts the given identifier to an aggregate identifier to load the event stream.
-     * @param eventStateApplier  The function to apply event state changes to the loaded entities.
-     * @param modelFactory       Supplier of the model this repository constructs. Used to define the default instance
-     *                           given to the {@code eventStateApplier}.
+     * @param eventStore        The event store to load events from.
+     * @param criteriaResolver  Converts the given identifier to an
+     *                          {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
+     *                          event stream.
+     * @param eventStateApplier The function to apply event state changes to the loaded entities.
+     * @param context           The (bounded) context this {@link AsyncEventSourcingRepository} provides access to
+     *                          models for.
      */
-    public AsyncEventSourcingRepository(EventStore eventStore,
-                                        IdentifierResolver<ID> identifierResolver,
+    public AsyncEventSourcingRepository(AsyncEventStore eventStore,
+                                        CriteriaResolver<ID> criteriaResolver,
                                         EventStateApplier<M> eventStateApplier,
-                                        Supplier<M> modelFactory) {
+                                        String context) {
         this.eventStore = eventStore;
-        this.identifierResolver = identifierResolver;
+        this.criteriaResolver = criteriaResolver;
         this.eventStateApplier = eventStateApplier;
-        this.modelFactory = modelFactory;
+        this.context = context;
     }
 
     @Override
@@ -101,18 +104,20 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
         return managedEntities.computeIfAbsent(
                 identifier,
-                id -> {
-                    DomainEventStream eventStream = eventStore.readEvents(identifierResolver.resolve(identifier));
-                    M currentState = null;
-                    while (eventStream.hasNext()) {
-                        DomainEventMessage<?> nextEvent = eventStream.next();
-                        currentState = eventStateApplier.apply(currentState, nextEvent);
-                    }
-
-                    EventSourcedEntity<ID, M> managedEntity = new EventSourcedEntity<>(identifier, currentState);
-                    updateActiveModel(managedEntity, processingContext);
-                    return CompletableFuture.completedFuture(managedEntity);
-                }
+                id -> eventStore.transaction(processingContext, context)
+                                .source(
+                                        SourcingCondition.conditionFor(criteriaResolver.resolve(id), start, end),
+                                        processingContext
+                                )
+                                .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, entry) -> {
+                                    entity.applyStateChange(entry.message(), eventStateApplier);
+                                    return entity;
+                                })
+                                .whenComplete((entity, exception) -> {
+                                    if (exception == null) {
+                                        updateActiveModel(entity, processingContext);
+                                    }
+                                })
         ).thenApply(Function.identity());
     }
 
@@ -123,7 +128,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         return load(identifier, processingContext).thenApply(
                 managedEntity -> {
                     managedEntity.applyStateChange(
-                            entity -> entity == null || entity.equals(modelFactory.get()) ? factoryMethod.get() : entity
+                            entity -> entity != null ? entity : factoryMethod.get()
                     );
                     return managedEntity;
                 }
@@ -145,24 +150,24 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
     /**
      * Update the given {@code entity} for any event that is published within its lifecycle, by invoking the
-     * {@link EventStateApplier} in the
-     * {@link org.axonframework.eventsourcing.eventstore.AppendEventTransaction#onAppend(Consumer)}. onAppend hook is
-     * used to immediately source events that are being published by the model
+     * {@link EventStateApplier} in the {@link EventStoreTransaction#onAppend(Consumer)}. onAppend hook is used to
+     * immediately source events that are being published by the model
      *
      * @param entity            An {@link ManagedEntity} to make the state change for.
-     * @param processingContext The context for which to retrieve the active
-     *                          {@link org.axonframework.eventsourcing.eventstore.AppendEventTransaction}.
+     * @param processingContext The {@link ProcessingContext} for which to retrieve the active
+     *                          {@link EventStoreTransaction}.
      */
     private void updateActiveModel(EventSourcedEntity<ID, M> entity, ProcessingContext processingContext) {
-        eventStore.currentTransaction(processingContext)
+        eventStore.transaction(processingContext, context)
                   .onAppend(event -> entity.applyStateChange(event, eventStateApplier));
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStore", eventStore);
-        descriptor.describeProperty("identifierResolver", identifierResolver);
+        descriptor.describeProperty("criteriaResolver", criteriaResolver);
         descriptor.describeProperty("eventStateApplier", eventStateApplier);
+        descriptor.describeProperty("context", context);
     }
 
     /**

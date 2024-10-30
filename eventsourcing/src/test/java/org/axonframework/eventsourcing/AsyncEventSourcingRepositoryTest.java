@@ -20,16 +20,18 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.AppendEventTransaction;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -39,92 +41,105 @@ import static org.mockito.Mockito.*;
  */
 class AsyncEventSourcingRepositoryTest {
 
-    private EventStore eventStore;
-    private AppendEventTransaction eventTransaction;
+    private static final String TEST_CONTEXT = "DEFAULT_CONTEXT";
+    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.hasIndex(new Index("aggregateId", "id"));
+
+    private AsyncEventStore eventStore;
+    private EventStoreTransaction eventStoreTransaction;
 
     private AsyncEventSourcingRepository<String, String> testSubject;
 
     @BeforeEach
     void setUp() {
         eventStore = mock();
-        eventTransaction = mock();
-        when(eventStore.currentTransaction(any())).thenReturn(eventTransaction);
+        eventStoreTransaction = mock();
+        when(eventStore.transaction(any(), eq(TEST_CONTEXT))).thenReturn(eventStoreTransaction);
 
         testSubject = new AsyncEventSourcingRepository<>(
                 eventStore,
-                identifier -> "id",
+                identifier -> TEST_MODEL_CRITERIA,
                 (currentState, event) -> currentState + "-" + event.getPayload(),
-                String::new
+                TEST_CONTEXT
         );
     }
 
     @Test
     void loadEventSourcedEntity() {
-        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
-        StubProcessingContext processingContext = new StubProcessingContext();
-        CompletableFuture<ManagedEntity<String, String>> loaded = testSubject.load("test", processingContext);
+        ProcessingContext processingContext = new StubProcessingContext();
+        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
+                .when(eventStoreTransaction)
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
 
-        assertTrue(loaded.isDone());
-        assertFalse(loaded.isCompletedExceptionally());
-        verify(eventTransaction).onAppend(any());
-        verify(eventStore).readEvents("id");
+        CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
 
-        assertEquals("null-0-1", loaded.resultNow().entity());
+        assertTrue(result.isDone());
+        assertFalse(result.isCompletedExceptionally(), () -> result.exceptionNow().toString());
+        verify(eventStore, times(2)).transaction(processingContext, TEST_CONTEXT);
+        verify(eventStoreTransaction).onAppend(any());
+        verify(eventStoreTransaction)
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
+
+        assertEquals("null-0-1", result.resultNow().entity());
     }
 
     @Test
     void persistNewEntityRegistersItToListenToEvents() {
-        StubProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = new StubProcessingContext();
 
-        ManagedEntity<String, String> actual = testSubject.persist("id", "entity", processingContext);
+        ManagedEntity<String, String> result = testSubject.persist("id", "entity", processingContext);
 
-        verify(eventTransaction).onAppend(any());
-        assertEquals("entity", actual.entity());
-        assertEquals("id", actual.identifier());
+        verify(eventStoreTransaction).onAppend(any());
+        assertEquals("entity", result.entity());
+        assertEquals("id", result.identifier());
     }
 
     @Test
     void persistAlreadyPersistedEntityDoesNotRegisterItToListenToEvents() {
-        StubProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = new StubProcessingContext();
 
-        ManagedEntity<String, String> actual = testSubject.persist("id", "entity", processingContext);
+        ManagedEntity<String, String> first = testSubject.persist("id", "entity", processingContext);
         ManagedEntity<String, String> second = testSubject.persist("id", "entity", processingContext);
 
-        verify(eventTransaction).onAppend(any());
-        assertSame(actual, second);
-        assertEquals("entity", actual.entity());
-        assertEquals("id", actual.identifier());
+        verify(eventStoreTransaction).onAppend(any());
+        assertSame(first, second);
+        assertEquals("entity", first.entity());
+        assertEquals("id", first.identifier());
     }
 
     @Test
     void assigningEntityToOtherProcessingContextInExactFormat() throws Exception {
-        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
-        StubProcessingContext processingContext = new StubProcessingContext();
-        StubProcessingContext processingContext2 = new StubProcessingContext();
-        ManagedEntity<String, String> loaded = testSubject.load("test", processingContext).get();
+        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext2 = new StubProcessingContext();
+        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
+                .when(eventStoreTransaction)
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
 
-        testSubject.attach(loaded, processingContext2);
+        ManagedEntity<String, String> result = testSubject.load("test", processingContext).get();
 
-        verify(eventTransaction, times(2)).onAppend(any());
+        testSubject.attach(result, processingContext2);
+
+        verify(eventStoreTransaction, times(2)).onAppend(any());
     }
 
     @Test
     void assigningEntityToOtherProcessingContextInOtherFormat() throws Exception {
-        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
-        StubProcessingContext processingContext = new StubProcessingContext();
-        StubProcessingContext processingContext2 = new StubProcessingContext();
+        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext2 = new StubProcessingContext();
+        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
+                .when(eventStoreTransaction)
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
 
-        ManagedEntity<String, String> loaded = testSubject.load("test", processingContext).get();
+        ManagedEntity<String, String> result = testSubject.load("test", processingContext).get();
 
         testSubject.attach(new ManagedEntity<>() {
             @Override
             public String identifier() {
-                return loaded.identifier();
+                return result.identifier();
             }
 
             @Override
             public String entity() {
-                return loaded.entity();
+                return result.entity();
             }
 
             @Override
@@ -134,62 +149,72 @@ class AsyncEventSourcingRepositoryTest {
             }
         }, processingContext2);
 
-        verify(eventTransaction, times(2)).onAppend(any());
+        verify(eventStoreTransaction, times(2)).onAppend(any());
     }
 
     @Test
     void updateLoadedEventSourcedEntity() {
-        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
-        StubProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = new StubProcessingContext();
+        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
+                .when(eventStoreTransaction)
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
 
-        CompletableFuture<ManagedEntity<String, String>> loaded = testSubject.load("test", processingContext);
+        CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
 
-        assertTrue(loaded.isDone());
-        assertFalse(loaded.isCompletedExceptionally());
+        assertTrue(result.isDone());
+        assertFalse(result.isCompletedExceptionally());
+        verify(eventStore, times(2)).transaction(processingContext, TEST_CONTEXT);
+        verify(eventStoreTransaction).onAppend(any());
+        verify(eventStoreTransaction)
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
         //noinspection unchecked
         ArgumentCaptor<Consumer<EventMessage<?>>> callback = ArgumentCaptor.forClass(Consumer.class);
-        verify(eventStore).readEvents("id");
-        verify(eventTransaction).onAppend(callback.capture());
-        assertEquals("null-0-1", loaded.resultNow().entity());
+        verify(eventStoreTransaction).onAppend(callback.capture());
+        assertEquals("null-0-1", result.resultNow().entity());
 
         callback.getValue().accept(new GenericEventMessage<>("live"));
-
-        assertEquals("null-0-1-live", loaded.resultNow().entity());
+        assertEquals("null-0-1-live", result.resultNow().entity());
     }
 
     @Test
     void loadOrCreateShouldLoadWhenEventsAreReturned() {
-        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.of(domainEvent(0), domainEvent(1)));
-        StubProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = new StubProcessingContext();
+        doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
+                .when(eventStoreTransaction)
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
 
-        CompletableFuture<ManagedEntity<String, String>> loaded =
+        CompletableFuture<ManagedEntity<String, String>> result =
                 testSubject.loadOrCreate("test", processingContext, () -> fail("This should not have been invoked"));
 
-        assertTrue(loaded.isDone());
-        assertFalse(loaded.isCompletedExceptionally());
-        verify(eventTransaction).onAppend(any());
-        verify(eventStore).readEvents("id");
-
-        assertEquals("null-0-1", loaded.resultNow().entity());
+        assertEquals("null-0-1", result.resultNow().entity());
     }
 
     @Test
     void loadOrCreateShouldCreateWhenNoEventsAreReturned() {
-        when(eventStore.readEvents("id")).thenReturn(DomainEventStream.empty());
         StubProcessingContext processingContext = new StubProcessingContext();
+        doReturn(MessageStream.empty())
+                .when(eventStoreTransaction)
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
 
         CompletableFuture<ManagedEntity<String, String>> loaded =
                 testSubject.loadOrCreate("test", processingContext, () -> "created");
 
         assertTrue(loaded.isDone());
-        assertFalse(loaded.isCompletedExceptionally(), () -> loaded.exceptionNow().getMessage());
-        verify(eventTransaction).onAppend(any());
-        verify(eventStore).readEvents("id");
+        assertFalse(loaded.isCompletedExceptionally());
+        verify(eventStore, times(2)).transaction(processingContext, TEST_CONTEXT);
+        verify(eventStoreTransaction).onAppend(any());
+        verify(eventStoreTransaction)
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
 
         assertEquals("created", loaded.resultNow().entity());
     }
 
-    private DomainEventMessage<?> domainEvent(int seq) {
+    private static boolean conditionPredicate(SourcingCondition condition) {
+        return condition.criteria().indices().containsAll(TEST_MODEL_CRITERIA.indices());
+    }
+
+    // TODO - Discuss: Perfect candidate to move to a commons test utils module?
+    private static DomainEventMessage<?> domainEvent(int seq) {
         return new GenericDomainEventMessage<>("test", "id", seq, seq);
     }
 }
