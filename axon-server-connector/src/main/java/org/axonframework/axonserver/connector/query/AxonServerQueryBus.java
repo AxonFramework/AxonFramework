@@ -286,10 +286,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             //noinspection resource
             ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
             CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
-            if (shouldRunQueryLocally(interceptedQuery.getQueryName())) {
-                queryTransaction = localSegment.query(interceptedQuery);
-            } else {
-                try {
+            try {
+                if (shouldRunQueryLocally(interceptedQuery.getQueryName())) {
+                    queryTransaction = localSegment.query(interceptedQuery);
+                } else {
                     int priority = priorityCalculator.determinePriority(interceptedQuery);
                     QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
                     ResultStream<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
@@ -305,12 +305,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                             responseProcessingTask,
                             priority,
                             TASK_SEQUENCE.incrementAndGet())));
-                } catch (Exception e) {
-                    logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
-                    AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
-                    queryTransaction.completeExceptionally(exception);
-                    span.recordException(e).end();
                 }
+            } catch (Exception e) {
+                logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
+                AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
+                queryTransaction.completeExceptionally(exception);
+                span.recordException(e).end();
             }
 
             queryTransaction.whenComplete((r, e) -> {
