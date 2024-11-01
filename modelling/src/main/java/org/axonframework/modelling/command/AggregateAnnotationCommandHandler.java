@@ -72,7 +72,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     private final List<MessageHandler<CommandMessage<?>>> handlers;
     private final Set<String> supportedCommandNames;
     private final Map<String, Set<MessageHandler<CommandMessage<?>>>> supportedCommandsByName;
-    private final CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory;
+    private final Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> factoryPerType;
 
     /**
      * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
@@ -111,16 +111,30 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         this.supportedCommandNames = new HashSet<>();
         this.supportedCommandsByName = new HashMap<>();
         AggregateModel<T> aggregateModel = builder.buildAggregateModel();
-        this.creationPolicyAggregateFactory =
-                initializeAggregateFactory(aggregateModel.entityClass(), builder.creationPolicyAggregateFactory);
+        // Suppressing cast to Class<? extends T> as we are definitely dealing with implementations of T.
+        //noinspection unchecked
+        this.factoryPerType = initializeAggregateFactories(
+                aggregateModel.types()
+                              .map(type -> (Class<? extends T>) type)
+                              .collect(Collectors.toList()),
+                builder.creationPolicyAggregateFactory
+        );
+
         this.handlers = initializeHandlers(aggregateModel);
     }
 
-    private CreationPolicyAggregateFactory<T> initializeAggregateFactory(Class<? extends T> aggregateClass,
-                                                                         CreationPolicyAggregateFactory<T> configuredAggregateFactory) {
-        return configuredAggregateFactory != null
-                ? configuredAggregateFactory
-                : new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateClass);
+    private Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> initializeAggregateFactories(
+            List<Class<? extends T>> aggregateTypes,
+            CreationPolicyAggregateFactory<T> configuredAggregateFactory
+    ) {
+        Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> typeToFactory = new HashMap<>();
+        for (Class<? extends T> aggregateType : aggregateTypes) {
+            typeToFactory.put(aggregateType, configuredAggregateFactory != null
+                    ? configuredAggregateFactory
+                    : new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType)
+            );
+        }
+        return typeToFactory;
     }
 
     /**
@@ -189,12 +203,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             } else {
                 switch (policy.orElse(NEVER)) {
                     case ALWAYS:
-                        messageHandler =
-                                new AlwaysCreateAggregateCommandHandler(handler, creationPolicyAggregateFactory);
+                        messageHandler = new AlwaysCreateAggregateCommandHandler(
+                                handler, factoryPerType.get(handler.declaringClass())
+                        );
                         break;
                     case CREATE_IF_MISSING:
-                        messageHandler =
-                                new AggregateCreateOrUpdateCommandHandler(handler, creationPolicyAggregateFactory);
+                        messageHandler = new AggregateCreateOrUpdateCommandHandler(
+                                handler, factoryPerType.get(handler.declaringClass())
+                        );
                         break;
                     case NEVER:
                         messageHandler = new AggregateCommandHandler(handler);
