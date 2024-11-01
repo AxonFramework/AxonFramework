@@ -16,7 +16,13 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandMessageHandler;
+import org.axonframework.commandhandling.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
@@ -31,7 +37,14 @@ import org.axonframework.modelling.command.inspection.CreationPolicyMember;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
