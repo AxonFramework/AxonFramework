@@ -28,35 +28,19 @@ import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Distributed;
-import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
-import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
-import org.axonframework.modelling.command.CommandTargetResolver;
-import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
-import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.NoArgumentConstructorCreationPolicyAggregateFactory;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.RepositorySpanFactory;
+import org.axonframework.modelling.command.*;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.serialization.Revision;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -315,10 +299,12 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * Defines the factory to create new aggregate instances of the type under configuration when initializing those
      * instances from non-constructor command handlers annotated with
      * {@link org.axonframework.modelling.command.CreationPolicy}.
+     * <p>
+     * When {@link #withSubtypes(Class[]) subtypes} are provided, the given {@link CreationPolicyAggregateFactory} is
+     * used for every implementation of the aggregate under construction.
      *
-     * When {@link #withSubtypes(Class[]) subtypes} are provided, the given {@link CreationPolicyAggregateFactory} is used for every implementation of the aggregate under construction.
-     *
-     * @param creationPolicyAggregateFactoryBuilder The builder function for the {@link CreationPolicyAggregateFactory}.
+     * @param creationPolicyAggregateFactoryBuilder The builder function for the
+     *                                              {@link CreationPolicyAggregateFactory}.
      * @return This configurer instance for chaining.
      */
     public AggregateConfigurer<A> configureCreationPolicyAggregateFactory(

@@ -16,13 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandMessageHandler;
-import org.axonframework.commandhandling.CommandMessageHandlingMember;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
@@ -37,14 +31,7 @@ import org.axonframework.modelling.command.inspection.CreationPolicyMember;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -368,11 +355,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         /**
          * Sets the {@link CreationPolicyAggregateFactory<T>} for generic type {@code T}.
+         * <p>
+         * The aggregate factory must produce a new instance of the aggregate root based on the supplied identifier.
+         * When dealing with a polymorphic aggregate, the given {@code creationPolicyAggregateFactory} will be used for
+         * <b>every</b> {@link AggregateModel#types() type}.
          *
-         * The aggregate factory must
-         * produce a new instance of the aggregate root based on the supplied identifier. When dealing with a polymorphic aggregate, the given {@code creationPolicyAggregateFactory} will be used for <b>every</b> {@link AggregateModel#types() type}.
-         *
-         * @param creationPolicyAggregateFactory The {@link CreationPolicyAggregateFactory} the constructs an aggregate instance based on an identifier.
+         * @param creationPolicyAggregateFactory The {@link CreationPolicyAggregateFactory} the constructs an aggregate
+         *                                       instance based on an identifier.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder<T> creationPolicyAggregateFactory(
