@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -367,11 +367,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
 
         /**
-         * Sets the {@link CreationPolicyAggregateFactory<T>} for generic type {@code T}. The aggregate factory must
-         * produce a new instance of the Aggregate root based on the supplied Identifier.
+         * Sets the {@link CreationPolicyAggregateFactory<T>} for generic type {@code T}.
          *
-         * @param creationPolicyAggregateFactory that returns the aggregate instance based on the identifier
-         * @return the current Builder instance, for fluent interfacing
+         * The aggregate factory must
+         * produce a new instance of the aggregate root based on the supplied identifier. When dealing with a polymorphic aggregate, the given {@code creationPolicyAggregateFactory} will be used for <b>every</b> {@link AggregateModel#types() type}.
+         *
+         * @param creationPolicyAggregateFactory The {@link CreationPolicyAggregateFactory} the constructs an aggregate instance based on an identifier.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder<T> creationPolicyAggregateFactory(
                 CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory
