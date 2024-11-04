@@ -366,7 +366,7 @@ public class AxonServerConfiguration {
         return localSegmentShortCut;
     }
 
-    public void setLocalSegmentShortCut(boolean localSegmentShortCut) {
+    public void setShortcutQueriesToLocalHandlers(boolean shortcutQueriesToLocalHandlers) {
         this.localSegmentShortCut = localSegmentShortCut;
     }
 
