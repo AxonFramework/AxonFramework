@@ -127,7 +127,7 @@ public class AxonServerBusAutoConfiguration {
                                                                         .targetContextResolver(targetContextResolver)
                                                                         .spanFactory(axonConfiguration.getComponent(
                                                                                 QueryBusSpanFactory.class));
-        if (axonServerConfiguration.getLocalSegmentShortCut()) {
+        if (axonServerConfiguration.isShortcutQueriesToLocalHandlers()) {
             axonQueryBuilder.enabledLocalSegmentShortCut();
         }
         return axonQueryBuilder.build();

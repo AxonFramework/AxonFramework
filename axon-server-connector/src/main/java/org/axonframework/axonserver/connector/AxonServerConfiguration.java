@@ -362,7 +362,7 @@ public class AxonServerConfiguration {
         return enabled;
     }
 
-    public boolean getLocalSegmentShortCut() {
+    public boolean isShortcutQueriesToLocalHandlers() {
         return localSegmentShortCut;
     }
 
