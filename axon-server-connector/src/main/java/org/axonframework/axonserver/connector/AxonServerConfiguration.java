@@ -155,7 +155,7 @@ public class AxonServerConfiguration {
      * A toggle dictating whether to invoke query handlers directly if they are registered in the local environment.
      * Defaults to {@code false}.
      */
-    private boolean localSegmentShortCut = false;
+    private boolean shortcutQueriesToLocalHandlers = false;
 
     /**
      * The number of threads executing commands. Defaults to {@code 10} threads.
@@ -363,11 +363,11 @@ public class AxonServerConfiguration {
     }
 
     public boolean isShortcutQueriesToLocalHandlers() {
-        return localSegmentShortCut;
+        return shortcutQueriesToLocalHandlers;
     }
 
     public void setShortcutQueriesToLocalHandlers(boolean shortcutQueriesToLocalHandlers) {
-        this.localSegmentShortCut = localSegmentShortCut;
+        this.shortcutQueriesToLocalHandlers = shortcutQueriesToLocalHandlers;
     }
 
     /**
