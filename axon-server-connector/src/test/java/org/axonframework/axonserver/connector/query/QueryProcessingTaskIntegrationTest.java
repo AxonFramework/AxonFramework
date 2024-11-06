@@ -691,6 +691,42 @@ class QueryProcessingTaskIntegrationTest {
         assertTrue(responseHandler.completed());
     }
 
+    @Test
+    void responsePendingReturnsTrueForUncompletedTask() {
+        QueryMessage<FluxQuery, Publisher<String>> testQuery =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
+        QueryRequest testRequest = querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
+                                                                  testRequest,
+                                                                  responseHandler,
+                                                                  querySerializer,
+                                                                  CLIENT_ID,
+                                                                  queryBusSpanFactory);
+
+        assertTrue(testSubject.resultPending());
+    }
+
+    @Test
+    void responsePendingReturnsFalseForCompletedTask() {
+        QueryMessage<FluxQuery, Publisher<String>> testQuery =
+                new GenericQueryMessage<>(new FluxQuery(1), ResponseTypes.publisherOf(String.class));
+        QueryRequest testRequest = querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
+                                                                  testRequest,
+                                                                  responseHandler,
+                                                                  querySerializer,
+                                                                  CLIENT_ID,
+                                                                  queryBusSpanFactory);
+
+        assertTrue(testSubject.resultPending());
+        testSubject.run();
+        testSubject.request(1);
+        assertEquals(1, responseHandler.sent().size());
+        assertOrder(responseHandler.sent().get(0));
+        assertTrue(responseHandler.completed());
+        assertFalse(testSubject.resultPending());
+    }
+
     private void assertOrder(List<QueryResponse> responses) {
         for (int i = 0; i < responses.size(); i++) {
             QueryResponseMessage<String> responseMessage =
