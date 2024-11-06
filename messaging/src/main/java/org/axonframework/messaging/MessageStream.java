@@ -141,7 +141,7 @@ public interface MessageStream<M extends Message<?>> {
      *                        {@code contextSupplier} respectively.
      * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A {@link MessageStream stream} of {@link Entry entries} that return the {@link Message Messages}
-     * resulting from the the given {@code messageSupplier} with a {@link Context} provided by the
+     * resulting from the given {@code messageSupplier} with a {@link Context} provided by the
      * {@code contextSupplier}.
      */
     static <T, M extends Message<?>> MessageStream<M> fromStream(@Nonnull Stream<T> stream,
