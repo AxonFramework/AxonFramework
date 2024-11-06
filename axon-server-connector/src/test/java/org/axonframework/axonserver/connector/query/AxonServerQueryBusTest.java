@@ -42,6 +42,7 @@ import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -619,7 +620,7 @@ class AxonServerQueryBusTest {
                                 .putMetaData("index", MetaDataValue.newBuilder().setNumberValue(i).build())
                                 .build();
 
-            queryHandler.handle(queryRequest, new NoOpReplyChannel());
+            queryHandler.handle(queryRequest, new StubReplyChannel());
         }
         startProcessingGate.countDown();
         //noinspection ResultOfMethodCallIgnored
@@ -627,6 +628,117 @@ class AxonServerQueryBusTest {
 
         assertEquals(queryCount, actual.size());
         assertEquals(expected, actual);
+    }
+
+    @Test
+    void disconnectCancelsQueriesInProgressIfAwaitDurationIsSurpassed() {
+        AxonServerQueryBus queryInProgressTestSubject =
+                AxonServerQueryBus.builder()
+                                  .axonServerConnectionManager(axonServerConnectionManager)
+                                  .configuration(configuration)
+                                  .localSegment(localSegment)
+                                  .updateEmitter(SimpleQueryUpdateEmitter.builder().build())
+                                  .messageSerializer(serializer)
+                                  .genericSerializer(serializer)
+                                  .targetContextResolver(targetContextResolver)
+                                  .executorServiceBuilder((c, q) -> new ThreadPoolExecutor(
+                                          1, 1, 5, TimeUnit.SECONDS, q
+                                  ))
+                                  .queryInProgressAwait(Duration.ofSeconds(1))
+                                  .build();
+        CountDownLatch handlerLatch = new CountDownLatch(1);
+        AtomicReference<QueryResponse> responseReference = new AtomicReference<>();
+        queriesInProgressTestSetup(queryInProgressTestSubject, handlerLatch, responseReference);
+
+        // Start disconnecting right away. As a blocking operation, this ensures we surpass the await duration.
+        queryInProgressTestSubject.disconnect();
+        // Release te latch, to let go of the blocking query handler.
+        handlerLatch.countDown();
+
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(250))
+               .untilAsserted(() -> assertNull(responseReference.get()));
+    }
+
+    @Test
+    void disconnectReturnsResponseFromQueriesInProgressIfAwaitDurationIsNotExceeded() throws InterruptedException {
+        AxonServerQueryBus queryInProgressTestSubject =
+                AxonServerQueryBus.builder()
+                                  .axonServerConnectionManager(axonServerConnectionManager)
+                                  .configuration(configuration)
+                                  .localSegment(localSegment)
+                                  .updateEmitter(SimpleQueryUpdateEmitter.builder().build())
+                                  .messageSerializer(serializer)
+                                  .genericSerializer(serializer)
+                                  .targetContextResolver(targetContextResolver)
+                                  .executorServiceBuilder((c, q) -> new ThreadPoolExecutor(
+                                          1, 1, 5, TimeUnit.SECONDS, q
+                                  ))
+                                  .queryInProgressAwait(Duration.ofSeconds(1))
+                                  .build();
+        CountDownLatch handlerLatch = new CountDownLatch(1);
+        AtomicReference<QueryResponse> responseReference = new AtomicReference<>();
+        queriesInProgressTestSetup(queryInProgressTestSubject, handlerLatch, responseReference);
+
+        // Start disconnecting in a separate thread to ensure the response latch is released
+        new Thread(queryInProgressTestSubject::disconnect).start();
+        // Sleep a little, to ensure there is some space between disconnecting and releasing the query handler latch
+        Thread.sleep(250);
+        // Release te latch, to let go of the blocking query handler.
+        handlerLatch.countDown();
+
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(250))
+               .untilAsserted(() -> assertNotNull(responseReference.get()));
+        assertEquals("Hello", responseReference.get().getMetaDataOrThrow("response").getTextValue());
+    }
+
+    private void queriesInProgressTestSetup(AxonServerQueryBus queryInProgressTestSubject,
+                                            CountDownLatch responseLatch,
+                                            AtomicReference<QueryResponse> responseReference) {
+        AtomicReference<QueryHandler> handlerReference = new AtomicReference<>();
+        doAnswer(i -> {
+            handlerReference.set(i.getArgument(0));
+            return (io.axoniq.axonserver.connector.Registration) () -> CompletableFuture.completedFuture(null);
+        }).when(mockQueryChannel)
+          .registerQueryHandler(any(), any());
+
+        when(localSegment.query(any())).thenAnswer(i -> {
+            responseLatch.await();
+            QueryMessage<?, ?> message = i.getArgument(0);
+            QueryResponseMessage<?> queryResponse = new GenericQueryResponseMessage<>(message.getPayload()).withMetaData(
+                    MetaData.with("response", message.getPayload()));
+            return CompletableFuture.completedFuture(queryResponse);
+        });
+
+        // We create a subscription to force a registration for this type of query.
+        // It doesn't get invoked because the localSegment is mocked
+        //noinspection resource
+        queryInProgressTestSubject.subscribe("testQuery",
+                                             String.class,
+                                             (MessageHandler<QueryMessage<?, String>>) message -> "ok");
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(250))
+               .untilAsserted(() -> assertNotNull(handlerReference.get()));
+
+        QueryHandler queryHandler = handlerReference.get();
+        QueryRequest queryRequest =
+                QueryRequest.newBuilder()
+                            .setQuery("testQuery")
+                            .setMessageIdentifier(UUID.randomUUID().toString())
+                            .setPayload(SerializedObject.newBuilder()
+                                                        .setType("java.lang.String")
+                                                        .setData(ByteString.copyFromUtf8("<string>Hello</string>"))
+                            )
+                            .setResponseType(SerializedObject.newBuilder()
+                                                             .setData(ByteString.copyFromUtf8(
+                                                                     INSTANCE_RESPONSE_TYPE_XML
+                                                             ))
+                                                             .setType(InstanceResponseType.class.getName())
+                                                             .build())
+                            .putMetaData("response", MetaDataValue.newBuilder().setTextValue("Hello").build())
+                            .build();
+        queryHandler.handle(queryRequest, new StubReplyChannel(responseReference));
     }
 
     private QueryResponse stubResponse(String payload) {
@@ -771,36 +883,37 @@ class AxonServerQueryBusTest {
         }
     }
 
-    private static class NoOpReplyChannel implements ReplyChannel<QueryResponse> {
+    private static class StubReplyChannel implements ReplyChannel<QueryResponse> {
+
+        private final AtomicReference<QueryResponse> responseReference;
+
+        // No-arg constructor acts like a Noop version of this ReplyChannel
+        private StubReplyChannel() {
+            this(new AtomicReference<>());
+        }
+
+        private StubReplyChannel(AtomicReference<QueryResponse> responseReference) {
+            this.responseReference = responseReference;
+        }
 
         @Override
         public void send(QueryResponse outboundMessage) {
-            // Do nothing - no-op implementation
-        }
-
-        @Override
-        public void sendAck() {
-            // Do nothing - no-op implementation
-        }
-
-        @Override
-        public void sendNack(ErrorMessage errorMessage) {
-            // Do nothing - no-op implementation
+            responseReference.set(outboundMessage);
         }
 
         @Override
         public void complete() {
-            // Do nothing - no-op implementation
+            // Do nothing - not required for testing
         }
 
         @Override
         public void completeWithError(ErrorMessage errorMessage) {
-            // Do nothing - no-op implementation
+            // Do nothing - not required for testing
         }
 
         @Override
         public void completeWithError(ErrorCategory errorCategory, String message) {
-            // Do nothing - no-op implementation
+            // Do nothing - not required for testing
         }
     }
 }
