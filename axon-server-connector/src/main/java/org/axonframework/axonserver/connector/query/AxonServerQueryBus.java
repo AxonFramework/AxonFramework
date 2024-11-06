@@ -95,10 +95,12 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -151,6 +153,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     private final String context;
     private final QueryBusSpanFactory spanFactory;
 
+    private final Set<String> queryHandlerNames = new CopyOnWriteArraySet<>();
+    private final boolean localSegmentShortCut;
+
     /**
      * Instantiate a {@link AxonServerQueryBus} based on the fields contained in the {@link Builder}.
      *
@@ -174,6 +179,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(QUERY_QUEUE_CAPACITY);
         queryExecutor = builder.executorServiceBuilder.apply(configuration, queryProcessQueue);
         localSegmentAdapter = new LocalSegmentAdapter();
+        this.localSegmentShortCut = builder.localSegmentShortCut;
     }
 
     @Override
@@ -188,12 +194,16 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                     TASK_SEQUENCE));
             return Mono.fromSupplier(this::registerStreamingQueryActivity).flatMapMany(
                     activity -> Mono.just(dispatchInterceptors.intercept(queryWithContext))
-                                    .flatMapMany(intercepted ->
-                                                         Mono.just(serializeStreaming(intercepted, priority))
-                                                             .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
-                                                                     () -> sendRequest(intercepted, queryRequest)))
-                                                             .concatMap(queryResponse -> deserialize(intercepted,
-                                                                                                     queryResponse))
+                                    .flatMapMany(intercepted -> {
+                                                     if (shouldRunQueryLocally(intercepted.getQueryName())) {
+                                                         return localSegment.streamingQuery(intercepted);
+                                                     }
+                                                     return Mono.just(serializeStreaming(intercepted, priority))
+                                                                .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
+                                                                        () -> sendRequest(intercepted, queryRequest)))
+                                                                .concatMap(queryResponse -> deserialize(intercepted,
+                                                                                                        queryResponse));
+                                                 }
                                     )
                                     .publishOn(scheduler.get())
                                     .doOnError(span::recordException)
@@ -246,11 +256,25 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                            .queryChannel()
                                            .registerQueryHandler(localSegmentAdapter, queryDefinition);
 
-        return new AxonServerRegistration(localRegistration, serverRegistration::cancel);
+        queryHandlerNames.add(queryName);
+        return new AxonServerRegistration(() -> unsubscribe(queryName, localRegistration), serverRegistration::cancel);
+    }
+
+    private boolean unsubscribe(String queryName, Registration localSegmentRegistration) {
+        boolean result = localSegmentRegistration.cancel();
+        if (result) {
+            queryHandlerNames.remove(queryName);
+        }
+        return result;
+    }
+
+    private boolean shouldRunQueryLocally(String queryName) {
+        return localSegmentShortCut && queryHandlerNames.contains(queryName);
     }
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> queryMessage) {
+
         Span span = spanFactory.createQuerySpan(queryMessage, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             QueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(queryMessage);
@@ -263,21 +287,25 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
             CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
             try {
-                int priority = priorityCalculator.determinePriority(interceptedQuery);
-                QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
-                ResultStream<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
-                queryTransaction.whenComplete((r, e) -> result.close());
-                Span responseTaskSpan = spanFactory.createResponseProcessingSpan(interceptedQuery);
-                Runnable responseProcessingTask = new ResponseProcessingTask<>(result,
-                                                                               serializer,
-                                                                               queryTransaction,
-                                                                               queryMessage.getResponseType(),
-                                                                               responseTaskSpan);
+                if (shouldRunQueryLocally(interceptedQuery.getQueryName())) {
+                    queryTransaction = localSegment.query(interceptedQuery);
+                } else {
+                    int priority = priorityCalculator.determinePriority(interceptedQuery);
+                    QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
+                    ResultStream<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
+                    queryTransaction.whenComplete((r, e) -> result.close());
+                    Span responseTaskSpan = spanFactory.createResponseProcessingSpan(interceptedQuery);
+                    Runnable responseProcessingTask = new ResponseProcessingTask<>(result,
+                                                                                   serializer,
+                                                                                   queryTransaction,
+                                                                                   queryMessage.getResponseType(),
+                                                                                   responseTaskSpan);
 
-                result.onAvailable(() -> queryExecutor.execute(new PriorityRunnable(
-                        responseProcessingTask,
-                        priority,
-                        TASK_SEQUENCE.incrementAndGet())));
+                    result.onAvailable(() -> queryExecutor.execute(new PriorityRunnable(
+                            responseProcessingTask,
+                            priority,
+                            TASK_SEQUENCE.incrementAndGet())));
+                }
             } catch (Exception e) {
                 logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
                 AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
@@ -285,7 +313,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                 span.recordException(e).end();
             }
 
-           queryTransaction.whenComplete((r, e) -> {
+            queryTransaction.whenComplete((r, e) -> {
                 queryInTransit.end();
                 if (e != null) {
                     span.recordException(e);
@@ -400,8 +428,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
 
         Span span = spanFactory.createScatterGatherSpan(queryMessage, true).start();
-        try(SpanScope unused = span.makeCurrent()) {
-            QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(queryMessage));
+        try (SpanScope unused = span.makeCurrent()) {
+            QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(
+                    queryMessage));
             long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
             String targetContext = targetContextResolver.resolveContext(interceptedQuery);
             QueryRequest queryRequest =
@@ -416,7 +445,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
             AtomicBoolean closed = new AtomicBoolean(false);
             Runnable closeHandler = () -> {
-                if(closed.compareAndSet(false, true)) {
+                if (closed.compareAndSet(false, true)) {
                     queryInTransit.end();
                     span.end();
                 }
@@ -567,6 +596,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
                                                                             .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                             .build();
+        private boolean localSegmentShortCut;
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -605,6 +635,17 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         public Builder localSegment(QueryBus localSegment) {
             assertNonNull(localSegment, "Local QueryBus may not be null");
             this.localSegment = localSegment;
+            return this;
+        }
+
+        /**
+         * Enables shortcut to local {@link QueryBus}. If query handlers are registered in the local environment they
+         * will be invoked directly instead of sending request to axon server.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder enabledLocalSegmentShortCut() {
+            this.localSegmentShortCut = true;
             return this;
         }
 
