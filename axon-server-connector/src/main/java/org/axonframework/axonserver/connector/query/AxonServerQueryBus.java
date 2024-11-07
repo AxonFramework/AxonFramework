@@ -1070,7 +1070,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                  .findFirst()
                                  .ifPresent(queryInProgress -> {
                                      while (Instant.now().isBefore(endAwait) && queryInProgress.resultPending()) {
-                                         LockSupport.parkUntil(10);
+                                         LockSupport.parkNanos(10_000_000);
                                      }
                                  });
             }
