@@ -1074,7 +1074,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                      }
                                  });
             }
-            return Instant.now().isBefore(endAwait);
+            return queriesInProgress.isEmpty();
         }
 
         private void cancel() {
