@@ -43,7 +43,6 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
-import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -116,17 +115,22 @@ public class AxonServerBusAutoConfiguration {
                 new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
         );
 
-        return AxonServerQueryBus.builder()
-                                 .axonServerConnectionManager(axonServerConnectionManager)
-                                 .configuration(axonServerConfiguration)
-                                 .localSegment(simpleQueryBus)
-                                 .updateEmitter(simpleQueryBus.queryUpdateEmitter())
-                                 .messageSerializer(messageSerializer)
-                                 .genericSerializer(genericSerializer)
-                                 .priorityCalculator(priorityCalculator)
-                                 .targetContextResolver(targetContextResolver)
-                                 .spanFactory(axonConfiguration.getComponent(QueryBusSpanFactory.class))
-                                 .build();
+        AxonServerQueryBus.Builder axonQueryBuilder = AxonServerQueryBus.builder()
+                                                                        .axonServerConnectionManager(
+                                                                                axonServerConnectionManager)
+                                                                        .configuration(axonServerConfiguration)
+                                                                        .localSegment(simpleQueryBus)
+                                                                        .updateEmitter(simpleQueryBus.queryUpdateEmitter())
+                                                                        .messageSerializer(messageSerializer)
+                                                                        .genericSerializer(genericSerializer)
+                                                                        .priorityCalculator(priorityCalculator)
+                                                                        .targetContextResolver(targetContextResolver)
+                                                                        .spanFactory(axonConfiguration.getComponent(
+                                                                                QueryBusSpanFactory.class));
+        if (axonServerConfiguration.isShortcutQueriesToLocalHandlers()) {
+            axonQueryBuilder.enabledLocalSegmentShortCut();
+        }
+        return axonQueryBuilder.build();
     }
 
     @Bean
