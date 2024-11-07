@@ -79,7 +79,7 @@ class AxonServerQueryBusTest {
 
     private static final String TEST_QUERY = "testQuery";
     private static final String CONTEXT = "default-test";
-    public static final String INSTANCE_RESPONSE_TYPE_XML = "<org.axonframework.messaging.responsetypes.InstanceResponseType><expectedResponseType>java.lang.String</expectedResponseType></org.axonframework.messaging.responsetypes.InstanceResponseType>";
+    private static final String INSTANCE_RESPONSE_TYPE_XML = "<org.axonframework.messaging.responsetypes.InstanceResponseType><expectedResponseType>java.lang.String</expectedResponseType></org.axonframework.messaging.responsetypes.InstanceResponseType>";
 
     private final QueryBus localSegment = mock(QueryBus.class);
     private final Serializer serializer = TestSerializer.xStreamSerializer();
@@ -212,8 +212,8 @@ class AxonServerQueryBusTest {
 
         @Test
         void queryWhenLocalHandlerIsPresent() {
-            when(localSegment.query(testQuery)).thenReturn(CompletableFuture.completedFuture(new GenericQueryResponseMessage<>(
-                    "ok")));
+            when(localSegment.query(testQuery))
+                    .thenReturn(CompletableFuture.completedFuture(new GenericQueryResponseMessage<>("ok")));
 
             testSubject.query(testQuery);
 
