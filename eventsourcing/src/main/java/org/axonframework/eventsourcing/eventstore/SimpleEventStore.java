@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -41,8 +42,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<EventMessage<?>> {
 
-    private final ProcessingContext.ResourceKey<EventStoreTransaction> eventStoreTransactionKey =
-            ProcessingContext.ResourceKey.create("eventStoreTransaction");
+    private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey =
+            ResourceKey.create(EventStoreTransaction.class);
 
     private final AsyncEventStorageEngine eventStorageEngine;
     private final String context;
