@@ -294,9 +294,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                     psFactory
             );
         };
-
         eventProcessingModule.setPersistentStreamMessageSourceDefinitionBuilder(ret);
-
         return ret;
     }
 
