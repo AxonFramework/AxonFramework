@@ -16,9 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.Context;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.messaging.Context;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -698,51 +697,6 @@ abstract class ProcessingLifecycleTest<PL extends ProcessingLifecycle> {
         testSubject.runOnPostInvocation(pc -> assertNull(pc.getResource(testKey)));
 
         execute(testSubject).join();
-    }
-
-    @Test
-    void resourceKeyCreateUsesValidUUID() {
-        Context.ResourceKey<Object> resourceKey = Context.ResourceKey.create();
-
-        assertEquals(UUID.fromString(resourceKey.toString()).toString(), resourceKey.toString());
-    }
-
-    @Test
-    void resourceKeyCreateForClassShowsClassNameInToStringOutput() {
-        Context.ResourceKey<Integer> resourceKey = Context.ResourceKey.create(Integer.class);
-
-        assertTrue(resourceKey.toString().contains("Integer"));
-    }
-
-    @Test
-    void resourceKeyCreateForIdentityStringShowsIdentityInToStringOutput() {
-        Context.ResourceKey<Object> resourceKey = Context.ResourceKey.create("myRandomDebugStringValue");
-
-        assertTrue(resourceKey.toString().contains("myRandomDebugStringValue"));
-    }
-
-    @Test
-    void resourceKeyWithDebugStringShowsDebugStringOnToStringOutput() {
-        String expectedToString = "some-debug-string";
-        // Test no-arg create.
-        Context.ResourceKey<Object> noArgResourceKey = Context.ResourceKey.create()
-                                                                          .withDebugString(expectedToString);
-        assertEquals(expectedToString, noArgResourceKey.toString());
-        // Test given Class create.
-        Context.ResourceKey<Integer> clazzResourceKey = Context.ResourceKey.create(Integer.class)
-                                                                           .withDebugString(expectedToString);
-        assertEquals(expectedToString, clazzResourceKey.toString());
-        // Test given identity String create.
-        Context.ResourceKey<Object> identityResourceKey = Context.ResourceKey.create("some-identity")
-                                                                             .withDebugString(expectedToString);
-        assertEquals(expectedToString, identityResourceKey.toString());
-    }
-
-    @Test
-    void resourceKeyWithNullOrEmptyDebugStringThrowsAxonConfigurationException() {
-        //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> Context.ResourceKey.create().withDebugString(null));
-        assertThrows(AxonConfigurationException.class, () -> Context.ResourceKey.create().withDebugString(""));
     }
 
     /**
