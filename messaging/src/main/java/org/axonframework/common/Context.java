@@ -18,6 +18,11 @@ package org.axonframework.common;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Objects;
+import java.util.UUID;
+
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
+
 /**
  * Interface describing operations for context-specific, <b>immutable</b>, resource management.
  * <p>
@@ -67,47 +72,108 @@ public interface Context {
                              @Nonnull T resource);
 
     /**
-     * Object that is used as a key to retrieve and register resources of a given type in a processing context.
+     * Object that is used as a key to retrieve and register resources of a given type in a {@link Context}.
      * <p>
-     * Implementations are encouraged to override the {@link #toString()} method to include some information useful for
-     * debugging.
-     * <p>
-     * Instance of a {@code ResourceKey} can be created using {@link ResourceKey#create(String)}.
+     * Instance of a {@code ResourceKey} can be created using either {@link #create()}, {@link #create(Class)}, or
+     * {@link #create(String)}. The former option will construct a unique key at all times, while the {@link Class} and
+     * {@link String} based factory methods result in an identical {@code ResourceKey} if the {@code Class} or
+     * {@code String} is reused.
      *
      * @param <T> The type of resource registered under this key.
+     * @author Allard Buijze
+     * @author Mitchell Herrijgers
+     * @author Steven van Beelen
+     * @since 5.0.0
      */
     @SuppressWarnings("unused") // Suppresses the warning that the generic type is not used.
     final class ResourceKey<T> {
 
-        private static final String RESOURCE_KEY_PREFIX = "ResourceKey@";
+        private final Object identity;
+        private final String debugString;
 
-        private final String toString;
-
-        private ResourceKey(String debugString) {
-            String keyId = RESOURCE_KEY_PREFIX + Integer.toHexString(System.identityHashCode(this));
-            if (debugString == null || debugString.isBlank()) {
-                this.toString = keyId;
-            } else {
-                this.toString = keyId + "[" + debugString + "]";
-            }
+        private ResourceKey(@Nonnull Object identity,
+                            @Nonnull String debugString) {
+            this.identity = identity;
+            this.debugString = debugString;
         }
 
         /**
-         * Create a new {@link ResourceKey} for a resource of type {@code T}. The given {@code debugString} is part of
-         * the {@link #toString()} (if not {@code null} or empty) of the created key instance and may be used for
-         * debugging purposes.
+         * Creates a {@link ResourceKey} using a {@link UUID#randomUUID() random UUID} as the key's identity.
+         *
+         * @param <T> The type of resource of this key.
+         * @return A {@link ResourceKey} using a {@link UUID#randomUUID() random UUID} as the key's identity, used for
+         * adding and retrieving context-specific resources.
+         */
+        public static <T> ResourceKey<T> create() {
+            return create(UUID.randomUUID().toString());
+        }
+
+        /**
+         * Creates a {@link ResourceKey} using the given {@code clazz} as the key's identity.
+         * <p>
+         * Creating another {@code ResourceKey} with the same {@link Class} results in an identical
+         * {@code ResourceKey}.
+         *
+         * @param clazz The {@link Class} used as the {@link ResourceKey resource key's} identity.
+         * @param <T>   The type of resource of this key.
+         * @return A {@link ResourceKey} using the given {@code clazz} as the key's identity, used for adding and
+         * retrieving context-specific resources.
+         */
+        public static <T> ResourceKey<T> create(@Nonnull Class<T> clazz) {
+            return create(clazz.getName());
+        }
+
+        /**
+         * Creates a {@link ResourceKey} using the given {@code identity} as the key's identity.
+         * <p>
+         * Creating another {@code ResourceKey} with the same {@code identity} results in an identical
+         * {@code ResourceKey}.
+         *
+         * @param identity The {@link String} defining the identity of this {@link ResourceKey}.
+         * @param <T>      The type of resource of this key.
+         * @return A {@link ResourceKey} using the given {@code identity} as the key's identity, used for adding and
+         * retrieving context-specific resources.
+         */
+        public static <T> ResourceKey<T> create(@Nonnull String identity) {
+            return new ResourceKey<>(identity, identity);
+        }
+
+        /**
+         * Creates a copy of {@code this} {@link ResourceKey} with the given {@code debugString} used as this key's
+         * {@link #toString()} output.
+         * <p>
+         * When no {@code debugString} is consciously given, the identity of the {@code ResourceKey} equals as the debug
+         * string.
          *
          * @param debugString A {@link String} to recognize this key during debugging.
-         * @param <T>         The type of resource of this key.
-         * @return A new key used to register and retrieve resources.
+         * @return A copy of {@code this} {@link ResourceKey} with the given {@code debugString} used as this key's
+         * {@link #toString()} output, used for adding and retrieving context-specific resources.
          */
-        public static <T> ResourceKey<T> create(String debugString) {
-            return new ResourceKey<>(debugString);
+        public ResourceKey<T> withDebugString(@Nonnull String debugString) {
+            assertNonEmpty(debugString, "The debug string cannot be null or empty.");
+            return new ResourceKey<>(this.identity, debugString);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ResourceKey<?> that = (ResourceKey<?>) o;
+            return Objects.equals(identity, that.identity);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(identity);
         }
 
         @Override
         public String toString() {
-            return toString;
+            return debugString;
         }
     }
 }
