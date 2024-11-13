@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;

@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Context;
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context;
+import org.axonframework.messaging.Context.ResourceKey;
 
 import java.util.Optional;
 import java.util.OptionalLong;

@@ -17,6 +17,7 @@
 package org.axonframework.common;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.Context;
 
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;

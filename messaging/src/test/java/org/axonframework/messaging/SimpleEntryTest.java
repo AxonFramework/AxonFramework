@@ -17,8 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Context;
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.ContextTestSuite;
 import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;

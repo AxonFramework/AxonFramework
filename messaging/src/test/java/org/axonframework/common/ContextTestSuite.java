@@ -16,7 +16,8 @@
 
 package org.axonframework.common;
 
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

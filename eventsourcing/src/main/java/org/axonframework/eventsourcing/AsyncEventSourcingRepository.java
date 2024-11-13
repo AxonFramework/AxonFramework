@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
