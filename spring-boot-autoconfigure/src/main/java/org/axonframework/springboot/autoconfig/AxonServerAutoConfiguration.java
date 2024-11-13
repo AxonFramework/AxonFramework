@@ -17,6 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 
+import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
@@ -26,6 +27,7 @@ import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
@@ -34,6 +36,8 @@ import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -203,8 +207,8 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     /**
      * Creates a {@link PersistentStreamScheduledExecutorBuilder} that constructs
-     * {@link ScheduledExecutorService ScheduledExecutorServices} for each persistent stream.
-     * Defaults to a {@link PersistentStreamScheduledExecutorBuilder#defaultFactory()}.
+     * {@link ScheduledExecutorService ScheduledExecutorServices} for each persistent stream. Defaults to a
+     * {@link PersistentStreamScheduledExecutorBuilder#defaultFactory()}.
      *
      * @return The a {@link PersistentStreamScheduledExecutorBuilder} that constructs
      * {@link ScheduledExecutorService ScheduledExecutorServices} for each persistent stream.
@@ -234,7 +238,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     )
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
     public PersistentStreamScheduledExecutorBuilder backwardsCompatiblePersistentStreamScheduledExecutorBuilder(
-         @Qualifier("persistentStreamScheduler") ScheduledExecutorService persistentStreamScheduler
+            @Qualifier("persistentStreamScheduler") ScheduledExecutorService persistentStreamScheduler
     ) {
         return (threadCount, streamName) -> persistentStreamScheduler;
     }
@@ -243,9 +247,9 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
      * Constructs a {@link PersistentStreamMessageSourceRegistrar} to create and register Spring beans for persistent
      * streams.
      *
-     * @param environment       The Spring {@link Environment}.
-     * @param executorBuilder   The {@link PersistentStreamScheduledExecutorBuilder} used to construct a
-     * {@link ScheduledExecutorService} to perform the persistent stream's tasks with.
+     * @param environment     The Spring {@link Environment}.
+     * @param executorBuilder The {@link PersistentStreamScheduledExecutorBuilder} used to construct a
+     *                        {@link ScheduledExecutorService} to perform the persistent stream's tasks with.
      * @return The {@link PersistentStreamMessageSourceRegistrar} to create and register Spring beans for persistent
      * streams.
      */
@@ -256,6 +260,44 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
             PersistentStreamScheduledExecutorBuilder executorBuilder
     ) {
         return new PersistentStreamMessageSourceRegistrar(environment, executorBuilder);
+    }
+
+    /**
+     * TODO
+     *
+     * @param executorBuilder
+     * @param eventProcessingModule
+     * @param psFactory
+     * @return
+     */
+    @Bean
+    @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams")
+    public EventProcessingConfigurer.PersistentStreamMessageSourceDefinitionBuilder autoPersistentStreamMessageSourceDefinitionBuilder(
+            PersistentStreamScheduledExecutorBuilder executorBuilder,
+            EventProcessingModule eventProcessingModule,
+            PersistentStreamMessageSourceFactory psFactory) {
+        AxonServerConfiguration.PersistentStreamSettings persistentStreamSettings = new AxonServerConfiguration.PersistentStreamSettings();
+
+        EventProcessingConfigurer.PersistentStreamMessageSourceDefinitionBuilder ret = processingGroupName -> {
+            String psName = processingGroupName + "-stream";
+            return new PersistentStreamMessageSourceDefinition(
+                    processingGroupName,
+                    new PersistentStreamProperties(psName,
+                                                   4,
+                                                   persistentStreamSettings.getSequencingPolicy(),
+                                                   persistentStreamSettings.getSequencingPolicyParameters(),
+                                                   persistentStreamSettings.getInitialPosition(),
+                                                   persistentStreamSettings.getFilter()),
+                    executorBuilder.build(10, psName),
+                    100,
+                    null,
+                    psFactory
+            );
+        };
+
+        eventProcessingModule.setPersistentStreamMessageSourceDefinitionBuilder(ret);
+
+        return ret;
     }
 
     /**

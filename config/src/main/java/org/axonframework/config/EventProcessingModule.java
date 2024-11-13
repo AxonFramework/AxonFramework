@@ -83,8 +83,8 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 import static org.axonframework.config.EventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp;
 
 /**
- * Event processing module configuration. Registers all configuration components within itself, builds the {@link
- * EventProcessingConfiguration} and takes care of module lifecycle.
+ * Event processing module configuration. Registers all configuration components within itself, builds the
+ * {@link EventProcessingConfiguration} and takes care of module lifecycle.
  *
  * @author Milan Savic
  * @since 4.0
@@ -111,7 +111,8 @@ public class EventProcessingModule
             .defaultSelector(type -> annotatedProcessingGroupOfType(type).orElse(null));
     private TypeProcessingGroupSelector typeFallback =
             TypeProcessingGroupSelector.defaultSelector(DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION);
-    private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(EventProcessingModule::packageOfObject);
+    private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(
+            EventProcessingModule::packageOfObject);
 
     private final Map<String, SagaConfigurer<?>> sagaConfigurations = new HashMap<>();
     private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
@@ -139,6 +140,13 @@ public class EventProcessingModule
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     protected Configuration configuration;
+
+    private PersistentStreamMessageSourceDefinitionBuilder persistentStreamMessageSourceDefinitionBuilder;
+
+    public void setPersistentStreamMessageSourceDefinitionBuilder(
+            PersistentStreamMessageSourceDefinitionBuilder builder) {
+        this.persistentStreamMessageSourceDefinitionBuilder = builder;
+    }
 
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
@@ -347,12 +355,12 @@ public class EventProcessingModule
     }
 
     /**
-     * The class is required to be provided in case the {@code ClasspathHandlerDefinition is used to retrieve the {@link
-     * HandlerDefinition}. Ideally, a {@code HandlerDefinition} would be retrieved per event handling class, as
-     * potentially users would be able to define different {@link ClassLoader} instances per event handling class
-     * contained in an Event Processor. For now we have deduced the latter to be to much of an edge case. Hence we
-     * assume users will use the same ClassLoader for differing event handling instance within a single Event
-     * Processor.
+     * The class is required to be provided in case the
+     * {@code ClasspathHandlerDefinition is used to retrieve the {@link HandlerDefinition}. Ideally, a {@code
+     * HandlerDefinition} would be retrieved per event handling class, as potentially users would be able to define
+     * different {@link ClassLoader} instances per event handling class contained in an Event Processor. For now we have
+     * deduced the latter to be to much of an edge case. Hence we assume users will use the same ClassLoader for
+     * differing event handling instance within a single Event Processor.
      */
     private HandlerDefinition retrieveHandlerDefinition(List<Object> handlers) {
         return configuration.handlerDefinition(handlers.get(0).getClass());
@@ -405,7 +413,7 @@ public class EventProcessingModule
         return eventProcessor;
     }
 
-    private void addInterceptors(String processorName, MessageHandlerInterceptorSupport<EventMessage<?>> processor){
+    private void addInterceptors(String processorName, MessageHandlerInterceptorSupport<EventMessage<?>> processor) {
         handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
                                    .stream()
                                    .map(hi -> hi.apply(configuration))
@@ -608,13 +616,15 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer configureDefaultStreamableMessageSource(Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource) {
+    public EventProcessingConfigurer configureDefaultStreamableMessageSource(
+            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource) {
         this.defaultStreamableSource.update(defaultSource);
         return this;
     }
 
     @Override
-    public EventProcessingConfigurer configureDefaultSubscribableMessageSource(Function<Configuration, SubscribableMessageSource<EventMessage<?>>> defaultSource) {
+    public EventProcessingConfigurer configureDefaultSubscribableMessageSource(
+            Function<Configuration, SubscribableMessageSource<EventMessage<?>>> defaultSource) {
         this.defaultSubscribableSource.update(defaultSource);
         return this;
     }
@@ -659,8 +669,8 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerTokenStore(String processorName,
                                                         Function<Configuration, TokenStore> tokenStore) {
         this.tokenStore.put(processorName, new Component<>(() -> configuration,
-                                                             "tokenStore",
-                                                             tokenStore));
+                                                           "tokenStore",
+                                                           tokenStore));
         return this;
     }
 
@@ -922,6 +932,14 @@ public class EventProcessingModule
     private EventProcessor defaultEventProcessor(String name,
                                                  Configuration conf,
                                                  EventHandlerInvoker eventHandlerInvoker) {
+
+        if (persistentStreamMessageSourceDefinitionBuilder != null) {
+            return subscribingEventProcessor(name,
+                                             eventHandlerInvoker,
+                                             persistentStreamMessageSourceDefinitionBuilder.build(name)
+                                                                                           .create(configuration));
+        }
+
         if (conf.eventBus() instanceof StreamableMessageSource) {
             return trackingEventProcessor(
                     name,
@@ -944,9 +962,9 @@ public class EventProcessingModule
     /**
      * Default {@link SubscribingEventProcessor} configuration based on this configure module.
      *
-     * @param name of the processor
+     * @param name                of the processor
      * @param eventHandlerInvoker used by the processor for the vent handling
-     * @param messageSource where to retrieve events from
+     * @param messageSource       where to retrieve events from
      * @return Default {@link SubscribingEventProcessor} configuration based on this configure module.
      */
     protected EventProcessor subscribingEventProcessor(String name,
@@ -968,10 +986,10 @@ public class EventProcessingModule
     /**
      * Default {@link TrackingEventProcessor} configuration based on this configure module.
      *
-     * @param name of the processor
+     * @param name                of the processor
      * @param eventHandlerInvoker used by the processor for the event handling
-     * @param config for the tracking event processor construction
-     * @param source where to retrieve events from
+     * @param config              for the tracking event processor construction
+     * @param source              where to retrieve events from
      * @return Default {@link TrackingEventProcessor} configuration based on this configure module.
      */
     protected EventProcessor trackingEventProcessor(String name,
@@ -995,10 +1013,10 @@ public class EventProcessingModule
     /**
      * Default {@link PooledStreamingEventProcessor} configuration based on this configure module.
      *
-     * @param name of the processor
-     * @param eventHandlerInvoker used by the processor for the event handling
-     * @param config main configuration providing access for Axon components
-     * @param messageSource where to retrieve events from
+     * @param name                   of the processor
+     * @param eventHandlerInvoker    used by the processor for the event handling
+     * @param config                 main configuration providing access for Axon components
+     * @param messageSource          where to retrieve events from
      * @param processorConfiguration for the pooled event processor construction
      * @return Default {@link PooledStreamingEventProcessor} configuration based on this configure module.
      */
@@ -1066,7 +1084,8 @@ public class EventProcessingModule
     private static class InstanceProcessingGroupSelector extends ProcessingGroupSelector<Object> {
 
         private static InstanceProcessingGroupSelector defaultSelector(Function<Object, String> selectorFunction) {
-            return new InstanceProcessingGroupSelector(Integer.MIN_VALUE, selectorFunction.andThen(Optional::ofNullable));
+            return new InstanceProcessingGroupSelector(Integer.MIN_VALUE,
+                                                       selectorFunction.andThen(Optional::ofNullable));
         }
 
         private InstanceProcessingGroupSelector(int priority, Function<Object, Optional<String>> selectorFunction) {
