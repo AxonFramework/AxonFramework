@@ -42,11 +42,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<EventMessage<?>> {
 
-    private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey =
-            ResourceKey.create(EventStoreTransaction.class);
-
     private final AsyncEventStorageEngine eventStorageEngine;
     private final String context;
+    private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
 
     /**
      * Constructs a {@link SimpleEventStore} using the given {@code eventStorageEngine} to start
@@ -64,6 +62,7 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
                             @Nonnull String context) {
         this.eventStorageEngine = eventStorageEngine;
         this.context = context;
+        this.eventStoreTransactionKey = ResourceKey.create();
     }
 
     @Override
