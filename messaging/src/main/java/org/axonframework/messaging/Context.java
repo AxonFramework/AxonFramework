@@ -74,8 +74,8 @@ public interface Context {
     /**
      * Object that is used as a key to retrieve and register resources of a given type in a {@link Context}.
      * <p>
-     * Instance of a {@code ResourceKey} can be created using either {@link #create()}, {@link #create(Class)}, or
-     * {@link #create(String)}. The former option will construct a unique key at all times, while the {@link Class} and
+     * Instance of a {@code ResourceKey} can be created using either {@link #uniqueKey()}, {@link #sharedKey(Class)}, or
+     * {@link #sharedKey(String)}. The former option will construct a unique key at all times, while the {@link Class} and
      * {@link String} based factory methods result in an identical {@code ResourceKey} if the {@code Class} or
      * {@code String} is reused.
      *
@@ -104,8 +104,8 @@ public interface Context {
          * @return A {@link ResourceKey} using a {@link UUID#randomUUID() random UUID} as the key's identity, used for
          * adding and retrieving context-specific resources.
          */
-        public static <T> ResourceKey<T> create() {
-            return create(UUID.randomUUID().toString());
+        public static <T> ResourceKey<T> uniqueKey() {
+            return sharedKey(UUID.randomUUID().toString());
         }
 
         /**
@@ -119,8 +119,8 @@ public interface Context {
          * @return A {@link ResourceKey} using the given {@code clazz} as the key's identity, used for adding and
          * retrieving context-specific resources.
          */
-        public static <T> ResourceKey<T> create(@Nonnull Class<T> clazz) {
-            return create(clazz.getName());
+        public static <T> ResourceKey<T> sharedKey(@Nonnull Class<T> clazz) {
+            return sharedKey(clazz.getName());
         }
 
         /**
@@ -134,7 +134,7 @@ public interface Context {
          * @return A {@link ResourceKey} using the given {@code identity} as the key's identity, used for adding and
          * retrieving context-specific resources.
          */
-        public static <T> ResourceKey<T> create(@Nonnull String identity) {
+        public static <T> ResourceKey<T> sharedKey(@Nonnull String identity) {
             return new ResourceKey<>(identity, identity);
         }
 

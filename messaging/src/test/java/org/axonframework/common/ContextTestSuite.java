@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public abstract class ContextTestSuite<C extends Context> {
 
     protected static final String EXPECTED_RESOURCE_VALUE = "testContext";
-    protected static final ResourceKey<String> TEST_RESOURCE_KEY = ResourceKey.create(EXPECTED_RESOURCE_VALUE);
+    protected static final ResourceKey<String> TEST_RESOURCE_KEY = ResourceKey.sharedKey(EXPECTED_RESOURCE_VALUE);
 
     /**
      * Build a test subject of type {@code C} for this suite.
@@ -69,7 +69,7 @@ public abstract class ContextTestSuite<C extends Context> {
     @Test
     void withResourceReturnsNewContextInstanceWithTheExpectedResources() {
         String expectedResourceValueTwo = "resourceTwo";
-        ResourceKey<String> testResourceKeyTwo = ResourceKey.create(expectedResourceValueTwo);
+        ResourceKey<String> testResourceKeyTwo = ResourceKey.sharedKey(expectedResourceValueTwo);
 
         C testSubject = testSubject();
 

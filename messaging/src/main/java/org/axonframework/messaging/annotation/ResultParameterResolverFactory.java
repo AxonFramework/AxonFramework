@@ -44,7 +44,7 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
 
     private static final ThreadLocal<Object> REGISTERED_RESULT = new ThreadLocal<>();
     private static final Object IGNORE_RESULT_PARAMETER_MARKER = new Object();
-    public static final ResourceKey<Object> RESOURCE_KEY = ResourceKey.create("Invocation result for interceptors");
+    public static final ResourceKey<Object> RESOURCE_KEY = ResourceKey.sharedKey("Invocation result for interceptors");
 
 
     public static <R> R callWithResult(Object result, ProcessingContext processingContext,

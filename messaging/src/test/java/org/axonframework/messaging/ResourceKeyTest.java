@@ -36,95 +36,95 @@ class ResourceKeyTest {
     private static final String DEBUG = "debug-text";
 
     @Test
-    void resourceKeyCreateNoArgUsesValidUUIDAsToString() {
-        ResourceKey<Object> resourceKey = ResourceKey.create();
+    void uniqueKeyUsesValidUUIDAsToString() {
+        ResourceKey<Object> resourceKey = ResourceKey.uniqueKey();
 
         assertEquals(UUID.fromString(resourceKey.toString()).toString(), resourceKey.toString());
     }
 
     @Test
-    void resourceKeyCreateNoArgMakesUniqueResourceKeys() {
-        ResourceKey<Object> testSubject = ResourceKey.create();
+    void uniqueKeyMakesUniqueResourceKeys() {
+        ResourceKey<Object> testSubject = ResourceKey.uniqueKey();
 
-        assertNotEquals(testSubject, ResourceKey.create());
+        assertNotEquals(testSubject, ResourceKey.uniqueKey());
     }
 
     @Test
-    void resourceKeyCreateNoArgWithDebugStringMakesUniqueResourceKeys() {
-        ResourceKey<Object> testSubject = ResourceKey.create().withDebugString(DEBUG);
+    void uniqueKeyWithDebugStringMakesUniqueResourceKeys() {
+        ResourceKey<Object> testSubject = ResourceKey.uniqueKey().withDebugString(DEBUG);
 
-        assertNotEquals(testSubject, ResourceKey.create().withDebugString(DEBUG));
+        assertNotEquals(testSubject, ResourceKey.uniqueKey().withDebugString(DEBUG));
     }
 
     @Test
-    void resourceKeyCreateForClassShowsClassNameInToStringOutput() {
-        ResourceKey<Integer> testSubject = ResourceKey.create(Integer.class);
+    void sharedKeyByClassShowsClassNameInToStringOutput() {
+        ResourceKey<Integer> testSubject = ResourceKey.sharedKey(Integer.class);
 
         assertTrue(testSubject.toString().contains("Integer"));
     }
 
     @Test
-    void resourceKeyCreateForClassMakesIdenticalResourceKeys() {
-        ResourceKey<Integer> testSubject = ResourceKey.create(Integer.class);
+    void sharedKeyByClassMakesIdenticalResourceKeys() {
+        ResourceKey<Integer> testSubject = ResourceKey.sharedKey(Integer.class);
 
-        assertEquals(testSubject, ResourceKey.create(Integer.class));
+        assertEquals(testSubject, ResourceKey.sharedKey(Integer.class));
     }
 
     @Test
-    void resourceKeyCreateForClassWithDebugStringIdenticalResourceKeys() {
-        ResourceKey<Integer> testSubject = ResourceKey.create(Integer.class).withDebugString(DEBUG);
+    void sharedKeyByClassWithDebugStringIdenticalResourceKeys() {
+        ResourceKey<Integer> testSubject = ResourceKey.sharedKey(Integer.class).withDebugString(DEBUG);
 
-        assertEquals(testSubject, ResourceKey.create(Integer.class).withDebugString(DEBUG));
+        assertEquals(testSubject, ResourceKey.sharedKey(Integer.class).withDebugString(DEBUG));
     }
 
     @Test
-    void resourceKeyCreateForClassUsesClassNameHashValueAsHashCodeOutput() {
-        assertEquals(Objects.hash(Integer.class.getName()), ResourceKey.create(Integer.class).hashCode());
+    void sharedKeyByClassUsesClassNameHashValueAsHashCodeOutput() {
+        assertEquals(Objects.hash(Integer.class.getName()), ResourceKey.sharedKey(Integer.class).hashCode());
     }
 
     @Test
-    void resourceKeyCreateForIdentityStringShowsIdentityInToStringOutput() {
-        ResourceKey<Object> testSubject = ResourceKey.create(IDENTITY);
+    void sharedKeyByIdentityStringShowsIdentityInToStringOutput() {
+        ResourceKey<Object> testSubject = ResourceKey.sharedKey(IDENTITY);
 
         assertEquals(IDENTITY, testSubject.toString());
     }
 
     @Test
-    void resourceKeyCreateForIdentityStringMakesIdenticalResourceKeys() {
-        ResourceKey<Object> testSubject = ResourceKey.create(IDENTITY);
+    void sharedKeyByIdentityStringMakesIdenticalResourceKeys() {
+        ResourceKey<Object> testSubject = ResourceKey.sharedKey(IDENTITY);
 
-        assertEquals(testSubject, ResourceKey.create(IDENTITY));
+        assertEquals(testSubject, ResourceKey.sharedKey(IDENTITY));
     }
 
     @Test
-    void resourceKeyCreateForIdentityStringWithDebugStringIdenticalResourceKeys() {
-        ResourceKey<Object> testSubject = ResourceKey.create(IDENTITY).withDebugString(DEBUG);
+    void sharedKeyByIdentityStringWithDebugStringIdenticalResourceKeys() {
+        ResourceKey<Object> testSubject = ResourceKey.sharedKey(IDENTITY).withDebugString(DEBUG);
 
-        assertEquals(testSubject, ResourceKey.create(IDENTITY).withDebugString(DEBUG));
+        assertEquals(testSubject, ResourceKey.sharedKey(IDENTITY).withDebugString(DEBUG));
     }
 
     @Test
-    void resourceKeyCreateForIdentityUsesIdentityHashValueAsHashCodeOutput() {
-        assertEquals(Objects.hash(IDENTITY), ResourceKey.create(IDENTITY).hashCode());
+    void sharedKeyByIdentityUsesIdentityHashValueAsHashCodeOutput() {
+        assertEquals(Objects.hash(IDENTITY), ResourceKey.sharedKey(IDENTITY).hashCode());
     }
 
     @Test
     void resourceKeyWithDebugStringShowsDebugStringOnToStringOutput() {
         // Test no-arg create.
-        ResourceKey<Object> noArgTestSubject = ResourceKey.create().withDebugString(DEBUG);
+        ResourceKey<Object> noArgTestSubject = ResourceKey.uniqueKey().withDebugString(DEBUG);
         assertEquals(DEBUG, noArgTestSubject.toString());
         // Test given Class create.
-        ResourceKey<Integer> clazzTestSubject = ResourceKey.create(Integer.class).withDebugString(DEBUG);
+        ResourceKey<Integer> clazzTestSubject = ResourceKey.sharedKey(Integer.class).withDebugString(DEBUG);
         assertEquals(DEBUG, clazzTestSubject.toString());
         // Test given identity String create.
-        ResourceKey<Object> identityTestSubject = ResourceKey.create(IDENTITY).withDebugString(DEBUG);
+        ResourceKey<Object> identityTestSubject = ResourceKey.sharedKey(IDENTITY).withDebugString(DEBUG);
         assertEquals(DEBUG, identityTestSubject.toString());
     }
 
     @Test
     void resourceKeyWithNullOrEmptyDebugStringThrowsAxonConfigurationException() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> ResourceKey.create().withDebugString(null));
-        assertThrows(AxonConfigurationException.class, () -> ResourceKey.create().withDebugString(""));
+        assertThrows(AxonConfigurationException.class, () -> ResourceKey.uniqueKey().withDebugString(null));
+        assertThrows(AxonConfigurationException.class, () -> ResourceKey.uniqueKey().withDebugString(""));
     }
 }

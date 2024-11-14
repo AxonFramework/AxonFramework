@@ -34,7 +34,7 @@ public interface TrackingToken {
     /**
      * The {@link ResourceKey} used whenever a {@link Context} would contain a {@link TrackingToken}.
      */
-    ResourceKey<TrackingToken> RESOURCE_KEY = ResourceKey.create(TrackingToken.class);
+    ResourceKey<TrackingToken> RESOURCE_KEY = ResourceKey.sharedKey(TrackingToken.class);
 
     /**
      * Adds the given {@code token} to the given {@code context} using the {@link #RESOURCE_KEY}.

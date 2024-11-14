@@ -58,7 +58,7 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
         Message<Object> expectedMessage = GenericMessage.asMessage("some-payload");
         MetaData expectedMetaData = MetaData.from(Map.of("key", "value"));
         String expectedResourceValue = "test";
-        ResourceKey<String> expectedContextKey = ResourceKey.create(expectedResourceValue);
+        ResourceKey<String> expectedContextKey = ResourceKey.sharedKey(expectedResourceValue);
         Context testContext = new SimpleContext().withResource(expectedContextKey, expectedResourceValue);
 
         Entry<Message<Object>> testSubject = new SimpleEntry<>(expectedMessage, testContext);
