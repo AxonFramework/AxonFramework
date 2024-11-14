@@ -937,7 +937,7 @@ public class EventProcessingModule
             return subscribingEventProcessor(name,
                                              eventHandlerInvoker,
                                              persistentStreamMessageSourceDefinitionBuilder.build(name)
-                                                                                           .create(configuration));
+                                                                                           .create(conf));
         }
 
         if (conf.eventBus() instanceof StreamableMessageSource) {
