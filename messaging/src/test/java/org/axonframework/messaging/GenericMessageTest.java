@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -24,9 +25,9 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.junit.jupiter.api.*;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -34,7 +35,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test correct operations of the {@link GenericMessage} class.
@@ -70,11 +72,11 @@ class GenericMessageTest {
     }
 
     @Test
-    void messageSerialization() throws IOException{
+    void messageSerialization() throws IOException {
         Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
 
         GenericMessage<String> message = new GenericMessage<>("payload", metaDataMap);
-     
+
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
 
 
@@ -83,11 +85,11 @@ class GenericMessageTest {
 
         assertEquals("\"payload\"", serializedPayload.getData());
 
-    
+
         ObjectMapper objectMapper = jacksonSerializer.getObjectMapper();
         Map<String, String> actualMetaData = objectMapper.readValue(serializedMetaData.getData(), Map.class);
 
-         assertTrue(actualMetaData.entrySet().containsAll(metaDataMap.entrySet()));
+        assertTrue(actualMetaData.entrySet().containsAll(metaDataMap.entrySet()));
     }
 
     @Test
@@ -110,7 +112,7 @@ class GenericMessageTest {
     }
 
     @Test
-    void whenCorrelationDataProviderThrowsException_thenCatchException(){
+    void whenCorrelationDataProviderThrowsException_thenCatchException() {
         unitOfWork = new DefaultUnitOfWork<>(new GenericEventMessage<>("Input 1"));
         CurrentUnitOfWork.set(unitOfWork);
         unitOfWork.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
