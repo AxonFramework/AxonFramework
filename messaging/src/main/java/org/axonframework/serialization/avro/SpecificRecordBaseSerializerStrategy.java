@@ -80,6 +80,9 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
 
         long fingerprint = AvroUtil.fingerprint(serializedObject.getData());
         Schema writerSchema = schemaStore.findByFingerprint(fingerprint);
+        if (writerSchema == null) {
+            throw AvroUtil.createExceptionNoSchemaFound(readerType, fingerprint);
+        }
 
         SpecificData readerSpecificData = SpecificData.getForClass(specificRecordBaseClass);
         Schema readerSchema = AvroUtil.getSchemaFromSpecificRecordBase(specificRecordBaseClass);
@@ -93,7 +96,7 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
             //noinspection unchecked
             return (T) decoder.decode(serializedObject.getData());
         } catch (IOException | AvroRuntimeException e) {
-            throw AvroUtil.createSerializationException(readerType, readerSchema, writerSchema, e);
+            throw AvroUtil.createExceptionFailedToDeserialize(readerType, readerSchema, writerSchema, e);
         }
     }
 

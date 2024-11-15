@@ -304,7 +304,7 @@ public class AvroSerializerTest {
 
 
         SerializationException exception = assertThrows(SerializationException.class, () -> testSubject.deserialize(serialized));
-        assertEquals(exception.getMessage(), AvroUtil.createSerializationException(ComplexObject.class, ComplexObject.getClassSchema(), writerSchema, null).getMessage());
+        assertEquals(exception.getMessage(), AvroUtil.createExceptionFailedToDeserialize(ComplexObject.class, ComplexObject.getClassSchema(), writerSchema, null).getMessage());
 
     }
 

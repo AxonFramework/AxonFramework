@@ -25,9 +25,9 @@ import java.util.List;
  */
 public interface ClasspathAvroSchemaLoader {
     /**
-     * Scans provided packages and loads schema from there.
+     * Scans provided packages and loads schemas from classes.
      * @param packageNames packages to scan.
      * @return list of detected Avro schemas.
      */
-    List<Schema> scan(List<String> packageNames);
+    List<Schema> load(List<String> packageNames);
 }

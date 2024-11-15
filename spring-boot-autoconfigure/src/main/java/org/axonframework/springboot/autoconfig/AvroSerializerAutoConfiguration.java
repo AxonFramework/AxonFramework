@@ -17,16 +17,18 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.apache.avro.message.SchemaStore;
+import org.axonframework.spring.serialization.avro.AvroSchemaPackages;
 import org.axonframework.spring.serialization.avro.ClasspathAvroSchemaLoader;
 import org.axonframework.spring.serialization.avro.SpecificRecordBaseClasspathAvroSchemaLoader;
-import org.axonframework.spring.serialization.avro.AvroSchemaPackages;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.core.io.ResourceLoader;
 
 import java.util.ArrayList;
@@ -42,7 +44,8 @@ import java.util.stream.Collectors;
 public class AvroSerializerAutoConfiguration {
 
     @Bean("defaultAxonSchemaStore")
-    @ConditionalOnMissingBean
+    // TODO we need to handle missing bean condition too
+    @Conditional({AvroConfiguredCondition.class})
     public SchemaStore defaultAxonSchemaStore(BeanFactory beanFactory, List<ClasspathAvroSchemaLoader> schemaLoader) {
         SchemaStore.Cache cachingSchemaStore = new SchemaStore.Cache();
         List<String> packagesCandidates = AvroSchemaPackages.get(beanFactory).getPackages();
@@ -53,16 +56,50 @@ public class AvroSerializerAutoConfiguration {
             packagesToScan.addAll(packagesCandidates);
         }
         schemaLoader
-            .stream().map(loader -> loader.scan(packagesToScan)).flatMap(List::stream)
+            .stream().map(loader -> loader.load(packagesToScan)).flatMap(List::stream)
             .collect(Collectors.toSet())
             .forEach(cachingSchemaStore::addSchema);
         return cachingSchemaStore;
     }
 
     @Bean("specificRecordBaseClasspathAvroSchemaLoader")
-    @ConditionalOnMissingBean
+    // TODO we need to handle missing bean condition too
+    @Conditional({AvroConfiguredCondition.class})
     public ClasspathAvroSchemaLoader specificRecordBaseClasspathAvroSchemaLoader(ResourceLoader resourceLoader) {
         return new SpecificRecordBaseClasspathAvroSchemaLoader(resourceLoader);
+    }
+
+    /**
+     * An {@link AnyNestedCondition} implementation, to support the following use cases:
+     * <ul>
+     *     <li>The {@code general} serializer property is set to {@code avro}</li>
+     *     <li>The {@code messages} serializer property is set to {@code avro}</li>
+     *     <li>The {@code events} serializer property is set to {@code avro}</li>
+     * </ul>
+     */
+    private static class AvroConfiguredCondition extends AnyNestedCondition {
+
+        public AvroConfiguredCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
+
+        @SuppressWarnings("unused")
+        @ConditionalOnProperty(name = "axon.serializer.general", havingValue = "avro")
+        static class GeneralAvroCondition {
+
+        }
+
+        @SuppressWarnings("unused")
+        @ConditionalOnProperty(name = "axon.serializer.messages", havingValue = "avro")
+        static class MessagesAvroCondition {
+
+        }
+
+        @SuppressWarnings("unused")
+        @ConditionalOnProperty(name = "axon.serializer.events", havingValue = "avro")
+        static class EventsAvroCondition {
+
+        }
     }
 
 }

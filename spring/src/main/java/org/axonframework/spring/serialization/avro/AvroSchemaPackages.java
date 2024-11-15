@@ -46,8 +46,8 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Holder for package-based class scanning for Avro schema extraction.
@@ -58,6 +58,12 @@ public class AvroSchemaPackages {
 
     private final List<String> packages;
 
+    /**
+     * Loader for the {@link AvroSchemaPackages} bean.
+     *
+     * @param beanFactory bean factory.
+     * @return registered bean or empty null-object.
+     */
     @Nonnull
     public static AvroSchemaPackages get(BeanFactory beanFactory) {
         try {
@@ -71,64 +77,100 @@ public class AvroSchemaPackages {
         this.packages = Arrays.stream(packages).filter(StringUtils::hasText).collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves packages to scan for schemas.
+     *
+     * @return packages to scan.
+     */
     public List<String> getPackages() {
         return packages;
     }
 
+    /**
+     * Registrar detecting {@link AvroSchemaScan} annotations and registering {@link AvroSchemaPackages} bean
+     * holding the packages to scan for Avro schemas.
+     */
     static class Registrar implements ImportBeanDefinitionRegistrar {
 
         private final Environment environment;
 
-        Registrar(Environment environment) {
+        Registrar(@Nonnull Environment environment) {
+            Assert.notNull(environment, "Environment must not be null");
             this.environment = environment;
         }
 
         public static void register(@Nonnull BeanDefinitionRegistry registry, @Nonnull Set<String> packageNames) {
+            Assert.notNull(registry, "Registry must not be null");
+            Assert.notNull(packageNames, "PackageNames must not be null");
             if (registry.containsBeanDefinition(BEAN)) {
-                AvroSchemaScanPackagesBeanDefinition beanDefinition = (AvroSchemaScanPackagesBeanDefinition)registry.getBeanDefinition(BEAN);
+                AvroSchemaScanPackagesBeanDefinition beanDefinition = (AvroSchemaScanPackagesBeanDefinition) registry.getBeanDefinition(BEAN);
                 beanDefinition.addPackageNames(packageNames);
             } else {
                 registry.registerBeanDefinition(BEAN, new AvroSchemaScanPackagesBeanDefinition(packageNames));
             }
         }
 
-        @Override
-        public void registerBeanDefinitions(@Nonnull AnnotationMetadata importingClassMetadata, @Nonnull BeanDefinitionRegistry registry) {
-            register(registry, getPackagesToScan(importingClassMetadata));
+        public static Set<String> getPackagesToScan(
+            Environment environment,
+            AnnotationMetadata metadata,
+            String annotationClassName,
+            String annotationAttributePackages,
+            String annotationAttributePackageClasses
+        ) {
+            AnnotationAttributes attributes = Objects.requireNonNull(
+                AnnotationAttributes.fromMap(
+                    metadata.getAnnotationAttributes(annotationClassName)
+                )
+            );
+            Set<String> packagesToScan = new LinkedHashSet<>();
+            for (String basePackage : attributes.getStringArray(annotationAttributePackages)) {
+                String[] tokenized = StringUtils.tokenizeToStringArray(
+                    environment.resolvePlaceholders(basePackage),
+                    ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
+                Collections.addAll(packagesToScan, tokenized);
+            }
+            for (Class<?> basePackageClass : attributes.getClassArray(annotationAttributePackageClasses)) {
+                packagesToScan.add(environment.resolvePlaceholders(ClassUtils.getPackageName(basePackageClass)));
+            }
+            if (packagesToScan.isEmpty()) {
+                String packageName = ClassUtils.getPackageName(metadata.getClassName());
+                Assert.state(StringUtils.hasLength(packageName), "@" + annotationClassName + " cannot be used with the default package");
+                return Collections.singleton(packageName);
+            }
+            return packagesToScan;
         }
 
-        private Set<String> getPackagesToScan(AnnotationMetadata metadata) {
-            AnnotationAttributes attributes = Objects.requireNonNull(AnnotationAttributes.fromMap(metadata.getAnnotationAttributes(AvroSchemaScan.class.getName())));
-            List<String> basePackagesToScan = Arrays.stream(attributes.getStringArray("basePackages")).map(basePackage ->
-                    Arrays.asList(StringUtils.tokenizeToStringArray(
-                            environment.resolvePlaceholders(basePackage),
-                            ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS
-                        )
-                    )).collect(Collectors.toList())
-                .stream()
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-            List<String> baseClassPackagesToScan = Arrays.stream(attributes.getClassArray("basePackageClasses")).map( basePackageClass ->
-                environment.resolvePlaceholders(ClassUtils.getPackageName(basePackageClass))
-                ).collect(Collectors.toList());
-            List<String> packagesToScan = Stream.concat(baseClassPackagesToScan.stream(), basePackagesToScan.stream())
-                .collect(Collectors.toList());
-            if (packagesToScan.isEmpty()) {
-                String defaultPackageName = ClassUtils.getPackageName(metadata.getClassName());
-                Assert.state(StringUtils.hasLength(defaultPackageName), "@"+ AvroSchemaScan.class.getName() + " cannot be used with the default package");
-                return Collections.singleton(defaultPackageName);
-            }
-            return new HashSet<>(packagesToScan);
+        @Override
+        public void registerBeanDefinitions(@Nonnull AnnotationMetadata importingClassMetadata, @Nonnull BeanDefinitionRegistry registry) {
+            register(
+                registry,
+                getPackagesToScan(
+                    this.environment,
+                    importingClassMetadata,
+                    AvroSchemaScan.class.getName(),
+                    "basePackages",
+                    "basePackageClasses"
+                )
+            );
         }
     }
 
+    /**
+     * Bean definition for {@link AvroSchemaPackages}.
+     */
     static class AvroSchemaScanPackagesBeanDefinition extends GenericBeanDefinition {
         private final LinkedHashSet<String> packageNames = new LinkedHashSet<>();
+
         AvroSchemaScanPackagesBeanDefinition(Collection<String> packageNames) {
             super();
             setBeanClass(AvroSchemaPackages.class);
             setRole(ROLE_INFRASTRUCTURE);
             addPackageNames(packageNames);
+        }
+
+        @Override
+        public Supplier<?> getInstanceSupplier() {
+            return () -> new AvroSchemaPackages(StringUtils.toStringArray(this.packageNames));
         }
 
         public void addPackageNames(Collection<String> packageNames) {

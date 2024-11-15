@@ -18,7 +18,6 @@ package org.axonframework.serialization.avro;
 
 import org.apache.avro.*;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.BadHeaderException;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
@@ -123,14 +122,30 @@ public class AvroUtil {
      * @return serialization exception.
      */
     @Nonnull
-    public static SerializationException createSerializationException(@Nonnull Class<?> readerType,
-                                                                      @Nonnull Schema readerSchema,
-                                                                      @Nonnull Schema writerSchema,
-                                                                      Exception cause) {
+    public static SerializationException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
+                                                                            @Nonnull Schema readerSchema,
+                                                                            @Nonnull Schema writerSchema,
+                                                                            Exception cause) {
         return new SerializationException("Failed to deserialize specific record to instance of "
             + readerType.getCanonicalName()
             + ", writer fp was " + fingerprint(writerSchema)
             + " reader fp was " + fingerprint(readerSchema),
             cause);
+    }
+
+    /**
+     * Creates exception if the schema for a given fingerprint could not be found.
+     * @param readerType type of object to deserialize.
+     * @param fingerprint fingerprint of writer schema.
+     * @return exception to throw.
+     */
+    public static SerializationException createExceptionNoSchemaFound(
+        @Nonnull Class<?> readerType,
+        long fingerprint
+    ) {
+        return new SerializationException("Schema store could not contain schema deserializing "
+            + readerType
+            + " with fp:"
+            + fingerprint);
     }
 }

@@ -45,7 +45,7 @@ public class SpecificRecordBaseClasspathAvroSchemaLoader implements ClasspathAvr
 
 
     @Override
-    public List<Schema> scan(List<String> packageNames) {
+    public List<Schema> load(List<String> packageNames) {
         return packageNames.stream()
             .map(this::scan)
             .flatMap(List::stream)
