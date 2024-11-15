@@ -109,9 +109,9 @@ public interface Context {
         }
 
         /**
-         * Creates a {@link ResourceKey} using the given {@code clazz} as the key's identity.
+         * Get a {@link ResourceKey} with the given {@code clazz} as the key's identity.
          * <p>
-         * Creating another {@code ResourceKey} with the same {@link Class} results in an identical
+         * Another {@code ResourceKey} with the same {@link Class} results in an identical
          * {@code ResourceKey}.
          *
          * @param clazz The {@link Class} used as the {@link ResourceKey resource key's} identity.
@@ -124,9 +124,9 @@ public interface Context {
         }
 
         /**
-         * Creates a {@link ResourceKey} using the given {@code identity} as the key's identity.
+         * Get a {@link ResourceKey} with the given {@code identity} as the key's identity.
          * <p>
-         * Creating another {@code ResourceKey} with the same {@code identity} results in an identical
+         * Another {@code ResourceKey} with the same {@code identity} results in an identical
          * {@code ResourceKey}.
          *
          * @param identity The {@link String} defining the identity of this {@link ResourceKey}.
