@@ -19,6 +19,7 @@ package org.axonframework.springboot.autoconfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
+import org.apache.avro.message.SchemaStore;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
@@ -71,6 +72,8 @@ import org.axonframework.serialization.ChainingConverter;
 import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.avro.AvroSerializer;
+import org.axonframework.serialization.avro.AvroSerializerStrategy;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
@@ -190,6 +193,23 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     private Serializer buildSerializer(RevisionResolver revisionResolver,
                                        SerializerProperties.SerializerType serializerType) {
         switch (serializerType) {
+            case AVRO:
+                Map<String, SchemaStore> schemaStoreBeans = beansOfTypeIncludingAncestors(applicationContext,
+                    SchemaStore.class);
+                SchemaStore schemaStore = schemaStoreBeans.containsKey("defaultAxonSchemaStore")
+                    ? schemaStoreBeans.get("defaultAxonSchemaStore")
+                    : schemaStoreBeans.values().stream().findFirst()
+                    .orElseThrow(() -> new NoSuchBeanDefinitionException(SchemaStore.class));
+                Serializer delegateSerializer = buildSerializer(revisionResolver, SerializerProperties.SerializerType.JACKSON);
+                Map<String, AvroSerializerStrategy> serializationStrategies = beansOfTypeIncludingAncestors(applicationContext,
+                    AvroSerializerStrategy.class);
+                AvroSerializer.Builder builder = AvroSerializer.builder()
+                    .schemaStore(schemaStore)
+                    .serializerDelegate(delegateSerializer)
+                    .revisionResolver(revisionResolver);
+                serializationStrategies.values().forEach(builder::addSerializerStrategy);
+                return builder.build();
+
             case JACKSON:
                 Map<String, ObjectMapper> objectMapperBeans = beansOfTypeIncludingAncestors(applicationContext,
                                                                                             ObjectMapper.class);
