@@ -1,14 +1,12 @@
 package org.axonframework.serialization.avro;
 
-import org.apache.avro.AvroRuntimeException;
-import org.apache.avro.InvalidAvroMagicException;
-import org.apache.avro.InvalidNumberEncodingException;
-import org.apache.avro.Schema;
+import org.apache.avro.*;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.BadHeaderException;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
+import org.axonframework.serialization.SerializationException;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
@@ -65,19 +63,6 @@ public class AvroUtil {
         return genericData;
     }
 
-    // FIXME -> remove?
-    public static SpecificData fromGenericData(GenericData genericData) {
-        SpecificData specificData = new SpecificData();
-        genericData.getConversions().forEach(specificData::addLogicalTypeConversion);
-        return specificData;
-    }
-
-    // FIXME -> remove?
-    public static GenericRecord fromSpecificRecord(SpecificRecordBase specificRecord) {
-        return fromSpecificData(specificRecord.getSpecificData())
-            .deepCopy(specificRecord.getSchema(), specificRecord);
-    }
-
     /**
      * Retrieves schema from specific record base class.
      *
@@ -91,5 +76,35 @@ public class AvroUtil {
         } catch (Exception e) {
             throw new AvroRuntimeException("Could not get schema from specific record class " + specificRecordBaseClass.getCanonicalName(), e);
         }
+    }
+
+    /**
+     * Returns a fingerprint for schema.
+     *
+     * @param schema schema to return the fingerprint for.
+     * @return fingerprint.
+     */
+    public static long fingerprint(@Nonnull Schema schema) {
+        return SchemaNormalization.parsingFingerprint64(schema);
+    }
+
+    /**
+     * Creates a serialization exception for reader type.
+     * @param readerType object type to deserialize.
+     * @param readerSchema reader schema.
+     * @param writerSchema writer schema.
+     * @param cause the cause of exception.
+     * @return serialization exception.
+     */
+    @Nonnull
+    public static SerializationException createSerializationException(@Nonnull Class<?> readerType,
+                                                                      @Nonnull Schema readerSchema,
+                                                                      @Nonnull Schema writerSchema,
+                                                                      Exception cause) {
+        return new SerializationException("Failed to deserialize specific record to instance of "
+            + readerType.getCanonicalName()
+            + ", writer fp was " + fingerprint(writerSchema)
+            + " reader fp was " + fingerprint(readerSchema),
+            cause);
     }
 }
