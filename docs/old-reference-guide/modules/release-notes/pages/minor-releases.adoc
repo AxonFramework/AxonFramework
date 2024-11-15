@@ -14,14 +14,14 @@ Any patch release made for an Axon project is tailored towards resolving bugs. T
 
 ==== Enhancements
 
-- fix: log statement issue with logback classic link:https://github.com/AxonFramework/AxonFramework/pull/3164[#3164]
+- fix: log statement issue with Logback classic link:https://github.com/AxonFramework/AxonFramework/pull/3164[#3164]
 - Wrap `SinksManyWrapper#performWithBusyWaitSpin` in `ReentrantLock` to improve performance of Subscription Query Updates link:https://github.com/AxonFramework/AxonFramework/pull/3163[#3163]
 - Deadletter Logging with Logback Classic link:https://github.com/AxonFramework/AxonFramework/issues/3160[#3160]
 - [#3157] Skip Axon Server Docker tests on ARM64 for older Axon Server versions link:https://github.com/AxonFramework/AxonFramework/pull/3158[#3158]
 - Legacy Axon Server 4.x tests fail on Mac/ARM link:https://github.com/AxonFramework/AxonFramework/issues/3157[#3157]
 - Fixed messageSerialization test in GenericMessageTest link:https://github.com/AxonFramework/AxonFramework/issues/3156[#3156]
 
-==== Bug Fixes
+==== Bug fixes
 
 - Gracefully await queries in progress in the `AxonServerQueryBus` link:https://github.com/AxonFramework/AxonFramework/pull/3176[#3176]
 - [#3171] Set `CreationPolicyAggregateFactory` for every type in the `AggregateModel` link:https://github.com/AxonFramework/AxonFramework/pull/3173[#3173]
