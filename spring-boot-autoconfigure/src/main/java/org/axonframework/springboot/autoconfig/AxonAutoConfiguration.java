@@ -195,18 +195,21 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         switch (serializerType) {
             case AVRO:
                 Map<String, SchemaStore> schemaStoreBeans = beansOfTypeIncludingAncestors(applicationContext,
-                    SchemaStore.class);
+                                                                                          SchemaStore.class);
                 SchemaStore schemaStore = schemaStoreBeans.containsKey("defaultAxonSchemaStore")
-                    ? schemaStoreBeans.get("defaultAxonSchemaStore")
-                    : schemaStoreBeans.values().stream().findFirst()
-                    .orElseThrow(() -> new NoSuchBeanDefinitionException(SchemaStore.class));
-                Serializer delegateSerializer = buildSerializer(revisionResolver, SerializerProperties.SerializerType.JACKSON);
-                Map<String, AvroSerializerStrategy> serializationStrategies = beansOfTypeIncludingAncestors(applicationContext,
-                    AvroSerializerStrategy.class);
+                        ? schemaStoreBeans.get("defaultAxonSchemaStore")
+                        : schemaStoreBeans.values().stream().findFirst()
+                                          .orElseThrow(() -> new NoSuchBeanDefinitionException(SchemaStore.class));
+                // TODO: Question, is it ok to fallback to Jackson as delegate?
+                Serializer delegateSerializer = buildSerializer(revisionResolver,
+                                                                SerializerProperties.SerializerType.JACKSON);
+                Map<String, AvroSerializerStrategy> serializationStrategies = beansOfTypeIncludingAncestors(
+                        applicationContext,
+                        AvroSerializerStrategy.class);
                 AvroSerializer.Builder builder = AvroSerializer.builder()
-                    .schemaStore(schemaStore)
-                    .serializerDelegate(delegateSerializer)
-                    .revisionResolver(revisionResolver);
+                                                               .schemaStore(schemaStore)
+                                                               .serializerDelegate(delegateSerializer)
+                                                               .revisionResolver(revisionResolver);
                 serializationStrategies.values().forEach(builder::addSerializerStrategy);
                 return builder.build();
 

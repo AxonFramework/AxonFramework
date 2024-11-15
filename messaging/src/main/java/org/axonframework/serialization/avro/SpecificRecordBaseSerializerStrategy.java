@@ -24,11 +24,15 @@ import org.apache.avro.message.BinaryMessageEncoder;
 import org.apache.avro.message.SchemaStore;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.SerializationException;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
 
-import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import javax.annotation.Nonnull;
 
 /**
  * Avro serializer strategy responsible for operations on <code>SpecificRecordBase</code>.
@@ -39,8 +43,8 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
     private final RevisionResolver revisionResolver;
 
     public SpecificRecordBaseSerializerStrategy(
-        SchemaStore schemaStore,
-        RevisionResolver revisionResolver
+            SchemaStore schemaStore,
+            RevisionResolver revisionResolver
     ) {
         this.schemaStore = schemaStore;
         this.revisionResolver = revisionResolver;
@@ -50,11 +54,14 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
     @Nonnull
     public SerializedObject<byte[]> serializeToSingleObjectEncoded(@Nonnull Object object) {
         if (!(object instanceof SpecificRecordBase)) {
-            throw new SerializationException("Expected object to be instance of SpecificRecordBase but it was " + object.getClass().getCanonicalName());
+            throw new SerializationException(
+                    "Expected object to be instance of SpecificRecordBase but it was " + object.getClass()
+                                                                                               .getCanonicalName());
         }
 
         SpecificRecordBase record = (SpecificRecordBase) object;
-        BinaryMessageEncoder<SpecificRecordBase> encoder = new BinaryMessageEncoder<>(record.getSpecificData(), record.getSchema());
+        BinaryMessageEncoder<SpecificRecordBase> encoder = new BinaryMessageEncoder<>(record.getSpecificData(),
+                                                                                      record.getSchema());
         final byte[] bytes;
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             encoder.encode(record, outputStream);
@@ -64,16 +71,18 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
         }
 
         return new SimpleSerializedObject<>(bytes, byte[].class, new SimpleSerializedType(
-            object.getClass().getCanonicalName(),
-            revisionResolver.revisionOf(object.getClass())
+                object.getClass().getCanonicalName(),
+                revisionResolver.revisionOf(object.getClass())
         ));
     }
 
     @Override
     @Nonnull
-    public <T> T deserializeFromSingleObjectEncoded(@Nonnull SerializedObject<byte[]> serializedObject, @Nonnull Class<T> readerType) {
+    public <T> T deserializeFromSingleObjectEncoded(@Nonnull SerializedObject<byte[]> serializedObject,
+                                                    @Nonnull Class<T> readerType) {
         if (!SpecificRecordBase.class.isAssignableFrom(readerType)) {
-            throw new SerializationException("Expected reader type to be assignable from SpecificRecordBase but it was " + readerType.getCanonicalName());
+            throw new SerializationException("Expected reader type to be assignable from SpecificRecordBase but it was "
+                                                     + readerType.getCanonicalName());
         }
         @SuppressWarnings("unchecked")
         Class<SpecificRecordBase> specificRecordBaseClass = (Class<SpecificRecordBase>) readerType;
@@ -89,7 +98,9 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
 
         // TODO: check reader and writer compatibility here
 
-        BinaryMessageDecoder<SpecificRecordBase> decoder = new BinaryMessageDecoder<SpecificRecordBase>(readerSpecificData, readerSchema);
+        BinaryMessageDecoder<SpecificRecordBase> decoder = new BinaryMessageDecoder<SpecificRecordBase>(
+                readerSpecificData,
+                readerSchema);
         decoder.addSchema(writerSchema);
 
         try {
@@ -102,9 +113,11 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
 
     @Override
     @Nonnull
-    public <T> T deserializeFromGenericRecord(@Nonnull SerializedObject<GenericRecord> serializedObject, @Nonnull Class<T> readerType) {
+    public <T> T deserializeFromGenericRecord(@Nonnull SerializedObject<GenericRecord> serializedObject,
+                                              @Nonnull Class<T> readerType) {
         if (!SpecificRecordBase.class.isAssignableFrom(readerType)) {
-            throw new SerializationException("Expected reader type to be assignable from SpecificRecordBase but it was " + readerType.getCanonicalName());
+            throw new SerializationException("Expected reader type to be assignable from SpecificRecordBase but it was "
+                                                     + readerType.getCanonicalName());
         }
 
         Schema writerSchema = serializedObject.getData().getSchema();
@@ -112,7 +125,8 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
 //            val readerClass: Class<*> = AvroKotlin.specificData.getClass(writerSchema)
 
         SpecificData readerSpecificData = SpecificData.getForClass(readerType);
-        SpecificRecordBase decoded = (SpecificRecordBase) readerSpecificData.deepCopy(writerSchema, serializedObject.getData());
+        SpecificRecordBase decoded = (SpecificRecordBase) readerSpecificData.deepCopy(writerSchema,
+                                                                                      serializedObject.getData());
         //noinspection unchecked
         return (T) decoded;
     }
@@ -121,5 +135,4 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
     public boolean test(@Nonnull Class<?> payloadType) {
         return SpecificRecordBase.class.isAssignableFrom(payloadType);
     }
-
 }

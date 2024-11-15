@@ -19,8 +19,8 @@ package org.axonframework.serialization.avro;
 import org.apache.avro.generic.GenericRecord;
 import org.axonframework.serialization.SerializedObject;
 
-import javax.annotation.Nonnull;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
 
 /**
  * Serialization strategy for Avro Serializer.
@@ -55,7 +55,8 @@ public interface AvroSerializerStrategy extends Predicate<Class<?>> {
      * @return deserialized object.
      */
     @Nonnull
-    <T> T deserializeFromSingleObjectEncoded(@Nonnull SerializedObject<byte[]> serializedObject, @Nonnull Class<T> type);
+    <T> T deserializeFromSingleObjectEncoded(@Nonnull SerializedObject<byte[]> serializedObject,
+                                             @Nonnull Class<T> type);
 
     /**
      * Deserializes from Apache Avro generic record (intermediate representation).
@@ -66,5 +67,4 @@ public interface AvroSerializerStrategy extends Predicate<Class<?>> {
      * @return deserialized object.
      */
     <T> T deserializeFromGenericRecord(SerializedObject<GenericRecord> serializedObject, Class<T> type);
-
 }

@@ -20,41 +20,56 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
 import org.apache.avro.util.ClassUtils;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.UnknownSerializedType;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
- *
+ * Serializer providing support for Apache Avro and using Single Object Encoded binary encoding.
  */
 public class AvroSerializer implements Serializer {
 
     private final RevisionResolver revisionResolver;
     private final ChainingConverter converter = new ChainingConverter();
     private final List<AvroSerializerStrategy> serializerStrategies = new ArrayList<>();
-    /**
-     * Responsible for everything that is NOT avro-java (SpecificRecordBase) or avro4k (KotlinX-Serialization).
+    /*
+     * Responsible for everything that is NOT Avro (e.g. MetaData).
      */
     private final Serializer serializerDelegate;
 
+    /**
+     * Creates the serializer instance.
+     * @param builder builder containing relevant settings.
+     */
     protected AvroSerializer(@Nonnull Builder builder) {
         builder.validate();
         this.revisionResolver = builder.revisionResolver;
         this.serializerDelegate = builder.serializerDelegate;
         this.serializerStrategies.addAll(builder.serializerStrategies);
         this.serializerStrategies.add(new SpecificRecordBaseSerializerStrategy(
-                builder.schemaStore,
-                this.revisionResolver
-            )
+                                              builder.schemaStore,
+                                              this.revisionResolver
+                                      )
         );
         this.converter.registerConverter(new ByteArrayToGenericRecordConverter(builder.schemaStore));
     }
 
+    /**
+     * Creates a builder for Avro Serializer.
+     * @return fluent builder instance.
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -63,12 +78,13 @@ public class AvroSerializer implements Serializer {
     @Override
     public <T> SerializedObject<T> serialize(Object object, @Nonnull Class<T> expectedRepresentation) {
         // assume: expectedRepresentation is byte[] (or possibly String), nothing else.
+        // TODO: Question is this correct? What is the contract of null handling?
         Objects.requireNonNull(object, "Can't serialize a null object");
 
         Optional<AvroSerializerStrategy> serializerStrategy = serializerStrategies
-            .stream()
-            .filter(it -> it.test(object.getClass()))
-            .findFirst();
+                .stream()
+                .filter(it -> it.test(object.getClass()))
+                .findFirst();
 
         if (serializerStrategy.isPresent()) {
             if (byte[].class.equals(expectedRepresentation)) {
@@ -93,9 +109,9 @@ public class AvroSerializer implements Serializer {
         }
 
         Optional<AvroSerializerStrategy> serializerStrategy = serializerStrategies
-            .stream()
-            .filter(it -> it.test(payloadType))
-            .findFirst();
+                .stream()
+                .filter(it -> it.test(payloadType))
+                .findFirst();
 
         if (serializerStrategy.isPresent()) {
 
@@ -103,10 +119,9 @@ public class AvroSerializer implements Serializer {
             // GenericRecord -> T
             if (serializedObject.getContentType().equals(GenericRecord.class)) {
                 return (T) serializerStrategy.get().deserializeFromGenericRecord(
-                    (SerializedObject<GenericRecord>) serializedObject, payloadType
+                        (SerializedObject<GenericRecord>) serializedObject, payloadType
                 );
             }
-
 
             // without upcasting:
             // byte[] -> T
@@ -119,12 +134,11 @@ public class AvroSerializer implements Serializer {
         return serializerDelegate.deserialize(serializedObject);
     }
 
-
     @Override
     public <T> boolean canSerializeTo(@Nonnull Class<T> expectedRepresentation) {
         return GenericRecord.class.equals(expectedRepresentation)
-            || getConverter().canConvert(byte[].class, expectedRepresentation)
-            || serializerDelegate.canSerializeTo(expectedRepresentation);
+                || getConverter().canConvert(byte[].class, expectedRepresentation)
+                || serializerDelegate.canSerializeTo(expectedRepresentation);
     }
 
     @Override
@@ -156,6 +170,9 @@ public class AvroSerializer implements Serializer {
         return converter;
     }
 
+    /**
+     * Builder to set up Avro Serializer.
+     */
     public static class Builder {
 
         private final List<AvroSerializerStrategy> serializerStrategies = new ArrayList<>();
@@ -163,21 +180,41 @@ public class AvroSerializer implements Serializer {
         private SchemaStore schemaStore;
         private Serializer serializerDelegate;
 
+        /**
+         * Sets revision resolver.
+         * @param revisionResolver revision resolver to use.
+         * @return builder instance.
+         */
         public Builder revisionResolver(RevisionResolver revisionResolver) {
             this.revisionResolver = revisionResolver;
             return this;
         }
 
+        /**
+         * Sets schema store for Avro schema resolution.
+         * @param schemaStore schema store instance.
+         * @return builder instance.
+         */
         public Builder schemaStore(SchemaStore schemaStore) {
             this.schemaStore = schemaStore;
             return this;
         }
 
+        /**
+         * Sets serializer delegate, used for all types which can't be converted to Avro.
+         * @param serializerDelegate serializer delegate.
+         * @return builder instance.
+         */
         public Builder serializerDelegate(Serializer serializerDelegate) {
             this.serializerDelegate = serializerDelegate;
             return this;
         }
 
+        /**
+         * Adds a serialization strategy.
+         * @param strategy strategy responsible for the serialization and deserialization.
+         * @return builder instance.
+         */
         public Builder addSerializerStrategy(AvroSerializerStrategy strategy) {
             this.serializerStrategies.add(strategy);
             return this;
@@ -190,14 +227,21 @@ public class AvroSerializer implements Serializer {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            Objects.requireNonNull(revisionResolver, "RevisionResolver is mandatory");
-            Objects.requireNonNull(schemaStore, "SchemaStore is mandatory");
-            Objects.requireNonNull(serializerDelegate, "SerializerDelegate is mandatory");
+            try {
+                Objects.requireNonNull(revisionResolver, "RevisionResolver is mandatory");
+                Objects.requireNonNull(schemaStore, "SchemaStore is mandatory");
+                Objects.requireNonNull(serializerDelegate, "SerializerDelegate is mandatory");
+            } catch (NullPointerException e) {
+                throw new AxonConfigurationException(e.getMessage());
+            }
         }
 
+        /**
+         * Creates an Avro Serializer instance.
+         * @return working instance.
+         */
         public AvroSerializer build() {
             return new AvroSerializer(this);
         }
     }
-
 }

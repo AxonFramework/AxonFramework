@@ -16,18 +16,22 @@
 
 package org.axonframework.serialization.avro;
 
-import org.apache.avro.*;
+import org.apache.avro.AvroRuntimeException;
+import org.apache.avro.InvalidAvroMagicException;
+import org.apache.avro.InvalidNumberEncodingException;
+import org.apache.avro.Schema;
+import org.apache.avro.SchemaNormalization;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.message.BadHeaderException;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.axonframework.serialization.SerializationException;
 
-import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import javax.annotation.Nonnull;
 
 /**
  * Utilities for Avro manipulations.
@@ -63,7 +67,8 @@ public class AvroUtil {
                 throw new InvalidAvroMagicException(String.format("Unrecognized header magic byte: 0x%02X", magicByte));
             }
             if (versionByte != FORMAT_VERSION) {
-                throw new InvalidNumberEncodingException(String.format("Unrecognized header version bytes: 0x%02X", versionByte));
+                throw new InvalidNumberEncodingException(String.format("Unrecognized header version bytes: 0x%02X",
+                                                                       versionByte));
             }
             byte[] fingerprintBytes = new byte[AVRO_HEADER_LENGTH];
             int read = bis.read(fingerprintBytes);
@@ -99,7 +104,8 @@ public class AvroUtil {
         try {
             return (Schema) specificRecordBaseClass.getDeclaredField("SCHEMA$").get(null);
         } catch (Exception e) {
-            throw new AvroRuntimeException("Could not get schema from specific record class " + specificRecordBaseClass.getCanonicalName(), e);
+            throw new AvroRuntimeException(
+                    "Could not get schema from specific record class " + specificRecordBaseClass.getCanonicalName(), e);
         }
     }
 
@@ -115,10 +121,11 @@ public class AvroUtil {
 
     /**
      * Creates a serialization exception for reader type.
-     * @param readerType object type to deserialize.
+     *
+     * @param readerType   object type to deserialize.
      * @param readerSchema reader schema.
      * @param writerSchema writer schema.
-     * @param cause the cause of exception.
+     * @param cause        the cause of exception.
      * @return serialization exception.
      */
     @Nonnull
@@ -127,25 +134,26 @@ public class AvroUtil {
                                                                             @Nonnull Schema writerSchema,
                                                                             Exception cause) {
         return new SerializationException("Failed to deserialize specific record to instance of "
-            + readerType.getCanonicalName()
-            + ", writer fp was " + fingerprint(writerSchema)
-            + " reader fp was " + fingerprint(readerSchema),
-            cause);
+                                                  + readerType.getCanonicalName()
+                                                  + ", writer fp was " + fingerprint(writerSchema)
+                                                  + " reader fp was " + fingerprint(readerSchema),
+                                          cause);
     }
 
     /**
      * Creates exception if the schema for a given fingerprint could not be found.
-     * @param readerType type of object to deserialize.
+     *
+     * @param readerType  type of object to deserialize.
      * @param fingerprint fingerprint of writer schema.
      * @return exception to throw.
      */
     public static SerializationException createExceptionNoSchemaFound(
-        @Nonnull Class<?> readerType,
-        long fingerprint
+            @Nonnull Class<?> readerType,
+            long fingerprint
     ) {
         return new SerializationException("Schema store could not contain schema deserializing "
-            + readerType
-            + " with fp:"
-            + fingerprint);
+                                                  + readerType
+                                                  + " with fp:"
+                                                  + fingerprint);
     }
 }

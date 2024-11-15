@@ -53,7 +53,9 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
     public GenericRecord convert(byte[] singleObjectEncodeBytes) {
         long fingerprint = AvroUtil.fingerprint(singleObjectEncodeBytes);
         Schema writerSchema = schemaStore.findByFingerprint(fingerprint);
-        GenericDatumReader<GenericRecord> reader = new GenericDatumReader<>(writerSchema, writerSchema, AvroUtil.genericData);
+        GenericDatumReader<GenericRecord> reader = new GenericDatumReader<>(writerSchema,
+                                                                            writerSchema,
+                                                                            AvroUtil.genericData);
 
         try {
             return reader.read(null, decoderFactory.binaryDecoder(singleObjectEncodeBytes, null));

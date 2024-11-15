@@ -4,6 +4,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.specific.SpecificRecordBase;
 
 public class DummyTypeWithWrongStructure extends SpecificRecordBase {
+
     @Override
     public void put(int i, Object v) {
 

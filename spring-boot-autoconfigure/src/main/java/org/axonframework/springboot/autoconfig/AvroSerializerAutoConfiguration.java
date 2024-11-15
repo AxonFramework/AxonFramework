@@ -43,8 +43,16 @@ import java.util.stream.Collectors;
 @ConditionalOnClass(name = {"org.apache.avro.message.SchemaStore"})
 public class AvroSerializerAutoConfiguration {
 
+    /**
+     * Constructs a default in-memory schema store filled with schemas detected during class scanning of packages,
+     * configured using {@link org.axonframework.spring.serialization.avro.AvroSchemaScan} annotations.
+     *
+     * @param beanFactory  spring bean factory.
+     * @param schemaLoader list of schema loaders.
+     * @return schema store instance.
+     */
     @Bean("defaultAxonSchemaStore")
-    // TODO we need to handle missing bean condition too
+    // TODO we need to handle missing bean condition too in order to make it replaceable.
     @Conditional({AvroConfiguredCondition.class})
     public SchemaStore defaultAxonSchemaStore(BeanFactory beanFactory, List<ClasspathAvroSchemaLoader> schemaLoader) {
         SchemaStore.Cache cachingSchemaStore = new SchemaStore.Cache();
@@ -56,14 +64,18 @@ public class AvroSerializerAutoConfiguration {
             packagesToScan.addAll(packagesCandidates);
         }
         schemaLoader
-            .stream().map(loader -> loader.load(packagesToScan)).flatMap(List::stream)
-            .collect(Collectors.toSet())
-            .forEach(cachingSchemaStore::addSchema);
+                .stream().map(loader -> loader.load(packagesToScan)).flatMap(List::stream)
+                .collect(Collectors.toSet())
+                .forEach(cachingSchemaStore::addSchema);
         return cachingSchemaStore;
     }
 
+    /**
+     * Constructs default schema loader from Avro-Java-Maven-Generated classes.
+     * @param resourceLoader resource loader.
+     * @return ClasspathAvroSchemaLoader instance.
+     */
     @Bean("specificRecordBaseClasspathAvroSchemaLoader")
-    // TODO we need to handle missing bean condition too
     @Conditional({AvroConfiguredCondition.class})
     public ClasspathAvroSchemaLoader specificRecordBaseClasspathAvroSchemaLoader(ResourceLoader resourceLoader) {
         return new SpecificRecordBaseClasspathAvroSchemaLoader(resourceLoader);
@@ -84,6 +96,7 @@ public class AvroSerializerAutoConfiguration {
         }
 
         @SuppressWarnings("unused")
+        // TODO: Question, the use case of events and messages makes sense for Avro, but general is artificial?
         @ConditionalOnProperty(name = "axon.serializer.general", havingValue = "avro")
         static class GeneralAvroCondition {
 
@@ -101,5 +114,4 @@ public class AvroSerializerAutoConfiguration {
 
         }
     }
-
 }

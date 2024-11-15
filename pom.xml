@@ -117,7 +117,7 @@
         <projectreactor.version>3.6.10</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
-        <avro.version>1.12.0</avro.version>
+        <avro.version>1.11.4</avro.version><!-- Don't upgrade due to JDK8, the JDK11+ version is defined in profile below -->
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.11.0</gson.version>
         <jackson.version>2.17.2</jackson.version>
@@ -857,6 +857,9 @@
             <activation>
                 <jdk>[11,)</jdk>
             </activation>
+            <properties>
+                <avro.version>1.12.0</avro.version>
+            </properties>
             <modules>
                 <module>hibernate-6-integrationtests</module>
             </modules>

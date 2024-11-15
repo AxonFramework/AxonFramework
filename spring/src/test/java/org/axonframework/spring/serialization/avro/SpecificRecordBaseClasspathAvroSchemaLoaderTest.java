@@ -1,7 +1,7 @@
 package org.axonframework.spring.serialization.avro;
 
 import org.apache.avro.Schema;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.core.io.DefaultResourceLoader;
 
 import java.util.ArrayList;

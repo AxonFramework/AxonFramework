@@ -44,15 +44,22 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * Holder for package-based class scanning for Avro schema extraction.
  */
 public class AvroSchemaPackages {
+
     private static final String BEAN = AvroSchemaPackages.class.getCanonicalName();
     private static final AvroSchemaPackages NONE = new AvroSchemaPackages();
 
@@ -87,8 +94,8 @@ public class AvroSchemaPackages {
     }
 
     /**
-     * Registrar detecting {@link AvroSchemaScan} annotations and registering {@link AvroSchemaPackages} bean
-     * holding the packages to scan for Avro schemas.
+     * Registrar detecting {@link AvroSchemaScan} annotations and registering {@link AvroSchemaPackages} bean holding
+     * the packages to scan for Avro schemas.
      */
     static class Registrar implements ImportBeanDefinitionRegistrar {
 
@@ -103,7 +110,8 @@ public class AvroSchemaPackages {
             Assert.notNull(registry, "Registry must not be null");
             Assert.notNull(packageNames, "PackageNames must not be null");
             if (registry.containsBeanDefinition(BEAN)) {
-                AvroSchemaScanPackagesBeanDefinition beanDefinition = (AvroSchemaScanPackagesBeanDefinition) registry.getBeanDefinition(BEAN);
+                AvroSchemaScanPackagesBeanDefinition beanDefinition = (AvroSchemaScanPackagesBeanDefinition) registry.getBeanDefinition(
+                        BEAN);
                 beanDefinition.addPackageNames(packageNames);
             } else {
                 registry.registerBeanDefinition(BEAN, new AvroSchemaScanPackagesBeanDefinition(packageNames));
@@ -111,22 +119,22 @@ public class AvroSchemaPackages {
         }
 
         public static Set<String> getPackagesToScan(
-            Environment environment,
-            AnnotationMetadata metadata,
-            String annotationClassName,
-            String annotationAttributePackages,
-            String annotationAttributePackageClasses
+                Environment environment,
+                AnnotationMetadata metadata,
+                String annotationClassName,
+                String annotationAttributePackages,
+                String annotationAttributePackageClasses
         ) {
             AnnotationAttributes attributes = Objects.requireNonNull(
-                AnnotationAttributes.fromMap(
-                    metadata.getAnnotationAttributes(annotationClassName)
-                )
+                    AnnotationAttributes.fromMap(
+                            metadata.getAnnotationAttributes(annotationClassName)
+                    )
             );
             Set<String> packagesToScan = new LinkedHashSet<>();
             for (String basePackage : attributes.getStringArray(annotationAttributePackages)) {
                 String[] tokenized = StringUtils.tokenizeToStringArray(
-                    environment.resolvePlaceholders(basePackage),
-                    ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
+                        environment.resolvePlaceholders(basePackage),
+                        ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
                 Collections.addAll(packagesToScan, tokenized);
             }
             for (Class<?> basePackageClass : attributes.getClassArray(annotationAttributePackageClasses)) {
@@ -134,23 +142,25 @@ public class AvroSchemaPackages {
             }
             if (packagesToScan.isEmpty()) {
                 String packageName = ClassUtils.getPackageName(metadata.getClassName());
-                Assert.state(StringUtils.hasLength(packageName), "@" + annotationClassName + " cannot be used with the default package");
+                Assert.state(StringUtils.hasLength(packageName),
+                             "@" + annotationClassName + " cannot be used with the default package");
                 return Collections.singleton(packageName);
             }
             return packagesToScan;
         }
 
         @Override
-        public void registerBeanDefinitions(@Nonnull AnnotationMetadata importingClassMetadata, @Nonnull BeanDefinitionRegistry registry) {
+        public void registerBeanDefinitions(@Nonnull AnnotationMetadata importingClassMetadata,
+                                            @Nonnull BeanDefinitionRegistry registry) {
             register(
-                registry,
-                getPackagesToScan(
-                    this.environment,
-                    importingClassMetadata,
-                    AvroSchemaScan.class.getName(),
-                    "basePackages",
-                    "basePackageClasses"
-                )
+                    registry,
+                    getPackagesToScan(
+                            this.environment,
+                            importingClassMetadata,
+                            AvroSchemaScan.class.getName(),
+                            "basePackages",
+                            "basePackageClasses"
+                    )
             );
         }
     }
@@ -159,6 +169,7 @@ public class AvroSchemaPackages {
      * Bean definition for {@link AvroSchemaPackages}.
      */
     static class AvroSchemaScanPackagesBeanDefinition extends GenericBeanDefinition {
+
         private final LinkedHashSet<String> packageNames = new LinkedHashSet<>();
 
         AvroSchemaScanPackagesBeanDefinition(Collection<String> packageNames) {
