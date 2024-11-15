@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CorrelationDataInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
 
-    public static final ResourceKey<Map<String, Object>> CORRELATION_DATA = ResourceKey.sharedKey("CorrelationData");
+    public static final ResourceKey<Map<String, Object>> CORRELATION_DATA = ResourceKey.getFor("CorrelationData");
     private final List<CorrelationDataProvider> correlationDataProviders;
 
     /**

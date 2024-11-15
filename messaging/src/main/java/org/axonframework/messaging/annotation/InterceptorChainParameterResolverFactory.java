@@ -42,7 +42,7 @@ public class InterceptorChainParameterResolverFactory
 
     private static final ThreadLocal<InterceptorChain<?, ?>> CURRENT = new ThreadLocal<>();
     private static final ResourceKey<InterceptorChain<?, ?>> INTERCEPTOR_CHAIN_KEY =
-            ResourceKey.sharedKey("InterceptorChain");
+            ResourceKey.getFor("InterceptorChain");
 
     /**
      * Invoke the given {@code action} with the given {@code interceptorChain} being available for parameter injection.

@@ -63,9 +63,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         this.processingContext = processingContext;
         this.callbacks = new CopyOnWriteArrayList<>();
 
-        this.appendConditionKey = ResourceKey.sharedKey("appendCondition");
-        this.eventQueueKey = ResourceKey.sharedKey("eventQueue");
-        this.appendPositionKey = ResourceKey.sharedKey("appendPosition");
+        this.appendConditionKey = ResourceKey.getFor("appendCondition");
+        this.eventQueueKey = ResourceKey.getFor("eventQueue");
+        this.appendPositionKey = ResourceKey.getFor("appendPosition");
     }
 
     @Override

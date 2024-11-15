@@ -21,7 +21,7 @@ import org.axonframework.messaging.Message;
 
 public interface PriorityResolver<M extends Message<?>> {
 
-    ResourceKey<Integer> PRIORITY_KEY = ResourceKey.sharedKey("Priority");
+    ResourceKey<Integer> PRIORITY_KEY = ResourceKey.getFor("Priority");
 
     int priorityFor(M message);
 }
