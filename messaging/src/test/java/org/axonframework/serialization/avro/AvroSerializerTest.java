@@ -5,6 +5,7 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.BinaryMessageEncoder;
 import org.apache.avro.message.SchemaStore;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.SerializationException;
@@ -134,18 +135,18 @@ public class AvroSerializerTest {
     }
 
     @Test
-    void testBuilder() {
-        NullPointerException revisionResolverMandatory = assertThrows(NullPointerException.class,
-                                                                      () -> AvroSerializer.builder().build());
+    void testBuilderMandatoryValues() {
+        AxonConfigurationException revisionResolverMandatory = assertThrows(AxonConfigurationException.class,
+                                                                            () -> AvroSerializer.builder().build());
         assertEquals("RevisionResolver is mandatory", revisionResolverMandatory.getMessage());
 
-        NullPointerException schemaStoreMandatory = assertThrows(NullPointerException.class,
+        AxonConfigurationException schemaStoreMandatory = assertThrows(AxonConfigurationException.class,
                                                                  () -> AvroSerializer.builder()
                                                                                      .revisionResolver(c -> "")
                                                                                      .build());
         assertEquals("SchemaStore is mandatory", schemaStoreMandatory.getMessage());
 
-        NullPointerException serializerDelegateMandatory = assertThrows(NullPointerException.class,
+        AxonConfigurationException serializerDelegateMandatory = assertThrows(AxonConfigurationException.class,
                                                                         () -> AvroSerializer.builder()
                                                                                             .revisionResolver(c -> "")
                                                                                             .schemaStore(new SchemaStore.Cache())
