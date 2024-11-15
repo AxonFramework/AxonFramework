@@ -27,7 +27,6 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.axonframework/axon/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.axonframework/axon)
 ![Build Status](https://github.com/AxonFramework/AxonFramework/workflows/Axon%20Framework/badge.svg?branch=master)
 [![SonarCloud Status](https://sonarcloud.io/api/project_badges/measure?project=AxonFramework_AxonFramework&metric=alert_status)](https://sonarcloud.io/dashboard?id=AxonFramework_AxonFramework)
-[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Axon%20Framework%20Guru-006BFF)](https://gurubase.io/g/axon-framework)
 
 Axon Framework is a framework for building evolutionary, event-driven microservice systems based on the principles of Domain-Driven Design (DDD), Command-Query Responsibility Separation (CQRS), and Event Sourcing.
 
@@ -65,6 +64,7 @@ Furthermore, below are several other helpful resources:
 * If the guide doesn't help, our [forum](https://discuss.axoniq.io/) provides a place to ask questions you have during development.
 * The [hotel demo](https://github.com/AxonIQ/hotel-demo) shows a fleshed-out example of using Axon Framework.
 * The [code samples repository](https://github.com/AxonIQ/code-samples) contains more in-depth samples you can benefit from.
+* You can [Ask Axon Guru](https://gurubase.io/g/axon-framework), it is an Axon-focused AI to answer your questions.
 
 ## Receiving help
 
