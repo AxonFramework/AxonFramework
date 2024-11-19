@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,65 +16,87 @@
 
 package org.axonframework.serialization;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.AbstractMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 
+import java.io.Serial;
 import java.util.Map;
-import javax.annotation.Nonnull;
 
 /**
- * A message containing serialized payload data and metadata. A SerializedMessage will deserialize the payload or
- * metadata on demand when {@link #getPayload()} or {@link #getMetaData()} is called.
+ * A message containing serialized {@link #getPayload() payload data} and {@link #getMetaData() metadata}.
  * <p>
- * The SerializedMessage guarantees that the payload and metadata will not be deserialized more than once. Messages of
- * this type  will not be serialized more than once by the same serializer.
+ * A {@link SerializedMessage} will deserialize the payload or metadata on demand when {@link #getPayload()} or
+ * {@link #getMetaData()} is called.
+ * <p>
+ * The {@code SerializedMessage} guarantees that the payload and metadata will not be deserialized more than once.
+ * Messages of this type  will not be serialized more than once by the same serializer.
  *
+ * @param <P> The type of {@link #getPayload() payload} contained in this {@link org.axonframework.messaging.Message}.
  * @author Rene de Waele
+ * @author Steven van Beelen
+ * @since 3.0.0
  */
-public class SerializedMessage<T> extends AbstractMessage<T> {
+public class SerializedMessage<P> extends AbstractMessage<P> {
 
+    @Serial
     private static final long serialVersionUID = 8079093289710229594L;
 
+    private final LazyDeserializingObject<P> payload;
     private final LazyDeserializingObject<MetaData> metaData;
-    private final LazyDeserializingObject<T> payload;
 
     /**
-     * Initializes a {@link SerializedMessage} with given {@code identifier} from the given serialized payload and
-     * metadata. The given {@code serializer} will be used to deserialize the data.
+     * Constructs a {@link SerializedMessage} with given {@code identifier} from the given {@code serializedPayload} and
+     * {@code serializedMetaData}.
+     * <p>
+     * The given {@code serializer} is used to deserialize the data.
      *
-     * @param identifier         the message identifier
-     * @param serializedPayload  the serialized message payload
-     * @param serializedMetaData the serialized message metadata
-     * @param serializer         the serializer required when the data needs to be deserialized
+     * @param identifier         The identifier of this {@link SerializedMessage}.
+     * @param serializedPayload  The {@link SerializedObject serializer} message payload.
+     * @param serializedMetaData The {@link SerializedObject serializer} message metadata.
+     * @param serializer         The {@link Serializer} required when the data needs to be deserialized.
      */
-    public SerializedMessage(String identifier, SerializedObject<?> serializedPayload,
-                             SerializedObject<?> serializedMetaData, Serializer serializer) {
-        this(identifier, new LazyDeserializingObject<>(serializedPayload, serializer),
+    public SerializedMessage(@Nonnull String identifier,
+                             @Nonnull SerializedObject<?> serializedPayload,
+                             @Nonnull SerializedObject<?> serializedMetaData,
+                             @Nonnull Serializer serializer) {
+        // TODO #3012 - I think the Serializer/Converter should provide the QualifiedName in this case.
+        this(identifier,
+             QualifiedName.dottedName(serializedPayload.getType().getName()),
+             new LazyDeserializingObject<>(serializedPayload, serializer),
              new LazyDeserializingObject<>(serializedMetaData, serializer));
     }
 
     /**
-     * Initializes a {@link SerializedMessage} with given {@code identifier} from the given lazily deserializing payload
-     * and metadata.
+     * Constructs a {@link SerializedMessage} with given {@code identifier}, {@code type}, and lazily deserialized
+     * {@code payload} and {@code metadata}.
+     * <p>
+     * The {@code identifier} originates from the {@link org.axonframework.messaging.Message} where the lazily
+     * deserialized {@code payload} and {@code metadata} originate from.
      *
-     * @param identifier the message identifier
+     * @param identifier The identifier of this {@link SerializedMessage}.
+     * @param type       The {@link QualifiedName type} for this {@link SerializedMessage}.
      * @param payload    serialized payload that can be deserialized on demand and never more than once
      * @param metaData   serialized metadata that can be deserialized on demand and never more than once
      */
-    public SerializedMessage(String identifier, LazyDeserializingObject<T> payload,
-                             LazyDeserializingObject<MetaData> metaData) {
-        super(identifier);
+    public SerializedMessage(@Nonnull String identifier,
+                             @Nonnull QualifiedName type,
+                             @Nonnull LazyDeserializingObject<P> payload,
+                             @Nonnull LazyDeserializingObject<MetaData> metaData) {
+        super(identifier, type);
         this.metaData = metaData;
         this.payload = payload;
     }
 
-    private SerializedMessage(SerializedMessage<T> message, LazyDeserializingObject<MetaData> newMetaData) {
-        this(message.getIdentifier(), message.payload, newMetaData);
+    private SerializedMessage(@Nonnull SerializedMessage<P> message,
+                              @Nonnull LazyDeserializingObject<MetaData> newMetaData) {
+        this(message.getIdentifier(), message.type(), message.payload, newMetaData);
     }
 
     @Override
-    public T getPayload() {
+    public P getPayload() {
         try {
             return payload.getObject();
         } catch (SerializationException e) {
@@ -92,12 +114,12 @@ public class SerializedMessage<T> extends AbstractMessage<T> {
     }
 
     @Override
-    public Class<T> getPayloadType() {
+    public Class<P> getPayloadType() {
         return payload.getType();
     }
 
     @Override
-    protected SerializedMessage<T> withMetaData(MetaData metaData) {
+    protected SerializedMessage<P> withMetaData(MetaData metaData) {
         if (getMetaData().equals(metaData)) {
             return this;
         }
@@ -105,16 +127,15 @@ public class SerializedMessage<T> extends AbstractMessage<T> {
     }
 
     @Override
-    public SerializedMessage<T> withMetaData(@Nonnull Map<String, ?> metaData) {
-        return (SerializedMessage<T>) super.withMetaData(metaData);
+    public SerializedMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
+        return (SerializedMessage<P>) super.withMetaData(metaData);
     }
 
     @Override
-    public SerializedMessage<T> andMetaData(@Nonnull Map<String, ?> metaData) {
-        return (SerializedMessage<T>) super.andMetaData(metaData);
+    public SerializedMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
+        return (SerializedMessage<P>) super.andMetaData(metaData);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
         if (serializer.equals(payload.getSerializer())) {
@@ -123,7 +144,6 @@ public class SerializedMessage<T> extends AbstractMessage<T> {
         return serializer.serialize(payload.getObject(), expectedRepresentation);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
         if (serializer.equals(metaData.getSerializer())) {
@@ -157,6 +177,6 @@ public class SerializedMessage<T> extends AbstractMessage<T> {
      * @return the GenericMessage to use as a replacement when serializing
      */
     protected Object writeReplace() {
-        return new GenericMessage<>(getIdentifier(), getPayload(), getMetaData());
+        return new GenericMessage<>(getIdentifier(), type(), getPayload(), getMetaData());
     }
 }
