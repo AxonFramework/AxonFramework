@@ -53,7 +53,7 @@ public interface Message<P> extends Serializable {
      * message. In such case, the {@link Message#getMetaData() metadata} may be different for both representations. The
      * {@link Message#getPayload() payload} <em>may</em> be identical.
      *
-     * @return the unique identifier of this message
+     * @return The unique identifier of this {@link Message}.
      */
     String getIdentifier();
 
@@ -98,26 +98,26 @@ public interface Message<P> extends Serializable {
     Class<P> getPayloadType();
 
     /**
-     * Returns a copy of this {@link Message} with the given {@code metaData}.
+     * Returns a copy of this {@link Message message (implementation)} with the given {@code metaData}.
      * <p>
-     * The payload remains unchanged.
+     * All others fields, like for example the {@link #getPayload()}, remain unchanged.
      * <p/>
-     * While the implementation returned may be different then the implementation of {@code this}, implementations must
+     * While the implementation returned may be different than the implementation of {@code this}, implementations must
      * take special care in returning the same type of {@code Message}to prevent errors further downstream.
      *
      * @param metaData The new metadata for the {@link Message}.
-     * @return A copy of this {@link Message} with the given {@code metaData}.
+     * @return A copy of this {@link Message message (implementation)} with the given {@code metaData}.
      */
     Message<P> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this {@link Message} with its {@link Message#getMetaData() metadata} merged with the given
-     * {@code metaData}.
+     * Returns a copy of this {@link Message message (implementation)} with its {@link Message#getMetaData() metadata}
+     * merged with the given {@code metaData}.
      * <p>
-     * The payload remains unchanged.
+     * All others fields, like for example the {@link #getPayload()}, remain unchanged.
      *
      * @param metaData The metadata to merge with.
-     * @return A copy of this {@link Message} with the given {@code metaData}.
+     * @return A copy of this {@link Message message (implementation)} with the given {@code metaData}.
      */
     Message<P> andMetaData(@Nonnull Map<String, ?> metaData);
 
