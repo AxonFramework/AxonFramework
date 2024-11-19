@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,34 @@
 
 package org.axonframework.eventhandling.replay;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 
+import java.io.Serial;
 import java.util.Map;
-import javax.annotation.Nonnull;
 
 /**
- * Generic implementation of the {@link ResetContext}.
+ * Generic implementation of the {@link ResetContext} interface.
  *
- * @param <T> the type of payload contained in the message
+ * @param <P> The type of {@link #getPayload()} contained in this {@link GenericResetContext}.
  * @author Steven van Beelen
- * @since 4.4
+ * @since 4.4.0
  */
-public class GenericResetContext<T> extends MessageDecorator<T> implements ResetContext<T> {
+public class GenericResetContext<P> extends MessageDecorator<P> implements ResetContext<P> {
 
+    @Serial
     private static final long serialVersionUID = -6872386525166762225L;
+
+    /**
+     * The {@link QualifiedName type} of <em>any</em> {@link GenericResetContext} instance.
+     */
+    public static final QualifiedName TYPE = QualifiedName.dottedName("axon.framework.resetContext");
 
     /**
      * Returns the given {@code messageOrPayload} as a {@link ResetContext}. If {@code messageOrPayload} already
@@ -43,8 +53,8 @@ public class GenericResetContext<T> extends MessageDecorator<T> implements Reset
      *
      * @param messageOrPayload the payload to wrap or cast as {@link ResetContext}
      * @param <T>              the type of payload contained in the message
-     * @return a {@link ResetContext} containing given {@code messageOrPayload} as payload, or the {@code
-     * messageOrPayload} if it already implements {@code ResetContext}.
+     * @return a {@link ResetContext} containing given {@code messageOrPayload} as payload, or the
+     * {@code messageOrPayload} if it already implements {@code ResetContext}.
      */
     @SuppressWarnings("unchecked")
     public static <T> ResetContext<T> asResetContext(Object messageOrPayload) {
@@ -57,39 +67,53 @@ public class GenericResetContext<T> extends MessageDecorator<T> implements Reset
     }
 
     /**
-     * Instantiate a {@link GenericResetContext} containing the given {@code payload} and en empty {@link MetaData}
-     * instance.
+     * Constructs a {@link GenericResetContext} for the given {@code payload}.
+     * <p>
+     * The {@link MetaData} defaults to an empty instance.
+     * <p>
+     * The {@link #type()} defaults to {@link #TYPE}.
      *
-     * @param payload the payload be included
+     * @param payload The payload of type {@code P} for this {@link ResetContext}.
      */
-    public GenericResetContext(T payload) {
+    public GenericResetContext(@Nullable P payload) {
         this(payload, MetaData.emptyInstance());
     }
 
     /**
-     * Instantiate a {@link GenericResetContext} containing the given {@code payload} and {@link MetaData}.
+     * Constructs a {@link GenericResetContext} for the given {@code payload} and {@code metaData}.
+     * <p>
+     * The {@link #type()} defaults to {@link #TYPE}.
      *
-     * @param payload  the payload to be included
-     * @param metaData the {@link MetaData} to be included
+     * @param payload  The payload of type {@code P} for this {@link ResetContext}.
+     * @param metaData The metadata for this {@link ResetContext}.
      */
-    public GenericResetContext(T payload, Map<String, ?> metaData) {
-        this(new GenericMessage<>(payload, metaData));
+    public GenericResetContext(@Nullable P payload,
+                               @Nonnull Map<String, ?> metaData) {
+        this(new GenericMessage<>(TYPE, payload, metaData));
     }
 
     /**
-     * @param message
+     * Constructs a {@link GenericResetContext} for the given {@code delegate}, intended to reconstruct another
+     * {@link ResetContext}.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
+     *
+     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
+     *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
+     *                 {@link EventMessage} to reconstruct.
      */
-    public GenericResetContext(Message<T> message) {
-        super(message);
+    public GenericResetContext(Message<P> delegate) {
+        super(delegate);
     }
 
     @Override
-    public GenericResetContext<T> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericResetContext<P> withMetaData(@Nonnull Map<String, ?> metaData) {
         return new GenericResetContext<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public GenericResetContext<T> andMetaData(@Nonnull Map<String, ?> additionalMetaData) {
+    public GenericResetContext<P> andMetaData(@Nonnull Map<String, ?> additionalMetaData) {
         return new GenericResetContext<>(getDelegate().andMetaData(additionalMetaData));
     }
 
