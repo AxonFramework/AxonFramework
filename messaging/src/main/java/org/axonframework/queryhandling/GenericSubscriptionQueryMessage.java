@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,66 +16,106 @@
 
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.util.Map;
-import javax.annotation.Nonnull;
 
 /**
- * Generic implementation of the {@link SubscriptionQueryMessage}. Unless explicitly provided, it assumes the {@code
- * queryName} of the message is the fully qualified class name of the message's payload.
+ * Generic implementation of the {@link SubscriptionQueryMessage} interface.
+ * <p>
+ * Unless explicitly provided, it assumes the {@code queryName} of the {@code SubscriptionQueryMessage} is the fully
+ * qualified class name of the message's payload.
  *
- * @param <Q> The type of payload expressing the query in this message
- * @param <I> The type of initial response expected from this query
- * @param <U> The type of incremental updates expected from this query
+ * @param <P> The type of {@link #getPayload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
+ * @param <I> The type of {@link #getResponseType() initial response} expected from this
+ *            {@link SubscriptionQueryMessage}.
+ * @param <U> The type of {@link #getUpdateResponseType() incremental updates} expected from this
+ *            {@link SubscriptionQueryMessage}.
  * @author Allard Buijze
- * @since 3.3
+ * @author Steven van Beelen
+ * @since 3.3.0
  */
-public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessage<Q, I>
-        implements SubscriptionQueryMessage<Q, I, U> {
+public class GenericSubscriptionQueryMessage<P, I, U>
+        extends GenericQueryMessage<P, I>
+        implements SubscriptionQueryMessage<P, I, U> {
 
     private final ResponseType<U> updateResponseType;
 
     /**
-     * Initializes the message with the given {@code payload}, expected {@code responseType} and expected {@code
-     * updateResponseType}. The query name is set to the fully qualified class name of the {@code payload}.
+     * Constructs a {@link GenericSubscriptionQueryMessage} for the given {@code type}, {@code payload},
+     * {@code responseType}, and {@code updateResponseType}.
+     * <p>
+     * The query name is set to the fully qualified class name of the {@code payload}. The {@link MetaData} defaults to
+     * an empty instance.
      *
-     * @param payload            The payload expressing the query
-     * @param responseType       The expected response type
-     * @param updateResponseType The expected type of incremental updates
+     * @param type               The {@link QualifiedName type} for this {@link SubscriptionQueryMessage}.
+     * @param payload            The payload of type {@code P} expressing the query for this
+     *                           {@link SubscriptionQueryMessage}.
+     * @param responseType       The expected {@link ResponseType response type} for this
+     *                           {@link SubscriptionQueryMessage}.
+     * @param updateResponseType The expected {@link ResponseType type} of incremental updates for this
+     *                           {@link SubscriptionQueryMessage}.
      */
-    public GenericSubscriptionQueryMessage(Q payload, ResponseType<I> responseType,
-                                           ResponseType<U> updateResponseType) {
-        this(payload, payload.getClass().getName(), responseType, updateResponseType);
+    public GenericSubscriptionQueryMessage(@Nonnull QualifiedName type,
+                                           @Nonnull P payload,
+                                           @Nonnull ResponseType<I> responseType,
+                                           @Nonnull ResponseType<U> updateResponseType) {
+        this(type, payload, payload.getClass().getName(), responseType, updateResponseType);
     }
 
     /**
-     * Initializes the message with the given {@code payload}, {@code queryName}, expected {@code responseType} and
-     * expected {@code updateResponseType}.
+     * Constructs a {@link GenericSubscriptionQueryMessage} for the given {@code type}, {@code payload},
+     * {@code queryName}, {@code responseType}, and {@code updateResponseType}.
+     * <p>
+     * The {@link MetaData} defaults to an empty instance.
      *
-     * @param payload            The payload expressing the query
-     * @param queryName          The name identifying the query to execute
-     * @param responseType       The expected response type
-     * @param updateResponseType The expected type of incremental updates
+     * @param type               The {@link QualifiedName type} for this {@link SubscriptionQueryMessage}.
+     * @param payload            The payload of type {@code P} expressing the query for this
+     *                           {@link SubscriptionQueryMessage}.
+     * @param queryName          The name identifying the query to execute by this {@link SubscriptionQueryMessage}.
+     * @param responseType       The expected {@link ResponseType response type} for this
+     *                           {@link SubscriptionQueryMessage}.
+     * @param updateResponseType The expected {@link ResponseType type} of incremental updates for this
+     *                           {@link SubscriptionQueryMessage}.
      */
-    public GenericSubscriptionQueryMessage(Q payload, String queryName, ResponseType<I> responseType,
-                                           ResponseType<U> updateResponseType) {
-        super(payload, queryName, responseType);
+    public GenericSubscriptionQueryMessage(@Nonnull QualifiedName type,
+                                           @Nonnull P payload,
+                                           @Nonnull String queryName,
+                                           @Nonnull ResponseType<I> responseType,
+                                           @Nonnull ResponseType<U> updateResponseType) {
+        super(type, queryName, payload, responseType);
         this.updateResponseType = updateResponseType;
     }
 
     /**
-     * Initializes the message, using given {@code delegate} as the carrier of payload and metadata and given {@code
-     * queryName}, expected {@code responseType} and expected {@code updateResponseType}.
+     * Constructs a {@link GenericSubscriptionQueryMessage} with given {@code delegate}, {@code queryName},
+     * {@code responseType}, and {@code updateResponseType}.
+     * <p>
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
+     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * {@code GenericQueryMessage}.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
      *
-     * @param delegate           The message containing the payload and meta data for this message
-     * @param queryName          The name identifying the query to execute
-     * @param responseType       The expected response type
-     * @param updateResponseType The expected type of incremental updates
+     * @param delegate           The {@link Message} containing {@link Message#getPayload() payload},
+     *                           {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                           {@link Message#getMetaData() metadata} for the {@link SubscriptionQueryMessage} to
+     *                           reconstruct.
+     * @param queryName          The name identifying the query to execute by this {@link SubscriptionQueryMessage}.
+     * @param responseType       The expected {@link ResponseType response type} for this
+     *                           {@link SubscriptionQueryMessage}.
+     * @param updateResponseType The expected {@link ResponseType type} of incremental updates for this
+     *                           {@link SubscriptionQueryMessage}.
      */
-    public GenericSubscriptionQueryMessage(Message<Q> delegate, String queryName, ResponseType<I> responseType,
-                                           ResponseType<U> updateResponseType) {
+    public GenericSubscriptionQueryMessage(@Nonnull Message<P> delegate,
+                                           @Nonnull String queryName,
+                                           @Nonnull ResponseType<I> responseType,
+                                           @Nonnull ResponseType<U> updateResponseType) {
         super(delegate, queryName, responseType);
         this.updateResponseType = updateResponseType;
     }
@@ -86,7 +126,7 @@ public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessag
     }
 
     @Override
-    public GenericSubscriptionQueryMessage<Q, I, U> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, ?> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().withMetaData(metaData),
                                                      getQueryName(),
                                                      getResponseType(),
@@ -94,7 +134,7 @@ public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessag
     }
 
     @Override
-    public GenericSubscriptionQueryMessage<Q, I, U> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, ?> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData),
                                                      getQueryName(),
                                                      getResponseType(),

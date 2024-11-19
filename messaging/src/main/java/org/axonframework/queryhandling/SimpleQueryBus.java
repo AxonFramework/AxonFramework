@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -202,10 +203,16 @@ public class SimpleQueryBus implements QueryBus {
                     if (!(resultMessage.exceptionResult() instanceof NoHandlerForQueryException)) {
                         GenericQueryResponseMessage<R> queryResponseMessage =
                                 responseType.convertExceptional(resultMessage.exceptionResult())
-                                            .map(GenericQueryResponseMessage::new)
+                                            .map(exceptionalResult -> new GenericQueryResponseMessage<>(
+                                                    QualifiedName.className(exceptionalResult.getClass()),
+                                                    exceptionalResult
+                                            ))
                                             .orElse(new GenericQueryResponseMessage<>(
-                                                    responseType.responseMessagePayloadType(),
-                                                    resultMessage.exceptionResult()));
+                                                    QualifiedName.className(resultMessage.exceptionResult()
+                                                                                         .getClass()),
+                                                    resultMessage.exceptionResult(),
+                                                    responseType.responseMessagePayloadType()
+                                            ));
 
 
                         result.complete(queryResponseMessage);
