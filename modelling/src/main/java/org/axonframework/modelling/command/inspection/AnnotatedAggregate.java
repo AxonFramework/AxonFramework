@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -39,6 +40,7 @@ import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 
+import java.io.Serial;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -490,19 +492,21 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @return the resulting message
      */
     protected <P> EventMessage<P> createMessage(P payload, MetaData metaData) {
+        // TODO #3068 - This operation should expect the QualifiedName as well. Omitted from #3085 for brevity.
+        QualifiedName type = QualifiedName.className(payload.getClass());
         if (lastKnownSequence != null) {
-            String type = inspector.declaredType(rootType())
-                                   .orElse(rootType().getSimpleName());
+            String aggregateType = inspector.declaredType(rootType())
+                                            .orElse(rootType().getSimpleName());
             long seq = lastKnownSequence + 1;
             String id = identifierAsString();
             if (id == null) {
                 Assert.state(seq == 0,
                              () -> "The aggregate identifier has not been set. It must be set at the latest when applying the creation event");
-                return new LazyIdentifierDomainEventMessage<>(type, seq, payload, metaData);
+                return new LazyIdentifierDomainEventMessage<>(aggregateType, seq, type, payload, metaData);
             }
-            return new GenericDomainEventMessage<>(type, identifierAsString(), seq, payload, metaData);
+            return new GenericDomainEventMessage<>(aggregateType, identifierAsString(), seq, type, payload, metaData);
         }
-        return new GenericEventMessage<>(payload, metaData);
+        return new GenericEventMessage<>(type, payload, metaData);
     }
 
     /**
@@ -538,8 +542,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param payloadOrMessage defines the payload and optionally metadata to apply to the aggregate
      */
     protected void applyMessageOrPayload(Object payloadOrMessage) {
-        if (payloadOrMessage instanceof Message) {
-            Message<?> message = (Message<?>) payloadOrMessage;
+        if (payloadOrMessage instanceof Message<?> message) {
             apply(message.getPayload(), message.getMetaData());
         } else if (payloadOrMessage != null) {
             apply(payloadOrMessage, MetaData.emptyInstance());
@@ -548,10 +551,15 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     private class LazyIdentifierDomainEventMessage<P> extends GenericDomainEventMessage<P> {
 
+        @Serial
         private static final long serialVersionUID = -1624446038982565972L;
 
-        public LazyIdentifierDomainEventMessage(String type, long seq, P payload, MetaData metaData) {
-            super(type, null, seq, payload, metaData);
+        public LazyIdentifierDomainEventMessage(String aggregateType,
+                                                long seq,
+                                                QualifiedName type,
+                                                P payload,
+                                                MetaData metaData) {
+            super(aggregateType, null, seq, type, payload, metaData);
         }
 
         @Override
@@ -563,11 +571,15 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, ?> newMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
-                return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       getPayload(), getMetaData(), getIdentifier(), getTimestamp());
+                return new GenericDomainEventMessage<>(
+                        getType(), getAggregateIdentifier(), getSequenceNumber(),
+                        getIdentifier(), type(), getPayload(), getMetaData(), getTimestamp()
+                );
             } else {
-                return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),
-                                                              MetaData.from(newMetaData));
+                return new LazyIdentifierDomainEventMessage<>(
+                        getType(), getSequenceNumber(),
+                        type(), getPayload(), MetaData.from(newMetaData)
+                );
             }
         }
 
@@ -575,12 +587,15 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, ?> additionalMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
-                return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       getPayload(), getMetaData(), getIdentifier(), getTimestamp())
-                        .andMetaData(additionalMetaData);
+                return new GenericDomainEventMessage<>(
+                        getType(), getAggregateIdentifier(), getSequenceNumber(),
+                        getIdentifier(), type(), getPayload(), getMetaData(), getTimestamp()
+                ).andMetaData(additionalMetaData);
             } else {
-                return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),
-                                                              getMetaData().mergedWith(additionalMetaData));
+                return new LazyIdentifierDomainEventMessage<>(
+                        getType(), getSequenceNumber(),
+                        type(), getPayload(), getMetaData().mergedWith(additionalMetaData)
+                );
             }
         }
     }
