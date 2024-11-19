@@ -17,7 +17,6 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
@@ -27,44 +26,63 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Representation of a Message, containing a Payload and MetaData. Typical examples of Messages are Commands, Events and
- * Queries.
+ * Representation of a {@link Message}, containing a {@link QualifiedName type}, payload of type {@code T}, and
+ * {@link MetaData}.
+ * <p>
+ * Typical examples of a {@code Messages} are {@link org.axonframework.commandhandling.CommandMessage commands},
+ * {@link org.axonframework.eventhandling.EventMessage events}, and
+ * {@link org.axonframework.queryhandling.QueryMessage queries}.
  * <p/>
- * Instead of implementing {@code Message} directly, consider implementing
- * {@link org.axonframework.commandhandling.CommandMessage {@code CommandMessage}}, {@link EventMessage} or
- * {@link org.axonframework.queryhandling.QueryMessage} instead.
+ * Instead of implementing {@code Message} directly, consider implementing {@code CommandMessage}, {@code EventMessage}
+ * or {@code QueryMessage} instead.
  *
- * @param <T> the type of payload contained in this Message
+ * @param <P> The type of {@link #getPayload() payload} contained in this {@link Message}.
  * @author Allard Buijze
- * @see org.axonframework.commandhandling.CommandMessage {@code CommandMessage}
- * @see EventMessage
- * @since 2.0
+ * @author Steven van Beelen
+ * @see org.axonframework.commandhandling.CommandMessage
+ * @see org.axonframework.eventhandling.EventMessage
+ * @see org.axonframework.queryhandling.QueryMessage
+ * @since 2.0.0
  */
-public interface Message<T> extends Serializable {
+public interface Message<P> extends Serializable {
 
     /**
-     * Returns the identifier of this message. Two messages with the same identifiers should be interpreted as different
-     * representations of the same conceptual message. In such case, the meta-data may be different for both
-     * representations. The payload <em>may</em> be identical.
+     * Returns the identifier of this {@link Message}.
+     * <p>
+     * Two messages with the same identifiers should be interpreted as different representations of the same conceptual
+     * message. In such case, the {@link Message#getMetaData() metadata} may be different for both representations. The
+     * {@link Message#getPayload() payload} <em>may</em> be identical.
      *
      * @return the unique identifier of this message
      */
     String getIdentifier();
 
     /**
-     * Returns the meta data for this message. This meta data is a collection of key-value pairs, where the key is a
-     * String, and the value is a serializable object.
+     * Returns the {@link QualifiedName type} of this {@link Message}.
      *
-     * @return the meta data for this message
+     * @return The {@link QualifiedName type} of this {@link Message}.
+     */
+    @Nonnull
+    QualifiedName type();
+
+    /**
+     * Returns the {@link MetaData} for this {@link Message}.
+     * <p>
+     * The {@code MetaData} is a collection of key-value pairs, where the key is a {@link String}, and the value is a
+     * serializable object.
+     *
+     * @return The {@link MetaData} for this {@link Message}.
      */
     MetaData getMetaData();
 
     /**
-     * Returns the payload of this message. The payload is the application-specific information.
+     * Returns the payload of this {@link Message}.
+     * <p>
+     * The payload is the application-specific information.
      *
-     * @return the payload of this message
+     * @return The payload of this {@link Message}.
      */
-    T getPayload();
+    P getPayload();
 
     /**
      * Returns the type of the payload.
@@ -75,38 +93,33 @@ public interface Message<T> extends Serializable {
      * @return the type of payload.
      * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
      */
-    @Deprecated // TODO #3085 - Replace for getMessageType once fully integrated
-    Class<T> getPayloadType();
+    @Deprecated
+    // TODO #3085 - Replace for getMessageType once fully integrated
+    Class<P> getPayloadType();
 
     /**
-     * Returns the message {@link QualifiedName  type} of this {@link Message}.
-     *
-     * @return The message {@link QualifiedName type} of this {@link Message}.
-     */
-    default QualifiedName type() {
-        return QualifiedName.fromClass(getPayloadType());
-    }
-
-    /**
-     * Returns a copy of this Message with the given {@code metaData}. The payload remains unchanged.
+     * Returns a copy of this {@link Message} with the given {@code metaData}.
+     * <p>
+     * The payload remains unchanged.
      * <p/>
-     * While the implementation returned may be different than the implementation of {@code this}, implementations must
-     * take special care in returning the same type of Message (e.g. EventMessage, DomainEventMessage) to prevent errors
-     * further downstream.
+     * While the implementation returned may be different then the implementation of {@code this}, implementations must
+     * take special care in returning the same type of {@code Message}to prevent errors further downstream.
      *
-     * @param metaData The new MetaData for the Message
-     * @return a copy of this message with the given MetaData
+     * @param metaData The new metadata for the {@link Message}.
+     * @return A copy of this {@link Message} with the given {@code metaData}.
      */
-    Message<T> withMetaData(@Nonnull Map<String, ?> metaData);
+    Message<P> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this Message with it MetaData merged with the given {@code metaData}. The payload remains
-     * unchanged.
+     * Returns a copy of this {@link Message} with its {@link Message#getMetaData() metadata} merged with the given
+     * {@code metaData}.
+     * <p>
+     * The payload remains unchanged.
      *
-     * @param metaData The MetaData to merge with
-     * @return a copy of this message with the given MetaData
+     * @param metaData The metadata to merge with.
+     * @return A copy of this {@link Message} with the given {@code metaData}.
      */
-    Message<T> andMetaData(@Nonnull Map<String, ?> metaData);
+    Message<P> andMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Serialize the payload of this message to the {@code expectedRepresentation} using given {@code serializer}. This
@@ -126,14 +139,14 @@ public interface Message<T> extends Serializable {
     }
 
     /**
-     * Serialize the meta data of this message to the {@code expectedRepresentation} using given {@code serializer}.
-     * This method <em>should</em> return the same SerializedObject instance when invoked multiple times using the same
+     * Serialize the metadata of this message to the {@code expectedRepresentation} using given {@code serializer}. This
+     * method <em>should</em> return the same SerializedObject instance when invoked multiple times using the same
      * serializer.
      *
      * @param serializer             The serializer to serialize meta data with
      * @param expectedRepresentation The type of data to serialize to
      * @param <R>                    The type of the serialized data
-     * @return a SerializedObject containing the serialized representation of the message's meta data
+     * @return a SerializedObject containing the serialized representation of the message's metadata
      * @deprecated Serialization is removed from messages themselves. Instead, use
      * {@link #withConvertedPayload(Function)}
      */
@@ -153,8 +166,9 @@ public interface Message<T> extends Serializable {
      * @param <C>        The new type of payload
      * @return a message with the converted payload
      */
-    default <C> Message<C> withConvertedPayload(@Nonnull Function<T, C> conversion) {
+    default <C> Message<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
         if (Objects.equals(getPayload(), conversion.apply(getPayload()))) {
+            //noinspection unchecked
             return (Message<C>) this;
         }
         throw new UnsupportedOperationException("To be implemented");
