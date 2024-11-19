@@ -17,12 +17,16 @@
 package org.axonframework.eventhandling;
 
 /**
- * Represents an {@link EventMessage} containing a {@link TrackingToken}. The tracking token can be used be {@link
- * EventProcessor event processors} to keep track of which events it has processed.
+ * Represents an {@link EventMessage} containing a {@link TrackingToken}. The tracking token can be used be
+ * {@link EventProcessor event processors} to keep track of which events it has processed.
  *
  * @param <T> The type of payload contained in this Message
  * @author Rene de Waele
+ * @deprecated In favor of pairing the {@link TrackingToken} through the
+ * {@link org.axonframework.messaging.MessageStream.Entry} its {@link org.axonframework.common.Context} with an
+ * {@link EventMessage}.
  */
+@Deprecated
 // TODO #3129 - MessageStream allows Pair<TrackingToken, EventMessage> type - Deprecate this class and implementations.
 public interface TrackedEventMessage<T> extends EventMessage<T> {
 
@@ -43,5 +47,4 @@ public interface TrackedEventMessage<T> extends EventMessage<T> {
      * @return a new instance of a message with a different tracking token
      */
     TrackedEventMessage<T> withTrackingToken(TrackingToken trackingToken);
-
 }
