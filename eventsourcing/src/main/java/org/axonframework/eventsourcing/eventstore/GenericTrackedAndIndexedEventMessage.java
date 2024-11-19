@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 
 import java.time.Instant;
 import java.util.Map;
@@ -45,6 +46,12 @@ public class GenericTrackedAndIndexedEventMessage<P> implements IndexedEventMess
     @Override
     public String getIdentifier() {
         return this.delegate.getIdentifier();
+    }
+
+    @Nonnull
+    @Override
+    public QualifiedName type() {
+        throw new UnsupportedOperationException("not implemented, as this will be removed soon.");
     }
 
     @Override

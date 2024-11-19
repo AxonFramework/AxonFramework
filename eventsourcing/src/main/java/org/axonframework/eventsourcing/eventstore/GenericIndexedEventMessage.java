@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 
 import java.time.Instant;
 import java.util.Map;
@@ -27,9 +28,9 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * Implementation of the {@link IndexedEventMessage} allowing a generic payload of type {@code P}.
+ * Generic implementation of the {@link IndexedEventMessage} interface.
  *
- * @param <P> The type of payload carried by this {@link EventMessage}.
+ * @param <P> The type of {@link #getPayload() payload} contained in this {@link IndexedEventMessage}.
  * @author Steven van Beelen
  * @since 5.0.0
  */
@@ -56,14 +57,20 @@ public class GenericIndexedEventMessage<P> implements IndexedEventMessage<P> {
         return this.delegate.getIdentifier();
     }
 
+    @Nonnull
     @Override
-    public MetaData getMetaData() {
-        return this.delegate.getMetaData();
+    public QualifiedName type() {
+        return this.delegate.type();
     }
 
     @Override
     public P getPayload() {
         return this.delegate.getPayload();
+    }
+
+    @Override
+    public MetaData getMetaData() {
+        return this.delegate.getMetaData();
     }
 
     @Override
