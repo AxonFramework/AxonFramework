@@ -72,6 +72,66 @@ public interface QualifiedName {
     }
 
     /**
+     * Reconstruct a {@link QualifiedName} based on the output of {@link QualifiedName#toSimpleString()}.
+     * <p>
+     * The output of the {@code QualifiedName#toSimpleString()} depends on which fields are set in the
+     * {@code QualifiedName}. If there is only a non-empty {@link #localName()}, only the {@code localName} will be
+     * printed. When the {@link #namespace()} is non-empty, the {@code localName} will be post-fixed with
+     * {@code "@({namespace})"}. And when the {@link #revision()} is non-empty, the {@code localName} (and possibly
+     * {@code namespace}) will be post-fixed with {@code "#[{revision}]"}.
+     * <p>
+     * Thus, if {@code localName()} returns {@code "BusinessName"}, the {@code namespace()} returns
+     * {@code "my.context"}, and the {@code revision()} returns {@code "3"}, a simple {@link String} would be
+     * {@code "BusinessName @(my.context) #[3]"}.
+     *
+     * @param simpleString The output of {@link QualifiedName#toSimpleString()}, given to reconstruct it into a
+     *                     {@link QualifiedName}.
+     * @return A reconstructed {@link QualifiedName} based on the expected output of
+     * {@link QualifiedName#toSimpleString()}.
+     */
+    @SuppressWarnings("DuplicateExpressions")
+    static QualifiedName simpleStringName(@Nonnull String simpleString) {
+        assertNonEmpty(simpleString, "Cannot construct a QualifiedName based on a null or empty String.");
+        int bracketOffset = 1;
+        int signAndBracketOffset = 2;
+
+        String namespace = "";
+        String localName;
+        String revision = "";
+        int lastAt = simpleString.lastIndexOf('@');
+        int lastHash = simpleString.lastIndexOf('#');
+        int length = simpleString.length();
+
+        if (onlyHasLocalName(lastAt, lastHash)) {
+            localName = simpleString;
+        } else if (hasLocalNameAndNamespace(lastAt, lastHash)) {
+            localName = simpleString.substring(0, lastAt - bracketOffset);
+            namespace = simpleString.substring(lastAt + signAndBracketOffset, length - bracketOffset);
+        } else if (hasLocalNameAndRevision(lastAt, lastHash)) {
+            localName = simpleString.substring(0, lastHash - bracketOffset);
+            revision = simpleString.substring(lastHash + signAndBracketOffset, length - bracketOffset);
+        } else {
+            localName = simpleString.substring(0, lastAt - bracketOffset);
+            namespace = simpleString.substring(lastAt + signAndBracketOffset, lastHash - signAndBracketOffset);
+            revision = simpleString.substring(lastHash + signAndBracketOffset, length - bracketOffset);
+        }
+
+        return new SimpleQualifiedName(namespace, localName, revision);
+    }
+
+    private static boolean hasLocalNameAndRevision(int lastAt, int lastHash) {
+        return lastAt == -1 && lastHash != -1;
+    }
+
+    private static boolean hasLocalNameAndNamespace(int lastAt, int lastHash) {
+        return lastAt != -1 && lastHash == -1;
+    }
+
+    private static boolean onlyHasLocalName(int lastAt, int lastHash) {
+        return lastAt == -1 && lastHash == -1;
+    }
+
+    /**
      * Returns the namespace this {@link QualifiedName} refers too.
      * <p>
      * The namespace may represent a (bounded) context, package, or whatever other "space" this name applies too.
