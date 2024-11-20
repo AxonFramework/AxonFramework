@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ package org.axonframework.tracing.attributes;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageTypeSpanAttributesProviderTest {
@@ -33,9 +34,9 @@ class MessageTypeSpanAttributesProviderTest {
 
     @Test
     void correctTypeForQueryMessage() {
-        Message<?> genericQueryMessage = new GenericQueryMessage<>("MyQuery",
-                                                                 "myQueryName",
-                                                                 ResponseTypes.instanceOf(String.class));
+        Message<?> genericQueryMessage = new GenericQueryMessage<>(
+                dottedName("test.query"), "myQueryName", "MyQuery", instanceOf(String.class)
+        );
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
         assertEquals("GenericQueryMessage", map.get("axon_message_type"));
@@ -43,7 +44,7 @@ class MessageTypeSpanAttributesProviderTest {
 
     @Test
     void correctTypeForCommandMessage() {
-        Message<?> genericQueryMessage = new GenericCommandMessage<>("payload");
+        Message<?> genericQueryMessage = new GenericCommandMessage<>(dottedName("test.command"), "payload");
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
         assertEquals("GenericCommandMessage", map.get("axon_message_type"));

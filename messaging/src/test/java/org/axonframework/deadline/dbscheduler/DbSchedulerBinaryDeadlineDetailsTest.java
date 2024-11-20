@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,8 @@ class DbSchedulerBinaryDeadlineDetailsTest {
     @ParameterizedTest
     void shouldBeSerializable(Serializer serializer) {
         DbSchedulerBinaryDeadlineDetails expected = new DbSchedulerBinaryDeadlineDetails(
-                "deadlinename",
+                "deadlineName",
+                "deadlineName",
                 "someScope".getBytes(),
                 "org.axonframework.modelling.command.AggregateScopeDescriptor",
                 "{\"foo\":\"bar\"}".getBytes(),

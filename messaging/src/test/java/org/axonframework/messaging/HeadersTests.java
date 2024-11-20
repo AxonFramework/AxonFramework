@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.Map;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.messaging.Headers.*;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -97,7 +98,7 @@ class HeadersTests {
     void generatingDefaultMessagingHeaders() {
         EventMessage<Object> message = asEventMessage("foo");
         SerializedObject<byte[]> serializedObject = message.serializePayload(serializer, byte[].class);
-        Map<String, Object> expected = new HashMap<String, Object>() {{
+        Map<String, Object> expected = new HashMap<>() {{
             put(MESSAGE_ID, message.getIdentifier());
             put(MESSAGE_TYPE, serializedObject.getType().getName());
             put(MESSAGE_REVISION, serializedObject.getType().getRevision());
@@ -118,7 +119,7 @@ class HeadersTests {
         DomainEventMessage<String> message = domainMessage();
         SerializedObject<byte[]> serializedObject = message.serializePayload(serializer, byte[].class);
 
-        Map<String, Object> expected = new HashMap<String, Object>() {{
+        Map<String, Object> expected = new HashMap<>() {{
             put(MESSAGE_ID, message.getIdentifier());
             put(MESSAGE_TYPE, serializedObject.getType().getName());
             put(MESSAGE_REVISION, serializedObject.getType().getRevision());
@@ -132,6 +133,6 @@ class HeadersTests {
     }
 
     private GenericDomainEventMessage<String> domainMessage() {
-        return new GenericDomainEventMessage<>("Stub", "893612", 1L, "Payload");
+        return new GenericDomainEventMessage<>("Stub", "893612", 1L, dottedName("test.event"), "Payload");
     }
 }

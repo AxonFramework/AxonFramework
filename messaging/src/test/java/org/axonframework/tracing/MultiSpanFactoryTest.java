@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.mockito.*;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -35,7 +36,7 @@ class MultiSpanFactoryTest {
     private final Span mockSpan2 = mock(Span.class);
     private final SpanFactory multiSpanFactory = new MultiSpanFactory(Arrays.asList(spanFactory1, spanFactory2));
 
-    private final GenericEventMessage<?> message = new GenericEventMessage<>("payload");
+    private final GenericEventMessage<?> message = new GenericEventMessage<>(dottedName("test.event"), "payload");
     private final Supplier<String> stringSupplier = () -> "Trace";
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AggregateIdentifierSpanAttributesProviderTest {
@@ -32,15 +33,18 @@ class AggregateIdentifierSpanAttributesProviderTest {
 
     @Test
     void domainEventMessage() {
-        Message<?> message = new GenericDomainEventMessage<>("MyType", "1729872981", 1, "payload");
+        Message<?> message = new GenericDomainEventMessage<>(
+                "MyType", "1729872981", 1, dottedName("test.event"), "payload"
+        );
 
         Map<String, String> map = provider.provideForMessage(message);
         assertEquals(1, map.size());
         assertEquals("1729872981", map.get("axon_aggregate_identifier"));
     }
+
     @Test
     void genericEventMessage() {
-        Message<?> message = new GenericEventMessage<>("payload");
+        Message<?> message = new GenericEventMessage<>(dottedName("test.event"), "payload");
 
         Map<String, String> map = provider.provideForMessage(message);
         assertEquals(0, map.size());

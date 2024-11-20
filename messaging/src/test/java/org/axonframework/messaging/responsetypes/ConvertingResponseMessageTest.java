@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,23 @@ import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 
 import static java.util.Collections.singletonList;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConvertingResponseMessageTest {
 
     @Test
     void payloadIsConvertedToExpectedType() {
-        QueryResponseMessage<?> msg = new GenericQueryResponseMessage<>(new String[]{"Some string result"})
-                .withMetaData(MetaData.with("test", "value"));
-        QueryResponseMessage<List<String>> wrapped = new ConvertingResponseMessage<>(
-                ResponseTypes.multipleInstancesOf(String.class),
-                msg);
+        QueryResponseMessage<?> msg =
+                new GenericQueryResponseMessage<>(dottedName("test.query"), new String[]{"Some string result"})
+                        .withMetaData(MetaData.with("test", "value"));
+        QueryResponseMessage<List<String>> wrapped =
+                new ConvertingResponseMessage<>(ResponseTypes.multipleInstancesOf(String.class), msg);
 
         assertEquals(List.class, wrapped.getPayloadType());
         assertEquals(singletonList("Some string result"), wrapped.getPayload());
@@ -45,9 +46,8 @@ class ConvertingResponseMessageTest {
     @Test
     void illegalAccessPayloadWhenResultIsExceptional() {
         QueryResponseMessage<?> msg = GenericQueryResponseMessage.asResponseMessage(List.class, new RuntimeException());
-        QueryResponseMessage<List<String>> wrapped = new ConvertingResponseMessage<>(
-                ResponseTypes.multipleInstancesOf(String.class),
-                msg);
+        QueryResponseMessage<List<String>> wrapped =
+                new ConvertingResponseMessage<>(ResponseTypes.multipleInstancesOf(String.class), msg);
 
         assertEquals(List.class, wrapped.getPayloadType());
         assertThrows(IllegalPayloadAccessException.class, wrapped::getPayload);

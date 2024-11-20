@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageNameSpanAttributesProviderTest {
@@ -42,9 +43,8 @@ class MessageNameSpanAttributesProviderTest {
 
     @Test
     void extractsForQueryWithSpecificName() {
-        Message<?> genericQueryMessage = new GenericQueryMessage<>("MyQuery",
-                                                                   "myQueryName",
-                                                                   ResponseTypes.instanceOf(String.class));
+        Message<?> genericQueryMessage =
+                new GenericQueryMessage<>(dottedName("test.query"), "myQueryName", "MyQuery", instanceOf(String.class));
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
         assertEquals("myQueryName", map.get("axon_message_name"));
@@ -52,8 +52,8 @@ class MessageNameSpanAttributesProviderTest {
 
     @Test
     void extractsForQueryWithPayloadName() {
-        Message<?> genericQueryMessage = new GenericQueryMessage<>("MyQuery",
-                                                                   ResponseTypes.instanceOf(String.class));
+        Message<?> genericQueryMessage =
+                new GenericQueryMessage<>(dottedName("test.query"), "MyQuery", instanceOf(String.class));
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
         assertEquals("java.lang.String", map.get("axon_message_name"));
@@ -61,8 +61,9 @@ class MessageNameSpanAttributesProviderTest {
 
     @Test
     void extractsForCommandWithSpecificName() {
-        Message<?> genericQueryMessage = new GenericCommandMessage<>(new GenericCommandMessage<>("payload"),
-                                                                     "MyAwesomeCommand");
+        Message<?> genericQueryMessage = new GenericCommandMessage<>(
+                new GenericCommandMessage<>(dottedName("test.command"), "payload"), "MyAwesomeCommand"
+        );
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
         assertEquals("MyAwesomeCommand", map.get("axon_message_name"));
@@ -70,7 +71,7 @@ class MessageNameSpanAttributesProviderTest {
 
     @Test
     void extractsForCommandWithPayloadName() {
-        Message<?> genericQueryMessage = new GenericCommandMessage<>("payload");
+        Message<?> genericQueryMessage = new GenericCommandMessage<>(dottedName("test.command"), "payload");
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
         assertEquals("java.lang.String", map.get("axon_message_name"));

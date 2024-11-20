@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.RoutingKey;
 import org.junit.jupiter.api.*;
 
+import static org.axonframework.messaging.QualifiedName.className;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -39,22 +40,28 @@ class AnnotationRoutingStrategyTest {
 
     @Test
     void getRoutingKeyFromField() {
-        CommandMessage<SomeFieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(new SomeFieldAnnotatedCommand());
+        CommandMessage<SomeFieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(
+                className(SomeFieldAnnotatedCommand.class), new SomeFieldAnnotatedCommand()
+        );
         assertEquals("Target", testSubject.getRoutingKey(testCommand));
 
-        CommandMessage<SomeOtherFieldAnnotatedCommand> otherTestCommand =
-                new GenericCommandMessage<>(new SomeOtherFieldAnnotatedCommand());
+        CommandMessage<SomeOtherFieldAnnotatedCommand> otherTestCommand = new GenericCommandMessage<>(
+                className(SomeOtherFieldAnnotatedCommand.class), new SomeOtherFieldAnnotatedCommand()
+        );
         assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
     }
 
     @Test
     void getRoutingKeyFromMethod() {
-        CommandMessage<SomeMethodAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(new SomeMethodAnnotatedCommand());
+        CommandMessage<SomeMethodAnnotatedCommand> testCommand = new GenericCommandMessage<>(className(
+                SomeMethodAnnotatedCommand.class), new SomeMethodAnnotatedCommand()
+        );
         assertEquals("Target", testSubject.getRoutingKey(testCommand));
 
-        CommandMessage<SomeOtherMethodAnnotatedCommand> otherTestCommand =
-                new GenericCommandMessage<>(new SomeOtherMethodAnnotatedCommand());
+        CommandMessage<SomeOtherMethodAnnotatedCommand> otherTestCommand = new GenericCommandMessage<>(
+                className(SomeOtherMethodAnnotatedCommand.class), new SomeOtherMethodAnnotatedCommand()
+        );
+
         assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
     }
 
@@ -63,8 +70,9 @@ class AnnotationRoutingStrategyTest {
         AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
                 new AnnotationRoutingStrategy();
 
-        CommandMessage<SomeFieldAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(new SomeFieldAnnotatedCommand());
+        CommandMessage<SomeFieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(
+                className(SomeFieldAnnotatedCommand.class), new SomeFieldAnnotatedCommand()
+        );
 
         assertEquals("Target", testSubjectWithMockedFallbackStrategy.getRoutingKey(testCommand));
     }
@@ -74,8 +82,10 @@ class AnnotationRoutingStrategyTest {
         AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
                 new AnnotationRoutingStrategy();
 
-        CommandMessage<SomeCommandWithoutTheRoutingAnnotation> testCommand =
-                new GenericCommandMessage<>(new SomeCommandWithoutTheRoutingAnnotation("target"));
+        CommandMessage<SomeCommandWithoutTheRoutingAnnotation> testCommand = new GenericCommandMessage<>(
+                className(SomeCommandWithoutTheRoutingAnnotation.class),
+                new SomeCommandWithoutTheRoutingAnnotation("target")
+        );
 
         assertNull(testSubjectWithMockedFallbackStrategy.getRoutingKey(testCommand));
     }
@@ -115,13 +125,7 @@ class AnnotationRoutingStrategyTest {
         }
     }
 
-    private static class SomeObject {
-
-        private final String target;
-
-        public SomeObject(String target) {
-            this.target = target;
-        }
+    private record SomeObject(String target) {
 
         @Override
         public String toString() {
@@ -140,16 +144,7 @@ class AnnotationRoutingStrategyTest {
         }
     }
 
-    public static class SomeCommandWithoutTheRoutingAnnotation {
+    public record SomeCommandWithoutTheRoutingAnnotation(String target) {
 
-        private final String target;
-
-        public SomeCommandWithoutTheRoutingAnnotation(String target) {
-            this.target = target;
-        }
-
-        public String getTarget() {
-            return target;
-        }
     }
 }

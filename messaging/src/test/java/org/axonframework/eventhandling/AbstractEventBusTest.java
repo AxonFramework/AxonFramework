@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -44,6 +45,8 @@ import static org.mockito.Mockito.*;
  * @author Rene de Waele
  */
 class AbstractEventBusTest {
+
+    private static final QualifiedName TEST_EVENT_TYPE = QualifiedName.dottedName("test.TestEvent");
 
     private UnitOfWork<?> unitOfWork;
     private StubPublishingEventBus testSubject;
@@ -194,7 +197,7 @@ class AbstractEventBusTest {
     }
 
     private static EventMessage<Object> newEvent() {
-        return new GenericEventMessage<>(new Object());
+        return new GenericEventMessage<>(TEST_EVENT_TYPE, new Object());
     }
 
     private static EventMessage<Integer> numberedEvent(final int number) {
@@ -297,8 +300,10 @@ class AbstractEventBusTest {
 
     private static class StubNumberedEvent extends GenericEventMessage<Integer> {
 
+        private static final QualifiedName TYPE = QualifiedName.dottedName("test.StubNumberedEvent");
+
         StubNumberedEvent(Integer payload) {
-            super(payload);
+            super(TYPE, payload);
         }
 
         @Override

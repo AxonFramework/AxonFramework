@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Mono;
@@ -34,6 +33,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -42,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
-@SuppressWarnings("resource")
 class FutureAsResponseTypeToQueryHandlersTest {
 
     private static final int FUTURE_RESOLVING_TIMEOUT = 500;
@@ -59,34 +60,34 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void queryWithMultipleResponses() throws ExecutionException, InterruptedException {
-        QueryMessage<String, List<String>> queryMessage = new GenericQueryMessage<>(
-                "criteria", "myQueryWithMultipleResponses", ResponseTypes.multipleInstancesOf(String.class)
+        QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
+                dottedName("test.query"), "myQueryWithMultipleResponses", "criteria", multipleInstancesOf(String.class)
         );
 
-        List<String> response = queryBus.query(queryMessage).get().getPayload();
+        List<String> response = queryBus.query(testQuery).get().getPayload();
 
         assertEquals(asList("Response1", "Response2"), response);
     }
 
     @Test
     void queryWithSingleResponse() throws ExecutionException, InterruptedException {
-        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>(
-                "criteria", "myQueryWithSingleResponse", ResponseTypes.instanceOf(String.class)
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                dottedName("test.query"), "myQueryWithSingleResponse", "criteria", instanceOf(String.class)
         );
 
-        String response = queryBus.query(queryMessage).get().getPayload();
+        String response = queryBus.query(testQuery).get().getPayload();
 
         assertEquals("Response", response);
     }
 
     @Test
     void scatterGatherQueryWithMultipleResponses() {
-        QueryMessage<String, List<String>> queryMessage = new GenericQueryMessage<>(
-                "criteria", "myQueryWithMultipleResponses", ResponseTypes.multipleInstancesOf(String.class)
+        QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
+                dottedName("test.query"), "myQueryWithMultipleResponses", "criteria", multipleInstancesOf(String.class)
         );
 
         List<String> response =
-                queryBus.scatterGather(queryMessage, FUTURE_RESOLVING_TIMEOUT * 2, TimeUnit.MILLISECONDS)
+                queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT * 2, TimeUnit.MILLISECONDS)
                         .map(Message::getPayload)
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList());
@@ -96,12 +97,12 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void scatterGatherQueryWithSingleResponse() {
-        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>(
-                "criteria", "myQueryWithSingleResponse", ResponseTypes.instanceOf(String.class)
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                dottedName("test.query"), "myQueryWithSingleResponse", "criteria", instanceOf(String.class)
         );
 
         String response =
-                queryBus.scatterGather(queryMessage, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
+                queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
                         .map(Message::getPayload)
                         .findFirst()
                         .orElse(null);
@@ -111,12 +112,12 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void subscriptionQueryWithMultipleResponses() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "criteria", "myQueryWithMultipleResponses",
-                ResponseTypes.multipleInstancesOf(String.class), ResponseTypes.instanceOf(String.class)
+        SubscriptionQueryMessage<String, List<String>, String> testQuery = new GenericSubscriptionQueryMessage<>(
+                dottedName("test.query"), "criteria", "myQueryWithMultipleResponses",
+                multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        Mono<List<String>> response = queryBus.subscriptionQuery(queryMessage)
+        Mono<List<String>> response = queryBus.subscriptionQuery(testQuery)
                                               .initialResult()
                                               .map(Message::getPayload);
 
@@ -127,12 +128,12 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void subscriptionQueryWithSingleResponse() {
-        SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "criteria", "myQueryWithSingleResponse",
-                ResponseTypes.instanceOf(String.class), ResponseTypes.instanceOf(String.class)
+        SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+                dottedName("test.query"), "criteria", "myQueryWithSingleResponse",
+                instanceOf(String.class), instanceOf(String.class)
         );
 
-        Mono<String> response = queryBus.subscriptionQuery(queryMessage)
+        Mono<String> response = queryBus.subscriptionQuery(testQuery)
                                         .initialResult()
                                         .map(Message::getPayload);
 
@@ -143,11 +144,12 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void futureQueryWithMultipleResponses() throws ExecutionException, InterruptedException {
-        QueryMessage<String, List<String>> queryMessage = new GenericQueryMessage<>(
-                "criteria", "myQueryFutureWithMultipleResponses", ResponseTypes.multipleInstancesOf(String.class)
+        QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
+                dottedName("test.query"), "myQueryFutureWithMultipleResponses", "criteria",
+                multipleInstancesOf(String.class)
         );
 
-        List<String> result = queryBus.query(queryMessage)
+        List<String> result = queryBus.query(testQuery)
                                       .get()
                                       .getPayload();
 
@@ -156,12 +158,13 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void futureScatterGatherQueryWithMultipleResponses() {
-        QueryMessage<String, List<String>> queryMessage = new GenericQueryMessage<>(
-                "criteria", "myQueryFutureWithMultipleResponses", ResponseTypes.multipleInstancesOf(String.class)
+        QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
+                dottedName("test.query"), "myQueryFutureWithMultipleResponses", "criteria",
+                multipleInstancesOf(String.class)
         );
 
         List<String> result =
-                queryBus.scatterGather(queryMessage, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
+                queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
                         .map(Message::getPayload)
                         .findFirst()
                         .orElse(null);
@@ -171,12 +174,12 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void futureSubscriptionQueryWithMultipleResponses() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "criteria", "myQueryFutureWithMultipleResponses",
-                ResponseTypes.multipleInstancesOf(String.class), ResponseTypes.instanceOf(String.class)
+        SubscriptionQueryMessage<String, List<String>, String> testQuery = new GenericSubscriptionQueryMessage<>(
+                dottedName("test.query"), "criteria", "myQueryFutureWithMultipleResponses",
+                multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        Mono<List<String>> response = queryBus.subscriptionQuery(queryMessage)
+        Mono<List<String>> response = queryBus.subscriptionQuery(testQuery)
                                               .initialResult()
                                               .map(Message::getPayload);
 

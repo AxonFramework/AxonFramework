@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,26 +146,26 @@ class DeadLetterSchemaTest {
     }
 
     @Test
-    void buildWithMessageTypeColumnReturnsConfiguredColumnName() {
+    void buildWithEventTypeColumnReturnsConfiguredColumnName() {
         DeadLetterSchema result = DeadLetterSchema.builder()
-                                                  .messageTypeColumn(TEST_COLUMN_NAME)
+                                                  .eventTypeColumn(TEST_COLUMN_NAME)
                                                   .build();
 
-        assertEquals(TEST_COLUMN_NAME, result.messageTypeColumn());
+        assertEquals(TEST_COLUMN_NAME, result.eventTypeColumn());
     }
 
     @Test
-    void buildWithNullMessageTypeColumnThrowsAxonConfigurationException() {
+    void buildWithNullEventTypeColumnThrowsAxonConfigurationException() {
         DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.messageTypeColumn(null));
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.eventTypeColumn(null));
     }
 
     @Test
-    void buildWithEmptyMessageTypeColumnThrowsAxonConfigurationException() {
+    void buildWithEmptyEventTypeColumnThrowsAxonConfigurationException() {
         DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.messageTypeColumn(""));
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.eventTypeColumn(""));
     }
 
     @Test
@@ -189,6 +189,29 @@ class DeadLetterSchemaTest {
         DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
 
         assertThrows(AxonConfigurationException.class, () -> testBuilder.eventIdentifierColumn(""));
+    }
+
+    @Test
+    void buildWithTypeColumnReturnsConfiguredColumnName() {
+        DeadLetterSchema result = DeadLetterSchema.builder()
+                                                  .typeColumn(TEST_COLUMN_NAME)
+                                                  .build();
+
+        assertEquals(TEST_COLUMN_NAME, result.typeColumn());
+    }
+
+    @Test
+    void buildWithNullTypeColumnThrowsAxonConfigurationException() {
+        DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.typeColumn(null));
+    }
+
+    @Test
+    void buildWithEmptyTypeColumnThrowsAxonConfigurationException() {
+        DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.typeColumn(""));
     }
 
     @Test

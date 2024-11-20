@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -68,20 +69,20 @@ class StreamingQueryTest {
         myQueryHandler.errorThrown.set(false);
     }
 
-    private <Q, R> Flux<R> streamingQueryPayloads(StreamingQueryMessage<Q, R> queryMessage) {
-        return streamingQuery(queryMessage).map(Message::getPayload);
+    private <Q, R> Flux<R> streamingQueryPayloads(StreamingQueryMessage<Q, R> testQuery) {
+        return streamingQuery(testQuery).map(Message::getPayload);
     }
 
-    private <Q, R> Flux<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> queryMessage) {
-        return Flux.from(queryBus.streamingQuery(queryMessage));
+    private <Q, R> Flux<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> testQuery) {
+        return Flux.from(queryBus.streamingQuery(testQuery));
     }
 
     @Test
     void streamingFluxResults() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "fluxQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "fluxQuery", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
     }
@@ -91,10 +92,10 @@ class StreamingQueryTest {
         handlersInvoked.removeIf(n -> true);
         errorQueryHandlerAdapter.subscribe(queryBus);
 
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "listQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "listQuery", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
 
@@ -104,102 +105,105 @@ class StreamingQueryTest {
 
     @Test
     void optionalResults() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "optionalResultQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
+                dottedName("test.query"), "optionalResultQuery", "criteria", String.class
+        );
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext("optional")
                     .verifyComplete();
     }
 
     @Test
     void emptyOptionalResults() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "emptyOptionalResultQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
+                dottedName("test.query"), "emptyOptionalResultQuery", "criteria", String.class
+        );
 
-        StepVerifier.create(streamingQuery(queryMessage))
+        StepVerifier.create(streamingQuery(testQuery))
                     .expectComplete()
                     .verify();
     }
 
     @Test
     void streamingListResults() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "listQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "listQuery", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
     }
 
     @Test
     void streamingStreamResults() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "streamQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "streamQuery", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
     }
 
     @Test
     void streamingSingleResult() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "singleResultQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
+                dottedName("test.query"), "singleResultQuery", "criteria", String.class
+        );
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext("lonely")
                     .verifyComplete();
     }
 
     @Test
     void streamingCompletableFutureResult() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "completableFutureQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
+                dottedName("test.query"), "completableFutureQuery", "criteria", String.class
+        );
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext("future")
                     .verifyComplete();
     }
 
     @Test
     void streamingFluxAfterHandlerCompletes() {
-        StreamingQueryMessage<String, Long> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria",
-                                                   "streamingAfterHandlerCompletesQuery",
-                                                   Long.class);
+        StreamingQueryMessage<String, Long> testQuery = new GenericStreamingQueryMessage<>(
+                dottedName("test.query"), "streamingAfterHandlerCompletesQuery", "criteria", Long.class
+        );
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext(0L, 1L, 2L, 3L, 4L)
                     .verifyComplete();
     }
 
     @Test
     void streamingMonoResult() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "monoQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "monoQuery", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext("helloMono")
                     .verifyComplete();
     }
 
     @Test
     void streamingNullResult() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "nullQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "nullQuery", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectComplete()
                     .verify();
     }
 
     @Test
     void errorResult() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "exceptionQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "exceptionQuery", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectErrorMatches(t -> t instanceof QueryExecutionException
                             && t.getMessage().startsWith("Error starting stream"))
                     .verify();
@@ -207,24 +211,21 @@ class StreamingQueryTest {
 
     @Test
     void throttledFluxQuery() {
-        StreamingQueryMessage<String, Long> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria",
-                                                   "throttledFluxQuery",
-                                                   Long.class);
+        StreamingQueryMessage<String, Long> testQuery = new GenericStreamingQueryMessage<>(
+                dottedName("test.query"), "throttledFluxQuery", "criteria", Long.class
+        );
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L)
                     .verifyComplete();
     }
 
     @Test
     void backpressureFluxQuery() {
-        StreamingQueryMessage<String, Long> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria",
-                                                   "backPressure",
-                                                   Long.class);
+        StreamingQueryMessage<String, Long> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "backPressure", "criteria", Long.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage), 10L)
+        StepVerifier.create(streamingQueryPayloads(testQuery), 10L)
                     .expectNextCount(10)
                     .thenRequest(10)
                     .expectNextCount(10)
@@ -241,10 +242,10 @@ class StreamingQueryTest {
             return (i, m) -> m;
         });
 
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "fluxQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "fluxQuery", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
 
@@ -253,41 +254,43 @@ class StreamingQueryTest {
 
     @Test
     void handlerInterceptor() {
-        queryBus.registerHandlerInterceptor((unitOfWork, interceptorChain) ->
-                                                    ((Flux) interceptorChain.proceedSync()).map(it -> "a"));
+        queryBus.registerHandlerInterceptor(
+                (unitOfWork, interceptorChain) -> ((Flux) interceptorChain.proceedSync()).map(it -> "a")
+        );
 
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "fluxQuery", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "fluxQuery", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .expectNext("a", "a", "a", "a")
                     .verifyComplete();
     }
 
     @Test
     void errorStream() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "errorStream", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "errorStream", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .verifyErrorMatches(t -> t instanceof RuntimeException && t.getMessage().equals("oops"));
     }
 
     @Test
     void queryNotExists() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "queryNotExists", String.class);
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>(dottedName("test.query"), "queryNotExists", "criteria", String.class);
 
-        StepVerifier.create(streamingQueryPayloads(queryMessage))
+        StepVerifier.create(streamingQueryPayloads(testQuery))
                     .verifyErrorMatches(t -> t instanceof NoHandlerForQueryException);
     }
 
     @Test
     void resubscribeWorksEvenWhenAnErrorHasBeenCashed() {
-        StreamingQueryMessage<String, String> queryMessage =
-                new GenericStreamingQueryMessage<>("criteria", "exceptionQueryOnce", String.class);
+        StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
+                dottedName("test.query"), "exceptionQueryOnce", "criteria", String.class
+        );
 
-        Flux<String> flux = streamingQueryPayloads(queryMessage);
+        Flux<String> flux = streamingQueryPayloads(testQuery);
 
         StepVerifier.create(flux)
                     .expectErrorMatches(t -> t instanceof QueryExecutionException
@@ -301,6 +304,7 @@ class StreamingQueryTest {
 
     private static class ErrorQueryHandler {
 
+        @SuppressWarnings("unused")
         @QueryHandler(queryName = "listQuery")
         public Flux<String> listQuery(String criteria) {
             handlersInvoked.add("handler_error");
@@ -308,6 +312,7 @@ class StreamingQueryTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class MyQueryHandler {
 
         AtomicBoolean errorThrown = new AtomicBoolean(false);

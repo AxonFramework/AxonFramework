@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -52,7 +53,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateSimpleObject() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>("Simple instance"));
+        uow.transformMessage(m -> new GenericMessage<>(dottedName("test.message"), "Simple instance"));
 
         testSubject.handle(uow, interceptorChain);
 
@@ -61,7 +62,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_IllegalNullValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance(null)));
+        uow.transformMessage(m -> new GenericMessage<>(dottedName("test.message"), new JSR303AnnotatedInstance(null)));
         try {
             testSubject.handle(uow, interceptorChain);
             fail("Expected exception");
@@ -73,7 +74,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_LegalValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>(new JSR303AnnotatedInstance("abc")));
+        uow.transformMessage(m -> new GenericMessage<>(dottedName("test.message"), new JSR303AnnotatedInstance("abc")));
 
         testSubject.handle(uow, interceptorChain);
 
@@ -82,7 +83,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_IllegalValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance("bea")));
+        uow.transformMessage(m -> new GenericMessage<>(dottedName("test.message"), new JSR303AnnotatedInstance("bea")));
 
         try {
             testSubject.handle(uow, interceptorChain);
@@ -96,7 +97,8 @@ class BeanValidationInterceptorTest {
 
     @Test
     void customValidatorFactory() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance("abc")));
+        uow.transformMessage(m -> new GenericMessage<Object>(dottedName("test.message"),
+                                                             new JSR303AnnotatedInstance("abc")));
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());
         testSubject = new BeanValidationInterceptor<>(mockValidatorFactory);
         testSubject.handle(uow, interceptorChain);

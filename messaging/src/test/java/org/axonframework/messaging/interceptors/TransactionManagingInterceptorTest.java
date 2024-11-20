@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,16 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link TransactionManagingInterceptor}.
+ *
  * @author Rene de Waele
  */
 class TransactionManagingInterceptorTest {
 
-    private Message<?> message;
     private InterceptorChain interceptorChain;
     private UnitOfWork<Message<?>> unitOfWork;
     private TransactionManager transactionManager;
@@ -46,7 +48,7 @@ class TransactionManagingInterceptorTest {
             CurrentUnitOfWork.get().rollback();
         }
         interceptorChain = mock(InterceptorChain.class);
-        message = new GenericMessage<>(new Object());
+        Message<?> message = new GenericMessage<>(dottedName("test.message"), new Object());
         unitOfWork = DefaultUnitOfWork.startAndGet(message);
         transactionManager = mock(TransactionManager.class);
         transaction = mock(Transaction.class);

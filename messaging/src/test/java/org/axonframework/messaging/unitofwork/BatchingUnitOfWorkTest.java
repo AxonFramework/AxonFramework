@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
+import static org.axonframework.messaging.QualifiedName.className;
 import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -134,7 +135,7 @@ class BatchingUnitOfWorkTest {
     }
 
     private static Message<?> toMessage(Object payload) {
-        return new GenericMessage<>(payload);
+        return new GenericMessage<>(className(payload.getClass()), payload);
     }
 
     public static Object resultFor(Message<?> message) {

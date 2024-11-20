@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests resolving query handlers which return primitive types.
@@ -30,8 +30,8 @@ class PrimitiveQueryHandlerResponseTypeTest {
 
     private final SimpleQueryBus queryBus = SimpleQueryBus.builder().build();
     private final PrimitiveQueryHandler queryHandler = new PrimitiveQueryHandler();
-    private final AnnotationQueryHandlerAdapter<PrimitiveQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
-            queryHandler);
+    private final AnnotationQueryHandlerAdapter<PrimitiveQueryHandler> annotationQueryHandlerAdapter =
+            new AnnotationQueryHandlerAdapter<>(queryHandler);
 
     @BeforeEach
     void setUp() {
@@ -82,14 +82,16 @@ class PrimitiveQueryHandlerResponseTypeTest {
      * Sends out two queries to ensure they both can be resolved - the first expecting a response type of the wrapper
      * class, and the second expecting a response type of the primitive class.
      *
-     * @param value a {@link T} value used as the query
-     * @param boxed the boxed primitive wrapper type, eg {@link Integer}.class, {@link Long}.class, etc.
+     * @param value     a {@link T} value used as the query
+     * @param boxed     the boxed primitive wrapper type, eg {@link Integer}.class, {@link Long}.class, etc.
      * @param primitive the unboxed primitive type, eg {@code int}.class, {@code long}.class, etc.
-     * @param <T> the type being tested
+     * @param <T>       the type being tested
      */
     private <T> void test(final T value, final Class<T> boxed, final Class<T> primitive) {
-        final QueryMessage<T, T> queryBoxed = new GenericQueryMessage<>(value,  ResponseTypes.instanceOf(boxed));
-        final QueryMessage<T, T> queryPrimitive = new GenericQueryMessage<>(value, ResponseTypes.instanceOf(primitive));
+        final QueryMessage<T, T> queryBoxed =
+                new GenericQueryMessage<>(dottedName("test.query"), value, ResponseTypes.instanceOf(boxed));
+        final QueryMessage<T, T> queryPrimitive =
+                new GenericQueryMessage<>(dottedName("test.query"), value, ResponseTypes.instanceOf(primitive));
 
         final T responseBoxed = queryBus.query(queryBoxed).join().getPayload();
         final T responsePrimitive = queryBus.query(queryPrimitive).join().getPayload();
@@ -98,6 +100,7 @@ class PrimitiveQueryHandlerResponseTypeTest {
         assertEquals(value, responsePrimitive);
     }
 
+    @SuppressWarnings("unused")
     private static class PrimitiveQueryHandler {
 
         @QueryHandler
@@ -139,7 +142,5 @@ class PrimitiveQueryHandlerResponseTypeTest {
         public char handle(final Character query) {
             return query;
         }
-
     }
-
 }

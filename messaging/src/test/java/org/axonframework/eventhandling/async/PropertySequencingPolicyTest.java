@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -35,7 +35,7 @@ final class PropertySequencingPolicyTest {
     void propertyExtractorShouldReadCorrectValue() {
         final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
                 .builder(TestEvent.class, String.class)
-                .propertyExtractor(TestEvent::getId)
+                .propertyExtractor(TestEvent::id)
                 .build();
 
         assertEquals("42", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42"))));
@@ -45,7 +45,7 @@ final class PropertySequencingPolicyTest {
     void propertyShouldReadCorrectValue() {
         final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
                 .builder(TestEvent.class, String.class)
-                .propertyName("Id")
+                .propertyName("id")
                 .build();
 
         assertEquals("42", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42"))));
@@ -55,7 +55,7 @@ final class PropertySequencingPolicyTest {
     void defaultFallbackShouldThrowException() {
         final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
                 .builder(TestEvent.class, String.class)
-                .propertyName("Id")
+                .propertyName("id")
                 .build();
 
         assertThrows(IllegalArgumentException.class,
@@ -66,7 +66,7 @@ final class PropertySequencingPolicyTest {
     void fallbackShouldBeApplied() {
         final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
                 .builder(TestEvent.class, String.class)
-                .propertyName("Id")
+                .propertyName("id")
                 .fallbackSequencingPolicy(SequentialPerAggregatePolicy.instance())
                 .build();
 
@@ -74,19 +74,10 @@ final class PropertySequencingPolicyTest {
     }
 
     private DomainEventMessage<?> newStubDomainEvent(final Object payload) {
-        return new GenericDomainEventMessage<>("type", "A", 0L, payload, MetaData.emptyInstance());
+        return new GenericDomainEventMessage<>("type", "A", 0L, dottedName("test.event"), payload);
     }
 
-    private static class TestEvent {
+    private record TestEvent(String id) {
 
-        private final String id;
-
-        public TestEvent(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
     }
 }

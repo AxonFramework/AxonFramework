@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -50,7 +51,7 @@ class AbstractUnitOfWorkTest {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
-        subject = spy(new DefaultUnitOfWork(new GenericEventMessage<>("Input 1")) {
+        subject = spy(new DefaultUnitOfWork(new GenericEventMessage<>(dottedName("test.event"), "Input 1")) {
             @Override
             public String toString() {
                 return "unitOfWork";

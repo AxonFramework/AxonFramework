@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -38,7 +39,6 @@ class DefaultCommandGatewayTest {
     private DefaultCommandGateway testSubject;
     private CommandBus mockCommandBus;
 
-    @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
         mockCommandBus = mock(CommandBus.class);
@@ -47,9 +47,9 @@ class DefaultCommandGatewayTest {
 
     @Test
     void wrapsObjectIntoCommandMessage() throws ExecutionException, InterruptedException {
-        when(mockCommandBus.dispatch(any(),
-                                     any())).thenAnswer(i -> CompletableFuture.completedFuture(new GenericCommandResultMessage<>(
-                "OK")));
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage<>(dottedName("test.result"), "OK")
+        ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
         verify(mockCommandBus).dispatch(argThat(m -> m.getPayload().equals(payload)), isNull());
@@ -68,9 +68,9 @@ class DefaultCommandGatewayTest {
 
     @Test
     void dispatchReturnsExceptionallyCompletedFutureWhenCommandBusReturnsExceptionalMessage() {
-        when(mockCommandBus.dispatch(any(),
-                                     any())).thenAnswer(i -> CompletableFuture.completedFuture(new GenericCommandResultMessage<>(
-                new MockException())));
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage<>(dottedName("test.result"), new MockException())
+        ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
         verify(mockCommandBus).dispatch(argThat(m -> m.getPayload().equals(payload)), isNull());

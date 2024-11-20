@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,16 @@ package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link SequentialPolicy}.
+ *
  * @author Allard Buijze
  */
 class SequentialPolicyTest {
@@ -44,8 +46,9 @@ class SequentialPolicyTest {
         assertEquals(id1, id3);
     }
 
-    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage<>("type", aggregateIdentifier.toString(), (long) 0, new Object(),
-                                                     MetaData.emptyInstance());
+    private DomainEventMessage<Object> newStubDomainEvent(Object aggregateIdentifier) {
+        return new GenericDomainEventMessage<>(
+                "aggregateType", aggregateIdentifier.toString(), 0L, dottedName("test.event"), new Object()
+        );
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AggregateTypeParameterResolverFactoryTest {
@@ -62,7 +63,8 @@ class AggregateTypeParameterResolverFactoryTest {
     void resolvesToAggregateTypeWhenAnnotatedForDomainEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(aggregateTypeMethod, aggregateTypeMethod.getParameters(), 0);
-        final DomainEventMessage<Object> eventMessage = new GenericDomainEventMessage("aggregateType", "id", 0L, "payload");
+        final DomainEventMessage<Object> eventMessage =
+                new GenericDomainEventMessage<>("aggregateType", "id", 0L, dottedName("test.event"), "payload");
         assertTrue(resolver.matches(eventMessage, null));
         assertEquals(eventMessage.getType(), resolver.resolveParameterValue(eventMessage, null));
     }

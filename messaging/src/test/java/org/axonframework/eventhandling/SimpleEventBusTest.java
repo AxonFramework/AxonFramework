@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.mockito.Mockito.*;
 
 /**
@@ -52,7 +53,6 @@ class SimpleEventBusTest {
     @Test
     void eventIsDispatchedToSubscribedListeners() {
         testSubject.publish(newEvent());
-        //noinspection resource
         testSubject.subscribe(listener1);
         // subscribing twice should not make a difference
         Registration subscription1 = testSubject.subscribe(listener1);
@@ -74,6 +74,6 @@ class SimpleEventBusTest {
     }
 
     private EventMessage<Object> newEvent() {
-        return new GenericEventMessage<>(new Object());
+        return new GenericEventMessage<>(dottedName("test.event"), new Object());
     }
 }

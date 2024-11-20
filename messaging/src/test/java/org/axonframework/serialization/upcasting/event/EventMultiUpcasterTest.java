@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventEntry;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -81,17 +83,17 @@ class EventMultiUpcasterTest {
 
     @Test
     void upcasterIgnoresWrongEventType() {
-        GenericDomainEventMessage<String> testEventMessage =
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString");
+        DomainEventMessage<String> testEventMessage =
+                new GenericDomainEventMessage<>("test", "aggregateId", 0, dottedName("test.event"), "someString");
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         IntermediateEventRepresentation testRepresentation =
                 spy(new InitialEventRepresentation(testEventData, serializer));
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                                                               .collect(toList());
+                                                               .toList();
 
         assertEquals(1, result.size());
-        IntermediateEventRepresentation resultRepresentation = result.get(0);
+        IntermediateEventRepresentation resultRepresentation = result.getFirst();
         assertSame(testRepresentation, resultRepresentation);
         verify(testRepresentation, never()).getData();
     }
@@ -100,23 +102,24 @@ class EventMultiUpcasterTest {
     void upcasterIgnoresWrongEventRevision() {
         String expectedRevisionNumber = "1";
 
-        GenericDomainEventMessage<StubDomainEvent> testEventMessage =
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName"));
+        DomainEventMessage<StubDomainEvent> testEventMessage = new GenericDomainEventMessage<>(
+                "test", "aggregateId", 0, dottedName("test.event"), new StubDomainEvent("oldName")
+        );
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
                                                                .collect(toList());
 
-        testRepresentation = spy(result.get(0));
+        testRepresentation = spy(result.getFirst());
         // Initial upcast was successful
         assertEquals(expectedRevisionNumber, testRepresentation.getType().getRevision());
 
         result = upcaster.upcast(Stream.of(testRepresentation))
-                         .collect(toList());
+                         .toList();
 
         assertFalse(result.isEmpty());
-        IntermediateEventRepresentation resultRepresentation = result.get(0);
+        IntermediateEventRepresentation resultRepresentation = result.getFirst();
         assertSame(testRepresentation, resultRepresentation);
         verify(testRepresentation, never()).getData();
     }
@@ -138,11 +141,11 @@ class EventMultiUpcasterTest {
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                                                               .collect(toList());
+                                                               .toList();
 
         assertFalse(result.isEmpty());
 
-        IntermediateEventRepresentation firstEventResult = result.get(0);
+        IntermediateEventRepresentation firstEventResult = result.getFirst();
         assertEquals(testAggregateType, firstEventResult.getAggregateType().get());
         assertEquals(testAggregateId, firstEventResult.getAggregateIdentifier().get());
         assertEquals(testTrackingToken, firstEventResult.getTrackingToken().get());
@@ -168,17 +171,18 @@ class EventMultiUpcasterTest {
         String expectedSecondAndThirdRevisionNumber = null;
 
         MetaData testMetaData = MetaData.with("key", "value");
-        GenericDomainEventMessage<StubDomainEvent> testEventMessage =
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName"), testMetaData);
+        DomainEventMessage<StubDomainEvent> testEventMessage = new GenericDomainEventMessage<>(
+                "test", "aggregateId", 0, dottedName("test.event"), new StubDomainEvent("oldName"), testMetaData
+        );
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                                                               .collect(toList());
+                                                               .toList();
 
         assertFalse(result.isEmpty());
 
-        IntermediateEventRepresentation firstResultRepresentation = result.get(0);
+        IntermediateEventRepresentation firstResultRepresentation = result.getFirst();
         assertEquals(expectedRevisionNumber, firstResultRepresentation.getType().getRevision());
         assertEquals(testEventData.getEventIdentifier(), firstResultRepresentation.getMessageIdentifier());
         assertEquals(testEventData.getTimestamp(), firstResultRepresentation.getTimestamp());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
@@ -44,13 +45,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This test class only asserts whether the context map is created, filled with data and if that data is used to upcast
- * an event. The other upcaster regularities are already asserted by the {@link EventMultiUpcasterTest} and can
- * thus be skipped.
+ * an event. The other upcaster regularities are already asserted by the {@link EventMultiUpcasterTest} and can thus be
+ * skipped.
  *
  * @author Steven van Beelen
  */
@@ -87,16 +88,18 @@ class ContextAwareEventMultiUpcasterTest {
 
         MetaData testMetaData = MetaData.with("key", "value");
 
-        GenericDomainEventMessage<SecondStubEvent> firstTestEventMessage = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new SecondStubEvent(expectedContextEventString, expectedContextEventNumber),
-                testMetaData
+        DomainEventMessage<SecondStubEvent> firstTestEventMessage = new GenericDomainEventMessage<>(
+                "test", "aggregateId", 0, dottedName("test.event"),
+                new SecondStubEvent(expectedContextEventString, expectedContextEventNumber), testMetaData
         );
         EventData<?> firstTestEventData = new TestDomainEventEntry(firstTestEventMessage, serializer);
         InitialEventRepresentation firstTestRepresentation =
                 new InitialEventRepresentation(firstTestEventData, serializer);
 
-        GenericDomainEventMessage<StubDomainEvent> secondTestEventMessage =
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName"), testMetaData);
+        DomainEventMessage<StubDomainEvent> secondTestEventMessage = new GenericDomainEventMessage<>(
+                "test", "aggregateId", 0, dottedName("test.event"),
+                new StubDomainEvent("oldName"), testMetaData
+        );
         EventData<?> secondTestEventData = new TestDomainEventEntry(secondTestEventMessage, serializer);
         InitialEventRepresentation secondTestRepresentation =
                 new InitialEventRepresentation(secondTestEventData, serializer);
@@ -104,11 +107,11 @@ class ContextAwareEventMultiUpcasterTest {
         Stream<IntermediateEventRepresentation> testEventRepresentationStream =
                 Stream.of(firstTestRepresentation, secondTestRepresentation);
         List<IntermediateEventRepresentation> result = upcaster.upcast(testEventRepresentationStream)
-                                                               .collect(toList());
+                                                               .toList();
 
         assertEquals(expectedNumberOfEvents, result.size());
 
-        IntermediateEventRepresentation firstEventResult = result.get(0);
+        IntermediateEventRepresentation firstEventResult = result.getFirst();
         assertNull(firstEventResult.getType().getRevision());
         assertEquals(firstTestEventData.getEventIdentifier(), firstEventResult.getMessageIdentifier());
         assertEquals(firstTestEventData.getTimestamp(), firstEventResult.getTimestamp());

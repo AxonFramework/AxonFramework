@@ -17,18 +17,21 @@
 package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryHandler;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -67,14 +70,13 @@ class MethodQueryMessageHandlerDefinitionTest {
         assertEquals(String.class, handler.getResultType());
 
         GenericQueryMessage<String, String> message =
-                new GenericQueryMessage<>("mock", ResponseTypes.instanceOf(String.class));
+                new GenericQueryMessage<>(dottedName("test.query"), "mock", ResponseTypes.instanceOf(String.class));
 
         assertTrue(handler.canHandle(message, null));
 
         Object invocationResult = handler.handleSync(message, this);
         assertNull(invocationResult);
     }
-
 
     @Test
     void unspecifiedOptionalResponseTypeUnwrapped() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.utils.MockException;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.axonframework.utils.MockException;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -34,12 +33,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class UnitOfWorkNestingTest {
 
-    private List<PhaseTransition> phaseTransitions = new ArrayList<>();
+    private final List<PhaseTransition> phaseTransitions = new ArrayList<>();
     private UnitOfWork<?> outer;
     private UnitOfWork<?> middle;
     private UnitOfWork<?> inner;
 
-    @SuppressWarnings({"unchecked"})
     @BeforeEach
     void setUp() {
         phaseTransitions.clear();
@@ -47,19 +45,19 @@ class UnitOfWorkNestingTest {
             CurrentUnitOfWork.get().rollback();
         }
 
-        outer = new DefaultUnitOfWork(new GenericEventMessage<>("Input 1")) {
+        outer = new DefaultUnitOfWork<>(new GenericEventMessage<>(dottedName("test.event"), "Input 1")) {
             @Override
             public String toString() {
                 return "outer";
             }
         };
-        middle = new DefaultUnitOfWork(new GenericEventMessage<Object>("Input middle")) {
+        middle = new DefaultUnitOfWork<>(new GenericEventMessage<Object>(dottedName("test.event"), "Input middle")) {
             @Override
             public String toString() {
                 return "middle";
             }
         };
-        inner = new DefaultUnitOfWork(new GenericEventMessage<>("Input 2")) {
+        inner = new DefaultUnitOfWork<>(new GenericEventMessage<>(dottedName("test.event"), "Input 2")) {
             @Override
             public String toString() {
                 return "inner";

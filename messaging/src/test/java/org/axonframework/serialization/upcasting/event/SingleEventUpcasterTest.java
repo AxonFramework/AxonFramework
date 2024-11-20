@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.serialization.upcasting.event;
 
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventEntry;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -54,14 +56,15 @@ class SingleEventUpcasterTest {
     void upcastsKnownType() {
         String newValue = "newNameValue";
         MetaData metaData = MetaData.with("key", "value");
-        EventData<?> eventData = new TestDomainEventEntry(
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName"), metaData),
-                serializer);
+        DomainEventMessage<StubDomainEvent> testEvent = new GenericDomainEventMessage<>(
+                "test", "aggregateId", 0, dottedName("test.event"), new StubDomainEvent("oldName"), metaData
+        );
+        EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster(newValue);
         List<IntermediateEventRepresentation> result =
-                upcaster.upcast(Stream.of(new InitialEventRepresentation(eventData, serializer))).collect(toList());
+                upcaster.upcast(Stream.of(new InitialEventRepresentation(eventData, serializer))).toList();
         assertFalse(result.isEmpty());
-        IntermediateEventRepresentation firstEvent = result.get(0);
+        IntermediateEventRepresentation firstEvent = result.getFirst();
         assertEquals("1", firstEvent.getType().getRevision());
         StubDomainEvent upcastedEvent = serializer.deserialize(firstEvent.getData());
         assertEquals(newValue, upcastedEvent.getName());
@@ -90,9 +93,9 @@ class SingleEventUpcasterTest {
         );
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
-        List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
+        List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).toList();
         assertFalse(result.isEmpty());
-        IntermediateEventRepresentation firstEvent = result.get(0);
+        IntermediateEventRepresentation firstEvent = result.getFirst();
         assertEquals(aggregateType, firstEvent.getAggregateType().get());
         assertEquals(aggregateId, firstEvent.getAggregateIdentifier().get());
         assertEquals(trackingToken, firstEvent.getTrackingToken().get());
@@ -101,31 +104,35 @@ class SingleEventUpcasterTest {
 
     @Test
     void ignoresUnknownType() {
+        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
+                "test", "aggregateId", 0, dottedName("test.event"), "someString"
+        );
         EventData<?> eventData = new TestDomainEventEntry(
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"), serializer
+                testEvent, serializer
         );
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = spy(new InitialEventRepresentation(eventData, serializer));
-        List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
+        List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).toList();
         assertEquals(1, result.size());
-        IntermediateEventRepresentation output = result.get(0);
+        IntermediateEventRepresentation output = result.getFirst();
         assertSame(input, output);
         verify(input, never()).getData();
     }
 
     @Test
     void ignoresWrongVersion() {
-        EventData<?> eventData = new TestDomainEventEntry(
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName")), serializer
+        DomainEventMessage<StubDomainEvent> testEvent = new GenericDomainEventMessage<>(
+                "test", "aggregateId", 0, dottedName("test.event"), new StubDomainEvent("oldName")
         );
+        EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
-        input = spy(result.get(0));
+        input = spy(result.getFirst());
         assertEquals("1", input.getType().getRevision()); //initial upcast was successful
-        result = upcaster.upcast(Stream.of(input)).collect(toList());
+        result = upcaster.upcast(Stream.of(input)).toList();
         assertFalse(result.isEmpty());
-        IntermediateEventRepresentation output = result.get(0);
+        IntermediateEventRepresentation output = result.getFirst();
         assertSame(input, output);
         verify(input, never()).getData();
     }

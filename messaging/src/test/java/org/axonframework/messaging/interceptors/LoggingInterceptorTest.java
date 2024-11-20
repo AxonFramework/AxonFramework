@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -58,7 +59,7 @@ class LoggingInterceptorTest {
         loggerField.set(logger, mockLogger);
 
         interceptorChain = mock(InterceptorChain.class);
-        unitOfWork = new DefaultUnitOfWork<>(new GenericMessage<Object>(new StubMessage()));
+        unitOfWork = new DefaultUnitOfWork<>(new GenericMessage<>(dottedName("test.message"), new StubMessage()));
     }
 
     @Test
@@ -139,7 +140,7 @@ class LoggingInterceptorTest {
     void dispatchInterceptorLogging() {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.handle(new GenericMessage<Object>(new StubMessage()));
+        testSubject.handle(new GenericMessage<>(dottedName("test.message"), new StubMessage()));
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
         verifyNoMoreInteractions(mockLogger);

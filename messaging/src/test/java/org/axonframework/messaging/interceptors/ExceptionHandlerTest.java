@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import java.util.function.Supplier;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -77,7 +78,7 @@ class ExceptionHandlerTest {
             Object result = handle(command);
             assertNull(result);
         } catch (Exception e) {
-            assertTrue(e instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, e);
         }
 
         assertEquals(COMMAND_HANDLER_INVOKED, invokedHandler.get());
@@ -93,7 +94,7 @@ class ExceptionHandlerTest {
             Object result = handle(event);
             assertNull(result);
         } catch (Exception e) {
-            assertTrue(e instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, e);
         }
 
         assertEquals(EVENT_HANDLER_INVOKED, invokedHandler.get());
@@ -103,15 +104,15 @@ class ExceptionHandlerTest {
     @Test
     void exceptionHandlerIsInvokedForAnQueryHandlerThrowingAnException() {
         QueryMessage<SomeQuery, SomeQueryResponse> query = new GenericQueryMessage<>(
+                dottedName("test.test"),
                 new SomeQuery(() -> new RuntimeException("some-exception")),
-                ResponseTypes.instanceOf(SomeQueryResponse.class)
-        );
+                ResponseTypes.instanceOf(SomeQueryResponse.class));
 
         try {
             Object result = handle(query);
             assertNull(result);
         } catch (Exception e) {
-            assertTrue(e instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, e);
         }
 
         assertEquals(QUERY_HANDLER_INVOKED, invokedHandler.get());
@@ -157,16 +158,8 @@ class ExceptionHandlerTest {
     }
 
     @SuppressWarnings("unused") // suppress not-invoked exception handler warning.
-    private static class ExceptionHandlingComponent {
-
-        private final AtomicReference<String> invokedHandler;
-        private final List<String> invokedExceptionHandlers;
-
-        private ExceptionHandlingComponent(AtomicReference<String> invokedHandler,
-                                           List<String> invokedExceptionHandlers) {
-            this.invokedHandler = invokedHandler;
-            this.invokedExceptionHandlers = invokedExceptionHandlers;
-        }
+    private record ExceptionHandlingComponent(AtomicReference<String> invokedHandler,
+                                              List<String> invokedExceptionHandlers) {
 
         @ExceptionHandler
         public void leastSpecificExceptionHandler() {
@@ -232,31 +225,16 @@ class ExceptionHandlerTest {
         }
     }
 
-    private static class SomeCommand {
+    private record SomeCommand(Supplier<Exception> exceptionSupplier) {
 
-        private final Supplier<Exception> exceptionSupplier;
-
-        private SomeCommand(Supplier<Exception> exceptionSupplier) {
-            this.exceptionSupplier = exceptionSupplier;
-        }
     }
 
-    private static class SomeEvent {
+    private record SomeEvent(Supplier<Exception> exceptionSupplier) {
 
-        private final Supplier<Exception> exceptionSupplier;
-
-        private SomeEvent(Supplier<Exception> exceptionSupplier) {
-            this.exceptionSupplier = exceptionSupplier;
-        }
     }
 
-    private static class SomeQuery {
+    private record SomeQuery(Supplier<Exception> exceptionSupplier) {
 
-        private final Supplier<Exception> exceptionSupplier;
-
-        private SomeQuery(Supplier<Exception> exceptionSupplier) {
-            this.exceptionSupplier = exceptionSupplier;
-        }
     }
 
     private static class SomeQueryResponse {

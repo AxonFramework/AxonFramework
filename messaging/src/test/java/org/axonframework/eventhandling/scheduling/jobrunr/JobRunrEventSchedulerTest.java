@@ -44,6 +44,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.jobrunr.server.BackgroundJobServerConfiguration.usingStandardBackgroundJobServerConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -120,7 +121,7 @@ class JobRunrEventSchedulerTest {
     void whenScheduleIsCalledWithEventMessageMetadataShouldBePreserved() {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("foo", "bar");
-        EventMessage<?> originalMessage = new GenericEventMessage<>(2, metadata);
+        EventMessage<?> originalMessage = new GenericEventMessage<>(dottedName("test.event"), 2, metadata);
         eventScheduler.schedule(Instant.now(), originalMessage);
         Instant rightAfterSchedule = Instant.now();
 
@@ -153,7 +154,9 @@ class JobRunrEventSchedulerTest {
     void whenScheduleIsCalledWithEventThatHasARevisionPayloadMessageMetadataShouldBePreserved() {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("foo", "bar");
-        EventMessage<?> originalMessage = new GenericEventMessage<>(new PayloadWithRevision(), metadata);
+        EventMessage<?> originalMessage = new GenericEventMessage<>(
+                dottedName("test.PayloadWithRevision"), new PayloadWithRevision(), metadata
+        );
         eventScheduler.schedule(Instant.now(), originalMessage);
         Instant rightAfterSchedule = Instant.now();
 

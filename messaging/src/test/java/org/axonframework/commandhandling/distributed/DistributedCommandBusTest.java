@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -54,7 +55,7 @@ class DistributedCommandBusTest {
 
     @BeforeEach
     void setUp() {
-        commandMessage = new GenericCommandMessage<>("test");
+        commandMessage = new GenericCommandMessage<>(dottedName("test.command"), "test");
         connector = new StubConnector();
         delegate = new SimpleCommandBus();
         testSubject = new DistributedCommandBus(delegate, connector);
@@ -80,7 +81,7 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreDelegatedToSubscribedHandlers() {
-        GenericMessage<String> okMessage = new GenericMessage<>("OK");
+        GenericMessage<String> okMessage = new GenericMessage<>(dottedName("test.command"), "OK");
         testSubject.subscribe(String.class.getName(), new MessageHandler<>() {
             @Override
             public Object handleSync(CommandMessage<?> message) {
@@ -101,7 +102,7 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreRejectedForCancelledHandlerSubscription() {
-        GenericMessage<String> okMessage = new GenericMessage<>("OK");
+        GenericMessage<String> okMessage = new GenericMessage<>(dottedName("test.command"), "OK");
         Registration registration = testSubject.subscribe(String.class.getName(),
                                                           new MessageHandler<>() {
                                                               @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PayloadTypeSpanAttributesProviderTest {
@@ -31,7 +32,7 @@ class PayloadTypeSpanAttributesProviderTest {
 
     @Test
     void stringPayload() {
-        Message<?> message = new GenericEventMessage<>("MyEvent");
+        Message<?> message = new GenericEventMessage<>(dottedName("test.event"), "MyEvent");
 
         Map<String, String> map = provider.provideForMessage(message);
         assertEquals(1, map.size());
@@ -40,7 +41,7 @@ class PayloadTypeSpanAttributesProviderTest {
 
     @Test
     void classPayload() {
-        Message<?> message = new GenericEventMessage<>(new MyEvent());
+        Message<?> message = new GenericEventMessage<>(dottedName("test.test"), new MyEvent());
 
         Map<String, String> map = provider.provideForMessage(message);
         assertEquals(1, map.size());

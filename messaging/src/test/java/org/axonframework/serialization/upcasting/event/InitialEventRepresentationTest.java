@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package org.axonframework.serialization.upcasting.event;
 
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.utils.StubDomainEvent;
@@ -28,6 +28,7 @@ import org.junit.jupiter.params.provider.*;
 
 import java.util.stream.Stream;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -51,8 +52,8 @@ class InitialEventRepresentationTest {
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
     void contentType(Serializer serializer) {
-        GenericDomainEventMessage<StubDomainEvent> event = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new StubDomainEvent("some-name"), MetaData.emptyInstance()
+        DomainEventMessage<StubDomainEvent> event = new GenericDomainEventMessage<>(
+                "test", "aggregateId", 0, dottedName("test.event"), new StubDomainEvent("some-name")
         );
         EventData<String> eventData = new TestDomainEventEntry(event, serializer);
 
