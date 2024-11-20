@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.createNew;
 
@@ -50,7 +51,7 @@ class FixtureTest_Polymorphism {
         fixture = new AggregateTestFixture<>(AggregateA.class).withSubtypes(AggregateB.class, AggregateC.class);
     }
 
-    private static Stream<Arguments> provideForCreationalTest() {
+    private static Stream<Arguments> provideForCreationTest() {
         return Stream.of(
                 Arguments.of((Function<String, Object>) CreateBCommand::new, "AggregateB"),
                 Arguments.of((Function<String, Object>) CreateCCommand::new, "AggregateC")
@@ -58,14 +59,15 @@ class FixtureTest_Polymorphism {
     }
 
     @ParameterizedTest(name = "[{index}] {1}")
-    @MethodSource("provideForCreationalTest")
+    @MethodSource("provideForCreationTest")
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void creationOfAggregate(Function<String, Object> commandBuilder, String aggregateType) {
         String id = "id";
         fixture.givenNoPriorActivity()
                .when(commandBuilder.apply(id))
                .expectEventsMatching(Matchers.predicate(events -> {
-                   DomainEventMessage<CreatedEvent> evt = (DomainEventMessage<CreatedEvent>) events.get(0);
+                   //noinspection unchecked
+                   DomainEventMessage<CreatedEvent> evt = (DomainEventMessage<CreatedEvent>) events.getFirst();
                    return evt.getType().equals(aggregateType)
                            && events.size() == 1
                            && evt.getPayload().id.equals(id);
@@ -77,11 +79,9 @@ class FixtureTest_Polymorphism {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void commonCommandOnAggregate(String aggregateType) {
         String id = "id";
-        DomainEventMessage<CreatedEvent> creationalEvent = new GenericDomainEventMessage<>(aggregateType,
-                                                                                           id,
-                                                                                           0,
-                                                                                           new CreatedEvent(id));
-        fixture.given(creationalEvent)
+        DomainEventMessage<CreatedEvent> creationEvent =
+                new GenericDomainEventMessage<>(aggregateType, id, 0, dottedName("test.event"), new CreatedEvent(id));
+        fixture.given(creationEvent)
                .when(new CommonCommand(id))
                .expectResultMessagePayload(aggregateType + id);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.Repository;
+
+import static org.axonframework.messaging.QualifiedName.dottedName;
 
 /**
  * @author Allard Buijze
@@ -46,19 +48,19 @@ class MyCommandHandler {
     @CommandHandler
     public void handleTestCommand(TestCommand testCommand) {
         repository.load(testCommand.getAggregateIdentifier().toString(), null)
-                .execute(StandardAggregate::doSomething);
+                  .execute(StandardAggregate::doSomething);
     }
 
     @CommandHandler
     public void handleStrangeCommand(StrangeCommand testCommand) {
         repository.load(testCommand.getAggregateIdentifier().toString(), null).execute(StandardAggregate::doSomething);
-        eventBus.publish(new GenericEventMessage<>(new MyApplicationEvent()));
+        eventBus.publish(new GenericEventMessage<>(dottedName("test.event"), new MyApplicationEvent()));
         throw new StrangeCommandReceivedException("Strange command received");
     }
 
     @CommandHandler
     public void handleEventPublishingCommand(PublishEventCommand testCommand) {
-        eventBus.publish(new GenericEventMessage<>(new MyApplicationEvent()));
+        eventBus.publish(new GenericEventMessage<>(dottedName("test.event"), new MyApplicationEvent()));
     }
 
     @CommandHandler
@@ -70,7 +72,7 @@ class MyCommandHandler {
     @CommandHandler
     public void handleDeleteAggregate(DeleteCommand command) {
         repository.load(command.getAggregateIdentifier().toString())
-                .execute(r -> r.delete(command.isAsIllegalChange()));
+                  .execute(r -> r.delete(command.isAsIllegalChange()));
     }
 
     public void setRepository(Repository<StandardAggregate> repository) {

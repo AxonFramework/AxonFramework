@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -35,7 +36,7 @@ import static org.mockito.Mockito.*;
  */
 class RecordingListenerInvocationErrorHandlerTest {
 
-    private static final EventMessage<String> TEST_EVENT = new GenericEventMessage<>("test");
+    private static final EventMessage<String> TEST_EVENT = new GenericEventMessage<>(dottedName("test.event"), "test");
     private static final Exception TEST_EXCEPTION = new IllegalArgumentException("This argument is illegal");
 
     private ListenerInvocationErrorHandler wrappedErrorHandler;

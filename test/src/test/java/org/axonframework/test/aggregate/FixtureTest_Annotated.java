@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
 import static org.axonframework.test.matchers.Matchers.matches;
 import static org.junit.jupiter.api.Assertions.*;
@@ -214,21 +215,27 @@ class FixtureTest_Annotated {
 
     @Test
     void fixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        assertThrows(EventStoreException.class, () ->
-                fixture.getEventStore().publish(
-                        new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()),
-                        new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()))
+        DomainEventMessage<StubDomainEvent> testEventOne = new GenericDomainEventMessage<>(
+                "test", UUID.randomUUID().toString(), 0, dottedName("test.event"), new StubDomainEvent()
         );
+        DomainEventMessage<StubDomainEvent> testEventTwo = new GenericDomainEventMessage<>(
+                "test", UUID.randomUUID().toString(), 0, dottedName("test.event"), new StubDomainEvent()
+        );
+
+        assertThrows(EventStoreException.class, () -> fixture.getEventStore().publish(testEventOne, testEventTwo));
     }
 
     @Test
     void fixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        assertThrows(EventStoreException.class, () ->
-                fixture.getEventStore().publish(
-                        new GenericDomainEventMessage<>("test", identifier, 0, new StubDomainEvent()),
-                        new GenericDomainEventMessage<>("test", identifier, 2, new StubDomainEvent()))
+        DomainEventMessage<StubDomainEvent> testEventOne = new GenericDomainEventMessage<>(
+                "test", identifier, 0, dottedName("test.event"), new StubDomainEvent()
         );
+        DomainEventMessage<StubDomainEvent> testEventTwo = new GenericDomainEventMessage<>(
+                "test", identifier, 2, dottedName("test.event"), new StubDomainEvent()
+        );
+
+        assertThrows(EventStoreException.class, () -> fixture.getEventStore().publish(testEventOne, testEventTwo));
     }
 
     @Test
