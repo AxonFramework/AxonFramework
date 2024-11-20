@@ -84,6 +84,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -231,14 +232,14 @@ class EventProcessingModuleTest {
 
         assertEquals(3, configuration.eventProcessingConfiguration().eventProcessors().size());
         assertTrue(processors.get("java.util.concurrent2").getEventHandlers().contains("concurrent"));
-        assertTrue(processors.get("java.util.concurrent2").getHandlerInterceptors().iterator()
-                             .next() instanceof CorrelationDataInterceptor);
+        assertInstanceOf(CorrelationDataInterceptor.class,
+                         processors.get("java.util.concurrent2").getHandlerInterceptors().getFirst());
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains(map));
-        assertTrue(processors.get("java.util.concurrent").getHandlerInterceptors().iterator()
-                             .next() instanceof CorrelationDataInterceptor);
+        assertInstanceOf(CorrelationDataInterceptor.class,
+                         processors.get("java.util.concurrent").getHandlerInterceptors().getFirst());
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
-        assertTrue(processors.get("java.lang").getHandlerInterceptors().iterator()
-                             .next() instanceof CorrelationDataInterceptor);
+        assertInstanceOf(CorrelationDataInterceptor.class,
+                         processors.get("java.lang").getHandlerInterceptors().getFirst());
     }
 
     @Test
@@ -342,9 +343,9 @@ class EventProcessingModuleTest {
                 getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), specialProcessor);
 
         assertEquals(sequentialPolicy,
-                     ((SimpleEventHandlerInvoker) defaultInvoker.delegates().get(0)).getSequencingPolicy());
+                     ((SimpleEventHandlerInvoker) defaultInvoker.delegates().getFirst()).getSequencingPolicy());
         assertEquals(fullConcurrencyPolicy,
-                     ((SimpleEventHandlerInvoker) specialInvoker.delegates().get(0)).getSequencingPolicy());
+                     ((SimpleEventHandlerInvoker) specialInvoker.delegates().getFirst()).getSequencingPolicy());
     }
 
     @Test
@@ -381,7 +382,8 @@ class EventProcessingModuleTest {
         Configuration config = configurer.start();
 
         try {
-            config.eventBus().publish(new GenericEventMessage<Object>("test"));
+            config.eventBus()
+                  .publish(new GenericEventMessage<>(dottedName("test.event"), "test"));
 
             assertEquals(1, subscribingMonitor.getMessages().size());
             assertTrue(trackingMonitor.await(10, TimeUnit.SECONDS));
@@ -401,7 +403,7 @@ class EventProcessingModuleTest {
         Configuration config = configurer.start();
 
         try {
-            GenericEventMessage<Object> message = new GenericEventMessage<>("test");
+            EventMessage<Object> message = new GenericEventMessage<>(dottedName("test.event"), "test");
             config.eventBus().publish(message);
 
             spanFactory.verifySpanCompleted("EventProcessor.process", message);
@@ -414,7 +416,7 @@ class EventProcessingModuleTest {
 
     @Test
     void configureDefaultListenerInvocationErrorHandler() throws Exception {
-        GenericEventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(true);
+        EventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(dottedName("test.event"), true);
 
         int expectedListenerInvocationErrorHandlerCalls = 2;
 
@@ -440,7 +442,7 @@ class EventProcessingModuleTest {
 
     @Test
     void configureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
-        GenericEventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(true);
+        EventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(dottedName("test.event"), true);
 
         int expectedErrorHandlerCalls = 1;
 
@@ -470,7 +472,7 @@ class EventProcessingModuleTest {
 
     @Test
     void configureDefaultErrorHandler() throws Exception {
-        GenericEventMessage<Integer> failingEventMessage = new GenericEventMessage<>(1000);
+        EventMessage<Integer> failingEventMessage = new GenericEventMessage<>(dottedName("test.event"), 1000);
 
         int expectedErrorHandlerCalls = 2;
 
@@ -552,7 +554,7 @@ class EventProcessingModuleTest {
 
     @Test
     void configureErrorHandlerPerEventProcessor() throws Exception {
-        GenericEventMessage<Integer> failingEventMessage = new GenericEventMessage<>(1000);
+        EventMessage<Integer> failingEventMessage = new GenericEventMessage<>(dottedName("test.event"), 1000);
 
         int expectedErrorHandlerCalls = 1;
 
@@ -979,7 +981,8 @@ class EventProcessingModuleTest {
         assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
-        assertEquals(config.getComponent(EventProcessorSpanFactory.class), getField(AbstractEventProcessor.class, "spanFactory", result));
+        assertEquals(config.getComponent(EventProcessorSpanFactory.class),
+                     getField(AbstractEventProcessor.class, "spanFactory", result));
     }
 
     @Test
@@ -1208,7 +1211,7 @@ class EventProcessingModuleTest {
     @Test
     void defaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
         String testName = "pooled-streaming";
-        GenericEventMessage<Integer> testEvent = new GenericEventMessage<>(1000);
+        EventMessage<Integer> testEvent = new GenericEventMessage<>(dottedName("test.event"), 1000);
 
         CountDownLatch transactionCommitted = new CountDownLatch(1);
         TransactionManager defaultTransactionManager = new StubTransactionManager(transactionCommitted);
@@ -1231,7 +1234,7 @@ class EventProcessingModuleTest {
     @Test
     void defaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
         String testName = "pooled-streaming";
-        GenericEventMessage<Integer> testEvent = new GenericEventMessage<>(1000);
+        EventMessage<Integer> testEvent = new GenericEventMessage<>(dottedName("test.event"), 1000);
 
         TransactionManager defaultTransactionManager = spy(TransactionManager.class);
         CountDownLatch transactionCommitted = new CountDownLatch(1);
@@ -1292,7 +1295,7 @@ class EventProcessingModuleTest {
         List<EventHandlerInvoker> delegates = getField("delegates", resultMultiInvoker);
         assertFalse(delegates.isEmpty());
         DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
-                ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+                ((DeadLetteringEventHandlerInvoker) delegates.getFirst());
 
         assertEquals(deadLetterQueue, getField("queue", resultDeadLetteringInvoker));
         assertEquals(expectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
@@ -1339,7 +1342,7 @@ class EventProcessingModuleTest {
         List<EventHandlerInvoker> delegates = getField("delegates", resultMultiInvoker);
         assertFalse(delegates.isEmpty());
         DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
-                ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+                ((DeadLetteringEventHandlerInvoker) delegates.getFirst());
 
         assertEquals(expectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
     }
@@ -1387,7 +1390,7 @@ class EventProcessingModuleTest {
         List<EventHandlerInvoker> delegates = getField("delegates", resultMultiInvoker);
         assertFalse(delegates.isEmpty());
         DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
-                ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+                ((DeadLetteringEventHandlerInvoker) delegates.getFirst());
 
         assertEquals(expectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
         assertNotEquals(unexpectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
@@ -1429,7 +1432,7 @@ class EventProcessingModuleTest {
         List<EventHandlerInvoker> delegates = getField("delegates", resultMultiInvoker);
         assertFalse(delegates.isEmpty());
         DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
-                ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+                ((DeadLetteringEventHandlerInvoker) delegates.getFirst());
 
         assertTrue((Boolean) getField("allowReset", resultDeadLetteringInvoker));
     }
@@ -1534,7 +1537,7 @@ class EventProcessingModuleTest {
         List<EventHandlerInvoker> delegates = getField("delegates", resultMultiInvoker);
         assertFalse(delegates.isEmpty());
         DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
-                ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+                ((DeadLetteringEventHandlerInvoker) delegates.getFirst());
 
         assertEquals(deadLetterQueue, getField("queue", resultDeadLetteringInvoker));
         assertEquals(expectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
@@ -1622,7 +1625,7 @@ class EventProcessingModuleTest {
 
         public List<?> getEventHandlers() {
             List<EventHandlerInvoker> invokers = ((MultiEventHandlerInvoker) getEventHandlerInvoker()).delegates();
-            return ((SimpleEventHandlerInvoker) invokers.get(0))
+            return ((SimpleEventHandlerInvoker) invokers.getFirst())
                     .eventHandlers()
                     .stream()
                     .map(eventHandlingComponent -> {

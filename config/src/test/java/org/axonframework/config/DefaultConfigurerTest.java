@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -93,6 +94,7 @@ import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -263,7 +265,9 @@ class DefaultConfigurerTest {
         config.start();
 
         config.commandGateway().sendAndWait(GenericCommandMessage.asCommandMessage("test"));
-        config.commandGateway().sendAndWait(new GenericCommandMessage<>(new GenericMessage<>("test"), "update"));
+        CommandMessage<String> testCommand =
+                new GenericCommandMessage<>(new GenericMessage<>(dottedName("test.message"), "test"), "update");
+        config.commandGateway().sendAndWait(testCommand);
         assertEquals(1, counter.get());
         assertNotNull(config.repository(StubAggregate.class));
     }
@@ -352,7 +356,9 @@ class DefaultConfigurerTest {
                                                         c -> transactionManager)
                                                 .configureCommandBus(c -> new InterceptingCommandBus(
                                                         new SimpleCommandBus(Runnable::run),
-                                                        List.of(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class))),
+                                                        List.of(new TransactionManagingInterceptor<>(c.getComponent(
+                                                                TransactionManager.class
+                                                        ))),
                                                         Collections.emptyList()))
                                                 .configureAggregate(defaultConfiguration(StubAggregate.class).configureRepository(
                                                         c -> GenericJpaRepository.builder(StubAggregate.class)
@@ -519,14 +525,12 @@ class DefaultConfigurerTest {
         Serializer serializer = TestSerializer.xStreamSerializer();
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
 
-        DomainEventMessage<String> testDomainEvent = new GenericDomainEventMessage<>("StubAggregate",
-                                                                                     "some-aggregate-id",
-                                                                                     0,
-                                                                                     "some-payload");
-        DomainEventData<byte[]> snapshotData = new AbstractSnapshotEventEntry<>(testDomainEvent,
-                                                                                serializer,
-                                                                                byte[].class) {
-        };
+        DomainEventMessage<String> testDomainEvent = new GenericDomainEventMessage<>(
+                "StubAggregate", "some-aggregate-id", 0, dottedName("test.event"), "some-payload"
+        );
+        DomainEventData<byte[]> snapshotData =
+                new AbstractSnapshotEventEntry<>(testDomainEvent, serializer, byte[].class) {
+                };
         DomainEventData<byte[]> domainEventData = new DomainEventEntry(testDomainEvent, serializer);
         // Firstly snapshot data will be retrieved (and filtered), secondly event data.
         doReturn(Stream.of(snapshotData), Collections.singletonList(domainEventData)).when(transactionManager)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -57,8 +59,10 @@ class ConfigurationParameterResolverFactoryTest {
     @Test
     void configurationContainsRequestedParameter() {
         ParameterResolver<?> actual = testSubject.createInstance(method, parameters, 1);
+        Message<String> testMessage = new GenericMessage<>(dottedName("test.message"), "test");
+
         assertNotNull(actual);
-        assertSame(commandBus, actual.resolveParameterValue(new GenericMessage<>("test"), null));
+        assertSame(commandBus, actual.resolveParameterValue(testMessage, null));
 
         verify(configuration).getComponent(CommandBus.class);
     }
