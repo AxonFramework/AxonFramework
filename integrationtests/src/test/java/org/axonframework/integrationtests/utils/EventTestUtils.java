@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 
 import java.time.Instant;
 import java.util.List;
@@ -27,16 +28,18 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+// TODO - Discuss: Perfect candidate to move to a commons test utils module?
 public abstract class EventTestUtils {
 
-    public static final String PAYLOAD = "payload";
+    private static final QualifiedName TYPE = QualifiedName.dottedName("EventTestUtils");
+    private static final String PAYLOAD = "payload";
     public static final String AGGREGATE = "aggregate";
-    private static final String TYPE = "type";
+    private static final String AGGREGATE_TYPE = "aggregateType";
     private static final MetaData METADATA = MetaData.emptyInstance();
 
     public static List<DomainEventMessage<?>> createEvents(int numberOfEvents) {
         return IntStream.range(0, numberOfEvents)
-                        .mapToObj(sequenceNumber -> createEvent(TYPE,
+                        .mapToObj(sequenceNumber -> createEvent(AGGREGATE_TYPE,
                                                                 IdentifierFactory.getInstance().generateIdentifier(),
                                                                 AGGREGATE,
                                                                 sequenceNumber,
@@ -47,12 +50,12 @@ public abstract class EventTestUtils {
 
     public static List<DomainEventMessage<?>> createUUIDEvents(int numberOfEvents) {
         return IntStream.range(0, numberOfEvents).mapToObj(
-                sequenceNumber -> createEvent(TYPE,
-                                              IdentifierFactory.getInstance().generateIdentifier(),
-                                              UUID.randomUUID().toString(),
-                                              sequenceNumber,
-                                              PAYLOAD + sequenceNumber,
-                                              METADATA))
+                                sequenceNumber -> createEvent(AGGREGATE_TYPE,
+                                                              IdentifierFactory.getInstance().generateIdentifier(),
+                                                              UUID.randomUUID().toString(),
+                                                              sequenceNumber,
+                                                              PAYLOAD + sequenceNumber,
+                                                              METADATA))
                         .collect(Collectors.toList());
     }
 
@@ -65,8 +68,11 @@ public abstract class EventTestUtils {
     }
 
     public static DomainEventMessage<String> createEvent(long sequenceNumber, Instant timestamp) {
-        return new GenericDomainEventMessage<>(TYPE, AGGREGATE, sequenceNumber, PAYLOAD, METADATA,
-                                               IdentifierFactory.getInstance().generateIdentifier(), timestamp);
+        return new GenericDomainEventMessage<>(
+                AGGREGATE_TYPE, AGGREGATE, sequenceNumber,
+                IdentifierFactory.getInstance().generateIdentifier(), TYPE,
+                PAYLOAD, METADATA, timestamp
+        );
     }
 
     public static DomainEventMessage<String> createEvent(String aggregateId, long sequenceNumber) {
@@ -74,7 +80,7 @@ public abstract class EventTestUtils {
     }
 
     public static DomainEventMessage<String> createEvent(String aggregateId, long sequenceNumber, String payload) {
-        return createEvent(TYPE,
+        return createEvent(AGGREGATE_TYPE,
                            IdentifierFactory.getInstance().generateIdentifier(),
                            aggregateId,
                            sequenceNumber,
@@ -83,7 +89,7 @@ public abstract class EventTestUtils {
     }
 
     public static DomainEventMessage<String> createEvent(String eventId, String aggregateId, long sequenceNumber) {
-        return createEvent(TYPE, eventId, aggregateId, sequenceNumber, PAYLOAD, METADATA);
+        return createEvent(AGGREGATE_TYPE, eventId, aggregateId, sequenceNumber, PAYLOAD, METADATA);
     }
 
     public static DomainEventMessage<String> createEvent(String type,
@@ -95,9 +101,10 @@ public abstract class EventTestUtils {
         return new GenericDomainEventMessage<>(type,
                                                aggregateId,
                                                sequenceNumber,
+                                               eventId,
+                                               TYPE,
                                                payload,
                                                metaData,
-                                               eventId,
                                                GenericDomainEventMessage.clock.instant());
     }
 

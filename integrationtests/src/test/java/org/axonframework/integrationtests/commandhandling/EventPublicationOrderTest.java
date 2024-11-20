@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -61,8 +62,9 @@ class EventPublicationOrderTest {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void publicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
-        GenericDomainEventMessage<StubAggregateCreatedEvent> event =
-                new GenericDomainEventMessage<>("test", aggregateId, 0, new StubAggregateCreatedEvent(aggregateId));
+        DomainEventMessage<StubAggregateCreatedEvent> event = new GenericDomainEventMessage<>(
+                "test", aggregateId, 0, dottedName("test.event"), new StubAggregateCreatedEvent(aggregateId)
+        );
         when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(event));
         doAnswer(invocation -> Void.class).when(eventStore).publish(isA(EventMessage.class));
 
