@@ -30,20 +30,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class QualifiedNameTest {
 
     @Test
-    void fromClassSplitsTheClassAsExpected() {
+    void classNameSplitsTheClassAsExpected() {
         String expectedNamespace = ClassToGiveNameTo.class.getPackageName();
         String expectedLocalName = ClassToGiveNameTo.class.getSimpleName();
 
-        QualifiedName testSubject = QualifiedName.fromClass(ClassToGiveNameTo.class);
+        QualifiedName testSubject = QualifiedName.className(ClassToGiveNameTo.class);
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
     }
 
     @Test
-    void fromClassThrowsAxonConfigurationExceptionForNullClass() {
+    void classNameThrowsAxonConfigurationExceptionForNullClass() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> QualifiedName.fromClass(null));
+        assertThrows(AxonConfigurationException.class, () -> QualifiedName.className(null));
     }
 
     @Test
@@ -51,7 +51,7 @@ class QualifiedNameTest {
         String expectedNamespace = "my.context";
         String expectedLocalName = "BusinessOperation";
 
-        QualifiedName testSubject = QualifiedName.fromDottedName("my.context.BusinessOperation");
+        QualifiedName testSubject = QualifiedName.dottedName("my.context.BusinessOperation");
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
@@ -60,29 +60,94 @@ class QualifiedNameTest {
     @Test
     void dottedNameThrowsAxonConfigurationExceptionForNullDottedName() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> QualifiedName.fromDottedName(null));
+        assertThrows(AxonConfigurationException.class, () -> QualifiedName.dottedName(null));
     }
 
     @Test
     void dottedNameThrowsAxonConfigurationExceptionForEmptyDottedName() {
-        assertThrows(AxonConfigurationException.class, () -> QualifiedName.fromDottedName(""));
+        assertThrows(AxonConfigurationException.class, () -> QualifiedName.dottedName(""));
     }
 
     @Test
     void dottedNameThrowsAxonConfigurationExceptionForEmptyLocalNamePart() {
-        assertThrows(AxonConfigurationException.class, () -> QualifiedName.fromDottedName("my.context."));
+        assertThrows(AxonConfigurationException.class, () -> QualifiedName.dottedName("my.context."));
+    }
+
+    @Test
+    void simpleStringNameSplitsLocalNameOnlyQualifiedTypeAsExpected() {
+        String expectedLocalName = "localName";
+
+        QualifiedName testSubject = QualifiedName.simpleStringName(expectedLocalName);
+
+        assertEquals("", testSubject.namespace());
+        assertEquals(expectedLocalName, testSubject.localName());
+        assertEquals("", testSubject.revision());
+    }
+
+    @Test
+    void simpleStringNameSplitsLocalNameAndNamespaceQualifiedTypeAsExpected() {
+        String expectedNamespace = "namespace";
+        String expectedLocalName = "localName";
+
+        String testSimpleString = expectedLocalName + " @[" + expectedNamespace + "]";
+
+        QualifiedName testSubject = QualifiedName.simpleStringName(testSimpleString);
+
+        assertEquals(expectedNamespace, testSubject.namespace());
+        assertEquals(expectedLocalName, testSubject.localName());
+        assertEquals("", testSubject.revision());
+    }
+
+    @Test
+    void simpleStringNameSplitsLocalNameAndRevisionQualifiedTypeAsExpected() {
+        String expectedLocalName = "localName";
+        String expectedRevision = "revision";
+
+        String testSimpleString = expectedLocalName + " #[" + expectedRevision + "]";
+
+        QualifiedName testSubject = QualifiedName.simpleStringName(testSimpleString);
+
+        assertEquals("", testSubject.namespace());
+        assertEquals(expectedLocalName, testSubject.localName());
+        assertEquals(expectedRevision, testSubject.revision());
+    }
+
+    @Test
+    void simpleStringNameSplitsFullQualifiedTypeAsExpected() {
+        String expectedNamespace = "namespace";
+        String expectedLocalName = "localName";
+        String expectedRevision = "revision";
+
+        String testSimpleString = expectedLocalName + " @[" + expectedNamespace + "] #[" + expectedRevision + "]";
+
+        QualifiedName testSubject = QualifiedName.simpleStringName(testSimpleString);
+
+        assertEquals(expectedNamespace, testSubject.namespace());
+        assertEquals(expectedLocalName, testSubject.localName());
+        assertEquals(expectedRevision, testSubject.revision());
+    }
+
+    @Test
+    void simpleStringNameThrowsAxonConfigurationExceptionForNullDottedName() {
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> QualifiedName.simpleStringName(null));
+    }
+
+    @Test
+    void simpleStringNameThrowsAxonConfigurationExceptionForEmptyDottedName() {
+        assertThrows(AxonConfigurationException.class, () -> QualifiedName.simpleStringName(""));
     }
 
     @Test
     void toSimpleStringReturnsLocalName() {
-        QualifiedName testSubject = QualifiedName.fromDottedName("BusinessOperation");
+        QualifiedName testSubject = QualifiedName.dottedName("BusinessOperation");
 
         assertEquals("BusinessOperation", testSubject.toSimpleString());
     }
 
     @Test
     void toSimpleStringReturnsLocalNameAtNamespace() {
-        QualifiedName testSubject = QualifiedName.fromDottedName("my.context.BusinessOperation");
+        QualifiedName testSubject = QualifiedName.dottedName("my.context.BusinessOperation");
 
         assertEquals("BusinessOperation @(my.context)", testSubject.toSimpleString());
     }
