@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,34 +18,35 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FilteringDomainEventStreamTest {
 
-    private DomainEventMessage event1;
-    private DomainEventMessage event2;
-    private DomainEventMessage event3;
+    private DomainEventMessage<String> event1;
+    private DomainEventMessage<String> event2;
+    private DomainEventMessage<String> event3;
 
     @BeforeEach
     void setUp() throws Exception {
-        event1 = new GenericDomainEventMessage<>("type", "1", (long) 0,
-                                                 "Create type 1", MetaData.emptyInstance());
-        event2 = new GenericDomainEventMessage<>("type2", "1", (long) 0,
-                                                 "Create type 2", MetaData.emptyInstance());
-        event3 = new GenericDomainEventMessage<>("type2", "1", (long) 1,
-                                                 "Change type 2", MetaData.emptyInstance());
+        event1 = new GenericDomainEventMessage<>("type", "1", 0L,
+                                                 dottedName("test.event"), "Create type 1");
+        event2 = new GenericDomainEventMessage<>("type2", "1", 0L,
+                                                 dottedName("test.event"), "Create type 2");
+        event3 = new GenericDomainEventMessage<>("type2", "1", 1L,
+                                                 dottedName("test.event"), "Change type 2");
     }
 
     @Test
     void forEachRemainingType1() {
-        List<DomainEventMessage> expectedMessages = Arrays.asList(event1);
+        List<DomainEventMessage<String>> expectedMessages = Collections.singletonList(event1);
 
         DomainEventStream concat = new FilteringDomainEventStream(
                 DomainEventStream.of(event1, event2, event3), // Initial stream - add all elements
@@ -57,10 +58,10 @@ class FilteringDomainEventStreamTest {
 
         assertEquals(expectedMessages, actualMessages);
     }
-    
+
     @Test
     void forEachRemainingType2() {
-        List<DomainEventMessage> expectedMessages = Arrays.asList(event2, event3);
+        List<DomainEventMessage<String>> expectedMessages = Arrays.asList(event2, event3);
 
         DomainEventStream concat = new FilteringDomainEventStream(
                 DomainEventStream.of(event1, event2, event3), // Initial stream - add all elements

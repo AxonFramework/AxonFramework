@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -26,17 +27,17 @@ import java.time.Instant;
 import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.mockito.Mockito.*;
 
 class FilteringEventStorageEngineTest {
 
-    private Predicate<EventMessage<?>> filter;
     private EventStorageEngine mockStorage;
     private FilteringEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() {
-        filter = m -> m.getPayload().toString().contains("accept");
+        Predicate<EventMessage<?>> filter = m -> m.getPayload().toString().contains("accept");
         mockStorage = mock(EventStorageEngine.class);
         testSubject = new FilteringEventStorageEngine(mockStorage, filter);
     }
@@ -65,7 +66,8 @@ class FilteringEventStorageEngineTest {
 
     @Test
     void storeSnapshotDelegated() {
-        GenericDomainEventMessage<Object> snapshot = new GenericDomainEventMessage<>("type", "id", 0, "fail");
+        DomainEventMessage<Object> snapshot =
+                new GenericDomainEventMessage<>("type", "id", 0, dottedName("test.snapshot"), "fail");
         testSubject.storeSnapshot(snapshot);
 
         verify(mockStorage).storeSnapshot(snapshot);

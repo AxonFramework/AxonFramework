@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,15 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the specifics around a {@link BatchingEventStorageEngine}.
@@ -44,7 +44,7 @@ public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStor
     protected void loadLargeAmountOfEventsFromAggregateStream() {
         int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
-        testSubject.appendEvents(new GenericEventMessage<>("test"));
+        testSubject.appendEvents(new GenericEventMessage<>(dottedName("test.event"), "test"));
         assertEquals(eventCount, testSubject.readEvents(AGGREGATE).asStream().count());
         Optional<? extends DomainEventMessage<?>> resultEventMessage =
                 testSubject.readEvents(AGGREGATE).asStream().reduce((a, b) -> b);
@@ -56,7 +56,7 @@ public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStor
     void loadLargeAmountFromOpenStream() {
         int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
-        GenericEventMessage<String> last = new GenericEventMessage<>("test");
+        GenericEventMessage<String> last = new GenericEventMessage<>(dottedName("test.event"), "test");
         testSubject.appendEvents(last);
 
         Optional<? extends EventMessage<?>> resultEventMessage =
