@@ -19,6 +19,7 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -35,7 +36,7 @@ import static org.axonframework.common.BuilderUtils.assertNonEmpty;
  */
 record SimpleQualifiedName(@Nullable String namespace,
                            @Nonnull String localName,
-                           @Nullable String revision) implements QualifiedName {
+                           @Nullable String revision) implements QualifiedName, Serializable {
 
     SimpleQualifiedName(String namespace, String localName) {
         this(namespace, localName, null);

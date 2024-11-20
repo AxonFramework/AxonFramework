@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -56,18 +55,17 @@ public interface IndexedEventMessage<P> extends EventMessage<P> {
      */
     static <P> IndexedEventMessage<P> asIndexedEvent(@Nonnull EventMessage<P> event,
                                                      @Nonnull Set<Index> indices) {
-        // TODO #3129 - MessageStream allows Pair<TrackingToken, EventMessage> type - Remove this if-branch.
-        if (event instanceof TrackedEventMessage<P> trackedEvent) {
-            return new GenericTrackedAndIndexedEventMessage<>(event, trackedEvent.trackingToken(), indices);
-        }
-        if (event instanceof IndexedEventMessage<P> taggedEvent) {
-            return taggedEvent.updateIndices(oldTags -> {
-                HashSet<Index> mutableIndices = new HashSet<>(oldTags);
-                mutableIndices.addAll(indices);
-                return new HashSet<>(mutableIndices);
-            });
-        }
-        return new GenericIndexedEventMessage<>(event, indices);
+        return event instanceof IndexedEventMessage<P> taggedEvent
+                ? taggedEvent.updateIndices(mergeWith(indices))
+                : new GenericIndexedEventMessage<>(event, indices);
+    }
+
+    private static Function<Set<Index>, Set<Index>> mergeWith(Set<Index> indices) {
+        return oldIndices -> {
+            HashSet<Index> mutableIndices = new HashSet<>(oldIndices);
+            mutableIndices.addAll(indices);
+            return new HashSet<>(mutableIndices);
+        };
     }
 
     /**
