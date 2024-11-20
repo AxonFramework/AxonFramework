@@ -26,22 +26,24 @@ import org.junit.jupiter.api.*;
 import java.lang.reflect.Field;
 import java.util.stream.Stream;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ForwardMatchingInstancesTest {
 
-    EntityModel entityModel = mock();
+    @SuppressWarnings("unchecked")
+    private final EntityModel<Object> entityModel = mock();
 
-    ForwardMatchingInstances<Message<?>> testSubject;
+    private ForwardMatchingInstances<Message<?>> testSubject;
 
     @AggregateMember
-    Object stubEntityWithImplicitRoutingKey = null;
+    private final Object stubEntityWithImplicitRoutingKey = null;
 
     @AggregateMember(routingKey = "explicitRoutingKey")
-    Object stubEntityWithExplicitRoutingKey = null;
+    private final Object stubEntityWithExplicitRoutingKey = null;
 
-    MockPropertyAccessStrategy mockAccessStrategy = mock();
+    private final MockPropertyAccessStrategy mockAccessStrategy = mock();
 
     @BeforeEach
     void setUp() {
@@ -64,7 +66,9 @@ class ForwardMatchingInstancesTest {
         verify(entityModel).routingKey();
 
         String candidate1 = "Candidate1";
-        Stream<String> result = testSubject.filterCandidates(new GenericMessage<>("Mock"), Stream.of(candidate1));
+        Message<String> testMessage = new GenericMessage<>(dottedName("test.message"), "Mock");
+
+        Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
         verify(mockAccessStrategy).propertyFor(String.class, "implicitRoutingKey");
         assertEquals(0, result.count());
@@ -79,7 +83,9 @@ class ForwardMatchingInstancesTest {
         verify(entityModel).routingKey();
 
         String candidate1 = "Candidate1";
-        Stream<String> result = testSubject.filterCandidates(new GenericMessage<>("Mock"), Stream.of(candidate1));
+        Message<String> testMessage = new GenericMessage<>(dottedName("test.message"), "Mock");
+
+        Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
         verify(mockAccessStrategy).propertyFor(String.class, "explicitRoutingKey");
         assertEquals(0, result.count());
@@ -99,7 +105,9 @@ class ForwardMatchingInstancesTest {
 
         String candidate1 = "Candidate1";
         String payload = "Mock";
-        Stream<String> result = testSubject.filterCandidates(new GenericMessage<>(payload), Stream.of(candidate1));
+        Message<String> testMessage = new GenericMessage<>(dottedName("test.message"), payload);
+
+        Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
         verify(mockAccessStrategy).propertyFor(String.class, "explicitRoutingKey");
         verify(mockProperty).getValue(same(payload));
@@ -120,7 +128,9 @@ class ForwardMatchingInstancesTest {
 
         String candidate1 = "Candidate1";
         String payload = "Mock";
-        Stream<String> result = testSubject.filterCandidates(new GenericMessage<>(payload), Stream.of(candidate1));
+        Message<String> testMessage = new GenericMessage<>(dottedName("test.message"), payload);
+
+        Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
         verify(mockAccessStrategy).propertyFor(String.class, "explicitRoutingKey");
         verify(mockProperty).getValue(same(payload));
@@ -142,8 +152,11 @@ class ForwardMatchingInstancesTest {
         String candidate1 = "Candidate1";
         String payload1 = "Mock1";
         String payload2 = "Mock2";
-        Stream<String> result1 = testSubject.filterCandidates(new GenericMessage<>(payload1), Stream.of(candidate1));
-        Stream<String> result2 = testSubject.filterCandidates(new GenericMessage<>(payload2), Stream.of(candidate1));
+        Message<String> testMessageOne = new GenericMessage<>(dottedName("test.message"), payload1);
+        Message<String> testMessageTwo = new GenericMessage<>(dottedName("test.message"), payload2);
+
+        Stream<String> result1 = testSubject.filterCandidates(testMessageOne, Stream.of(candidate1));
+        Stream<String> result2 = testSubject.filterCandidates(testMessageTwo, Stream.of(candidate1));
 
         // the access strategy is only consulted the first time or any payload
         verify(mockAccessStrategy, times(1)).propertyFor(String.class, "explicitRoutingKey");
@@ -171,8 +184,11 @@ class ForwardMatchingInstancesTest {
         String candidate1 = "Candidate1";
         String payload1 = "Mock1";
         Long payload2 = 2L;
-        Stream<String> result1 = testSubject.filterCandidates(new GenericMessage<>(payload1), Stream.of(candidate1));
-        Stream<String> result2 = testSubject.filterCandidates(new GenericMessage<>(payload2), Stream.of(candidate1));
+        Message<String> testMessageOne = new GenericMessage<>(dottedName("test.message"), payload1);
+        Message<Long> testMessageTwo = new GenericMessage<>(dottedName("test.message"), payload2);
+
+        Stream<String> result1 = testSubject.filterCandidates(testMessageOne, Stream.of(candidate1));
+        Stream<String> result2 = testSubject.filterCandidates(testMessageTwo, Stream.of(candidate1));
 
         // the access strategy is only consulted the first time or any payload
         verify(mockAccessStrategy, times(1)).propertyFor(String.class, "explicitRoutingKey");
@@ -184,7 +200,7 @@ class ForwardMatchingInstancesTest {
     }
 
 
-    private abstract class MockPropertyAccessStrategy extends PropertyAccessStrategy {
+    private abstract static class MockPropertyAccessStrategy extends PropertyAccessStrategy {
 
 
         @Override
