@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
@@ -47,40 +48,45 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
 
     private static final String AXON_MESSAGE_PREFIX = "axon-message-";
     private static final String MESSAGE_ID = AXON_MESSAGE_PREFIX + "id";
+    private static final String MESSAGE_TYPE = AXON_MESSAGE_PREFIX + "type";
     private static final String AGGREGATE_ID = AXON_MESSAGE_PREFIX + "aggregate-id";
     private static final String AGGREGATE_SEQ = AXON_MESSAGE_PREFIX + "aggregate-seq";
     private static final String AGGREGATE_TYPE = AXON_MESSAGE_PREFIX + "aggregate-type";
 
     @Override
     public <T> Message<T> convertToOutboundMessage(EventMessage<T> event) {
-        Map<String, Object> headers = new HashMap<>();
-        event.getMetaData().forEach(headers::put);
+        Map<String, Object> headers = new HashMap<>(event.getMetaData());
         headers.put(MESSAGE_ID, event.getIdentifier());
+        headers.put(MESSAGE_TYPE, event.type().toSimpleString());
         if (event instanceof DomainEventMessage) {
-            headers.put(AGGREGATE_ID, ((DomainEventMessage) event).getAggregateIdentifier());
-            headers.put(AGGREGATE_SEQ, ((DomainEventMessage) event).getSequenceNumber());
-            headers.put(AGGREGATE_TYPE, ((DomainEventMessage) event).getType());
+            headers.put(AGGREGATE_ID, ((DomainEventMessage<?>) event).getAggregateIdentifier());
+            headers.put(AGGREGATE_SEQ, ((DomainEventMessage<?>) event).getSequenceNumber());
+            headers.put(AGGREGATE_TYPE, ((DomainEventMessage<?>) event).getType());
         }
-        return new GenericMessage<>(event.getPayload(), new SettableTimestampMessageHeaders(headers, event.getTimestamp().toEpochMilli()));
+        return new GenericMessage<>(event.getPayload(),
+                                    new SettableTimestampMessageHeaders(headers, event.getTimestamp().toEpochMilli()));
     }
 
     @Override
     public <T> EventMessage<T> convertFromInboundMessage(Message<T> message) {
         MessageHeaders headers = message.getHeaders();
         Map<String, ?> metaData = headers.entrySet()
-                .stream()
-                .filter(entry -> !entry.getKey().startsWith(AXON_MESSAGE_PREFIX))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                                         .stream()
+                                         .filter(entry -> !entry.getKey().startsWith(AXON_MESSAGE_PREFIX))
+                                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         String messageId = Objects.toString(headers.get(MESSAGE_ID));
+        QualifiedName type = QualifiedName.simpleStringName(Objects.toString(headers.get(MESSAGE_TYPE)));
         Long timestamp = headers.getTimestamp();
 
         org.axonframework.messaging.GenericMessage<T> genericMessage
-                = new org.axonframework.messaging.GenericMessage<>(messageId, message.getPayload(), metaData);
+                = new org.axonframework.messaging.GenericMessage<>(messageId, type, message.getPayload(), metaData);
         if (headers.containsKey(AGGREGATE_ID)) {
             return new GenericDomainEventMessage<>(Objects.toString(headers.get(AGGREGATE_TYPE)),
                                                    Objects.toString(headers.get(AGGREGATE_ID)),
-                                                   NumberUtils.convertNumberToTargetClass(headers.get(AGGREGATE_SEQ, Number.class), Long.class),
+                                                   NumberUtils.convertNumberToTargetClass(
+                                                           headers.get(AGGREGATE_SEQ, Number.class), Long.class
+                                                   ),
                                                    genericMessage, () -> Instant.ofEpochMilli(timestamp));
         } else {
             return new GenericEventMessage<>(genericMessage, () -> Instant.ofEpochMilli(timestamp));
@@ -88,6 +94,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
     }
 
     private static class SettableTimestampMessageHeaders extends MessageHeaders {
+
         protected SettableTimestampMessageHeaders(Map<String, Object> headers, Long timestamp) {
             super(headers, null, timestamp);
         }
