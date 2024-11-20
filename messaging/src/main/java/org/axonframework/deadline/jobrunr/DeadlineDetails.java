@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package org.axonframework.deadline.jobrunr;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Pojo that contains the information about a {@link org.jobrunr.jobs.Job}, will be serialized and deserialized using
@@ -38,6 +38,7 @@ import javax.annotation.Nullable;
 public class DeadlineDetails {
 
     private String deadlineName;
+    private String type;
     private String scopeDescriptor;
     private String scopeDescriptorClass;
     private String payload;
@@ -54,6 +55,8 @@ public class DeadlineDetails {
      * {@link org.axonframework.deadline.DeadlineMessage}.
      *
      * @param deadlineName         The {@link String} with the name of the deadline.
+     * @param type                 The {@link DeadlineMessage#type()} of the deadline as a
+     *                             {@link QualifiedName#toSimpleString()}.
      * @param scopeDescriptor      The {@link String} which tells what the scope is of the deadline.
      * @param scopeDescriptorClass The {@link String} which tells what the class of the scope descriptor is.
      * @param payload              The {@link String} with the payload. This can be null.
@@ -62,10 +65,16 @@ public class DeadlineDetails {
      * @param metaData             The {@link String} containing the metadata about the deadline.
      */
     @SuppressWarnings("squid:S107")
-    public DeadlineDetails(@Nonnull String deadlineName, @Nonnull String scopeDescriptor,
-                           @Nonnull String scopeDescriptorClass, @Nullable String payload,
-                           @Nullable String payloadClass, @Nullable String payloadRevision, @Nonnull String metaData) {
+    DeadlineDetails(@Nonnull String deadlineName,
+                    @Nonnull String type,
+                    @Nonnull String scopeDescriptor,
+                    @Nonnull String scopeDescriptorClass,
+                    @Nullable String payload,
+                    @Nullable String payloadClass,
+                    @Nullable String payloadRevision,
+                    @Nonnull String metaData) {
         this.deadlineName = deadlineName;
+        this.type = type;
         this.scopeDescriptor = scopeDescriptor;
         this.scopeDescriptorClass = scopeDescriptorClass;
         this.payload = payload;
@@ -88,21 +97,21 @@ public class DeadlineDetails {
      * @return The serialized {@link String} representation of the details.
      */
     @SuppressWarnings("rawtypes")
-    static String serialized(@Nonnull String deadlineName, @Nonnull ScopeDescriptor descriptor,
+    static String serialized(@Nonnull String deadlineName,
+                             @Nonnull ScopeDescriptor descriptor,
                              @Nonnull DeadlineMessage message,
                              @Nonnull Serializer serializer) {
         SerializedObject<String> serializedDescriptor = serializer.serialize(descriptor, String.class);
         SerializedObject<String> serializedPayload = serializer.serialize(message.getPayload(), String.class);
         SerializedObject<String> serializedMetaData = serializer.serialize(message.getMetaData(), String.class);
-        DeadlineDetails deadlineDetails = new DeadlineDetails(
-                deadlineName,
-                serializedDescriptor.getData(),
-                serializedDescriptor.getType().getName(),
-                serializedPayload.getData(),
-                serializedPayload.getType().getName(),
-                serializedPayload.getType().getRevision(),
-                serializedMetaData.getData()
-        );
+        DeadlineDetails deadlineDetails = new DeadlineDetails(deadlineName,
+                                                              message.type().toSimpleString(),
+                                                              serializedDescriptor.getData(),
+                                                              serializedDescriptor.getType().getName(),
+                                                              serializedPayload.getData(),
+                                                              serializedPayload.getType().getName(),
+                                                              serializedPayload.getType().getRevision(),
+                                                              serializedMetaData.getData());
         SerializedObject<String> serializedDeadlineDetails = serializer.serialize(deadlineDetails, String.class);
         return serializedDeadlineDetails.getData();
     }
@@ -114,6 +123,15 @@ public class DeadlineDetails {
      */
     public String getDeadlineName() {
         return deadlineName;
+    }
+
+    /**
+     * Returns the {@link DeadlineMessage#type()} of this deadline as a {@link String}.
+     *
+     * @return The {@link DeadlineMessage#type()} of this deadline as a {@link String}.
+     */
+    public String getType() {
+        return type;
     }
 
     /**
@@ -178,27 +196,21 @@ public class DeadlineDetails {
      */
     @SuppressWarnings("rawtypes")
     public GenericDeadlineMessage asDeadLineMessage(Serializer serializer) {
-        return new GenericDeadlineMessage<>(
-                deadlineName,
-                getDeserializedPayload(serializer),
-                getDeserializedMetaData(serializer));
+        return new GenericDeadlineMessage<>(deadlineName,
+                                            QualifiedName.simpleStringName(type),
+                                            getDeserializedPayload(serializer),
+                                            getDeserializedMetaData(serializer));
     }
 
     private Object getDeserializedPayload(Serializer serializer) {
-        SimpleSerializedObject<String> serializedDeadlinePayload = new SimpleSerializedObject<>(
-                payload,
-                String.class,
-                payloadClass,
-                payloadRevision
-        );
+        SimpleSerializedObject<String> serializedDeadlinePayload =
+                new SimpleSerializedObject<>(payload, String.class, payloadClass, payloadRevision);
         return serializer.deserialize(serializedDeadlinePayload);
     }
 
     private MetaData getDeserializedMetaData(Serializer serializer) {
-
-        SimpleSerializedObject<String> serializedDeadlineMetaData = new SimpleSerializedObject<>(
-                metaData, String.class, MetaData.class.getName(), null
-        );
+        SimpleSerializedObject<String> serializedDeadlineMetaData =
+                new SimpleSerializedObject<>(metaData, String.class, MetaData.class.getName(), null);
         return serializer.deserialize(serializedDeadlineMetaData);
     }
 
@@ -209,9 +221,8 @@ public class DeadlineDetails {
      * @return the {@link ScopeDescriptor} that is serialized using the supplied {@link Serializer}.
      */
     public ScopeDescriptor getDeserializedScopeDescriptor(Serializer serializer) {
-        SimpleSerializedObject<String> serializedDeadlineScope = new SimpleSerializedObject<>(
-                scopeDescriptor, String.class, scopeDescriptorClass, null
-        );
+        SimpleSerializedObject<String> serializedDeadlineScope =
+                new SimpleSerializedObject<>(scopeDescriptor, String.class, scopeDescriptorClass, null);
         return serializer.deserialize(serializedDeadlineScope);
     }
 }
