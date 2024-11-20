@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.MetaData;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.spring.config.annotation.StubAggregate;
 import org.junit.jupiter.api.*;
@@ -36,9 +35,12 @@ import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link SpringAggregateSnapshotterFactoryBean}.
+ *
  * @author Allard Buijze
  * @author Nakul Mishra
  */
@@ -64,7 +66,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
         testSubject.setExecutor(executor);
         when(mockApplicationContext.getBeansOfType(AggregateFactory.class)).thenReturn(
                 Collections.singletonMap("myFactory",
-                                         new AbstractAggregateFactory<StubAggregate>(StubAggregate.class) {
+                                         new AbstractAggregateFactory<>(StubAggregate.class) {
                                              @Override
                                              public StubAggregate doCreateAggregate(String aggregateIdentifier,
                                                                                     DomainEventMessage firstEvent) {
@@ -77,10 +79,12 @@ class SpringAggregateSnapshotterFactoryBeanTest {
         aggregateIdentifier = UUID.randomUUID().toString();
 
         String type = "testAggregate";
-        DomainEventMessage event1 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 0L, "Mock contents",
-                                                                    MetaData.emptyInstance());
-        DomainEventMessage event2 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 1L, "Mock contents",
-                                                                    MetaData.emptyInstance());
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                type, aggregateIdentifier, 0L, dottedName("test.event"), "Mock contents"
+        );
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+                type, aggregateIdentifier, 1L, dottedName("test.event"), "Mock contents"
+        );
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(event1, event2));
     }
 
@@ -166,7 +170,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
         verify(mockTransactionManager).rollback(existingTransaction);
     }
 
-    private DomainEventMessage eventSequence(final long sequenceNumber) {
+    private DomainEventMessage<?> eventSequence(final long sequenceNumber) {
         return argThat(o -> o != null &&
                 o.getSequenceNumber() == sequenceNumber);
     }

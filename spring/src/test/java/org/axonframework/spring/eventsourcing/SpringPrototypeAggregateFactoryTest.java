@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -63,7 +64,7 @@ class SpringPrototypeAggregateFactoryTest {
     @Test
     void createNewAggregateInstance() {
         GenericDomainEventMessage<String> domainEvent = new GenericDomainEventMessage<>(
-                "SpringWiredAggregate", "id2", 0, "FirstEvent"
+                "SpringWiredAggregate", "id2", 0, dottedName("test.event"), "FirstEvent"
         );
         SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2", domainEvent);
 
@@ -73,7 +74,7 @@ class SpringPrototypeAggregateFactoryTest {
     @Test
     void processSnapshotAggregateInstance() {
         DomainEventMessage<SpringWiredAggregate> snapshotEvent = new GenericDomainEventMessage<>(
-                "SpringWiredAggregate", "id2", 5, new SpringWiredAggregate()
+                "SpringWiredAggregate", "id2", 5, dottedName("test.event"), new SpringWiredAggregate()
         );
         SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2", snapshotEvent);
 
