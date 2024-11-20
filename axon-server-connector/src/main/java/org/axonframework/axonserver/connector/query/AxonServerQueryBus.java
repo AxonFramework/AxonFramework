@@ -375,9 +375,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                       R newPayload,
                                                       Class<R> expectedPayloadType) {
         GenericMessage<R> delegate = new GenericMessage<>(original.getIdentifier(),
-                                                          expectedPayloadType,
+                                                          original.type(),
                                                           newPayload,
-                                                          original.getMetaData());
+                                                          original.getMetaData(),
+                                                          expectedPayloadType);
         return new GenericQueryResponseMessage<>(delegate);
     }
 
@@ -410,7 +411,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
             AtomicBoolean closed = new AtomicBoolean(false);
             Runnable closeHandler = () -> {
-                if(closed.compareAndSet(false, true)) {
+                if (closed.compareAndSet(false, true)) {
                     queryInTransit.end();
                     span.end();
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
@@ -29,14 +31,13 @@ import org.axonframework.serialization.Serializer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
 
 /**
  * Wrapper that allows clients to access a gRPC {@link QueryUpdate} as a {@link SubscriptionQueryUpdateMessage}.
  *
- * @param <U> a generic specifying the type of the updates contained in the {@link SubscriptionQueryUpdateMessage}
+ * @param <U> A generic specifying the type of the updates contained in the {@link SubscriptionQueryUpdateMessage}.
  * @author Sara Pellegrini
- * @since 4.0
+ * @since 4.0.0
  */
 class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<U> {
 
@@ -46,12 +47,12 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     private final Supplier<MetaData> metaDataSupplier;
 
     /**
-     * Instantiate a {@link GrpcBackedQueryUpdateMessage} with the given {@code queryUpdate}, using the provided {@code
-     * serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     * Instantiate a {@link GrpcBackedQueryUpdateMessage} with the given {@code queryUpdate}, using the provided
+     * {@code serializer} to be able to retrieve the payload and {@link MetaData} from it.
      *
-     * @param queryUpdate a {@link QueryUpdate} which is being wrapped as a {@link SubscriptionQueryUpdateMessage}
-     * @param serializer  a {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
-     *                    {@code queryUpdate}
+     * @param queryUpdate A {@link QueryUpdate} which is being wrapped as a {@link SubscriptionQueryUpdateMessage}.
+     * @param serializer  A {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
+     *                    {@code queryUpdate}.
      */
     public GrpcBackedQueryUpdateMessage(QueryUpdate queryUpdate, Serializer serializer) {
         this.queryUpdate = queryUpdate;
@@ -81,6 +82,13 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     @Override
     public String getIdentifier() {
         return queryUpdate.getMessageIdentifier();
+    }
+
+    @Nonnull
+    @Override
+    public QualifiedName type() {
+        // TODO #3085 - Do we use the payload#type, change that protocol, or push the QualifiedName into the metadata?
+        return QualifiedName.className(serializedPayload.getType());
     }
 
     @Override

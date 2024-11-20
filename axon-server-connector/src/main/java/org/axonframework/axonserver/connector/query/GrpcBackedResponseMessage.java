@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.query.QueryResponse;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedType;
@@ -30,14 +32,13 @@ import org.axonframework.serialization.Serializer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
 
 /**
  * Wrapper that allows clients to access a gRPC {@link QueryResponse} as a {@link QueryResponseMessage}.
  *
- * @param <R> a generic specifying the type of the {@link QueryResponseMessage}
+ * @param <R> A generic specifying the type of the {@link QueryResponseMessage}.
  * @author Marc Gathier
- * @since 4.0
+ * @since 4.0.0
  */
 public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
@@ -47,12 +48,12 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     private final Supplier<MetaData> metaDataSupplier;
 
     /**
-     * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryResponse}, using the provided {@link
-     * Serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryResponse}, using the provided
+     * {@link Serializer} to be able to retrieve the payload and {@link MetaData} from it.
      *
-     * @param queryResponse the {@link QueryResponse} which is being wrapped as a {@link QueryResponseMessage}
-     * @param serializer    the {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
-     *                      {@code queryResponse}
+     * @param queryResponse The {@link QueryResponse} which is being wrapped as a {@link QueryResponseMessage}.
+     * @param serializer    The {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
+     *                      {@code queryResponse}.
      */
     public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer serializer) {
         this.queryResponse = queryResponse;
@@ -81,6 +82,13 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     @Override
     public String getIdentifier() {
         return queryResponse.getMessageIdentifier();
+    }
+
+    @Nonnull
+    @Override
+    public QualifiedName type() {
+        // TODO #3085 - Do we use the payload#type, change that protocol, or push the QualifiedName into the metadata?
+        return QualifiedName.className(serializedPayload.getType());
     }
 
     @Override
