@@ -46,6 +46,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
@@ -402,7 +403,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     type,
                     aggregateIdentifier,
                     sequenceNumber++,
-                    new GenericMessage<>(payload, metaData),
+                    new GenericMessage<>(QualifiedName.className(payload.getClass()), payload, metaData),
                     deadlineManager.getCurrentDateTime()
             );
             this.givenEvents.add(eventMessage);
@@ -1037,9 +1038,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             givenEvents.clear();
             for (DomainEventMessage<?> oldEvent : oldEvents) {
                 if (oldEvent.getAggregateIdentifier() == null) {
-                    givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getType(), aggregateIdentifier,
-                                                                    oldEvent.getSequenceNumber(), oldEvent.getPayload(),
-                                                                    oldEvent.getMetaData(), oldEvent.getIdentifier(),
+                    givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getType(),
+                                                                    aggregateIdentifier,
+                                                                    oldEvent.getSequenceNumber(),
+                                                                    oldEvent.getIdentifier(),
+                                                                    oldEvent.type(),
+                                                                    oldEvent.getPayload(),
+                                                                    oldEvent.getMetaData(),
                                                                     oldEvent.getTimestamp()));
                 } else {
                     givenEvents.add(oldEvent);
@@ -1104,7 +1109,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public Aggregate<R> newInstance(@Nonnull Callable<R> factoryMethod) throws Exception {
-            AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType, getParameterResolverFactory(), getHandlerDefinition());
+            AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(
+                    aggregateType, getParameterResolverFactory(), getHandlerDefinition()
+            );
             return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider);
         }
 
