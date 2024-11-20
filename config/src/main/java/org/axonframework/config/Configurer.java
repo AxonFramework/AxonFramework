@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @see DefaultConfigurer
  * @since 3.0
- */
+ */ // TODO keep LifecycleOperations - discuss
 public interface Configurer extends LifecycleOperations {
 
     /**
@@ -63,7 +63,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param upcasterBuilder The function that returns an EventUpcaster based on the configuration
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO move to handling specific components or as convertor specific configuration component
     Configurer registerEventUpcaster(@Nonnull Function<Configuration, EventUpcaster> upcasterBuilder);
 
     /**
@@ -74,7 +74,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param messageMonitorFactoryBuilder The MessageMonitor builder function
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO PERHAPS move to handling specific components
     Configurer configureMessageMonitor(
             @Nonnull Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryBuilder);
 
@@ -97,7 +97,7 @@ public interface Configurer extends LifecycleOperations {
      * @param componentType         The declared type of the component
      * @param messageMonitorBuilder The builder function to use
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO PERHAPS move to handling specific components
     default Configurer configureMessageMonitor(@Nonnull Class<?> componentType,
                                                @Nonnull Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return configureMessageMonitor(componentType,
@@ -122,7 +122,7 @@ public interface Configurer extends LifecycleOperations {
      * @param componentType         The declared type of the component
      * @param messageMonitorFactory The factory to use
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO PERHAPS move to handling specific components
     Configurer configureMessageMonitor(@Nonnull Class<?> componentType,
                                        @Nonnull MessageMonitorFactory messageMonitorFactory);
 
@@ -145,7 +145,7 @@ public interface Configurer extends LifecycleOperations {
      * @param componentName         The name of the component
      * @param messageMonitorBuilder The builder function to use
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO PERHAPS move to handling specific components
     default Configurer configureMessageMonitor(@Nonnull Class<?> componentType, @Nonnull String componentName,
                                                @Nonnull Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return configureMessageMonitor(componentType,
@@ -172,7 +172,7 @@ public interface Configurer extends LifecycleOperations {
      * @param componentName         The name of the component
      * @param messageMonitorFactory The factory to use
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO PERHAPS move to handling specific components
     Configurer configureMessageMonitor(@Nonnull Class<?> componentType, @Nonnull String componentName,
                                        @Nonnull MessageMonitorFactory messageMonitorFactory);
 
@@ -183,7 +183,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param correlationDataProviderBuilder the builder function returning the CorrelationDataProvider list
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO not sure what to do with this...
     Configurer configureCorrelationDataProviders(
             @Nonnull Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder);
 
@@ -196,7 +196,7 @@ public interface Configurer extends LifecycleOperations {
      * @param module The module to register
      * @return the current instance of the Configurer, for chaining purposes
      * @see SagaConfiguration
-     */
+     */ // TODO keep
     Configurer registerModule(@Nonnull ModuleConfiguration module);
 
     /**
@@ -209,7 +209,7 @@ public interface Configurer extends LifecycleOperations {
      * @param componentBuilder The builder function of this component
      * @param <C>              The type of component
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO keep
     <C> Configurer registerComponent(@Nonnull Class<C> componentType,
                                      @Nonnull Function<Configuration, ? extends C> componentBuilder);
 
@@ -223,7 +223,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param commandHandlerBuilder the builder function of the command handler bean
      * @return the current instance of the {@link Configurer}, for chaining purposes
-     */
+     */ // TODO Move to command model in CommandHandlingComponent interface based on MessageHandlingComponent
     Configurer registerCommandHandler(@Nonnull Function<Configuration, Object> commandHandlerBuilder);
 
     /**
@@ -236,7 +236,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param queryHandlerBuilder the builder function of the query handler bean
      * @return the current instance of the {@link Configurer}, for chaining purposes
-     */
+     */ // TODO Move to query model in QueryHandlingComponent interface based on MessageHandlingComponent
     Configurer registerQueryHandler(@Nonnull Function<Configuration, Object> queryHandlerBuilder);
 
     /**
@@ -251,7 +251,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param messageHandlerBuilder the builder function of the message handler bean
      * @return the current instance of the {@link Configurer}, for chaining purposes
-     */
+     */ // TODO Keep, but let it ingest a MessageHandlingComponent
     Configurer registerMessageHandler(@Nonnull Function<Configuration, Object> messageHandlerBuilder);
 
     /**
@@ -261,7 +261,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param storageEngineBuilder The builder function for the {@link EventStorageEngine}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO move to Event Store module. Or, perhaps remove entirely, in favor of configureEventStore
     Configurer configureEmbeddedEventStore(@Nonnull Function<Configuration, EventStorageEngine> storageEngineBuilder);
 
     /**
@@ -270,7 +270,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param eventStoreBuilder The builder function for the {@link EventStore}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO move to Event Store module
     default Configurer configureEventStore(@Nonnull Function<Configuration, EventStore> eventStoreBuilder) {
         return registerComponent(EventBus.class, eventStoreBuilder);
     }
@@ -285,7 +285,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param eventBusBuilder The builder function for the {@link EventBus}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO move to Event module, and let it ingest the MessageHandlerRegistry, specific for events
     default Configurer configureEventBus(@Nonnull Function<Configuration, EventBus> eventBusBuilder) {
         return registerComponent(EventBus.class, eventBusBuilder);
     }
@@ -297,7 +297,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param commandBusBuilder The builder function for the {@link CommandBus}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO move to Command module, let it ingest the MessageHandlerRegistry, specific for commands
     default Configurer configureCommandBus(@Nonnull Function<Configuration, CommandBus> commandBusBuilder) {
         return registerComponent(CommandBus.class, commandBusBuilder);
     }
@@ -309,7 +309,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param queryBusBuilder The builder function for the {@link QueryBus}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO move to Query module, let it ingest the MessageHandlerRegistry, specific for queries
     default Configurer configureQueryBus(@Nonnull Function<Configuration, QueryBus> queryBusBuilder) {
         return registerComponent(QueryBus.class, queryBusBuilder);
     }
@@ -320,7 +320,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param queryUpdateEmitterBuilder The builder function for the {@link QueryUpdateEmitter}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO move to Query module, let it ingest the MessageHandlerRegistry, specific for queries
     default Configurer configureQueryUpdateEmitter(
             @Nonnull Function<Configuration, QueryUpdateEmitter> queryUpdateEmitterBuilder) {
         return registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder);
@@ -333,7 +333,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param serializerBuilder The builder function for the {@link Serializer}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO Keep, but perhaps have some form of ConverterConfigurer that people need to construct to be able to configure Converters in there.
     default Configurer configureSerializer(@Nonnull Function<Configuration, Serializer> serializerBuilder) {
         return registerComponent(Serializer.class, serializerBuilder);
     }
@@ -346,7 +346,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param eventSerializerBuilder The builder function for the {@link org.axonframework.serialization.Serializer}.
      * @return The current instance of the Configurer, for chaining purposes.
-     */
+     */ // TODO Keep, but perhaps have some form of ConverterConfigurer that people need to construct to be able to configure Converters in there.
     Configurer configureEventSerializer(@Nonnull Function<Configuration, Serializer> eventSerializerBuilder);
 
     /**
@@ -357,7 +357,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param messageSerializerBuilder The builder function for the {@link org.axonframework.serialization.Serializer}.
      * @return The current instance of the Configurer, for chaining purposes.
-     */
+     */ // TODO Keep, but perhaps have some form of ConverterConfigurer that people need to construct to be able to configure Converters in there.
     Configurer configureMessageSerializer(@Nonnull Function<Configuration, Serializer> messageSerializerBuilder);
 
     /**
@@ -367,7 +367,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param transactionManagerBuilder The builder function for the {@link TransactionManager}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO Keep - discuss
     default Configurer configureTransactionManager(
             @Nonnull Function<Configuration, TransactionManager> transactionManagerBuilder) {
         return registerComponent(TransactionManager.class, transactionManagerBuilder);
@@ -379,7 +379,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param resourceInjectorBuilder The builder function for the {@link ResourceInjector}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO Move to Saga specific module, if that will exist at all
     default Configurer configureResourceInjector(
             @Nonnull Function<Configuration, ResourceInjector> resourceInjectorBuilder) {
         return registerComponent(ResourceInjector.class, resourceInjectorBuilder);
@@ -391,7 +391,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param tagsBuilder The builder function for the {@link TagsConfiguration}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO Keep - discuss
     default Configurer configureTags(@Nonnull Function<Configuration, TagsConfiguration> tagsBuilder) {
         return registerComponent(TagsConfiguration.class, tagsBuilder);
     }
@@ -404,7 +404,7 @@ public interface Configurer extends LifecycleOperations {
      * @param <A>                    The type of aggregate the configuration is for
      * @return the current instance of the Configurer, for chaining purposes
      * @see AggregateConfigurer
-     */
+     */ // TODO Move to an aggregate module to be defined
     <A> Configurer configureAggregate(@Nonnull AggregateConfiguration<A> aggregateConfiguration);
 
     /**
@@ -415,7 +415,7 @@ public interface Configurer extends LifecycleOperations {
      * @param aggregate The aggregate type to register with the Configuration
      * @param <A>       The type of aggregate
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO Move to an aggregate module to be defined
     default <A> Configurer configureAggregate(@Nonnull Class<A> aggregate) {
         return configureAggregate(AggregateConfigurer.defaultConfiguration(aggregate));
     }
@@ -426,7 +426,7 @@ public interface Configurer extends LifecycleOperations {
      * @param handlerDefinitionClass A function providing the definition based on the current Configuration as well
      *                               as the class being inspected.
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO keep - discuss
     Configurer registerHandlerDefinition(
             @Nonnull BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass);
 
@@ -441,7 +441,7 @@ public interface Configurer extends LifecycleOperations {
      * @param handlerEnhancerBuilder A lambda constructing a {@link HandlerEnhancerDefinition} based on the
      *                               {@link Configuration}.
      * @return The current instance of the {@link Configurer}, for chaining purposes.
-     */
+     */ // TODO keep - discuss
     Configurer registerHandlerEnhancerDefinition(
             Function<Configuration, HandlerEnhancerDefinition> handlerEnhancerBuilder
     );
@@ -452,7 +452,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param snapshotterBuilder the builder function for the {@link Snapshotter}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO Move to an aggregate module to be defined
     default Configurer configureSnapshotter(@Nonnull Function<Configuration, Snapshotter> snapshotterBuilder) {
         return registerComponent(Snapshotter.class, snapshotterBuilder);
     }
@@ -463,7 +463,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param deadlineManagerBuilder a builder function for the {@link DeadlineManager}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO Likely move to command-module, as deadline messages should be a form of command
     default Configurer configureDeadlineManager(
             @Nonnull Function<Configuration, DeadlineManager> deadlineManagerBuilder) {
         return registerComponent(DeadlineManager.class, deadlineManagerBuilder);
@@ -475,7 +475,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param spanFactory a builder function for the {@link SpanFactory}
      * @return the current instance of the Configurer, for chaining purposes
-     */
+     */ // TODO keep - discuss
     default Configurer configureSpanFactory(
             @Nonnull Function<Configuration, SpanFactory> spanFactory) {
         return registerComponent(SpanFactory.class, spanFactory);
@@ -489,7 +489,7 @@ public interface Configurer extends LifecycleOperations {
      * @return an instance of Event Processing Configurer
      *
      * @throws AxonConfigurationException thrown if there are multiple {@link EventProcessingConfigurer}s
-     */
+     */ // TODO Move to event module, and let these implement the MessageHandlerRegistry for events
     EventProcessingConfigurer eventProcessing() throws AxonConfigurationException;
 
     /**
