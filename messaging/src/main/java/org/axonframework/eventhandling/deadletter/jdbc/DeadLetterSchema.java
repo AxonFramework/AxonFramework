@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 
 package org.axonframework.eventhandling.deadletter.jdbc;
+
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 
 import java.util.function.Function;
 
@@ -36,8 +39,9 @@ public class DeadLetterSchema {
     private final String sequenceIdentifierColumn;
     private final String sequenceIndexColumn;
     // Event Message columns
-    private final String messageTypeColumn;
+    private final String eventTypeColumn;
     private final String eventIdentifierColumn;
+    private final String typeColumn;
     private final String timestampColumn;
     private final String payloadTypeColumn;
     private final String payloadRevisionColumn;
@@ -62,8 +66,9 @@ public class DeadLetterSchema {
                         schema.processingGroupColumn(),
                         schema.sequenceIdentifierColumn(),
                         schema.sequenceIndexColumn(),
-                        schema.messageTypeColumn(),
+                        schema.eventTypeColumn(),
                         schema.eventIdentifierColumn(),
+                        schema.typeColumn(),
                         schema.timestampColumn(),
                         schema.payloadTypeColumn(),
                         schema.payloadRevisionColumn(),
@@ -91,8 +96,9 @@ public class DeadLetterSchema {
         this.processingGroupColumn = builder.processingGroupColumn;
         this.sequenceIdentifierColumn = builder.sequenceIdentifierColumn;
         this.sequenceIndexColumn = builder.sequenceIndexColumn;
-        this.messageTypeColumn = builder.messageTypeColumn;
+        this.eventTypeColumn = builder.eventTypeColumn;
         this.eventIdentifierColumn = builder.eventIdentifierColumn;
+        this.typeColumn = builder.typeColumn;
         this.timestampColumn = builder.timeStampColumn;
         this.payloadTypeColumn = builder.payloadTypeColumn;
         this.payloadRevisionColumn = builder.payloadRevisionColumn;
@@ -178,12 +184,12 @@ public class DeadLetterSchema {
     }
 
     /**
-     * Returns the configured {@code messageType} column name.
+     * Returns the configured {@code eventType} column name.
      *
-     * @return The configured {@code messageType} column name.
+     * @return The configured {@code eventType} column name.
      */
-    public String messageTypeColumn() {
-        return messageTypeColumn;
+    public String eventTypeColumn() {
+        return eventTypeColumn;
     }
 
     /**
@@ -193,6 +199,17 @@ public class DeadLetterSchema {
      */
     public String eventIdentifierColumn() {
         return eventIdentifierColumn;
+    }
+
+    /**
+     * Returns the configured {@code typeColumn} column name.
+     * <p>
+     * Represents the {@link Message#type()} field, as a {@link QualifiedName#toSimpleString() simple String.}
+     *
+     * @return The configured {@code typeColumn} column name.
+     */
+    public String typeColumn() {
+        return typeColumn;
     }
 
     /**
@@ -362,14 +379,15 @@ public class DeadLetterSchema {
         private String processingGroupColumn = "processingGroup";
         private String sequenceIdentifierColumn = "sequenceIdentifier";
         private String sequenceIndexColumn = "sequenceIndex";
-        private String messageTypeColumn = "messageType";
+        private String eventTypeColumn = "eventType";
         private String eventIdentifierColumn = "eventIdentifier";
+        private String typeColumn = "type";
         private String timeStampColumn = "timestamp";
         private String payloadTypeColumn = "payloadType";
         private String payloadRevisionColumn = "payloadRevision";
         private String payloadColumn = "payload";
         private String metaDataColumn = "metaData";
-        private String aggregateTypeColumn = "type";
+        private String aggregateTypeColumn = "aggregateType";
         private String aggregateIdentifierColumn = "aggregateIdentifier";
         private String sequenceNumberColumn = "sequenceNumber";
         private String tokenTypeColumn = "tokenType";
@@ -442,14 +460,14 @@ public class DeadLetterSchema {
         }
 
         /**
-         * Sets the name of the {@code messageType} column. Defaults to {@code messageType}.
+         * Sets the name of the {@code eventType} column. Defaults to {@code eventType}.
          *
-         * @param messageTypeColumn The name for the {@code messageType} column.
+         * @param eventTypeColumn The name for the {@code eventType} column.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder messageTypeColumn(String messageTypeColumn) {
-            assertNonEmpty(messageTypeColumn, "The messageTypeColumn should be not null or empty");
-            this.messageTypeColumn = messageTypeColumn;
+        public Builder eventTypeColumn(String eventTypeColumn) {
+            assertNonEmpty(eventTypeColumn, "The eventTypeColumn should be not null or empty");
+            this.eventTypeColumn = eventTypeColumn;
             return this;
         }
 
@@ -462,6 +480,18 @@ public class DeadLetterSchema {
         public Builder eventIdentifierColumn(String eventIdentifierColumn) {
             assertNonEmpty(eventIdentifierColumn, "The eventIdentifierColumn should be not null or empty");
             this.eventIdentifierColumn = eventIdentifierColumn;
+            return this;
+        }
+
+        /**
+         * Sets the name of the {@code type} column. Defaults to {@code type}.
+         *
+         * @param typeColumn The name for the {@code type} column.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder typeColumn(String typeColumn) {
+            assertNonEmpty(typeColumn, "The typeColumn should be not null or empty");
+            this.typeColumn = typeColumn;
             return this;
         }
 

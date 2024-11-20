@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
@@ -69,6 +70,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         return new DeadLetterEventEntry(
                 message.getClass().getName(),
                 message.getIdentifier(),
+                message.type().toSimpleString(),
                 message.getTimestamp().toString(),
                 serializedPayload.getType().getName(),
                 serializedPayload.getType().getRevision(),
@@ -95,37 +97,35 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
             TrackingToken trackingToken = genericSerializer.deserialize(entry.getTrackingToken());
             if (entry.getAggregateIdentifier() != null) {
                 return new GenericTrackedDomainEventMessage<>(trackingToken,
-                                                              entry.getType(),
+                                                              entry.getAggregateType(),
                                                               entry.getAggregateIdentifier(),
                                                               entry.getSequenceNumber(),
                                                               serializedMessage,
                                                               timestampSupplier);
             } else {
-                return new GenericTrackedEventMessage<>(trackingToken,
-                                                        serializedMessage,
-                                                        timestampSupplier);
+                return new GenericTrackedEventMessage<>(trackingToken, serializedMessage, timestampSupplier);
             }
         }
         if (entry.getAggregateIdentifier() != null) {
-            return new GenericDomainEventMessage<>(entry.getType(),
+            return new GenericDomainEventMessage<>(entry.getAggregateType(),
                                                    entry.getAggregateIdentifier(),
                                                    entry.getSequenceNumber(),
+                                                   serializedMessage.getIdentifier(),
+                                                   QualifiedName.simpleStringName(entry.getType()),
                                                    serializedMessage.getPayload(),
                                                    serializedMessage.getMetaData(),
-                                                   serializedMessage.getIdentifier(),
                                                    timestampSupplier.get());
         } else {
-            return new GenericEventMessage<>(serializedMessage,
-                                             timestampSupplier);
+            return new GenericEventMessage<>(serializedMessage, timestampSupplier);
         }
     }
 
     @Override
     public boolean canConvert(DeadLetterEventEntry message) {
-        return message.getMessageType().equals(GenericTrackedDomainEventMessage.class.getName()) ||
-                message.getMessageType().equals(GenericEventMessage.class.getName()) ||
-                message.getMessageType().equals(GenericDomainEventMessage.class.getName()) ||
-                message.getMessageType().equals(GenericTrackedEventMessage.class.getName());
+        return message.getEventType().equals(GenericTrackedDomainEventMessage.class.getName()) ||
+                message.getEventType().equals(GenericEventMessage.class.getName()) ||
+                message.getEventType().equals(GenericDomainEventMessage.class.getName()) ||
+                message.getEventType().equals(GenericTrackedEventMessage.class.getName());
     }
 
     @Override
