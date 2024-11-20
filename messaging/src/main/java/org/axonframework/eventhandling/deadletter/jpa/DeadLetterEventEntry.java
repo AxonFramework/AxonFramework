@@ -50,7 +50,7 @@ public class DeadLetterEventEntry {
     private String eventIdentifier;
 
     @Column(nullable = false)
-    private String aggregateType;
+    private String type;
 
     @Basic(optional = false)
     private String timeStamp;
@@ -72,7 +72,7 @@ public class DeadLetterEventEntry {
     private byte[] metaData;
 
     @Basic
-    private String type;
+    private String aggregateType;
 
     @Basic
     private String aggregateIdentifier;
