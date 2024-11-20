@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,13 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Created by Sara Pellegrini on 03/04/2018.
- * sara.pellegrini@gmail.com
+ * Test class validating the {@link DispatchInterceptors}.
+ *
+ * @author Sara Pellegrini
  */
 class DispatchInterceptorsTest {
 
@@ -46,11 +48,9 @@ class DispatchInterceptorsTest {
                                                              return b;
                                                          }
         );
-        dispatchInterceptors.intercept(new GenericMessage<>("payload"));
+        dispatchInterceptors.intercept(new GenericMessage<>(dottedName("test.message"), "payload"));
         assertEquals("Interceptor One", results.get(0));
         assertEquals("Interceptor Two", results.get(1));
         assertEquals(2, results.size());
-
     }
-
 }
