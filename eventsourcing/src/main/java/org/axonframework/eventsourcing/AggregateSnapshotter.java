@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -99,9 +100,9 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     }
 
     @Override
-    protected DomainEventMessage createSnapshot(Class<?> aggregateType,
-                                                String aggregateIdentifier,
-                                                DomainEventStream eventStream) {
+    protected DomainEventMessage<?> createSnapshot(Class<?> aggregateType,
+                                                   String aggregateIdentifier,
+                                                   DomainEventStream eventStream) {
         DomainEventMessage<?> firstEvent = eventStream.peek();
         AggregateFactory<?> aggregateFactory = getAggregateFactory(aggregateType);
         if (aggregateFactory == null) {
@@ -121,7 +122,10 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         if (aggregate.isDeleted()) {
             return null;
         }
-        return new GenericDomainEventMessage<>(aggregate.type(), aggregate.identifierAsString(), aggregate.version(),
+        return new GenericDomainEventMessage<>(aggregate.type(),
+                                               aggregate.identifierAsString(),
+                                               aggregate.version(),
+                                               QualifiedName.className(aggregateType),
                                                aggregate.getAggregateRoot());
     }
 
