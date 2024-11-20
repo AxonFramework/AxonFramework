@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,15 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.quartz.*;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.SchedulerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,13 +101,10 @@ public class FireEventJob implements Job {
      * @return the message to publish
      */
     private EventMessage<?> createMessage(Object event) {
-        EventMessage<?> eventMessage;
-        if (event instanceof EventMessage) {
-            eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
-                                                     ((EventMessage) event).getMetaData());
-        } else {
-            eventMessage = new GenericEventMessage<>(event, MetaData.emptyInstance());
-        }
-        return eventMessage;
+        return event instanceof EventMessage
+                ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
+                                            ((EventMessage<?>) event).getPayload(),
+                                            ((EventMessage<?>) event).getMetaData())
+                : new GenericEventMessage<>(QualifiedName.className(event.getClass()), event);
     }
 }

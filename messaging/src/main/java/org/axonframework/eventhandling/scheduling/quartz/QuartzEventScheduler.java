@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -232,6 +233,12 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
      */
     public static class DirectEventJobDataBinder implements EventJobDataBinder {
 
+        /**
+         * Key pointing to the {@link QualifiedName#toSimpleString() type's simple STring} of the deadline in the
+         * {@link JobDataMap}
+         */
+        public static final String QUALIFIED_TYPE = "qualifiedType";
+
         private final Serializer serializer;
 
         /**
@@ -248,9 +255,10 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         public JobDataMap toJobData(Object event) {
             JobDataMap jobData = new JobDataMap();
 
-            EventMessage eventMessage = (EventMessage) event;
+            EventMessage<?> eventMessage = (EventMessage<?>) event;
 
             jobData.put(MESSAGE_ID, eventMessage.getIdentifier());
+            jobData.put(QUALIFIED_TYPE, eventMessage.type().toSimpleString());
             jobData.put(MESSAGE_TIMESTAMP, eventMessage.getTimestamp().toString());
 
             SerializedObject<byte[]> serializedPayload =
@@ -269,6 +277,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         @Override
         public Object fromJobData(JobDataMap jobDataMap) {
             return new GenericEventMessage<>((String) jobDataMap.get(MESSAGE_ID),
+                                             QualifiedName.simpleStringName((String) jobDataMap.get(QUALIFIED_TYPE)),
                                              deserializePayload(jobDataMap),
                                              deserializeMetaData(jobDataMap),
                                              retrieveDeadlineTimestamp(jobDataMap));

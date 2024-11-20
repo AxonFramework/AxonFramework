@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -50,8 +50,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * mechanism.
  * <p/>
  * Note that this mechanism is non-persistent. Scheduled tasks will be lost when the JVM is shut down, unless special
- * measures have been taken to prevent that. For more flexible and powerful scheduling options, see {@link
- * org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler}.
+ * measures have been taken to prevent that. For more flexible and powerful scheduling options, see
+ * {@link org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler}.
  *
  * @author Allard Buijze
  * @see org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler
@@ -165,14 +165,11 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
          * @return the message to publish
          */
         private EventMessage<?> createMessage() {
-            EventMessage<?> eventMessage;
-            if (event instanceof EventMessage) {
-                eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
-                                                         ((EventMessage) event).getMetaData());
-            } else {
-                eventMessage = new GenericEventMessage<>(event, MetaData.emptyInstance());
-            }
-            return eventMessage;
+            return event instanceof EventMessage
+                    ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
+                                                ((EventMessage<?>) event).getPayload(),
+                                                ((EventMessage<?>) event).getMetaData())
+                    : new GenericEventMessage<>(QualifiedName.className(event.getClass()), event);
         }
     }
 
@@ -204,8 +201,7 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
         /**
          * Sets the {@link ScheduledExecutorService} used for scheduling and triggering events.
          *
-         * @param scheduledExecutorService a {@link ScheduledExecutorService} used for scheduling and triggering
-         *                                 events
+         * @param scheduledExecutorService a {@link ScheduledExecutorService} used for scheduling and triggering events
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
