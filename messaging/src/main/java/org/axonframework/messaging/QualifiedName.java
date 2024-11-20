@@ -43,7 +43,7 @@ public interface QualifiedName {
      * @param clazz The {@link Class} to extract a {@link #namespace()} and {@link #localName()} from.
      * @return A {@link QualifiedName} based on the given {@code clazz}.
      */
-    static QualifiedName fromClass(@Nonnull Class<?> clazz) {
+    static QualifiedName className(@Nonnull Class<?> clazz) {
         assertNonNull(clazz, "Cannot construct a QualifiedName based on a null Class.");
         return new SimpleQualifiedName(clazz.getPackageName(), clazz.getSimpleName());
     }
@@ -63,7 +63,7 @@ public interface QualifiedName {
      * @throws org.axonframework.common.AxonConfigurationException If the substring representing the
      *                                                             {@link #localName()} is {@code null} or empty.
      */
-    static QualifiedName fromDottedName(@Nonnull String dottedName) {
+    static QualifiedName dottedName(@Nonnull String dottedName) {
         assertNonEmpty(dottedName, "Cannot construct a QualifiedName based on a null or empty String.");
         int lastDot = dottedName.lastIndexOf('.');
         String namespace = dottedName.substring(0, Math.max(lastDot, 0));
