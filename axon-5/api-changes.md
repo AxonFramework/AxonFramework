@@ -99,6 +99,23 @@ Other API changes
 
 TODO
 
+Stored format changes
+=====================
+
+## Dead Letters
+
+1. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` expects the `QualifiedName` to be present under the field `qualifiedType`.
+2. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` has renamed the `messageType` column to `eventType`.
+3. The JDBC `org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema` expects the `QualifiedName` to be present under the `qualifiedTypeColumn`.
+4. The JDBC `org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema` has renamed the `messageType` column to `eventType`.
+
+## Deadlines
+
+1. The JobRunr `org.axonframework.deadline.jobrunr.DeadlineDetails` expects the `QualifiedName` to be present under the field `type`.
+2. The Quartz `org.axonframework.deadline.quartz.DeadlineJob` expects the QualifiedName to be present in the `JobDataMap` under the key `qualifiedType`.
+3. The dbscheduler `org.axonframework.deadline.dbscheduler.DbSchedulerBinaryDeadlineDetails` expects the `QualifiedName` to be present under the field `t`.
+4. The dbscheduler `org.axonframework.deadline.dbscheduler.DbSchedulerHumanReadableDeadlineDetails` expects the `QualifiedName` to be present under the field `type`.
+
 Moved / Remove Classes
 ======================
 
