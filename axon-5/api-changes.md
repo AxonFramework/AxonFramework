@@ -104,10 +104,12 @@ Stored format changes
 
 ## Dead Letters
 
-1. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` expects the `QualifiedName` to be present under the field `qualifiedType`.
-2. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` has renamed the `messageType` column to `eventType`.
-3. The JDBC `org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema` expects the `QualifiedName` to be present under the `qualifiedTypeColumn`.
+1. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` has renamed the `messageType` column to `eventType`.
+2. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` has renamed the `type` column to `aggregateType`.
+3. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` expects the `QualifiedName` to be present under the `type` column, non-nullable.
 4. The JDBC `org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema` has renamed the `messageType` column to `eventType`.
+5. The JDBC `org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema` has renamed the `type` column to `aggregateType`.
+6. The JDBC `org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema` expects the `QualifiedName` to be present under the `type` column, non-nullable.
 
 ## Deadlines
 
