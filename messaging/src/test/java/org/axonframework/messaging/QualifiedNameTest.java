@@ -175,14 +175,20 @@ class QualifiedNameTest {
     }
 
     @Test
-    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForNullDottedName() {
+    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForNullSimpleString() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.simpleStringName(null));
     }
 
     @Test
-    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyDottedName() {
+    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForEmptySimpleString() {
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.simpleStringName(""));
+    }
+
+    @Test
+    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForMalformedString() {
+        assertThrows(AxonConfigurationException.class,
+                     () -> QualifiedName.simpleStringName("this doesn't match"));
     }
 
     @Test

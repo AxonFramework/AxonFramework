@@ -21,9 +21,10 @@ import jakarta.annotation.Nullable;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static org.axonframework.common.BuilderUtils.assertNonEmpty;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.*;
 
 /**
  * Interface describing a qualified name, providing space for a {@link #namespace() namespace},
@@ -38,6 +39,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 5.0.0
  */
 public final class QualifiedName {
+
+    private static final Pattern SIMPLE_STRING_PATTERN = Pattern.compile("(\\w+)(\\s@\\[\\w+])?(\\s#\\[\\w+])?");
 
     private final String namespace;
     private final String localName;
@@ -119,46 +122,29 @@ public final class QualifiedName {
      * @return A reconstructed {@link QualifiedName} based on the expected output of
      * {@link QualifiedName#toSimpleString()}.
      */
-    @SuppressWarnings("DuplicateExpressions")
     public static QualifiedName simpleStringName(@Nonnull String simpleString) {
         assertNonEmpty(simpleString, "Cannot construct a QualifiedName based on a null or empty String.");
-        int bracketOffset = 1;
-        int signAndBracketOffset = 2;
+        Matcher simpleStringMatcher = SIMPLE_STRING_PATTERN.matcher(simpleString);
+        assertThat(simpleStringMatcher,
+                   Matcher::matches,
+                   "The given simple String [" + simpleString + "] does not match the expected pattern.");
 
-        String namespace = null;
-        String localName;
-        String revision = null;
-        int lastAt = simpleString.lastIndexOf('@');
-        int lastHash = simpleString.lastIndexOf('#');
-        int length = simpleString.length();
-
-        if (onlyHasLocalName(lastAt, lastHash)) {
-            localName = simpleString;
-        } else if (hasLocalNameAndNamespace(lastAt, lastHash)) {
-            localName = simpleString.substring(0, lastAt - bracketOffset);
-            namespace = simpleString.substring(lastAt + signAndBracketOffset, length - bracketOffset);
-        } else if (hasLocalNameAndRevision(lastAt, lastHash)) {
-            localName = simpleString.substring(0, lastHash - bracketOffset);
-            revision = simpleString.substring(lastHash + signAndBracketOffset, length - bracketOffset);
-        } else {
-            localName = simpleString.substring(0, lastAt - bracketOffset);
-            namespace = simpleString.substring(lastAt + signAndBracketOffset, lastHash - signAndBracketOffset);
-            revision = simpleString.substring(lastHash + signAndBracketOffset, length - bracketOffset);
-        }
-
+        String namespace = getNamespace(simpleStringMatcher.group(2));
+        String localName = simpleStringMatcher.group(1);
+        String revision = getRevision(simpleStringMatcher.group(3));
         return new QualifiedName(namespace, localName, revision);
     }
 
-    private static boolean hasLocalNameAndRevision(int lastAt, int lastHash) {
-        return lastAt == -1 && lastHash != -1;
+    private static String getNamespace(String namespaceGroup) {
+        return namespaceGroup != null ? removeBrackets(namespaceGroup).replace("@", "").trim() : null;
     }
 
-    private static boolean hasLocalNameAndNamespace(int lastAt, int lastHash) {
-        return lastAt != -1 && lastHash == -1;
+    private static String getRevision(String revisionGroup) {
+        return revisionGroup != null ? removeBrackets(revisionGroup).replace("#", "").trim() : null;
     }
 
-    private static boolean onlyHasLocalName(int lastAt, int lastHash) {
-        return lastAt == -1 && lastHash == -1;
+    private static String removeBrackets(String stringWithBrackets) {
+        return stringWithBrackets.replace("[", "").replace("]", "");
     }
 
     /**
