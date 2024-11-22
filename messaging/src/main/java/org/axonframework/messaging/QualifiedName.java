@@ -17,12 +17,17 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Interface describing a qualified name.
+ * Interface describing a qualified name, providing space for a {@link #namespace() namespace},
+ * {@link #localName() local name}, and {@link #revision() revision}.
  * <p>
  * Useful to provide clear names to {@link Message Messages}, {@link MessageHandler MessageHandlers}, and other
  * components that require naming.
@@ -32,7 +37,32 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface QualifiedName {
+public final class QualifiedName {
+
+    private final String namespace;
+    private final String localName;
+    private final String revision;
+
+    /**
+     * Constructs a {@link QualifiedName} based on the given {@code namespace}, {@code localName}, and
+     * {@code revision}.
+     * <p>
+     * A {@code null} given {@code namespace} is defaulted to an empty {@link String}. The given {@code revision} will
+     * be wrapped in an {@link Optional#ofNullable(Object)} at all times when retrieved through the {@link #revision()}
+     * operation.
+     *
+     * @param namespace The {@link String} representing the {@link #namespace()} of this {@link QualifiedName}.
+     * @param localName The {@link String} representing the {@link #localName()} of this {@link QualifiedName}.
+     * @param revision  The {@link String} representing the {@link #revision()} of this {@link QualifiedName}.
+     */
+    public QualifiedName(@Nullable String namespace,
+                         @Nonnull String localName,
+                         @Nullable String revision) {
+        assertNonEmpty(localName, "The localName must not be null or empty.");
+        this.namespace = Objects.requireNonNullElse(namespace, "");
+        this.localName = localName;
+        this.revision = revision;
+    }
 
     /**
      * Construct a {@link QualifiedName} based on the given {@code clazz}.
@@ -43,9 +73,9 @@ public interface QualifiedName {
      * @param clazz The {@link Class} to extract a {@link #namespace()} and {@link #localName()} from.
      * @return A {@link QualifiedName} based on the given {@code clazz}.
      */
-    static QualifiedName className(@Nonnull Class<?> clazz) {
+    public static QualifiedName className(@Nonnull Class<?> clazz) {
         assertNonNull(clazz, "Cannot construct a QualifiedName based on a null Class.");
-        return new SimpleQualifiedName(clazz.getPackageName(), clazz.getSimpleName());
+        return new QualifiedName(clazz.getPackageName(), clazz.getSimpleName(), null);
     }
 
     /**
@@ -63,12 +93,12 @@ public interface QualifiedName {
      * @throws org.axonframework.common.AxonConfigurationException If the substring representing the
      *                                                             {@link #localName()} is {@code null} or empty.
      */
-    static QualifiedName dottedName(@Nonnull String dottedName) {
+    public static QualifiedName dottedName(@Nonnull String dottedName) {
         assertNonEmpty(dottedName, "Cannot construct a QualifiedName based on a null or empty String.");
         int lastDot = dottedName.lastIndexOf('.');
         String namespace = dottedName.substring(0, Math.max(lastDot, 0));
         String localName = dottedName.substring(lastDot + 1);
-        return new SimpleQualifiedName(namespace, localName);
+        return new QualifiedName(namespace, localName, null);
     }
 
     /**
@@ -90,14 +120,14 @@ public interface QualifiedName {
      * {@link QualifiedName#toSimpleString()}.
      */
     @SuppressWarnings("DuplicateExpressions")
-    static QualifiedName simpleStringName(@Nonnull String simpleString) {
+    public static QualifiedName simpleStringName(@Nonnull String simpleString) {
         assertNonEmpty(simpleString, "Cannot construct a QualifiedName based on a null or empty String.");
         int bracketOffset = 1;
         int signAndBracketOffset = 2;
 
-        String namespace = "";
+        String namespace = null;
         String localName;
-        String revision = "";
+        String revision = null;
         int lastAt = simpleString.lastIndexOf('@');
         int lastHash = simpleString.lastIndexOf('#');
         int length = simpleString.length();
@@ -116,7 +146,7 @@ public interface QualifiedName {
             revision = simpleString.substring(lastHash + signAndBracketOffset, length - bracketOffset);
         }
 
-        return new SimpleQualifiedName(namespace, localName, revision);
+        return new QualifiedName(namespace, localName, revision);
     }
 
     private static boolean hasLocalNameAndRevision(int lastAt, int lastHash) {
@@ -138,8 +168,9 @@ public interface QualifiedName {
      *
      * @return The namespace this {@link QualifiedName} refers too.
      */
-    @Nonnull
-    String namespace();
+    public String namespace() {
+        return namespace;
+    }
 
     /**
      * Returns the local name this {@link QualifiedName} refers too.
@@ -149,16 +180,18 @@ public interface QualifiedName {
      *
      * @return The local name this {@link QualifiedName} refers too.
      */
-    @Nonnull
-    String localName();
+    public String localName() {
+        return localName;
+    }
 
     /**
-     * Returns the revision of this {@link QualifiedName}.
+     * Returns the revision of this {@link QualifiedName} as an {@link Optional}.
      *
      * @return The revision of this {@link QualifiedName}.
      */
-    @Nonnull
-    String revision();
+    public Optional<String> revision() {
+        return Optional.ofNullable(revision);
+    }
 
     /**
      * Prints the {@link QualifiedName} in a simplified {@link String}.
@@ -175,9 +208,34 @@ public interface QualifiedName {
      * @return A simple {@link String} based on the {@link #localName()}, and {@link #namespace()} (if non-empty) and
      * {@link #revision()} (if non-empty).
      */
-    default String toSimpleString() {
+    public String toSimpleString() {
         return localName()
-                + (namespace().isBlank() ? "" : " @(" + namespace() + ")")
-                + (revision().isBlank() ? "" : " #[" + revision() + "]");
+                + (namespace.isBlank() ? "" : " @(" + namespace + ")")
+                + (revision == null || revision.isBlank() ? "" : " #[" + revision + "]");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        QualifiedName that = (QualifiedName) o;
+        return Objects.equals(namespace, that.namespace)
+                && Objects.equals(localName, that.localName)
+                && Objects.equals(revision, that.revision);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(namespace, localName, revision);
+    }
+
+    @Override
+    public String toString() {
+        return "QualifiedName{" +
+                "namespace='" + namespace + '\'' +
+                ", localName='" + localName + '\'' +
+                ", revision='" + revision + '\'' +
+                '}';
     }
 }
