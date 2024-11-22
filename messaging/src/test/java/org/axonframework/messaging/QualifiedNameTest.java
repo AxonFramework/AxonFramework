@@ -17,20 +17,65 @@
 package org.axonframework.messaging;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@code static} builder methods and {@code default} methods of the {@link QualifiedName}.
+ * Test class validating the {@link QualifiedName}.
  *
  * @author Steven van Beelen
  */
 class QualifiedNameTest {
 
+    private static final String NAMESPACE = "namespace";
+    private static final String LOCAL_NAME = "localName";
+    private static final String REVISION = "revision";
+
     @Test
-    void classNameSplitsTheClassAsExpected() {
+    void containsDataAsExpected() {
+        QualifiedName testSubject = new QualifiedName(NAMESPACE, LOCAL_NAME, REVISION);
+
+        assertEquals(NAMESPACE, testSubject.namespace());
+        assertEquals(LOCAL_NAME, testSubject.localName());
+        assertTrue(testSubject.revision().isPresent());
+        assertEquals(REVISION, testSubject.revision().get());
+    }
+
+    @Test
+    void defaultsNamespaceToEmptyStringWhenNullIsProvided() {
+        QualifiedName testSubject = new QualifiedName(null, LOCAL_NAME, REVISION);
+
+        assertEquals("", testSubject.namespace());
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionForNullLocalName() {
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, null, REVISION));
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionForEmptyLocalName() {
+        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, "", REVISION));
+    }
+
+    @Test
+    void nullRevisionResultsInEmptyOptional() {
+        QualifiedName testSubject = new QualifiedName(NAMESPACE, LOCAL_NAME, null);
+
+        assertFalse(testSubject.revision().isPresent());
+    }
+
+    @Test
+    void toSimpleStringReturnsAsExpected() {
+        QualifiedName testSubject = new QualifiedName(NAMESPACE, LOCAL_NAME, REVISION);
+
+        assertEquals("localName @(namespace) #[revision]", testSubject.toSimpleString());
+    }
+
+    @Test
+    void classNameFactoryMethodSplitsTheClassAsExpected() {
         String expectedNamespace = ClassToGiveNameTo.class.getPackageName();
         String expectedLocalName = ClassToGiveNameTo.class.getSimpleName();
 
@@ -41,13 +86,13 @@ class QualifiedNameTest {
     }
 
     @Test
-    void classNameThrowsAxonConfigurationExceptionForNullClass() {
+    void classNameFactoryMethodThrowsAxonConfigurationExceptionForNullClass() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.className(null));
     }
 
     @Test
-    void dottedNameSplitsTheNameAsExpected() {
+    void dottedNameFactoryMethodSplitsTheNameAsExpected() {
         String expectedNamespace = "my.context";
         String expectedLocalName = "BusinessOperation";
 
@@ -58,36 +103,36 @@ class QualifiedNameTest {
     }
 
     @Test
-    void dottedNameThrowsAxonConfigurationExceptionForNullDottedName() {
+    void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForNullDottedName() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.dottedName(null));
     }
 
     @Test
-    void dottedNameThrowsAxonConfigurationExceptionForEmptyDottedName() {
+    void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyDottedName() {
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.dottedName(""));
     }
 
     @Test
-    void dottedNameThrowsAxonConfigurationExceptionForEmptyLocalNamePart() {
+    void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyLocalNamePart() {
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.dottedName("my.context."));
     }
 
     @Test
-    void simpleStringNameSplitsLocalNameOnlyQualifiedTypeAsExpected() {
-        String expectedLocalName = "localName";
+    void simpleStringNameFactoryMethodSplitsLocalNameOnlyQualifiedTypeAsExpected() {
+        String expectedLocalName = LOCAL_NAME;
 
         QualifiedName testSubject = QualifiedName.simpleStringName(expectedLocalName);
 
         assertEquals("", testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertEquals("", testSubject.revision());
+        assertFalse(testSubject.revision().isPresent());
     }
 
     @Test
-    void simpleStringNameSplitsLocalNameAndNamespaceQualifiedTypeAsExpected() {
-        String expectedNamespace = "namespace";
-        String expectedLocalName = "localName";
+    void simpleStringNameFactoryMethodSplitsLocalNameAndNamespaceQualifiedTypeAsExpected() {
+        String expectedNamespace = NAMESPACE;
+        String expectedLocalName = LOCAL_NAME;
 
         String testSimpleString = expectedLocalName + " @[" + expectedNamespace + "]";
 
@@ -95,13 +140,13 @@ class QualifiedNameTest {
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertEquals("", testSubject.revision());
+        assertFalse(testSubject.revision().isPresent());
     }
 
     @Test
-    void simpleStringNameSplitsLocalNameAndRevisionQualifiedTypeAsExpected() {
-        String expectedLocalName = "localName";
-        String expectedRevision = "revision";
+    void simpleStringNameFactoryMethodSplitsLocalNameAndRevisionQualifiedTypeAsExpected() {
+        String expectedLocalName = LOCAL_NAME;
+        String expectedRevision = REVISION;
 
         String testSimpleString = expectedLocalName + " #[" + expectedRevision + "]";
 
@@ -109,14 +154,15 @@ class QualifiedNameTest {
 
         assertEquals("", testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertEquals(expectedRevision, testSubject.revision());
+        assertTrue(testSubject.revision().isPresent());
+        assertEquals(expectedRevision, testSubject.revision().get());
     }
 
     @Test
-    void simpleStringNameSplitsFullQualifiedTypeAsExpected() {
-        String expectedNamespace = "namespace";
-        String expectedLocalName = "localName";
-        String expectedRevision = "revision";
+    void simpleStringNameFactoryMethodSplitsFullQualifiedTypeAsExpected() {
+        String expectedNamespace = NAMESPACE;
+        String expectedLocalName = LOCAL_NAME;
+        String expectedRevision = REVISION;
 
         String testSimpleString = expectedLocalName + " @[" + expectedNamespace + "] #[" + expectedRevision + "]";
 
@@ -124,18 +170,25 @@ class QualifiedNameTest {
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertEquals(expectedRevision, testSubject.revision());
+        assertTrue(testSubject.revision().isPresent());
+        assertEquals(expectedRevision, testSubject.revision().get());
     }
 
     @Test
-    void simpleStringNameThrowsAxonConfigurationExceptionForNullDottedName() {
+    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForNullSimpleString() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.simpleStringName(null));
     }
 
     @Test
-    void simpleStringNameThrowsAxonConfigurationExceptionForEmptyDottedName() {
+    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForEmptySimpleString() {
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.simpleStringName(""));
+    }
+
+    @Test
+    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForMalformedString() {
+        assertThrows(AxonConfigurationException.class,
+                     () -> QualifiedName.simpleStringName("this doesn't match"));
     }
 
     @Test
