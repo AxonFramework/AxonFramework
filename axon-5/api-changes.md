@@ -110,6 +110,12 @@ The `QualifiedName` provides space for a `localName`, a `namespace`, and a `revi
 The fields can respectively be used to define the `Class#getSimpleName`, the package name, and the version of the `Message` it is connected too.
 This layer of indirection will allow us to provide the freedom that currently is not an option (as explained above).
 
+### Factory Methods, like GenericMessage#asMessage(Object)
+
+The factory methods that would construct a `Mesage` implementation based on a given `Object` have been removed from Axon Framework.
+These factory methods no longer align with the new API, which expects that the `QualifiedName` is set consciously.
+Hence, users of the factory methods need to revert to using the constructor of the `Message` implementation instead.
+
 ## Message Stream
 
 TODO - provide description once the `MessageStream` generics discussion has been finalized.

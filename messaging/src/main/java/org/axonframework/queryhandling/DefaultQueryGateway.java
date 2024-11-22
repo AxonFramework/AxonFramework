@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
@@ -34,7 +35,6 @@ import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.messaging.GenericMessage.asMessage;
 import static org.axonframework.queryhandling.GenericQueryResponseMessage.asResponseMessage;
 
 /**
@@ -79,8 +79,11 @@ public class DefaultQueryGateway implements QueryGateway {
     @Override
     public <R, Q> CompletableFuture<R> query(@Nonnull String queryName, @Nonnull Q query,
                                              @Nonnull ResponseType<R> responseType) {
-        CompletableFuture<QueryResponseMessage<R>> queryResponse = queryBus
-                .query(processInterceptors(new GenericQueryMessage<>(asMessage(query), queryName, responseType)));
+        QueryMessage<Q, R> queryMessage = new GenericQueryMessage<>(QualifiedName.className(query.getClass()),
+                                                                    queryName,
+                                                                    query,
+                                                                    responseType);
+        CompletableFuture<QueryResponseMessage<R>> queryResponse = queryBus.query(processInterceptors(queryMessage));
         CompletableFuture<R> result = new CompletableFuture<>();
         result.whenComplete((r, e) -> {
             if (!queryResponse.isDone()) {
@@ -104,7 +107,12 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Override
     public <R, Q> Publisher<R> streamingQuery(String queryName, Q query, Class<R> responseType) {
-        return Mono.fromSupplier(() -> new GenericStreamingQueryMessage<>(asMessage(query), queryName, responseType))
+        return Mono.fromSupplier(() -> new GenericStreamingQueryMessage<>(
+                           QualifiedName.className(query.getClass()),
+                           queryName,
+                           query,
+                           responseType
+                   ))
                    .flatMapMany(queryMessage -> queryBus.streamingQuery(processInterceptors(queryMessage)))
                    .map(Message::getPayload);
     }
@@ -115,7 +123,10 @@ public class DefaultQueryGateway implements QueryGateway {
                                           @Nonnull ResponseType<R> responseType,
                                           long timeout,
                                           @Nonnull TimeUnit timeUnit) {
-        GenericQueryMessage<?, R> queryMessage = new GenericQueryMessage<>(asMessage(query), queryName, responseType);
+        QueryMessage<Q, R> queryMessage = new GenericQueryMessage<>(QualifiedName.className(query.getClass()),
+                                                                    queryName,
+                                                                    query,
+                                                                    responseType);
         return queryBus.scatterGather(processInterceptors(queryMessage), timeout, timeUnit)
                        .map(QueryResponseMessage::getPayload);
     }
@@ -126,23 +137,18 @@ public class DefaultQueryGateway implements QueryGateway {
                                                                      @Nonnull ResponseType<I> initialResponseType,
                                                                      @Nonnull ResponseType<U> updateResponseType,
                                                                      int updateBufferSize) {
-        SubscriptionQueryMessage<?, I, U> interceptedQuery =
-                getSubscriptionQueryMessage(queryName, query, initialResponseType, updateResponseType);
+        SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage =
+                new GenericSubscriptionQueryMessage<>(QualifiedName.className(query.getClass()),
+                                                      queryName,
+                                                      query,
+                                                      initialResponseType,
+                                                      updateResponseType);
+        SubscriptionQueryMessage<?, I, U> interceptedQuery = processInterceptors(subscriptionQueryMessage);
 
         SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result =
                 queryBus.subscriptionQuery(interceptedQuery, updateBufferSize);
 
         return getSubscriptionQueryResult(result);
-    }
-
-    private <Q, I, U> SubscriptionQueryMessage<?, I, U> getSubscriptionQueryMessage(String queryName,
-                                                                                    Q query,
-                                                                                    ResponseType<I> initialResponseType,
-                                                                                    ResponseType<U> updateResponseType) {
-        SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage = new GenericSubscriptionQueryMessage<>(
-                asMessage(query), queryName, initialResponseType, updateResponseType
-        );
-        return processInterceptors(subscriptionQueryMessage);
     }
 
     private <I, U> DefaultSubscriptionQueryResult<I, U> getSubscriptionQueryResult(

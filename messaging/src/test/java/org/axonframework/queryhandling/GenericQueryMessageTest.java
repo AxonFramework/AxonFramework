@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import static org.axonframework.messaging.QualifiedName.dottedName;
@@ -42,8 +43,9 @@ class GenericQueryMessageTest {
 
     @Test
     void queryNameResemblesMessagePayloadTypeClassName() {
+        QualifiedName testType = dottedName("test.query");
         String testPayload = "payload";
-        Message<?> testMessage = GenericMessage.asMessage(testPayload);
+        Message<?> testMessage = new GenericMessage<>(testType, testPayload);
 
         String result = QueryMessage.queryName(testMessage);
 

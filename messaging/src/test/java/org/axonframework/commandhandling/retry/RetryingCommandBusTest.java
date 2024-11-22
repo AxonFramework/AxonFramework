@@ -33,6 +33,7 @@ import org.mockito.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -51,7 +52,7 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldReturnSuccessResultImmediately() throws ExecutionException, InterruptedException {
-        Message<Object> result = GenericMessage.asMessage("OK");
+        Message<Object> result = new GenericMessage<>(dottedName("test.message"), "OK");
         when(delegate.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(result));
 
         ProcessingContext processingContext = mock();
@@ -63,18 +64,23 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldDelegateToRetrySchedulerOnFailure() throws ExecutionException, InterruptedException {
-        Message<Object> successResult = GenericMessage.asMessage("OK");
+        Message<Object> successResult = new GenericMessage<>(dottedName("test.message"), "OK");
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException("Simulating failure")));
-        when(retryScheduler.scheduleRetry(any(), any(), any(), any())).thenAnswer(i -> MessageStream.just(successResult));
+        when(retryScheduler.scheduleRetry(any(), any(), any(), any()))
+                .thenAnswer(i -> MessageStream.just(successResult));
 
         ProcessingContext processingContext = mock();
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage(
                 "Test");
         CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(command, processingContext);
 
-        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage<?>, Message<?>>> dispatcherCaptor = ArgumentCaptor.forClass(RetryScheduler.Dispatcher.class);
-        verify(retryScheduler).scheduleRetry(eq(command), eq(processingContext), isA(MockException.class), dispatcherCaptor.capture());
+        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage<?>, Message<?>>> dispatcherCaptor = ArgumentCaptor.forClass(
+                RetryScheduler.Dispatcher.class);
+        verify(retryScheduler).scheduleRetry(eq(command),
+                                             eq(processingContext),
+                                             isA(MockException.class),
+                                             dispatcherCaptor.capture());
 
         verify(delegate, times(1)).dispatch(any(), any());
 
@@ -89,15 +95,23 @@ class RetryingCommandBusTest {
     void shouldReturnedFailureIfRetrySchedulerReturnsFailure() {
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException("Simulating failure")));
-        when(retryScheduler.scheduleRetry(any(), any(), any(), any())).thenAnswer(i -> MessageStream.failed(new MockException("Simulating failure")));
+        when(retryScheduler.scheduleRetry(any(),
+                                          any(),
+                                          any(),
+                                          any())).thenAnswer(i -> MessageStream.failed(new MockException(
+                "Simulating failure")));
 
         ProcessingContext processingContext = mock();
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage(
                 "Test");
         CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(command, processingContext);
 
-        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage<?>, Message<?>>> dispatcherCaptor = ArgumentCaptor.forClass(RetryScheduler.Dispatcher.class);
-        verify(retryScheduler).scheduleRetry(eq(command), eq(processingContext), isA(MockException.class), dispatcherCaptor.capture());
+        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage<?>, Message<?>>> dispatcherCaptor = ArgumentCaptor.forClass(
+                RetryScheduler.Dispatcher.class);
+        verify(retryScheduler).scheduleRetry(eq(command),
+                                             eq(processingContext),
+                                             isA(MockException.class),
+                                             dispatcherCaptor.capture());
 
         verify(delegate, times(1)).dispatch(any(), any());
 

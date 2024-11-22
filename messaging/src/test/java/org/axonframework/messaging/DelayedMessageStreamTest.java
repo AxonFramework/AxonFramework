@@ -17,7 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.messaging.MessageStream.Entry;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -26,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -53,7 +54,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
+        return new GenericMessage<>(dottedName("test.message"), "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test

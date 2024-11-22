@@ -19,14 +19,15 @@ package org.axonframework.commandhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.messaging.QualifiedName.className;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -309,10 +311,12 @@ class SimpleCommandBusTest {
                                                           ProcessingContext processingContext) {
             if (result instanceof Throwable error) {
                 return MessageStream.failed(error);
-            } else if (result instanceof CompletableFuture<?> futureResult) {
-                return MessageStream.fromFuture(futureResult.thenApply(GenericMessage::asMessage));
+            } else if (result instanceof CompletableFuture<?> future) {
+                return MessageStream.fromFuture(future.thenApply(
+                        r -> new GenericMessage<>(className(r.getClass()), r)
+                ));
             } else {
-                return MessageStream.just(GenericMessage.asMessage(result));
+                return MessageStream.just(new GenericMessage<>(className(result.getClass()), result));
             }
         }
 

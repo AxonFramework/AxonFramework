@@ -27,12 +27,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExponentialBackOffRetryPolicyTest {
 
-    private final Message<?> message = GenericMessage.asMessage("test");
+    private final Message<?> message = new GenericMessage<>(dottedName("test.message"), "test");
     private final MockException failure = new MockException("Simulating failure");
+
     private ExponentialBackOffRetryPolicy testSubject;
 
     @BeforeEach

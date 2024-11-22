@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -61,13 +62,12 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldReturnFailedStreamIfPolicyOutcomeIsNoRetry() {
+        Message<Object> testMessage = new GenericMessage<>(dottedName("test.message"), "stub");
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
-        MessageStream<Message<?>> actual = testSubject.scheduleRetry(GenericMessage.asMessage(
-                                                                             "stub"),
-                                                                     null,
-                                                                     new MockException(
-                                                                             "Simulating exception"),
-                                                                     dispatcher);
+
+        MessageStream<Message<?>> actual =
+                testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
+
         assertTrue(actual.firstAsCompletableFuture().isCompletedExceptionally());
         verify(dispatcher, never()).dispatch(any(), any());
         verify(executor, never()).schedule(any(Runnable.class), anyLong(), any());
@@ -76,17 +76,15 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldScheduleRetryIfPolicyOutcomeIsRetry() {
+        Message<Object> testMessage = new GenericMessage<>(dottedName("test.message"), "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any())).thenReturn(MessageStream.empty());
-        Message<Object> message = GenericMessage.asMessage("stub");
-        MessageStream<Message<?>> actual = testSubject.scheduleRetry(message,
-                                                                     null,
-                                                                     new MockException(
-                                                                             "Simulating exception"),
-                                                                     dispatcher);
+
+        MessageStream<Message<?>> actual =
+                testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
         // make sure the policy as asked with the right details
-        verify(retryPolicy).defineFor(eq(message), isA(MockException.class), argThat(List::isEmpty));
+        verify(retryPolicy).defineFor(eq(testMessage), isA(MockException.class), argThat(List::isEmpty));
 
         assertFalse(actual.firstAsCompletableFuture().isDone());
         ScheduledTask scheduledTask = scheduledTasks.poll();
@@ -96,7 +94,7 @@ class AsyncRetrySchedulerTest {
 
         scheduledTask.task.run();
 
-        verify(dispatcher).dispatch(eq(message), any());
+        verify(dispatcher).dispatch(eq(testMessage), any());
         assertTrue(actual.firstAsCompletableFuture().isDone());
         verifyNoMoreInteractions(retryPolicy);
     }
@@ -104,20 +102,17 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldRescheduleAgainWhenRetryReturnsFailedStream() {
+        Message<Object> testMessage = new GenericMessage<>(dottedName("test.message"), "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any()))
                 .thenReturn(MessageStream.failed(new MockException("Repeated failure")))
                 .thenReturn(MessageStream.empty());
 
-        Message<Object> message = GenericMessage.asMessage("stub");
-        MessageStream<Message<?>> actual = testSubject.scheduleRetry(message,
-                                                                     null,
-                                                                     new MockException(
-                                                                             "Simulating exception"),
-                                                                     dispatcher);
+        MessageStream<Message<?>> actual =
+                testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
 
-        verify(retryPolicy).defineFor(eq(message), isA(MockException.class), argThat(List::isEmpty));
+        verify(retryPolicy).defineFor(eq(testMessage), isA(MockException.class), argThat(List::isEmpty));
 
         assertFalse(actual.firstAsCompletableFuture().isDone());
         ScheduledTask scheduledTask = scheduledTasks.poll();
@@ -126,9 +121,9 @@ class AsyncRetrySchedulerTest {
         assertEquals(TimeUnit.SECONDS, scheduledTask.unit);
 
         scheduledTask.task.run();
-        verify(retryPolicy).defineFor(eq(message), isA(MockException.class), argThat(h -> h.size() == 1));
+        verify(retryPolicy).defineFor(eq(testMessage), isA(MockException.class), argThat(h -> h.size() == 1));
 
-        verify(dispatcher, times(1)).dispatch(eq(message), any());
+        verify(dispatcher, times(1)).dispatch(eq(testMessage), any());
         assertFalse(actual.firstAsCompletableFuture().isDone());
 
         scheduledTasks.remove().task.run();
@@ -138,17 +133,18 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldReturnFailedStreamIfFailureIsNotFirstItemInStream() {
+        Message<Object> testMessage = new GenericMessage<>(dottedName("test.message"), "stub");
+        Message<String> responseMessage = new GenericMessage<>(dottedName("test.message"), "OK");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
-        when(dispatcher.dispatch(any(), any())).thenAnswer(i -> MessageStream.just(GenericMessage.asMessage("OK"))
-                                                                             .concatWith(MessageStream.failed(new MockException(
-                                                                                     "Streaming error"))));
-        MessageStream<Message<?>> actual = testSubject.scheduleRetry(GenericMessage.asMessage(
-                                                                             "stub"),
-                                                                     null,
-                                                                     new MockException(
-                                                                             "Simulating exception"),
-                                                                     dispatcher);
+        when(dispatcher.dispatch(any(), any())).thenAnswer(
+                i -> MessageStream.just(responseMessage)
+                                  .concatWith(MessageStream.failed(new MockException("Streaming error")))
+        );
+
+        MessageStream<Message<?>> actual =
+                testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
+
         assertFalse(actual.firstAsCompletableFuture().isDone());
         verify(dispatcher, never()).dispatch(any(), any());
         scheduledTasks.remove().task.run();
@@ -167,13 +163,14 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldNotScheduleAnotherRetryWhenPolicyIndicatesSo() {
+        Message<Object> testMessage = new GenericMessage<>(dottedName("test.message"), "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any())).thenAnswer(i -> MessageStream.failed(new MockException("Retry error")));
-        MessageStream<Message<?>> actual = testSubject.scheduleRetry(GenericMessage.asMessage("stub"),
-                                                                     null,
-                                                                     new MockException("Simulating exception"),
-                                                                     dispatcher);
+
+        MessageStream<Message<?>> actual =
+                testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
+
         assertFalse(actual.firstAsCompletableFuture().isDone());
         verify(dispatcher, never()).dispatch(any(), any());
 
@@ -197,13 +194,7 @@ class AsyncRetrySchedulerTest {
         verify(mock).describeProperty("executor", executor);
     }
 
-    private static class TestRetryPolicy implements RetryPolicy {
-
-        private final AtomicReference<Outcome> policyOutcome;
-
-        public TestRetryPolicy(AtomicReference<Outcome> policyOutcome) {
-            this.policyOutcome = policyOutcome;
-        }
+    private record TestRetryPolicy(AtomicReference<Outcome> policyOutcome) implements RetryPolicy {
 
         @Override
         public Outcome defineFor(@Nonnull Message<?> message, @Nonnull Throwable cause,
@@ -217,16 +208,7 @@ class AsyncRetrySchedulerTest {
         }
     }
 
-    private static class ScheduledTask {
+    private record ScheduledTask(Runnable task, long delay, TimeUnit unit) {
 
-        private final Runnable task;
-        private final long delay;
-        private final TimeUnit unit;
-
-        public ScheduledTask(Runnable task, long delay, TimeUnit unit) {
-            this.task = task;
-            this.delay = delay;
-            this.unit = unit;
-        }
     }
 }

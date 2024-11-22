@@ -17,7 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.messaging.MessageStream.Entry;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
@@ -26,8 +26,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -56,7 +56,7 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
+        return new GenericMessage<>(dottedName("test.message"), "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test

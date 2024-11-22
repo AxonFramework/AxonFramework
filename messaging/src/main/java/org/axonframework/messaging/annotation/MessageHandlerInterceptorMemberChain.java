@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -53,7 +54,8 @@ public interface MessageHandlerInterceptorMemberChain<T> {
                                     @Nonnull T target,
                                     @Nonnull MessageHandlingMember<? super T> handler) {
         try {
-            return MessageStream.just(GenericMessage.asMessage(handleSync(message, target, handler)));
+            Object result = handleSync(message, target, handler);
+            return MessageStream.just(new GenericMessage<>(QualifiedName.className(result.getClass()), result));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

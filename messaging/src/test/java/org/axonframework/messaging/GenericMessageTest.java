@@ -44,6 +44,7 @@ import static org.mockito.Mockito.*;
 class GenericMessageTest {
 
     private final Map<String, ?> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
+
     private UnitOfWork<?> unitOfWork;
 
     @BeforeEach
@@ -58,6 +59,21 @@ class GenericMessageTest {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.clear(CurrentUnitOfWork.get());
         }
+    }
+
+    @Test
+    void containsDataAsExpected() {
+        String testIdentifier = "testIdentifier";
+        QualifiedName testType = dottedName("test.message");
+        String testPayload = "payload";
+        MetaData testMetaData = MetaData.emptyInstance();
+
+        Message<String> testSubject = new GenericMessage<>(testIdentifier, testType, testPayload, testMetaData);
+
+        assertEquals(testIdentifier, testSubject.getIdentifier());
+        assertEquals(testType, testSubject.type());
+        assertEquals(testPayload, testSubject.getPayload());
+        assertEquals(testMetaData, testSubject.getMetaData());
     }
 
     @Test
@@ -93,32 +109,13 @@ class GenericMessageTest {
     }
 
     @Test
-    void asMessageReturnsProvidedMessageAsIs() {
-        Message<String> testMessage = new GenericMessage<>(dottedName("test.message"), "payload");
-
-        Message<?> result = GenericMessage.asMessage(testMessage);
-
-        assertEquals(testMessage, result);
-    }
-
-    @Test
-    void asMessageWrapsProvidedObjectsInMessage() {
-        String testPayload = "payload";
-
-        Message<?> result = GenericMessage.asMessage(testPayload);
-
-        assertNotEquals(testPayload, result);
-        assertEquals(testPayload, result.getPayload());
-    }
-
-    @Test
     void whenCorrelationDataProviderThrowsException_thenCatchException() {
         unitOfWork = new DefaultUnitOfWork<>(new GenericEventMessage<>(dottedName("test.message"), "Input 1"));
         CurrentUnitOfWork.set(unitOfWork);
         unitOfWork.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
         CannotConvertBetweenTypesException exception = new CannotConvertBetweenTypesException("foo");
 
-        Message<?> result = GenericMessage.asMessage(exception);
+        Message<?> result = new GenericMessage<>(dottedName("test.exception"), exception);
 
         assertNotNull(result);
     }

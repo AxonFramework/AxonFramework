@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
@@ -113,7 +114,8 @@ public interface MessageHandlingMember<T> {
                                     @Nullable T target) {
         try {
             // TODO: 24-11-2023 proper impl
-            return MessageStream.just(GenericMessage.asMessage(handleSync(message, target)));
+            Object result = handleSync(message, target);
+            return MessageStream.just(new GenericMessage<>(QualifiedName.className(result.getClass()), result));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

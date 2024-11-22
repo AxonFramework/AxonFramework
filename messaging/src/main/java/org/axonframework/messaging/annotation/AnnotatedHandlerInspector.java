@@ -25,7 +25,17 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -33,6 +43,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.emptySortedSet;
+import static org.axonframework.messaging.QualifiedName.className;
 
 /**
  * Inspector for a message handling target of type {@code T} that uses annotations on the target to inspect the
@@ -195,9 +206,10 @@ public class AnnotatedHandlerInspector<T> {
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
     private static MessageStream<?> returnTypeConverter(Object result) {
-        return result instanceof CompletableFuture<?>
-                ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
-                : MessageStream.just(GenericMessage.asMessage(result));
+        if (result instanceof CompletableFuture<?> future) {
+            return MessageStream.fromFuture(future.thenApply(r -> new GenericMessage<>(className(r.getClass()), r)));
+        }
+        return MessageStream.just(new GenericMessage<>(className(result.getClass()), result));
     }
 
     @SuppressWarnings("unchecked")

@@ -19,6 +19,8 @@ package org.axonframework.messaging;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
+
 /**
  * Test class validating the {@link CompletionCallbackMessageStream} through the {@link MessageStreamTest} suite.
  *
@@ -45,6 +47,6 @@ class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message<Stri
 
     @Override
     Message<String> createRandomMessage() {
-        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
+        return new GenericMessage<>(dottedName("test.message"), "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

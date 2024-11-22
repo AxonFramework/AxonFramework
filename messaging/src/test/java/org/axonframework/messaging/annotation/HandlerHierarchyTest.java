@@ -21,13 +21,14 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.axonframework.messaging.QualifiedName.className;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests sorting of handlers using {@link HandlerComparator}. Event types have complex hierarchical inheritance.
@@ -102,9 +103,10 @@ class HandlerHierarchyTest {
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
     private static MessageStream<?> returnTypeConverter(Object result) {
-        return result instanceof CompletableFuture<?>
-                ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
-                : MessageStream.just(GenericMessage.asMessage(result));
+        if (result instanceof CompletableFuture<?> future) {
+            return MessageStream.fromFuture(future.thenApply(r -> new GenericMessage<>(className(r.getClass()), r)));
+        }
+        return MessageStream.just(new GenericMessage<>(className(result.getClass()), result));
     }
 
     @Test

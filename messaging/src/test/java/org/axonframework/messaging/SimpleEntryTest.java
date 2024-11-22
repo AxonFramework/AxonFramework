@@ -22,10 +22,11 @@ import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.ContextTestSuite;
 import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
+import static org.axonframework.messaging.QualifiedName.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -35,9 +36,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
+    private static final Message<Object> TEST_MESSAGE =
+            new GenericMessage<>(dottedName("test.message"), "some-payload");
+
     @Override
     public SimpleEntry<Message<?>> testSubject() {
-        return new SimpleEntry<>(GenericMessage.asMessage("some-payload"));
+        return new SimpleEntry<>(TEST_MESSAGE);
     }
 
     @Test
@@ -47,7 +51,7 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
     @Test
     void containsExpectedData() {
-        Message<Object> expected = GenericMessage.asMessage("some-payload");
+        Message<Object> expected = TEST_MESSAGE;
 
         Entry<Message<Object>> testSubject = new SimpleEntry<>(expected);
 
@@ -56,7 +60,7 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
     @Test
     void mapsContainedMessageAndContextAsExpected() {
-        Message<Object> expectedMessage = GenericMessage.asMessage("some-payload");
+        Message<Object> expectedMessage = TEST_MESSAGE;
         MetaData expectedMetaData = MetaData.from(Map.of("key", "value"));
         String expectedResourceValue = "test";
         ResourceKey<String> expectedContextKey = ResourceKey.create(expectedResourceValue);
