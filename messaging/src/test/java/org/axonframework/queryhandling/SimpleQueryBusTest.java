@@ -766,7 +766,7 @@ class SimpleQueryBusTest {
 
 
         SubscriptionQueryMessage<String, Long, Long> testQuery = new GenericSubscriptionQueryMessage<>(
-                dottedName("test.query"), "test", "queryName", instanceOf(Long.class), instanceOf(Long.class)
+                dottedName("test.query"), "queryName", "test", instanceOf(Long.class), instanceOf(Long.class)
         );
         SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result =
                 testSubject.subscriptionQuery(testQuery);
@@ -798,7 +798,7 @@ class SimpleQueryBusTest {
 
 
         SubscriptionQueryMessage<String, Long, Long> testQuery = new GenericSubscriptionQueryMessage<>(
-                dottedName("test.query"), "test", "queryName", instanceOf(Long.class), instanceOf(Long.class)
+                dottedName("test.query"), "queryName", "test", instanceOf(Long.class), instanceOf(Long.class)
         );
         try {
             SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result =

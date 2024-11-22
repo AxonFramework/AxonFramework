@@ -64,7 +64,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
                                            @Nonnull P payload,
                                            @Nonnull ResponseType<I> responseType,
                                            @Nonnull ResponseType<U> updateResponseType) {
-        this(type, payload, payload.getClass().getName(), responseType, updateResponseType);
+        this(type, payload.getClass().getName(), payload, responseType, updateResponseType);
     }
 
     /**
@@ -74,17 +74,17 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * The {@link MetaData} defaults to an empty instance.
      *
      * @param type               The {@link QualifiedName type} for this {@link SubscriptionQueryMessage}.
+     * @param queryName          The name identifying the query to execute by this {@link SubscriptionQueryMessage}.
      * @param payload            The payload of type {@code P} expressing the query for this
      *                           {@link SubscriptionQueryMessage}.
-     * @param queryName          The name identifying the query to execute by this {@link SubscriptionQueryMessage}.
      * @param responseType       The expected {@link ResponseType response type} for this
      *                           {@link SubscriptionQueryMessage}.
      * @param updateResponseType The expected {@link ResponseType type} of incremental updates for this
      *                           {@link SubscriptionQueryMessage}.
      */
     public GenericSubscriptionQueryMessage(@Nonnull QualifiedName type,
-                                           @Nonnull P payload,
                                            @Nonnull String queryName,
+                                           @Nonnull P payload,
                                            @Nonnull ResponseType<I> responseType,
                                            @Nonnull ResponseType<U> updateResponseType) {
         super(type, queryName, payload, responseType);

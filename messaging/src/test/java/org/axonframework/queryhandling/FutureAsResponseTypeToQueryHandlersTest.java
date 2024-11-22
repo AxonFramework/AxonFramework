@@ -113,7 +113,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void subscriptionQueryWithMultipleResponses() {
         SubscriptionQueryMessage<String, List<String>, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                dottedName("test.query"), "criteria", "myQueryWithMultipleResponses",
+                dottedName("test.query"), "myQueryWithMultipleResponses", "criteria",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
@@ -129,7 +129,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void subscriptionQueryWithSingleResponse() {
         SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                dottedName("test.query"), "criteria", "myQueryWithSingleResponse",
+                dottedName("test.query"), "myQueryWithSingleResponse", "criteria",
                 instanceOf(String.class), instanceOf(String.class)
         );
 
@@ -175,7 +175,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void futureSubscriptionQueryWithMultipleResponses() {
         SubscriptionQueryMessage<String, List<String>, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                dottedName("test.query"), "criteria", "myQueryFutureWithMultipleResponses",
+                dottedName("test.query"), "myQueryFutureWithMultipleResponses", "criteria",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 

@@ -519,7 +519,7 @@ class AxonServerQueryBusTest {
                         "<string>Hello world</string>", stubUpdate("Not a valid XML object")
                 ));
         GenericSubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                dottedName("test.query"), "Say hi", "test", instanceOf(String.class), instanceOf(String.class)
+                dottedName("test.query"), "test", "Say hi", instanceOf(String.class), instanceOf(String.class)
         );
 
         SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> queryResult =
@@ -544,7 +544,7 @@ class AxonServerQueryBusTest {
                         "Not a valid XML object", stubUpdate("<string>Hello world</string>")
                 ));
         GenericSubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                dottedName("test.query"), "Say hi", "test", instanceOf(String.class), instanceOf(String.class)
+                dottedName("test.query"), "test", "Say hi", instanceOf(String.class), instanceOf(String.class)
         );
 
         SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> queryResult =
