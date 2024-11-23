@@ -18,6 +18,7 @@ package org.axonframework.spring.authorization;
 
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
+import org.hamcrest.core.StringStartsWith;
 import org.junit.jupiter.api.*;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.testcontainers.shaded.com.google.common.collect.Sets;
@@ -57,8 +58,8 @@ class SecuredMethodMessageHandlerDefinitionTest {
         testSubject.givenNoPriorActivity()
                    .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER),
                          metaData)
-                   .expectException(SecurityException.class)
-                   .expectExceptionMessage("Message denied");
+                   .expectException(UnauthorizedMessageException.class)
+                   .expectExceptionMessage(StringStartsWith.startsWith("Unauthorized message"));
     }
     @Test
     void shouldAllowUnannotatedMethods() {
@@ -74,7 +75,7 @@ class SecuredMethodMessageHandlerDefinitionTest {
     void shouldDenyWhenNoAuthorityPresent() {
         testSubject.givenNoPriorActivity()
                    .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER))
-                   .expectException(SecurityException.class)
-                   .expectExceptionMessage("Message denied");
+                   .expectException(UnauthorizedMessageException.class)
+                   .expectExceptionMessage(StringStartsWith.startsWith("Unauthorized message"));
     }
 }
