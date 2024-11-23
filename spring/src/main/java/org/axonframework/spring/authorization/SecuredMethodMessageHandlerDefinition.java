@@ -23,6 +23,7 @@ import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -53,7 +54,7 @@ public class SecuredMethodMessageHandlerDefinition implements HandlerEnhancerDef
         public SecuredMessageHandlingMember(MessageHandlingMember<T> delegate,
                                             Map<String, Object> annotationAttributes) {
             super(delegate);
-            requiredRoles = Set.of((String[]) annotationAttributes.get("secured"));
+            requiredRoles = new HashSet<>(Arrays.asList((String[]) annotationAttributes.get("secured")));
         }
 
         @Override

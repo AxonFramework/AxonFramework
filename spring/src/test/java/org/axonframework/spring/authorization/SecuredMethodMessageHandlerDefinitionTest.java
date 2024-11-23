@@ -20,6 +20,7 @@ import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
 import org.junit.jupiter.api.*;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.testcontainers.shaded.com.google.common.collect.Sets;
 
 import java.util.Map;
 import java.util.Set;
@@ -41,25 +42,30 @@ class SecuredMethodMessageHandlerDefinitionTest {
 
     @Test
     void shouldAllowWhenAuthorityMatch() {
+        Map<String, java.util.HashSet<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
+        metaData.put("authorities", Sets.newHashSet(new SimpleGrantedAuthority("ROLE_aggregate.create")));
         testSubject.givenNoPriorActivity()
-                   .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER),
-                         Map.of("authorities", Set.of(new SimpleGrantedAuthority("ROLE_aggregate.create"))))
+                   .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), metaData)
                    .expectEventsMatching(exactSequenceOf(predicate(
                            eventMessage -> eventMessage.getPayloadType().isAssignableFrom(AggregateCreatedEvent.class)
                    )));
     }
     @Test
     void shouldDenyWhenAuthorityDoesNotMatch() {
+        Map<String, java.util.HashSet<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
+        metaData.put("authorities", Sets.newHashSet(new SimpleGrantedAuthority("ROLE_anonymous")));
         testSubject.givenNoPriorActivity()
                    .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER),
-                         Map.of("authorities", Set.of(new SimpleGrantedAuthority("ROLE_anonymous"))))
+                         metaData)
                    .expectException(SecurityException.class)
                    .expectExceptionMessage("Message denied");
     }
     @Test
     void shouldAllowUnannotatedMethods() {
+        Map<String, Set<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
+        metaData.put("authorities", Sets.newHashSet(new SimpleGrantedAuthority("ROLE_anonymous")));
         testSubject.given(new AggregateCreatedEvent(TEST_AGGREGATE_IDENTIFIER))
-                   .when(new UpdateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), Map.of("authorities", Set.of(new SimpleGrantedAuthority("ROLE_anonymous"))))
+                   .when(new UpdateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), metaData)
                    .expectEventsMatching(exactSequenceOf(predicate(
                            eventMessage -> eventMessage.getPayloadType().isAssignableFrom(AggregateUpdatedEvent.class)
                    )));
