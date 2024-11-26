@@ -19,6 +19,7 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -38,7 +39,7 @@ import static org.axonframework.common.BuilderUtils.*;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public final class QualifiedName {
+public final class QualifiedName implements Serializable {
 
     private static final Pattern SIMPLE_STRING_PATTERN = Pattern.compile("(\\w+)(\\s@\\[\\w+])?(\\s#\\[\\w+])?");
 
