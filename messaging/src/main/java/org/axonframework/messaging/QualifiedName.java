@@ -197,12 +197,16 @@ public final class QualifiedName implements Serializable {
     }
 
     /**
-     * Returns the revision of this {@link QualifiedName} as an {@link Optional}.
+     * Returns the revision of this {@link QualifiedName}.
+     * <p>
+     * The revision typically represents the version of the {@link Message Message's}
+     * {@link Message#getPayload() payload}. Or, for a {@link MessageHandler}, it specifies the version or versions of a
+     * {@code Message} that the handler is able to handle.
      *
      * @return The revision of this {@link QualifiedName}.
      */
-    public Optional<String> revision() {
-        return Optional.ofNullable(revision);
+    public String revision() {
+        return revision;
     }
 
     /**

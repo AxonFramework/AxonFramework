@@ -38,8 +38,7 @@ class QualifiedNameTest {
 
         assertEquals(NAMESPACE, testSubject.namespace());
         assertEquals(LOCAL_NAME, testSubject.localName());
-        assertTrue(testSubject.revision().isPresent());
-        assertEquals(REVISION, testSubject.revision().get());
+        assertEquals(REVISION, testSubject.revision());
     }
 
     @Test
@@ -124,7 +123,7 @@ class QualifiedNameTest {
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertEquals(QualifiedName.DEFAULT_REVISION, testSubject.revision().get());
+        assertEquals(QualifiedName.DEFAULT_REVISION, testSubject.revision());
     }
 
     @Test
@@ -137,7 +136,7 @@ class QualifiedNameTest {
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertEquals(testRevision, testSubject.revision().get());
+        assertEquals(testRevision, testSubject.revision());
     }
 
     @Test
@@ -148,7 +147,6 @@ class QualifiedNameTest {
 
         assertEquals("", testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertFalse(testSubject.revision().isPresent());
     }
 
     @Test
@@ -162,7 +160,6 @@ class QualifiedNameTest {
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertFalse(testSubject.revision().isPresent());
     }
 
     @Test
@@ -176,8 +173,7 @@ class QualifiedNameTest {
 
         assertEquals("", testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertTrue(testSubject.revision().isPresent());
-        assertEquals(expectedRevision, testSubject.revision().get());
+        assertEquals(expectedRevision, testSubject.revision());
     }
 
     @Test
@@ -192,8 +188,7 @@ class QualifiedNameTest {
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertTrue(testSubject.revision().isPresent());
-        assertEquals(expectedRevision, testSubject.revision().get());
+        assertEquals(expectedRevision, testSubject.revision());
     }
 
     @Test
