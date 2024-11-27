@@ -19,7 +19,7 @@ You can make an enhancement request by clicking link:https://github.com/AxonFram
 When looking to provide a pull request, be sure to adjust link:https://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/serialization.adochttps://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/known-issues-and-workarounds.adoc[this file].
 ====
 
-== RDBMS storage and serialized data columns
+== Relation database storage and serialized data columns
 
 When storing the serialized formats of, for example, xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[tokens], xref:axon-framework-reference:sagas:index.adoc[sagas], xref:axon-framework-reference:tuning:event-snapshots.adoc[snapshots], or xref:axon-framework-reference:events:infrastructure.adoc[events], it is good to know Axon uses the (B)LOB for these columns in your RDBMS of choice.
 
