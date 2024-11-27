@@ -100,17 +100,6 @@ class QualifiedNameTest {
     }
 
     @Test
-    void dottedNameFactoryMethodSplitsTheNameAsExpected() {
-        String expectedNamespace = "my.context";
-        String expectedLocalName = "BusinessOperation";
-
-        QualifiedName testSubject = QualifiedName.dottedName("my.context.BusinessOperation");
-
-        assertEquals(expectedNamespace, testSubject.namespace());
-        assertEquals(expectedLocalName, testSubject.localName());
-    }
-
-    @Test
     void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForNullDottedName() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.dottedName(null));
@@ -124,6 +113,31 @@ class QualifiedNameTest {
     @Test
     void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyLocalNamePart() {
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.dottedName("my.context."));
+    }
+
+    @Test
+    void dottedNameFactoryMethodSplitsTheNameAsExpected() {
+        String expectedNamespace = "my.context";
+        String expectedLocalName = "BusinessOperation";
+
+        QualifiedName testSubject = QualifiedName.dottedName("my.context.BusinessOperation");
+
+        assertEquals(expectedNamespace, testSubject.namespace());
+        assertEquals(expectedLocalName, testSubject.localName());
+        assertEquals(QualifiedName.DEFAULT_REVISION, testSubject.revision().get());
+    }
+
+    @Test
+    void dottedNameFactoryMethodWithRevisionSplitsTheNameAsExpected() {
+        String expectedNamespace = "my.context";
+        String expectedLocalName = "BusinessOperation";
+        String testRevision = "1337.42";
+
+        QualifiedName testSubject = QualifiedName.dottedName("my.context.BusinessOperation", testRevision);
+
+        assertEquals(expectedNamespace, testSubject.namespace());
+        assertEquals(expectedLocalName, testSubject.localName());
+        assertEquals(testRevision, testSubject.revision().get());
     }
 
     @Test
