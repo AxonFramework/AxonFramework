@@ -6,7 +6,7 @@ When using Axon Framework together with a relational database, there are several
 . Using the xref:#important_indices[correct indices] for the different types of queries used.
 . Configuring the xref:#auto_increment_and_sequences[right auto-increment configuration] when using JPA.
 
-== Important Indices
+== Important indices
 
 [#important_indices]
 :navtitle: Important Indices
@@ -61,7 +61,7 @@ Generally, these are the `'simple name'` of the aggregate.
 Even the infamous `AbstractDependencyInjectionSpringContextTests` in Spring only counts 45 characters.
 Here, again, a shorter (but variable) length field should suffice.
 
-== Auto-Increment and Sequences
+== Auto-increment and sequences
 
 [#auto_increment_and_sequences]
 :navtitle: Auto-Increment and Sequences

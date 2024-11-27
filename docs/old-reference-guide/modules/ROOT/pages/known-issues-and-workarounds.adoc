@@ -10,7 +10,7 @@ This page intends to provide the biggest "gotchas," with optional workarounds, w
 .Where is issue XYZ?
 ====
 This page can by no means contain **all** possible issues out there.
-But, that does not mean we are not open for suggestions.
+However, that does not mean we are not open for suggestions.
 
 This documentation, just as the framework, is open source as well.
 Hence, if you have found something problematic that you think should be added to the list, be sure to file an issue and (ideally!) a pull request.
@@ -29,7 +29,7 @@ Especially (B/C)LOB columns are automatically replaced for the OID type.
 
 Hence, all your tokens, sagas, snapshots, and events will automatically move to another table, with all added overhead coming with it.
 Using xref:axon-server-reference::index.adoc[Axon Server] will, obviously, resolve this for your events and snapshots, as you would no longer use an RDBMS in that case.
-But even when using Axon Server, the predicament remains for tokens and sagas.
+However, even when using Axon Server, the predicament remains for tokens and sagas.
 
 For those cases, it would be wise to replace the TOAST behavior entirely.
 The most straightforward way, is to enforce the use of the `bytea` column type; with some additional steps, of course.
