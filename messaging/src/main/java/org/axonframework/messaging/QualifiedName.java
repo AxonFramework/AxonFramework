@@ -19,11 +19,11 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Interface describing a qualified name, providing space for a {@link #namespace() namespace},
@@ -32,12 +32,24 @@ import static org.axonframework.common.BuilderUtils.*;
  * Useful to provide clear names to {@link Message Messages}, {@link MessageHandler MessageHandlers}, and other
  * components that require naming.
  *
+ * @param namespace The {@link String} representing the {@link #namespace()} of this {@link QualifiedName}. The
+ *                  {@code namespace} may represent a (bounded) context, package, or whatever other "space" this
+ *                  {@link QualifiedName} applies too.
+ * @param localName The {@link String} representing the {@link #localName()} of this {@link QualifiedName}. The
+ *                  {@code localName} may represent a {@link Message Message's} name, a {@link MessageHandler} its name,
+ *                  or whatever other business specific concept this {@link QualifiedName} should represent.
+ * @param revision  The {@link String} representing the {@link #revision()} of this {@link QualifiedName}. The
+ *                  {@code revision} typically represents the version of the {@link Message Message's}
+ *                  {@link Message#getPayload() payload}. Or, for a {@link MessageHandler}, it specifies the version or
+ *                  versions of a {@code Message} that the handler is able to handle.
  * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public final class QualifiedName implements Serializable {
+public record QualifiedName(@Nonnull String namespace,
+                            @Nonnull String localName,
+                            @Nonnull String revision) implements Serializable {
 
     private static final Pattern SIMPLE_STRING_PATTERN = Pattern.compile("(\\w+)(\\s@\\[\\w+])?(\\s#\\[\\w+])?");
 
@@ -51,27 +63,14 @@ public final class QualifiedName implements Serializable {
      */
     public static final String DELIMITER = ":";
 
-    private final String namespace;
-    private final String localName;
-    private final String revision;
-
     /**
-     * Constructs a {@link QualifiedName} based on the given {@code namespace}, {@code localName}, and
-     * {@code revision}.
-     *
-     * @param namespace The {@link String} representing the {@link #namespace()} of this {@link QualifiedName}.
-     * @param localName The {@link String} representing the {@link #localName()} of this {@link QualifiedName}.
-     * @param revision  The {@link String} representing the {@link #revision()} of this {@link QualifiedName}.
+     * Compact constructor asserting whether the {@code namespace}, {@code localName}, and {@code revision} are non-null
+     * and not empty.
      */
-    public QualifiedName(@Nonnull String namespace,
-                         @Nonnull String localName,
-                         @Nonnull String revision) {
+    public QualifiedName {
         assertNonEmpty(namespace, "The namespace must not be null or empty.");
         assertNonEmpty(localName, "The localName must not be null or empty.");
         assertNonEmpty(revision, "The revision must not be null or empty.");
-        this.namespace = namespace;
-        this.localName = localName;
-        this.revision = revision;
     }
 
     /**
@@ -164,43 +163,6 @@ public final class QualifiedName implements Serializable {
     }
 
     /**
-     * Returns the namespace this {@link QualifiedName} refers too.
-     * <p>
-     * The namespace may represent a (bounded) context, package, or whatever other "space" this {@link QualifiedName}
-     * applies too.
-     *
-     * @return The namespace this {@link QualifiedName} refers too.
-     */
-    public String namespace() {
-        return namespace;
-    }
-
-    /**
-     * Returns the local name this {@link QualifiedName} refers too.
-     * <p>
-     * The local name may represent a {@link Message Message's} name, a {@link MessageHandler} its name, or whatever
-     * other business specific concept this {@link QualifiedName} should represent.
-     *
-     * @return The local name this {@link QualifiedName} refers too.
-     */
-    public String localName() {
-        return localName;
-    }
-
-    /**
-     * Returns the revision of this {@link QualifiedName}.
-     * <p>
-     * The revision typically represents the version of the {@link Message Message's}
-     * {@link Message#getPayload() payload}. Or, for a {@link MessageHandler}, it specifies the version or versions of a
-     * {@code Message} that the handler is able to handle.
-     *
-     * @return The revision of this {@link QualifiedName}.
-     */
-    public String revision() {
-        return revision;
-    }
-
-    /**
      * Prints the {@link QualifiedName} in a simplified {@link String}.
      * <p>
      * The {@link #namespace()}, {@link #localName()}, and {@link #revision()} are split by means of a semicolon
@@ -215,30 +177,5 @@ public final class QualifiedName implements Serializable {
      */
     public String toSimpleString() {
         return namespace + DELIMITER + localName + DELIMITER + revision;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        QualifiedName that = (QualifiedName) o;
-        return Objects.equals(namespace, that.namespace)
-                && Objects.equals(localName, that.localName)
-                && Objects.equals(revision, that.revision);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(namespace, localName, revision);
-    }
-
-    @Override
-    public String toString() {
-        return "QualifiedName{" +
-                "namespace='" + namespace + '\'' +
-                ", localName='" + localName + '\'' +
-                ", revision='" + revision + '\'' +
-                '}';
     }
 }
