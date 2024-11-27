@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -176,7 +175,8 @@ public final class QualifiedName implements Serializable {
     /**
      * Returns the namespace this {@link QualifiedName} refers too.
      * <p>
-     * The namespace may represent a (bounded) context, package, or whatever other "space" this name applies too.
+     * The namespace may represent a (bounded) context, package, or whatever other "space" this {@link QualifiedName}
+     * applies too.
      *
      * @return The namespace this {@link QualifiedName} refers too.
      */
@@ -188,7 +188,7 @@ public final class QualifiedName implements Serializable {
      * Returns the local name this {@link QualifiedName} refers too.
      * <p>
      * The local name may represent a {@link Message Message's} name, a {@link MessageHandler} its name, or whatever
-     * other business specific concept this name should represent.
+     * other business specific concept this {@link QualifiedName} should represent.
      *
      * @return The local name this {@link QualifiedName} refers too.
      */
