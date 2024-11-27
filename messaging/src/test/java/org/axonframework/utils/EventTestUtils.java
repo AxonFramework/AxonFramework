@@ -31,7 +31,7 @@ import java.util.stream.IntStream;
 // TODO - Discuss: Perfect candidate to move to a commons test utils module?
 public abstract class EventTestUtils {
 
-    private static final QualifiedName TYPE = QualifiedName.dottedName("EventTestUtils");
+    private static final QualifiedName TYPE = QualifiedName.dottedName("test.event");
     private static final String PAYLOAD = "payload";
     private static final String AGGREGATE = "aggregate";
     private static final String AGGREGATE_TYPE = "aggregateType";

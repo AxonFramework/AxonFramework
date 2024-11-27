@@ -434,7 +434,7 @@ class DefaultQueryGatewayTest {
     void payloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         when(mockBus.query(anyMessage(String.class, String.class)))
                 .thenReturn(completedFuture(new GenericQueryResponseMessage<>(
-                        QualifiedName.dottedName("test"), "test"
+                        QualifiedName.dottedName("test.query"), "test"
                 ) {
                     @Override
                     public String getPayload() {
