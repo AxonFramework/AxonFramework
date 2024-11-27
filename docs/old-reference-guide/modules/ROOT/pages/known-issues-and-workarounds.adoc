@@ -6,6 +6,19 @@ Especially given the fact Axon Framework will integrate with a wide variety of o
 
 This page intends to provide the biggest "gotchas," with optional workarounds, which you can see below.
 
+[NOTE]
+.Where is issue XYZ?
+====
+This page can by no means contain **all** possible issues out there.
+But, that does not mean we are not open for suggestions.
+
+This documentation, just as the framework, is open source as well.
+Hence, if you have found something problematic that you think should be added to the list, be sure to file an issue and (ideally!) a pull request.
+
+You can make an enhancement request by clicking link:https://github.com/AxonFramework/AxonFramework/issues/new?assignees=&labels=Type%3A+Enhancement&projects=&template=2_enhancement_request.md[here].
+When looking to provide a pull request, be sure to adjust link:https://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/serialization.adochttps://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/known-issues-and-workarounds.adoc[this file].
+====
+
 == RDBMS Storage and LOB columns
 
 When storing the serialized formats of, for example, xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[tokens], xref:axon-framework-reference:sagas:index.adoc[sagas], xref:axon-framework-reference:tuning:event-snapshots.adoc[snapshots], or xref:axon-framework-reference:events:infrastructure.adoc[events], it is good to know Axon uses the (B)LOB for these columns in your RDBMS of choice.
