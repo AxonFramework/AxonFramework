@@ -51,7 +51,10 @@ public record QualifiedName(@Nonnull String namespace,
                             @Nonnull String localName,
                             @Nonnull String revision) implements Serializable {
 
-    private static final Pattern SIMPLE_STRING_PATTERN = Pattern.compile("(\\w+)(\\s@\\[\\w+])?(\\s#\\[\\w+])?");
+    private static final Pattern SIMPLE_STRING_PATTERN = Pattern.compile("^([^:]+):([^:]+):([^:]+)$");
+    private static final int NAMESPACE_GROUP = 1;
+    private static final int LOCAL_NAME_GROUP = 2;
+    private static final int REVISION_GROUP = 3;
 
     /**
      * The default {@link #revision()} to use when none is present. Defaults to {@code "0.0.1"} as the revision.
@@ -139,27 +142,13 @@ public record QualifiedName(@Nonnull String namespace,
      */
     public static QualifiedName simpleStringName(@Nonnull String simpleString) {
         assertNonEmpty(simpleString, "Cannot construct a QualifiedName based on a null or empty String.");
-        Matcher simpleStringMatcher = SIMPLE_STRING_PATTERN.matcher(simpleString);
-        assertThat(simpleStringMatcher,
-                   Matcher::matches,
+        Matcher matcher = SIMPLE_STRING_PATTERN.matcher(simpleString);
+        assertThat(matcher, Matcher::matches,
                    "The given simple String [" + simpleString + "] does not match the expected pattern.");
 
-        String namespace = getNamespace(simpleStringMatcher.group(2));
-        String localName = simpleStringMatcher.group(1);
-        String revision = getRevision(simpleStringMatcher.group(3));
-        return new QualifiedName(namespace, localName, revision);
-    }
-
-    private static String getNamespace(String namespaceGroup) {
-        return namespaceGroup != null ? removeBrackets(namespaceGroup).replace("@", "").trim() : null;
-    }
-
-    private static String getRevision(String revisionGroup) {
-        return revisionGroup != null ? removeBrackets(revisionGroup).replace("#", "").trim() : null;
-    }
-
-    private static String removeBrackets(String stringWithBrackets) {
-        return stringWithBrackets.replace("[", "").replace("]", "");
+        return new QualifiedName(matcher.group(NAMESPACE_GROUP),
+                                 matcher.group(LOCAL_NAME_GROUP),
+                                 matcher.group(REVISION_GROUP));
     }
 
     /**
