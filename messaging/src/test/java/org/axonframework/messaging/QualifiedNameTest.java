@@ -43,10 +43,14 @@ class QualifiedNameTest {
     }
 
     @Test
-    void defaultsNamespaceToEmptyStringWhenNullIsProvided() {
-        QualifiedName testSubject = new QualifiedName(null, LOCAL_NAME, REVISION);
+    void throwsAxonConfigurationExceptionForNullNamespace() {
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(null, LOCAL_NAME, REVISION));
+    }
 
-        assertEquals("", testSubject.namespace());
+    @Test
+    void throwsAxonConfigurationExceptionForEmptyNamespace() {
+        assertThrows(AxonConfigurationException.class, () -> new QualifiedName("", LOCAL_NAME, REVISION));
     }
 
     @Test
@@ -61,10 +65,14 @@ class QualifiedNameTest {
     }
 
     @Test
-    void nullRevisionResultsInEmptyOptional() {
-        QualifiedName testSubject = new QualifiedName(NAMESPACE, LOCAL_NAME, null);
+    void throwsAxonConfigurationExceptionForNullRevision() {
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, null));
+    }
 
-        assertFalse(testSubject.revision().isPresent());
+    @Test
+    void throwsAxonConfigurationExceptionForEmptyRevision() {
+        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, ""));
     }
 
     @Test

@@ -17,7 +17,6 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -50,20 +49,18 @@ public final class QualifiedName implements Serializable {
     /**
      * Constructs a {@link QualifiedName} based on the given {@code namespace}, {@code localName}, and
      * {@code revision}.
-     * <p>
-     * A {@code null} given {@code namespace} is defaulted to an empty {@link String}. The given {@code revision} will
-     * be wrapped in an {@link Optional#ofNullable(Object)} at all times when retrieved through the {@link #revision()}
-     * operation.
      *
      * @param namespace The {@link String} representing the {@link #namespace()} of this {@link QualifiedName}.
      * @param localName The {@link String} representing the {@link #localName()} of this {@link QualifiedName}.
      * @param revision  The {@link String} representing the {@link #revision()} of this {@link QualifiedName}.
      */
-    public QualifiedName(@Nullable String namespace,
+    public QualifiedName(@Nonnull String namespace,
                          @Nonnull String localName,
-                         @Nullable String revision) {
+                         @Nonnull String revision) {
+        assertNonEmpty(namespace, "The namespace must not be null or empty.");
         assertNonEmpty(localName, "The localName must not be null or empty.");
-        this.namespace = Objects.requireNonNullElse(namespace, "");
+        assertNonEmpty(revision, "The revision must not be null or empty.");
+        this.namespace = namespace;
         this.localName = localName;
         this.revision = revision;
     }
