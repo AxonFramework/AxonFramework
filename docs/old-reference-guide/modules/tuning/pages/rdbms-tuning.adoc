@@ -83,6 +83,13 @@ When using a `JpaEventStorageEngine`, Axon relies on the JPA implementation to c
 While this will work, it is unlikely to provide the configuration that has the best performance for the database engine in use.
 That is because Axon uses default settings for the `@GeneratedValue` annotation.
 
+[WARNING]
+====
+When using the `@GeneratedValue` annotation as-is in Hibernate 6, the default increment value jumped to 50.
+This change, in combination with, for example, the xref:multitenancy-extension-reference::index.adoc[multitenancy] extension, may lead to uniqueness issues.
+Hence, it is strongly recommended to define a custom sequence generator, as described below.
+====
+
 To override these settings, create a file called `/META-INF/orm.xml` on the classpath, which looks as follows:
 
 [source,xml]
