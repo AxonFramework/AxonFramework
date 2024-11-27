@@ -82,23 +82,6 @@ class QualifiedNameTest {
     }
 
     @Test
-    void classNameFactoryMethodSplitsTheClassAsExpected() {
-        String expectedNamespace = ClassToGiveNameTo.class.getPackageName();
-        String expectedLocalName = ClassToGiveNameTo.class.getSimpleName();
-
-        QualifiedName testSubject = QualifiedName.className(ClassToGiveNameTo.class);
-
-        assertEquals(expectedNamespace, testSubject.namespace());
-        assertEquals(expectedLocalName, testSubject.localName());
-    }
-
-    @Test
-    void classNameFactoryMethodThrowsAxonConfigurationExceptionForNullClass() {
-        //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> QualifiedName.className(null));
-    }
-
-    @Test
     void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForNullDottedName() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> QualifiedName.dottedName(null));
@@ -220,9 +203,5 @@ class QualifiedNameTest {
         QualifiedName testSubject = QualifiedName.dottedName("my.context.BusinessOperation");
 
         assertEquals("BusinessOperation @(my.context)", testSubject.toSimpleString());
-    }
-
-    private static class ClassToGiveNameTo {
-
     }
 }

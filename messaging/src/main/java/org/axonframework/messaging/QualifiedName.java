@@ -70,20 +70,6 @@ public final class QualifiedName implements Serializable {
     }
 
     /**
-     * Construct a {@link QualifiedName} based on the given {@code clazz}.
-     * <p>
-     * The {@link Class#getPackageName()} will become the {@link #namespace()}, and the {@link Class#getSimpleName()}
-     * will be the {@link #localName()}.
-     *
-     * @param clazz The {@link Class} to extract a {@link #namespace()} and {@link #localName()} from.
-     * @return A {@link QualifiedName} based on the given {@code clazz}.
-     */
-    public static QualifiedName className(@Nonnull Class<?> clazz) {
-        assertNonNull(clazz, "Cannot construct a QualifiedName based on a null Class.");
-        return new QualifiedName(clazz.getPackageName(), clazz.getSimpleName(), null);
-    }
-
-    /**
      * Construct a {@link QualifiedName} based on the given {@code dottedName}, defaulting the {@link #revision()} to
      * {@link #DEFAULT_REVISION}.
      * <p>
