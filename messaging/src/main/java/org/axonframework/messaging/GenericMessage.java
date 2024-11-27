@@ -70,7 +70,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         }
         QualifiedName type = payloadOrMessage == null
                 ? QualifiedName.dottedName("empty.command.payload")
-                : QualifiedName.className(payloadOrMessage.getClass());
+                : QualifiedNameUtils.fromClassName(payloadOrMessage.getClass());
         //noinspection unchecked
         return new GenericMessage<>(type, (P) payloadOrMessage);
     }

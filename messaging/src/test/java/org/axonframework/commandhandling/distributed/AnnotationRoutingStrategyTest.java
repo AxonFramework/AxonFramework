@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.RoutingKey;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedName.className;
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -41,25 +41,25 @@ class AnnotationRoutingStrategyTest {
     @Test
     void getRoutingKeyFromField() {
         CommandMessage<SomeFieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(
-                className(SomeFieldAnnotatedCommand.class), new SomeFieldAnnotatedCommand()
+                fromClassName(SomeFieldAnnotatedCommand.class), new SomeFieldAnnotatedCommand()
         );
         assertEquals("Target", testSubject.getRoutingKey(testCommand));
 
         CommandMessage<SomeOtherFieldAnnotatedCommand> otherTestCommand = new GenericCommandMessage<>(
-                className(SomeOtherFieldAnnotatedCommand.class), new SomeOtherFieldAnnotatedCommand()
+                fromClassName(SomeOtherFieldAnnotatedCommand.class), new SomeOtherFieldAnnotatedCommand()
         );
         assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
     }
 
     @Test
     void getRoutingKeyFromMethod() {
-        CommandMessage<SomeMethodAnnotatedCommand> testCommand = new GenericCommandMessage<>(className(
-                SomeMethodAnnotatedCommand.class), new SomeMethodAnnotatedCommand()
+        CommandMessage<SomeMethodAnnotatedCommand> testCommand = new GenericCommandMessage<>(
+                fromClassName(SomeMethodAnnotatedCommand.class), new SomeMethodAnnotatedCommand()
         );
         assertEquals("Target", testSubject.getRoutingKey(testCommand));
 
         CommandMessage<SomeOtherMethodAnnotatedCommand> otherTestCommand = new GenericCommandMessage<>(
-                className(SomeOtherMethodAnnotatedCommand.class), new SomeOtherMethodAnnotatedCommand()
+                fromClassName(SomeOtherMethodAnnotatedCommand.class), new SomeOtherMethodAnnotatedCommand()
         );
 
         assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
@@ -71,7 +71,7 @@ class AnnotationRoutingStrategyTest {
                 new AnnotationRoutingStrategy();
 
         CommandMessage<SomeFieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(
-                className(SomeFieldAnnotatedCommand.class), new SomeFieldAnnotatedCommand()
+                fromClassName(SomeFieldAnnotatedCommand.class), new SomeFieldAnnotatedCommand()
         );
 
         assertEquals("Target", testSubjectWithMockedFallbackStrategy.getRoutingKey(testCommand));
@@ -83,7 +83,7 @@ class AnnotationRoutingStrategyTest {
                 new AnnotationRoutingStrategy();
 
         CommandMessage<SomeCommandWithoutTheRoutingAnnotation> testCommand = new GenericCommandMessage<>(
-                className(SomeCommandWithoutTheRoutingAnnotation.class),
+                fromClassName(SomeCommandWithoutTheRoutingAnnotation.class),
                 new SomeCommandWithoutTheRoutingAnnotation("target")
         );
 

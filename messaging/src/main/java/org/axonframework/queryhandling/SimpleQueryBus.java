@@ -25,7 +25,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -186,7 +186,8 @@ public class SimpleQueryBus implements QueryBus {
                        () -> "Direct query does not support Flux as a return type.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
-        List<MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>>> handlers = getHandlersForMessage(interceptedQuery);
+        List<MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>>> handlers =
+                getHandlersForMessage(interceptedQuery);
         CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
         try {
             ResponseType<R> responseType = interceptedQuery.getResponseType();
@@ -204,12 +205,12 @@ public class SimpleQueryBus implements QueryBus {
                         GenericQueryResponseMessage<R> queryResponseMessage =
                                 responseType.convertExceptional(resultMessage.exceptionResult())
                                             .map(exceptionalResult -> new GenericQueryResponseMessage<>(
-                                                    QualifiedName.className(exceptionalResult.getClass()),
+                                                    QualifiedNameUtils.fromClassName(exceptionalResult.getClass()),
                                                     exceptionalResult
                                             ))
                                             .orElse(new GenericQueryResponseMessage<>(
-                                                    QualifiedName.className(resultMessage.exceptionResult()
-                                                                                         .getClass()),
+                                                    QualifiedNameUtils.fromClassName(resultMessage.exceptionResult()
+                                                                                                  .getClass()),
                                                     resultMessage.exceptionResult(),
                                                     responseType.responseMessagePayloadType()
                                             ));
@@ -406,7 +407,8 @@ public class SimpleQueryBus implements QueryBus {
                        () -> "Scatter-Gather query does not support Flux as a return type.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
-        List<MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>>> handlers = getHandlersForMessage(interceptedQuery);
+        List<MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>>> handlers =
+                getHandlersForMessage(interceptedQuery);
         if (handlers.isEmpty()) {
             monitorCallback.reportIgnored();
             return Stream.empty();
@@ -472,7 +474,8 @@ public class SimpleQueryBus implements QueryBus {
         Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
                                                           .doOnError(error -> logger.error(
                                                                   "An error happened while trying to report an initial result. Query: {}",
-                                                                  query, error));
+                                                                  query, error
+                                                          ));
         UpdateHandlerRegistration<U> updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, updateBufferSize);
 
@@ -628,8 +631,8 @@ public class SimpleQueryBus implements QueryBus {
      * <p>
      * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to
      * {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler},
-     * the {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter} and the {@link QueryBusSpanFactory} defaults to a
-     * {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
+     * the {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter} and the {@link QueryBusSpanFactory} defaults
+     * to a {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
      */
     public static class Builder {
 

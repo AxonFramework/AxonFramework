@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.io.Serial;
 import java.util.Map;
@@ -64,7 +65,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
         } else if (command instanceof Message<?> message) {
             return new GenericCommandMessage<>(message.type(), (P) message.getPayload(), message.getMetaData());
         }
-        return new GenericCommandMessage<>(QualifiedName.className(command.getClass()), (P) command,
+        return new GenericCommandMessage<>(QualifiedNameUtils.fromClassName(command.getClass()), (P) command,
                                            MetaData.emptyInstance());
     }
 

@@ -46,7 +46,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
@@ -403,7 +403,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     type,
                     aggregateIdentifier,
                     sequenceNumber++,
-                    new GenericMessage<>(QualifiedName.className(payload.getClass()), payload, metaData),
+                    new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload, metaData),
                     deadlineManager.getCurrentDateTime()
             );
             this.givenEvents.add(eventMessage);

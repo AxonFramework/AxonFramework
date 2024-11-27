@@ -20,6 +20,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.Arrays;
@@ -103,7 +104,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
                 } else {
                     QualifiedName type = result == null
                             ? QualifiedName.dottedName("empty.result")
-                            : QualifiedName.className(result.getClass());
+                            : QualifiedNameUtils.fromClassName(result.getClass());
                     resultMessage = new GenericResultMessage<>(type, result);
                 }
             } catch (Error | Exception e) {
@@ -131,8 +132,8 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     }
 
     /**
-     * Returns a Map of {@link ExecutionResult} per Message. If the Unit of Work has not been given a task
-     * to execute, the ExecutionResult is {@code null} for each Message.
+     * Returns a Map of {@link ExecutionResult} per Message. If the Unit of Work has not been given a task to execute,
+     * the ExecutionResult is {@code null} for each Message.
      *
      * @return a Map of ExecutionResult per Message processed by this Unit of Work
      */
@@ -172,9 +173,9 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
 
     @Override
     protected void setRollbackCause(Throwable cause) {
-        processingContexts.forEach(context -> context.setExecutionResult(
-                new ExecutionResult(new GenericResultMessage<>(QualifiedName.className(cause.getClass()), cause))
-        ));
+        processingContexts.forEach(context -> context.setExecutionResult(new ExecutionResult(
+                new GenericResultMessage<>(QualifiedNameUtils.fromClassName(cause.getClass()), cause)
+        )));
     }
 
     @Override
@@ -229,5 +230,4 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     public boolean isFirstMessage() {
         return isFirstMessage(getMessage());
     }
-
 }

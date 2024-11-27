@@ -20,6 +20,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.concurrent.Callable;
@@ -88,7 +89,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
             } else {
                 QualifiedName type = result == null
                         ? QualifiedName.dottedName("empty.result")
-                        : QualifiedName.className(result.getClass());
+                        : QualifiedNameUtils.fromClassName(result.getClass());
                 resultMessage = new GenericResultMessage<>(type, result);
             }
         } catch (Error | Exception e) {
@@ -111,7 +112,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     protected void setRollbackCause(Throwable cause) {
         QualifiedName type = cause == null
                 ? QualifiedName.dottedName("empty.rollback.cause")
-                : QualifiedName.className(cause.getClass());
+                : QualifiedNameUtils.fromClassName(cause.getClass());
         setExecutionResult(new ExecutionResult(new GenericResultMessage<>(type, cause)));
     }
 

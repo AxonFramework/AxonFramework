@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
-import static org.axonframework.messaging.QualifiedName.className;
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -135,7 +135,7 @@ class BatchingUnitOfWorkTest {
     }
 
     private static Message<?> toMessage(Object payload) {
-        return new GenericMessage<>(className(payload.getClass()), payload);
+        return new GenericMessage<>(fromClassName(payload.getClass()), payload);
     }
 
     public static Object resultFor(Message<?> message) {

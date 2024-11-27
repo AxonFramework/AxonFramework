@@ -17,7 +17,12 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDecorator;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.CachingSupplier;
 
 import java.io.Serial;
@@ -73,7 +78,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
             return new GenericEventMessage<>(message, clock.instant());
         }
         return new GenericEventMessage<>(
-                new GenericMessage<>(QualifiedName.className(event.getClass()), (P) event),
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
                 clock.instant()
         );
     }

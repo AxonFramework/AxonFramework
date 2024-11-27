@@ -23,6 +23,7 @@ import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 
 import java.io.Serial;
@@ -63,7 +64,7 @@ public class GenericSubscriptionQueryUpdateMessage<U>
             ResultMessage<U> resultMessage = (ResultMessage<U>) payload;
             if (resultMessage.isExceptional()) {
                 Throwable cause = resultMessage.exceptionResult();
-                return new GenericSubscriptionQueryUpdateMessage<>(QualifiedName.className(cause.getClass()),
+                return new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromClassName(cause.getClass()),
                                                                    cause,
                                                                    resultMessage.getMetaData(),
                                                                    resultMessage.getPayloadType());
@@ -72,7 +73,9 @@ public class GenericSubscriptionQueryUpdateMessage<U>
         } else if (payload instanceof Message) {
             return new GenericSubscriptionQueryUpdateMessage<>((Message<U>) payload);
         }
-        return new GenericSubscriptionQueryUpdateMessage<>(QualifiedName.className(payload.getClass()), (U) payload);
+        return new GenericSubscriptionQueryUpdateMessage<>(
+                QualifiedNameUtils.fromClassName(payload.getClass()), (U) payload
+        );
     }
 
     /**
@@ -88,7 +91,7 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      */
     @Deprecated
     public static <U> SubscriptionQueryUpdateMessage<U> asUpdateMessage(Class<U> declaredType, Throwable exception) {
-        return new GenericSubscriptionQueryUpdateMessage<>(QualifiedName.className(exception.getClass()),
+        return new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()),
                                                            exception,
                                                            MetaData.emptyInstance(),
                                                            declaredType);

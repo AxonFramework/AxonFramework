@@ -23,6 +23,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.io.Serial;
 import java.time.Instant;
@@ -72,7 +73,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
         }
         QualifiedName type = messageOrPayload == null
                 ? QualifiedName.dottedName("empty.deadline.payload")
-                : QualifiedName.className(messageOrPayload.getClass());
+                : QualifiedNameUtils.fromClassName(messageOrPayload.getClass());
         return new GenericDeadlineMessage<>(
                 deadlineName, new GenericMessage<>(type, (P) messageOrPayload), () -> expiryTime
         );
