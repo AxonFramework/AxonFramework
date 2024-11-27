@@ -35,16 +35,21 @@ For those cases, it would be wise to replace the TOAST behavior entirely.
 The most straightforward way, is to enforce the use of the `bytea` column type; with some additional steps, of course.
 The following link:https://www.axoniq.io/blog/axonframework-and-postgresql-without-toast[blog post] explains it in great detail, so be sure to check it out.
 
+== Sequence generation issues with JPA Entities
 
-[NOTE]
-.Where is issue XYZ?
-====
-This page can by no means contain **all** possible issues out there.
-But, that does not mean we are not open for suggestions.
+For the JPA entities that require a generated sequence, Axon opted to use the default `@GeneratedValue` annotation back in 2016.
+In the pre-Hibernate-6 age, this typically resulted in the construction of a single sequence generator that would be reused by several tables.
+This can already be regarded as suboptimal, as frequently the sequence generator would be reused between tables.
 
-This documentation, just as the framework, is open source as well.
-Hence, if you have found something problematic that you think should be added to the list, be sure to file an issue and (ideally!) a pull request.
+Especially given the nature of the `global_index` column on the `domain_event_entry` table, which is used to keep the progress in xref:axon-framework-reference:events:event-processors/streaming.adoc[streaming event processors], a reused generator causes unexpected gaps in event processing.
+Although Axon can deal with these gaps, they do make the queries to the `domain_event_entry` table rather bulky.
 
-You can make an enhancement request by clicking link:https://github.com/AxonFramework/AxonFramework/issues/new?assignees=&labels=Type%3A+Enhancement&projects=&template=2_enhancement_request.md[here].
-When looking to provide a pull request, be sure to adjust link:https://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/serialization.adochttps://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/known-issues-and-workarounds.adoc[this file].
-====
+Just as with any event storage solution, using a dedicate event store implementation like xref:axon-server-reference::index.adoc[Axon Server] will solve the problem entirely.
+Instead of using Axon Server, it is also possible to define sequence generators manually for Axon's entities.
+The xref:axon-framework-reference:tuning:rdbms-tuning.adoc[Relational Database Tuning page] contains a section on how to do this, called xref:axon-framework-reference:tuning:rdbms-tuning.adoc#auto_increment_and_sequences[Auto-Increment and Sequences].
+
+As described earlier, the `@GeneratedValue` was introduced in 2016.
+With the recent move to Hibernate 6, which defaults the increment value to 50, the problem of gaps or unintended reuse between tables has only become bigger.
+Especially when combining this with Axon's xref:multitenancy-extension-reference::index.adoc[multitenancy] extension, the new default behavior of Hibernate 6 might cause uniqueness issues in this way.
+
+Hence, given the history on the subject, and the Axon-team having explained this predicament more frequent than they can count, we intend to address the sequence generation behavior in Axon Framework 5.
