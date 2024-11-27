@@ -45,6 +45,11 @@ public final class QualifiedName implements Serializable {
      * The default {@link #revision()} to use when none is present. Defaults to {@code "0.0.1"} as the revision.
      */
     public static final String DEFAULT_REVISION = "0.0.1";
+    /**
+     * The delimiter, a semicolon ({@code :}), used between the {@link #namespace()}, {@link #localName()}, and
+     * {@link #revision()}.
+     */
+    public static final String DELIMITER = ":";
 
     private final String namespace;
     private final String localName;
@@ -198,22 +203,18 @@ public final class QualifiedName implements Serializable {
     /**
      * Prints the {@link QualifiedName} in a simplified {@link String}.
      * <p>
-     * If there is only a non-empty {@link #localName()}, only the {@code localName} will be printed. When the
-     * {@link #namespace()} is non-empty, the {@code localName} will be post-fixed with {@code "@({namespace})"}. And
-     * when the {@link #revision()} is non-empty, the {@code localName} (and possibly {@code namespace}) will be
-     * post-fixed with {@code "#[{revision}]"}.
+     * The {@link #namespace()}, {@link #localName()}, and {@link #revision()} are split by means of a semicolon
+     * ({@code :}).
      * <p>
-     * Thus, if {@code localName()} returns {@code "BusinessName"}, the {@code namespace()} returns
-     * {@code "my.context"}, and the {@code revision()} returns {@code "3"}, the result of this operation would be
-     * {@code "BusinessName @(my.context) #[3]"}.
+     * Thus, if {@code #namespace()} returns {@code "my.context"}, the {@code #localName()} returns
+     * {@code "BusinessName"}, and the {@code #revision()} returns {@code "1.0.5"}, the result of <b>this</b> operation
+     * would be {@code "my.context:BusinessName:1.0.5"}.
      *
-     * @return A simple {@link String} based on the {@link #localName()}, and {@link #namespace()} (if non-empty) and
-     * {@link #revision()} (if non-empty).
+     * @return A simple {@link String} based on the {@link #localName()}, {@link #namespace()}, and {@link #revision()},
+     * delimited by a semicolon ({@code :}).
      */
     public String toSimpleString() {
-        return localName()
-                + (namespace.isBlank() ? "" : " @(" + namespace + ")")
-                + (revision == null || revision.isBlank() ? "" : " #[" + revision + "]");
+        return namespace + DELIMITER + localName + DELIMITER + revision;
     }
 
     @Override

@@ -78,7 +78,7 @@ class QualifiedNameTest {
     void toSimpleStringReturnsAsExpected() {
         QualifiedName testSubject = new QualifiedName(NAMESPACE, LOCAL_NAME, REVISION);
 
-        assertEquals("localName @(namespace) #[revision]", testSubject.toSimpleString());
+        assertEquals("namespace:localName:revision", testSubject.toSimpleString());
     }
 
     @Test
