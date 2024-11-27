@@ -55,6 +55,11 @@ class QualifiedNameTest {
     }
 
     @Test
+    void throwsAxonConfigurationExceptionForNamespaceContainingSemicolons() {
+        assertThrows(AxonConfigurationException.class, () -> new QualifiedName("name:space", LOCAL_NAME, REVISION));
+    }
+
+    @Test
     void throwsAxonConfigurationExceptionForNullLocalName() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, null, REVISION));
@@ -66,6 +71,11 @@ class QualifiedNameTest {
     }
 
     @Test
+    void throwsAxonConfigurationExceptionForLocalNameContainingSemicolons() {
+        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, "local:name", REVISION));
+    }
+
+    @Test
     void throwsAxonConfigurationExceptionForNullRevision() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, null));
@@ -74,6 +84,11 @@ class QualifiedNameTest {
     @Test
     void throwsAxonConfigurationExceptionForEmptyRevision() {
         assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, ""));
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionForRevisionContainingSemicolons() {
+        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, "blue:green"));
     }
 
     @Test

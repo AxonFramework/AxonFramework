@@ -17,6 +17,7 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.StringUtils;
 
 import java.io.Serializable;
 import java.util.regex.Matcher;
@@ -31,6 +32,10 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * <p>
  * Useful to provide clear names to {@link Message Messages}, {@link MessageHandler MessageHandlers}, and other
  * components that require naming.
+ * <p>
+ * Note that all characters <b>except</b> for the semicolon ({@code :}) are allowed for any of the three parameters. The
+ * semicolon acts as a delimiter for the {@link #toSimpleString()} and thus is a special character delimited on in the
+ * {@link QualifiedName#simpleStringName(String)} method.
  *
  * @param namespace The {@link String} representing the {@link #namespace()} of this {@link QualifiedName}. The
  *                  {@code namespace} may represent a (bounded) context, package, or whatever other "space" this
@@ -71,9 +76,18 @@ public record QualifiedName(@Nonnull String namespace,
      * and not empty.
      */
     public QualifiedName {
-        assertNonEmpty(namespace, "The namespace must not be null or empty.");
-        assertNonEmpty(localName, "The localName must not be null or empty.");
-        assertNonEmpty(revision, "The revision must not be null or empty.");
+        assertThat(namespace,
+                   n -> StringUtils.nonEmptyOrNull(n) && !n.contains(DELIMITER),
+                   "The given namespace [" + namespace
+                           + "] is unsupported because it is null, empty, or contains a semicolon (:).");
+        assertThat(localName,
+                   l -> StringUtils.nonEmptyOrNull(l) && !l.contains(DELIMITER),
+                   "The given local name [" + localName
+                           + "] is unsupported because it is null, empty, or contains a semicolon (:).");
+        assertThat(revision,
+                   r -> StringUtils.nonEmptyOrNull(r) && !r.contains(DELIMITER),
+                   "The given revision [" + revision
+                           + "] is unsupported because it is null, empty, or contains a semicolon (:).");
     }
 
     /**
