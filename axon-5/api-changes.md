@@ -106,7 +106,7 @@ Lastly, it ties Axon Framework into the JVM space, as the FQCN is important to a
 Hence, having Axon Framework applications communicate with non-JVM-based applications is, simply put, rough.
 
 It is for this reason that we introduced the `QualifiedName`, which is retrievable through the `Message#type` method.
-The `QualifiedName` provides space for a `localName`, a `namespace`, and a `revision`.
+The `QualifiedName` provides space for a `localName`, a `namespace`, and a `revision`, expecting all three to be present at all times.
 The fields can respectively be used to define the `Class#getSimpleName`, the package name, and the version of the `Message` it is connected too.
 This layer of indirection will allow us to provide the freedom that currently is not an option (as explained above).
 
