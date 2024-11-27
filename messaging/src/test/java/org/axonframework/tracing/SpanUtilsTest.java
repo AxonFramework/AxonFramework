@@ -74,7 +74,8 @@ class SpanUtilsTest {
 
     @Test
     void determineMessageNameForDeadlineWithoutPayload() {
-        GenericDeadlineMessage<String> message = new GenericDeadlineMessage<>("myDeadlineName");
+        GenericDeadlineMessage<String> message =
+                new GenericDeadlineMessage<>(dottedName("test.deadline"), "myDeadlineName");
         assertEquals("myDeadlineName", SpanUtils.determineMessageName(message));
     }
 

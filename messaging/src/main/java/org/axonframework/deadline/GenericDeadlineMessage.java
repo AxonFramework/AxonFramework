@@ -80,27 +80,15 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     }
 
     /**
-     * Constructs a {@link GenericDeadlineMessage} for the given {@code deadlineName}, setting the {@code deadlineName}
-     * as the {@link #type()} of this {@link DeadlineMessage}.
+     * Constructs a {@link GenericDeadlineMessage} for the given {@code type} and {@code deadlineName}.
      * <p>
      * The {@link #getPayload()} defaults to {@code null} and the {@link MetaData} defaults to an empty instance.
      *
-     * @param deadlineName The name for this {@link DeadlineMessage}.
-     */
-    public GenericDeadlineMessage(@Nonnull String deadlineName) {
-        this(deadlineName, QualifiedName.dottedName(deadlineName));
-    }
-
-    /**
-     * Constructs a {@link GenericDeadlineMessage} for the given {@code deadlineName} and {@code type}.
-     * <p>
-     * The {@link #getPayload()} defaults to {@code null} and the {@link MetaData} defaults to an empty instance.
-     *
-     * @param deadlineName The name for this {@link DeadlineMessage}.
      * @param type         The {@link QualifiedName type} for this {@link DeadlineMessage}.
+     * @param deadlineName The name for this {@link DeadlineMessage}.
      */
-    public GenericDeadlineMessage(@Nonnull String deadlineName,
-                                  @Nonnull QualifiedName type) {
+    public GenericDeadlineMessage(@Nonnull QualifiedName type,
+                                  @Nonnull String deadlineName) {
         this(deadlineName, type, null);
     }
 
