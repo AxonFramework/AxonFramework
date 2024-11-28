@@ -36,11 +36,17 @@ public final class QualifiedNameUtils {
     }
 
     /**
+     * The default {@link QualifiedName#revision()} to use when none is present. Defaults to {@code "0.0.1"} as the
+     * revision.
+     */
+    public static final String DEFAULT_REVISION = "0.0.1";
+
+    /**
      * Construct a {@link QualifiedName} based on the given {@code clazz}.
      * <p>
      * The {@link Class#getPackageName()} will become the {@link QualifiedName#namespace()}, and the
      * {@link Class#getSimpleName()} will be the {@link QualifiedName#localName()}. The {@link QualifiedName#revision()}
-     * becomes the {@link QualifiedName#DEFAULT_REVISION}.
+     * becomes the {@link QualifiedNameUtils#DEFAULT_REVISION}.
      *
      * @param clazz The {@link Class} to extract a {@link QualifiedName#namespace()} and
      *              {@link QualifiedName#localName()} from.
@@ -48,12 +54,12 @@ public final class QualifiedNameUtils {
      */
     public static QualifiedName fromClassName(@Nonnull Class<?> clazz) {
         assertNonNull(clazz, "Cannot construct a QualifiedName based on a null Class.");
-        return new QualifiedName(clazz.getPackageName(), clazz.getSimpleName(), QualifiedName.DEFAULT_REVISION);
+        return new QualifiedName(clazz.getPackageName(), clazz.getSimpleName(), DEFAULT_REVISION);
     }
 
     /**
      * Construct a {@link QualifiedName} based on the given {@code dottedName}, defaulting the
-     * {@link QualifiedName#revision()} to {@link QualifiedName#DEFAULT_REVISION}.
+     * {@link QualifiedName#revision()} to {@link QualifiedNameUtils#DEFAULT_REVISION}.
      * <p>
      * All information <em>before</em> the last dot ({@code .}) in the given {@code dottedName} will be set as the
      * {@link QualifiedName#namespace()}. In turn, all text <em>after</em> the last dot in the given {@code dottedName}
@@ -71,7 +77,7 @@ public final class QualifiedNameUtils {
      *                                                             empty.
      */
     public static QualifiedName fromDottedName(@Nonnull String dottedName) {
-        return fromDottedName(dottedName, QualifiedName.DEFAULT_REVISION);
+        return fromDottedName(dottedName, DEFAULT_REVISION);
     }
 
     /**

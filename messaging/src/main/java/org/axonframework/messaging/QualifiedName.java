@@ -61,10 +61,6 @@ public record QualifiedName(@Nonnull String namespace,
     private static final int REVISION_GROUP = 3;
 
     /**
-     * The default {@link #revision()} to use when none is present. Defaults to {@code "0.0.1"} as the revision.
-     */
-    public static final String DEFAULT_REVISION = "0.0.1";
-    /**
      * The delimiter, a semicolon ({@code :}), used between the {@link #namespace()}, {@link #localName()}, and
      * {@link #revision()}.
      */

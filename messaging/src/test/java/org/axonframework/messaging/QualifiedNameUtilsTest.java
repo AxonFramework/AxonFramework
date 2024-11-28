@@ -70,7 +70,7 @@ class QualifiedNameUtilsTest {
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-        assertEquals(QualifiedName.DEFAULT_REVISION, testSubject.revision());
+        assertEquals(QualifiedNameUtils.DEFAULT_REVISION, testSubject.revision());
     }
 
     @Test
