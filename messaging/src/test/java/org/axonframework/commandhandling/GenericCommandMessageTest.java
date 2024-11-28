@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

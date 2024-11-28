@@ -26,7 +26,7 @@ import java.util.Optional;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

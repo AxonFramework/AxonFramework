@@ -23,7 +23,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PayloadTypeSpanAttributesProviderTest {

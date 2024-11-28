@@ -88,7 +88,7 @@ import java.util.stream.Stream;
 import static java.util.Arrays.asList;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
 import static org.junit.jupiter.api.Assertions.*;

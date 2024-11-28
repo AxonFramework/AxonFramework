@@ -72,7 +72,7 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
                                                 () -> expiryTime);
         }
         QualifiedName type = messageOrPayload == null
-                ? QualifiedName.dottedName("empty.deadline.payload")
+                ? QualifiedNameUtils.dottedName("empty.deadline.payload")
                 : QualifiedNameUtils.fromClassName(messageOrPayload.getClass());
         return new GenericDeadlineMessage<>(
                 deadlineName, new GenericMessage<>(type, (P) messageOrPayload), () -> expiryTime

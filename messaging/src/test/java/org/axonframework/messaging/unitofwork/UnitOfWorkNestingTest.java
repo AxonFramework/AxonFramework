@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

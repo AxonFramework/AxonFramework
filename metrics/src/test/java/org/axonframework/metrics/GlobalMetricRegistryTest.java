@@ -29,7 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GlobalMetricRegistryTest {

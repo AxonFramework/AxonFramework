@@ -25,7 +25,7 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConvertingResponseMessageTest {

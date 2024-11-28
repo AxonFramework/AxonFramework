@@ -25,7 +25,7 @@ import org.axonframework.spring.utils.StubDomainEvent;
 
 import java.util.UUID;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 

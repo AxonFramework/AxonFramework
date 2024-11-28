@@ -88,7 +88,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
                                                            ((Message<?>) result).getMetaData());
             } else {
                 QualifiedName type = result == null
-                        ? QualifiedName.dottedName("empty.result")
+                        ? QualifiedNameUtils.dottedName("empty.result")
                         : QualifiedNameUtils.fromClassName(result.getClass());
                 resultMessage = new GenericResultMessage<>(type, result);
             }
@@ -111,7 +111,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     @Override
     protected void setRollbackCause(Throwable cause) {
         QualifiedName type = cause == null
-                ? QualifiedName.dottedName("empty.rollback.cause")
+                ? QualifiedNameUtils.dottedName("empty.rollback.cause")
                 : QualifiedNameUtils.fromClassName(cause.getClass());
         setExecutionResult(new ExecutionResult(new GenericResultMessage<>(type, cause)));
     }

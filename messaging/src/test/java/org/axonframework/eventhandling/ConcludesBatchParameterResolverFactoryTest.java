@@ -25,7 +25,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 

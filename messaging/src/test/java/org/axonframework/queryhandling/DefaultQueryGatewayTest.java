@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -434,7 +434,7 @@ class DefaultQueryGatewayTest {
     void payloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         when(mockBus.query(anyMessage(String.class, String.class)))
                 .thenReturn(completedFuture(new GenericQueryResponseMessage<>(
-                        QualifiedName.dottedName("test.query"), "test"
+                        dottedName("test.query"), "test"
                 ) {
                     @Override
                     public String getPayload() {

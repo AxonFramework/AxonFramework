@@ -42,7 +42,7 @@ import javax.annotation.Nonnull;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

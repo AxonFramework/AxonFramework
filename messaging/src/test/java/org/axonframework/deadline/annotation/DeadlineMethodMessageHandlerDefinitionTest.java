@@ -23,7 +23,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class DeadlineMethodMessageHandlerDefinitionTest {

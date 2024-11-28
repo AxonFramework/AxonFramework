@@ -28,7 +28,7 @@ import org.junit.jupiter.params.provider.*;
 
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

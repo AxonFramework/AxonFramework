@@ -27,7 +27,7 @@ import java.time.Instant;
 import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.mockito.Mockito.*;
 
 class FilteringEventStorageEngineTest {

@@ -28,7 +28,7 @@ import org.junit.jupiter.api.*;
 import java.util.UUID;
 
 import static java.util.Collections.singletonList;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 import static org.junit.jupiter.api.Assertions.*;

@@ -36,7 +36,7 @@ import java.io.PrintStream;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GlobalMetricRegistryTest {

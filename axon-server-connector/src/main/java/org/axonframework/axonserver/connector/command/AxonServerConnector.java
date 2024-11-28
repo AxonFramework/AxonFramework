@@ -34,7 +34,7 @@ import org.axonframework.commandhandling.distributed.PriorityResolver;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
@@ -84,7 +84,8 @@ public class AxonServerConnector implements Connector {
 
         return CompletableFuture.completedFuture(new GenericMessage<>(
                 commandResponse.getMessageIdentifier(),
-                QualifiedName.dottedName("what.to.do.here?"), commandResponse.getPayload().getData().toByteArray(),
+                QualifiedNameUtils.dottedName("what.to.do.here?"),
+                commandResponse.getPayload().getData().toByteArray(),
                 convertMap(commandResponse.getMetaDataMap(), this::convertToMetaDataValue)
         ));
     }
@@ -191,7 +192,7 @@ public class AxonServerConnector implements Connector {
         return new GenericCommandMessage<>(
                 new GenericMessage<>(
                         command.getMessageIdentifier(),
-                        QualifiedName.dottedName(commandPayload.getType()),
+                        QualifiedNameUtils.dottedName(commandPayload.getType()),
                         commandPayload.getData().toByteArray(),
                         convertMap(command.getMetaDataMap(), this::convertToMetaDataValue)
                 ),

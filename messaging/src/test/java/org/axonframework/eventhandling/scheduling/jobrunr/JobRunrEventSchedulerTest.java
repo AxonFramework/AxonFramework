@@ -44,7 +44,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.jobrunr.server.BackgroundJobServerConfiguration.usingStandardBackgroundJobServerConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

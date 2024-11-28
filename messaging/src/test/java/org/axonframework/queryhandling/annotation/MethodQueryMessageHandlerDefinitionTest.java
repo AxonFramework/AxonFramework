@@ -31,7 +31,7 @@ import org.junit.jupiter.api.*;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

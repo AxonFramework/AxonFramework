@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.axonframework.common.ReflectionUtils.methodOf;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution.silentlyAdd;

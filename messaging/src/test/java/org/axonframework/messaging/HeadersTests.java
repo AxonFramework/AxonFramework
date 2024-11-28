@@ -32,7 +32,7 @@ import java.util.Map;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.messaging.Headers.*;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;

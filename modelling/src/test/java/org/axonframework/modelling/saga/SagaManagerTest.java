@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static java.util.Collections.singleton;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.Mockito.*;

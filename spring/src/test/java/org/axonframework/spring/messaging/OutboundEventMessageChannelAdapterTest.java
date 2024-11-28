@@ -25,7 +25,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
 import static java.util.Collections.singletonList;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.mockito.Mockito.*;
 
 /**

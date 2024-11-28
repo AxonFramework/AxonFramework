@@ -21,6 +21,7 @@ import org.axonframework.messaging.AbstractMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.io.Serial;
 import java.util.Map;
@@ -64,7 +65,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
                              @Nonnull Serializer serializer) {
         // TODO #3012 - I think the Serializer/Converter should provide the QualifiedName in this case.
         this(identifier,
-             QualifiedName.dottedName(serializedPayload.getType().getName()),
+             QualifiedNameUtils.dottedName(serializedPayload.getType().getName()),
              new LazyDeserializingObject<>(serializedPayload, serializer),
              new LazyDeserializingObject<>(serializedMetaData, serializer));
     }

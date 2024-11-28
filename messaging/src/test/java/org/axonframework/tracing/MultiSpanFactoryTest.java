@@ -24,7 +24,7 @@ import org.mockito.*;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

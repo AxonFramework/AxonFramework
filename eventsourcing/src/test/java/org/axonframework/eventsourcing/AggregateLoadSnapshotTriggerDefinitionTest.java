@@ -36,7 +36,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.mockito.Mockito.*;
 
 /**

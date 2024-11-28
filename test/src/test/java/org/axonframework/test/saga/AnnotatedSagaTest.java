@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.any;
 import static org.junit.jupiter.api.Assertions.*;

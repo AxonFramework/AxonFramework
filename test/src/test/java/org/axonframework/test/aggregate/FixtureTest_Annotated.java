@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
 import static org.axonframework.test.matchers.Matchers.matches;
 import static org.junit.jupiter.api.Assertions.*;

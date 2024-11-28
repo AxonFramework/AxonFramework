@@ -91,52 +91,6 @@ public record QualifiedName(@Nonnull String namespace,
     }
 
     /**
-     * Construct a {@link QualifiedName} based on the given {@code dottedName}, defaulting the {@link #revision()} to
-     * {@link #DEFAULT_REVISION}.
-     * <p>
-     * All information <em>before</em> the last dot ({@code .}) in the given {@code dottedName} will be set as the
-     * {@link #namespace()}. In turn, all text <em>after</em> the last dot in the given {@code dottedName} will become
-     * the {@link #localName()}.
-     * <p>
-     * For example, given a {@link String} of {@code "my.context.BusinessOperation"}, the {@link #namespace()} would
-     * become {@code "my.context"} and the {@link #localName()} would be {@code "BusinessOperation"}.
-     *
-     * @param dottedName The {@link String} to retrieve the {@link #namespace()} and {@link #localName()} from.
-     * @return A {@link QualifiedName} based on the given {@code dottedName}.
-     * @throws org.axonframework.common.AxonConfigurationException If the substring representing the
-     *                                                             {@link #localName()} is {@code null} or empty.
-     */
-    public static QualifiedName dottedName(@Nonnull String dottedName) {
-        return dottedName(dottedName, DEFAULT_REVISION);
-    }
-
-    /**
-     * Construct a {@link QualifiedName} based on the given {@code dottedName}, using the given {@code revision} as the
-     * {@link #revision()}.
-     * <p>
-     * All information <em>before</em> the last dot ({@code .}) in the given {@code dottedName} will be set as the
-     * {@link #namespace()}. In turn, all text <em>after</em> the last dot in the given {@code dottedName} will become
-     * the {@link #localName()}.
-     * <p>
-     * For example, given a {@link String} of {@code "my.context.BusinessOperation"}, the {@link #namespace()} would
-     * become {@code "my.context"} and the {@link #localName()} would be {@code "BusinessOperation"}.
-     *
-     * @param dottedName The {@link String} to retrieve the {@link #namespace()} and {@link #localName()} from.
-     * @param revision   The {@link String} resulting in the {@link #revision()}.
-     * @return A {@link QualifiedName} based on the given {@code dottedName}.
-     * @throws org.axonframework.common.AxonConfigurationException If the substring representing the
-     *                                                             {@link #localName()} is {@code null} or empty.
-     */
-    public static QualifiedName dottedName(@Nonnull String dottedName,
-                                           @Nonnull String revision) {
-        assertNonEmpty(dottedName, "Cannot construct a QualifiedName based on a null or empty String.");
-        int lastDot = dottedName.lastIndexOf('.');
-        String namespace = dottedName.substring(0, Math.max(lastDot, 0));
-        String localName = dottedName.substring(lastDot + 1);
-        return new QualifiedName(namespace, localName, revision);
-    }
-
-    /**
      * Reconstruct a {@link QualifiedName} based on the output of {@link QualifiedName#toSimpleString()}.
      * <p>
      * The output of the {@code QualifiedName#toSimpleString()} depends on which fields are set in the

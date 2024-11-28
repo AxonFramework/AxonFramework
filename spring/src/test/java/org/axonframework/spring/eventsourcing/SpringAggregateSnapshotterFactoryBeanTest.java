@@ -35,7 +35,7 @@ import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.mockito.Mockito.*;
 
 /**

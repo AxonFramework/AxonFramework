@@ -49,7 +49,7 @@ import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.utils.DbSchedulerTestUtil.getScheduler;
 import static org.axonframework.utils.DbSchedulerTestUtil.reCreateTable;
 import static org.junit.jupiter.api.Assertions.*;

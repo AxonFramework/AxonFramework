@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.Repository;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 
 /**
  * @author Allard Buijze

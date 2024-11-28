@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWith;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

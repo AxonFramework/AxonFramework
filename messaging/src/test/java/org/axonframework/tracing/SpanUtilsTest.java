@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 

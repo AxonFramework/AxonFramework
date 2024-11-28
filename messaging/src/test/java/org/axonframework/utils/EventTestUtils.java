@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.stream.IntStream;
 // TODO - Discuss: Perfect candidate to move to a commons test utils module?
 public abstract class EventTestUtils {
 
-    private static final QualifiedName TYPE = QualifiedName.dottedName("test.event");
+    private static final QualifiedName TYPE = QualifiedNameUtils.dottedName("test.event");
     private static final String PAYLOAD = "payload";
     private static final String AGGREGATE = "aggregate";
     private static final String AGGREGATE_TYPE = "aggregateType";

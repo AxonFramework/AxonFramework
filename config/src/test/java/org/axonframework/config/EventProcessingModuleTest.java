@@ -84,7 +84,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
