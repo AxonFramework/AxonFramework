@@ -79,7 +79,7 @@ public interface Message<T> extends Serializable {
     Class<T> getPayloadType();
 
     /**
-     * Returns the message {@link QualifiedName  type} of this {@link Message}.
+     * Returns the message {@link QualifiedName type} of this {@link Message}.
      *
      * @return The message {@link QualifiedName type} of this {@link Message}.
      */
