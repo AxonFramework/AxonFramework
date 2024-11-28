@@ -174,3 +174,25 @@ Moved / Remove Classes
 | org.axonframework.messaging.unitofwork.ExecutionResult          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
 | org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
 | org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`                                     |
+
+Method Signature Changes
+========================
+
+### Constructors
+
+| Constructor                                                                                | What                           | Why                                          | 
+|--------------------------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
+| One org.axonframework.messaging.AbstractMessage constructor                                | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| One org.axonframework.serialization.SerializedMessage constructor                          | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.messaging.GenericMessage constructors                      | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.commandhandling.GenericCommandMessage constructors         | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.eventhandling.GenericEventMessage constructors             | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.eventhandling.GenericDomainEventMessage constructors       | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericQueryMessage constructors             | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericSubscriptionQueryMessage constructors | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericStreamingQueryMessage constructors    | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.deadline.GenericDeadlineMessage constructors               | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.messaging.GenericResultMessage constructors                | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
