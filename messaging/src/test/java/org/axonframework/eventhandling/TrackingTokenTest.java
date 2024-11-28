@@ -36,7 +36,7 @@ class TrackingTokenTest {
         Context testContext = new SimpleContext();
         TestToken testToken = new TestToken();
 
-        TrackingToken.addToContext(testContext, testToken);
+        testContext = TrackingToken.addToContext(testContext, testToken);
 
         assertTrue(testContext.containsResource(TrackingToken.RESOURCE_KEY));
     }
@@ -55,7 +55,7 @@ class TrackingTokenTest {
         Context testContext = new SimpleContext();
         TestToken testToken = new TestToken();
 
-        TrackingToken.addToContext(testContext, testToken);
+        testContext = TrackingToken.addToContext(testContext, testToken);
 
         Optional<TrackingToken> result = TrackingToken.fromContext(testContext);
 
