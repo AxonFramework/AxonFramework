@@ -117,7 +117,8 @@ TODO - provide description once the `MessageStream` generics discussion has been
 ### Adjusted APIs
 
 TODO - Start filling adjusted operation once the `MessageStream` generics discussion has been finalized.
-* 
+
+*
 
 Other API changes
 =================
