@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 
 /**
  * Test class validating the {@link SingleValueMessageStream} through the {@link MessageStreamTest} suite.
@@ -48,6 +48,7 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return new GenericMessage<>(dottedName("test.message"), "test-" + ThreadLocalRandom.current().nextInt(10000));
+        return new GenericMessage<>(fromDottedName("test.message"),
+                                    "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

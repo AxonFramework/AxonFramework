@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,7 +43,7 @@ class GenericQueryMessageTest {
 
     @Test
     void queryNameResemblesMessagePayloadTypeClassName() {
-        QualifiedName testType = dottedName("test.query");
+        QualifiedName testType = fromDottedName("test.query");
         String testPayload = "payload";
         Message<?> testMessage = new GenericMessage<>(testType, testPayload);
 
@@ -55,7 +56,7 @@ class GenericQueryMessageTest {
     void queryNameResemblesQueryMessageQueryName() {
         String expectedQueryName = "myQueryName";
         QueryMessage<String, String> testMessage = new GenericQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), expectedQueryName, "payload", instanceOf(String.class)
+                fromDottedName("test.query"), expectedQueryName, "payload", instanceOf(String.class)
         );
 
         String result = QueryMessage.queryName(testMessage);

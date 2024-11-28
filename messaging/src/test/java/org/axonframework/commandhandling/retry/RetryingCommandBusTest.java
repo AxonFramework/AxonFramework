@@ -33,7 +33,7 @@ import org.mockito.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -52,7 +52,7 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldReturnSuccessResultImmediately() throws ExecutionException, InterruptedException {
-        Message<Object> result = new GenericMessage<>(dottedName("test.message"), "OK");
+        Message<Object> result = new GenericMessage<>(fromDottedName("test.message"), "OK");
         when(delegate.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(result));
 
         ProcessingContext processingContext = mock();
@@ -64,7 +64,7 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldDelegateToRetrySchedulerOnFailure() throws ExecutionException, InterruptedException {
-        Message<Object> successResult = new GenericMessage<>(dottedName("test.message"), "OK");
+        Message<Object> successResult = new GenericMessage<>(fromDottedName("test.message"), "OK");
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException("Simulating failure")));
         when(retryScheduler.scheduleRetry(any(), any(), any(), any()))

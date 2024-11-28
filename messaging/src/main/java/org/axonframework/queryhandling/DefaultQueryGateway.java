@@ -20,7 +20,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
@@ -79,7 +79,7 @@ public class DefaultQueryGateway implements QueryGateway {
     @Override
     public <R, Q> CompletableFuture<R> query(@Nonnull String queryName, @Nonnull Q query,
                                              @Nonnull ResponseType<R> responseType) {
-        QueryMessage<Q, R> queryMessage = new GenericQueryMessage<>(QualifiedName.className(query.getClass()),
+        QueryMessage<Q, R> queryMessage = new GenericQueryMessage<>(QualifiedNameUtils.fromClassName(query.getClass()),
                                                                     queryName,
                                                                     query,
                                                                     responseType);
@@ -108,7 +108,7 @@ public class DefaultQueryGateway implements QueryGateway {
     @Override
     public <R, Q> Publisher<R> streamingQuery(String queryName, Q query, Class<R> responseType) {
         return Mono.fromSupplier(() -> new GenericStreamingQueryMessage<>(
-                           QualifiedName.className(query.getClass()),
+                           QualifiedNameUtils.fromClassName(query.getClass()),
                            queryName,
                            query,
                            responseType
@@ -123,7 +123,7 @@ public class DefaultQueryGateway implements QueryGateway {
                                           @Nonnull ResponseType<R> responseType,
                                           long timeout,
                                           @Nonnull TimeUnit timeUnit) {
-        QueryMessage<Q, R> queryMessage = new GenericQueryMessage<>(QualifiedName.className(query.getClass()),
+        QueryMessage<Q, R> queryMessage = new GenericQueryMessage<>(QualifiedNameUtils.fromClassName(query.getClass()),
                                                                     queryName,
                                                                     query,
                                                                     responseType);
@@ -138,7 +138,7 @@ public class DefaultQueryGateway implements QueryGateway {
                                                                      @Nonnull ResponseType<U> updateResponseType,
                                                                      int updateBufferSize) {
         SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage =
-                new GenericSubscriptionQueryMessage<>(QualifiedName.className(query.getClass()),
+                new GenericSubscriptionQueryMessage<>(QualifiedNameUtils.fromClassName(query.getClass()),
                                                       queryName,
                                                       query,
                                                       initialResponseType,

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -83,7 +83,7 @@ class LockAwareAggregateTest {
 
     @Test
     void handleMethodInvokesWrappedAggregateAndInspectsLock() throws Exception {
-        Message<?> testMessage = new GenericMessage<>(dottedName("test.message"), "some-message");
+        Message<?> testMessage = new GenericMessage<>(fromDottedName("test.message"), "some-message");
 
         testSubject.handle(testMessage);
 

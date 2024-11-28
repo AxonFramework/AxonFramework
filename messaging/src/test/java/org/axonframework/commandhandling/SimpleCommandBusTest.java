@@ -37,7 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.messaging.QualifiedName.className;
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -313,10 +313,10 @@ class SimpleCommandBusTest {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> future) {
                 return MessageStream.fromFuture(future.thenApply(
-                        r -> new GenericMessage<>(className(r.getClass()), r)
+                        r -> new GenericMessage<>(fromClassName(r.getClass()), r)
                 ));
             } else {
-                return MessageStream.just(new GenericMessage<>(className(result.getClass()), result));
+                return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
             }
         }
 

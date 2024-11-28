@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
@@ -43,7 +44,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.emptySortedSet;
-import static org.axonframework.messaging.QualifiedName.className;
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 
 /**
  * Inspector for a message handling target of type {@code T} that uses annotations on the target to inspect the
@@ -207,9 +208,11 @@ public class AnnotatedHandlerInspector<T> {
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
     private static MessageStream<?> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?> future) {
-            return MessageStream.fromFuture(future.thenApply(r -> new GenericMessage<>(className(r.getClass()), r)));
+            return MessageStream.fromFuture(future.thenApply(
+                    r -> new GenericMessage<>(fromClassName(r.getClass()), r)
+            ));
         }
-        return MessageStream.just(new GenericMessage<>(className(result.getClass()), result));
+        return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
     }
 
     @SuppressWarnings("unchecked")

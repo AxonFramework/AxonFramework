@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.QualifiedName.className;
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -71,9 +71,11 @@ class AnnotatedHandlerInspectorTest {
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
     private static MessageStream<?> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?> future) {
-            return MessageStream.fromFuture(future.thenApply(r -> new GenericMessage<>(className(r.getClass()), r)));
+            return MessageStream.fromFuture(future.thenApply(
+                    r -> new GenericMessage<>(fromClassName(r.getClass()), r)
+            ));
         }
-        return MessageStream.just(new GenericMessage<>(className(result.getClass()), result));
+        return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
     }
 
     @Test

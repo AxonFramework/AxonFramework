@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -48,7 +48,7 @@ class ResultDeserializingCommandGatewayTest {
     @Test
     void testResultIsDeserializedWhenRetrievedFromCommandResult() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
-                CompletableFuture.completedFuture(new GenericMessage<>(dottedName("test.message"), HELLO_MESSAGE))
+                CompletableFuture.completedFuture(new GenericMessage<>(fromDottedName("test.message"), HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
@@ -62,7 +62,7 @@ class ResultDeserializingCommandGatewayTest {
     @Test
     void testResultIsDeserializedWhenRetrievedDirectly() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
-                CompletableFuture.completedFuture(new GenericMessage<>(dottedName("test.message"), HELLO_MESSAGE))
+                CompletableFuture.completedFuture(new GenericMessage<>(fromDottedName("test.message"), HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
@@ -76,7 +76,7 @@ class ResultDeserializingCommandGatewayTest {
     @Test
     void testCommandResultProvidesAccessToOriginalMessage() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
-                CompletableFuture.completedFuture(new GenericMessage<>(dottedName("test.message"), HELLO_MESSAGE))
+                CompletableFuture.completedFuture(new GenericMessage<>(fromDottedName("test.message"), HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
@@ -109,7 +109,7 @@ class ResultDeserializingCommandGatewayTest {
             invoked.set(true);
         });
 
-        completableFuture.complete(new GenericMessage<>(dottedName("test.message"), HELLO_MESSAGE));
+        completableFuture.complete(new GenericMessage<>(fromDottedName("test.message"), HELLO_MESSAGE));
 
         assertTrue(actual.isDone());
         assertTrue(invoked.get());
