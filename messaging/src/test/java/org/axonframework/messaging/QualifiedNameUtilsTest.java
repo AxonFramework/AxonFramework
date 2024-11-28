@@ -29,6 +29,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class QualifiedNameUtilsTest {
 
     @Test
+    void fromClassNameThrowsAxonConfigurationExceptionForNullClass() {
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromClassName(null));
+    }
+
+    @Test
     void fromClassNameSplitsTheClassAsExpected() {
         String expectedNamespace = ClassToGiveNameTo.class.getPackageName();
         String expectedLocalName = ClassToGiveNameTo.class.getSimpleName();
@@ -37,12 +43,6 @@ class QualifiedNameUtilsTest {
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
-    }
-
-    @Test
-    void fromClassNameThrowsAxonConfigurationExceptionForNullClass() {
-        //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromClassName(null));
     }
 
     @Test

@@ -19,6 +19,7 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Utility class containing factory methods for the {@link QualifiedName} that align closely with the previous major
@@ -46,6 +47,7 @@ public final class QualifiedNameUtils {
      * @return A {@link QualifiedName} based on the given {@code clazz}.
      */
     public static QualifiedName fromClassName(@Nonnull Class<?> clazz) {
+        assertNonNull(clazz, "Cannot construct a QualifiedName based on a null Class.");
         return new QualifiedName(clazz.getPackageName(), clazz.getSimpleName(), QualifiedName.DEFAULT_REVISION);
     }
 
