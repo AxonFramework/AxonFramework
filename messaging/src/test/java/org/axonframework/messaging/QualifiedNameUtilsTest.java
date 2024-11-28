@@ -29,27 +29,27 @@ import static org.junit.jupiter.api.Assertions.*;
 class QualifiedNameUtilsTest {
 
     @Test
-    void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForNullDottedName() {
+    void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForNullFromDottedName() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.dottedName(null));
+        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromDottedName(null));
     }
 
     @Test
-    void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyDottedName() {
-        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.dottedName(""));
+    void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyFromDottedName() {
+        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromDottedName(""));
     }
 
     @Test
-    void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyLocalNamePart() {
-        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.dottedName("my.context."));
+    void fromDottedNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyLocalNamePart() {
+        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromDottedName("my.context."));
     }
 
     @Test
-    void dottedNameFactoryMethodSplitsTheNameAsExpected() {
+    void fromDottedNameFactoryMethodSplitsTheNameAsExpected() {
         String expectedNamespace = "my.context";
         String expectedLocalName = "BusinessOperation";
 
-        QualifiedName testSubject = QualifiedNameUtils.dottedName("my.context.BusinessOperation");
+        QualifiedName testSubject = QualifiedNameUtils.fromDottedName("my.context.BusinessOperation");
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
@@ -57,12 +57,12 @@ class QualifiedNameUtilsTest {
     }
 
     @Test
-    void dottedNameFactoryMethodWithRevisionSplitsTheNameAsExpected() {
+    void fromDottedNameFactoryMethodWithRevisionSplitsTheNameAsExpected() {
         String expectedNamespace = "my.context";
         String expectedLocalName = "BusinessOperation";
         String testRevision = "1337.42";
 
-        QualifiedName testSubject = QualifiedNameUtils.dottedName("my.context.BusinessOperation", testRevision);
+        QualifiedName testSubject = QualifiedNameUtils.fromDottedName("my.context.BusinessOperation", testRevision);
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());

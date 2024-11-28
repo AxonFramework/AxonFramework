@@ -59,6 +59,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -94,7 +95,7 @@ import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -266,7 +267,7 @@ class DefaultConfigurerTest {
 
         config.commandGateway().sendAndWait(GenericCommandMessage.asCommandMessage("test"));
         CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new GenericMessage<>(dottedName("test.message"), "test"), "update");
+                new GenericCommandMessage<>(new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "test"), "update");
         config.commandGateway().sendAndWait(testCommand);
         assertEquals(1, counter.get());
         assertNotNull(config.repository(StubAggregate.class));
@@ -526,7 +527,7 @@ class DefaultConfigurerTest {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
 
         DomainEventMessage<String> testDomainEvent = new GenericDomainEventMessage<>(
-                "StubAggregate", "some-aggregate-id", 0, dottedName("test.event"), "some-payload"
+                "StubAggregate", "some-aggregate-id", 0, QualifiedNameUtils.fromDottedName("test.event"), "some-payload"
         );
         DomainEventData<byte[]> snapshotData =
                 new AbstractSnapshotEventEntry<>(testDomainEvent, serializer, byte[].class) {

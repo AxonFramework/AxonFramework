@@ -20,13 +20,14 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.Map;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -43,9 +44,9 @@ class GenericCommandMessageTest {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericCommandMessage<Object> message2 =
-                new GenericCommandMessage<>(dottedName("test.command"), payload, metaData);
+                new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), payload, metaData);
         GenericCommandMessage<Object> message3 =
-                new GenericCommandMessage<>(dottedName("test.command"), payload, metaDataMap);
+                new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), payload, metaDataMap);
 
         assertSame(MetaData.emptyInstance(), message1.getMetaData());
         assertEquals(Object.class, message1.getPayload().getClass());
@@ -70,7 +71,7 @@ class GenericCommandMessageTest {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericCommandMessage<Object> message = new GenericCommandMessage<>(dottedName("test.command"),
+        GenericCommandMessage<Object> message = new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"),
                                                                             payload,
                                                                             metaData);
         GenericCommandMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
@@ -86,7 +87,7 @@ class GenericCommandMessageTest {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericCommandMessage<Object> message = new GenericCommandMessage<>(dottedName("test.command"),
+        GenericCommandMessage<Object> message = new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"),
                                                                             payload,
                                                                             metaData);
         GenericCommandMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
@@ -128,7 +129,7 @@ class GenericCommandMessageTest {
     @Test
     void asCommandMessageReturnsCommandMessageAsIs() {
         CommandMessage<String> expected =
-                new GenericCommandMessage<>(dottedName("test.command"), "some-payload", MetaData.with("key", "value"));
+                new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "some-payload", MetaData.with("key", "value"));
 
         CommandMessage<Object> result = asCommandMessage(expected);
 
@@ -137,7 +138,7 @@ class GenericCommandMessageTest {
 
     @Test
     void asCommandMessageRetrievesPayloadAndMetaDataFromMessageImplementations() {
-        QualifiedName expectedType = dottedName("test.command");
+        QualifiedName expectedType = QualifiedNameUtils.fromDottedName("test.command");
         String expectedPayload = "some-payload";
         MetaData expectedMetaData = MetaData.with("key", "value");
 

@@ -32,7 +32,7 @@ import java.util.Map;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.messaging.Headers.*;
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -133,6 +133,6 @@ class HeadersTests {
     }
 
     private GenericDomainEventMessage<String> domainMessage() {
-        return new GenericDomainEventMessage<>("Stub", "893612", 1L, dottedName("test.event"), "Payload");
+        return new GenericDomainEventMessage<>("Stub", "893612", 1L, QualifiedNameUtils.fromDottedName("test.event"), "Payload");
     }
 }

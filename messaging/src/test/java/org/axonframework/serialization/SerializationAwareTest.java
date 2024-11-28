@@ -18,6 +18,7 @@ package org.axonframework.serialization;
 
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.io.ByteArrayInputStream;
@@ -27,7 +28,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Collections;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -41,7 +42,7 @@ class SerializationAwareTest {
     @BeforeEach
     void setUp() {
         testSubject = new GenericEventMessage<>(
-                dottedName("test.event"), "payload", Collections.singletonMap("key", "value")
+                QualifiedNameUtils.fromDottedName("test.event"), "payload", Collections.singletonMap("key", "value")
         );
     }
 

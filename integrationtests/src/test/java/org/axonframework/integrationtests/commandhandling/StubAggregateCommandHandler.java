@@ -19,10 +19,11 @@ package org.axonframework.integrationtests.commandhandling;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.Repository;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 
 class StubAggregateCommandHandler {
 
@@ -48,7 +49,7 @@ class StubAggregateCommandHandler {
     public void handleStubAggregateUpdatedWithExtraEvent(UpdateStubAggregateWithExtraEventCommand command) {
         Aggregate<StubAggregate> aggregate = repository.load(command.getAggregateId().toString());
         aggregate.execute(StubAggregate::makeAChange);
-        eventBus.publish(new GenericEventMessage<>(dottedName("test.event"), new MyEvent()));
+        eventBus.publish(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new MyEvent()));
         aggregate.execute(StubAggregate::makeAChange);
     }
 

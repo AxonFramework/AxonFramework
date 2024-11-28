@@ -84,7 +84,7 @@ public class AxonServerConnector implements Connector {
 
         return CompletableFuture.completedFuture(new GenericMessage<>(
                 commandResponse.getMessageIdentifier(),
-                QualifiedNameUtils.dottedName("what.to.do.here?"),
+                QualifiedNameUtils.fromDottedName("what.to.do.here?"),
                 commandResponse.getPayload().getData().toByteArray(),
                 convertMap(commandResponse.getMetaDataMap(), this::convertToMetaDataValue)
         ));
@@ -192,7 +192,7 @@ public class AxonServerConnector implements Connector {
         return new GenericCommandMessage<>(
                 new GenericMessage<>(
                         command.getMessageIdentifier(),
-                        QualifiedNameUtils.dottedName(commandPayload.getType()),
+                        QualifiedNameUtils.fromDottedName(commandPayload.getType()),
                         commandPayload.getData().toByteArray(),
                         convertMap(command.getMetaDataMap(), this::convertToMetaDataValue)
                 ),

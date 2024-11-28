@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConcatenatingDomainEventStreamTest {
@@ -40,15 +41,15 @@ class ConcatenatingDomainEventStreamTest {
     @BeforeEach
     void setUp() {
         event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 0,
-                                                 dottedName("test.event"), "Mock contents 1");
+                                                 QualifiedNameUtils.fromDottedName("test.event"), "Mock contents 1");
         event2 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 1,
-                                                 dottedName("test.event"), "Mock contents 2");
+                                                 QualifiedNameUtils.fromDottedName("test.event"), "Mock contents 2");
         event3 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 2,
-                                                 dottedName("test.event"), "Mock contents 3");
+                                                 QualifiedNameUtils.fromDottedName("test.event"), "Mock contents 3");
         event4 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 3,
-                                                 dottedName("test.event"), "Mock contents 4");
+                                                 QualifiedNameUtils.fromDottedName("test.event"), "Mock contents 4");
         event5 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 4,
-                                                 dottedName("test.event"), "Mock contents 5");
+                                                 QualifiedNameUtils.fromDottedName("test.event"), "Mock contents 5");
     }
 
     @Test

@@ -152,7 +152,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
             return (ResultMessage<R>) new GenericResultMessage<>(resultMessage);
         }
         QualifiedName type = result == null
-                ? QualifiedNameUtils.dottedName("empty.result")
+                ? QualifiedNameUtils.fromDottedName("empty.result")
                 : QualifiedNameUtils.fromClassName(result.getClass());
         //noinspection unchecked
         return new GenericResultMessage<>(type, (R) result);

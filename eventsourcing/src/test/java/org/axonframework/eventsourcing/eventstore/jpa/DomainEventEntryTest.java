@@ -48,7 +48,7 @@ class DomainEventEntryTest {
         String expectedAggregateType = "aggregateType";
         String expectedAggregateId = randomUUID().toString();
         long expectedSequenceNumber = 2L;
-        QualifiedName expectedType = QualifiedNameUtils.dottedName("test.event");
+        QualifiedName expectedType = QualifiedNameUtils.fromDottedName("test.event");
         String expectedPayload = "Payload";
         MetaData expectedMetaData = new MetaData(Collections.singletonMap("Key", "Value"));
         Instant expectedTimestamp = DateTimeUtils.parseInstant(DateTimeUtils.formatInstant(testTimestamp));

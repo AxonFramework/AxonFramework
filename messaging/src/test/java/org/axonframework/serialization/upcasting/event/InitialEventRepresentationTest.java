@@ -19,6 +19,7 @@ package org.axonframework.serialization.upcasting.event;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.utils.StubDomainEvent;
@@ -28,7 +29,7 @@ import org.junit.jupiter.params.provider.*;
 
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -53,7 +54,7 @@ class InitialEventRepresentationTest {
     @MethodSource(SOURCE_METHOD_NAME)
     void contentType(Serializer serializer) {
         DomainEventMessage<StubDomainEvent> event = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, dottedName("test.event"), new StubDomainEvent("some-name")
+                "test", "aggregateId", 0, QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent("some-name")
         );
         EventData<String> eventData = new TestDomainEventEntry(event, serializer);
 

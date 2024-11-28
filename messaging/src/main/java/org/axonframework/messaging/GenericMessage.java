@@ -69,7 +69,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
             return (Message<P>) payloadOrMessage;
         }
         QualifiedName type = payloadOrMessage == null
-                ? QualifiedNameUtils.dottedName("empty.command.payload")
+                ? QualifiedNameUtils.fromDottedName("empty.command.payload")
                 : QualifiedNameUtils.fromClassName(payloadOrMessage.getClass());
         //noinspection unchecked
         return new GenericMessage<>(type, (P) payloadOrMessage);
@@ -206,7 +206,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * {@link Message#type()} of {@code "empty"}.
      */
     public static Message<Void> emptyMessage() {
-        return new GenericMessage<>(QualifiedNameUtils.dottedName("empty"), null);
+        return new GenericMessage<>(QualifiedNameUtils.fromDottedName("empty"), null);
     }
 
     @Override

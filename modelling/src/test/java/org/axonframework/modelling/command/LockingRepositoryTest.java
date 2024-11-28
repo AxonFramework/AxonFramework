@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -36,7 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -47,7 +48,7 @@ import static org.mockito.Mockito.*;
  */
 class LockingRepositoryTest {
 
-    private static final Message<?> MESSAGE = new GenericMessage<Object>(dottedName("test.message"), "test");
+    private static final Message<?> MESSAGE = new GenericMessage<Object>(QualifiedNameUtils.fromDottedName("test.message"), "test");
 
     private EventBus eventBus;
     private LockFactory lockFactory;

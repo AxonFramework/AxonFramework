@@ -22,12 +22,13 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.Map;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -51,7 +52,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
         String payload = null;
 
         SubscriptionQueryUpdateMessage<String> result =
-                new GenericSubscriptionQueryUpdateMessage<>(dottedName("test.query"), payload, String.class);
+                new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromDottedName("test.query"), payload, String.class);
 
         assertNull(result.getPayload());
     }
@@ -60,7 +61,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     void andMetaData() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v2");
         SubscriptionQueryUpdateMessage<Object> original = new GenericSubscriptionQueryUpdateMessage<>(
-                new GenericMessage<>(dottedName("test.query"), "payload", metaData)
+                new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "payload", metaData)
         );
 
         Map<String, String> newMetaData = Collections.singletonMap("k2", "v3");
@@ -76,7 +77,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     void withMetaData() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v2");
         SubscriptionQueryUpdateMessage<Object> original = new GenericSubscriptionQueryUpdateMessage<>(
-                new GenericMessage<>(dottedName("test.query"), "payload", metaData)
+                new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "payload", metaData)
         );
 
         Map<String, String> newMetaData = Collections.singletonMap("k2", "v3");
@@ -89,7 +90,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     @Test
     void messageCreationBasedOnExistingMessage() {
         SubscriptionQueryUpdateMessage<String> original =
-                new GenericSubscriptionQueryUpdateMessage<>(dottedName("test.query"), "payload");
+                new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "payload");
 
         SubscriptionQueryUpdateMessage<Object> result = GenericSubscriptionQueryUpdateMessage.asUpdateMessage(original);
 
@@ -100,7 +101,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     void messageCreationBasedOnResultMessage() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v1");
         CommandResultMessage<String> resultMessage = GenericCommandResultMessage.asCommandResultMessage(
-                new GenericResultMessage<>(dottedName("test.query"), "result", metaData)
+                new GenericResultMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "result", metaData)
         );
 
         SubscriptionQueryUpdateMessage<Object> result =
@@ -115,7 +116,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
         Map<String, String> metaData = Collections.singletonMap("k1", "v1");
         RuntimeException exception = new RuntimeException();
         CommandResultMessage<String> resultMessage = GenericCommandResultMessage.asCommandResultMessage(
-                new GenericResultMessage<>(dottedName("test.query"), exception, metaData));
+                new GenericResultMessage<>(QualifiedNameUtils.fromDottedName("test.query"), exception, metaData));
 
         SubscriptionQueryUpdateMessage<Object> result =
                 GenericSubscriptionQueryUpdateMessage.asUpdateMessage(resultMessage);
@@ -128,7 +129,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     @Test
     void messageCreationBasedOnAnyMessage() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v1");
-        Message<String> message = new GenericMessage<>(dottedName("test.query"), "payload", metaData);
+        Message<String> message = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "payload", metaData);
 
         SubscriptionQueryUpdateMessage<Object> result = GenericSubscriptionQueryUpdateMessage.asUpdateMessage(message);
 

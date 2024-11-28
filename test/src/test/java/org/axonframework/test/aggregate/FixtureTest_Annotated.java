@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
@@ -35,7 +36,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
 import static org.axonframework.test.matchers.Matchers.matches;
 import static org.junit.jupiter.api.Assertions.*;
@@ -216,10 +217,10 @@ class FixtureTest_Annotated {
     @Test
     void fixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
         DomainEventMessage<StubDomainEvent> testEventOne = new GenericDomainEventMessage<>(
-                "test", UUID.randomUUID().toString(), 0, dottedName("test.event"), new StubDomainEvent()
+                "test", UUID.randomUUID().toString(), 0, QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent()
         );
         DomainEventMessage<StubDomainEvent> testEventTwo = new GenericDomainEventMessage<>(
-                "test", UUID.randomUUID().toString(), 0, dottedName("test.event"), new StubDomainEvent()
+                "test", UUID.randomUUID().toString(), 0, QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent()
         );
 
         assertThrows(EventStoreException.class, () -> fixture.getEventStore().publish(testEventOne, testEventTwo));
@@ -229,10 +230,10 @@ class FixtureTest_Annotated {
     void fixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
         DomainEventMessage<StubDomainEvent> testEventOne = new GenericDomainEventMessage<>(
-                "test", identifier, 0, dottedName("test.event"), new StubDomainEvent()
+                "test", identifier, 0, QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent()
         );
         DomainEventMessage<StubDomainEvent> testEventTwo = new GenericDomainEventMessage<>(
-                "test", identifier, 2, dottedName("test.event"), new StubDomainEvent()
+                "test", identifier, 2, QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent()
         );
 
         assertThrows(EventStoreException.class, () -> fixture.getEventStore().publish(testEventOne, testEventTwo));

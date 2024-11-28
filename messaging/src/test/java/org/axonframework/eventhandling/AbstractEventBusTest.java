@@ -47,7 +47,7 @@ import static org.mockito.Mockito.*;
  */
 class AbstractEventBusTest {
 
-    private static final QualifiedName TEST_EVENT_TYPE = QualifiedNameUtils.dottedName("test.TestEvent");
+    private static final QualifiedName TEST_EVENT_TYPE = QualifiedNameUtils.fromDottedName("test.TestEvent");
 
     private UnitOfWork<?> unitOfWork;
     private StubPublishingEventBus testSubject;
@@ -301,7 +301,7 @@ class AbstractEventBusTest {
 
     private static class StubNumberedEvent extends GenericEventMessage<Integer> {
 
-        private static final QualifiedName TYPE = QualifiedNameUtils.dottedName("test.StubNumberedEvent");
+        private static final QualifiedName TYPE = QualifiedNameUtils.fromDottedName("test.StubNumberedEvent");
 
         StubNumberedEvent(Integer payload) {
             super(TYPE, payload);

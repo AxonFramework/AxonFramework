@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -51,7 +52,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -107,7 +108,7 @@ class FixtureExecutionResultImplTest {
 
         commandBus.dispatch(asCommandMessage("First"), ProcessingContext.NONE);
         EventMessage<TriggerSagaStartEvent> firstEventMessage =
-                new GenericEventMessage<>(dottedName("test.event"), new TriggerSagaStartEvent(identifier));
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TriggerSagaStartEvent(identifier));
         eventBus.publish(firstEventMessage);
         Exception testException = new IllegalArgumentException("First");
         assertThrows(IllegalArgumentException.class,
@@ -116,7 +117,7 @@ class FixtureExecutionResultImplTest {
         testSubject.startRecording();
 
         EventMessage<TriggerSagaEndEvent> endEventMessage =
-                new GenericEventMessage<>(dottedName("test.event"), new TriggerSagaEndEvent(identifier));
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TriggerSagaEndEvent(identifier));
         eventBus.publish(endEventMessage);
         commandBus.dispatch(asCommandMessage("Second"), ProcessingContext.NONE);
         IllegalArgumentException secondException = new IllegalArgumentException("Second");
@@ -152,7 +153,7 @@ class FixtureExecutionResultImplTest {
                                                        errorHandler);
         testSubject.startRecording();
         EventMessage<TriggerSagaEndEvent> eventMessage =
-                new GenericEventMessage<>(dottedName("test.event"), new TriggerSagaEndEvent(identifier));
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TriggerSagaEndEvent(identifier));
         eventBus.publish(eventMessage);
         commandBus.dispatch(asCommandMessage("Command"), ProcessingContext.NONE);
         errorHandler.onError(new IllegalArgumentException("First"), eventMessage, eventMessageHandler);
@@ -165,7 +166,7 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectPublishedEvents_WrongCount() {
-        eventBus.publish(new GenericEventMessage<>(dottedName("test.event"), new TriggerSagaEndEvent(identifier)));
+        eventBus.publish(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TriggerSagaEndEvent(identifier)));
 
         assertThrows(
                 AxonAssertionError.class,
@@ -177,7 +178,7 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectPublishedEvents_WrongType() {
-        eventBus.publish(new GenericEventMessage<>(dottedName("test.event"), new TriggerSagaEndEvent(identifier)));
+        eventBus.publish(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TriggerSagaEndEvent(identifier)));
 
         assertThrows(
                 AxonAssertionError.class,
@@ -187,7 +188,7 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectPublishedEvents_FailedMatcher() {
-        eventBus.publish(new GenericEventMessage<>(dottedName("test.event"), new TriggerSagaEndEvent(identifier)));
+        eventBus.publish(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TriggerSagaEndEvent(identifier)));
 
         assertThrows(
                 AxonAssertionError.class, () -> testSubject.expectPublishedEvents(new FailingMatcher<EventMessage<?>>())
@@ -276,7 +277,7 @@ class FixtureExecutionResultImplTest {
     @Test
     void expectNoScheduledEvents_EventIsScheduled() {
         EventMessage<TimerTriggeredEvent> testEvent =
-                new GenericEventMessage<>(dottedName("test.event"), applicationEvent);
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), applicationEvent);
 
         eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
 
@@ -291,7 +292,7 @@ class FixtureExecutionResultImplTest {
     @Test
     void expectNoScheduledEvents_ScheduledEventIsTriggered() {
         EventMessage<TimerTriggeredEvent> testEvent =
-                new GenericEventMessage<>(dottedName("test.event"), applicationEvent);
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), applicationEvent);
 
         eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
         eventScheduler.advanceToNextTrigger();
@@ -302,7 +303,7 @@ class FixtureExecutionResultImplTest {
     @Test
     void expectScheduledEvent_WrongDateTime() {
         EventMessage<TimerTriggeredEvent> testEvent =
-                new GenericEventMessage<>(dottedName("test.event"), applicationEvent);
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), applicationEvent);
 
         eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), NO_OP);
@@ -316,7 +317,7 @@ class FixtureExecutionResultImplTest {
     @Test
     void expectScheduledEvent_WrongClass() {
         EventMessage<TimerTriggeredEvent> testEvent =
-                new GenericEventMessage<>(dottedName("test.event"), applicationEvent);
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), applicationEvent);
 
         eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), NO_OP);
@@ -330,9 +331,9 @@ class FixtureExecutionResultImplTest {
     @Test
     void expectScheduledEvent_WrongEvent() {
         EventMessage<TimerTriggeredEvent> testEvent =
-                new GenericEventMessage<>(dottedName("test.event"), applicationEvent);
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), applicationEvent);
         EventMessage<TimerTriggeredEvent> unexpectedEvent =
-                new GenericEventMessage<>(dottedName("test.event"), new TimerTriggeredEvent("unexpected"));
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TimerTriggeredEvent("unexpected"));
 
         eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), NO_OP);
@@ -348,7 +349,7 @@ class FixtureExecutionResultImplTest {
     @Test
     void expectScheduledEvent_FailedMatcher() {
         EventMessage<TimerTriggeredEvent> testEvent =
-                new GenericEventMessage<>(dottedName("test.event"), applicationEvent);
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), applicationEvent);
 
         eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), NO_OP);
@@ -362,7 +363,7 @@ class FixtureExecutionResultImplTest {
     @Test
     void expectScheduledEvent_Found() {
         EventMessage<TimerTriggeredEvent> testEvent =
-                new GenericEventMessage<>(dottedName("test.event"), applicationEvent);
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), applicationEvent);
 
         eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), NO_OP);
@@ -373,11 +374,11 @@ class FixtureExecutionResultImplTest {
     @Test
     void expectScheduledEvent_FoundInMultipleCandidates() {
         EventMessage<TimerTriggeredEvent> testEventOne =
-                new GenericEventMessage<>(dottedName("test.event"), new TimerTriggeredEvent("unexpected1"));
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TimerTriggeredEvent("unexpected1"));
         EventMessage<TimerTriggeredEvent> testEventTwo =
-                new GenericEventMessage<>(dottedName("test.event"), applicationEvent);
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), applicationEvent);
         EventMessage<TimerTriggeredEvent> testEventThree =
-                new GenericEventMessage<>(dottedName("test.event"), new TimerTriggeredEvent("unexpected2"));
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TimerTriggeredEvent("unexpected2"));
 
         eventScheduler.schedule(Duration.ofSeconds(1), testEventOne);
         eventScheduler.schedule(Duration.ofSeconds(1), testEventTwo);

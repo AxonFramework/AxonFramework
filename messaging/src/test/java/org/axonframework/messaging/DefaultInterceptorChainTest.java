@@ -21,7 +21,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -46,13 +46,13 @@ class DefaultInterceptorChainTest {
     @SuppressWarnings("unchecked")
     void chainWithDifferentProceedCalls() throws Exception {
         MessageHandlerInterceptor interceptor1 = (unitOfWork, interceptorChain) -> {
-            unitOfWork.transformMessage(m -> new GenericMessage<>(dottedName("test.message"), "testing"));
+            unitOfWork.transformMessage(m -> new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "testing"));
             return interceptorChain.proceedSync();
         };
         MessageHandlerInterceptor interceptor2 = (unitOfWork, interceptorChain) -> interceptorChain.proceedSync();
 
 
-        unitOfWork.transformMessage(m -> new GenericMessage<>(dottedName("test.message"), "original"));
+        unitOfWork.transformMessage(m -> new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "original"));
         DefaultInterceptorChain testSubject = new DefaultInterceptorChain(
                 unitOfWork, asList(interceptor1, interceptor2), mockHandler
         );

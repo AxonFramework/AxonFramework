@@ -19,12 +19,13 @@ package org.axonframework.eventsourcing;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -37,10 +38,10 @@ class DomainEventStreamTest {
     @Test
     void peek() {
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
-                "type", UUID.randomUUID().toString(), 0L, dottedName("test.event"), "Mock contents"
+                "type", UUID.randomUUID().toString(), 0L, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
         );
         DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
-                "type", UUID.randomUUID().toString(), 0L, dottedName("test.event"), "Mock contents"
+                "type", UUID.randomUUID().toString(), 0L, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
         );
         DomainEventStream testSubject = DomainEventStream.of(event1, event2);
         assertSame(event1, testSubject.peek());
@@ -62,10 +63,10 @@ class DomainEventStreamTest {
     @Test
     void nextAndHasNext() {
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
-                "type", UUID.randomUUID().toString(), 0L, dottedName("test.event"), "Mock contents"
+                "type", UUID.randomUUID().toString(), 0L, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
         );
         DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
-                "type", UUID.randomUUID().toString(), 0L, dottedName("test.event"), "Mock contents"
+                "type", UUID.randomUUID().toString(), 0L, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
         );
         DomainEventStream testSubject = DomainEventStream.of(event1, event2);
         assertTrue(testSubject.hasNext());
@@ -78,7 +79,7 @@ class DomainEventStreamTest {
     @Test
     void next_ReadBeyondEnd() {
         DomainEventMessage<String> event = new GenericDomainEventMessage<>(
-                "type", UUID.randomUUID().toString(), 0L, dottedName("test.event"), "Mock contents"
+                "type", UUID.randomUUID().toString(), 0L, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
         );
         DomainEventStream testSubject = DomainEventStream.of(event);
         testSubject.next();

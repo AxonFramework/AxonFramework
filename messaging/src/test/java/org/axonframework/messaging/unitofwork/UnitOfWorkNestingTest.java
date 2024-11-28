@@ -17,6 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -25,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -45,19 +46,19 @@ class UnitOfWorkNestingTest {
             CurrentUnitOfWork.get().rollback();
         }
 
-        outer = new DefaultUnitOfWork<>(new GenericEventMessage<>(dottedName("test.event"), "Input 1")) {
+        outer = new DefaultUnitOfWork<>(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "Input 1")) {
             @Override
             public String toString() {
                 return "outer";
             }
         };
-        middle = new DefaultUnitOfWork<>(new GenericEventMessage<Object>(dottedName("test.event"), "Input middle")) {
+        middle = new DefaultUnitOfWork<>(new GenericEventMessage<Object>(QualifiedNameUtils.fromDottedName("test.event"), "Input middle")) {
             @Override
             public String toString() {
                 return "middle";
             }
         };
-        inner = new DefaultUnitOfWork<>(new GenericEventMessage<>(dottedName("test.event"), "Input 2")) {
+        inner = new DefaultUnitOfWork<>(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "Input 2")) {
             @Override
             public String toString() {
                 return "inner";

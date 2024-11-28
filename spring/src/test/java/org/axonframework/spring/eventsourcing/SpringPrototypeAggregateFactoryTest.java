@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.spring.config.SpringAggregateLookup;
 import org.axonframework.spring.config.SpringAxonConfiguration;
 import org.axonframework.spring.config.SpringConfigurer;
@@ -40,7 +41,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -64,7 +65,7 @@ class SpringPrototypeAggregateFactoryTest {
     @Test
     void createNewAggregateInstance() {
         GenericDomainEventMessage<String> domainEvent = new GenericDomainEventMessage<>(
-                "SpringWiredAggregate", "id2", 0, dottedName("test.event"), "FirstEvent"
+                "SpringWiredAggregate", "id2", 0, QualifiedNameUtils.fromDottedName("test.event"), "FirstEvent"
         );
         SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2", domainEvent);
 
@@ -74,7 +75,7 @@ class SpringPrototypeAggregateFactoryTest {
     @Test
     void processSnapshotAggregateInstance() {
         DomainEventMessage<SpringWiredAggregate> snapshotEvent = new GenericDomainEventMessage<>(
-                "SpringWiredAggregate", "id2", 5, dottedName("test.event"), new SpringWiredAggregate()
+                "SpringWiredAggregate", "id2", 5, QualifiedNameUtils.fromDottedName("test.event"), new SpringWiredAggregate()
         );
         SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2", snapshotEvent);
 

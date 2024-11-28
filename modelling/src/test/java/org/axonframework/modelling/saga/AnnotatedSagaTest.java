@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.NoMoreInterceptors;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
@@ -32,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWith;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -61,9 +62,9 @@ class AnnotatedSagaTest {
     @Test
     void invokeSaga() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new RegularEvent("id")));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new RegularEvent("wrongId")));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new Object()));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new RegularEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new RegularEvent("wrongId")));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new Object()));
 
         assertEquals(1, testSaga.invocationCount);
     }
@@ -89,10 +90,10 @@ class AnnotatedSagaTest {
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("propertyName", "id");
         EventMessage<EventWithoutProperties> testEvent = new GenericEventMessage<>(
-                dottedName("test.event"), new EventWithoutProperties(), new MetaData(metaData)
+                QualifiedNameUtils.fromDottedName("test.event"), new EventWithoutProperties(), new MetaData(metaData)
         );
         testSubject.handleSync(testEvent);
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new EventWithoutProperties()));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new EventWithoutProperties()));
 
         assertEquals(1, testSaga.invocationCount);
     }
@@ -108,9 +109,9 @@ class AnnotatedSagaTest {
     @Test
     void endedAfterInvocationBeanProperty() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new RegularEvent("id")));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new Object()));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new SagaEndEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new RegularEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new Object()));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new SagaEndEvent("id")));
 
         assertEquals(2, testSaga.invocationCount);
         assertFalse(testSubject.isActive());
@@ -126,9 +127,9 @@ class AnnotatedSagaTest {
         );
 
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new RegularEvent("id")));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new Object()));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new SagaEndEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new RegularEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new Object()));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new SagaEndEvent("id")));
 
         assertEquals(2, testSaga.invocationCount);
         assertFalse(testSubject.isActive());
@@ -137,9 +138,9 @@ class AnnotatedSagaTest {
     @Test
     void endedAfterInvocationUniformAccessPrinciple() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new UniformAccessEvent("id")));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new Object()));
-        testSubject.handleSync(new GenericEventMessage<>(dottedName("test.event"), new SagaEndEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new UniformAccessEvent("id")));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new Object()));
+        testSubject.handleSync(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new SagaEndEvent("id")));
 
         assertEquals(2, testSaga.invocationCount);
         assertFalse(testSubject.isActive());

@@ -20,7 +20,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -56,7 +56,7 @@ class DefaultQueryGatewayTest {
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
-        answer = new GenericQueryResponseMessage<>(dottedName("test.query"), "answer");
+        answer = new GenericQueryResponseMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "answer");
         MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         mockBus = mock(QueryBus.class);
         testSubject = DefaultQueryGateway.builder()
@@ -118,7 +118,7 @@ class DefaultQueryGatewayTest {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
         GenericMessage<String> testQuery = new GenericMessage<>(
-                dottedName("test.query"), "query", MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
+                QualifiedNameUtils.fromDottedName("test.query"), "query", MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
         );
 
         CompletableFuture<String> queryResponse = testSubject.query(testQuery, instanceOf(String.class));
@@ -144,7 +144,7 @@ class DefaultQueryGatewayTest {
     void pointToPointQueryWhenQueryBusReportsAnError() throws Exception {
         Throwable expected = new Throwable("oops");
         QueryResponseMessage<String> testQuery =
-                new GenericQueryResponseMessage<>(dottedName("test.query"), expected, String.class);
+                new GenericQueryResponseMessage<>(QualifiedNameUtils.fromDottedName("test.query"), expected, String.class);
         when(mockBus.query(anyMessage(String.class, String.class)))
                 .thenReturn(completedFuture(testQuery));
 
@@ -252,7 +252,7 @@ class DefaultQueryGatewayTest {
                 .thenReturn(Stream.of(answer));
 
         Message<String> testQuery = new GenericMessage<>(
-                dottedName("test.query"), "scatterGather", MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
+                QualifiedNameUtils.fromDottedName("test.query"), "scatterGather", MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
         );
 
         Stream<String> queryResponse =
@@ -337,7 +337,7 @@ class DefaultQueryGatewayTest {
 
 
         Message<String> testQuery = new GenericMessage<>(
-                dottedName("test.query"), "subscription", MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
+                QualifiedNameUtils.fromDottedName("test.query"), "subscription", MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
         );
         testSubject.subscriptionQuery(testQuery, instanceOf(String.class), instanceOf(String.class));
 
@@ -364,7 +364,7 @@ class DefaultQueryGatewayTest {
     void dispatchInterceptor() {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
         testSubject.registerDispatchInterceptor(messages -> (integer, queryMessage) -> new GenericQueryMessage<>(
-                dottedName("test.query"), queryMessage.getQueryName(), "dispatch-" + queryMessage.getPayload(),
+                QualifiedNameUtils.fromDottedName("test.query"), queryMessage.getQueryName(), "dispatch-" + queryMessage.getPayload(),
                 queryMessage.getResponseType())
         );
 
@@ -378,7 +378,7 @@ class DefaultQueryGatewayTest {
     @Test
     void exceptionInInitialResultOfSubscriptionQueryReportedInMono() {
         QueryResponseMessage<String> testResponse =
-                new GenericQueryResponseMessage<>(dottedName("test.query"), new MockException(), String.class);
+                new GenericQueryResponseMessage<>(QualifiedNameUtils.fromDottedName("test.query"), new MockException(), String.class);
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.just(testResponse),
@@ -398,7 +398,7 @@ class DefaultQueryGatewayTest {
     @Test
     void nullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
         QueryResponseMessage<String> testQuery =
-                new GenericQueryResponseMessage<>(dottedName("test.query"), (String) null, String.class);
+                new GenericQueryResponseMessage<>(QualifiedNameUtils.fromDottedName("test.query"), (String) null, String.class);
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.just(testQuery),
@@ -415,7 +415,7 @@ class DefaultQueryGatewayTest {
     @Test
     void nullUpdatesOfSubscriptionQuerySkipped() {
         SubscriptionQueryUpdateMessage<String> testQuery =
-                new GenericSubscriptionQueryUpdateMessage<>(dottedName("test.query"), null, String.class);
+                new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromDottedName("test.query"), null, String.class);
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.empty(),
@@ -434,7 +434,7 @@ class DefaultQueryGatewayTest {
     void payloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         when(mockBus.query(anyMessage(String.class, String.class)))
                 .thenReturn(completedFuture(new GenericQueryResponseMessage<>(
-                        dottedName("test.query"), "test"
+                        QualifiedNameUtils.fromDottedName("test.query"), "test"
                 ) {
                     @Override
                     public String getPayload() {
@@ -451,9 +451,9 @@ class DefaultQueryGatewayTest {
     @Test
     void streamingQueryIsLazy() {
         Publisher<QueryResponseMessage<Object>> response = Flux.just(
-                new GenericQueryResponseMessage<>(dottedName("test.a"), "a"),
-                new GenericQueryResponseMessage<>(dottedName("test.b"), "b"),
-                new GenericQueryResponseMessage<>(dottedName("test.c"), "c")
+                new GenericQueryResponseMessage<>(QualifiedNameUtils.fromDottedName("test.a"), "a"),
+                new GenericQueryResponseMessage<>(QualifiedNameUtils.fromDottedName("test.b"), "b"),
+                new GenericQueryResponseMessage<>(QualifiedNameUtils.fromDottedName("test.c"), "c")
         );
 
         when(mockBus.streamingQuery(any()))
@@ -489,7 +489,7 @@ class DefaultQueryGatewayTest {
         when(mockBus.streamingQuery(any())).thenReturn(Flux.empty());
 
         StreamingQueryMessage<String, String> testQuery =
-                new GenericStreamingQueryMessage<>(dottedName("test.query"), "Query", String.class)
+                new GenericStreamingQueryMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "Query", String.class)
                         .andMetaData(MetaData.with("key", "value"));
 
         StepVerifier.create(testSubject.streamingQuery(testQuery, String.class))

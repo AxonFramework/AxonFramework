@@ -19,10 +19,11 @@ package org.axonframework.tracing;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,14 +31,14 @@ class SpanUtilsTest {
 
     @Test
     void determineMessageNameForEvent() {
-        GenericEventMessage<?> message = new GenericEventMessage<>(dottedName("test.event"), "MyPayload");
+        GenericEventMessage<?> message = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "MyPayload");
         assertEquals("String", SpanUtils.determineMessageName(message));
     }
 
     @Test
     void determineMessageNameForQueryWithoutName() {
         GenericQueryMessage<String, String> message =
-                new GenericQueryMessage<>(dottedName("test.query"), "MyPayload", instanceOf(String.class));
+                new GenericQueryMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "MyPayload", instanceOf(String.class));
 
         assertEquals("String", SpanUtils.determineMessageName(message));
     }
@@ -45,7 +46,7 @@ class SpanUtilsTest {
     @Test
     void determineMessageNameForQueryWithName() {
         GenericQueryMessage<String, String> message = new GenericQueryMessage<>(
-                dottedName("test.query"), "SuperString", "MyPayload", instanceOf(String.class)
+                QualifiedNameUtils.fromDottedName("test.query"), "SuperString", "MyPayload", instanceOf(String.class)
         );
         assertEquals("SuperString", SpanUtils.determineMessageName(message));
     }
@@ -53,21 +54,21 @@ class SpanUtilsTest {
     @Test
     void determineMessageNameForQueryWithSameName() {
         GenericQueryMessage<String, String> message = new GenericQueryMessage<>(
-                dottedName("test.query"), "java.lang.String", "MyPayload", instanceOf(String.class)
+                QualifiedNameUtils.fromDottedName("test.query"), "java.lang.String", "MyPayload", instanceOf(String.class)
         );
         assertEquals("String", SpanUtils.determineMessageName(message));
     }
 
     @Test
     void determineMessageNameForCommandWithoutName() {
-        GenericCommandMessage<String> message = new GenericCommandMessage<>(dottedName("test.command"), "MyPayload");
+        GenericCommandMessage<String> message = new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "MyPayload");
         assertEquals("String", SpanUtils.determineMessageName(message));
     }
 
     @Test
     void determineMessageNameForCommandWithName() {
         GenericCommandMessage<String> message = new GenericCommandMessage<>(
-                new GenericCommandMessage<>(dottedName("test.command"), "MyPayload"), "SuperCommand"
+                new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "MyPayload"), "SuperCommand"
         );
         assertEquals("SuperCommand", SpanUtils.determineMessageName(message));
     }
@@ -75,14 +76,14 @@ class SpanUtilsTest {
     @Test
     void determineMessageNameForDeadlineWithoutPayload() {
         GenericDeadlineMessage<String> message =
-                new GenericDeadlineMessage<>(dottedName("test.deadline"), "myDeadlineName");
+                new GenericDeadlineMessage<>(QualifiedNameUtils.fromDottedName("test.deadline"), "myDeadlineName");
         assertEquals("myDeadlineName", SpanUtils.determineMessageName(message));
     }
 
     @Test
     void determineMessageNameForDeadlineWithPayload() {
         GenericDeadlineMessage<String> message =
-                new GenericDeadlineMessage<>("myDeadlineName", dottedName("test.deadline"), "MyPayload");
+                new GenericDeadlineMessage<>("myDeadlineName", QualifiedNameUtils.fromDottedName("test.deadline"), "MyPayload");
         assertEquals("myDeadlineName,String", SpanUtils.determineMessageName(message));
     }
 }

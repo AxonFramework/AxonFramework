@@ -68,8 +68,8 @@ public final class QualifiedNameUtils {
      *                                                             {@link QualifiedName#localName()} is {@code null} or
      *                                                             empty.
      */
-    public static QualifiedName dottedName(@Nonnull String dottedName) {
-        return dottedName(dottedName, QualifiedName.DEFAULT_REVISION);
+    public static QualifiedName fromDottedName(@Nonnull String dottedName) {
+        return fromDottedName(dottedName, QualifiedName.DEFAULT_REVISION);
     }
 
     /**
@@ -92,8 +92,8 @@ public final class QualifiedNameUtils {
      *                                                             {@link QualifiedName#localName()} is {@code null} or
      *                                                             empty.
      */
-    public static QualifiedName dottedName(@Nonnull String dottedName,
-                                           @Nonnull String revision) {
+    public static QualifiedName fromDottedName(@Nonnull String dottedName,
+                                               @Nonnull String revision) {
         assertNonEmpty(dottedName, "Cannot construct a QualifiedName based on a null or empty String.");
         int lastDot = dottedName.lastIndexOf('.');
         String namespace = dottedName.substring(0, Math.max(lastDot, 0));

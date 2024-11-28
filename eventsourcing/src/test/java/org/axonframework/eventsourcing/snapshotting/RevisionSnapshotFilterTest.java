@@ -22,11 +22,12 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.eventsourcing.utils.TestSerializer;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.Serializer;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -50,7 +51,7 @@ class RevisionSnapshotFilterTest {
 
         DomainEventMessage<RightAggregateTypeAndRevision> snapshotEvent = new GenericDomainEventMessage<>(
                 RightAggregateTypeAndRevision.class.getName(), "some-aggregate-id", 0,
-                dottedName("test.snapshot"), new RightAggregateTypeAndRevision("some-state")
+                QualifiedNameUtils.fromDottedName("test.snapshot"), new RightAggregateTypeAndRevision("some-state")
         );
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, serializer);
 
@@ -67,7 +68,7 @@ class RevisionSnapshotFilterTest {
 
         DomainEventMessage<WrongAggregateType> snapshotEvent = new GenericDomainEventMessage<>(
                 WrongAggregateType.class.getName(), "some-aggregate-id", 0,
-                dottedName("test.snapshot"), new WrongAggregateType("some-state")
+                QualifiedNameUtils.fromDottedName("test.snapshot"), new WrongAggregateType("some-state")
         );
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, serializer);
 
@@ -84,7 +85,7 @@ class RevisionSnapshotFilterTest {
 
         DomainEventMessage<RightAggregateTypeAndWrongRevision> snapshotEvent = new GenericDomainEventMessage<>(
                 RightAggregateTypeAndWrongRevision.class.getName(), "some-aggregate-id", 0,
-                dottedName("test.snapshot"), new RightAggregateTypeAndWrongRevision("some-state")
+                QualifiedNameUtils.fromDottedName("test.snapshot"), new RightAggregateTypeAndWrongRevision("some-state")
         );
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, serializer);
 

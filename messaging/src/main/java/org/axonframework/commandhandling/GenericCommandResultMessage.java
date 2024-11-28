@@ -65,7 +65,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
             return new GenericCommandResultMessage<>(commandResultMessage);
         }
         QualifiedName type = commandResult == null
-                ? QualifiedNameUtils.dottedName("empty.command.result")
+                ? QualifiedNameUtils.fromDottedName("empty.command.result")
                 : QualifiedNameUtils.fromClassName(commandResult.getClass());
         return new GenericCommandResultMessage<>(type, (R) commandResult);
     }

@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedType;
@@ -45,7 +46,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EventMessageDeadLetterJpaConverterTest {
@@ -55,7 +56,7 @@ class EventMessageDeadLetterJpaConverterTest {
     private final Serializer eventSerializer = TestSerializer.JACKSON.getSerializer();
     private final Serializer genericSerializer = TestSerializer.XSTREAM.getSerializer();
     private final ConverterTestEvent event = new ConverterTestEvent("myValue");
-    private final QualifiedName type = dottedName("test.event");
+    private final QualifiedName type = QualifiedNameUtils.fromDottedName("test.event");
     private final MetaData metaData = MetaData.from(Collections.singletonMap("myMetadataKey", "myMetadataValue"));
 
     @Test

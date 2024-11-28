@@ -65,7 +65,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
                              @Nonnull Serializer serializer) {
         // TODO #3012 - I think the Serializer/Converter should provide the QualifiedName in this case.
         this(identifier,
-             QualifiedNameUtils.dottedName(serializedPayload.getType().getName()),
+             QualifiedNameUtils.fromDottedName(serializedPayload.getType().getName()),
              new LazyDeserializingObject<>(serializedPayload, serializer),
              new LazyDeserializingObject<>(serializedMetaData, serializer));
     }

@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -29,7 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -44,7 +45,7 @@ class DefaultEventMessageConverterTest {
     @Test
     void givenGenericEventMessageWhenConvertingTwiceThenResultingEventShouldBeTheSame() {
         String id = UUID.randomUUID().toString();
-        QualifiedName type = dottedName("test.event");
+        QualifiedName type = QualifiedNameUtils.fromDottedName("test.event");
         EventPayload payload = new EventPayload("hello");
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("number", 100);
@@ -69,7 +70,7 @@ class DefaultEventMessageConverterTest {
     void givenDomainEventMessageWhenConvertingTwiceThenResultingEventShouldBeTheSame() {
         String aggId = UUID.randomUUID().toString();
         String id = UUID.randomUUID().toString();
-        QualifiedName type = dottedName("test.event");
+        QualifiedName type = QualifiedNameUtils.fromDottedName("test.event");
         EventPayload payload = new EventPayload("hello");
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("number", 100);

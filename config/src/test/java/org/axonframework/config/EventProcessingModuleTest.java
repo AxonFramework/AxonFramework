@@ -54,6 +54,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
@@ -84,7 +85,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -383,7 +384,7 @@ class EventProcessingModuleTest {
 
         try {
             config.eventBus()
-                  .publish(new GenericEventMessage<>(dottedName("test.event"), "test"));
+                  .publish(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "test"));
 
             assertEquals(1, subscribingMonitor.getMessages().size());
             assertTrue(trackingMonitor.await(10, TimeUnit.SECONDS));
@@ -403,7 +404,7 @@ class EventProcessingModuleTest {
         Configuration config = configurer.start();
 
         try {
-            EventMessage<Object> message = new GenericEventMessage<>(dottedName("test.event"), "test");
+            EventMessage<Object> message = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "test");
             config.eventBus().publish(message);
 
             spanFactory.verifySpanCompleted("EventProcessor.process", message);
@@ -416,7 +417,7 @@ class EventProcessingModuleTest {
 
     @Test
     void configureDefaultListenerInvocationErrorHandler() throws Exception {
-        EventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(dottedName("test.event"), true);
+        EventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), true);
 
         int expectedListenerInvocationErrorHandlerCalls = 2;
 
@@ -442,7 +443,7 @@ class EventProcessingModuleTest {
 
     @Test
     void configureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
-        EventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(dottedName("test.event"), true);
+        EventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), true);
 
         int expectedErrorHandlerCalls = 1;
 
@@ -472,7 +473,7 @@ class EventProcessingModuleTest {
 
     @Test
     void configureDefaultErrorHandler() throws Exception {
-        EventMessage<Integer> failingEventMessage = new GenericEventMessage<>(dottedName("test.event"), 1000);
+        EventMessage<Integer> failingEventMessage = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), 1000);
 
         int expectedErrorHandlerCalls = 2;
 
@@ -554,7 +555,7 @@ class EventProcessingModuleTest {
 
     @Test
     void configureErrorHandlerPerEventProcessor() throws Exception {
-        EventMessage<Integer> failingEventMessage = new GenericEventMessage<>(dottedName("test.event"), 1000);
+        EventMessage<Integer> failingEventMessage = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), 1000);
 
         int expectedErrorHandlerCalls = 1;
 
@@ -1211,7 +1212,7 @@ class EventProcessingModuleTest {
     @Test
     void defaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
         String testName = "pooled-streaming";
-        EventMessage<Integer> testEvent = new GenericEventMessage<>(dottedName("test.event"), 1000);
+        EventMessage<Integer> testEvent = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), 1000);
 
         CountDownLatch transactionCommitted = new CountDownLatch(1);
         TransactionManager defaultTransactionManager = new StubTransactionManager(transactionCommitted);
@@ -1234,7 +1235,7 @@ class EventProcessingModuleTest {
     @Test
     void defaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
         String testName = "pooled-streaming";
-        EventMessage<Integer> testEvent = new GenericEventMessage<>(dottedName("test.event"), 1000);
+        EventMessage<Integer> testEvent = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), 1000);
 
         TransactionManager defaultTransactionManager = spy(TransactionManager.class);
         CountDownLatch transactionCommitted = new CountDownLatch(1);

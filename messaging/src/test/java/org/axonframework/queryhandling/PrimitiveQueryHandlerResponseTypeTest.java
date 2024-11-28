@@ -16,11 +16,12 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -89,9 +90,9 @@ class PrimitiveQueryHandlerResponseTypeTest {
      */
     private <T> void test(final T value, final Class<T> boxed, final Class<T> primitive) {
         final QueryMessage<T, T> queryBoxed =
-                new GenericQueryMessage<>(dottedName("test.query"), value, ResponseTypes.instanceOf(boxed));
+                new GenericQueryMessage<>(QualifiedNameUtils.fromDottedName("test.query"), value, ResponseTypes.instanceOf(boxed));
         final QueryMessage<T, T> queryPrimitive =
-                new GenericQueryMessage<>(dottedName("test.query"), value, ResponseTypes.instanceOf(primitive));
+                new GenericQueryMessage<>(QualifiedNameUtils.fromDottedName("test.query"), value, ResponseTypes.instanceOf(primitive));
 
         final T responseBoxed = queryBus.query(queryBoxed).join().getPayload();
         final T responsePrimitive = queryBus.query(queryPrimitive).join().getPayload();

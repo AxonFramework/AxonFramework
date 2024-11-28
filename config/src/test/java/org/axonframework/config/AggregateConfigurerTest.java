@@ -35,6 +35,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -60,7 +61,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.config.utils.TestSerializer.xStreamSerializer;
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -150,7 +151,7 @@ public class AggregateConfigurerTest {
     void aggregateConfigurationCreatesRevisionSnapshotFilterForAggregateWithRevision() {
         DomainEventMessage<TestAggregateWithRevision> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregateWithRevision.class.getName(), "some-aggregate-id", 0,
-                dottedName("test.snapshot"), new TestAggregateWithRevision()
+                QualifiedNameUtils.fromDottedName("test.snapshot"), new TestAggregateWithRevision()
         );
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, xStreamSerializer());
 
@@ -331,7 +332,7 @@ public class AggregateConfigurerTest {
     void nullRevisionEventAndNullRevisionAggregateAllowed() {
         DomainEventMessage<TestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregate.class.getSimpleName(), "some-aggregate-id", 0,
-                dottedName("test.snapshot"), new TestAggregate()
+                QualifiedNameUtils.fromDottedName("test.snapshot"), new TestAggregate()
         );
 
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, xStreamSerializer());
@@ -351,7 +352,7 @@ public class AggregateConfigurerTest {
     void nonNullEventRevisionAndNullAggregateRevisionNotAllowed() {
         DomainEventMessage<TestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregate.class.getSimpleName(), "some-aggregate-id", 0,
-                dottedName("test.snapshot"), new TestAggregate()
+                QualifiedNameUtils.fromDottedName("test.snapshot"), new TestAggregate()
         );
         Serializer serializer = XStreamSerializer.builder()
                                                  .xStream(new XStream(new CompactDriver()))

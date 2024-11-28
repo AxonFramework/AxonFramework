@@ -19,11 +19,12 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -51,7 +52,7 @@ class MetaDataRoutingStrategyTest {
 
         MetaData testMetaData = MetaData.from(Collections.singletonMap(META_DATA_KEY, expectedRoutingKey));
         CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(dottedName("test.command"), "some-payload", testMetaData);
+                new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "some-payload", testMetaData);
 
         assertEquals(expectedRoutingKey, testSubject.getRoutingKey(testCommand));
         verifyNoInteractions(fallbackRoutingStrategy);
@@ -60,7 +61,7 @@ class MetaDataRoutingStrategyTest {
     @Test
     void returnsNullOnUnresolvedMetadataKey() {
         CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(dottedName("test.command"), "some-payload", MetaData.emptyInstance());
+                new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "some-payload", MetaData.emptyInstance());
 
         assertNull(testSubject.getRoutingKey(testCommand));
     }

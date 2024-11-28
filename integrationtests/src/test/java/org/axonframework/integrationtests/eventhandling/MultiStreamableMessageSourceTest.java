@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.junit.jupiter.api.*;
 
@@ -41,7 +42,7 @@ import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -108,7 +109,7 @@ class MultiStreamableMessageSourceTest {
     @Test
     void simplePublishAndConsumeDomainEventMessage() throws InterruptedException {
         EventMessage<?> publishedEvent =
-                new GenericDomainEventMessage<>("Aggregate", "id", 0, dottedName("test.event"), "Event1");
+                new GenericDomainEventMessage<>("Aggregate", "id", 0, QualifiedNameUtils.fromDottedName("test.event"), "Event1");
 
         eventStoreA.publish(publishedEvent);
         BlockingStream<TrackedEventMessage<?>> singleEventStream =

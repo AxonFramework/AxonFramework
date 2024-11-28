@@ -44,7 +44,7 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
     /**
      * The {@link QualifiedName type} of <em>any</em> {@link GenericResetContext} instance.
      */
-    public static final QualifiedName TYPE = QualifiedNameUtils.dottedName("axon.framework.resetContext");
+    public static final QualifiedName TYPE = QualifiedNameUtils.fromDottedName("axon.framework.resetContext");
 
     /**
      * Returns the given {@code messageOrPayload} as a {@link ResetContext}. If {@code messageOrPayload} already

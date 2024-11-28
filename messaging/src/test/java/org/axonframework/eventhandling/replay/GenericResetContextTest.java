@@ -18,13 +18,14 @@ package org.axonframework.eventhandling.replay;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.Map;
 
 import static org.axonframework.eventhandling.replay.GenericResetContext.asResetContext;
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -39,7 +40,7 @@ class GenericResetContextTest {
     @Test
     void constructor() {
         ResetContext<Object> messageOne = asResetContext(TEST_PAYLOAD);
-        ResetContext<Object> messageTwo = asResetContext(new GenericMessage<>(dottedName("test.event"), TEST_PAYLOAD));
+        ResetContext<Object> messageTwo = asResetContext(new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.event"), TEST_PAYLOAD));
         ResetContext<Object> messageThree = asResetContext(new GenericResetContext<>(TEST_PAYLOAD));
 
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");

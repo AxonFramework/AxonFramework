@@ -21,12 +21,13 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedNameUtils.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.mockito.Mockito.*;
 
 /**
@@ -48,7 +49,7 @@ class TransactionManagingInterceptorTest {
             CurrentUnitOfWork.get().rollback();
         }
         interceptorChain = mock(InterceptorChain.class);
-        Message<?> message = new GenericMessage<>(dottedName("test.message"), new Object());
+        Message<?> message = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), new Object());
         unitOfWork = DefaultUnitOfWork.startAndGet(message);
         transactionManager = mock(TransactionManager.class);
         transaction = mock(Transaction.class);

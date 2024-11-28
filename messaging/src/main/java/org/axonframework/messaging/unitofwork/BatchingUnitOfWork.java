@@ -103,7 +103,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
                                                                ((Message<?>) result).getMetaData());
                 } else {
                     QualifiedName type = result == null
-                            ? QualifiedNameUtils.dottedName("empty.result")
+                            ? QualifiedNameUtils.fromDottedName("empty.result")
                             : QualifiedNameUtils.fromClassName(result.getClass());
                     resultMessage = new GenericResultMessage<>(type, result);
                 }

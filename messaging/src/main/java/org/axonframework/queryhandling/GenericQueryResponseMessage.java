@@ -118,7 +118,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
                                                      message.getMetaData());
         } else {
             QualifiedName type = result == null
-                    ? QualifiedNameUtils.dottedName("empty.query.response")
+                    ? QualifiedNameUtils.fromDottedName("empty.query.response")
                     : QualifiedNameUtils.fromClassName(result.getClass());
             //noinspection unchecked
             return new GenericQueryResponseMessage<>(type, (R) result, declaredType);
