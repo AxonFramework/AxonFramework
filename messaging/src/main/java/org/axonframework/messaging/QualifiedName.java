@@ -34,8 +34,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * components that require naming.
  * <p>
  * Note that all characters <b>except</b> for the semicolon ({@code :}) are allowed for any of the three parameters. The
- * semicolon acts as a delimiter for the {@link #toSimpleString()} and thus is a special character delimited on in the
- * {@link QualifiedName#simpleStringName(String)} method.
+ * semicolon acts as a delimiter for the {@link #toSimpleString()} and thus is a reserved character.
  *
  * @param namespace The {@link String} representing the {@link #namespace()} of this {@link QualifiedName}. The
  *                  {@code namespace} may represent a (bounded) context, package, or whatever other "space" this
@@ -93,15 +92,12 @@ public record QualifiedName(@Nonnull String namespace,
     /**
      * Reconstruct a {@link QualifiedName} based on the output of {@link QualifiedName#toSimpleString()}.
      * <p>
-     * The output of the {@code QualifiedName#toSimpleString()} depends on which fields are set in the
-     * {@code QualifiedName}. If there is only a non-empty {@link #localName()}, only the {@code localName} will be
-     * printed. When the {@link #namespace()} is non-empty, the {@code localName} will be post-fixed with
-     * {@code "@({namespace})"}. And when the {@link #revision()} is non-empty, the {@code localName} (and possibly
-     * {@code namespace}) will be post-fixed with {@code "#[{revision}]"}.
+     * The output of {@code QualifiedName#toSimpleString()} is a concatination of  the {@link #namespace()},
+     * {@link #localName()}, and {@link #revision()}, split by means of a semicolon ({@code :}).
      * <p>
-     * Thus, if {@code localName()} returns {@code "BusinessName"}, the {@code namespace()} returns
-     * {@code "my.context"}, and the {@code revision()} returns {@code "3"}, a simple {@link String} would be
-     * {@code "BusinessName @(my.context) #[3]"}.
+     * Thus, if {@code #namespace()} returns {@code "my.context"}, the {@code #localName()} returns
+     * {@code "BusinessName"}, and the {@code #revision()} returns {@code "1.0.5"}, the result of <b>this</b> operation
+     * would be {@code "my.context:BusinessName:1.0.5"}.
      *
      * @param simpleString The output of {@link QualifiedName#toSimpleString()}, given to reconstruct it into a
      *                     {@link QualifiedName}.
