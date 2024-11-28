@@ -16,7 +16,6 @@
 
 package org.axonframework.axonserver.connector.query.subscription;
 
-import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.ErrorCode;
@@ -71,12 +70,12 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
                 : null;
         this.metaDataSupplier = new GrpcMetaData(queryUpdate.getMetaDataMap(), serializer);
         if (serializedPayload != null) {
-            SerializedObject serializedPayload = queryUpdate.getPayload();
-            String revision = serializedPayload.getRevision();
-            this.type = QualifiedNameUtils.fromDottedName(
-                    serializedPayload.getType(),
-                    revision.isEmpty() ? QualifiedNameUtils.DEFAULT_REVISION : revision
-            );
+            GrpcSerializedObject serializedObject = new GrpcSerializedObject(queryUpdate.getPayload());
+            Class<?> payloadClass = serializer.classForType(serializedObject.getType());
+            String revision = serializedObject.getType().getRevision();
+            this.type = new QualifiedName(payloadClass.getPackageName(),
+                                          payloadClass.getSimpleName(),
+                                          revision != null ? revision : QualifiedNameUtils.DEFAULT_REVISION);
         } else {
             this.type = new QualifiedName("query.update.exception",
                                           queryUpdate.getErrorCode(),

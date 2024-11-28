@@ -16,7 +16,6 @@
 
 package org.axonframework.axonserver.connector.query;
 
-import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.util.GrpcMetaData;
@@ -66,16 +65,16 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer),
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer),
                 new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer),
-                createType(queryRequest.getPayload())
+                createType(new GrpcSerializedObject(queryRequest.getResponseType()), serializer)
         );
     }
 
-    private static QualifiedName createType(SerializedObject serializedPayload) {
-        String revision = serializedPayload.getRevision();
-        return QualifiedNameUtils.fromDottedName(
-                serializedPayload.getType(),
-                revision.isEmpty() ? QualifiedNameUtils.DEFAULT_REVISION : revision
-        );
+    private static QualifiedName createType(GrpcSerializedObject serializedObject, Serializer serializer) {
+        Class<?> payloadClass = serializer.classForType(serializedObject.getType());
+        String revision = serializedObject.getType().getRevision();
+        return new QualifiedName(payloadClass.getPackageName(),
+                                 payloadClass.getSimpleName(),
+                                 revision != null ? revision : QualifiedNameUtils.DEFAULT_REVISION);
     }
 
     private GrpcBackedQueryMessage(QueryRequest queryRequest,

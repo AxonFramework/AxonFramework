@@ -89,7 +89,6 @@ import java.util.stream.Stream;
 import static java.util.Arrays.asList;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
 import static org.junit.jupiter.api.Assertions.*;
@@ -487,9 +486,10 @@ class AxonServerQueryBusTest {
 
     @Test
     void shutdownTakesFinishedQueriesIntoAccount() {
-        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(QueryResponse.newBuilder().build()));
-        QueryMessage<String, String> testQuery =
-                new GenericQueryMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "some-query", instanceOf(String.class));
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(stubResponse("some-payload")));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                QualifiedNameUtils.fromDottedName("test.query"), "some-query", instanceOf(String.class)
+        );
 
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
         result.join();
