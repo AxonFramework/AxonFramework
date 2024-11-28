@@ -29,23 +29,40 @@ import static org.junit.jupiter.api.Assertions.*;
 class QualifiedNameUtilsTest {
 
     @Test
-    void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForNullFromDottedName() {
+    void fromClassNameSplitsTheClassAsExpected() {
+        String expectedNamespace = ClassToGiveNameTo.class.getPackageName();
+        String expectedLocalName = ClassToGiveNameTo.class.getSimpleName();
+
+        QualifiedName testSubject = QualifiedNameUtils.fromClassName(ClassToGiveNameTo.class);
+
+        assertEquals(expectedNamespace, testSubject.namespace());
+        assertEquals(expectedLocalName, testSubject.localName());
+    }
+
+    @Test
+    void fromClassNameThrowsAxonConfigurationExceptionForNullClass() {
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromClassName(null));
+    }
+
+    @Test
+    void fromDottedNameThrowsAxonConfigurationExceptionForNullFromDottedName() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromDottedName(null));
     }
 
     @Test
-    void dottedNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyFromDottedName() {
+    void fromDottedNameThrowsAxonConfigurationExceptionForEmptyFromDottedName() {
         assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromDottedName(""));
     }
 
     @Test
-    void fromDottedNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyLocalNamePart() {
+    void fromDottedNameThrowsAxonConfigurationExceptionForEmptyLocalNamePart() {
         assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromDottedName("my.context."));
     }
 
     @Test
-    void fromDottedNameFactoryMethodSplitsTheNameAsExpected() {
+    void fromDottedNameSplitsTheNameAsExpected() {
         String expectedNamespace = "my.context";
         String expectedLocalName = "BusinessOperation";
 
@@ -57,7 +74,7 @@ class QualifiedNameUtilsTest {
     }
 
     @Test
-    void fromDottedNameFactoryMethodWithRevisionSplitsTheNameAsExpected() {
+    void fromDottedNameWithRevisionSplitsTheNameAsExpected() {
         String expectedNamespace = "my.context";
         String expectedLocalName = "BusinessOperation";
         String testRevision = "1337.42";
@@ -67,5 +84,9 @@ class QualifiedNameUtilsTest {
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
         assertEquals(testRevision, testSubject.revision());
+    }
+
+    private static class ClassToGiveNameTo {
+
     }
 }
