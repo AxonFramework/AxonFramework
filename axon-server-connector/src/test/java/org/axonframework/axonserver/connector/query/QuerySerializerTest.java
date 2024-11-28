@@ -22,6 +22,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryExecutionException;
@@ -36,7 +37,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -61,7 +62,7 @@ class QuerySerializerTest {
     @Test
     void serializeRequest() {
         QueryMessage<String, Integer> message =
-                new GenericQueryMessage<>(dottedName("test.query"), "MyQueryName", "Test", instanceOf(int.class));
+                new GenericQueryMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "MyQueryName", "Test", instanceOf(int.class));
         QueryRequest queryRequest = testSubject.serializeRequest(message, 5, 10, 1);
         QueryMessage<Object, Object> deserialized = testSubject.deserializeRequest(queryRequest);
 
@@ -80,7 +81,7 @@ class QuerySerializerTest {
             this.put("secondKey", "secondValue");
         }};
         QueryResponseMessage<BigDecimal> message =
-                new GenericQueryResponseMessage<>(dottedName("test.query"), BigDecimal.ONE, metadata, BigDecimal.class);
+                new GenericQueryResponseMessage<>(QualifiedNameUtils.fromDottedName("test.query"), BigDecimal.ONE, metadata, BigDecimal.class);
         QueryResponse grpcMessage = testSubject.serializeResponse(message, "requestMessageId");
         QueryResponseMessage<BigDecimal> deserialized =
                 testSubject.deserializeResponse(grpcMessage, instanceOf(BigDecimal.class));
@@ -95,7 +96,7 @@ class QuerySerializerTest {
     void serializeExceptionalResponse() {
         RuntimeException exception = new RuntimeException("oops");
         QueryResponseMessage<String> responseMessage = new GenericQueryResponseMessage<>(
-                dottedName("test.query"), exception, MetaData.with("test", "testValue"), String.class
+                QualifiedNameUtils.fromDottedName("test.query"), exception, MetaData.with("test", "testValue"), String.class
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
@@ -114,7 +115,7 @@ class QuerySerializerTest {
     void serializeDeserializeNonTransientExceptionalResponse() {
         SerializationException exception = new SerializationException("oops");
         QueryResponseMessage<String> responseMessage = new GenericQueryResponseMessage<>(
-                dottedName("test.query"), exception, MetaData.with("test", "testValue"), String.class
+                QualifiedNameUtils.fromDottedName("test.query"), exception, MetaData.with("test", "testValue"), String.class
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
@@ -134,7 +135,7 @@ class QuerySerializerTest {
     void serializeExceptionalResponseWithDetails() {
         Exception exception = new QueryExecutionException("oops", null, "Details");
         QueryResponseMessage<String> responseMessage = new GenericQueryResponseMessage<>(
-                dottedName("test.query"), exception, MetaData.with("test", "testValue"), String.class
+                QualifiedNameUtils.fromDottedName("test.query"), exception, MetaData.with("test", "testValue"), String.class
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");

@@ -23,6 +23,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.spring.config.annotation.StubAggregate;
 import org.junit.jupiter.api.*;
@@ -35,7 +36,7 @@ import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.mockito.Mockito.*;
 
 /**
@@ -80,10 +81,10 @@ class SpringAggregateSnapshotterFactoryBeanTest {
 
         String type = "testAggregate";
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
-                type, aggregateIdentifier, 0L, dottedName("test.event"), "Mock contents"
+                type, aggregateIdentifier, 0L, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
         );
         DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
-                type, aggregateIdentifier, 1L, dottedName("test.event"), "Mock contents"
+                type, aggregateIdentifier, 1L, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
         );
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(event1, event2));
     }

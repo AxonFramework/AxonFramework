@@ -19,10 +19,11 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.Repository;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 
 /**
  * @author Allard Buijze
@@ -54,13 +55,13 @@ class MyCommandHandler {
     @CommandHandler
     public void handleStrangeCommand(StrangeCommand testCommand) {
         repository.load(testCommand.getAggregateIdentifier().toString(), null).execute(StandardAggregate::doSomething);
-        eventBus.publish(new GenericEventMessage<>(dottedName("test.event"), new MyApplicationEvent()));
+        eventBus.publish(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new MyApplicationEvent()));
         throw new StrangeCommandReceivedException("Strange command received");
     }
 
     @CommandHandler
     public void handleEventPublishingCommand(PublishEventCommand testCommand) {
-        eventBus.publish(new GenericEventMessage<>(dottedName("test.event"), new MyApplicationEvent()));
+        eventBus.publish(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new MyApplicationEvent()));
     }
 
     @CommandHandler

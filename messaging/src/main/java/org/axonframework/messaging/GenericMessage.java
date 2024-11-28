@@ -181,7 +181,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * {@link Message#type()} of {@code "empty"}.
      */
     public static Message<Void> emptyMessage() {
-        return new GenericMessage<>(QualifiedName.dottedName("empty"), null);
+        return new GenericMessage<>(new QualifiedName("axon", "empty", "1.0"), null);
     }
 
     @Override

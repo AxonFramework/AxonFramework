@@ -18,6 +18,7 @@ package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -32,7 +33,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.messaging.QualifiedName.className;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -71,7 +72,7 @@ class MethodQueryMessageHandlerDefinitionTest {
         assertEquals(String.class, handler.getResultType());
 
         GenericQueryMessage<String, String> message =
-                new GenericQueryMessage<>(dottedName("test.query"), "mock", ResponseTypes.instanceOf(String.class));
+                new GenericQueryMessage<>(QualifiedNameUtils.fromDottedName("test.query"), "mock", ResponseTypes.instanceOf(String.class));
 
         assertTrue(handler.canHandle(message, null));
 

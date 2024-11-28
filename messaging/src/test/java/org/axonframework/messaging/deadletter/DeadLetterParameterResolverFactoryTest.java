@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -31,7 +32,7 @@ import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -90,7 +91,7 @@ class DeadLetterParameterResolverFactoryTest {
         CommandMessage<Object> testCommand = GenericCommandMessage.asCommandMessage("some-command");
         EventMessage<Object> testEvent = GenericEventMessage.asEventMessage("some-command");
         QueryMessage<String, String> testQuery =
-                new GenericQueryMessage<>(dottedName("test.test"), "some-query", instanceOf(String.class));
+                new GenericQueryMessage<>(QualifiedNameUtils.fromDottedName("test.test"), "some-query", instanceOf(String.class));
 
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);

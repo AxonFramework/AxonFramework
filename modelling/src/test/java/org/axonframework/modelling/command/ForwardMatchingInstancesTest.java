@@ -20,13 +20,14 @@ import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.modelling.command.inspection.EntityModel;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Field;
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -66,7 +67,7 @@ class ForwardMatchingInstancesTest {
         verify(entityModel).routingKey();
 
         String candidate1 = "Candidate1";
-        Message<String> testMessage = new GenericMessage<>(dottedName("test.message"), "Mock");
+        Message<String> testMessage = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "Mock");
 
         Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
@@ -83,7 +84,7 @@ class ForwardMatchingInstancesTest {
         verify(entityModel).routingKey();
 
         String candidate1 = "Candidate1";
-        Message<String> testMessage = new GenericMessage<>(dottedName("test.message"), "Mock");
+        Message<String> testMessage = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "Mock");
 
         Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
@@ -105,7 +106,7 @@ class ForwardMatchingInstancesTest {
 
         String candidate1 = "Candidate1";
         String payload = "Mock";
-        Message<String> testMessage = new GenericMessage<>(dottedName("test.message"), payload);
+        Message<String> testMessage = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), payload);
 
         Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
@@ -128,7 +129,7 @@ class ForwardMatchingInstancesTest {
 
         String candidate1 = "Candidate1";
         String payload = "Mock";
-        Message<String> testMessage = new GenericMessage<>(dottedName("test.message"), payload);
+        Message<String> testMessage = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), payload);
 
         Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
@@ -152,8 +153,8 @@ class ForwardMatchingInstancesTest {
         String candidate1 = "Candidate1";
         String payload1 = "Mock1";
         String payload2 = "Mock2";
-        Message<String> testMessageOne = new GenericMessage<>(dottedName("test.message"), payload1);
-        Message<String> testMessageTwo = new GenericMessage<>(dottedName("test.message"), payload2);
+        Message<String> testMessageOne = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), payload1);
+        Message<String> testMessageTwo = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), payload2);
 
         Stream<String> result1 = testSubject.filterCandidates(testMessageOne, Stream.of(candidate1));
         Stream<String> result2 = testSubject.filterCandidates(testMessageTwo, Stream.of(candidate1));
@@ -184,8 +185,8 @@ class ForwardMatchingInstancesTest {
         String candidate1 = "Candidate1";
         String payload1 = "Mock1";
         Long payload2 = 2L;
-        Message<String> testMessageOne = new GenericMessage<>(dottedName("test.message"), payload1);
-        Message<Long> testMessageTwo = new GenericMessage<>(dottedName("test.message"), payload2);
+        Message<String> testMessageOne = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), payload1);
+        Message<Long> testMessageTwo = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), payload2);
 
         Stream<String> result1 = testSubject.filterCandidates(testMessageOne, Stream.of(candidate1));
         Stream<String> result2 = testSubject.filterCandidates(testMessageTwo, Stream.of(candidate1));

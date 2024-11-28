@@ -22,6 +22,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
 import java.io.Serial;
@@ -64,8 +65,8 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
             return new GenericCommandResultMessage<>(commandResultMessage);
         }
         QualifiedName type = commandResult == null
-                ? QualifiedName.dottedName("empty.command.result")
-                : QualifiedName.className(commandResult.getClass());
+                ? QualifiedNameUtils.fromDottedName("empty.command.result")
+                : QualifiedNameUtils.fromClassName(commandResult.getClass());
         return new GenericCommandResultMessage<>(type, (R) commandResult);
     }
 
@@ -81,7 +82,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      */
     @Deprecated
     public static <R> CommandResultMessage<R> asCommandResultMessage(@Nonnull Throwable exception) {
-        return new GenericCommandResultMessage<>(QualifiedName.className(exception.getClass()), exception);
+        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()), exception);
     }
 
     /**

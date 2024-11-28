@@ -24,7 +24,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -125,7 +125,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         return new GenericDomainEventMessage<>(aggregate.type(),
                                                aggregate.identifierAsString(),
                                                aggregate.version(),
-                                               QualifiedName.className(aggregateType),
+                                               QualifiedNameUtils.fromClassName(aggregateType),
                                                aggregate.getAggregateRoot());
     }
 

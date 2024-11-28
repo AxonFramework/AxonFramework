@@ -26,6 +26,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.utils.RecordingAppender;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
@@ -42,7 +43,7 @@ import javax.annotation.Nonnull;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -245,7 +246,7 @@ class AbstractSnapshotterTest {
                 return null;
             }
             return new GenericDomainEventMessage<>("test", aggregateIdentifier, lastIdentifier,
-                                                   dottedName("test.event"), "Mock contents");
+                                                   QualifiedNameUtils.fromDottedName("test.event"), "Mock contents");
         }
 
         private long getLastIdentifierFrom(DomainEventStream eventStream) {

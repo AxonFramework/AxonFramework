@@ -20,12 +20,13 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.spring.utils.StubDomainEvent;
 
 import java.util.UUID;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 
@@ -64,7 +65,7 @@ public class StubAggregate {
     @SuppressWarnings("unused")
     public DomainEventMessage<?> createSnapshotEvent() {
         return new GenericDomainEventMessage<>(
-                "test", identifier, 5L, dottedName("test.snapshot"), new StubDomainEvent()
+                "test", identifier, 5L, QualifiedNameUtils.fromDottedName("test.snapshot"), new StubDomainEvent()
         );
     }
 

@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -57,7 +58,7 @@ import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -229,7 +230,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
         AtomicLong payload = new AtomicLong();
 
-        inspector.publish(new GenericEventMessage<>(dottedName("test.event"), payload), new SomeSubclass());
+        inspector.publish(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), payload), new SomeSubclass());
 
         assertEquals(2L, payload.get());
     }
@@ -239,7 +240,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
-        GenericCommandMessage<?> message = new GenericCommandMessage<>(dottedName("test.command"), BigDecimal.ONE);
+        GenericCommandMessage<?> message = new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), BigDecimal.ONE);
         SomeSubclass target = new SomeSubclass();
         MessageHandlingMember<? super SomeSubclass> handler = getHandler(inspector, message);
         assertEquals("1", handler.handleSync(message, target));

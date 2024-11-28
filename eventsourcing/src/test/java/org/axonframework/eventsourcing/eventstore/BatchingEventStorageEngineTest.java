@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +27,7 @@ import java.util.Optional;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -44,7 +45,7 @@ public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStor
     protected void loadLargeAmountOfEventsFromAggregateStream() {
         int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
-        testSubject.appendEvents(new GenericEventMessage<>(dottedName("test.event"), "test"));
+        testSubject.appendEvents(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "test"));
         assertEquals(eventCount, testSubject.readEvents(AGGREGATE).asStream().count());
         Optional<? extends DomainEventMessage<?>> resultEventMessage =
                 testSubject.readEvents(AGGREGATE).asStream().reduce((a, b) -> b);
@@ -56,7 +57,7 @@ public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStor
     void loadLargeAmountFromOpenStream() {
         int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
-        GenericEventMessage<String> last = new GenericEventMessage<>(dottedName("test.event"), "test");
+        GenericEventMessage<String> last = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "test");
         testSubject.appendEvents(last);
 
         Optional<? extends EventMessage<?>> resultEventMessage =

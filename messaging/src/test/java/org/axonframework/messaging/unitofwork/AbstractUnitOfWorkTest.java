@@ -20,6 +20,7 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.utils.MockException;
@@ -33,7 +34,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -51,7 +52,7 @@ class AbstractUnitOfWorkTest {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
-        subject = spy(new DefaultUnitOfWork(new GenericEventMessage<>(dottedName("test.event"), "Input 1")) {
+        subject = spy(new DefaultUnitOfWork(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "Input 1")) {
             @Override
             public String toString() {
                 return "unitOfWork";

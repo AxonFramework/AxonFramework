@@ -18,12 +18,13 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -48,7 +49,7 @@ class DispatchInterceptorsTest {
                                                              return b;
                                                          }
         );
-        dispatchInterceptors.intercept(new GenericMessage<>(dottedName("test.message"), "payload"));
+        dispatchInterceptors.intercept(new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "payload"));
         assertEquals("Interceptor One", results.get(0));
         assertEquals("Interceptor Two", results.get(1));
         assertEquals(2, results.size());

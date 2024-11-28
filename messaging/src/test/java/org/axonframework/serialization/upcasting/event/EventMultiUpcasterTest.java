@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -49,7 +50,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -84,7 +85,7 @@ class EventMultiUpcasterTest {
     @Test
     void upcasterIgnoresWrongEventType() {
         DomainEventMessage<String> testEventMessage =
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, dottedName("test.event"), "someString");
+                new GenericDomainEventMessage<>("test", "aggregateId", 0, QualifiedNameUtils.fromDottedName("test.event"), "someString");
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         IntermediateEventRepresentation testRepresentation =
                 spy(new InitialEventRepresentation(testEventData, serializer));
@@ -103,7 +104,7 @@ class EventMultiUpcasterTest {
         String expectedRevisionNumber = "1";
 
         DomainEventMessage<StubDomainEvent> testEventMessage = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, dottedName("test.event"), new StubDomainEvent("oldName")
+                "test", "aggregateId", 0, QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent("oldName")
         );
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
@@ -172,7 +173,7 @@ class EventMultiUpcasterTest {
 
         MetaData testMetaData = MetaData.with("key", "value");
         DomainEventMessage<StubDomainEvent> testEventMessage = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, dottedName("test.event"), new StubDomainEvent("oldName"), testMetaData
+                "test", "aggregateId", 0, QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent("oldName"), testMetaData
         );
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);

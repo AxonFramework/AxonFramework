@@ -23,6 +23,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.io.Serial;
 import java.time.Instant;
@@ -71,35 +72,23 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
                                                 () -> expiryTime);
         }
         QualifiedName type = messageOrPayload == null
-                ? QualifiedName.dottedName("empty.deadline.payload")
-                : QualifiedName.className(messageOrPayload.getClass());
+                ? QualifiedNameUtils.fromDottedName("empty.deadline.payload")
+                : QualifiedNameUtils.fromClassName(messageOrPayload.getClass());
         return new GenericDeadlineMessage<>(
                 deadlineName, new GenericMessage<>(type, (P) messageOrPayload), () -> expiryTime
         );
     }
 
     /**
-     * Constructs a {@link GenericDeadlineMessage} for the given {@code deadlineName}, setting the {@code deadlineName}
-     * as the {@link #type()} of this {@link DeadlineMessage}.
+     * Constructs a {@link GenericDeadlineMessage} for the given {@code type} and {@code deadlineName}.
      * <p>
      * The {@link #getPayload()} defaults to {@code null} and the {@link MetaData} defaults to an empty instance.
      *
-     * @param deadlineName The name for this {@link DeadlineMessage}.
-     */
-    public GenericDeadlineMessage(@Nonnull String deadlineName) {
-        this(deadlineName, QualifiedName.dottedName(deadlineName));
-    }
-
-    /**
-     * Constructs a {@link GenericDeadlineMessage} for the given {@code deadlineName} and {@code type}.
-     * <p>
-     * The {@link #getPayload()} defaults to {@code null} and the {@link MetaData} defaults to an empty instance.
-     *
-     * @param deadlineName The name for this {@link DeadlineMessage}.
      * @param type         The {@link QualifiedName type} for this {@link DeadlineMessage}.
+     * @param deadlineName The name for this {@link DeadlineMessage}.
      */
-    public GenericDeadlineMessage(@Nonnull String deadlineName,
-                                  @Nonnull QualifiedName type) {
+    public GenericDeadlineMessage(@Nonnull QualifiedName type,
+                                  @Nonnull String deadlineName) {
         this(deadlineName, type, null);
     }
 

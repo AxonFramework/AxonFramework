@@ -152,8 +152,8 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
             return (ResultMessage<R>) new GenericResultMessage<>(resultMessage);
         }
         QualifiedName type = result == null
-                ? QualifiedName.dottedName("empty.result")
-                : QualifiedName.className(result.getClass());
+                ? QualifiedNameUtils.fromDottedName("empty.result")
+                : QualifiedNameUtils.fromClassName(result.getClass());
         //noinspection unchecked
         return new GenericResultMessage<>(type, (R) result);
     }
@@ -169,7 +169,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      */
     @Deprecated
     public static <R> ResultMessage<R> asResultMessage(Throwable exception) {
-        return new GenericResultMessage<>(QualifiedName.className(exception.getClass()), exception);
+        return new GenericResultMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()), exception);
     }
 
     private static <R> Throwable findExceptionResult(Message<R> delegate) {

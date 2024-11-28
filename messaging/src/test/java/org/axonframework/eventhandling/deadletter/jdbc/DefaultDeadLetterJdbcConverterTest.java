@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
@@ -178,7 +178,7 @@ class DefaultDeadLetterJdbcConverterTest {
         // Event Message mocking
         when(mock.getString(schema.eventIdentifierColumn())).thenReturn(UUID.randomUUID().toString());
         when(mock.getString(schema.typeColumn()))
-                .thenReturn(QualifiedName.dottedName("test.event").toSimpleString());
+                .thenReturn(QualifiedNameUtils.fromDottedName("test.event").toSimpleString());
         when(mock.getString(schema.timestampColumn())).thenReturn(timestamp);
         // Token mocking
         if (withToken) {

@@ -23,6 +23,7 @@ import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 
 import java.io.Serial;
@@ -59,16 +60,18 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
             return (QueryResponseMessage<R>) result;
         } else if (result instanceof ResultMessage) {
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
-            return new GenericQueryResponseMessage<>(QualifiedName.className(resultMessage.getPayload().getClass()),
-                                                     resultMessage.getPayload(),
-                                                     resultMessage.getMetaData());
+            return new GenericQueryResponseMessage<>(
+                    QualifiedNameUtils.fromClassName(resultMessage.getPayload().getClass()),
+                    resultMessage.getPayload(),
+                    resultMessage.getMetaData()
+            );
         } else if (result instanceof Message) {
             Message<R> message = (Message<R>) result;
-            return new GenericQueryResponseMessage<>(QualifiedName.className(message.getPayload().getClass()),
+            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(message.getPayload().getClass()),
                                                      message.getPayload(),
                                                      message.getMetaData());
         } else {
-            return new GenericQueryResponseMessage<>(QualifiedName.className(result.getClass()), (R) result);
+            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(result.getClass()), (R) result);
         }
     }
 
@@ -98,23 +101,25 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
             if (resultMessage.isExceptional()) {
                 Throwable cause = resultMessage.exceptionResult();
-                return new GenericQueryResponseMessage<>(QualifiedName.className(cause.getClass()), cause,
+                return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(cause.getClass()), cause,
                                                          resultMessage.getMetaData(),
                                                          declaredType);
             }
-            return new GenericQueryResponseMessage<>(QualifiedName.className(resultMessage.getPayload().getClass()),
-                                                     resultMessage.getPayload(),
-                                                     resultMessage.getMetaData());
+            return new GenericQueryResponseMessage<>(
+                    QualifiedNameUtils.fromClassName(resultMessage.getPayload().getClass()),
+                    resultMessage.getPayload(),
+                    resultMessage.getMetaData()
+            );
         } else if (result instanceof Message) {
             //noinspection unchecked
             Message<R> message = (Message<R>) result;
-            return new GenericQueryResponseMessage<>(QualifiedName.className(message.getPayload().getClass()),
+            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(message.getPayload().getClass()),
                                                      message.getPayload(),
                                                      message.getMetaData());
         } else {
             QualifiedName type = result == null
-                    ? QualifiedName.dottedName("empty.query.response")
-                    : QualifiedName.className(result.getClass());
+                    ? QualifiedNameUtils.fromDottedName("empty.query.response")
+                    : QualifiedNameUtils.fromClassName(result.getClass());
             //noinspection unchecked
             return new GenericQueryResponseMessage<>(type, (R) result, declaredType);
         }
@@ -132,7 +137,8 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      */
     @Deprecated
     public static <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
-        return new GenericQueryResponseMessage<>(QualifiedName.className(exception.getClass()), exception,
+        return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()),
+                                                 exception,
                                                  declaredType);
     }
 

@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.TestSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
@@ -49,7 +50,7 @@ import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.utils.DbSchedulerTestUtil.getScheduler;
 import static org.axonframework.utils.DbSchedulerTestUtil.reCreateTable;
 import static org.junit.jupiter.api.Assertions.*;
@@ -127,7 +128,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
     void whenScheduleIsCalledWithEventMessageMetadataShouldBePreserved() {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("foo", "bar");
-        EventMessage<?> originalMessage = new GenericEventMessage<>(dottedName("test.event"), 2, metadata);
+        EventMessage<?> originalMessage = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), 2, metadata);
         eventScheduler.schedule(Instant.now(), originalMessage);
         Instant rightAfterSchedule = Instant.now();
 
@@ -161,7 +162,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("foo", "bar");
         EventMessage<?> originalMessage =
-                new GenericEventMessage<>(dottedName("test.PayloadWithRevision"), new PayloadWithRevision(), metadata);
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.PayloadWithRevision"), new PayloadWithRevision(), metadata);
         eventScheduler.schedule(Instant.now(), originalMessage);
         Instant rightAfterSchedule = Instant.now();
 

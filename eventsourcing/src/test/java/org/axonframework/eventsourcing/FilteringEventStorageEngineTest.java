@@ -21,13 +21,14 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.mockito.Mockito.*;
 
 class FilteringEventStorageEngineTest {
@@ -67,7 +68,7 @@ class FilteringEventStorageEngineTest {
     @Test
     void storeSnapshotDelegated() {
         DomainEventMessage<Object> snapshot =
-                new GenericDomainEventMessage<>("type", "id", 0, dottedName("test.snapshot"), "fail");
+                new GenericDomainEventMessage<>("type", "id", 0, QualifiedNameUtils.fromDottedName("test.snapshot"), "fail");
         testSubject.storeSnapshot(snapshot);
 
         verify(mockStorage).storeSnapshot(snapshot);

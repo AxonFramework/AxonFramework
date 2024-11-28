@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.io.ByteArrayInputStream;
@@ -29,7 +30,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -42,11 +43,11 @@ class GenericEventMessageTest {
     @Test
     void constructor() {
         Object payload = new Object();
-        EventMessage<Object> message1 = new GenericEventMessage<>(dottedName("test.event"), payload);
+        EventMessage<Object> message1 = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        EventMessage<Object> message2 = new GenericEventMessage<>(dottedName("test.event"), payload, metaData);
-        EventMessage<Object> message3 = new GenericEventMessage<>(dottedName("test.event"), payload, metaDataMap);
+        EventMessage<Object> message2 = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), payload, metaData);
+        EventMessage<Object> message3 = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), payload, metaDataMap);
 
         assertSame(MetaData.emptyInstance(), message1.getMetaData());
         assertEquals(Object.class, message1.getPayload().getClass());
@@ -71,7 +72,7 @@ class GenericEventMessageTest {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericEventMessage<Object> message = new GenericEventMessage<>(dottedName("test.event"), payload, metaData);
+        GenericEventMessage<Object> message = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), payload, metaData);
         GenericEventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
         GenericEventMessage<Object> message2 = message.withMetaData(
                 MetaData.from(Collections.singletonMap("key", "otherValue")));
@@ -85,7 +86,7 @@ class GenericEventMessageTest {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericEventMessage<Object> message = new GenericEventMessage<>(dottedName("test.event"), payload, metaData);
+        GenericEventMessage<Object> message = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), payload, metaData);
         GenericEventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
         GenericEventMessage<Object> message2 = message.andMetaData(
                 MetaData.from(Collections.singletonMap("key", "otherValue")));
@@ -101,7 +102,7 @@ class GenericEventMessageTest {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         GenericEventMessage<String> testSubject = new GenericEventMessage<>(
-                new GenericMessage<>(dottedName("test.event"), "payload", Collections.singletonMap("key", "value")),
+                new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "payload", Collections.singletonMap("key", "value")),
                 Instant::now
         );
         oos.writeObject(testSubject);

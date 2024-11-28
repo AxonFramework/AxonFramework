@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.Serializer;
@@ -78,7 +78,7 @@ public abstract class EventStreamUtils {
         Stream<? extends DomainEventMessage<?>> stream = upcastResult.map(ir -> {
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(
                     ir.getMessageIdentifier(),
-                    QualifiedName.className(serializer.classForType(ir.getType())),
+                    QualifiedNameUtils.fromClassName(serializer.classForType(ir.getType())),
                     new LazyDeserializingObject<>(ir::getData, ir.getType(), serializer),
                     ir.getMetaData()
             );

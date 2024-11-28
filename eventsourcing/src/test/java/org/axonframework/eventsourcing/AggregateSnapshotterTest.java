@@ -22,13 +22,14 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.utils.StubDomainEvent;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
 import static java.util.Collections.singletonList;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,7 +61,7 @@ public class AggregateSnapshotterTest {
     void createSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         DomainEventMessage<?> firstEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0L, dottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0L, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
         );
         DomainEventStream eventStream = DomainEventStream.of(firstEvent);
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
@@ -78,10 +79,10 @@ public class AggregateSnapshotterTest {
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
 
         DomainEventMessage<StubAggregate> first = new GenericDomainEventMessage<>(
-                "type", aggregate.getIdentifier(), 0, dottedName("test.snapshot"), aggregate
+                "type", aggregate.getIdentifier(), 0, QualifiedNameUtils.fromDottedName("test.snapshot"), aggregate
         );
         DomainEventMessage<String> second = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier.toString(), 0, dottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier.toString(), 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
         );
         DomainEventStream eventStream = DomainEventStream.of(first, second);
 
@@ -99,10 +100,10 @@ public class AggregateSnapshotterTest {
     void createSnapshot_AggregateMarkedDeletedWillNotGenerateSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         DomainEventMessage<?> firstEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0L, dottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0L, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
         );
         DomainEventMessage<?> secondEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0L, dottedName("test.event"), "deleted"
+                "type", aggregateIdentifier, 0L, QualifiedNameUtils.fromDottedName("test.event"), "deleted"
         );
         DomainEventStream eventStream = DomainEventStream.of(firstEvent, secondEvent);
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.Serializer;
@@ -80,7 +80,7 @@ public abstract class EventUtils {
         return upcastResult.map(ir -> {
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(
                     ir.getMessageIdentifier(),
-                    QualifiedName.className(serializer.classForType(ir.getType())),
+                    QualifiedNameUtils.fromClassName(serializer.classForType(ir.getType())),
                     new LazyDeserializingObject<>(ir::getData, ir.getType(), serializer),
                     ir.getMetaData()
             );

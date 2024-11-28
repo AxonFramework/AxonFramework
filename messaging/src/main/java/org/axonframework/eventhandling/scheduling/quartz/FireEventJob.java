@@ -20,7 +20,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.quartz.Job;
@@ -38,8 +38,8 @@ import org.slf4j.LoggerFactory;
  * scheduler context.
  *
  * @author Allard Buijze
- * @since 0.7
  * @see EventJobDataBinder
+ * @since 0.7
  */
 public class FireEventJob implements Job {
 
@@ -75,7 +75,9 @@ public class FireEventJob implements Job {
             EventMessage<?> eventMessage = createMessage(event);
 
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
-            TransactionManager txManager = (TransactionManager) context.getScheduler().getContext().get(TRANSACTION_MANAGER_KEY);
+            TransactionManager txManager = (TransactionManager) context.getScheduler()
+                                                                       .getContext()
+                                                                       .get(TRANSACTION_MANAGER_KEY);
 
             UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
             if (txManager != null) {
@@ -85,7 +87,7 @@ public class FireEventJob implements Job {
 
             if (logger.isInfoEnabled()) {
                 logger.info("Job successfully executed. Scheduled Event [{}] has been published.",
-                             eventMessage.getPayloadType().getSimpleName());
+                            eventMessage.getPayloadType().getSimpleName());
             }
         } catch (Exception e) {
             logger.error("Exception occurred while publishing scheduled event [{}]", jobDetail.getDescription(), e);
@@ -94,8 +96,8 @@ public class FireEventJob implements Job {
     }
 
     /**
-     * Creates a new message for the scheduled event. This ensures that a new identifier and timestamp will always
-     * be generated, so that the timestamp will reflect the actual moment the trigger occurred.
+     * Creates a new message for the scheduled event. This ensures that a new identifier and timestamp will always be
+     * generated, so that the timestamp will reflect the actual moment the trigger occurred.
      *
      * @param event The actual event (either a payload or an entire message) to create the message from
      * @return the message to publish
@@ -105,6 +107,6 @@ public class FireEventJob implements Job {
                 ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
                                             ((EventMessage<?>) event).getPayload(),
                                             ((EventMessage<?>) event).getMetaData())
-                : new GenericEventMessage<>(QualifiedName.className(event.getClass()), event);
+                : new GenericEventMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), event);
     }
 }

@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -169,7 +169,7 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
                     ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
                                                 ((EventMessage<?>) event).getPayload(),
                                                 ((EventMessage<?>) event).getMetaData())
-                    : new GenericEventMessage<>(QualifiedName.className(event.getClass()), event);
+                    : new GenericEventMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), event);
         }
     }
 

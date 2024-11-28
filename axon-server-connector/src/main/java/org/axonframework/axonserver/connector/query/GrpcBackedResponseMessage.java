@@ -24,6 +24,7 @@ import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedType;
@@ -46,6 +47,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     private final LazyDeserializingObject<R> serializedPayload;
     private final Throwable exception;
     private final Supplier<MetaData> metaDataSupplier;
+    private final QualifiedName type;
 
     /**
      * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryResponse}, using the provided
@@ -67,16 +69,30 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
                                     serializedPayload == null ? () -> null : serializedPayload::getObject)
                 : null;
         this.metaDataSupplier = new GrpcMetaData(queryResponse.getMetaDataMap(), serializer);
+        if (serializedPayload != null) {
+            GrpcSerializedObject serializedObject = new GrpcSerializedObject(queryResponse.getPayload());
+            Class<?> payloadClass = serializer.classForType(serializedObject.getType());
+            String revision = serializedObject.getType().getRevision();
+            this.type = new QualifiedName(payloadClass.getPackageName(),
+                                          payloadClass.getSimpleName(),
+                                          revision != null ? revision : QualifiedNameUtils.DEFAULT_REVISION);
+        } else {
+            this.type = new QualifiedName("query.response.exception",
+                                          queryResponse.getErrorCode(),
+                                          QualifiedNameUtils.DEFAULT_REVISION);
+        }
     }
 
     private GrpcBackedResponseMessage(QueryResponse queryResponse,
                                       LazyDeserializingObject<R> serializedPayload,
                                       Throwable exception,
-                                      Supplier<MetaData> metaDataSupplier) {
+                                      Supplier<MetaData> metaDataSupplier,
+                                      QualifiedName type) {
         this.queryResponse = queryResponse;
         this.serializedPayload = serializedPayload;
         this.exception = exception;
         this.metaDataSupplier = metaDataSupplier;
+        this.type = type;
     }
 
     @Override
@@ -87,8 +103,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     @Nonnull
     @Override
     public QualifiedName type() {
-        // TODO #3085 - Do we use the payload#type, change that protocol, or push the QualifiedName into the metadata?
-        return QualifiedName.className(serializedPayload.getType());
+        return this.type;
     }
 
     @Override
@@ -125,9 +140,11 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Override
     public GrpcBackedResponseMessage<R> withMetaData(@Nonnull Map<String, ?> metaData) {
-        return new GrpcBackedResponseMessage<>(
-                queryResponse, serializedPayload, exception, () -> MetaData.from(metaData)
-        );
+        return new GrpcBackedResponseMessage<>(queryResponse,
+                                               serializedPayload,
+                                               exception,
+                                               () -> MetaData.from(metaData),
+                                               type);
     }
 
     @Override

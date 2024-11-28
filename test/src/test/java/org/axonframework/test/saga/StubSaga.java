@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.EndSaga;
@@ -39,7 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -77,7 +78,7 @@ public class StubSaga {
 
         timer = scheduler.schedule(
                 message.getTimestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
-                new GenericEventMessage<>(dottedName("test.event"), new TimerTriggeredEvent(event.getIdentifier()))
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TimerTriggeredEvent(event.getIdentifier()))
         );
     }
 
@@ -87,14 +88,14 @@ public class StubSaga {
         handledEvents.add(event);
         timer = scheduler.schedule(
                 timestamp.plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
-                new GenericEventMessage<>(dottedName("test.event"), new TimerTriggeredEvent(event.getIdentifier()))
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TimerTriggeredEvent(event.getIdentifier()))
         );
     }
 
     @SagaEventHandler(associationProperty = "identifier")
     public void handleEvent(TriggerExistingSagaEvent event, EventBus eventBus) {
         handledEvents.add(event);
-        eventBus.publish(new GenericEventMessage<>(dottedName("test.event"), new SagaWasTriggeredEvent(this)));
+        eventBus.publish(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new SagaWasTriggeredEvent(this)));
     }
 
     @SagaEventHandler(associationProperty = "identifier")
@@ -132,7 +133,7 @@ public class StubSaga {
         scheduler.cancelSchedule(timer);
         timer = scheduler.schedule(
                 Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
-                new GenericEventMessage<>(dottedName("test.event"), new TimerTriggeredEvent(event.getIdentifier()))
+                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TimerTriggeredEvent(event.getIdentifier()))
         );
     }
 

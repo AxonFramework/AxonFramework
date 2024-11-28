@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -69,7 +70,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -345,7 +346,7 @@ class PooledStreamingEventProcessorTest {
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     private static List<EventMessage<Integer>> createEvents(int number) {
         return IntStream.range(0, number)
-                        .mapToObj(i -> new GenericEventMessage<>(dottedName("test.event"), i))
+                        .mapToObj(i -> new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), i))
                         .collect(Collectors.toList());
     }
 
@@ -356,7 +357,7 @@ class PooledStreamingEventProcessorTest {
     @Test
     void exceptionWhileHandlingEventAbortsWorker() throws Exception {
         List<EventMessage<Integer>> events = Stream.of(1, 2, 2, 4, 5)
-                                                   .map(i -> new GenericEventMessage<>(dottedName("test.event"), i))
+                                                   .map(i -> new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), i))
                                                    .collect(Collectors.toList());
         mockEventHandlerInvoker();
         doThrow(new RuntimeException("Simulating worker failure"))
@@ -523,7 +524,7 @@ class PooledStreamingEventProcessorTest {
         mockEventHandlerInvoker();
 
         Stream.of(0, 1, 2, 3)
-              .map(i -> new GenericEventMessage<>(dottedName("test.event"), i))
+              .map(i -> new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), i))
               .forEach(testMessageSource::publishMessage);
 
         testSubject.start();
@@ -539,7 +540,7 @@ class PooledStreamingEventProcessorTest {
         });
 
         Stream.of(4, 5, 6, 7)
-              .map(i -> new GenericEventMessage<>(dottedName("test.event"), i))
+              .map(i -> new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), i))
               .forEach(testMessageSource::publishMessage);
         testMessageSource.runOnAvailableCallback();
 
@@ -558,7 +559,7 @@ class PooledStreamingEventProcessorTest {
             throws InterruptedException, ExecutionException, TimeoutException {
         testSubject.start();
         Stream.of(1, 2, 2, 4, 5)
-              .map(i -> new GenericEventMessage<>(dottedName("test.event"), i))
+              .map(i -> new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), i))
               .forEach(stubMessageSource::publishMessage);
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
@@ -596,7 +597,7 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
 
         Stream.of(1, 2, 2, 4, 5)
-              .map(i -> new GenericEventMessage<>(dottedName("test.event"), i))
+              .map(i -> new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), i))
               .forEach(stubMessageSource::publishMessage);
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
@@ -634,7 +635,7 @@ class PooledStreamingEventProcessorTest {
 
         // After one exception the Coordinator#errorWaitBackOff is 1 second. After this, the Coordinator should proceed.
         Stream.of(1, 2, 2, 4, 5)
-              .map(i -> new GenericEventMessage<>(dottedName("test.event"), i))
+              .map(i -> new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), i))
               .forEach(stubMessageSource::publishMessage);
         assertWithin(1500, TimeUnit.MILLISECONDS, () -> assertFalse(testSubject.isError()));
     }
@@ -654,7 +655,7 @@ class PooledStreamingEventProcessorTest {
 
         // After one exception the Coordinator#errorWaitBackOff is 1 second. After this, the Coordinator should proceed.
         Stream.of(1, 2, 2, 4, 5)
-              .map(i -> new GenericEventMessage<>(dottedName("test.event"), i))
+              .map(i -> new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), i))
               .forEach(stubMessageSource::publishMessage);
         assertWithin(1500, TimeUnit.MILLISECONDS, () -> assertFalse(testSubject.isError()));
     }
@@ -977,7 +978,7 @@ class PooledStreamingEventProcessorTest {
         mockEventHandlerInvoker();
 
         Stream.of(1, 2, 2, 4, 5)
-              .map(i -> new GenericEventMessage<>(dottedName("test.event"), i))
+              .map(i -> new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), i))
               .forEach(stubMessageSource::publishMessage);
 
         assertWithin(

@@ -22,6 +22,7 @@ import org.apache.logging.slf4j.Log4jLogger;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
@@ -30,7 +31,7 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -59,7 +60,7 @@ class LoggingInterceptorTest {
         loggerField.set(logger, mockLogger);
 
         interceptorChain = mock(InterceptorChain.class);
-        unitOfWork = new DefaultUnitOfWork<>(new GenericMessage<>(dottedName("test.message"), new StubMessage()));
+        unitOfWork = new DefaultUnitOfWork<>(new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), new StubMessage()));
     }
 
     @Test
@@ -140,7 +141,7 @@ class LoggingInterceptorTest {
     void dispatchInterceptorLogging() {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.handle(new GenericMessage<>(dottedName("test.message"), new StubMessage()));
+        testSubject.handle(new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), new StubMessage()));
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
         verifyNoMoreInteractions(mockLogger);

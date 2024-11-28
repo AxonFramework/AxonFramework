@@ -19,6 +19,7 @@ package org.axonframework.serialization.upcasting.event;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -45,7 +46,7 @@ class IntermediateRepresentationTest {
     @Test
     public void canConvertDataTo() {
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, dottedName("test.event"), "someString"
+                "test", "aggregateId", 0, QualifiedNameUtils.fromDottedName("test.event"), "someString"
         );
         EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
         Serializer serializer = mock(Serializer.class);

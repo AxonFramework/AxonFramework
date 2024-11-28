@@ -18,13 +18,14 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -48,7 +49,7 @@ class DefaultCommandGatewayTest {
     @Test
     void wrapsObjectIntoCommandMessage() throws ExecutionException, InterruptedException {
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(dottedName("test.result"), "OK")
+                new GenericCommandResultMessage<>(QualifiedNameUtils.fromDottedName("test.result"), "OK")
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
@@ -69,7 +70,7 @@ class DefaultCommandGatewayTest {
     @Test
     void dispatchReturnsExceptionallyCompletedFutureWhenCommandBusReturnsExceptionalMessage() {
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(dottedName("test.result"), new MockException())
+                new GenericCommandResultMessage<>(QualifiedNameUtils.fromDottedName("test.result"), new MockException())
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);

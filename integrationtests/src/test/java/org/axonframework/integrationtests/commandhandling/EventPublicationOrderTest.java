@@ -28,6 +28,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -36,7 +37,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -63,7 +64,7 @@ class EventPublicationOrderTest {
     void publicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
         DomainEventMessage<StubAggregateCreatedEvent> event = new GenericDomainEventMessage<>(
-                "test", aggregateId, 0, dottedName("test.event"), new StubAggregateCreatedEvent(aggregateId)
+                "test", aggregateId, 0, QualifiedNameUtils.fromDottedName("test.event"), new StubAggregateCreatedEvent(aggregateId)
         );
         when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(event));
         doAnswer(invocation -> Void.class).when(eventStore).publish(isA(EventMessage.class));

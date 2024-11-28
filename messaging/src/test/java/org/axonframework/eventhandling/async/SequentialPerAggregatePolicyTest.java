@@ -19,11 +19,12 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -41,7 +42,7 @@ class SequentialPerAggregatePolicyTest {
         Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
         Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
         Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString()));
-        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<>(dottedName("test.test"), "bla"));
+        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.test"), "bla"));
 
         assertEquals(id1, id2);
         assertNotEquals(id1, id3);
@@ -51,7 +52,7 @@ class SequentialPerAggregatePolicyTest {
 
     private DomainEventMessage<Object> newStubDomainEvent(String aggregateIdentifier) {
         return new GenericDomainEventMessage<>(
-                "aggregateType", aggregateIdentifier, 0L, dottedName("test.test"), new Object()
+                "aggregateType", aggregateIdentifier, 0L, QualifiedNameUtils.fromDottedName("test.test"), new Object()
         );
     }
 }

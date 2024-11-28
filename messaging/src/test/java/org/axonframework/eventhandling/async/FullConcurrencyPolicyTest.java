@@ -18,11 +18,12 @@ package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -43,7 +44,7 @@ class FullConcurrencyPolicyTest {
 
     private DomainEventMessage<Object> newStubDomainEvent(Object aggregateIdentifier) {
         return new GenericDomainEventMessage<>(
-                "aggregateType", aggregateIdentifier.toString(), 0L, dottedName("test.event"), new Object()
+                "aggregateType", aggregateIdentifier.toString(), 0L, QualifiedNameUtils.fromDottedName("test.event"), new Object()
         );
     }
 }

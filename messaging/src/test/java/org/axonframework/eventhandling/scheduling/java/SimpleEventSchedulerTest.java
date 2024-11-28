@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -36,7 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -130,6 +131,6 @@ class SimpleEventSchedulerTest {
     }
 
     private EventMessage<Object> createEvent() {
-        return new GenericEventMessage<>(dottedName("test.event"), new Object());
+        return new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new Object());
     }
 }

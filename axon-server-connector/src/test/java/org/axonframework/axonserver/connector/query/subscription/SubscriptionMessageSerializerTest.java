@@ -23,6 +23,7 @@ import org.axonframework.axonserver.connector.query.AxonServerNonTransientRemote
 import org.axonframework.axonserver.connector.query.AxonServerRemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.SerializationException;
@@ -33,7 +34,7 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.axonframework.messaging.QualifiedName.dottedName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -60,7 +61,7 @@ class SubscriptionMessageSerializerTest {
         payload.add("A");
         payload.add("B");
         SubscriptionQueryUpdateMessage<List<String>> message =
-                new GenericSubscriptionQueryUpdateMessage<>(dottedName("test.query"), payload);
+                new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromDottedName("test.query"), payload);
         QueryUpdate result = testSubject.serialize(message);
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
         assertEquals(message.getIdentifier(), deserialized.getIdentifier());
@@ -73,7 +74,7 @@ class SubscriptionMessageSerializerTest {
     void exceptionalUpdate() {
         MetaData metaData = MetaData.with("k1", "v1");
         SubscriptionQueryUpdateMessage<String> message = new GenericSubscriptionQueryUpdateMessage<>(
-                dottedName("test.query"), new RuntimeException("oops"), metaData, String.class
+                QualifiedNameUtils.fromDottedName("test.query"), new RuntimeException("oops"), metaData, String.class
         );
         QueryUpdate result = testSubject.serialize(message);
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
@@ -89,7 +90,7 @@ class SubscriptionMessageSerializerTest {
     void nonTransientExceptionalUpdate() {
         MetaData metaData = MetaData.with("k1", "v1");
         SubscriptionQueryUpdateMessage<String> message = new GenericSubscriptionQueryUpdateMessage<>(
-                dottedName("test.query"), new SerializationException("oops"), metaData, String.class
+                QualifiedNameUtils.fromDottedName("test.query"), new SerializationException("oops"), metaData, String.class
         );
         QueryUpdate result = testSubject.serialize(message);
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), result.getErrorCode());
