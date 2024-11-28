@@ -100,14 +100,19 @@ By making this flexible, Message Handlers can choose how to convert a given `pay
 Furthermore, the `payloadType`, as it was a `Class`, tied `Messages` to the fully-qualified-class-name.
 Hence, it exposed the internals of an application, making the FQCN part of the domain knowledge.
 
-The latter point can be regarded as undesirable for several reasons, like the fact it exposes technical concerns like the package structure to others.
-Furthermore, it means users are unable to define a so-called "business" or "domain" name to their `Message`; you're stuck to the FQCN to make things work.
-Lastly, it ties Axon Framework into the JVM space, as the FQCN is important to adhere to the `Mesasge#getPayloadType` method.
+The latter point can be regarded as undesirable for several reasons, like the fact it exposes technical concerns like
+the package structure to others.
+Furthermore, it means users are unable to define a so-called "business" or "domain" name to their `Message`; you're
+stuck to the FQCN to make things work.
+Lastly, it ties Axon Framework into the JVM space, as the FQCN is important to adhere to the `Mesasge#getPayloadType`
+method.
 Hence, having Axon Framework applications communicate with non-JVM-based applications is, simply put, rough.
 
 It is for this reason that we introduced the `QualifiedName`, which is retrievable through the `Message#type` method.
-The `QualifiedName` provides space for a `localName`, a `namespace`, and a `revision`, expecting all three to be present at all times.
-The fields can respectively be used to define the `Class#getSimpleName`, the package name, and the version of the `Message` it is connected too.
+The `QualifiedName` provides space for a `localName`, a `namespace`, and a `revision`, expecting all three to be present
+at all times.
+The fields can respectively be used to define the `Class#getSimpleName`, the package name, and the version of the
+`Message` it is connected too.
 This layer of indirection will allow us to provide the freedom that currently is not an option (as explained above).
 
 ## Message Stream
