@@ -16,12 +16,14 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
@@ -44,6 +46,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     private final LazyDeserializingObject<P> serializedPayload;
     private final LazyDeserializingObject<ResponseType<R>> serializedResponseType;
     private final Supplier<MetaData> metaDataSupplier;
+    private final QualifiedName type;
 
     /**
      * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryRequest}, using the provided
@@ -62,18 +65,29 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
                 queryRequest,
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer),
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer),
-                new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer)
+                new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer),
+                createType(queryRequest.getPayload())
+        );
+    }
+
+    private static QualifiedName createType(SerializedObject serializedPayload) {
+        String revision = serializedPayload.getRevision();
+        return QualifiedNameUtils.fromDottedName(
+                serializedPayload.getType(),
+                revision.isEmpty() ? QualifiedNameUtils.DEFAULT_REVISION : revision
         );
     }
 
     private GrpcBackedQueryMessage(QueryRequest queryRequest,
                                    LazyDeserializingObject<P> serializedPayload,
                                    LazyDeserializingObject<ResponseType<R>> serializedResponseType,
-                                   Supplier<MetaData> metaDataSupplier) {
+                                   Supplier<MetaData> metaDataSupplier,
+                                   QualifiedName type) {
         this.query = queryRequest;
         this.serializedPayload = serializedPayload;
         this.serializedResponseType = serializedResponseType;
         this.metaDataSupplier = metaDataSupplier;
+        this.type = type;
     }
 
     @Override
@@ -84,8 +98,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     @Nonnull
     @Override
     public QualifiedName type() {
-        // TODO #3085 - Do we use the payload#type, change that protocol, or push the QualifiedName into the metadata?
-        return QualifiedName.className(serializedPayload.getType());
+        return this.type;
     }
 
     @Override
@@ -115,9 +128,11 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
 
     @Override
     public GrpcBackedQueryMessage<P, R> withMetaData(@Nonnull Map<String, ?> metaData) {
-        return new GrpcBackedQueryMessage<>(
-                query, serializedPayload, serializedResponseType, () -> MetaData.from(metaData)
-        );
+        return new GrpcBackedQueryMessage<>(query,
+                                            serializedPayload,
+                                            serializedResponseType,
+                                            () -> MetaData.from(metaData),
+                                            type);
     }
 
     @Override

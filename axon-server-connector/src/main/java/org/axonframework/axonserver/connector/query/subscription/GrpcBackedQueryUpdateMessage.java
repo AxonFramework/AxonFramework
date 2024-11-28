@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query.subscription;
 
+import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.ErrorCode;
@@ -24,6 +25,7 @@ import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
@@ -45,6 +47,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     private final LazyDeserializingObject<U> serializedPayload;
     private final Throwable exception;
     private final Supplier<MetaData> metaDataSupplier;
+    private final QualifiedName type;
 
     /**
      * Instantiate a {@link GrpcBackedQueryUpdateMessage} with the given {@code queryUpdate}, using the provided
@@ -67,16 +70,30 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
                            .convert(queryUpdate.getErrorMessage(), exceptionDetails)
                 : null;
         this.metaDataSupplier = new GrpcMetaData(queryUpdate.getMetaDataMap(), serializer);
+        if (serializedPayload != null) {
+            SerializedObject serializedPayload = queryUpdate.getPayload();
+            String revision = serializedPayload.getRevision();
+            this.type = QualifiedNameUtils.fromDottedName(
+                    serializedPayload.getType(),
+                    revision.isEmpty() ? QualifiedNameUtils.DEFAULT_REVISION : revision
+            );
+        } else {
+            this.type = new QualifiedName("query.update.exception",
+                                          queryUpdate.getErrorCode(),
+                                          QualifiedNameUtils.DEFAULT_REVISION);
+        }
     }
 
     private GrpcBackedQueryUpdateMessage(QueryUpdate queryUpdate,
                                          LazyDeserializingObject<U> serializedPayload,
                                          Throwable exception,
-                                         Supplier<MetaData> metaDataSupplier) {
+                                         Supplier<MetaData> metaDataSupplier,
+                                         QualifiedName type) {
         this.queryUpdate = queryUpdate;
         this.serializedPayload = serializedPayload;
         this.exception = exception;
         this.metaDataSupplier = metaDataSupplier;
+        this.type = type;
     }
 
     @Override
@@ -87,8 +104,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     @Nonnull
     @Override
     public QualifiedName type() {
-        // TODO #3085 - Do we use the payload#type, change that protocol, or push the QualifiedName into the metadata?
-        return QualifiedName.className(serializedPayload.getType());
+        return this.type;
     }
 
     @Override
@@ -128,7 +144,8 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
         return new GrpcBackedQueryUpdateMessage<>(queryUpdate,
                                                   serializedPayload,
                                                   exception,
-                                                  () -> MetaData.from(metaData));
+                                                  () -> MetaData.from(metaData),
+                                                  type);
     }
 
     @Override
