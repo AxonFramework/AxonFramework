@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
@@ -76,7 +77,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
                                          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         String messageId = Objects.toString(headers.get(MESSAGE_ID));
-        QualifiedName type = QualifiedName.simpleStringName(Objects.toString(headers.get(MESSAGE_TYPE)));
+        QualifiedName type = getType(message);
         Long timestamp = headers.getTimestamp();
 
         org.axonframework.messaging.GenericMessage<T> genericMessage
@@ -91,6 +92,18 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
         } else {
             return new GenericEventMessage<>(genericMessage, () -> Instant.ofEpochMilli(timestamp));
         }
+    }
+
+    /**
+     * If the given {@code headers} contain the {@code message type}, the {@link QualifiedName type} is reconstructed
+     * based on the header. When it is not present, we can expect a non-Axon {@link Message} is handled. As such, we
+     * base the {@code type} on the fully qualified class name.
+     */
+    private static <T> QualifiedName getType(Message<T> message) {
+        MessageHeaders headers = message.getHeaders();
+        return headers.containsKey(MESSAGE_TYPE)
+                ? QualifiedName.simpleStringName(Objects.toString(headers.get(MESSAGE_TYPE)))
+                : QualifiedNameUtils.fromClassName(message.getClass());
     }
 
     private static class SettableTimestampMessageHeaders extends MessageHeaders {
