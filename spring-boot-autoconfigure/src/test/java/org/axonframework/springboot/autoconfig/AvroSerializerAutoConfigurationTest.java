@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * AvroSerializer Spring integration test, verifiying classpath scan and serialize/deserialize.
+ * AvroSerializer Spring integration test, verifying classpath scan and serialize/deserialize.
  *
  * @author Simon Zambrovski
  * @author Jan Galinski
