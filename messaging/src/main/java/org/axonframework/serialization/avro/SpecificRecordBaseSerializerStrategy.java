@@ -36,6 +36,10 @@ import javax.annotation.Nonnull;
 
 /**
  * Avro serializer strategy responsible for operations on <code>SpecificRecordBase</code>.
+ *
+ * @author Simon Zambrovski
+ * @author Jan Galinski
+ * @since 4.11.0
  */
 public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrategy {
 

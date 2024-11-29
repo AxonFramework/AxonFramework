@@ -32,6 +32,9 @@ import java.lang.annotation.Target;
  * specific packages to scan. If specific packages are not defined scanning will occur from the package of the class
  * with this annotation.
  *
+ * @author Simon Zambrovski
+ * @author Jan Galinski
+ * @since 4.11.0
  * @see AvroSchemaPackages
  */
 @Retention(RetentionPolicy.RUNTIME)

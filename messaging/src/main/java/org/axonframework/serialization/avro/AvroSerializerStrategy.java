@@ -24,6 +24,10 @@ import javax.annotation.Nonnull;
 
 /**
  * Serialization strategy for Avro Serializer.
+ *
+ * @author Simon Zambrovski
+ * @author Jan Galinski
+ * @since 4.11.0
  */
 public interface AvroSerializerStrategy extends Predicate<Class<?>> {
 

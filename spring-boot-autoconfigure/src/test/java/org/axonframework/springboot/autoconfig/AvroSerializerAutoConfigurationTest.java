@@ -39,6 +39,13 @@ import org.springframework.test.context.ContextConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * AvroSerializer Spring integration test, verifiying classpath scan and serialize/deserialize.
+ *
+ * @author Simon Zambrovski
+ * @author Jan Galinski
+ * @since 4.11.0
+ */
 class AvroSerializerAutoConfigurationTest {
 
     private ApplicationContextRunner testApplicationContext;

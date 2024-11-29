@@ -14,26 +14,32 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.serialization.avro;
+package org.axonframework.spring.serialization.avro.test1;
 
 import org.apache.avro.Schema;
-
-import java.util.List;
+import org.apache.avro.specific.SpecificRecordBase;
 
 /**
- * Classpath Avro schema loader.
+ * Sanity check that files with wrong structure are not found by component scan.
  *
  * @author Simon Zambrovski
  * @author Jan Galinski
  * @since 4.11.0
  */
-public interface ClasspathAvroSchemaLoader {
+public class DummyTypeWithMissingIncludedSchema extends SpecificRecordBase {
 
-    /**
-     * Scans provided packages and loads schemas from classes.
-     *
-     * @param packageNames packages to scan.
-     * @return list of detected Avro schemas.
-     */
-    List<Schema> load(List<String> packageNames);
+    @Override
+    public void put(int i, Object v) {
+
+    }
+
+    @Override
+    public Object get(int i) {
+        return null;
+    }
+
+    @Override
+    public Schema getSchema() {
+        return null;
+    }
 }

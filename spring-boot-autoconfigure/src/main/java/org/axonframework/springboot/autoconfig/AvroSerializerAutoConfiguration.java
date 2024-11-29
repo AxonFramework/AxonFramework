@@ -37,6 +37,10 @@ import java.util.stream.Collectors;
 
 /**
  * Autoconfigures required beans for the Avro serializer.
+ *
+ * @author Simon Zambrovski
+ * @author Jan Galinski
+ * @since 4.11.0
  */
 @AutoConfiguration
 @AutoConfigureBefore(AxonAutoConfiguration.class)

@@ -38,6 +38,10 @@ import javax.annotation.Nullable;
 
 /**
  * Serializer providing support for Apache Avro and using Single Object Encoded binary encoding.
+ *
+ * @author Simon Zambrovski
+ * @author Jan Galinski
+ * @since 4.11.0
  */
 public class AvroSerializer implements Serializer {
 

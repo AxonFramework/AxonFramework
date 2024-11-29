@@ -35,6 +35,10 @@ import javax.annotation.Nonnull;
 
 /**
  * Utilities for Avro manipulations.
+ *
+ * @author Simon Zambrovski
+ * @author Jan Galinski
+ * @since 4.11.0
  */
 public class AvroUtil {
 

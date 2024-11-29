@@ -57,6 +57,10 @@ import javax.annotation.Nonnull;
 
 /**
  * Holder for package-based class scanning for Avro schema extraction.
+ *
+ * @author Simon Zambrovski
+ * @author Jan Galinski
+ * @since 4.11.0
  */
 public class AvroSchemaPackages {
 
