@@ -18,6 +18,7 @@ package org.axonframework.serialization.avro;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaCompatibility;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.BinaryMessageEncoder;
@@ -37,10 +38,13 @@ import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.avro.test.ComplexObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
 
 import static java.util.Collections.singletonMap;
 import static org.axonframework.serialization.avro.AvroUtil.genericData;
@@ -56,82 +60,86 @@ import static org.mockito.Mockito.*;
  */
 public class AvroSerializerTest {
 
-    private static final String compatibleSchemaWithoutValue2 = "{\n" +
-            "  \"name\": \"ComplexObject\",\n" +
-            "  \"namespace\": \"org.axonframework.serialization.avro.test\",\n" +
-            "  \"type\": \"record\",\n" +
-            "  \"fields\": [\n" +
-            "    {\n" +
-            "      \"name\": \"value1\",\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    {\n" +
-            "      \"name\": \"value3\",\n" +
-            "      \"type\": \"int\"\n" +
-            "    }\n" +
-            "  ]\n" +
-            "}";
+    private static final String compatibleSchemaWithoutValue2 =
+            "{\n" +
+                    "  \"name\": \"ComplexObject\",\n" +
+                    "  \"namespace\": \"org.axonframework.serialization.avro.test\",\n" +
+                    "  \"type\": \"record\",\n" +
+                    "  \"fields\": [\n" +
+                    "    {\n" +
+                    "      \"name\": \"value1\",\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      \"name\": \"value3\",\n" +
+                    "      \"type\": \"int\"\n" +
+                    "    }\n" +
+                    "  ]\n" +
+                    "}";
 
-    private static final String incompatibleSchema = "{\n" +
-            "  \"name\": \"ComplexObject\",\n" +
-            "  \"namespace\": \"org.axonframework.serialization.avro.test\",\n" +
-            "  \"type\": \"record\",\n" +
-            "  \"fields\": [\n" +
-            "    {\n" +
-            "      \"name\": \"value2\",\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    {\n" +
-            "      \"name\": \"value3\",\n" +
-            "      \"type\": \"int\"\n" +
-            "    }\n" +
-            "  ]\n" +
-            "}";
+    private static final String incompatibleSchema =
+            "{\n" +
+                    "  \"name\": \"ComplexObject\",\n" +
+                    "  \"namespace\": \"org.axonframework.serialization.avro.test\",\n" +
+                    "  \"type\": \"record\",\n" +
+                    "  \"fields\": [\n" +
+                    "    {\n" +
+                    "      \"name\": \"value2\",\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      \"name\": \"value3\",\n" +
+                    "      \"type\": \"int\"\n" +
+                    "    }\n" +
+                    "  ]\n" +
+                    "}";
 
 
-    private static final String compatibleSchema = "{\n" +
-            "  \"name\": \"ComplexObject\",\n" +
-            "  \"namespace\": \"org.axonframework.serialization.avro.test\",\n" +
-            "  \"type\": \"record\",\n" +
-            "  \"fields\": [\n" +
-            "    {\n" +
-            "      \"name\": \"value1\",\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    {\n" +
-            "      \"name\": \"value2\",\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    {\n" +
-            "      \"name\": \"value3\",\n" +
-            "      \"type\": \"int\"\n" +
-            "    }\n" +
-            "  ]\n" +
-            "}";
+    private static final String compatibleSchema =
+            "{\n" +
+                    "  \"name\": \"ComplexObject\",\n" +
+                    "  \"namespace\": \"org.axonframework.serialization.avro.test\",\n" +
+                    "  \"type\": \"record\",\n" +
+                    "  \"fields\": [\n" +
+                    "    {\n" +
+                    "      \"name\": \"value1\",\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      \"name\": \"value2\",\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      \"name\": \"value3\",\n" +
+                    "      \"type\": \"int\"\n" +
+                    "    }\n" +
+                    "  ]\n" +
+                    "}";
 
-    private static final String compatibleSchemaWithAdditionalField = "{\n" +
-            "  \"name\": \"ComplexObject\",\n" +
-            "  \"namespace\": \"org.axonframework.serialization.avro.test\",\n" +
-            "  \"type\": \"record\",\n" +
-            "  \"fields\": [\n" +
-            "    {\n" +
-            "      \"name\": \"value1\",\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    {\n" +
-            "      \"name\": \"value2\",\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    {\n" +
-            "      \"name\": \"value4\",\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    {\n" +
-            "      \"name\": \"value3\",\n" +
-            "      \"type\": \"int\"\n" +
-            "    }\n" +
-            "  ]\n" +
-            "}";
+    private static final String compatibleSchemaWithAdditionalField =
+            "{\n" +
+                    "  \"name\": \"ComplexObject\",\n" +
+                    "  \"namespace\": \"org.axonframework.serialization.avro.test\",\n" +
+                    "  \"type\": \"record\",\n" +
+                    "  \"fields\": [\n" +
+                    "    {\n" +
+                    "      \"name\": \"value1\",\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      \"name\": \"value2\",\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      \"name\": \"value4\",\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      \"name\": \"value3\",\n" +
+                    "      \"type\": \"int\"\n" +
+                    "    }\n" +
+                    "  ]\n" +
+                    "}";
 
 
     private static final ComplexObject complexObject = ComplexObject
@@ -213,6 +221,7 @@ public class AvroSerializerTest {
         );
     }
 
+    @SuppressWarnings("DataFlowIssue")
     @Test
     void testBuilderSetterContracts() {
 
@@ -405,11 +414,35 @@ public class AvroSerializerTest {
         assertEquals("default value", deserialized.getValue2());
     }
 
-    @Test
-    void failsWhenSerializeFromIncompatibleSchemaAndDeserialize() {
-        store.addSchema(ComplexObject.getClassSchema());
+    @ParameterizedTest
+    @MethodSource("serializerAndIncompatibleSerializedObject")
+    void failToDeserializeFromIncompatibleSchema(
+            SerializedObject<byte[]> serialized,
+            AvroSerializer serializer,
+            String expectedMessage) {
+        assertEquals(expectedMessage,
+                     assertThrows(
+                             SerializationException.class,
+                             () -> serializer.deserialize(serialized)
+                     ).getMessage()
+        );
+    }
+
+    static Stream<Arguments> serializerAndIncompatibleSerializedObject() {
+
         Schema writerSchema = new Schema.Parser().parse(incompatibleSchema);
-        store.addSchema(writerSchema);
+
+        SchemaCompatibility.Incompatibility incompatibility =
+                SchemaCompatibility.checkReaderWriterCompatibility(
+                        ComplexObject.getClassSchema(), writerSchema
+                ).getResult().getIncompatibilities().get(0);
+
+
+        SchemaStore.Cache schemaStore = new SchemaStore.Cache();
+        schemaStore.addSchema(ComplexObject.getClassSchema());
+        schemaStore.addSchema(writerSchema);
+
+
         GenericData.Record record = new GenericData.Record(writerSchema);
         record.put("value2", complexObject.getValue1());
         record.put("value3", complexObject.getValue3());
@@ -421,13 +454,82 @@ public class AvroSerializerTest {
         assertEquals(serialized.getType().getName(), ComplexObject.class.getCanonicalName());
 
 
-        SerializationException exception = assertThrows(SerializationException.class,
-                                                        () -> testSubject.deserialize(serialized));
-        assertEquals(exception.getMessage(),
-                     AvroUtil.createExceptionFailedToDeserialize(ComplexObject.class,
-                                                                 ComplexObject.getClassSchema(),
-                                                                 writerSchema,
-                                                                 null).getMessage());
+        return Stream.of(
+                Arguments.of(
+                        serialized,
+                        AvroSerializer
+                                .builder()
+                                .serializerDelegate(JacksonSerializer.defaultSerializer())
+                                .revisionResolver((c) -> null)
+                                .performSchemaCompatibilityCheck(true)
+                                .includeSchemasInStackTraces(false)
+                                .schemaStore(schemaStore)
+                                .build(),
+                        AvroUtil.createExceptionFailedToDeserialize(
+                                ComplexObject.class,
+                                ComplexObject.getClassSchema(),
+                                writerSchema,
+                                "[" + AvroUtil.incompatibilityPrinter(incompatibility) + "]",
+                                false
+                        ).getMessage()
+                ),
+                Arguments.of(
+                        serialized,
+                        AvroSerializer
+                                .builder()
+                                .serializerDelegate(JacksonSerializer.defaultSerializer())
+                                .revisionResolver((c) -> null)
+                                .schemaStore(schemaStore)
+                                .performSchemaCompatibilityCheck(true)
+                                .includeSchemasInStackTraces(true)
+                                .build(),
+                        AvroUtil.createExceptionFailedToDeserialize(
+                                ComplexObject.class,
+                                ComplexObject.getClassSchema(),
+                                writerSchema,
+                                "[" + AvroUtil.incompatibilityPrinter(incompatibility) + "]",
+                                true
+                        ).getMessage()
+                ),
+                Arguments.of(
+                        serialized,
+                        AvroSerializer
+                                .builder()
+                                .serializerDelegate(JacksonSerializer.defaultSerializer())
+                                .revisionResolver((c) -> null)
+                                .schemaStore(schemaStore)
+                                .performSchemaCompatibilityCheck(false)
+                                .includeSchemasInStackTraces(false)
+                                .build(),
+                        AvroUtil.createExceptionFailedToDeserialize(
+                                ComplexObject.class,
+                                ComplexObject.getClassSchema(),
+                                writerSchema,
+                                (Exception) null,
+                                false
+                        ).getMessage()
+                ),
+                Arguments.of(
+                        serialized,
+                        AvroSerializer
+                                .builder()
+                                .serializerDelegate(JacksonSerializer.defaultSerializer())
+                                .revisionResolver((c) -> null)
+                                .schemaStore(schemaStore)
+                                .performSchemaCompatibilityCheck(false)
+                                .includeSchemasInStackTraces(true)
+                                .build(),
+                        AvroUtil.createExceptionFailedToDeserialize(
+                                ComplexObject.class,
+                                ComplexObject.getClassSchema(),
+                                writerSchema,
+                                (Exception) null,
+                                true
+                        ).getMessage()
+                )
+
+
+        );
     }
 
     @Test

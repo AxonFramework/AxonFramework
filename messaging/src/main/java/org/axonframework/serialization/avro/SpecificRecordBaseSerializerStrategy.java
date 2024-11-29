@@ -34,6 +34,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import javax.annotation.Nonnull;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * Avro serializer strategy responsible for operations on <code>SpecificRecordBase</code>.
  *
@@ -45,11 +47,15 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
 
     private final SchemaStore schemaStore;
     private final RevisionResolver revisionResolver;
+    private AvroSerializerStrategyConfig avroSerializerStrategyConfig = AvroSerializerStrategyConfig
+            .builder()
+            .build();
 
     /**
-     * Constructs avro serialization strategy supporting serialization and deserialization
-     * of Java Avro classes extending {@link SpecificRecordBase}.
-     * @param schemaStore schema store to resolve schema from fingerprint.
+     * Constructs avro serialization strategy supporting serialization and deserialization of Java Avro classes
+     * extending {@link SpecificRecordBase}.
+     *
+     * @param schemaStore      schema store to resolve schema from fingerprint.
      * @param revisionResolver revision resolver to find correct revision.
      */
     public SpecificRecordBaseSerializerStrategy(
@@ -106,9 +112,17 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
         SpecificData readerSpecificData = SpecificData.getForClass(specificRecordBaseClass);
         Schema readerSchema = AvroUtil.getSchemaFromSpecificRecordBase(specificRecordBaseClass);
 
-        // TODO: check reader and writer compatibility here
+        if (this.avroSerializerStrategyConfig.performAvroCompatibilityCheck()) {
+            // assert schema compatibility
+            AvroUtil.assertSchemaCompatibility(
+                    readerType,
+                    readerSchema,
+                    writerSchema,
+                    avroSerializerStrategyConfig.includeSchemasInStackTraces()
+            );
+        }
 
-        BinaryMessageDecoder<SpecificRecordBase> decoder = new BinaryMessageDecoder<SpecificRecordBase>(
+        BinaryMessageDecoder<SpecificRecordBase> decoder = new BinaryMessageDecoder<>(
                 readerSpecificData,
                 readerSchema);
         decoder.addSchema(writerSchema);
@@ -117,7 +131,13 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
             //noinspection unchecked
             return (T) decoder.decode(serializedObject.getData());
         } catch (IOException | AvroRuntimeException e) {
-            throw AvroUtil.createExceptionFailedToDeserialize(readerType, readerSchema, writerSchema, e);
+            throw AvroUtil.createExceptionFailedToDeserialize(
+                    readerType,
+                    readerSchema,
+                    writerSchema,
+                    e,
+                    avroSerializerStrategyConfig.includeSchemasInStackTraces()
+            );
         }
     }
 
@@ -131,10 +151,19 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
         }
 
         Schema writerSchema = serializedObject.getData().getSchema();
-//            // TODO if caller does not provide expected type, we use the writer schema to derive the class ... this could be wrong.
-//            val readerClass: Class<*> = AvroKotlin.specificData.getClass(writerSchema)
-
         SpecificData readerSpecificData = SpecificData.getForClass(readerType);
+        Schema readerSchema = readerSpecificData.getSchema(readerType);
+
+        if (avroSerializerStrategyConfig.performAvroCompatibilityCheck()) {
+            // assert schema compatibility
+            AvroUtil.assertSchemaCompatibility(
+                    readerType,
+                    readerSchema,
+                    writerSchema,
+                    avroSerializerStrategyConfig.includeSchemasInStackTraces()
+            );
+        }
+
         SpecificRecordBase decoded = (SpecificRecordBase) readerSpecificData.deepCopy(writerSchema,
                                                                                       serializedObject.getData());
         //noinspection unchecked
@@ -144,5 +173,11 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
     @Override
     public boolean test(@Nonnull Class<?> payloadType) {
         return SpecificRecordBase.class.isAssignableFrom(payloadType);
+    }
+
+    @Override
+    public void applyConfig(@Nonnull AvroSerializerStrategyConfig avroSerializerStrategyConfig) {
+        assertNonNull(avroSerializerStrategyConfig, "AvroSerializerStrategyConfig may not be null");
+        this.avroSerializerStrategyConfig = avroSerializerStrategyConfig;
     }
 }

@@ -71,4 +71,19 @@ public interface AvroSerializerStrategy extends Predicate<Class<?>> {
      * @return deserialized object.
      */
     <T> T deserializeFromGenericRecord(SerializedObject<GenericRecord> serializedObject, Class<T> type);
+
+    /**
+     * Sets the configuration for the strategy.
+     * <p>This method is called by the {@link AvroSerializer.Builder} during instantiation of {@link AvroSerializer},
+     * passing the builder configuration to the strategy. The default implementation does nothing, but a strategy might
+     * use this method to set up internal.
+     * </p>
+     * <p>This method is intended to be implemented by the strategy, if it supports configuration options set by the
+     * {@link AvroSerializer.Builder}.</p>
+     *
+     * @param avroSerializerStrategyConfig configuration passed by the builder.
+     */
+    default void applyConfig(AvroSerializerStrategyConfig avroSerializerStrategyConfig) {
+
+    }
 }

@@ -181,12 +181,23 @@ public class AvroSerializer implements Serializer {
             return Void.class;
         }
         try {
-            // TODO check if SpecificData#classForSchema is a better fit
-            return ClassUtils.forName(type.getName());
+            return ClassUtils.forName(resolveClassName(type));
         } catch (ClassNotFoundException e) {
             return UnknownSerializedType.class;
         }
     }
+
+    /**
+     * Resolve the class name from the given {@code serializedType}. This method may be overridden to customize the
+     * names used to denote certain classes, for example, by leaving out a certain base package for brevity.
+     *
+     * @param serializedType The serialized type to resolve the class name for
+     * @return The fully qualified name of the class to load
+     */
+    protected String resolveClassName(SerializedType serializedType) {
+        return serializedType.getName();
+    }
+
 
     @SuppressWarnings("rawtypes")
     @Override
@@ -216,12 +227,13 @@ public class AvroSerializer implements Serializer {
     public static class Builder {
 
         private final List<AvroSerializerStrategy> serializerStrategies = new ArrayList<>();
+        private final AvroSerializerStrategyConfig.Builder configurationBuilder = AvroSerializerStrategyConfig
+                .builder();
         private RevisionResolver revisionResolver;
         private SchemaStore schemaStore;
         private Serializer serializerDelegate;
         private Converter converter = new ChainingConverter();
         private boolean includeDefaultStrategies = true;
-
         /**
          * Sets revision resolver.
          *
@@ -302,6 +314,28 @@ public class AvroSerializer implements Serializer {
         }
 
         /**
+         * Sets a flag to perform Avro Schema Compatibility check during deserialization.
+         *
+         * @param performSchemaCompatibilityCheck flag to set, defaults to <code>true</code>.
+         * @return builder instance.
+         */
+        public Builder performSchemaCompatibilityCheck(boolean performSchemaCompatibilityCheck) {
+            this.configurationBuilder.performAvroCompatibilityCheck(performSchemaCompatibilityCheck);
+            return this;
+        }
+
+        /**
+         * Sets a flag to print relevant schemas in stack traces.
+         *
+         * @param includeSchemasInStackTraces flag to set, defaults to <code>false</code>.
+         * @return builder instance.
+         */
+        public Builder includeSchemasInStackTraces(boolean includeSchemasInStackTraces) {
+            this.configurationBuilder.includeSchemasInStackTraces(includeSchemasInStackTraces);
+            return this;
+        }
+
+        /**
          * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
@@ -311,7 +345,7 @@ public class AvroSerializer implements Serializer {
             assertNonNull(revisionResolver, "RevisionResolver is mandatory");
             assertNonNull(schemaStore, "SchemaStore is mandatory");
             assertNonNull(serializerDelegate, "SerializerDelegate is mandatory");
-            assertThat(this.serializerStrategies, (strategies) -> !strategies.isEmpty(),
+            assertThat(serializerStrategies, (strategies) -> !strategies.isEmpty(),
                        "At least one AvroSerializerStrategy must be provided.");
         }
 
@@ -321,14 +355,18 @@ public class AvroSerializer implements Serializer {
          * @return working instance.
          */
         public AvroSerializer build() {
+            // include default strategy
             if (includeDefaultStrategies) {
-                this.addSerializerStrategy(
-                        new SpecificRecordBaseSerializerStrategy(
-                                this.schemaStore,
-                                this.revisionResolver
-                        )
+                AvroSerializerStrategy defaultStrategy = new SpecificRecordBaseSerializerStrategy(
+                        this.schemaStore,
+                        this.revisionResolver
                 );
+                this.addSerializerStrategy(defaultStrategy);
             }
+            // create configuration
+            AvroSerializerStrategyConfig configuration = configurationBuilder.build();
+            // apply configuration to the strategies
+            this.serializerStrategies.forEach(strategy -> strategy.applyConfig(configuration));
             return new AvroSerializer(this);
         }
     }

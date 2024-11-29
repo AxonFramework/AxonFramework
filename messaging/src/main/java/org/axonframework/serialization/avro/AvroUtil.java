@@ -20,6 +20,8 @@ import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.InvalidAvroMagicException;
 import org.apache.avro.InvalidNumberEncodingException;
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaCompatibility;
+import org.apache.avro.SchemaCompatibility.SchemaCompatibilityResult;
 import org.apache.avro.SchemaNormalization;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.message.BadHeaderException;
@@ -31,7 +33,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+
+import static org.apache.avro.SchemaCompatibility.checkReaderWriterCompatibility;
 
 /**
  * Utilities for Avro manipulations.
@@ -43,20 +48,27 @@ import javax.annotation.Nonnull;
 public class AvroUtil {
 
     /**
-     * Magic marker bytes, indicating single-objet-encoding as defined in <a href="https://avro.apache.org/docs/1.11.4/specification/#single-object-encoding-specification">Avro specification</a>.
+     * Magic marker bytes, indicating single-objet-encoding as defined in <a
+     * href="https://avro.apache.org/docs/1.11.4/specification/#single-object-encoding-specification">Avro
+     * specification</a>.
      */
     public static final int MAGIC_BYTE = 0xC3;
     /**
-     * Format version of single-objet-encoding as defined in <a href="https://avro.apache.org/docs/1.11.4/specification/#single-object-encoding-specification">Avro specification</a>.
+     * Format version of single-objet-encoding as defined in <a
+     * href="https://avro.apache.org/docs/1.11.4/specification/#single-object-encoding-specification">Avro
+     * specification</a>.
      */
     public static final int FORMAT_VERSION = 0x01;
     /**
-     * Header size of single-objet-encoding as defined in <a href="https://avro.apache.org/docs/1.11.4/specification/#single-object-encoding-specification">Avro specification</a>.
+     * Header size of single-objet-encoding as defined in <a
+     * href="https://avro.apache.org/docs/1.11.4/specification/#single-object-encoding-specification">Avro
+     * specification</a>.
      */
     public static final int AVRO_HEADER_LENGTH = 8;
 
     /**
-     * Constant utilities for construction of {@link org.apache.avro.generic.GenericRecord} preloaded by default Avro stack.
+     * Constant utilities for construction of {@link org.apache.avro.generic.GenericRecord} preloaded by default Avro
+     * stack.
      */
     public static final GenericData genericData = GenericData.get();
 
@@ -135,6 +147,45 @@ public class AvroUtil {
     }
 
     /**
+     * Checks schema compatibilities and throws exception if schemas are not compatible.
+     *
+     * @param readerType   intended reader type.
+     * @param readerSchema schema available on the reader side.
+     * @param writerSchema schema that was used to write the data.
+     * @throws SerializationException if the schema check has not passed.
+     */
+    public static void assertSchemaCompatibility(@Nonnull Class<?> readerType,
+                                                 @Nonnull Schema readerSchema,
+                                                 @Nonnull Schema writerSchema,
+                                                 boolean includeSchemasInStackTraces
+    ) throws SerializationException {
+        SchemaCompatibilityResult schemaPairCompatibilityResult = checkReaderWriterCompatibility(
+                readerSchema,
+                writerSchema
+        ).getResult();
+
+        if (schemaPairCompatibilityResult
+                .getCompatibility()
+                .equals(SchemaCompatibility.SchemaCompatibilityType.INCOMPATIBLE)
+        ) {
+            // reader and writer are incompatible
+            // this is a fatal error, let provide information for the developer
+            String incompatibilitiesMessage = schemaPairCompatibilityResult
+                    .getIncompatibilities()
+                    .stream()
+                    .map(AvroUtil::incompatibilityPrinter)
+                    .collect(Collectors.joining(", "));
+            throw createExceptionFailedToDeserialize(
+                    readerType,
+                    readerSchema,
+                    writerSchema,
+                    "[" + incompatibilitiesMessage + "]",
+                    includeSchemasInStackTraces
+            );
+        }
+    }
+
+    /**
      * Creates a serialization exception for reader type.
      *
      * @param readerType   object type to deserialize.
@@ -147,12 +198,47 @@ public class AvroUtil {
     public static SerializationException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
                                                                             @Nonnull Schema readerSchema,
                                                                             @Nonnull Schema writerSchema,
-                                                                            Exception cause) {
-        return new SerializationException("Failed to deserialize specific record to instance of "
-                                                  + readerType.getCanonicalName()
-                                                  + ", writer fp was " + fingerprint(writerSchema)
-                                                  + " reader fp was " + fingerprint(readerSchema),
-                                          cause);
+                                                                            Exception cause,
+                                                                            boolean includeSchemasInStackTraces
+    ) {
+        return new SerializationException(
+                "Failed to deserialize single-object-encoded bytes to instance of "
+                        + readerType.getCanonicalName()
+                        + ", writer schema fingerprint is " + fingerprint(writerSchema)
+                        + (includeSchemasInStackTraces ? ", writer schema fingerprint is " + writerSchema : "")
+                        + " reader schema fingerprint is " + fingerprint(readerSchema)
+                        + (includeSchemasInStackTraces ? ", reader schema is " + readerSchema : ""),
+                cause);
+    }
+
+    public static SerializationException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
+                                                                            @Nonnull Schema readerSchema,
+                                                                            @Nonnull Schema writerSchema,
+                                                                            String message,
+                                                                            boolean includeSchemasInStackTraces
+    ) {
+        return new SerializationException(
+                "Failed to deserialize single-object-encoded bytes to instance of "
+                        + readerType.getCanonicalName()
+                        + ", writer schema fingerprint is " + fingerprint(writerSchema)
+                        + (includeSchemasInStackTraces ? ", writer schema is " + writerSchema : "")
+                        + ", reader schema fingerprint is " + fingerprint(readerSchema)
+                        + (includeSchemasInStackTraces ? ", reader schema is " + readerSchema : "")
+                        + ", detected incompatibilities are: " + message
+                        + ". Consider to define an upcaster to fix this problem."
+        );
+    }
+
+    /**
+     * Creates incompatibility string representation.
+     * @param incompatibility incompatibility to display.
+     * @return string representation.
+     */
+    public static String incompatibilityPrinter(@Nonnull SchemaCompatibility.Incompatibility incompatibility) {
+        return String.format("%s located at \"%s\" with value \"%s\"",
+                             incompatibility.getType(),
+                             incompatibility.getLocation(),
+                             incompatibility.getMessage());
     }
 
     /**
