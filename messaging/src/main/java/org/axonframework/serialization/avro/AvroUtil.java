@@ -42,11 +42,22 @@ import javax.annotation.Nonnull;
  */
 public class AvroUtil {
 
+    /**
+     * Magic marker bytes, indicating single-objet-encoding as defined in <a href="https://avro.apache.org/docs/1.11.4/specification/#single-object-encoding-specification">Avro specification</a>.
+     */
     public static final int MAGIC_BYTE = 0xC3;
+    /**
+     * Format version of single-objet-encoding as defined in <a href="https://avro.apache.org/docs/1.11.4/specification/#single-object-encoding-specification">Avro specification</a>.
+     */
     public static final int FORMAT_VERSION = 0x01;
+    /**
+     * Header size of single-objet-encoding as defined in <a href="https://avro.apache.org/docs/1.11.4/specification/#single-object-encoding-specification">Avro specification</a>.
+     */
     public static final int AVRO_HEADER_LENGTH = 8;
 
-    // Constant because everything is loaded via SPI
+    /**
+     * Constant utilities for construction of {@link org.apache.avro.generic.GenericRecord} preloaded by default Avro stack.
+     */
     public static final GenericData genericData = GenericData.get();
 
     /**
