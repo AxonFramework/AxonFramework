@@ -1,18 +1,18 @@
 = Known Issues and Workarounds
 :navtitle: Known Issues and Workarounds
 
-As with tool, library, or framework, there are well-known issues you might potentially come up against.
-Especially given the fact Axon Framework will integrate with a wide variety of other tools, it becomes rough to deal with everything.
+As with any tool, library, or framework, there are well-known issues you might find with Axon Framework.
+Especially since Axon Framework integrates with many other tools, it becomes rough to deal with everything.
 
-This page intends to provide the biggest "gotchas," with optional workarounds, which you can see below.
+This page provides the biggest "gotchas," with optional workarounds.
 
 [NOTE]
 .Where is issue XYZ?
 ====
-This page can by no means contain **all** possible issues out there.
-However, that does not mean we are not open for suggestions.
+This page can by no means contain **all** possible issues.
+However, we are open for suggestions.
 
-This documentation, just as the framework, is open source as well.
+This documentation, just as the framework, is open source.
 Hence, if you have found something problematic that you think should be added to the list, be sure to file an issue and (ideally!) a pull request.
 
 You can make an enhancement request by clicking link:https://github.com/AxonFramework/AxonFramework/issues/new?assignees=&labels=Type%3A+Enhancement&projects=&template=2_enhancement_request.md[here].
