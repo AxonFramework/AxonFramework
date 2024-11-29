@@ -39,6 +39,11 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
 
     private final SchemaStore schemaStore;
 
+    /**
+     * Constructs a content type converter used during deserialization for upcasting,
+     * to create {@link GenericRecord} from single-object-encoded for a given schema.
+     * @param schemaStore schema store to resolve schema from fingerprint.
+     */
     public ByteArrayToGenericRecordConverter(SchemaStore schemaStore) {
         this.schemaStore = schemaStore;
     }
