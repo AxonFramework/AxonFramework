@@ -89,6 +89,8 @@ list of the latter, please check [here](#removed).
 
 ### Payload Type and Qualified Name
 
+TODO - check if the below section is clear about the uncertainty of the further existence of payloadType (or perhaps contentType).
+
 The `Message` API has seen roughly two major changes, being:
 
 1. Deprecation and subsequent removal of the `Message#getPayloadType()` operation.
