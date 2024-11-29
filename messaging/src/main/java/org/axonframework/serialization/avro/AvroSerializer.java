@@ -82,6 +82,13 @@ public class AvroSerializer implements Serializer {
 
     /**
      * Creates a builder for Avro Serializer.
+     * <p>
+     *     The following fields are mandatory, to create the Serializer:
+     * <ul>
+     *     <li>{@link Builder#revisionResolver(RevisionResolver)}, to resolve revisions of events</li>
+     *     <li>{@link Builder#schemaStore(SchemaStore)}, to lookup schemas by their fingerprints</li>
+     *     <li>{@link Builder#serializerDelegate(Serializer)}, to deserialize all non-Avro artifacts</li>
+     * </ul>
      *
      * @return fluent builder instance.
      */
@@ -187,6 +194,14 @@ public class AvroSerializer implements Serializer {
 
     /**
      * Builder to set up Avro Serializer.
+     * <p>
+     *     The following fields are mandatory, to create the Serializer:
+     * <ul>
+     *     <li>{@link Builder#revisionResolver(RevisionResolver)}, to resolve revisions of events</li>
+     *     <li>{@link Builder#schemaStore(SchemaStore)}, to lookup schemas by their fingerprints</li>
+     *     <li>{@link Builder#serializerDelegate(Serializer)}, to deserialize all non-Avro artifacts</li>
+     * </ul>
+     * </p>
      */
     public static class Builder {
 
