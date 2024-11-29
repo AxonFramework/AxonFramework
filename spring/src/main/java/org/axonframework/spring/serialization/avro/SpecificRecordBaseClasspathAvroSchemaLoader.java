@@ -18,12 +18,12 @@ package org.axonframework.spring.serialization.avro;
 
 import org.apache.avro.Schema;
 import org.apache.avro.specific.SpecificRecordBase;
+import org.axonframework.serialization.avro.AvroUtil;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -65,7 +65,7 @@ public class SpecificRecordBaseClasspathAvroSchemaLoader implements ClasspathAvr
                                  if (SpecificRecordBase.class.isAssignableFrom(clazz)) {
                                      @SuppressWarnings("unchecked")
                                      Class<SpecificRecordBase> specificRecordBaseClass = (Class<SpecificRecordBase>) clazz;
-                                     return getClassSchema(specificRecordBaseClass);
+                                     return AvroUtil.getClassSchema(specificRecordBaseClass);
                                  } else {
                                      return null;
                                  }
@@ -74,10 +74,5 @@ public class SpecificRecordBaseClasspathAvroSchemaLoader implements ClasspathAvr
                              }
                          }).filter(Objects::nonNull)
                          .collect(Collectors.toList());
-    }
-
-    private static Schema getClassSchema(Class<SpecificRecordBase> clazz)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        return (Schema) clazz.getMethod("getClassSchema").invoke(null); // invoke static method
     }
 }

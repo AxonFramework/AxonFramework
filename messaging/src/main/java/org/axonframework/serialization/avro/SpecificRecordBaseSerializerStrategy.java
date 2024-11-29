@@ -110,7 +110,7 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
         }
 
         SpecificData readerSpecificData = SpecificData.getForClass(specificRecordBaseClass);
-        Schema readerSchema = AvroUtil.getSchemaFromSpecificRecordBase(specificRecordBaseClass);
+        Schema readerSchema = AvroUtil.getClassSchemaChecked(specificRecordBaseClass);
 
         if (this.avroSerializerStrategyConfig.performAvroCompatibilityCheck()) {
             // assert schema compatibility

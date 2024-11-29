@@ -31,6 +31,7 @@ import org.axonframework.serialization.SerializationException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.stream.Collectors;
@@ -125,16 +126,33 @@ public class AvroUtil {
      *
      * @param specificRecordBaseClass class extending <code>SpecificRecordBase</code>
      * @return schema.
+     * @throws AvroRuntimeException on any errors.
      */
     @Nonnull
-    public static Schema getSchemaFromSpecificRecordBase(@Nonnull Class<SpecificRecordBase> specificRecordBaseClass) {
+    public static Schema getClassSchemaChecked(@Nonnull Class<SpecificRecordBase> specificRecordBaseClass) {
         try {
-            return (Schema) specificRecordBaseClass.getDeclaredField("SCHEMA$").get(null);
+            return getClassSchema(specificRecordBaseClass);
         } catch (Exception e) {
             throw new AvroRuntimeException(
                     "Could not get schema from specific record class " + specificRecordBaseClass.getCanonicalName(), e);
         }
     }
+
+    /**
+     * Retrieves schema from specific record base class.
+     *
+     * @param clazz class extending <code>SpecificRecordBase</code>
+     * @return schema.
+     * @throws NoSuchMethodException     on wrong class structure.
+     * @throws InvocationTargetException on wrong class structure.
+     * @throws IllegalAccessException    on wrong class structure.
+     */
+    @Nonnull
+    public static Schema getClassSchema(@Nonnull Class<SpecificRecordBase> clazz)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return (Schema) clazz.getMethod("getClassSchema").invoke(null); // invoke static method
+    }
+
 
     /**
      * Returns a fingerprint based on the given {@code schema}.
@@ -231,6 +249,7 @@ public class AvroUtil {
 
     /**
      * Creates incompatibility string representation.
+     *
      * @param incompatibility incompatibility to display.
      * @return string representation.
      */
@@ -252,9 +271,9 @@ public class AvroUtil {
             @Nonnull Class<?> readerType,
             long fingerprint
     ) {
-        return new SerializationException("Schema store could not contain schema deserializing "
+        return new SerializationException("Schema store could didn't contain schema deserializing "
                                                   + readerType
-                                                  + " with fp:"
+                                                  + " with fingerprint:"
                                                   + fingerprint);
     }
 }
