@@ -92,21 +92,21 @@ class QualifiedNameTest {
     }
 
     @Test
-    void toSimpleStringReturnsAsExpected() {
+    void toStringReturnsAsExpected() {
         QualifiedName testSubject = new QualifiedName(NAMESPACE, LOCAL_NAME, REVISION);
 
-        assertEquals("namespace:localName:revision", testSubject.toSimpleString());
+        assertEquals("namespace:localName:revision", testSubject.toString());
     }
 
     @Test
-    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForNullSimpleString() {
+    void fromStringThrowsAxonConfigurationExceptionForNullFromString() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> QualifiedName.simpleStringName(null));
+        assertThrows(AxonConfigurationException.class, () -> QualifiedName.fromString(null));
     }
 
     @Test
-    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyString() {
-        assertThrows(AxonConfigurationException.class, () -> QualifiedName.simpleStringName(""));
+    void fromStringThrowsAxonConfigurationExceptionForEmptyString() {
+        assertThrows(AxonConfigurationException.class, () -> QualifiedName.fromString(""));
     }
 
     /**
@@ -114,7 +114,7 @@ class QualifiedNameTest {
      * semicolons spread within.
      */
     @Test
-    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionWhenDelimiterCountIsNotExactlyTwo() {
+    void fromStringThrowsAxonConfigurationExceptionWhenDelimiterCountIsNotExactlyTwo() {
         String baseText = "Lorem";
         int[] scenarios = new int[]{1, 3, 4, 5, 6, 7, 8, 9, 10};
         for (int scenario : scenarios) {
@@ -122,13 +122,13 @@ class QualifiedNameTest {
                                        .mapToObj(delimiterCount -> baseText)
                                        .reduce(baseText, (result, base) -> result + QualifiedName.DELIMITER + base);
             assertThrows(AxonConfigurationException.class,
-                         () -> QualifiedName.simpleStringName(testText),
+                         () -> QualifiedName.fromString(testText),
                          () -> "Failed in the scenario with #" + scenario + " delimiters: " + testText);
         }
     }
 
     @Test
-    void simpleStringNameFactoryMethodSplitsFullQualifiedTypeAsExpected() {
+    void fromStringSplitsFullQualifiedTypeAsExpected() {
         String expectedNamespace = NAMESPACE;
         String expectedLocalName = LOCAL_NAME;
         String expectedRevision = REVISION;
@@ -136,7 +136,7 @@ class QualifiedNameTest {
         String testSimpleString = expectedNamespace + QualifiedName.DELIMITER
                 + expectedLocalName + QualifiedName.DELIMITER + expectedRevision;
 
-        QualifiedName testSubject = QualifiedName.simpleStringName(testSimpleString);
+        QualifiedName testSubject = QualifiedName.fromString(testSimpleString);
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());
