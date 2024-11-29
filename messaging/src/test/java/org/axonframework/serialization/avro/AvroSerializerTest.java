@@ -37,6 +37,8 @@ import org.junit.jupiter.api.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import static java.util.Collections.singletonMap;
 import static org.axonframework.serialization.avro.AvroUtil.genericData;
@@ -224,9 +226,10 @@ public class AvroSerializerTest {
 
     @Test
     void serializeNull() {
-        NullPointerException npe = assertThrows(NullPointerException.class,
-                                                () -> testSubject.serialize(null, byte[].class));
-        assertEquals("Can't serialize a null object", npe.getMessage());
+        SerializedObject<byte[]> serialized = testSubject.serialize(null, byte[].class);
+        assertEquals(SerializedType.emptyType(), serialized.getType());
+        assertArrayEquals("null".getBytes(StandardCharsets.UTF_8), serialized.getData());
+        verify(serializer).serialize(null, byte[].class);
     }
 
     @Test
