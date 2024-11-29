@@ -76,10 +76,10 @@ public interface AvroSerializerStrategy extends Predicate<Class<?>> {
      * Sets the configuration for the strategy.
      * <p>This method is called by the {@link AvroSerializer.Builder} during instantiation of {@link AvroSerializer},
      * passing the builder configuration to the strategy. The default implementation does nothing, but a strategy might
-     * use this method to set up internal.
+     * use this method to set up internals.
      * </p>
      * <p>This method is intended to be implemented by the strategy, if it supports configuration options set by the
-     * {@link AvroSerializer.Builder}.</p>
+     * {@link AvroSerializer.Builder}, passed via {@link AvroSerializerStrategyConfig}</p>
      *
      * @param avroSerializerStrategyConfig configuration passed by the builder.
      */
