@@ -35,6 +35,7 @@ import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.utils.CallbackBehavior;
 
 import java.time.Instant;
+import java.util.Map;
 
 
 /**
@@ -300,6 +301,17 @@ public interface FixtureConfiguration {
      * @return an object that allows chaining of more given state
      */
     ContinuedGivenState givenAPublished(Object event);
+
+
+    /**
+     * Indicates that the given {@code event} with given {@code metaData} has been published in the past.
+     * This event is sent to the associated sagas.
+     *
+     * @param event The event to publish
+     * @param metaData The meta data to attach to the event
+     * @return an object that allows chaining of more given state
+     */
+    ContinuedGivenState givenAPublished(Object event, Map<String, ?> metaData);
 
     /**
      * Indicates that no relevant activity has occurred in the past.
