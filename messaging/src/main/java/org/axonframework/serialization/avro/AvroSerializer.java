@@ -20,21 +20,16 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
 import org.apache.avro.util.ClassUtils;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.UnknownSerializedType;
+import org.axonframework.serialization.*;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Serializer providing support for Apache Avro and using Single Object Encoded binary encoding.
@@ -55,6 +50,7 @@ public class AvroSerializer implements Serializer {
 
     /**
      * Creates the serializer instance.
+     *
      * @param builder builder containing relevant settings.
      */
     protected AvroSerializer(@Nonnull Builder builder) {
@@ -63,15 +59,16 @@ public class AvroSerializer implements Serializer {
         this.serializerDelegate = builder.serializerDelegate;
         this.serializerStrategies.addAll(builder.serializerStrategies);
         this.serializerStrategies.add(new SpecificRecordBaseSerializerStrategy(
-                                              builder.schemaStore,
-                                              this.revisionResolver
-                                      )
+                        builder.schemaStore,
+                        this.revisionResolver
+                )
         );
         this.converter.registerConverter(new ByteArrayToGenericRecordConverter(builder.schemaStore));
     }
 
     /**
      * Creates a builder for Avro Serializer.
+     *
      * @return fluent builder instance.
      */
     public static Builder builder() {
@@ -186,6 +183,7 @@ public class AvroSerializer implements Serializer {
 
         /**
          * Sets revision resolver.
+         *
          * @param revisionResolver revision resolver to use.
          * @return builder instance.
          */
@@ -196,6 +194,7 @@ public class AvroSerializer implements Serializer {
 
         /**
          * Sets schema store for Avro schema resolution.
+         *
          * @param schemaStore schema store instance.
          * @return builder instance.
          */
@@ -206,6 +205,7 @@ public class AvroSerializer implements Serializer {
 
         /**
          * Sets serializer delegate, used for all types which can't be converted to Avro.
+         *
          * @param serializerDelegate serializer delegate.
          * @return builder instance.
          */
@@ -216,6 +216,7 @@ public class AvroSerializer implements Serializer {
 
         /**
          * Adds a serialization strategy.
+         *
          * @param strategy strategy responsible for the serialization and deserialization.
          * @return builder instance.
          */
@@ -231,17 +232,14 @@ public class AvroSerializer implements Serializer {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            try {
-                Objects.requireNonNull(revisionResolver, "RevisionResolver is mandatory");
-                Objects.requireNonNull(schemaStore, "SchemaStore is mandatory");
-                Objects.requireNonNull(serializerDelegate, "SerializerDelegate is mandatory");
-            } catch (NullPointerException e) {
-                throw new AxonConfigurationException(e.getMessage());
-            }
+            assertNonNull(revisionResolver, "RevisionResolver is mandatory");
+            assertNonNull(schemaStore, "SchemaStore is mandatory");
+            assertNonNull(serializerDelegate, "SerializerDelegate is mandatory");
         }
 
         /**
          * Creates an Avro Serializer instance.
+         *
          * @return working instance.
          */
         public AvroSerializer build() {
