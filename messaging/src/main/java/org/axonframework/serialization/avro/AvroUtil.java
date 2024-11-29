@@ -125,10 +125,10 @@ public class AvroUtil {
     }
 
     /**
-     * Returns a fingerprint for schema.
+     * Returns a fingerprint based on the given {@code schema}.
      *
-     * @param schema schema to return the fingerprint for.
-     * @return fingerprint.
+     * @param schema A {@link Schema} to return the fingerprint for.
+     * @return The fingerprint for the given {@code schema}.
      */
     public static long fingerprint(@Nonnull Schema schema) {
         return SchemaNormalization.parsingFingerprint64(schema);
