@@ -46,6 +46,12 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
     private final SchemaStore schemaStore;
     private final RevisionResolver revisionResolver;
 
+    /**
+     * Constructs avro serialization strategy supporting serialization and deserialization
+     * of Java Avro classes extending {@link SpecificRecordBase}.
+     * @param schemaStore schema store to resolve schema from fingerprint.
+     * @param revisionResolver revision resolver to find correct revision.
+     */
     public SpecificRecordBaseSerializerStrategy(
             SchemaStore schemaStore,
             RevisionResolver revisionResolver
