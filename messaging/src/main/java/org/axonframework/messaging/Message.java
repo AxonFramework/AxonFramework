@@ -79,11 +79,11 @@ public interface Message<T> extends Serializable {
     Class<T> getPayloadType();
 
     /**
-     * Returns the message {@link QualifiedName type} of this {@link Message}.
+     * Returns the message {@link QualifiedName name} of this {@link Message}.
      *
-     * @return The message {@link QualifiedName type} of this {@link Message}.
+     * @return The message {@link QualifiedName name} of this {@link Message}.
      */
-    default QualifiedName type() {
+    default QualifiedName name() {
         Class<T> payloadType = getPayloadType();
         return new QualifiedName(payloadType.getPackageName(), payloadType.getSimpleName(), "0.0.1");
     }
