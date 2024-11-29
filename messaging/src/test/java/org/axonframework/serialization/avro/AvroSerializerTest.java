@@ -16,6 +16,7 @@
 
 package org.axonframework.serialization.avro;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -23,6 +24,8 @@ import org.apache.avro.message.BinaryMessageEncoder;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.SerializationException;
 import org.axonframework.serialization.SerializedObject;
@@ -38,7 +41,6 @@ import org.junit.jupiter.api.*;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 import static java.util.Collections.singletonMap;
 import static org.axonframework.serialization.avro.AvroUtil.genericData;
@@ -147,8 +149,6 @@ public class AvroSerializerTest {
 
     @BeforeEach
     void setUp() {
-
-
         serializer = spy(JacksonSerializer.defaultSerializer());
         store = new SchemaStore.Cache();
         testSubject = AvroSerializer
@@ -161,22 +161,98 @@ public class AvroSerializerTest {
 
     @Test
     void testBuilderMandatoryValues() {
-        AxonConfigurationException revisionResolverMandatory = assertThrows(AxonConfigurationException.class,
-                                                                            () -> AvroSerializer.builder().build());
-        assertEquals("RevisionResolver is mandatory", revisionResolverMandatory.getMessage());
+        assertEquals("RevisionResolver is mandatory",
+                     assertThrows(AxonConfigurationException.class,
+                                  () -> AvroSerializer.builder().build())
+                             .getMessage()
+        );
 
-        AxonConfigurationException schemaStoreMandatory = assertThrows(AxonConfigurationException.class,
-                                                                 () -> AvroSerializer.builder()
-                                                                                     .revisionResolver(c -> "")
-                                                                                     .build());
-        assertEquals("SchemaStore is mandatory", schemaStoreMandatory.getMessage());
 
-        AxonConfigurationException serializerDelegateMandatory = assertThrows(AxonConfigurationException.class,
-                                                                        () -> AvroSerializer.builder()
-                                                                                            .revisionResolver(c -> "")
-                                                                                            .schemaStore(new SchemaStore.Cache())
-                                                                                            .build());
-        assertEquals("SerializerDelegate is mandatory", serializerDelegateMandatory.getMessage());
+        assertEquals("SchemaStore is mandatory",
+                     assertThrows(AxonConfigurationException.class,
+                                  () -> AvroSerializer.builder()
+                                                      .revisionResolver(c -> "")
+                                                      .build())
+                             .getMessage()
+        );
+
+        assertEquals("SerializerDelegate is mandatory",
+                     assertThrows(AxonConfigurationException.class,
+                                  () -> AvroSerializer.builder()
+                                                      .revisionResolver(c -> "")
+                                                      .schemaStore(new SchemaStore.Cache())
+                                                      .build())
+                             .getMessage()
+        );
+
+        assertEquals("At least one AvroSerializerStrategy must be provided.",
+                     assertThrows(AxonConfigurationException.class,
+                                  () -> AvroSerializer
+                                          .builder()
+                                          .revisionResolver(c -> "")
+                                          .serializerDelegate(serializer)
+                                          .schemaStore(new SchemaStore.Cache())
+                                          .includeDefaultAvroSerializationStrategies(false)
+                                          .build()
+                     ).getMessage()
+        );
+
+        // that should work fine
+        assertNotNull(
+                AvroSerializer
+                        .builder()
+                        .revisionResolver(c -> "")
+                        .serializerDelegate(serializer)
+                        .schemaStore(new SchemaStore.Cache())
+                        .includeDefaultAvroSerializationStrategies(false)
+                        .addSerializerStrategy(new SpecificRecordBaseSerializerStrategy(
+                                new SchemaStore.Cache(),
+                                c -> ""
+                        ))
+                        .build()
+        );
+    }
+
+    @Test
+    void testBuilderSetterContracts() {
+
+        assertEquals("RevisionResolver may not be null",
+                     assertThrows(AxonConfigurationException.class,
+                                  () -> AvroSerializer.builder()
+                                                      .revisionResolver(null)
+                     ).getMessage()
+        );
+
+
+        assertEquals("SchemaStore may not be null",
+                     assertThrows(AxonConfigurationException.class,
+                                  () -> AvroSerializer.builder().schemaStore(null)
+                     ).getMessage()
+        );
+
+
+        assertEquals("Serializer delegate may not be null",
+                     assertThrows(AxonConfigurationException.class,
+                                  () -> AvroSerializer.builder()
+                                                      .serializerDelegate(null))
+                             .getMessage()
+        );
+
+        assertEquals("AvroSerializerStrategy may not be null",
+                     assertThrows(AxonConfigurationException.class,
+                                  () -> AvroSerializer.builder()
+                                                      .addSerializerStrategy(
+                                                              null))
+                             .getMessage()
+        );
+    }
+
+    @Test
+    void deliverCorrectConverter() {
+        Converter converter = testSubject.getConverter();
+        assertInstanceOf(ChainingConverter.class, converter);
+        assertTrue(converter.canConvert(byte[].class, GenericRecord.class)); // this is registered by AvroSerializer
+        assertTrue(converter.canConvert(byte[].class, JsonNode.class)); // this is registered by the JacksonSerializer
     }
 
     @Test

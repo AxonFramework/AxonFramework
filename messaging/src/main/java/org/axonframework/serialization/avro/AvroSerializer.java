@@ -36,6 +36,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Serializer providing support for <a href="https://avro.apache.org/">Apache Avro</a>, using
@@ -61,10 +62,10 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class AvroSerializer implements Serializer {
 
     private final RevisionResolver revisionResolver;
-    private final ChainingConverter converter = new ChainingConverter();
+    private final Converter converter;
     private final List<AvroSerializerStrategy> serializerStrategies = new ArrayList<>();
     /*
-     * Responsible for everything that is NOT Avro (e.g. MetaData).
+     * Responsible for everything that is NOT Avro (e.g. MetaData, Tokens, Snapshots, Sagas).
      */
     private final Serializer serializerDelegate;
 
@@ -78,12 +79,16 @@ public class AvroSerializer implements Serializer {
         this.revisionResolver = builder.revisionResolver;
         this.serializerDelegate = builder.serializerDelegate;
         this.serializerStrategies.addAll(builder.serializerStrategies);
-        this.serializerStrategies.add(new SpecificRecordBaseSerializerStrategy(
-                                              builder.schemaStore,
-                                              this.revisionResolver
-                                      )
-        );
-        this.converter.registerConverter(new ByteArrayToGenericRecordConverter(builder.schemaStore));
+        this.converter = builder.converter;
+        // converter registration
+        if (this.converter instanceof ChainingConverter) {
+            ChainingConverter chainingConverter = (ChainingConverter) this.converter;
+            chainingConverter.registerConverter(new ByteArrayToGenericRecordConverter(builder.schemaStore));
+            Converter delegateConverter = serializerDelegate.getConverter();
+            if (delegateConverter instanceof ChainingConverter) {
+                chainingConverter.setAdditionalConverters(((ChainingConverter) delegateConverter).getContentTypeConverters());
+            }
+        }
     }
 
     /**
@@ -194,7 +199,6 @@ public class AvroSerializer implements Serializer {
 
     @Override
     public Converter getConverter() {
-        // TODO Question: Do we have to build a union with the serializerDelegate.getConverter()?
         return converter;
     }
 
@@ -215,6 +219,8 @@ public class AvroSerializer implements Serializer {
         private RevisionResolver revisionResolver;
         private SchemaStore schemaStore;
         private Serializer serializerDelegate;
+        private Converter converter = new ChainingConverter();
+        private boolean includeDefaultStrategies = true;
 
         /**
          * Sets revision resolver.
@@ -222,7 +228,8 @@ public class AvroSerializer implements Serializer {
          * @param revisionResolver revision resolver to use.
          * @return builder instance.
          */
-        public Builder revisionResolver(RevisionResolver revisionResolver) {
+        public Builder revisionResolver(@Nonnull RevisionResolver revisionResolver) {
+            assertNonNull(revisionResolver, "RevisionResolver may not be null");
             this.revisionResolver = revisionResolver;
             return this;
         }
@@ -233,7 +240,8 @@ public class AvroSerializer implements Serializer {
          * @param schemaStore schema store instance.
          * @return builder instance.
          */
-        public Builder schemaStore(SchemaStore schemaStore) {
+        public Builder schemaStore(@Nonnull SchemaStore schemaStore) {
+            assertNonNull(schemaStore, "SchemaStore may not be null");
             this.schemaStore = schemaStore;
             return this;
         }
@@ -244,7 +252,8 @@ public class AvroSerializer implements Serializer {
          * @param serializerDelegate serializer delegate.
          * @return builder instance.
          */
-        public Builder serializerDelegate(Serializer serializerDelegate) {
+        public Builder serializerDelegate(@Nonnull Serializer serializerDelegate) {
+            assertNonNull(serializerDelegate, "Serializer delegate may not be null");
             this.serializerDelegate = serializerDelegate;
             return this;
         }
@@ -255,8 +264,40 @@ public class AvroSerializer implements Serializer {
          * @param strategy strategy responsible for the serialization and deserialization.
          * @return builder instance.
          */
-        public Builder addSerializerStrategy(AvroSerializerStrategy strategy) {
+        public Builder addSerializerStrategy(@Nonnull AvroSerializerStrategy strategy) {
+            assertNonNull(strategy, "AvroSerializerStrategy may not be null");
             this.serializerStrategies.add(strategy);
+            return this;
+        }
+
+        /**
+         * Sets the {@link Converter} used as a converter factory providing converter instances utilized by upcasters to
+         * convert between different content types. Defaults to a {@link ChainingConverter}.
+         *
+         * @param converter a {@link Converter} used as a converter factory providing converter instances utilized by
+         *                  upcasters to convert between different content types
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder converter(Converter converter) {
+            assertNonNull(converter, "Converter may not be null");
+            this.converter = converter;
+            return this;
+        }
+
+        /**
+         * Sets a flag controlling the instantiation of default {@link SpecificRecordBaseSerializerStrategy} and its
+         * registration.
+         * <p>
+         * Allows to exclude the instantiation of the default strategy. If set to <code>false</code>, the caller must
+         * provide at least one own strategy by calling {@link Builder#addSerializerStrategy(AvroSerializerStrategy)}
+         * method.
+         * </p>
+         *
+         * @param includeDefaultStrategies flag controlling default registration, defaults to <code>true</code>.
+         * @return builder instance.
+         */
+        public Builder includeDefaultAvroSerializationStrategies(boolean includeDefaultStrategies) {
+            this.includeDefaultStrategies = includeDefaultStrategies;
             return this;
         }
 
@@ -270,6 +311,8 @@ public class AvroSerializer implements Serializer {
             assertNonNull(revisionResolver, "RevisionResolver is mandatory");
             assertNonNull(schemaStore, "SchemaStore is mandatory");
             assertNonNull(serializerDelegate, "SerializerDelegate is mandatory");
+            assertThat(this.serializerStrategies, (strategies) -> !strategies.isEmpty(),
+                       "At least one AvroSerializerStrategy must be provided.");
         }
 
         /**
@@ -278,6 +321,14 @@ public class AvroSerializer implements Serializer {
          * @return working instance.
          */
         public AvroSerializer build() {
+            if (includeDefaultStrategies) {
+                this.addSerializerStrategy(
+                        new SpecificRecordBaseSerializerStrategy(
+                                this.schemaStore,
+                                this.revisionResolver
+                        )
+                );
+            }
             return new AvroSerializer(this);
         }
     }
