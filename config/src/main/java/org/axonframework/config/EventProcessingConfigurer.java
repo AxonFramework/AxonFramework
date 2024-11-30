@@ -855,7 +855,7 @@ public interface EventProcessingConfigurer {
      * TODO
      */
     @FunctionalInterface
-    interface PersistentStreamMessageSourceDefinitionBuilder {
+    interface SubscribableMessageSourceDefinitionBuilder {
 
         SubscribableMessageSourceDefinition<EventMessage<?>> build(String processingGroupName);
     }

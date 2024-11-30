@@ -141,11 +141,11 @@ public class EventProcessingModule
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     protected Configuration configuration;
 
-    private PersistentStreamMessageSourceDefinitionBuilder persistentStreamMessageSourceDefinitionBuilder;
+    private SubscribableMessageSourceDefinitionBuilder subscribableMessageSourceDefinitionBuilder;
 
-    public void setPersistentStreamMessageSourceDefinitionBuilder(
-            PersistentStreamMessageSourceDefinitionBuilder builder) {
-        this.persistentStreamMessageSourceDefinitionBuilder = builder;
+    public void setSubscribableMessageSourceDefinitionBuilder(
+            SubscribableMessageSourceDefinitionBuilder builder) {
+        this.subscribableMessageSourceDefinitionBuilder = builder;
     }
 
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
@@ -933,11 +933,11 @@ public class EventProcessingModule
                                                  Configuration conf,
                                                  EventHandlerInvoker eventHandlerInvoker) {
 
-        if (persistentStreamMessageSourceDefinitionBuilder != null) {
+        if (subscribableMessageSourceDefinitionBuilder != null) {
             return subscribingEventProcessor(name,
                                              eventHandlerInvoker,
-                                             persistentStreamMessageSourceDefinitionBuilder.build(name)
-                                                                                           .create(conf));
+                                             subscribableMessageSourceDefinitionBuilder.build(name)
+                                                                                       .create(conf));
         }
 
         if (conf.eventBus() instanceof StreamableMessageSource) {

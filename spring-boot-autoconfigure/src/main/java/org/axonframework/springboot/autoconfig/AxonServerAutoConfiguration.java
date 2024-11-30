@@ -272,13 +272,13 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
      */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams")
-    public EventProcessingConfigurer.PersistentStreamMessageSourceDefinitionBuilder autoPersistentStreamMessageSourceDefinitionBuilder(
+    public EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder autoPersistentStreamMessageSourceDefinitionBuilder(
             PersistentStreamScheduledExecutorBuilder executorBuilder,
             EventProcessingModule eventProcessingModule,
             PersistentStreamMessageSourceFactory psFactory) {
         AxonServerConfiguration.PersistentStreamSettings persistentStreamSettings = new AxonServerConfiguration.PersistentStreamSettings();
 
-        EventProcessingConfigurer.PersistentStreamMessageSourceDefinitionBuilder ret = processingGroupName -> {
+        EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder ret = processingGroupName -> {
             String psName = processingGroupName + "-stream";
             return new PersistentStreamMessageSourceDefinition(
                     processingGroupName,
@@ -294,7 +294,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                     psFactory
             );
         };
-        eventProcessingModule.setPersistentStreamMessageSourceDefinitionBuilder(ret);
+        eventProcessingModule.setSubscribableMessageSourceDefinitionBuilder(ret);
         return ret;
     }
 
