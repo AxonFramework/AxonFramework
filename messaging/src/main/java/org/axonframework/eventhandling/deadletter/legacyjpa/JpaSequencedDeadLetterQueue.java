@@ -147,7 +147,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
         if (optionalCause.isPresent()) {
             logger.info("Adding dead letter with message id [{}] because [{}].",
                         letter.message().getIdentifier(),
-                        optionalCause.get());
+                        optionalCause.get().type());
         } else {
             logger.info(
                     "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
