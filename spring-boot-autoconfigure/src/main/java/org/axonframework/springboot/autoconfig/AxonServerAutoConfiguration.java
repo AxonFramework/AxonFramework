@@ -264,6 +264,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Configuration
+    @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams.enabled")
     public static class AutoPersistentStreamConfiguration {
 
         @Bean
