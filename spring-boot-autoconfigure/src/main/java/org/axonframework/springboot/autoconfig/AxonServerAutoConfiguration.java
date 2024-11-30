@@ -264,11 +264,11 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Configuration
-    public static class AutoPersitanceStreamConfiguration {
+    public static class AutoPersistentStreamConfiguration {
 
         @Bean
         @ConfigurationProperties(prefix = "axon.axonserver.auto-persistent-streams")
-        AxonServerConfiguration.PersistentStreamSettings autoPersitanceStreamSettings() {
+        AxonServerConfiguration.PersistentStreamSettings autoPersistentStreamSettings() {
             return new AxonServerConfiguration.PersistentStreamSettings();
         }
     }
@@ -287,20 +287,20 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
             PersistentStreamScheduledExecutorBuilder executorBuilder,
             EventProcessingModule eventProcessingModule,
             PersistentStreamMessageSourceFactory psFactory,
-            AxonServerConfiguration.PersistentStreamSettings autoPersitanceStreamSettings) {
+            AxonServerConfiguration.PersistentStreamSettings autoPersistentStreamSettings) {
 
         EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder ret = processingGroupName -> {
             String psName = processingGroupName + "-stream";
             return new PersistentStreamMessageSourceDefinition(
                     processingGroupName,
                     new PersistentStreamProperties(psName,
-                                                   autoPersitanceStreamSettings.getInitialSegmentCount(),
-                                                   autoPersitanceStreamSettings.getSequencingPolicy(),
-                                                   autoPersitanceStreamSettings.getSequencingPolicyParameters(),
-                                                   autoPersitanceStreamSettings.getInitialPosition(),
-                                                   autoPersitanceStreamSettings.getFilter()),
-                    executorBuilder.build(autoPersitanceStreamSettings.getThreadCount(), psName),
-                    autoPersitanceStreamSettings.getBatchSize(),
+                                                   autoPersistentStreamSettings.getInitialSegmentCount(),
+                                                   autoPersistentStreamSettings.getSequencingPolicy(),
+                                                   autoPersistentStreamSettings.getSequencingPolicyParameters(),
+                                                   autoPersistentStreamSettings.getInitialPosition(),
+                                                   autoPersistentStreamSettings.getFilter()),
+                    executorBuilder.build(autoPersistentStreamSettings.getThreadCount(), psName),
+                    autoPersistentStreamSettings.getBatchSize(),
                     null,
                     psFactory
             );
