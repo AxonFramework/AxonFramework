@@ -57,6 +57,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -262,6 +263,16 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         return new PersistentStreamMessageSourceRegistrar(environment, executorBuilder);
     }
 
+    @Configuration
+    public static class AutoPersitanceStreamConfiguration {
+
+        @Bean
+        @ConfigurationProperties(prefix = "axon.axonserver.auto-persistent-streams")
+        AxonServerConfiguration.PersistentStreamSettings autoPersitanceStreamSettings() {
+            return new AxonServerConfiguration.PersistentStreamSettings();
+        }
+    }
+
     /**
      * TODO
      *
@@ -271,25 +282,25 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
      * @return
      */
     @Bean
-    @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams")
+    @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams.enabled")
     public EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder autoPersistentStreamMessageSourceDefinitionBuilder(
             PersistentStreamScheduledExecutorBuilder executorBuilder,
             EventProcessingModule eventProcessingModule,
-            PersistentStreamMessageSourceFactory psFactory) {
-        AxonServerConfiguration.PersistentStreamSettings persistentStreamSettings = new AxonServerConfiguration.PersistentStreamSettings();
+            PersistentStreamMessageSourceFactory psFactory,
+            AxonServerConfiguration.PersistentStreamSettings autoPersitanceStreamSettings) {
 
         EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder ret = processingGroupName -> {
             String psName = processingGroupName + "-stream";
             return new PersistentStreamMessageSourceDefinition(
                     processingGroupName,
                     new PersistentStreamProperties(psName,
-                                                   4,
-                                                   persistentStreamSettings.getSequencingPolicy(),
-                                                   persistentStreamSettings.getSequencingPolicyParameters(),
-                                                   persistentStreamSettings.getInitialPosition(),
-                                                   persistentStreamSettings.getFilter()),
-                    executorBuilder.build(10, psName),
-                    100,
+                                                   autoPersitanceStreamSettings.getInitialSegmentCount(),
+                                                   autoPersitanceStreamSettings.getSequencingPolicy(),
+                                                   autoPersitanceStreamSettings.getSequencingPolicyParameters(),
+                                                   autoPersitanceStreamSettings.getInitialPosition(),
+                                                   autoPersitanceStreamSettings.getFilter()),
+                    executorBuilder.build(autoPersitanceStreamSettings.getThreadCount(), psName),
+                    autoPersitanceStreamSettings.getBatchSize(),
                     null,
                     psFactory
             );
