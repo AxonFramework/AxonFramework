@@ -111,3 +111,129 @@ It is important to specify `metadata-complete="false"`.
 This indicates this file should be used to override existing annotations, instead of replacing them.
 For the best results, ensure that the `DomainEventEntry`  table uses its own sequence.
 This can be ensured by specifying a different sequence generator for that entity only.
+
+== PostgreSQL, `@LOB`-annotated columns, and default Hibernate mapping
+
+Specific to link:https://www.postgresql.org/[PostgreSQL] is its link:https://wiki.postgresql.org/wiki/TOAST[TOAST] functionality.
+TOAST stands for "the oversized attribute storage technique," ensuring columns that are (by default) larger than 8KB are:
+
+1. Compressed **if** possible.
+If this is insufficient,
+2. the wide columns is broken into chunks and moved to another table.
+
+Any field that is moved out of line to this _other_ "large object storage table" will be replaced by an OID field.
+This "object identifier" will allow the main table to point to the actual data in the large object storage table.
+
+Although this is a very useful feature for PostgreSQL users to help with large row sizes, it has some impact too, being:
+
+1. There is some added overhead when reading data, as the original and the large object table should be read.
+2. Removing an object that has a TOAST-ed field does not automatically remove it from the large object table.
+3. Manually querying the table will result in an OID column instead of the actual data being shown.
+
+Let us look how this behavior from PostgreSQL combines with Axon Framework when combined with JPA and Hibernate.
+
+Axon Framework uses the `@Lob` in several columns and tables for its JPA-based support, being:
+
+* The `payload` and `meta_data` columns in the `domain_event_entry` table.
+* The `payload` and `meta_data` columns in the `snapshot_event_entry` table.
+* The `token` column in the `token_entry` table.
+* The `serialized_saga` column in the `saga_entry` table.
+* The `diagnostics`, `payload`, `metadata`, and `token` column in the `dead_letter_entry` table.
+
+Furthermore, Hibernate will by default use the aforementioned OID-type whenever an `@Lob` annotation is found.
+Thus, the dedicate large object storage solution will be used if you are using PostgreSQL to store events, snapshots, tokens, sagas, and dead letters.
+
+As events and snapshots are frequently read, the overhead predicament discussed earlier will be hit.
+But arguably more problematic is issue two, especially for the `token_entry` table.
+
+The "claim" on a token is very frequently updated to allow correct collaboration in a distributed Axon setup (please read our xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[Tracking Tokens] section for more details).
+As the large object table is **not** automatically cleared, it will eventually overflow through all the updates.
+
+Hence, it would be best to avoid this "enforced" TOAST behavior through Hibernate's default settings.
+Luckily, that can be done with three easy steps:
+
+. Adjust the Hibernate dialect.
+. Override the Hibernate mapping.
+. [Optional] Migrate existing columns from OID to BYTEA.
+
+=== PostgreSQL Hibernate dialect changes
+
+To adjust the dialect to **not** go for OID, we can enforce the type to BYTEA.
+Since Axon actually stores a byte array in the `@Lob` annotated columns, changing it to a BYTEA type makes sense.
+
+Down below is a `PostgreSQLDialect` implementation that would get the trick done:
+
+[source,java]
+----
+public class ByteaEnforcedPostgresSQLDialect extends PostgreSQLDialect {
+
+    public ByteaEnforcedPostgresSQLDialect(){
+        super(DatabaseVersion.make(9, 5));
+    }
+
+    @Override
+    protected String columnType(int sqlTypeCode) {
+        return sqlTypeCode == SqlTypes.BLOB ? "bytea" : super.columnType(sqlTypeCode);
+    }
+
+    @Override
+    protected String castType(int sqlTypeCode) {
+        return sqlTypeCode == SqlTypes.BLOB ? "bytea" : super.castType(sqlTypeCode);
+    }
+
+    @Override
+    public void contributeTypes(TypeContributions typeContributions,
+                                ServiceRegistry serviceRegistry) {
+        super.contributeTypes(typeContributions, serviceRegistry);
+        JdbcTypeRegistry jdbcTypeRegistry = typeContributions.getTypeConfiguration()
+                                                             .getJdbcTypeRegistry();
+        jdbcTypeRegistry.addDescriptor(Types.BLOB, BinaryJdbcType.INSTANCE);
+    }
+}
+----
+
+With the dialect in your application, your next step is to configure it to be used.
+This can for example be done by setting the `jpa.database-platform` property when using Spring:
+
+[source,properties]
+----
+jpa.database-platform=fully.qualified.classname.ByteaEnforcedPostgresSQLDialect
+----
+
+=== Hibernate mapping override
+
+We use the Hibernate metadata override mechanism to tell which columns need to be of the BYTEA type instead of OID.
+To that end, add a file named `orm.xml` (ORM stands for object-relational mapping) under `src/main/java/resources/META-INF` directory containing the overrides.
+
+Below is an example of overriding the `serializedSaga` and `token` columns from the `SagaEntry` and `TokenEntry` respectively:
+
+[source,xml]
+----
+<entity-mappings xmlns="http://java.sun.com/xml/ns/persistence/orm" version="2.0">
+    <entity class="org.axonframework.modelling.saga.repository.jpa.SagaEntry">
+        <attribute-override name="serializedSaga">
+            <column name="serializedSaga" column-definition="BYTEA"></column>
+        </attribute-override>
+    </entity>
+    <entity class="org.axonframework.eventhandling.tokenstore.jpa.TokenEntry">
+        <attribute-override name="token">
+            <column name="token" column-definition="BYTEA"></column>
+        </attribute-override>
+    </entity>
+ </entity-mappings>
+----
+
+=== OID to BYTEA column migration
+
+If you already have Axon-specific tables using the OID type, you need to migrate them to BYTEA.
+The following SQL script can get the job done for the `token_entry` table:
+
+[source,sql]
+----
+ALTER TABLE token_entry ADD COLUMN token_bytea BYTEA;
+UPDATE token_entry SET token_bytea = lo_get(token);
+ALTER TABLE token_entry  DROP COLUMN token;
+ALTER TABLE token_entry  RENAME COLUMN token_bytea to token;
+----
+
+After making all the changes and running the SQL script, the data-affected columns should now all be readable.
