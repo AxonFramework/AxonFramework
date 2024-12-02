@@ -46,7 +46,7 @@ This can already be regarded as suboptimal, as frequently the sequence generator
 Especially given the nature of the `global_index` column on the `domain_event_entry` table, which is used to keep the progress in xref:axon-framework-reference:events:event-processors/streaming.adoc[streaming event processors], a reused generator causes unexpected gaps in event processing.
 Although Axon can deal with these gaps, they do make the queries to the `domain_event_entry` table rather bulky.
 
-Just as with any event storage solution, using a dedicate event store implementation like xref:axon-server-reference::index.adoc[Axon Server] will solve the problem entirely.
+Just as with any event storage solution, using a dedicated event store implementation like xref:axon-server-reference::index.adoc[Axon Server] will solve the problem entirely.
 Instead of using Axon Server, it is also possible to define sequence generators manually for Axon's entities.
 The xref:axon-framework-reference:tuning:rdbms-tuning.adoc[Relational Database Tuning page] contains a section on how to do this, called xref:axon-framework-reference:tuning:rdbms-tuning.adoc#auto_increment_and_sequences[Auto-Increment and Sequences].
 
