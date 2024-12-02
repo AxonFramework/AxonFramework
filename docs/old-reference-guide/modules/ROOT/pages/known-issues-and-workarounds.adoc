@@ -19,21 +19,23 @@ You can make an enhancement request by clicking link:https://github.com/AxonFram
 When looking to provide a pull request, be sure to adjust link:https://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/serialization.adochttps://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/known-issues-and-workarounds.adoc[this file].
 ====
 
-== Relational database storage and serialized data columns
+== PostgreSQL and large object storage
 
-When storing the serialized formats of, for example, xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[tokens], xref:axon-framework-reference:sagas:index.adoc[sagas], xref:axon-framework-reference:tuning:event-snapshots.adoc[snapshots], or xref:axon-framework-reference:events:infrastructure.adoc[events], it is good to know Axon uses the (B)LOB for these columns in your RDBMS of choice.
+When storing the serialized formats of, for example, xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[tokens], xref:axon-framework-reference:sagas:index.adoc[sagas], xref:axon-framework-reference:tuning:event-snapshots.adoc[snapshots], or xref:axon-framework-reference:events:infrastructure.adoc[events], it is good to know Axon uses JPAs `@Lob` annotation for these columns.
 
-Some databases react unexpectedly to this, with a clear case being link:https://www.postgresql.org/[PostgreSQL].
-It uses a mechanism it calls link:https://wiki.postgresql.org/wiki/TOAST["TOAST"] to move data that's too large to another table.
-Especially (B/C)LOB columns are automatically replaced for the OID type.
+This choice combined with link:https://www.postgresql.org/[PostgreSQL] and Hibernate, causes unexpected behavior for most.
+
+PostgeSQL has a feature called link:https://wiki.postgresql.org/wiki/TOAST["TOAST"] to move data rows that are too big to another table.
+This causes rows to contain an OID (object identifier) instead of the data directly.
+Hibernate will default `@Lob` annotated fields to go through this TOAST feature, by mapping to the OID type.
 
 Hence, all your tokens, sagas, snapshots, and events will automatically move to another table, with all added overhead coming with it.
 Using xref:axon-server-reference::index.adoc[Axon Server] will, obviously, resolve this for your events and snapshots, as you would no longer use an RDBMS in that case.
 However, even when using Axon Server, the predicament remains for tokens and sagas.
 
-For those cases, it would be wise to replace the TOAST behavior entirely.
+For those cases, it would be wise to adjust the Hibernate mapping.
 The most straightforward way, is to enforce the use of the `bytea` column type; with some additional steps, of course.
-The following link:https://www.axoniq.io/blog/axonframework-and-postgresql-without-toast[blog post] explains it in great detail, so be sure to check it out.
+For a full explanation and walkthrough, please check the xref:axon-framework-reference:tuning:rdbms-tuning.adoc#_postgresql_lob_annotated_columns_and_default_hibernate_mapping[PostegreSQL, LOB annotated columns, and default Hibernate mapping] tuning page.
 
 == Sequence generation issues with JPA Entities
 
