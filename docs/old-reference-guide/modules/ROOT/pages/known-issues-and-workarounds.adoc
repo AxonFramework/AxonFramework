@@ -39,7 +39,7 @@ For a full explanation and walkthrough, please check the xref:axon-framework-ref
 
 == Sequence generation issues with JPA Entities
 
-For the JPA entities that require a generated sequence, Axon opted to use the default `@GeneratedValue` annotation back in 2016.
+For the JPA entities that require a generated sequence, we decided to use the default `@GeneratedValue` annotation back in 2016.
 In the pre-Hibernate-6 age, this typically resulted in the construction of a single sequence generator that would be reused by several tables.
 This can already be regarded as suboptimal, as frequently the sequence generator would be reused between tables.
 
