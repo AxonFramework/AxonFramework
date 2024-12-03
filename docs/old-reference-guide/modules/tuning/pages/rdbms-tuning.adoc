@@ -159,7 +159,7 @@ Luckily, that can be done with three easy steps:
 === PostgreSQL Hibernate dialect changes
 
 To adjust the dialect to **not** go for OID, we can enforce the type to BYTEA.
-Since Axon actually stores a byte array in the `@Lob` annotated columns, changing it to a BYTEA type makes sense.
+Since Axon Framework stores a byte array in the `@Lob` annotated columns, changing it to a BYTEA type makes sense.
 
 Down below is a `PostgreSQLDialect` implementation that would get the trick done:
 
