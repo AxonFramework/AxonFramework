@@ -58,9 +58,9 @@ public interface Message<P> extends Serializable {
     String getIdentifier();
 
     /**
-     * Returns the {@link QualifiedName type} of this {@link Message}.
+     * Returns the message {@link QualifiedName name} of this {@link Message}.
      *
-     * @return The {@link QualifiedName type} of this {@link Message}.
+     * @return The message {@link QualifiedName name} of this {@link Message}.
      */
     @Nonnull
     QualifiedName type();
@@ -93,8 +93,7 @@ public interface Message<P> extends Serializable {
      * @return the type of payload.
      * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
      */
-    @Deprecated
-    // TODO #3085 - Replace for getMessageType once fully integrated
+    @Deprecated // TODO #3085 - Replace for getMessageType once fully integrated
     Class<P> getPayloadType();
 
     /**
