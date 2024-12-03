@@ -79,7 +79,7 @@ These gaps may be the result of events becoming visible in a different order, bu
 It is highly recommended to ensure that no gaps exist because of over eagerly increasing the sequence number.
 The mechanism for checking gaps is convenient, but comes with a performance impact.
 
-When using a `JpaEventStorageEngine`, Axon relies on the JPA implementation to create the table structure.
+When using a `JpaEventStorageEngine`, Axon Framework relies on the JPA implementation to create the table structure.
 While this will work, it is unlikely to provide the configuration that has the best performance for the database engine in use.
 That is because Axon Framework uses default settings for the `@GeneratedValue` annotation.
 
