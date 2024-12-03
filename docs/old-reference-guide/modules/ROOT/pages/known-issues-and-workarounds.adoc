@@ -25,16 +25,17 @@ When storing the serialized formats of, for example, xref:axon-framework-referen
 
 This choice combined with link:https://www.postgresql.org/[PostgreSQL] and Hibernate, causes unexpected behavior for most.
 
-PostgeSQL has a feature called link:https://wiki.postgresql.org/wiki/TOAST["TOAST"] to move data rows that are too big to another table.
-This causes rows to contain an OID (object identifier) instead of the data directly.
-Hibernate will default `@Lob` annotated fields to go through this TOAST feature, by mapping to the OID type.
+PostgreSQL has a feature called link:https://www.postgresql.org/docs/current/largeobjects.html["Large Object Storage"], which moves `LOB`, `BLOB`, and `CLOB` columns to a singular large object storage table.
+Instead of the `LOB`/`BLOB`/`CLOB` type, the column will be of type `OID` (object identifier).
+Hences, the rows will contain this `OID` instead of the data directly.
+Hibernate will default `@Lob` annotated fields to go through this Large Object Storage feature, by automatically mapping to the `OID` type.
 
-Hence, all your tokens, sagas, snapshots, and events will automatically move to another table, with all added overhead coming with it.
+Hence, in such a setup, all your serialized tokens, sagas, snapshots, and events will automatically move to another table, with all added overhead coming with it.
 Using xref:axon-server-reference::index.adoc[Axon Server] will, obviously, resolve this for your events and snapshots, as you would no longer use an RDBMS in that case.
 However, even when using Axon Server, the predicament remains for tokens and sagas.
 
 For those cases, it would be wise to adjust the Hibernate mapping.
-The most straightforward way, is to enforce the use of the `bytea` column type; with some additional steps, of course.
+The most straightforward way, is to enforce the use of the `BYTEA` column type; with some additional steps, of course.
 For a full explanation and walkthrough, please check the xref:axon-framework-reference:tuning:rdbms-tuning.adoc#_postgresql_lob_annotated_columns_and_default_hibernate_mapping[PostegreSQL, LOB annotated columns, and default Hibernate mapping] tuning page.
 
 == Sequence generation issues with JPA Entities
