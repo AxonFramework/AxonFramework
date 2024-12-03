@@ -24,9 +24,6 @@ import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.axonframework.common.BuilderUtils.assertNonEmpty;
-import static org.axonframework.common.BuilderUtils.assertThat;
-
 /**
  * Interface describing a qualified name, providing space for a {@link #namespace() namespace},
  * {@link #localName() local name}, and {@link #revision() revision}.
@@ -73,19 +70,30 @@ public record QualifiedName(@Nonnull String namespace,
      * and not empty.
      */
     public QualifiedName {
-        // TODO for these too
-        assertThat(namespace,
-                   n -> StringUtils.nonEmptyOrNull(n) && !n.contains(DELIMITER),
-                   "The given namespace [" + namespace
-                           + "] is unsupported because it is null, empty, or contains a semicolon (:).");
-        assertThat(localName,
-                   l -> StringUtils.nonEmptyOrNull(l) && !l.contains(DELIMITER),
-                   "The given local name [" + localName
-                           + "] is unsupported because it is null, empty, or contains a semicolon (:).");
-        assertThat(revision,
-                   r -> StringUtils.nonEmptyOrNull(r) && !r.contains(DELIMITER),
-                   "The given revision [" + revision
-                           + "] is unsupported because it is null, empty, or contains a semicolon (:).");
+        Assert.assertThat(
+                namespace,
+                n -> StringUtils.nonEmptyOrNull(n) && !n.contains(DELIMITER),
+                () -> new IllegalArgumentException(
+                        "The given namespace [" + namespace
+                                + "] is unsupported because it is null, empty, or contains a semicolon (:)."
+                )
+        );
+        Assert.assertThat(
+                localName,
+                l -> StringUtils.nonEmptyOrNull(l) && !l.contains(DELIMITER),
+                () -> new IllegalArgumentException(
+                        "The given local name [" + localName
+                                + "] is unsupported because it is null, empty, or contains a semicolon (:)."
+                )
+        );
+        Assert.assertThat(
+                revision,
+                r -> StringUtils.nonEmptyOrNull(r) && !r.contains(DELIMITER),
+                () -> new IllegalArgumentException(
+                        "The given revision [" + revision
+                                + "] is unsupported because it is null, empty, or contains a semicolon (:)."
+                )
+        );
     }
 
     /**
@@ -102,10 +110,10 @@ public record QualifiedName(@Nonnull String namespace,
      * @return A reconstructed {@link QualifiedName} based on the expected output of {@link QualifiedName#toString()}.
      */
     public static QualifiedName fromString(@Nonnull String s) {
-        // TODO add Assert.nonempty
-        assertNonEmpty(s, "Cannot construct a QualifiedName based on a null or empty String.");
+        Assert.nonEmpty(s, "Cannot construct a QualifiedName based on a null or empty String.");
         Matcher matcher = SIMPLE_STRING_PATTERN.matcher(s);
-        Assert.isTrue(matcher.matches(), () -> "The given simple String [" + s + "] does not match the expected pattern.");
+        Assert.isTrue(matcher.matches(),
+                      () -> "The given simple String [" + s + "] does not match the expected pattern.");
 
         return new QualifiedName(matcher.group(NAMESPACE_GROUP),
                                  matcher.group(LOCAL_NAME_GROUP),
