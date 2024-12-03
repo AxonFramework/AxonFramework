@@ -44,7 +44,7 @@ In the pre-Hibernate-6 age, this typically resulted in the construction of a sin
 This can be regarded as suboptimal, as frequently, the sequence generator would be reused between tables.
 
 Especially given the nature of the `global_index` column on the `domain_event_entry` table, which is used to keep the progress in xref:axon-framework-reference:events:event-processors/streaming.adoc[streaming event processors], a reused generator, causes unexpected gaps in event processing.
-Although Axon can deal with these gaps, they do make the queries to the `domain_event_entry` table rather bulky.
+Although Axon Framework can deal with these gaps, they make the queries to the `domain_event_entry` table rather bulky.
 
 Just as with any event storage solution, using a dedicated event store implementation like xref:axon-server-reference::index.adoc[Axon Server] will solve the problem entirely.
 Instead of using Axon Server, it is also possible to define sequence generators manually for Axon's entities.
