@@ -114,20 +114,23 @@ This can be ensured by specifying a different sequence generator for that entity
 
 == PostgreSQL, `@LOB`-annotated columns, and default Hibernate mapping
 
-Specific to link:https://www.postgresql.org/[PostgreSQL] is its link:https://wiki.postgresql.org/wiki/TOAST[TOAST] functionality.
+Specific to link:https://www.postgresql.org/[PostgreSQL] is its link:https://www.postgresql.org/docs/current/storage-toast.html[TOAST] and link:https://www.postgresql.org/docs/current/largeobjects.html[Large Object Storage] functionality.
 TOAST stands for "the oversized attribute storage technique," ensuring columns that are (by default) larger than 8KB are:
 
-1. Compressed **if** possible.
-If this is insufficient,
+1. Compressed **if** possible. If this is insufficient,
 2. the wide columns is broken into chunks and moved to another table.
 
-Any field that is moved out of line to this _other_ "large object storage table" will be replaced by an OID field.
-This "object identifier" will allow the main table to point to the actual data in the large object storage table.
+Any field that is moved out of line to this _other_ "TOAST-table" will transparently be replaced by out-of-line identifiers.
+Furthermore, TOASTing is only supported for PostgreSQL data types like `BYTEA` or `TEXT`.
 
-Although this is a very useful feature for PostgreSQL users to help with large row sizes, it has some impact too, being:
+Large Object Storage takes a slightly different route, as instead, it uses a fixed `OID` column type.
+This "object identifier" will allow the main table to point to the actual data in a "large object storage table."
+The Large Object Storage route will be traversed whenever a column type is a `LOB`, `BLOB`, or `CLOB`.
+
+Although the Large Object Storage is a very useful feature from PostgreSQL to help with large objects, it has some impact too, being:
 
 1. There is some added overhead when reading data, as the original and the large object table should be read.
-2. Removing an object that has a TOAST-ed field does not automatically remove it from the large object table.
+2. Removing an object that has an OID column *does not* automatically remove it from the large object table.
 3. Manually querying the table will result in an OID column instead of the actual data being shown.
 
 Let us look how this behavior from PostgreSQL combines with Axon Framework when combined with JPA and Hibernate.
@@ -140,7 +143,7 @@ Axon Framework uses the `@Lob` in several columns and tables for its JPA-based s
 * The `serialized_saga` column in the `saga_entry` table.
 * The `diagnostics`, `payload`, `metadata`, and `token` column in the `dead_letter_entry` table.
 
-Furthermore, Hibernate will by default use the aforementioned OID-type whenever an `@Lob` annotation is found.
+Furthermore, Hibernate will by default use the aforementioned `OID` type whenever an `@Lob` annotation is found.
 Thus, the dedicate large object storage solution will be used if you are using PostgreSQL to store events, snapshots, tokens, sagas, and dead letters.
 
 As events and snapshots are frequently read, the overhead predicament discussed earlier will be hit.
@@ -149,8 +152,11 @@ But arguably more problematic is issue two, especially for the `token_entry` tab
 The "claim" on a token is very frequently updated to allow correct collaboration in a distributed Axon setup (please read our xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[Tracking Tokens] section for more details).
 As the large object table is **not** automatically cleared, it will eventually overflow through all the updates.
 
-Hence, it would be best to avoid this "enforced" TOAST behavior through Hibernate's default settings.
-Luckily, that can be done with three easy steps:
+Hence, it would be best to avoid the Large Object Storage behavior and instead opt for the transparent TOAST feature.
+We can achieve this by adjusting Hibernate's settings, to map the `@Lob` annotated fields to the `BYTEA` type.
+Since Axon Framework stores a byte array in each of the `@Lob` annotated columns, changing it to the `BYTEA` type makes sense.
+
+Luckily, changing these settings can be done with three easy steps:
 
 . Adjust the Hibernate dialect.
 . Override the Hibernate mapping.
@@ -158,8 +164,7 @@ Luckily, that can be done with three easy steps:
 
 === PostgreSQL Hibernate dialect changes
 
-To adjust the dialect to **not** go for OID, we can enforce the type to BYTEA.
-Since Axon Framework stores a byte array in the `@Lob` annotated columns, changing it to a BYTEA type makes sense.
+To adjust the dialect to **not** go for OID, we can enforce the type to `BYTEA` by providing a custom dialect.
 
 Down below is a `PostgreSQLDialect` implementation that would get the trick done:
 
