@@ -66,7 +66,7 @@ Here, again, a shorter (but variable) length field should suffice.
 [#auto_increment_and_sequences]
 :navtitle: Auto-Increment and Sequences
 
-When using a relational database as an event store, Axon relies on an auto-increment value to allow xref:axon-framework-reference:events:event-processors/streaming.adoc[streaming event processors] to read all events roughly in the order they were inserted.
+When using a relational database as an event store, Axon Framework relies on an auto-increment value to allow xref:axon-framework-reference:events:event-processors/streaming.adoc[streaming event processors] to read all events roughly in the order they were inserted.
 We say "roughly", because "insert-order" and "commit-order" are different things.
 
 While auto-increment values are (generally) generated at insert-time, these values only become visible at commit-time.
