@@ -81,7 +81,7 @@ The mechanism for checking gaps is convenient, but comes with a performance impa
 
 When using a `JpaEventStorageEngine`, Axon relies on the JPA implementation to create the table structure.
 While this will work, it is unlikely to provide the configuration that has the best performance for the database engine in use.
-That is because Axon uses default settings for the `@GeneratedValue` annotation.
+That is because Axon Framework uses default settings for the `@GeneratedValue` annotation.
 
 [WARNING]
 ====
