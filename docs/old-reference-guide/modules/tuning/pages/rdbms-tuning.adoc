@@ -127,7 +127,7 @@ Large Object Storage takes a slightly different route, as instead, it uses a fix
 This "object identifier" will allow the main table to point to the actual data in a "large object storage table."
 The Large Object Storage route will be traversed whenever a column type is a `LOB`, `BLOB`, or `CLOB`.
 
-Although the Large Object Storage is a very useful feature from PostgreSQL to help with large objects, it has some impact too, being:
+Although the Large Object Storage is a useful feature from PostgreSQL to help with large objects, it has some impact too, being:
 
 1. There is some added overhead when reading data, as the original and the large object table should be read.
 2. Removing an object that has an OID column *does not* automatically remove it from the large object table.
@@ -147,9 +147,9 @@ Furthermore, Hibernate will by default use the aforementioned `OID` type wheneve
 Thus, the dedicate large object storage solution will be used if you are using PostgreSQL to store events, snapshots, tokens, sagas, and dead letters.
 
 As events and snapshots are frequently read, the overhead predicament discussed earlier will be hit.
-But arguably more problematic is issue two, especially for the `token_entry` table.
+Arguably more problematic is issue two, especially for the `token_entry` table.
 
-The "claim" on a token is very frequently updated to allow correct collaboration in a distributed Axon setup (please read our xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[Tracking Tokens] section for more details).
+The "claim" on a token is frequently updated to allow correct collaboration in a distributed Axon setup (please read our xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[Tracking Tokens] section for more details).
 As the large object table is **not** automatically cleared, it will eventually overflow through all the updates.
 
 Hence, it would be best to avoid the Large Object Storage behavior and instead opt for the transparent TOAST feature.
@@ -162,7 +162,7 @@ Luckily, changing these settings can be done with three easy steps:
 . Override the Hibernate mapping.
 . [Optional] Migrate existing columns from OID to BYTEA.
 
-=== PostgreSQL Hibernate dialect changes
+=== Hibernate dialect changes
 
 To adjust the dialect to **not** go for OID, we can enforce the type to `BYTEA` by providing a custom dialect.
 
