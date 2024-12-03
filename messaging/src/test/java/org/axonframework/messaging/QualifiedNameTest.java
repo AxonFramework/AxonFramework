@@ -31,7 +31,7 @@ class QualifiedNameTest {
 
     private static final String NAMESPACE = "namespace";
     private static final String LOCAL_NAME = "localName";
-    private static final String REVISION = "revision";
+    private static final String REVISION = "0.0.1";
 
     @Test
     void containsDataAsExpected() {
@@ -94,7 +94,7 @@ class QualifiedNameTest {
     void toStringReturnsAsExpected() {
         QualifiedName testSubject = new QualifiedName(NAMESPACE, LOCAL_NAME, REVISION);
 
-        assertEquals("namespace:localName:revision", testSubject.toString());
+        assertEquals("namespace:localName:0.0.1", testSubject.toString());
     }
 
     @Test
