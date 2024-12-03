@@ -380,7 +380,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         public Builder<T> creationPolicyAggregateFactory(
                 CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory
         ) {
-            assertNonNull(creationPolicyAggregateFactory, "CreationPolicyAggregateFactory may not be null");
             this.creationPolicyAggregateFactory = creationPolicyAggregateFactory;
             return this;
         }
