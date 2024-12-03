@@ -1,7 +1,7 @@
 = Tuning
 :page-aliases: README.adoc
 
-The Axon framework provides capabilities to tune the performance for your Axon applications.
+Axon framework provides capabilities to tune the performance of your Axon applications.
 This includes capabilities to take event snapshots, segment tuning, command processing, and general RDBMS tuning suggestions.
 This section of the documentation intends to cover in detail the capabilities that the Axon Framework provides to help tune your Axon applications.
 
