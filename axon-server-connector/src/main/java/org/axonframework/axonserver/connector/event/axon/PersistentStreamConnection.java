@@ -59,8 +59,8 @@ import static io.axoniq.axonserver.connector.event.PersistentStreamSegment.PENDI
  */
 public class PersistentStreamConnection {
 
-    public static final int MAX_RETRY_INTERVAL_SECONDS = 60;
-    public static final int MIN_RETRY_INTERVAL_SECONDS = 1;
+    private static final int MAX_RETRY_INTERVAL_SECONDS = 60;
+    private static final int MIN_RETRY_INTERVAL_SECONDS = 1;
     private final Logger logger = LoggerFactory.getLogger(PersistentStreamConnection.class);
 
     private static final int MAX_MESSAGES_PER_RUN = 10_000;
