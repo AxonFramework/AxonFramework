@@ -2,7 +2,7 @@
 :navtitle: Known Issues and Workarounds
 
 As with any tool, library, or framework, there are well-known issues you might find with Axon Framework.
-Especially since Axon Framework integrates with many other tools, it becomes rough to deal with everything.
+Since Axon Framework integrates with many other tools, it is challenging to find the perfect solution for every scenario.
 
 This page provides the biggest "gotchas," with optional workarounds.
 
