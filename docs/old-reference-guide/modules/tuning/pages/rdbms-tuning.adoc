@@ -71,7 +71,7 @@ We say "roughly", because "insert-order" and "commit-order" are different things
 
 While auto-increment values are (generally) generated at insert-time, these values only become visible at commit-time.
 This means another process may observe these sequence numbers arriving in a different order.
-While Axon has mechanisms to ensure eventually all events are handled, even when they become visible in a different order, there are limitations and performance aspects to consider.
+While Axon Framework has mechanisms to ensure that eventually all events are handled, even when they become visible in a different order, there are limitations and performance aspects to consider.
 
 When a xref:axon-framework-reference:events:event-processors/streaming.adoc[streaming event processor] reads events, it uses the "global sequence" to track its progress.
 When events become available in a different order than they were inserted, Axon will encounter a "gap." Axon will remember these "gaps" to verify that data has become available since the last read.
