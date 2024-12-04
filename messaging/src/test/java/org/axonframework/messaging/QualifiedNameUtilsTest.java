@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,9 +28,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class QualifiedNameUtilsTest {
 
     @Test
-    void fromClassNameThrowsAxonConfigurationExceptionForNullClass() {
+    void fromClassNameThrowsIllegalArgumentExceptionForNullClass() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromClassName(null));
+        assertThrows(IllegalArgumentException.class, () -> QualifiedNameUtils.fromClassName(null));
     }
 
     @Test
@@ -46,19 +45,19 @@ class QualifiedNameUtilsTest {
     }
 
     @Test
-    void fromDottedNameThrowsAxonConfigurationExceptionForNullFromDottedName() {
+    void fromDottedNameThrowsIllegalArgumentExceptionForNullFromDottedName() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromDottedName(null));
+        assertThrows(IllegalArgumentException.class, () -> QualifiedNameUtils.fromDottedName(null));
     }
 
     @Test
-    void fromDottedNameThrowsAxonConfigurationExceptionForEmptyFromDottedName() {
-        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromDottedName(""));
+    void fromDottedNameThrowsIllegalArgumentExceptionForEmptyFromDottedName() {
+        assertThrows(IllegalArgumentException.class, () -> QualifiedNameUtils.fromDottedName(""));
     }
 
     @Test
-    void fromDottedNameThrowsAxonConfigurationExceptionForEmptyLocalNamePart() {
-        assertThrows(AxonConfigurationException.class, () -> QualifiedNameUtils.fromDottedName("my.context."));
+    void fromDottedNameThrowsIllegalArgumentExceptionForEmptyLocalNamePart() {
+        assertThrows(IllegalArgumentException.class, () -> QualifiedNameUtils.fromDottedName("my.context."));
     }
 
     @Test
