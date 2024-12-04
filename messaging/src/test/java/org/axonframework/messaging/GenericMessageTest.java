@@ -63,14 +63,14 @@ class GenericMessageTest {
     @Test
     void containsDataAsExpected() {
         String testIdentifier = "testIdentifier";
-        QualifiedName testType = new QualifiedName("test", "message", "0.0.1");
+        QualifiedName testName = new QualifiedName("test", "message", "0.0.1");
         String testPayload = "payload";
         MetaData testMetaData = MetaData.emptyInstance();
 
-        Message<String> testSubject = new GenericMessage<>(testIdentifier, testType, testPayload, testMetaData);
+        Message<String> testSubject = new GenericMessage<>(testIdentifier, testName, testPayload, testMetaData);
 
         assertEquals(testIdentifier, testSubject.getIdentifier());
-        assertEquals(testType, testSubject.type());
+        assertEquals(testName, testSubject.name());
         assertEquals(testPayload, testSubject.getPayload());
         assertEquals(testMetaData, testSubject.getMetaData());
     }
