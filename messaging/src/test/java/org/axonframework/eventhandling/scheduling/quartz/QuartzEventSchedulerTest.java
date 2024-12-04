@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.utils.AssertUtils;
@@ -42,7 +42,6 @@ import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -227,6 +226,6 @@ class QuartzEventSchedulerTest {
     }
 
     private EventMessage<Object> buildTestEvent() {
-        return new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new Object());
+        return new GenericEventMessage<>(new QualifiedName("test", "message", "0.0.1"), new Object());
     }
 }

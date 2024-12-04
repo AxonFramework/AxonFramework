@@ -18,14 +18,13 @@ package org.axonframework.tracing;
 
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.Arrays;
 import java.util.function.Supplier;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -37,7 +36,8 @@ class MultiSpanFactoryTest {
     private final Span mockSpan2 = mock(Span.class);
     private final SpanFactory multiSpanFactory = new MultiSpanFactory(Arrays.asList(spanFactory1, spanFactory2));
 
-    private final GenericEventMessage<?> message = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "payload");
+    private final GenericEventMessage<?> message =
+            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "payload");
     private final Supplier<String> stringSupplier = () -> "Trace";
 
     @Test

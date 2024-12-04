@@ -46,7 +46,7 @@ import static java.lang.String.format;
 public class DbSchedulerBinaryDeadlineDetails implements Serializable {
 
     private String d;
-    private String t;
+    private String n;
     private byte[] s;
     private String sc;
     private byte[] p;
@@ -62,8 +62,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      * Creates a new {@link DbSchedulerBinaryDeadlineDetails} object, likely based on a {@link DeadlineMessage}.
      *
      * @param deadlineName         The {@link String} with the name of the deadline.
-     * @param type                 The {@link DeadlineMessage#type()} of the deadline as a
-     *                             {@link QualifiedName#toSimpleString()}.
+     * @param name                 The {@link DeadlineMessage#name()} of the deadline.
      * @param scopeDescriptor      The {@link String} which tells what the scope is of the deadline.
      * @param scopeDescriptorClass The {@link String} which tells what the class of the scope descriptor is.
      * @param payload              The {@link String} with the payload. This can be null.
@@ -73,7 +72,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      */
     @SuppressWarnings("squid:S107")
     public DbSchedulerBinaryDeadlineDetails(@Nonnull String deadlineName,
-                                            @Nonnull String type,
+                                            @Nonnull String name,
                                             @Nonnull byte[] scopeDescriptor,
                                             @Nonnull String scopeDescriptorClass,
                                             @Nullable byte[] payload,
@@ -81,7 +80,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
                                             @Nullable String payloadRevision,
                                             @Nullable byte[] metaData) {
         this.d = deadlineName;
-        this.t = type;
+        this.n = name;
         this.s = scopeDescriptor;
         this.sc = scopeDescriptorClass;
         this.p = payload;
@@ -111,7 +110,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
         SerializedObject<byte[]> serializedMetaData = serializer.serialize(message.getMetaData(), byte[].class);
 
         return new DbSchedulerBinaryDeadlineDetails(deadlineName,
-                                                    message.type().toSimpleString(),
+                                                    message.name().toString(),
                                                     serializedDescriptor.getData(),
                                                     serializedDescriptor.getType().getName(),
                                                     serializedPayload.getData(),
@@ -130,12 +129,12 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
     }
 
     /**
-     * Returns the {@link DeadlineMessage#type()} of this deadline as a {@link String}.
+     * Returns the {@link DeadlineMessage#name()} of this deadline.
      *
-     * @return The {@link DeadlineMessage#type()} of this deadline as a {@link String}.
+     * @return The {@link DeadlineMessage#name()} of this deadline.
      */
-    public String getT() {
-        return t;
+    public String getN() {
+        return n;
     }
 
     /**
@@ -201,7 +200,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
     @SuppressWarnings("rawtypes")
     public GenericDeadlineMessage asDeadLineMessage(Serializer serializer) {
         return new GenericDeadlineMessage<>(d,
-                                            QualifiedName.simpleStringName(t),
+                                            QualifiedName.fromString(n),
                                             getDeserializedPayload(serializer),
                                             getDeserializedMetaData(serializer));
     }
@@ -233,19 +232,19 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
     @Override
     public String toString() {
         return format("DbScheduler deadline details, deadlineName: [%s], " +
-                              "type: [%s], " +
+                              "name: [%s], " +
                               "scopeDescriptor: [%s], " +
                               "scopeDescriptorClass: [%s], " +
                               "payload: [%s], " +
                               "payloadClass: [%s], " +
                               "payloadRevision: [%s], " +
                               "metadata: [%s]",
-                      d, t, Arrays.toString(s), sc, Arrays.toString(p), pc, r, Arrays.toString(m));
+                      d, n, Arrays.toString(s), sc, Arrays.toString(p), pc, r, Arrays.toString(m));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(d, t, Arrays.hashCode(s), sc, Arrays.hashCode(p), pc, r, Arrays.hashCode(m));
+        return Objects.hash(d, n, Arrays.hashCode(s), sc, Arrays.hashCode(p), pc, r, Arrays.hashCode(m));
     }
 
     @Override
@@ -258,7 +257,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
         }
         final DbSchedulerBinaryDeadlineDetails other = (DbSchedulerBinaryDeadlineDetails) obj;
         return Objects.equals(this.d, other.d) &&
-                Objects.equals(this.t, other.t) &&
+                Objects.equals(this.n, other.n) &&
                 Arrays.equals(this.s, other.s) &&
                 Objects.equals(this.sc, other.sc) &&
                 Arrays.equals(this.p, other.p) &&

@@ -23,8 +23,9 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -58,7 +59,6 @@ import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -230,7 +230,9 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
         AtomicLong payload = new AtomicLong();
 
-        inspector.publish(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), payload), new SomeSubclass());
+        EventMessage<AtomicLong> testEvent =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
+        inspector.publish(testEvent, new SomeSubclass());
 
         assertEquals(2L, payload.get());
     }
@@ -240,7 +242,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
-        GenericCommandMessage<?> message = new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), BigDecimal.ONE);
+        CommandMessage<?> message =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), BigDecimal.ONE);
         SomeSubclass target = new SomeSubclass();
         MessageHandlingMember<? super SomeSubclass> handler = getHandler(inspector, message);
         assertEquals("1", handler.handleSync(message, target));

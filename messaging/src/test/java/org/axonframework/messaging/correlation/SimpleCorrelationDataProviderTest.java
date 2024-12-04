@@ -18,14 +18,13 @@ package org.axonframework.messaging.correlation;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Collections.singletonMap;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleCorrelationDataProviderTest {
@@ -36,7 +35,8 @@ class SimpleCorrelationDataProviderTest {
         metaData.put("key1", "value1");
         metaData.put("key2", "value2");
         metaData.put("key3", "value3");
-        Message<String> message = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "payload", metaData);
+        Message<String> message =
+                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "payload", metaData);
 
         assertEquals(singletonMap("key1", "value1"),
                      new SimpleCorrelationDataProvider("key1").correlationDataFor(message));

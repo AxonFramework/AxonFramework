@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -64,7 +63,7 @@ class GenericMessageTest {
     @Test
     void containsDataAsExpected() {
         String testIdentifier = "testIdentifier";
-        QualifiedName testType = fromDottedName("test.message");
+        QualifiedName testType = new QualifiedName("test", "message", "0.0.1");
         String testPayload = "payload";
         MetaData testMetaData = MetaData.emptyInstance();
 
@@ -78,13 +77,12 @@ class GenericMessageTest {
 
     @Test
     void correlationDataAddedToNewMessage() {
-        Message<Object> testMessage = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"),
-                                                           new Object());
+        Message<Object> testMessage = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), new Object());
         assertEquals(correlationData, new HashMap<>(testMessage.getMetaData()));
 
         MetaData newMetaData = MetaData.from(Collections.singletonMap("whatever", new Object()));
         Message<Object> testMessageWithMetaData =
-                new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), new Object(), newMetaData);
+                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), new Object(), newMetaData);
         assertEquals(newMetaData.mergedWith(correlationData), testMessageWithMetaData.getMetaData());
     }
 
@@ -92,9 +90,8 @@ class GenericMessageTest {
     void messageSerialization() throws IOException {
         Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
 
-        Message<String> message = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"),
-                                                       "payload",
-                                                       metaDataMap);
+        Message<String> message =
+                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "payload", metaDataMap);
 
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
 
@@ -113,13 +110,14 @@ class GenericMessageTest {
 
     @Test
     void whenCorrelationDataProviderThrowsException_thenCatchException() {
-        unitOfWork = new DefaultUnitOfWork<>(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.message"),
-                                                                       "Input 1"));
+        unitOfWork = new DefaultUnitOfWork<>(
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Input 1")
+        );
         CurrentUnitOfWork.set(unitOfWork);
         unitOfWork.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
         CannotConvertBetweenTypesException exception = new CannotConvertBetweenTypesException("foo");
 
-        Message<?> result = new GenericMessage<>(fromDottedName("test.exception"), exception);
+        Message<?> result = new GenericMessage<>(new QualifiedName("test", "exception", "0.0.1"), exception);
 
         assertNotNull(result);
     }

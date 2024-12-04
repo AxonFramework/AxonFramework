@@ -18,7 +18,7 @@ package org.axonframework.messaging.responsetypes;
 
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.junit.jupiter.api.*;
@@ -26,16 +26,15 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConvertingResponseMessageTest {
 
     @Test
     void payloadIsConvertedToExpectedType() {
-        QueryResponseMessage<?> msg =
-                new GenericQueryResponseMessage<>(QualifiedNameUtils.fromDottedName("test.query"), new String[]{"Some string result"})
-                        .withMetaData(MetaData.with("test", "value"));
+        QueryResponseMessage<?> msg = new GenericQueryResponseMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), new String[]{"Some string result"}
+        ).withMetaData(MetaData.with("test", "value"));
         QueryResponseMessage<List<String>> wrapped =
                 new ConvertingResponseMessage<>(ResponseTypes.multipleInstancesOf(String.class), msg);
 

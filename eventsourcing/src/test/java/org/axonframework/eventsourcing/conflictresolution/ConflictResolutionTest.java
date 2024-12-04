@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.conflictresolution;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -27,7 +27,6 @@ import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -37,7 +36,7 @@ class ConflictResolutionTest {
     private ConflictResolution subject;
     private ConflictResolver conflictResolver;
     private final CommandMessage<String> commandMessage =
-            new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "test");
+            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
 
     @BeforeEach
     void setUp() throws Exception {

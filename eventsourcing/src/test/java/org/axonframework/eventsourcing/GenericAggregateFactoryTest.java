@@ -20,12 +20,11 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.eventsourcing.utils.StubAggregate;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -45,8 +44,9 @@ class GenericAggregateFactoryTest {
     void initializeRepository_ConstructorNotCallable() {
         GenericAggregateFactory<ExceptionThrowingAggregate> factory =
                 new GenericAggregateFactory<>(ExceptionThrowingAggregate.class);
-        DomainEventMessage<Object> testEvent =
-                new GenericDomainEventMessage<>("type", "", 0, QualifiedNameUtils.fromDottedName("test.event"), new Object());
+        DomainEventMessage<Object> testEvent = new GenericDomainEventMessage<>(
+                "type", "", 0, new QualifiedName("test", "event", "0.0.1"), new Object()
+        );
         try {
             factory.createAggregateRoot(UUID.randomUUID().toString(), testEvent);
             fail("Expected IncompatibleAggregateException");
@@ -59,7 +59,7 @@ class GenericAggregateFactoryTest {
     void initializeFromAggregateSnapshot() {
         StubAggregate aggregate = new StubAggregate("stubId");
         DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(
-                "type", aggregate.getIdentifier(), 2, QualifiedNameUtils.fromDottedName("test.snapshot"), aggregate
+                "type", aggregate.getIdentifier(), 2, new QualifiedName("test", "event", "0.0.1"), aggregate
         );
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<>(StubAggregate.class);
         assertSame(aggregate, factory.createAggregateRoot(aggregate.getIdentifier(), snapshotMessage));
@@ -72,7 +72,7 @@ class GenericAggregateFactoryTest {
     void initializeFromAggregateSnapshot_AvoidCallingDoCreateAggregate() {
         StubAggregate aggregate = new StubAggregate("stubId");
         DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(
-                "type", aggregate.getIdentifier(), 2, QualifiedNameUtils.fromDottedName("test.snapshot"), aggregate
+                "type", aggregate.getIdentifier(), 2, new QualifiedName("test", "event", "0.0.1"), aggregate
         );
         AggregateFactory<StubAggregate> factory = new RogueAggregateFactory(StubAggregate.class);
         assertSame(aggregate, factory.createAggregateRoot(aggregate.getIdentifier(), snapshotMessage));

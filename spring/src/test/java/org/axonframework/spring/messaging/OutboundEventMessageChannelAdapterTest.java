@@ -19,14 +19,13 @@ package org.axonframework.spring.messaging;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.spring.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
 import static java.util.Collections.singletonList;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.mockito.Mockito.*;
 
 /**
@@ -51,7 +50,9 @@ class OutboundEventMessageChannelAdapterTest {
     @Test
     void messageForwardedToChannel() {
         StubDomainEvent event = new StubDomainEvent();
-        testSubject.handle(singletonList(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), event)));
+        EventMessage<StubDomainEvent> testMessage =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), event);
+        testSubject.handle(singletonList(testMessage));
 
         verify(mockChannel).send(messageWithPayload(event));
     }
@@ -73,7 +74,7 @@ class OutboundEventMessageChannelAdapterTest {
     }
 
     private EventMessage<String> newDomainEvent() {
-        return new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "Mock");
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Mock");
     }
 
     private Message<?> messageWithPayload(final StubDomainEvent event) {

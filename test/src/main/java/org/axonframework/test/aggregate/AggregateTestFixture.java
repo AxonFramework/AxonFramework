@@ -1042,7 +1042,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                                     aggregateIdentifier,
                                                                     oldEvent.getSequenceNumber(),
                                                                     oldEvent.getIdentifier(),
-                                                                    oldEvent.type(),
+                                                                    oldEvent.name(),
                                                                     oldEvent.getPayload(),
                                                                     oldEvent.getMetaData(),
                                                                     oldEvent.getTimestamp()));

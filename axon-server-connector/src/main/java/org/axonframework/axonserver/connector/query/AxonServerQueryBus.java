@@ -375,7 +375,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                       R newPayload,
                                                       Class<R> expectedPayloadType) {
         GenericMessage<R> delegate = new GenericMessage<>(original.getIdentifier(),
-                                                          original.type(),
+                                                          original.name(),
                                                           newPayload,
                                                           original.getMetaData(),
                                                           expectedPayloadType);

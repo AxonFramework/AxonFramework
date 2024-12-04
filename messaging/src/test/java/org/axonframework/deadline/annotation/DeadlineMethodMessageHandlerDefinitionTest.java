@@ -19,12 +19,11 @@ package org.axonframework.deadline.annotation;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class DeadlineMethodMessageHandlerDefinitionTest {
@@ -40,7 +39,9 @@ class DeadlineMethodMessageHandlerDefinitionTest {
 
     @Test
     void deadlineManagerIsEvaluatedBeforeGenericEventHandler() throws Exception {
-        handlerAdapter.handleSync(new GenericDeadlineMessage<>("someDeadline", QualifiedNameUtils.fromDottedName("test.deadline"), "test"));
+        handlerAdapter.handleSync(new GenericDeadlineMessage<>(
+                "someDeadline", new QualifiedName("test", "deadline", "0.0.1"), "test"
+        ));
 
         assertThat("Deadline handler is invoked", listener.deadlineCounter.get() == 1);
         assertThat("Event handler was not invoked", listener.eventCounter.get() == 0);
@@ -48,7 +49,9 @@ class DeadlineMethodMessageHandlerDefinitionTest {
 
     @Test
     void namedDeadlineManagerIsEvaluatedBeforeGenericOne() throws Exception {
-        handlerAdapter.handleSync(new GenericDeadlineMessage<>("specificDeadline", QualifiedNameUtils.fromDottedName("test.deadline"), "test"));
+        handlerAdapter.handleSync(new GenericDeadlineMessage<>(
+                "specificDeadline", new QualifiedName("test", "deadline", "0.0.1"), "test"
+        ));
 
         assertThat("Generic Deadline handler was not invoked", listener.deadlineCounter.get() == 0);
         assertThat("Specific Deadline handler was invoked", listener.specificDeadlineCounter.get() == 1);

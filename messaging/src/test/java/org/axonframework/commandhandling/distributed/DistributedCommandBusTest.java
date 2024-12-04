@@ -27,7 +27,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -37,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -56,7 +55,7 @@ class DistributedCommandBusTest {
 
     @BeforeEach
     void setUp() {
-        commandMessage = new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "test");
+        commandMessage = new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
         connector = new StubConnector();
         delegate = new SimpleCommandBus();
         testSubject = new DistributedCommandBus(delegate, connector);
@@ -82,7 +81,7 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreDelegatedToSubscribedHandlers() {
-        GenericMessage<String> okMessage = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "OK");
+        GenericMessage<String> okMessage = new GenericMessage<>(new QualifiedName("test", "command", "0.0.1"), "OK");
         testSubject.subscribe(String.class.getName(), new MessageHandler<>() {
             @Override
             public Object handleSync(CommandMessage<?> message) {
@@ -103,7 +102,7 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreRejectedForCancelledHandlerSubscription() {
-        GenericMessage<String> okMessage = new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "OK");
+        GenericMessage<String> okMessage = new GenericMessage<>(new QualifiedName("test", "command", "0.0.1"), "OK");
         Registration registration = testSubject.subscribe(String.class.getName(),
                                                           new MessageHandler<>() {
                                                               @Override

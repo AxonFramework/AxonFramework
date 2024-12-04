@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.mockito.Mockito.*;
 
 /**
@@ -57,7 +56,7 @@ class EventCountSnapshotTriggerDefinitionTest {
         mockSnapshotter = mock(Snapshotter.class);
         testSubject = new EventCountSnapshotTriggerDefinition(mockSnapshotter, 3);
         aggregateIdentifier = "aggregateIdentifier";
-        DefaultUnitOfWork.startAndGet(new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "test"));
+        DefaultUnitOfWork.startAndGet(new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test"));
         aggregate = AnnotatedAggregate.initialize(
                 new StubAggregate(aggregateIdentifier),
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(StubAggregate.class),
@@ -76,7 +75,7 @@ class EventCountSnapshotTriggerDefinitionTest {
     void snapshotterTriggeredOnUnitOfWorkCleanup() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.eventHandled(testEvent);
         trigger.eventHandled(testEvent);
@@ -95,7 +94,7 @@ class EventCountSnapshotTriggerDefinitionTest {
     void snapshotterTriggeredOnUnitOfWorkCommit() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.initializationFinished();
         trigger.eventHandled(testEvent);
@@ -112,7 +111,7 @@ class EventCountSnapshotTriggerDefinitionTest {
     void snapshotterIsNotTriggeredOnUnitOfWorkRollbackIfEventsHandledAfterInitialization() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.initializationFinished();
         trigger.eventHandled(testEvent);
@@ -129,7 +128,7 @@ class EventCountSnapshotTriggerDefinitionTest {
     void snapshotterTriggeredOnUnitOfWorkRollbackWhenEventsHandledBeforeInitialization() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.eventHandled(testEvent);
         trigger.eventHandled(testEvent);
@@ -146,7 +145,7 @@ class EventCountSnapshotTriggerDefinitionTest {
     void snapshotterNotTriggered() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.eventHandled(testEvent);
         trigger.eventHandled(testEvent);
@@ -161,7 +160,7 @@ class EventCountSnapshotTriggerDefinitionTest {
     void counterDoesNotResetWhenSerialized() throws IOException, ClassNotFoundException {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.eventHandled(testEvent);
         trigger.eventHandled(testEvent);

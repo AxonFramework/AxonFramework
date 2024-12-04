@@ -23,12 +23,11 @@ import jakarta.validation.constraints.Pattern;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -54,7 +53,9 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateSimpleObject() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "Simple instance"));
+        uow.transformMessage(m -> new GenericMessage<>(
+                new QualifiedName("test", "message", "0.0.1"), "Simple instance"
+        ));
 
         testSubject.handle(uow, interceptorChain);
 
@@ -63,7 +64,9 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_IllegalNullValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), new JSR303AnnotatedInstance(null)));
+        uow.transformMessage(m -> new GenericMessage<>(
+                new QualifiedName("test", "message", "0.0.1"), new JSR303AnnotatedInstance(null)
+        ));
         try {
             testSubject.handle(uow, interceptorChain);
             fail("Expected exception");
@@ -75,7 +78,9 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_LegalValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), new JSR303AnnotatedInstance("abc")));
+        uow.transformMessage(m -> new GenericMessage<>(
+                new QualifiedName("test", "message", "0.0.1"), new JSR303AnnotatedInstance("abc")
+        ));
 
         testSubject.handle(uow, interceptorChain);
 
@@ -84,7 +89,9 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_IllegalValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), new JSR303AnnotatedInstance("bea")));
+        uow.transformMessage(m -> new GenericMessage<>(
+                new QualifiedName("test", "message", "0.0.1"), new JSR303AnnotatedInstance("bea")
+        ));
 
         try {
             testSubject.handle(uow, interceptorChain);
@@ -98,7 +105,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void customValidatorFactory() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<Object>(QualifiedNameUtils.fromDottedName("test.message"),
+        uow.transformMessage(m -> new GenericMessage<Object>(new QualifiedName("test", "message", "0.0.1"),
                                                              new JSR303AnnotatedInstance("abc")));
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());
         testSubject = new BeanValidationInterceptor<>(mockValidatorFactory);

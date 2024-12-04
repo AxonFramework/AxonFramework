@@ -20,12 +20,11 @@ import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.eventsourcing.utils.TestSerializer;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -39,7 +38,7 @@ class SnapshotFilterTest {
     private static final DomainEventData<?> NO_SNAPSHOT_DATA = null;
     private static final DomainEventData<?> MOCK_SNAPSHOT_DATA = mock(DomainEventData.class);
     private static final SnapshotEventEntry TEST_SNAPSHOT_DATA = new SnapshotEventEntry(new GenericDomainEventMessage<>(
-            "some-type", "some-aggregate-id", 0, QualifiedNameUtils.fromDottedName("test.snapshot"), "some-payload"
+            "some-type", "some-aggregate-id", 0, new QualifiedName("test", "snapshot", "0.0.1"), "some-payload"
     ), TestSerializer.xStreamSerializer());
 
     @Test

@@ -18,10 +18,9 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -32,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class UnresolvedRoutingKeyPolicyTest {
 
     private final CommandMessage<String> testCommand =
-            new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "some-payload");
+            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "some-payload");
 
     @Test
     void errorStrategy() {

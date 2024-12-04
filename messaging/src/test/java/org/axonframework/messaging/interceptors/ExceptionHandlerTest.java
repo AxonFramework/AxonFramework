@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -40,7 +40,6 @@ import java.util.function.Supplier;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -105,7 +104,7 @@ class ExceptionHandlerTest {
     @Test
     void exceptionHandlerIsInvokedForAnQueryHandlerThrowingAnException() {
         QueryMessage<SomeQuery, SomeQueryResponse> query = new GenericQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.test"),
+                new QualifiedName("test", "query", "0.0.1"),
                 new SomeQuery(() -> new RuntimeException("some-exception")),
                 ResponseTypes.instanceOf(SomeQueryResponse.class));
 

@@ -50,7 +50,7 @@ public class DeadLetterEventEntry {
     private String eventIdentifier;
 
     @Column(nullable = false)
-    private String type;
+    private String name;
 
     @Basic(optional = false)
     private String timeStamp;
@@ -100,7 +100,8 @@ public class DeadLetterEventEntry {
      *
      * @param eventType           The event type (required).
      * @param eventIdentifier     The identifier of the message (required).
-     * @param type                The {@link QualifiedName#toSimpleString() type} as a simple String of the message.
+     * @param name                The {@link EventMessage#name()} as a {@code String}, based on the output of
+     *                            {@link QualifiedName#toString()}.
      * @param messageTimestamp    The timestamp of the message (required).
      * @param payloadType         The payload's type of the message.
      * @param payloadRevision     The payload's revision of the message.
@@ -114,7 +115,7 @@ public class DeadLetterEventEntry {
      */
     public DeadLetterEventEntry(String eventType,
                                 String eventIdentifier,
-                                String type,
+                                String name,
                                 String messageTimestamp,
                                 String payloadType,
                                 String payloadRevision,
@@ -128,11 +129,11 @@ public class DeadLetterEventEntry {
         requireNonNull(eventType,
                        "Event type should be provided by the DeadLetterJpaConverter, otherwise it can never be converted back.");
         requireNonNull(eventIdentifier, "All EventMessage implementations require a message identifier.");
-        requireNonNull(type, "All EventMessage implementations require a type.");
+        requireNonNull(name, "All EventMessage implementations require a name.");
         requireNonNull(messageTimestamp, "All EventMessage implementations require a timestamp.");
         this.eventType = eventType;
         this.eventIdentifier = eventIdentifier;
-        this.type = type;
+        this.name = name;
         this.timeStamp = messageTimestamp;
         this.payloadType = payloadType;
         this.payloadRevision = payloadRevision;
@@ -167,12 +168,14 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the original {@link QualifiedName} as a {@link QualifiedName#toSimpleString()}.
+     * Returns the original {@link EventMessage#name() name} of the dead-letter, based on the
+     * {@link QualifiedName#toString()} output.
      *
-     * @return The original {@link QualifiedName} as a {@link QualifiedName#toSimpleString()}.
+     * @return The original {@link EventMessage#name() name} of the dead-letter, based on the
+     * {@link QualifiedName#toString()} output.
      */
-    public String getType() {
-        return type;
+    public String getName() {
+        return name;
     }
 
     /**
@@ -255,7 +258,7 @@ public class DeadLetterEventEntry {
         DeadLetterEventEntry that = (DeadLetterEventEntry) o;
         return Objects.equals(eventType, that.eventType)
                 && Objects.equals(eventIdentifier, that.eventIdentifier)
-                && Objects.equals(type, that.type)
+                && Objects.equals(name, that.name)
                 && Objects.equals(timeStamp, that.timeStamp)
                 && Objects.equals(payloadType, that.payloadType)
                 && Objects.equals(payloadRevision, that.payloadRevision)
@@ -272,7 +275,7 @@ public class DeadLetterEventEntry {
     public int hashCode() {
         return Objects.hash(eventType,
                             eventIdentifier,
-                            type,
+                            name,
                             timeStamp,
                             payloadType,
                             payloadRevision,
@@ -290,7 +293,7 @@ public class DeadLetterEventEntry {
         return "DeadLetterEventEntry{" +
                 "eventType='" + eventType + '\'' +
                 ", eventIdentifier='" + eventIdentifier + '\'' +
-                ", type='" + type + '\'' +
+                ", name='" + name + '\'' +
                 ", timeStamp='" + timeStamp + '\'' +
                 ", payloadType='" + payloadType + '\'' +
                 ", payloadRevision='" + payloadRevision + '\'' +

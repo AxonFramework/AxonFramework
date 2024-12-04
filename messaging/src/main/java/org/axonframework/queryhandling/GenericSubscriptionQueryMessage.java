@@ -46,13 +46,13 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     private final ResponseType<U> updateResponseType;
 
     /**
-     * Constructs a {@link GenericSubscriptionQueryMessage} for the given {@code type}, {@code payload},
+     * Constructs a {@link GenericSubscriptionQueryMessage} for the given {@code name}, {@code payload},
      * {@code responseType}, and {@code updateResponseType}.
      * <p>
      * The query name is set to the fully qualified class name of the {@code payload}. The {@link MetaData} defaults to
      * an empty instance.
      *
-     * @param type               The {@link QualifiedName type} for this {@link SubscriptionQueryMessage}.
+     * @param name               The {@link QualifiedName name} for this {@link SubscriptionQueryMessage}.
      * @param payload            The payload of type {@code P} expressing the query for this
      *                           {@link SubscriptionQueryMessage}.
      * @param responseType       The expected {@link ResponseType response type} for this
@@ -60,20 +60,20 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * @param updateResponseType The expected {@link ResponseType type} of incremental updates for this
      *                           {@link SubscriptionQueryMessage}.
      */
-    public GenericSubscriptionQueryMessage(@Nonnull QualifiedName type,
+    public GenericSubscriptionQueryMessage(@Nonnull QualifiedName name,
                                            @Nonnull P payload,
                                            @Nonnull ResponseType<I> responseType,
                                            @Nonnull ResponseType<U> updateResponseType) {
-        this(type, payload.getClass().getName(), payload, responseType, updateResponseType);
+        this(name, payload.getClass().getName(), payload, responseType, updateResponseType);
     }
 
     /**
-     * Constructs a {@link GenericSubscriptionQueryMessage} for the given {@code type}, {@code payload},
+     * Constructs a {@link GenericSubscriptionQueryMessage} for the given {@code name}, {@code payload},
      * {@code queryName}, {@code responseType}, and {@code updateResponseType}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param type               The {@link QualifiedName type} for this {@link SubscriptionQueryMessage}.
+     * @param name               The {@link QualifiedName name} for this {@link SubscriptionQueryMessage}.
      * @param queryName          The name identifying the query to execute by this {@link SubscriptionQueryMessage}.
      * @param payload            The payload of type {@code P} expressing the query for this
      *                           {@link SubscriptionQueryMessage}.
@@ -82,12 +82,12 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * @param updateResponseType The expected {@link ResponseType type} of incremental updates for this
      *                           {@link SubscriptionQueryMessage}.
      */
-    public GenericSubscriptionQueryMessage(@Nonnull QualifiedName type,
+    public GenericSubscriptionQueryMessage(@Nonnull QualifiedName name,
                                            @Nonnull String queryName,
                                            @Nonnull P payload,
                                            @Nonnull ResponseType<I> responseType,
                                            @Nonnull ResponseType<U> updateResponseType) {
-        super(type, queryName, payload, responseType);
+        super(name, queryName, payload, responseType);
         this.updateResponseType = updateResponseType;
     }
 
@@ -95,7 +95,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * Constructs a {@link GenericSubscriptionQueryMessage} with given {@code delegate}, {@code queryName},
      * {@code responseType}, and {@code updateResponseType}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#name() name},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
@@ -103,7 +103,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * of Work.
      *
      * @param delegate           The {@link Message} containing {@link Message#getPayload() payload},
-     *                           {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                           {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
      *                           {@link Message#getMetaData() metadata} for the {@link SubscriptionQueryMessage} to
      *                           reconstruct.
      * @param queryName          The name identifying the query to execute by this {@link SubscriptionQueryMessage}.

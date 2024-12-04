@@ -59,8 +59,8 @@ public class GenericIndexedEventMessage<P> implements IndexedEventMessage<P> {
 
     @Nonnull
     @Override
-    public QualifiedName type() {
-        return this.delegate.type();
+    public QualifiedName name() {
+        return this.delegate.name();
     }
 
     @Override

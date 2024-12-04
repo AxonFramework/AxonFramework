@@ -104,7 +104,7 @@ public class FireEventJob implements Job {
      */
     private EventMessage<?> createMessage(Object event) {
         return event instanceof EventMessage
-                ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
+                ? new GenericEventMessage<>(((EventMessage<?>) event).name(),
                                             ((EventMessage<?>) event).getPayload(),
                                             ((EventMessage<?>) event).getMetaData())
                 : new GenericEventMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), event);

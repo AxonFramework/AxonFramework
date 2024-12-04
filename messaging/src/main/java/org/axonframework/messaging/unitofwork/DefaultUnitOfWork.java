@@ -83,14 +83,14 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
                 //noinspection unchecked
                 resultMessage = (ResultMessage<R>) result;
             } else if (result instanceof Message) {
-                resultMessage = new GenericResultMessage<>(((Message<?>) result).type(),
+                resultMessage = new GenericResultMessage<>(((Message<?>) result).name(),
                                                            result,
                                                            ((Message<?>) result).getMetaData());
             } else {
-                QualifiedName type = result == null
-                        ? QualifiedNameUtils.fromDottedName("empty.result")
+                QualifiedName name = result == null
+                        ? new QualifiedName("axon.framework", "empty.result", "0.0.1")
                         : QualifiedNameUtils.fromClassName(result.getClass());
-                resultMessage = new GenericResultMessage<>(type, result);
+                resultMessage = new GenericResultMessage<>(name, result);
             }
         } catch (Error | Exception e) {
             resultMessage = asResultMessage(e);
@@ -110,10 +110,10 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
 
     @Override
     protected void setRollbackCause(Throwable cause) {
-        QualifiedName type = cause == null
-                ? QualifiedNameUtils.fromDottedName("empty.rollback.cause")
+        QualifiedName name = cause == null
+                ? new QualifiedName("axon.framework", "empty.rollback.cause", "0.0.1")
                 : QualifiedNameUtils.fromClassName(cause.getClass());
-        setExecutionResult(new ExecutionResult(new GenericResultMessage<>(type, cause)));
+        setExecutionResult(new ExecutionResult(new GenericResultMessage<>(name, cause)));
     }
 
     @Override

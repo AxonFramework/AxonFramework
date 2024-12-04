@@ -70,7 +70,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         return new DeadLetterEventEntry(
                 message.getClass().getName(),
                 message.getIdentifier(),
-                message.type().toSimpleString(),
+                message.name().toString(),
                 message.getTimestamp().toString(),
                 serializedPayload.getType().getName(),
                 serializedPayload.getType().getRevision(),
@@ -111,7 +111,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                                                    entry.getAggregateIdentifier(),
                                                    entry.getSequenceNumber(),
                                                    serializedMessage.getIdentifier(),
-                                                   QualifiedName.simpleStringName(entry.getType()),
+                                                   QualifiedName.fromString(entry.getName()),
                                                    serializedMessage.getPayload(),
                                                    serializedMessage.getMetaData(),
                                                    timestampSupplier.get());

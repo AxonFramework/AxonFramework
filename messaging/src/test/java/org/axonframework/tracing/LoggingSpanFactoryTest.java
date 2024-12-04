@@ -20,11 +20,10 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -34,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class LoggingSpanFactoryTest {
 
     private static final EventMessage<String> TEST_EVENT =
-            new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "payload");
+            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "payload");
 
     @Test
     void createRootTraceReturnsNoOpSpan() {

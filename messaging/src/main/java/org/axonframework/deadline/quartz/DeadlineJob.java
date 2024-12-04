@@ -23,6 +23,7 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
@@ -208,10 +209,9 @@ public class DeadlineJob implements Job {
          */
         public static final String SERIALIZED_DEADLINE_SCOPE_CLASS_NAME = "serializedDeadlineScopeClassName";
         /**
-         * Key pointing to the {@link QualifiedName#toSimpleString() type's simple STring} of the deadline in the
-         * {@link JobDataMap}
+         * Key pointing to the {@link Message#name()} as a {@code String} of the deadline in the {@link JobDataMap}.
          */
-        public static final String QUALIFIED_TYPE = "qualifiedType";
+        public static final String NAME = "name";
 
         /**
          * Serializes the provided {@code deadlineMessage} and {@code deadlineScope} and puts them in a
@@ -239,7 +239,7 @@ public class DeadlineJob implements Job {
                                                Serializer serializer) {
             jobData.put(DEADLINE_NAME, deadlineMessage.getDeadlineName());
             jobData.put(MESSAGE_ID, deadlineMessage.getIdentifier());
-            jobData.put(QUALIFIED_TYPE, deadlineMessage.type().toSimpleString());
+            jobData.put(NAME, deadlineMessage.name().toString());
             jobData.put(MESSAGE_TIMESTAMP, deadlineMessage.getTimestamp().toString());
 
             SerializedObject<byte[]> serializedDeadlinePayload =
@@ -272,7 +272,7 @@ public class DeadlineJob implements Job {
             return (DeadlineMessage<T>) new GenericDeadlineMessage<>(
                     (String) jobDataMap.get(DEADLINE_NAME),
                     (String) jobDataMap.get(MESSAGE_ID),
-                    QualifiedName.simpleStringName((String) jobDataMap.get(QUALIFIED_TYPE)),
+                    QualifiedName.fromString((String) jobDataMap.get(NAME)),
                     deserializeDeadlinePayload(serializer, jobDataMap),
                     deserializeDeadlineMetaData(serializer, jobDataMap),
                     retrieveDeadlineTimestamp(jobDataMap)

@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +36,6 @@ import static java.util.Collections.singletonMap;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -69,7 +68,7 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void appendAndReadNonDomainEvent() {
-        testSubject.appendEvents(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "Hello world"));
+        testSubject.appendEvents(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Hello world"));
 
         List<? extends TrackedEventMessage<?>> actual = testSubject.readEvents(null, false)
                                                                    .toList();
@@ -85,8 +84,9 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void storeAndLoadApplicationEvent() {
-        EventMessage<String> testEvent =
-                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "application event", MetaData.with("key", "value"));
+        EventMessage<String> testEvent = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), "application event", MetaData.with("key", "value")
+        );
         testSubject.appendEvents(testEvent);
         assertEquals(1, testSubject.readEvents(null, false).count());
         Optional<? extends TrackedEventMessage<?>> optionalFirst = testSubject.readEvents(null, false).findFirst();

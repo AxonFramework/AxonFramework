@@ -18,14 +18,13 @@ package org.axonframework.tracing.attributes;
 
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
 import static java.util.Collections.singletonMap;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MetadataSpanAttributesProviderTest {
@@ -34,7 +33,7 @@ class MetadataSpanAttributesProviderTest {
 
     @Test
     void addsAllMetadata() {
-        Message<?> message = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "MyEvent")
+        Message<?> message = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "MyEvent")
                 .andMetaData(singletonMap("myKeyOne", "valueOne"))
                 .andMetaData(singletonMap("myNumberKey", 2))
                 .andMetaData(singletonMap("someOtherKey_2", "someValue"));

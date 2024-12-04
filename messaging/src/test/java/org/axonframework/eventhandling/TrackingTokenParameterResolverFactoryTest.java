@@ -16,13 +16,12 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TrackingTokenParameterResolverFactoryTest {
@@ -42,7 +41,7 @@ class TrackingTokenParameterResolverFactoryTest {
         ParameterResolver<?> resolver = testSubject.createInstance(method, method.getParameters(), 1);
 
         assertNotNull(resolver);
-        EventMessage<String> message = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "test");
+        EventMessage<String> message = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "test");
         assertFalse(resolver.matches(message, null));
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(1L);
         GenericTrackedEventMessage<String> trackedEventMessage = new GenericTrackedEventMessage<>(trackingToken,

@@ -18,7 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.any;
 import static org.junit.jupiter.api.Assertions.*;
@@ -129,7 +128,9 @@ class AnnotatedSagaTest {
     void fixtureApi_PublishedEvent_NoHistoricActivity() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
-               .whenPublishingA(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new TriggerSagaStartEvent("id")))
+               .whenPublishingA(new GenericEventMessage<>(
+                       new QualifiedName("test", "event", "0.0.1"), new TriggerSagaStartEvent("id")
+               ))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", "id")
                .expectNoScheduledDeadlines();

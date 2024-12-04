@@ -26,7 +26,7 @@ import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.Index;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
@@ -37,7 +37,6 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -177,7 +176,7 @@ class AsyncEventSourcingRepositoryTest {
         verify(eventStoreTransaction).onAppend(callback.capture());
         assertEquals("null-0-1", result.resultNow().entity());
 
-        callback.getValue().accept(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "live"));
+        callback.getValue().accept(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "live"));
         assertEquals("null-0-1-live", result.resultNow().entity());
     }
 
@@ -220,6 +219,6 @@ class AsyncEventSourcingRepositoryTest {
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     private static DomainEventMessage<?> domainEvent(int seq) {
-        return new GenericDomainEventMessage<>("test", "id", seq, QualifiedNameUtils.fromDottedName("test.event"), seq);
+        return new GenericDomainEventMessage<>("test", "id", seq, new QualifiedName("test", "event", "0.0.1"), seq);
     }
 }

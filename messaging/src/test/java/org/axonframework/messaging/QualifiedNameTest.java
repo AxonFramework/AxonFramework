@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.*;
 
 import java.util.stream.IntStream;
@@ -32,7 +31,7 @@ class QualifiedNameTest {
 
     private static final String NAMESPACE = "namespace";
     private static final String LOCAL_NAME = "localName";
-    private static final String REVISION = "revision";
+    private static final String REVISION = "0.0.1";
 
     @Test
     void containsDataAsExpected() {
@@ -44,69 +43,69 @@ class QualifiedNameTest {
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForNullNamespace() {
+    void throwsIllegalArgumentExceptionForNullNamespace() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(null, LOCAL_NAME, REVISION));
+        assertThrows(IllegalArgumentException.class, () -> new QualifiedName(null, LOCAL_NAME, REVISION));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForEmptyNamespace() {
-        assertThrows(AxonConfigurationException.class, () -> new QualifiedName("", LOCAL_NAME, REVISION));
+    void throwsIllegalArgumentExceptionForEmptyNamespace() {
+        assertThrows(IllegalArgumentException.class, () -> new QualifiedName("", LOCAL_NAME, REVISION));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForNamespaceContainingSemicolons() {
-        assertThrows(AxonConfigurationException.class, () -> new QualifiedName("name:space", LOCAL_NAME, REVISION));
+    void throwsIllegalArgumentExceptionForNamespaceContainingSemicolons() {
+        assertThrows(IllegalArgumentException.class, () -> new QualifiedName("name:space", LOCAL_NAME, REVISION));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForNullLocalName() {
+    void throwsIllegalArgumentExceptionForNullLocalName() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, null, REVISION));
+        assertThrows(IllegalArgumentException.class, () -> new QualifiedName(NAMESPACE, null, REVISION));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForEmptyLocalName() {
-        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, "", REVISION));
+    void throwsIllegalArgumentExceptionForEmptyLocalName() {
+        assertThrows(IllegalArgumentException.class, () -> new QualifiedName(NAMESPACE, "", REVISION));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForLocalNameContainingSemicolons() {
-        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, "local:name", REVISION));
+    void throwsIllegalArgumentExceptionForLocalNameContainingSemicolons() {
+        assertThrows(IllegalArgumentException.class, () -> new QualifiedName(NAMESPACE, "local:name", REVISION));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForNullRevision() {
+    void throwsIllegalArgumentExceptionForNullRevision() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, null));
+        assertThrows(IllegalArgumentException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, null));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForEmptyRevision() {
-        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, ""));
+    void throwsIllegalArgumentExceptionForEmptyRevision() {
+        assertThrows(IllegalArgumentException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, ""));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForRevisionContainingSemicolons() {
-        assertThrows(AxonConfigurationException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, "blue:green"));
+    void throwsIllegalArgumentExceptionForRevisionContainingSemicolons() {
+        assertThrows(IllegalArgumentException.class, () -> new QualifiedName(NAMESPACE, LOCAL_NAME, "blue:green"));
     }
 
     @Test
-    void toSimpleStringReturnsAsExpected() {
+    void toStringReturnsAsExpected() {
         QualifiedName testSubject = new QualifiedName(NAMESPACE, LOCAL_NAME, REVISION);
 
-        assertEquals("namespace:localName:revision", testSubject.toSimpleString());
+        assertEquals("namespace:localName:0.0.1", testSubject.toString());
     }
 
     @Test
-    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForNullSimpleString() {
+    void fromStringThrowsAxonConfigurationExceptionForNullFromString() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> QualifiedName.simpleStringName(null));
+        assertThrows(IllegalArgumentException.class, () -> QualifiedName.fromString(null));
     }
 
     @Test
-    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionForEmptyString() {
-        assertThrows(AxonConfigurationException.class, () -> QualifiedName.simpleStringName(""));
+    void fromStringThrowsAxonConfigurationExceptionForEmptyString() {
+        assertThrows(IllegalArgumentException.class, () -> QualifiedName.fromString(""));
     }
 
     /**
@@ -114,21 +113,21 @@ class QualifiedNameTest {
      * semicolons spread within.
      */
     @Test
-    void simpleStringNameFactoryMethodThrowsAxonConfigurationExceptionWhenDelimiterCountIsNotExactlyTwo() {
+    void fromStringThrowsAxonConfigurationExceptionWhenDelimiterCountIsNotExactlyTwo() {
         String baseText = "Lorem";
         int[] scenarios = new int[]{1, 3, 4, 5, 6, 7, 8, 9, 10};
         for (int scenario : scenarios) {
             String testText = IntStream.range(0, scenario)
                                        .mapToObj(delimiterCount -> baseText)
                                        .reduce(baseText, (result, base) -> result + QualifiedName.DELIMITER + base);
-            assertThrows(AxonConfigurationException.class,
-                         () -> QualifiedName.simpleStringName(testText),
+            assertThrows(IllegalArgumentException.class,
+                         () -> QualifiedName.fromString(testText),
                          () -> "Failed in the scenario with #" + scenario + " delimiters: " + testText);
         }
     }
 
     @Test
-    void simpleStringNameFactoryMethodSplitsFullQualifiedTypeAsExpected() {
+    void fromStringSplitsFullQualifiedTypeAsExpected() {
         String expectedNamespace = NAMESPACE;
         String expectedLocalName = LOCAL_NAME;
         String expectedRevision = REVISION;
@@ -136,7 +135,7 @@ class QualifiedNameTest {
         String testSimpleString = expectedNamespace + QualifiedName.DELIMITER
                 + expectedLocalName + QualifiedName.DELIMITER + expectedRevision;
 
-        QualifiedName testSubject = QualifiedName.simpleStringName(testSimpleString);
+        QualifiedName testSubject = QualifiedName.fromString(testSimpleString);
 
         assertEquals(expectedNamespace, testSubject.namespace());
         assertEquals(expectedLocalName, testSubject.localName());

@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.Serializer;
 import org.junit.jupiter.api.*;
 
@@ -48,7 +47,7 @@ class DomainEventEntryTest {
         String expectedAggregateType = "aggregateType";
         String expectedAggregateId = randomUUID().toString();
         long expectedSequenceNumber = 2L;
-        QualifiedName expectedType = QualifiedNameUtils.fromDottedName("test.event");
+        QualifiedName expectedType = new QualifiedName("test", "event", "0.0.1");
         String expectedPayload = "Payload";
         MetaData expectedMetaData = new MetaData(Collections.singletonMap("Key", "Value"));
         Instant expectedTimestamp = DateTimeUtils.parseInstant(DateTimeUtils.formatInstant(testTimestamp));

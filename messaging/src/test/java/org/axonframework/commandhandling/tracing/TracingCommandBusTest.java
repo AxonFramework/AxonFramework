@@ -25,7 +25,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
@@ -35,7 +35,6 @@ import org.mockito.*;
 import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -106,7 +105,7 @@ class TracingCommandBusTest {
             public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
                                                               ProcessingContext processingContext) {
                 spanFactory.verifySpanActive("CommandBus.handleCommand");
-                return MessageStream.just(new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "ok"));
+                return MessageStream.just(new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "ok"));
             }
         });
 
