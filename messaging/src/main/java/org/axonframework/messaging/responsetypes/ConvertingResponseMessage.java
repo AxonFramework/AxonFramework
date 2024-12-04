@@ -88,8 +88,8 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Nonnull
     @Override
-    public QualifiedName type() {
-        return responseMessage.type();
+    public QualifiedName name() {
+        return responseMessage.name();
     }
 
     @Override

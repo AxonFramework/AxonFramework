@@ -139,7 +139,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
         SerializedObject<byte[]> serializedMetaData = eventMessage.serializeMetaData(eventSerializer, byte[].class);
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getClass().getName());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getIdentifier());
-        statement.setString(fieldIndex.getAndIncrement(), eventMessage.type().toSimpleString());
+        statement.setString(fieldIndex.getAndIncrement(), eventMessage.name().toString());
         statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(eventMessage.getTimestamp()));
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getName());
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getRevision());

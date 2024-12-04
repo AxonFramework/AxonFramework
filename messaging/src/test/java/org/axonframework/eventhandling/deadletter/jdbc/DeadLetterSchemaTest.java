@@ -192,26 +192,26 @@ class DeadLetterSchemaTest {
     }
 
     @Test
-    void buildWithTypeColumnReturnsConfiguredColumnName() {
+    void buildWithNameColumnReturnsConfiguredColumnName() {
         DeadLetterSchema result = DeadLetterSchema.builder()
-                                                  .typeColumn(TEST_COLUMN_NAME)
+                                                  .nameColumn(TEST_COLUMN_NAME)
                                                   .build();
 
-        assertEquals(TEST_COLUMN_NAME, result.typeColumn());
+        assertEquals(TEST_COLUMN_NAME, result.nameColumn());
     }
 
     @Test
-    void buildWithNullTypeColumnThrowsAxonConfigurationException() {
+    void buildWithNullNameColumnThrowsAxonConfigurationException() {
         DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.typeColumn(null));
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.nameColumn(null));
     }
 
     @Test
-    void buildWithEmptyTypeColumnThrowsAxonConfigurationException() {
+    void buildWithEmptyNameColumnThrowsAxonConfigurationException() {
         DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.typeColumn(""));
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.nameColumn(""));
     }
 
     @Test

@@ -19,7 +19,6 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -47,7 +46,7 @@ import static org.mockito.Mockito.*;
  */
 class AbstractEventBusTest {
 
-    private static final QualifiedName TEST_EVENT_TYPE = QualifiedNameUtils.fromDottedName("test.TestEvent");
+    private static final QualifiedName TEST_EVENT_NAME = new QualifiedName("test", "event", "0.0.1");
 
     private UnitOfWork<?> unitOfWork;
     private StubPublishingEventBus testSubject;
@@ -198,7 +197,7 @@ class AbstractEventBusTest {
     }
 
     private static EventMessage<Object> newEvent() {
-        return new GenericEventMessage<>(TEST_EVENT_TYPE, new Object());
+        return new GenericEventMessage<>(TEST_EVENT_NAME, new Object());
     }
 
     private static EventMessage<Integer> numberedEvent(final int number) {
@@ -301,10 +300,10 @@ class AbstractEventBusTest {
 
     private static class StubNumberedEvent extends GenericEventMessage<Integer> {
 
-        private static final QualifiedName TYPE = QualifiedNameUtils.fromDottedName("test.StubNumberedEvent");
+        private static final QualifiedName NAME = new QualifiedName("test", "StubNumberedEvent", "0.0.1");
 
         StubNumberedEvent(Integer payload) {
-            super(TYPE, payload);
+            super(NAME, payload);
         }
 
         @Override

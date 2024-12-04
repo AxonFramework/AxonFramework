@@ -46,80 +46,80 @@ public class GenericStreamingQueryMessage<P, R>
         implements StreamingQueryMessage<P, R> {
 
     /**
-     * Constructs a {@link GenericStreamingQueryMessage} for the given {@code type}, {@code payload}, and
+     * Constructs a {@link GenericStreamingQueryMessage} for the given {@code name}, {@code payload}, and
      * {@code responseType}.
      * <p>
      * The query name is set to the fully qualified class name of the {@code payload}. The {@link MetaData} defaults to
      * an empty instance.
      *
-     * @param type         The {@link QualifiedName type} for this {@link StreamingQueryMessage}.
+     * @param name         The {@link QualifiedName name} for this {@link StreamingQueryMessage}.
      * @param payload      The payload of type {@code P} expressing the query for this {@link StreamingQueryMessage}.
      * @param responseType The expected {@link Class response type} for this {@link StreamingQueryMessage}.
      */
-    public GenericStreamingQueryMessage(@Nonnull QualifiedName type,
+    public GenericStreamingQueryMessage(@Nonnull QualifiedName name,
                                         @Nonnull P payload,
                                         @Nonnull Class<R> responseType) {
-        this(type, payload, new PublisherResponseType<>(responseType));
+        this(name, payload, new PublisherResponseType<>(responseType));
     }
 
     /**
-     * Constructs a {@link GenericStreamingQueryMessage} for the given {@code type}, {@code payload}, {@code queryName},
+     * Constructs a {@link GenericStreamingQueryMessage} for the given {@code name}, {@code payload}, {@code queryName},
      * and {@code responseType}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param type         The {@link QualifiedName type} for this {@link StreamingQueryMessage}.
+     * @param name         The {@link QualifiedName name} for this {@link StreamingQueryMessage}.
      * @param queryName    The name identifying the query to execute by this {@link StreamingQueryMessage}.
      * @param payload      The payload of type {@code P} expressing the query for this {@link StreamingQueryMessage}.
      * @param responseType The expected {@link Class response type} for this {@link StreamingQueryMessage}.
      */
-    public GenericStreamingQueryMessage(@Nonnull QualifiedName type,
+    public GenericStreamingQueryMessage(@Nonnull QualifiedName name,
                                         @Nonnull String queryName,
                                         @Nonnull P payload,
                                         @Nonnull Class<R> responseType) {
-        this(type, queryName, payload, new PublisherResponseType<>(responseType));
+        this(name, queryName, payload, new PublisherResponseType<>(responseType));
     }
 
     /**
-     * Constructs a {@link GenericStreamingQueryMessage} for the given {@code type}, {@code payload}, and
+     * Constructs a {@link GenericStreamingQueryMessage} for the given {@code name}, {@code payload}, and
      * {@code responseType}.
      * <p>
      * The query name is set to the fully qualified class name of the {@code payload}. The {@link MetaData} defaults to
      * an empty instance.
      *
-     * @param type         The {@link QualifiedName type} for this {@link StreamingQueryMessage}.
+     * @param name         The {@link QualifiedName name} for this {@link StreamingQueryMessage}.
      * @param payload      The payload of type {@code P} expressing the query for this {@link StreamingQueryMessage}.
      * @param responseType The expected {@link ResponseType response type} for this {@link StreamingQueryMessage}.
      */
-    public GenericStreamingQueryMessage(@Nonnull QualifiedName type,
+    public GenericStreamingQueryMessage(@Nonnull QualifiedName name,
                                         @Nonnull P payload,
                                         @Nonnull ResponseType<Publisher<R>> responseType) {
-        super(type, payload, responseType);
+        super(name, payload, responseType);
     }
 
     /**
-     * Constructs a {@link GenericStreamingQueryMessage} for the given {@code type}, {@code payload}, {@code queryName},
+     * Constructs a {@link GenericStreamingQueryMessage} for the given {@code name}, {@code payload}, {@code queryName},
      * and {@code responseType}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param type         The {@link QualifiedName type} for this {@link StreamingQueryMessage}.
+     * @param name         The {@link QualifiedName name} for this {@link StreamingQueryMessage}.
      * @param queryName    The name identifying the query to execute by this {@link StreamingQueryMessage}.
      * @param payload      The payload of type {@code P} expressing the query for this {@link StreamingQueryMessage}.
      * @param responseType The expected {@link ResponseType response type} for this {@link StreamingQueryMessage}.
      */
-    public GenericStreamingQueryMessage(@Nonnull QualifiedName type,
+    public GenericStreamingQueryMessage(@Nonnull QualifiedName name,
                                         @Nonnull String queryName,
                                         @Nonnull P payload,
                                         @Nonnull ResponseType<Publisher<R>> responseType) {
-        this(new GenericMessage<>(type, payload, MetaData.emptyInstance()), queryName, responseType);
+        this(new GenericMessage<>(name, payload, MetaData.emptyInstance()), queryName, responseType);
     }
 
     /**
      * Constructs a {@link GenericStreamingQueryMessage} with given {@code delegate}, {@code queryName}, and
      * {@code responseType}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#name() name},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
@@ -127,7 +127,7 @@ public class GenericStreamingQueryMessage<P, R>
      * of Work.
      *
      * @param delegate     The {@link Message} containing {@link Message#getPayload() payload},
-     *                     {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                     {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
      *                     {@link Message#getMetaData() metadata} for the {@link SubscriptionQueryMessage} to
      *                     reconstruct.
      * @param queryName    The name identifying the query to execute by this {@link StreamingQueryMessage}.
@@ -143,7 +143,7 @@ public class GenericStreamingQueryMessage<P, R>
      * Constructs a {@link GenericStreamingQueryMessage} with given {@code delegate}, {@code queryName}, and
      * {@code responseType}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#name() name},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
@@ -151,7 +151,7 @@ public class GenericStreamingQueryMessage<P, R>
      * of Work.
      *
      * @param delegate     The {@link Message} containing {@link Message#getPayload() payload},
-     *                     {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                     {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
      *                     {@link Message#getMetaData() metadata} for the {@link SubscriptionQueryMessage} to
      *                     reconstruct.
      * @param queryName    The name identifying the query to execute by this {@link StreamingQueryMessage}.

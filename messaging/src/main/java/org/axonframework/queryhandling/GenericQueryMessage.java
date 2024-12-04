@@ -48,45 +48,45 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
     private final ResponseType<R> responseType;
 
     /**
-     * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and {@code responseType}.
+     * Constructs a {@link GenericQueryMessage} for the given {@code name}, {@code payload}, and {@code responseType}.
      * <p>
      * The query name is set to the fully qualified class name of the {@code payload}. The {@link MetaData} defaults to
      * an empty instance.
      *
-     * @param type         The {@link QualifiedName type} for this {@link QueryMessage}.
+     * @param name         The {@link QualifiedName name} for this {@link QueryMessage}.
      * @param payload      The payload of type {@code P} expressing the query for this {@link QueryMessage}.
      * @param responseType The expected {@link ResponseType response type} for this {@link QueryMessage}.
      */
-    public GenericQueryMessage(@Nonnull QualifiedName type,
+    public GenericQueryMessage(@Nonnull QualifiedName name,
                                @Nonnull P payload,
                                @Nonnull ResponseType<R> responseType) {
-        this(type, payload.getClass().getName(), payload, responseType);
+        this(name, payload.getClass().getName(), payload, responseType);
     }
 
     /**
-     * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, {@code queryName}, and
+     * Constructs a {@link GenericQueryMessage} for the given {@code name}, {@code payload}, {@code queryName}, and
      * {@code responseType}.
      * <p>
      * The {@link MetaData} defaults to an empty instance. Initializes the message with the given {@code payload} and
      * expected {@code responseType}.
      *
-     * @param type         The {@link QualifiedName type} for this {@link QueryMessage}.
+     * @param name         The {@link QualifiedName name} for this {@link QueryMessage}.
      * @param queryName    The name identifying the query to execute by this {@link QueryMessage}.
      * @param payload      The payload of type {@code P} expressing the query for this {@link CommandMessage}.
      * @param responseType The expected {@link ResponseType response type} for this {@link QueryMessage}.
      */
-    public GenericQueryMessage(@Nonnull QualifiedName type,
+    public GenericQueryMessage(@Nonnull QualifiedName name,
                                @Nonnull String queryName,
                                @Nonnull P payload,
                                @Nonnull ResponseType<R> responseType) {
-        this(new GenericMessage<>(type, payload, MetaData.emptyInstance()), queryName, responseType);
+        this(new GenericMessage<>(name, payload, MetaData.emptyInstance()), queryName, responseType);
     }
 
     /**
      * Constructs a {@link GenericQueryMessage} with given {@code delegate}, {@code queryName}, and
      * {@code responseType}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#name() name},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
@@ -94,7 +94,7 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
      * of Work.
      *
      * @param delegate     The {@link Message} containing {@link Message#getPayload() payload},
-     *                     {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                     {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
      *                     {@link Message#getMetaData() metadata} for the {@link QueryMessage} to reconstruct.
      * @param queryName    The name identifying the query to execute by this {@link QueryMessage}.
      * @param responseType The expected {@link ResponseType response type} for this {@link QueryMessage}.

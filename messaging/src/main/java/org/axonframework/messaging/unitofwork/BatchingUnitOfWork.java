@@ -98,14 +98,14 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
                     //noinspection unchecked
                     resultMessage = (ResultMessage<R>) result;
                 } else if (result instanceof Message) {
-                    resultMessage = new GenericResultMessage<>(((Message<?>) result).type(),
+                    resultMessage = new GenericResultMessage<>(((Message<?>) result).name(),
                                                                result,
                                                                ((Message<?>) result).getMetaData());
                 } else {
-                    QualifiedName type = result == null
+                    QualifiedName name = result == null
                             ? QualifiedNameUtils.fromDottedName("empty.result")
                             : QualifiedNameUtils.fromClassName(result.getClass());
-                    resultMessage = new GenericResultMessage<>(type, result);
+                    resultMessage = new GenericResultMessage<>(name, result);
                 }
             } catch (Error | Exception e) {
                 if (rollbackConfiguration.rollBackOn(e)) {

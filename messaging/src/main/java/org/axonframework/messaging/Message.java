@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Representation of a {@link Message}, containing a {@link QualifiedName type}, payload of type {@code T}, and
+ * Representation of a {@link Message}, containing a {@link QualifiedName name}, payload of type {@code T}, and
  * {@link MetaData}.
  * <p>
  * Typical examples of a {@code Messages} are {@link org.axonframework.commandhandling.CommandMessage commands},
@@ -63,7 +63,7 @@ public interface Message<P> extends Serializable {
      * @return The message {@link QualifiedName name} of this {@link Message}.
      */
     @Nonnull
-    QualifiedName type();
+    QualifiedName name();
 
     /**
      * Returns the {@link MetaData} for this {@link Message}.

@@ -46,7 +46,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     private final LazyDeserializingObject<U> serializedPayload;
     private final Throwable exception;
     private final Supplier<MetaData> metaDataSupplier;
-    private final QualifiedName type;
+    private final QualifiedName name;
 
     /**
      * Instantiate a {@link GrpcBackedQueryUpdateMessage} with the given {@code queryUpdate}, using the provided
@@ -73,11 +73,11 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
             GrpcSerializedObject serializedObject = new GrpcSerializedObject(queryUpdate.getPayload());
             Class<?> payloadClass = serializer.classForType(serializedObject.getType());
             String revision = serializedObject.getType().getRevision();
-            this.type = new QualifiedName(payloadClass.getPackageName(),
+            this.name = new QualifiedName(payloadClass.getPackageName(),
                                           payloadClass.getSimpleName(),
                                           revision != null ? revision : QualifiedNameUtils.DEFAULT_REVISION);
         } else {
-            this.type = new QualifiedName("query.update.exception",
+            this.name = new QualifiedName("query.update.exception",
                                           queryUpdate.getErrorCode(),
                                           QualifiedNameUtils.DEFAULT_REVISION);
         }
@@ -87,12 +87,12 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
                                          LazyDeserializingObject<U> serializedPayload,
                                          Throwable exception,
                                          Supplier<MetaData> metaDataSupplier,
-                                         QualifiedName type) {
+                                         QualifiedName name) {
         this.queryUpdate = queryUpdate;
         this.serializedPayload = serializedPayload;
         this.exception = exception;
         this.metaDataSupplier = metaDataSupplier;
-        this.type = type;
+        this.name = name;
     }
 
     @Override
@@ -102,8 +102,8 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
 
     @Nonnull
     @Override
-    public QualifiedName type() {
-        return this.type;
+    public QualifiedName name() {
+        return this.name;
     }
 
     @Override
@@ -144,7 +144,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
                                                   serializedPayload,
                                                   exception,
                                                   () -> MetaData.from(metaData),
-                                                  type);
+                                                  name);
     }
 
     @Override

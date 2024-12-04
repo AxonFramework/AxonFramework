@@ -83,14 +83,14 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
                 //noinspection unchecked
                 resultMessage = (ResultMessage<R>) result;
             } else if (result instanceof Message) {
-                resultMessage = new GenericResultMessage<>(((Message<?>) result).type(),
+                resultMessage = new GenericResultMessage<>(((Message<?>) result).name(),
                                                            result,
                                                            ((Message<?>) result).getMetaData());
             } else {
-                QualifiedName type = result == null
+                QualifiedName name = result == null
                         ? QualifiedNameUtils.fromDottedName("empty.result")
                         : QualifiedNameUtils.fromClassName(result.getClass());
-                resultMessage = new GenericResultMessage<>(type, result);
+                resultMessage = new GenericResultMessage<>(name, result);
             }
         } catch (Error | Exception e) {
             resultMessage = asResultMessage(e);
@@ -110,10 +110,10 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
 
     @Override
     protected void setRollbackCause(Throwable cause) {
-        QualifiedName type = cause == null
+        QualifiedName name = cause == null
                 ? QualifiedNameUtils.fromDottedName("empty.rollback.cause")
                 : QualifiedNameUtils.fromClassName(cause.getClass());
-        setExecutionResult(new ExecutionResult(new GenericResultMessage<>(type, cause)));
+        setExecutionResult(new ExecutionResult(new GenericResultMessage<>(name, cause)));
     }
 
     @Override

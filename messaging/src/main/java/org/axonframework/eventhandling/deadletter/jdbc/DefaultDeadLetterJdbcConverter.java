@@ -120,12 +120,12 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
                 eventMessage = new GenericTrackedEventMessage<>(trackingToken, serializedMessage, timestampSupplier);
             }
         } else if (resultSet.getString(schema.aggregateIdentifierColumn()) != null) {
-            QualifiedName type = QualifiedName.simpleStringName(resultSet.getString(schema.typeColumn()));
+            QualifiedName name = QualifiedName.fromString(resultSet.getString(schema.nameColumn()));
             eventMessage = new GenericDomainEventMessage<>(resultSet.getString(schema.aggregateTypeColumn()),
                                                            resultSet.getString(schema.aggregateIdentifierColumn()),
                                                            resultSet.getLong(schema.sequenceNumberColumn()),
                                                            serializedMessage.getIdentifier(),
-                                                           type,
+                                                           name,
                                                            serializedMessage.getPayload(),
                                                            serializedMessage.getMetaData(),
                                                            timestampSupplier.get());

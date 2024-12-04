@@ -98,8 +98,8 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
 
     @Override
     protected <T> ApplyMore doApply(T payload, MetaData metaData) {
-        QualifiedName eventType = QualifiedNameUtils.fromClassName(payload.getClass());
-        appliedMessages.add(new GenericEventMessage<T>(eventType, payload, metaData));
+        QualifiedName eventName = QualifiedNameUtils.fromClassName(payload.getClass());
+        appliedMessages.add(new GenericEventMessage<>(eventName, payload, metaData));
 
         return new ApplyMore() {
             @Override

@@ -47,7 +47,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     private final LazyDeserializingObject<R> serializedPayload;
     private final Throwable exception;
     private final Supplier<MetaData> metaDataSupplier;
-    private final QualifiedName type;
+    private final QualifiedName name;
 
     /**
      * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryResponse}, using the provided
@@ -73,11 +73,11 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
             GrpcSerializedObject serializedObject = new GrpcSerializedObject(queryResponse.getPayload());
             Class<?> payloadClass = serializer.classForType(serializedObject.getType());
             String revision = serializedObject.getType().getRevision();
-            this.type = new QualifiedName(payloadClass.getPackageName(),
+            this.name = new QualifiedName(payloadClass.getPackageName(),
                                           payloadClass.getSimpleName(),
                                           revision != null ? revision : QualifiedNameUtils.DEFAULT_REVISION);
         } else {
-            this.type = new QualifiedName("query.response.exception",
+            this.name = new QualifiedName("query.response.exception",
                                           queryResponse.getErrorCode(),
                                           QualifiedNameUtils.DEFAULT_REVISION);
         }
@@ -87,12 +87,12 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
                                       LazyDeserializingObject<R> serializedPayload,
                                       Throwable exception,
                                       Supplier<MetaData> metaDataSupplier,
-                                      QualifiedName type) {
+                                      QualifiedName name) {
         this.queryResponse = queryResponse;
         this.serializedPayload = serializedPayload;
         this.exception = exception;
         this.metaDataSupplier = metaDataSupplier;
-        this.type = type;
+        this.name = name;
     }
 
     @Override
@@ -102,8 +102,8 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Nonnull
     @Override
-    public QualifiedName type() {
-        return this.type;
+    public QualifiedName name() {
+        return this.name;
     }
 
     @Override
@@ -144,7 +144,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
                                                serializedPayload,
                                                exception,
                                                () -> MetaData.from(metaData),
-                                               type);
+                                               name);
     }
 
     @Override

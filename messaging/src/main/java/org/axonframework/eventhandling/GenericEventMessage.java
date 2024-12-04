@@ -66,7 +66,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * @return an EventMessage containing given {@code event} as payload, or {@code event} if it already implements
      * EventMessage.
      * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName type}.
+     * {@link QualifiedName name}.
      */
     @Deprecated
     @SuppressWarnings("unchecked")
@@ -84,50 +84,50 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     }
 
     /**
-     * Constructs a {@link GenericEventMessage} for the given {@code type} and {@code payload}.
+     * Constructs a {@link GenericEventMessage} for the given {@code name} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param type    The {@link QualifiedName type} for this {@link EventMessage}.
+     * @param name    The {@link QualifiedName name} for this {@link EventMessage}.
      * @param payload The payload of type {@code P} for this {@link EventMessage}.
      * @see #asEventMessage(Object)
      */
-    public GenericEventMessage(@Nonnull QualifiedName type,
+    public GenericEventMessage(@Nonnull QualifiedName name,
                                @Nonnull P payload) {
-        this(type, payload, MetaData.emptyInstance());
+        this(name, payload, MetaData.emptyInstance());
     }
 
     /**
-     * Constructs a {@link GenericEventMessage} for the given {@code type}, {@code payload} and {@code metaData}.
+     * Constructs a {@link GenericEventMessage} for the given {@code name}, {@code payload} and {@code metaData}.
      *
-     * @param type     The {@link QualifiedName type} for this {@link EventMessage}.
+     * @param name     The {@link QualifiedName name} for this {@link EventMessage}.
      * @param payload  The payload of type {@code P} for this {@link EventMessage}.
      * @param metaData The metadata for this {@link EventMessage}.
      * @see #asEventMessage(Object)
      */
-    public GenericEventMessage(@Nonnull QualifiedName type,
+    public GenericEventMessage(@Nonnull QualifiedName name,
                                @Nonnull P payload,
                                @Nonnull Map<String, ?> metaData) {
-        this(new GenericMessage<>(type, payload, metaData), clock.instant());
+        this(new GenericMessage<>(name, payload, metaData), clock.instant());
     }
 
     /**
-     * Constructs a {@link GenericEventMessage} for the given {@code identifier}, {@code type}, {@code payload},
+     * Constructs a {@link GenericEventMessage} for the given {@code identifier}, {@code name}, {@code payload},
      * {@code metaData}, and {@code timestamp}.
      *
      * @param identifier The identifier of this {@link EventMessage}.
-     * @param type       The {@link QualifiedName type} for this {@link EventMessage}.
+     * @param name       The {@link QualifiedName name} for this {@link EventMessage}.
      * @param payload    The payload of type {@code P} for this {@link EventMessage}.
      * @param metaData   The metadata for this {@link EventMessage}.
      * @param timestamp  The {@link Instant timestamp} of this {@link EventMessage EventMessage's} creation.
      * @see #asEventMessage(Object)
      */
     public GenericEventMessage(@Nonnull String identifier,
-                               @Nonnull QualifiedName type,
+                               @Nonnull QualifiedName name,
                                @Nonnull P payload,
                                @Nonnull Map<String, ?> metaData,
                                @Nonnull Instant timestamp) {
-        this(new GenericMessage<>(identifier, type, payload, metaData), timestamp);
+        this(new GenericMessage<>(identifier, name, payload, metaData), timestamp);
     }
 
     /**
@@ -141,7 +141,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * of Work.
      *
      * @param delegate          The {@link Message} containing {@link Message#getPayload() payload},
-     *                          {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                          {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
      *                          {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestampSupplier {@link Supplier} for the {@link Instant timestamp} of the
      *                          {@link EventMessage EventMessage's} creation.
@@ -155,7 +155,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     /**
      * Constructs a {@link GenericEventMessage} with given {@code delegate} and {@code timestamp}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#name() name},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
      * {@code GenericEventMessage}.
      * <p>
@@ -163,7 +163,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * of Work.
      *
      * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                  {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
      *                  {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestamp The {@link Instant timestamp} of this {@link EventMessage GenericEventMessage's} creation.
      */

@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -30,7 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -45,7 +43,7 @@ class DefaultEventMessageConverterTest {
     @Test
     void givenGenericEventMessageWhenConvertingTwiceThenResultingEventShouldBeTheSame() {
         String id = UUID.randomUUID().toString();
-        QualifiedName type = QualifiedNameUtils.fromDottedName("test.event");
+        QualifiedName name = new QualifiedName("test", "event", "0.0.1");
         EventPayload payload = new EventPayload("hello");
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("number", 100);
@@ -53,7 +51,7 @@ class DefaultEventMessageConverterTest {
         Instant instant = Instant.EPOCH;
 
         EventMessage<EventPayload> axonMessage =
-                new GenericEventMessage<>(id, type, payload, metaData, instant);
+                new GenericEventMessage<>(id, name, payload, metaData, instant);
 
         EventMessage<EventPayload> convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(
                 eventMessageConverter.convertToOutboundMessage(axonMessage)
@@ -70,7 +68,7 @@ class DefaultEventMessageConverterTest {
     void givenDomainEventMessageWhenConvertingTwiceThenResultingEventShouldBeTheSame() {
         String aggId = UUID.randomUUID().toString();
         String id = UUID.randomUUID().toString();
-        QualifiedName type = QualifiedNameUtils.fromDottedName("test.event");
+        QualifiedName name = new QualifiedName("test", "event", "0.0.1");
         EventPayload payload = new EventPayload("hello");
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("number", 100);
@@ -78,7 +76,7 @@ class DefaultEventMessageConverterTest {
         Instant instant = Instant.EPOCH;
 
         EventMessage<EventPayload> axonMessage =
-                new GenericDomainEventMessage<>("foo", aggId, 1, id, type, payload, metaData, instant);
+                new GenericDomainEventMessage<>("foo", aggId, 1, id, name, payload, metaData, instant);
         EventMessage<EventPayload> convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(
                 eventMessageConverter.convertToOutboundMessage(axonMessage)
         );

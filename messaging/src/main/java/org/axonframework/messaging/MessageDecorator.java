@@ -43,7 +43,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
      * Initializes a new decorator with given {@code delegate} {@link Message}.
      * <p>
      * The decorator delegates to the delegate for the message's {@link #getIdentifier() identifier},
-     * {@link #type() type}, {@link #getPayload() payload}, and {@link #getMetaData() metadata}.
+     * {@link #name() type}, {@link #getPayload() payload}, and {@link #getMetaData() metadata}.
      *
      * @param delegate The {@link Message} delegate.
      */
@@ -58,8 +58,8 @@ public abstract class MessageDecorator<P> implements Message<P> {
 
     @Nonnull
     @Override
-    public QualifiedName type() {
-        return delegate.type();
+    public QualifiedName name() {
+        return delegate.name();
     }
 
     @Override

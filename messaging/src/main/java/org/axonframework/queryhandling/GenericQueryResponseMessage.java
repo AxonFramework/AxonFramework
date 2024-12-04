@@ -51,7 +51,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
      * QueryResponseMessage.
      * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName type}.
+     * {@link QualifiedName name}.
      */
     @Deprecated
     @SuppressWarnings("unchecked")
@@ -89,7 +89,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
      * QueryResponseMessage.
      * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName type}.
+     * {@link QualifiedName name}.
      */
     @Deprecated
     public static <R> QueryResponseMessage<R> asNullableResponseMessage(Class<R> declaredType, Object result) {
@@ -117,11 +117,11 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
                                                      message.getPayload(),
                                                      message.getMetaData());
         } else {
-            QualifiedName type = result == null
+            QualifiedName name = result == null
                     ? QualifiedNameUtils.fromDottedName("empty.query.response")
                     : QualifiedNameUtils.fromClassName(result.getClass());
             //noinspection unchecked
-            return new GenericQueryResponseMessage<>(type, (R) result, declaredType);
+            return new GenericQueryResponseMessage<>(name, (R) result, declaredType);
         }
     }
 
@@ -133,7 +133,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * @param <R>          The type of the payload
      * @return a message containing exception result
      * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName type}.
+     * {@link QualifiedName name}.
      */
     @Deprecated
     public static <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
@@ -143,91 +143,91 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type} and {@code payload}.
+     * Constructs a {@link GenericQueryResponseMessage} for the given {@code name} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param type   The {@link QualifiedName type} for this {@link QueryResponseMessage}.
+     * @param name   The {@link QualifiedName name} for this {@link QueryResponseMessage}.
      * @param result The result of type {@code R} for this {@link QueryResponseMessage}.
      */
     @SuppressWarnings("unchecked")
-    public GenericQueryResponseMessage(@Nonnull QualifiedName type,
+    public GenericQueryResponseMessage(@Nonnull QualifiedName name,
                                        @Nonnull R result) {
-        this(type, result, MetaData.emptyInstance(), (Class<R>) result.getClass());
+        this(name, result, MetaData.emptyInstance(), (Class<R>) result.getClass());
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type} and {@code payload}.
+     * Constructs a {@link GenericQueryResponseMessage} for the given {@code name} and {@code payload}.
      * <p>
      * This constructor allows the actual result to be {@code null}. The {@link MetaData} defaults to an empty
      * instance.
      *
-     * @param type   The {@link QualifiedName type} for this {@link QueryResponseMessage}.
+     * @param name   The {@link QualifiedName name} for this {@link QueryResponseMessage}.
      * @param result The result of type {@code R} for this {@link GenericQueryResponseMessage}. May be {@code null}.
      * @deprecated In favor of {@link #GenericQueryResponseMessage(QualifiedName, Object)} once the
      * {@code declaredPayloadType} is removed completely.
      */
     @Deprecated
-    public GenericQueryResponseMessage(@Nonnull QualifiedName type,
+    public GenericQueryResponseMessage(@Nonnull QualifiedName name,
                                        @Nullable R result,
                                        @Deprecated Class<R> declaredResultType) {
-        this(type, result, MetaData.emptyInstance(), declaredResultType);
+        this(name, result, MetaData.emptyInstance(), declaredResultType);
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type} and {@code exception}.
+     * Constructs a {@link GenericQueryResponseMessage} for the given {@code name} and {@code exception}.
      *
-     * @param type      The {@link QualifiedName type} for this {@link QueryResponseMessage}.
+     * @param name      The {@link QualifiedName name} for this {@link QueryResponseMessage}.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link QueryResponseMessage}.
      */
-    public GenericQueryResponseMessage(@Nonnull QualifiedName type,
+    public GenericQueryResponseMessage(@Nonnull QualifiedName name,
                                        @Nonnull Throwable exception,
                                        @Deprecated Class<R> declaredResultType) {
-        this(type, exception, MetaData.emptyInstance(), declaredResultType);
+        this(name, exception, MetaData.emptyInstance(), declaredResultType);
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type}, {@code result}, and
+     * Constructs a {@link GenericQueryResponseMessage} for the given {@code name}, {@code result}, and
      * {@code metaData}.
      * <p>
      * This constructor allows the actual result to be {@code null}.
      *
-     * @param type     The {@link QualifiedName type} for this {@link QueryResponseMessage}.
+     * @param name     The {@link QualifiedName name} for this {@link QueryResponseMessage}.
      * @param result   The result of type {@code R} for this {@link GenericQueryResponseMessage}. May be {@code null}.
      * @param metaData The metadata for this {@link QueryResponseMessage}.
      */
-    public GenericQueryResponseMessage(@Nonnull QualifiedName type,
+    public GenericQueryResponseMessage(@Nonnull QualifiedName name,
                                        @Nullable R result,
                                        @Nonnull Map<String, ?> metaData) {
-        super(new GenericMessage<>(type, result, metaData));
+        super(new GenericMessage<>(name, result, metaData));
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type}, {@code result}, and
+     * Constructs a {@link GenericQueryResponseMessage} for the given {@code name}, {@code result}, and
      * {@code metaData}.
      * <p>
      * This constructor allows the actual result to be {@code null}.
      *
-     * @param type     The {@link QualifiedName type} for this {@link QueryResponseMessage}.
+     * @param name     The {@link QualifiedName name} for this {@link QueryResponseMessage}.
      * @param result   The result of type {@code R} for this {@link GenericQueryResponseMessage}. May be {@code null}.
      * @param metaData The metadata for this {@link QueryResponseMessage}.
      * @deprecated In favor of {@link #GenericQueryResponseMessage(QualifiedName, Object, Map)} once the
      * {@code declaredPayloadType} is removed completely.
      */
     @Deprecated
-    public GenericQueryResponseMessage(@Nonnull QualifiedName type,
+    public GenericQueryResponseMessage(@Nonnull QualifiedName name,
                                        @Nullable R result,
                                        @Nonnull Map<String, ?> metaData,
                                        @Deprecated Class<R> declaredResultType) {
-        super(new GenericMessage<>(type, result, metaData, declaredResultType));
+        super(new GenericMessage<>(name, result, metaData, declaredResultType));
     }
 
     /**
-     * Constructs a {@link GenericQueryResponseMessage} for the given {@code type}, {@code exception}, and
+     * Constructs a {@link GenericQueryResponseMessage} for the given {@code name}, {@code exception}, and
      * {@code metaData}.
      *
-     * @param type      The {@link QualifiedName type} for this {@link QueryResponseMessage}.
+     * @param name      The {@link QualifiedName name} for this {@link QueryResponseMessage}.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link QueryResponseMessage}.
      * @param metaData  The metadata for this {@link QueryResponseMessage}.
@@ -235,11 +235,11 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * from the base {@link Message}.
      */
     @Deprecated
-    public GenericQueryResponseMessage(@Nonnull QualifiedName type,
+    public GenericQueryResponseMessage(@Nonnull QualifiedName name,
                                        @Nonnull Throwable exception,
                                        @Nonnull Map<String, ?> metaData,
                                        @Deprecated Class<R> declaredResultType) {
-        super(new GenericMessage<>(type, null, metaData, declaredResultType), exception);
+        super(new GenericMessage<>(name, null, metaData, declaredResultType), exception);
     }
 
     /**
@@ -249,7 +249,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
+     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#name() name},
      *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
@@ -265,7 +265,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * of Work.
      *
      * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                  {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
      *                  {@link Message#getMetaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link QueryResponseMessage}.

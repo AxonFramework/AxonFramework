@@ -49,7 +49,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
 
     private static final String AXON_MESSAGE_PREFIX = "axon-message-";
     private static final String MESSAGE_ID = AXON_MESSAGE_PREFIX + "id";
-    private static final String MESSAGE_TYPE = AXON_MESSAGE_PREFIX + "type";
+    private static final String MESSAGE_NAME = AXON_MESSAGE_PREFIX + "name";
     private static final String AGGREGATE_ID = AXON_MESSAGE_PREFIX + "aggregate-id";
     private static final String AGGREGATE_SEQ = AXON_MESSAGE_PREFIX + "aggregate-seq";
     private static final String AGGREGATE_TYPE = AXON_MESSAGE_PREFIX + "aggregate-type";
@@ -58,7 +58,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
     public <T> Message<T> convertToOutboundMessage(EventMessage<T> event) {
         Map<String, Object> headers = new HashMap<>(event.getMetaData());
         headers.put(MESSAGE_ID, event.getIdentifier());
-        headers.put(MESSAGE_TYPE, event.type().toSimpleString());
+        headers.put(MESSAGE_NAME, event.name().toString());
         if (event instanceof DomainEventMessage) {
             headers.put(AGGREGATE_ID, ((DomainEventMessage<?>) event).getAggregateIdentifier());
             headers.put(AGGREGATE_SEQ, ((DomainEventMessage<?>) event).getSequenceNumber());
@@ -77,11 +77,11 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
                                          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         String messageId = Objects.toString(headers.get(MESSAGE_ID));
-        QualifiedName type = getType(message);
+        QualifiedName name = getName(message);
         Long timestamp = headers.getTimestamp();
 
         org.axonframework.messaging.GenericMessage<T> genericMessage
-                = new org.axonframework.messaging.GenericMessage<>(messageId, type, message.getPayload(), metaData);
+                = new org.axonframework.messaging.GenericMessage<>(messageId, name, message.getPayload(), metaData);
         if (headers.containsKey(AGGREGATE_ID)) {
             return new GenericDomainEventMessage<>(Objects.toString(headers.get(AGGREGATE_TYPE)),
                                                    Objects.toString(headers.get(AGGREGATE_ID)),
@@ -95,14 +95,14 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
     }
 
     /**
-     * If the given {@code headers} contain the {@code message type}, the {@link QualifiedName type} is reconstructed
+     * If the given {@code headers} contain the {@code message name}, the {@link QualifiedName name} is reconstructed
      * based on the header. When it is not present, we can expect a non-Axon {@link Message} is handled. As such, we
-     * base the {@code type} on the fully qualified class name.
+     * base the {@code name} on the fully qualified class name.
      */
-    private static <T> QualifiedName getType(Message<T> message) {
+    private static <T> QualifiedName getName(Message<T> message) {
         MessageHeaders headers = message.getHeaders();
-        return headers.containsKey(MESSAGE_TYPE)
-                ? QualifiedName.simpleStringName(Objects.toString(headers.get(MESSAGE_TYPE)))
+        return headers.containsKey(MESSAGE_NAME)
+                ? QualifiedName.fromString(Objects.toString(headers.get(MESSAGE_NAME)))
                 : QualifiedNameUtils.fromClassName(message.getClass());
     }
 

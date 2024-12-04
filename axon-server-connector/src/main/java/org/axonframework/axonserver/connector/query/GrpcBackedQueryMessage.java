@@ -45,7 +45,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     private final LazyDeserializingObject<P> serializedPayload;
     private final LazyDeserializingObject<ResponseType<R>> serializedResponseType;
     private final Supplier<MetaData> metaDataSupplier;
-    private final QualifiedName type;
+    private final QualifiedName name;
 
     /**
      * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryRequest}, using the provided
@@ -65,11 +65,11 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer),
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer),
                 new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer),
-                createType(new GrpcSerializedObject(queryRequest.getResponseType()), serializer)
+                createName(new GrpcSerializedObject(queryRequest.getResponseType()), serializer)
         );
     }
 
-    private static QualifiedName createType(GrpcSerializedObject serializedObject, Serializer serializer) {
+    private static QualifiedName createName(GrpcSerializedObject serializedObject, Serializer serializer) {
         Class<?> payloadClass = serializer.classForType(serializedObject.getType());
         String revision = serializedObject.getType().getRevision();
         return new QualifiedName(payloadClass.getPackageName(),
@@ -81,12 +81,12 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
                                    LazyDeserializingObject<P> serializedPayload,
                                    LazyDeserializingObject<ResponseType<R>> serializedResponseType,
                                    Supplier<MetaData> metaDataSupplier,
-                                   QualifiedName type) {
+                                   QualifiedName name) {
         this.query = queryRequest;
         this.serializedPayload = serializedPayload;
         this.serializedResponseType = serializedResponseType;
         this.metaDataSupplier = metaDataSupplier;
-        this.type = type;
+        this.name = name;
     }
 
     @Override
@@ -96,8 +96,8 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
 
     @Nonnull
     @Override
-    public QualifiedName type() {
-        return this.type;
+    public QualifiedName name() {
+        return this.name;
     }
 
     @Override
@@ -131,7 +131,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
                                             serializedPayload,
                                             serializedResponseType,
                                             () -> MetaData.from(metaData),
-                                            type);
+                                            name);
     }
 
     @Override

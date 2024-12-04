@@ -35,18 +35,18 @@ public abstract class AbstractMessage<P> implements Message<P> {
     private static final long serialVersionUID = -5847906865361406657L;
 
     private final String identifier;
-    private final QualifiedName type;
+    private final QualifiedName name;
 
     /**
-     * Initializes a new {@link Message} with given {@code identifier} and {@code type}.
+     * Initializes a new {@link Message} with given {@code identifier} and {@code name}.
      *
      * @param identifier The identifier of this {@link Message}.
-     * @param type       The {@link QualifiedName type} for this {@link Message}.
+     * @param name       The {@link QualifiedName name} for this {@link Message}.
      */
     public AbstractMessage(@Nonnull String identifier,
-                           @Nonnull QualifiedName type) {
+                           @Nonnull QualifiedName name) {
         this.identifier = identifier;
-        this.type = type;
+        this.name = name;
     }
 
     @Override
@@ -56,8 +56,8 @@ public abstract class AbstractMessage<P> implements Message<P> {
 
     @Nonnull
     @Override
-    public QualifiedName type() {
-        return this.type;
+    public QualifiedName name() {
+        return this.name;
     }
 
     @Override

@@ -47,59 +47,59 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
 
     /**
      * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
-     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code type}, and {@code payload}.
+     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code name}, and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
      * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
      * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
-     * @param type                The {@link QualifiedName type} for this {@link DomainEventMessage}.
+     * @param name                The {@link QualifiedName name} for this {@link DomainEventMessage}.
      * @param payload             The payload of type {@code P} for this {@link DomainEventMessage}.
      */
     public GenericDomainEventMessage(String aggregateType,
                                      String aggregateIdentifier,
                                      long sequenceNumber,
-                                     @Nonnull QualifiedName type,
+                                     @Nonnull QualifiedName name,
                                      @Nonnull P payload) {
-        this(aggregateType, aggregateIdentifier, sequenceNumber, type, payload, MetaData.emptyInstance());
+        this(aggregateType, aggregateIdentifier, sequenceNumber, name, payload, MetaData.emptyInstance());
     }
 
     /**
      * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
-     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code type}, {@code payload}, and
+     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code name}, {@code payload}, and
      * {@code metaData}.
      *
      * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
      * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
-     * @param type                The {@link QualifiedName type} for this {@link DomainEventMessage}.
+     * @param name                The {@link QualifiedName name} for this {@link DomainEventMessage}.
      * @param payload             The payload of type {@code P} for this {@link DomainEventMessage}.
      * @param metaData            The metadata for this {@link DomainEventMessage}.
      */
     public GenericDomainEventMessage(String aggregateType,
                                      String aggregateIdentifier,
                                      long sequenceNumber,
-                                     @Nonnull QualifiedName type,
+                                     @Nonnull QualifiedName name,
                                      @Nonnull P payload,
                                      @Nonnull Map<String, ?> metaData) {
         this(aggregateType,
              aggregateIdentifier,
              sequenceNumber,
-             new GenericMessage<>(type, payload, metaData),
+             new GenericMessage<>(name, payload, metaData),
              clock.instant());
     }
 
     /**
      * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
-     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code messageIdentifier}, {@code type},
+     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code messageIdentifier}, {@code name},
      * {@code payload}, {@code metaData}, and {@code timestamp}.
      *
      * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
      * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
      * @param messageIdentifier   The identifier of this {@link DomainEventMessage}.
-     * @param type                The {@link QualifiedName type} for this {@link DomainEventMessage}.
+     * @param name                The {@link QualifiedName name} for this {@link DomainEventMessage}.
      * @param payload             The payload of type {@code P} for this {@link DomainEventMessage}.
      * @param metaData            The metadata for this {@link DomainEventMessage}.
      * @param timestamp           The {@link Instant timestamp} of this {@link DomainEventMessage DomainEventMessage's}
@@ -109,14 +109,14 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
                                      String aggregateIdentifier,
                                      long sequenceNumber,
                                      @Nonnull String messageIdentifier,
-                                     @Nonnull QualifiedName type,
+                                     @Nonnull QualifiedName name,
                                      @Nonnull P payload,
                                      @Nonnull Map<String, ?> metaData,
                                      @Nonnull Instant timestamp) {
         this(aggregateType,
              aggregateIdentifier,
              sequenceNumber,
-             new GenericMessage<>(messageIdentifier, type, payload, metaData),
+             new GenericMessage<>(messageIdentifier, name, payload, metaData),
              timestamp);
     }
 
@@ -135,7 +135,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
      * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
      * @param delegate            The {@link Message} containing {@link Message#getPayload() payload},
-     *                            {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                            {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
      *                            {@link Message#getMetaData() metadata} for the {@link DomainEventMessage} to
      *                            reconstruct.
      * @param timestampSupplier   The {@link Instant timestampSupplier} of this
@@ -157,7 +157,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
      * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code delegate}, and {@code timestamp},
      * intended to reconstruct another {@link DomainEventMessage}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#name() name},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
      * {@code GenericEventMessage}.
      * <p>
@@ -168,7 +168,7 @@ public class GenericDomainEventMessage<P> extends GenericEventMessage<P> impleme
      * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
      * @param delegate            The {@link Message} containing {@link Message#getPayload() payload},
-     *                            {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                            {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
      *                            {@link Message#getMetaData() metadata} for the {@link DomainEventMessage} to
      *                            reconstruct.
      * @param timestamp           The {@link Instant timestamp} of this {@link DomainEventMessage DomainEventMessage's}

@@ -71,29 +71,29 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     /**
-     * Constructs a {@link SerializedMessage} with given {@code identifier}, {@code type}, and lazily deserialized
+     * Constructs a {@link SerializedMessage} with given {@code identifier}, {@code name}, and lazily deserialized
      * {@code payload} and {@code metadata}.
      * <p>
      * The {@code identifier} originates from the {@link org.axonframework.messaging.Message} where the lazily
      * deserialized {@code payload} and {@code metadata} originate from.
      *
      * @param identifier The identifier of this {@link SerializedMessage}.
-     * @param type       The {@link QualifiedName type} for this {@link SerializedMessage}.
+     * @param name       The {@link QualifiedName name} for this {@link SerializedMessage}.
      * @param payload    serialized payload that can be deserialized on demand and never more than once
      * @param metaData   serialized metadata that can be deserialized on demand and never more than once
      */
     public SerializedMessage(@Nonnull String identifier,
-                             @Nonnull QualifiedName type,
+                             @Nonnull QualifiedName name,
                              @Nonnull LazyDeserializingObject<P> payload,
                              @Nonnull LazyDeserializingObject<MetaData> metaData) {
-        super(identifier, type);
+        super(identifier, name);
         this.metaData = metaData;
         this.payload = payload;
     }
 
     private SerializedMessage(@Nonnull SerializedMessage<P> message,
                               @Nonnull LazyDeserializingObject<MetaData> newMetaData) {
-        this(message.getIdentifier(), message.type(), message.payload, newMetaData);
+        this(message.getIdentifier(), message.name(), message.payload, newMetaData);
     }
 
     @Override
@@ -178,6 +178,6 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
      * @return the GenericMessage to use as a replacement when serializing
      */
     protected Object writeReplace() {
-        return new GenericMessage<>(getIdentifier(), type(), getPayload(), getMetaData());
+        return new GenericMessage<>(getIdentifier(), name(), getPayload(), getMetaData());
     }
 }

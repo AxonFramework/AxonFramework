@@ -38,7 +38,7 @@ import org.axonframework.serialization.SimpleSerializedObject;
 public class DeadlineDetails {
 
     private String deadlineName;
-    private String type;
+    private String name;
     private String scopeDescriptor;
     private String scopeDescriptorClass;
     private String payload;
@@ -55,8 +55,7 @@ public class DeadlineDetails {
      * {@link org.axonframework.deadline.DeadlineMessage}.
      *
      * @param deadlineName         The {@link String} with the name of the deadline.
-     * @param type                 The {@link DeadlineMessage#type()} of the deadline as a
-     *                             {@link QualifiedName#toSimpleString()}.
+     * @param name                 The {@link DeadlineMessage#name()} of the deadline.
      * @param scopeDescriptor      The {@link String} which tells what the scope is of the deadline.
      * @param scopeDescriptorClass The {@link String} which tells what the class of the scope descriptor is.
      * @param payload              The {@link String} with the payload. This can be null.
@@ -66,7 +65,7 @@ public class DeadlineDetails {
      */
     @SuppressWarnings("squid:S107")
     DeadlineDetails(@Nonnull String deadlineName,
-                    @Nonnull String type,
+                    @Nonnull String name,
                     @Nonnull String scopeDescriptor,
                     @Nonnull String scopeDescriptorClass,
                     @Nullable String payload,
@@ -74,7 +73,7 @@ public class DeadlineDetails {
                     @Nullable String payloadRevision,
                     @Nonnull String metaData) {
         this.deadlineName = deadlineName;
-        this.type = type;
+        this.name = name;
         this.scopeDescriptor = scopeDescriptor;
         this.scopeDescriptorClass = scopeDescriptorClass;
         this.payload = payload;
@@ -85,7 +84,7 @@ public class DeadlineDetails {
 
     /**
      * Created a new {@link DeadlineDetails} object, and returns that serialized as a {@link String}. The reason
-     * {@link String} was chosen over a byte array is that optionally the JubRunr dashboard is used, and as
+     * {@link String} was chosen over a byte array is that optionally the JobRunr dashboard is used, and as
      * {@link String} its easy to read the details there.
      *
      * @param deadlineName The {@link String} with the name of the deadline.
@@ -105,7 +104,7 @@ public class DeadlineDetails {
         SerializedObject<String> serializedPayload = serializer.serialize(message.getPayload(), String.class);
         SerializedObject<String> serializedMetaData = serializer.serialize(message.getMetaData(), String.class);
         DeadlineDetails deadlineDetails = new DeadlineDetails(deadlineName,
-                                                              message.type().toSimpleString(),
+                                                              message.name().toString(),
                                                               serializedDescriptor.getData(),
                                                               serializedDescriptor.getType().getName(),
                                                               serializedPayload.getData(),
@@ -126,12 +125,12 @@ public class DeadlineDetails {
     }
 
     /**
-     * Returns the {@link DeadlineMessage#type()} of this deadline as a {@link String}.
+     * Returns the {@link DeadlineMessage#name()} of this deadline.
      *
-     * @return The {@link DeadlineMessage#type()} of this deadline as a {@link String}.
+     * @return The {@link DeadlineMessage#name()} of this deadline.
      */
-    public String getType() {
-        return type;
+    public String getName() {
+        return name;
     }
 
     /**
@@ -197,7 +196,7 @@ public class DeadlineDetails {
     @SuppressWarnings("rawtypes")
     public GenericDeadlineMessage asDeadLineMessage(Serializer serializer) {
         return new GenericDeadlineMessage<>(deadlineName,
-                                            QualifiedName.simpleStringName(type),
+                                            QualifiedName.fromString(name),
                                             getDeserializedPayload(serializer),
                                             getDeserializedMetaData(serializer));
     }

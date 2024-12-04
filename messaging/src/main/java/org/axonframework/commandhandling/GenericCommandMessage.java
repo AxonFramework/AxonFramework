@@ -55,7 +55,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * implements {@code CommandMessage}, or a {@code CommandMessage} based on the result of
      * {@link Message#getPayload()} and {@link Message#getMetaData()} for other {@link Message} implementations.
      * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName type}.
+     * {@link QualifiedName name}.
      */
     @Deprecated
     @SuppressWarnings("unchecked")
@@ -63,42 +63,42 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
         if (command instanceof CommandMessage) {
             return (CommandMessage<P>) command;
         } else if (command instanceof Message<?> message) {
-            return new GenericCommandMessage<>(message.type(), (P) message.getPayload(), message.getMetaData());
+            return new GenericCommandMessage<>(message.name(), (P) message.getPayload(), message.getMetaData());
         }
         return new GenericCommandMessage<>(QualifiedNameUtils.fromClassName(command.getClass()), (P) command,
                                            MetaData.emptyInstance());
     }
 
     /**
-     * Constructs a {@link GenericCommandMessage} for the given {@code type} and {@code payload}.
+     * Constructs a {@link GenericCommandMessage} for the given {@code name} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param type    The {@link QualifiedName type} for this {@link CommandMessage}.
+     * @param name    The {@link QualifiedName name} for this {@link CommandMessage}.
      * @param payload The payload of type {@code P} for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@Nonnull QualifiedName type,
+    public GenericCommandMessage(@Nonnull QualifiedName name,
                                  @Nonnull P payload) {
-        this(type, payload, MetaData.emptyInstance());
+        this(name, payload, MetaData.emptyInstance());
     }
 
     /**
-     * Constructs a {@link GenericCommandMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * Constructs a {@link GenericCommandMessage} for the given {@code name}, {@code payload}, and {@code metaData}.
      *
-     * @param type     The {@link QualifiedName type} for this {@link CommandMessage}.
+     * @param name     The {@link QualifiedName name} for this {@link CommandMessage}.
      * @param payload  The payload of type {@code P} for this {@link CommandMessage}.
      * @param metaData The metadata for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@Nonnull QualifiedName type,
+    public GenericCommandMessage(@Nonnull QualifiedName name,
                                  @Nonnull P payload,
                                  @Nonnull Map<String, ?> metaData) {
-        this(new GenericMessage<>(type, payload, metaData), payload.getClass().getName());
+        this(new GenericMessage<>(name, payload, metaData), payload.getClass().getName());
     }
 
     /**
      * Constructs a {@link GenericCommandMessage} with given {@code delegate} and {@code commandName}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#name() name},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
      * {@code GenericCommandMessage}.
      * <p>
@@ -106,7 +106,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * of Work.
      *
      * @param delegate    The {@link Message} containing {@link Message#getPayload() payload},
-     *                    {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
+     *                    {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
      *                    {@link Message#getMetaData() metadata} for the {@link CommandMessage} to reconstruct.
      * @param commandName The name for this {@link CommandMessage}.
      */
@@ -136,7 +136,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
         // TODO - Once Message declares a convert method, use that
         Message<P> delegate = getDelegate();
         Message<C> transformed = new GenericMessage<>(delegate.getIdentifier(),
-                                                      delegate.type(),
+                                                      delegate.name(),
                                                       conversion.apply(delegate.getPayload()),
                                                       delegate.getMetaData());
         return new GenericCommandMessage<>(transformed, commandName);

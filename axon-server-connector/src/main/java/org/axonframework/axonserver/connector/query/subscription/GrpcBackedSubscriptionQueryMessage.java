@@ -83,8 +83,8 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
 
     @Nonnull
     @Override
-    public QualifiedName type() {
-        return grpcBackedQueryMessage.type();
+    public QualifiedName name() {
+        return grpcBackedQueryMessage.name();
     }
 
     @Nonnull
