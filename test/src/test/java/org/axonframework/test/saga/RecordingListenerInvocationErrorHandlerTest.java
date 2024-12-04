@@ -20,13 +20,12 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -37,7 +36,8 @@ import static org.mockito.Mockito.*;
  */
 class RecordingListenerInvocationErrorHandlerTest {
 
-    private static final EventMessage<String> TEST_EVENT = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "test");
+    private static final EventMessage<String> TEST_EVENT =
+            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "test");
     private static final Exception TEST_EXCEPTION = new IllegalArgumentException("This argument is illegal");
 
     private ListenerInvocationErrorHandler wrappedErrorHandler;

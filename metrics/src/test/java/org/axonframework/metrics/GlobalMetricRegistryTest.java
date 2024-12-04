@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.junit.jupiter.api.*;
@@ -30,7 +30,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GlobalMetricRegistryTest {
@@ -75,7 +74,8 @@ class GlobalMetricRegistryTest {
     void createCommandBusMonitor() {
         MessageMonitor<? super CommandMessage<?>> monitor = subject.registerCommandBus("commandBus");
 
-        monitor.onMessageIngested(new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "test")).reportSuccess();
+        monitor.onMessageIngested(new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test"))
+               .reportSuccess();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ConsoleReporter.forRegistry(subject.getRegistry()).outputTo(new PrintStream(out)).build().report();

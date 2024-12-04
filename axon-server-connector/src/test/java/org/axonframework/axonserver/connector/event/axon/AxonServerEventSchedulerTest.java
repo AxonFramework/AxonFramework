@@ -41,7 +41,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -52,7 +52,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -263,8 +262,9 @@ public class AxonServerEventSchedulerTest {
     @Test
     void reschedule() {
         String token = "12345";
-        EventMessage<String> testEvent =
-                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "Updated", MetaData.with("updated", "true"));
+        EventMessage<String> testEvent = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), "Updated", MetaData.with("updated", "true")
+        );
 
         scheduled.put(token, Event.newBuilder().build());
         testSubject.reschedule(new SimpleScheduleToken(token), Duration.ofDays(1), testEvent);
@@ -275,8 +275,9 @@ public class AxonServerEventSchedulerTest {
 
     @Test
     void rescheduleWithoutToken() {
-        EventMessage<String> testEvent =
-                new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "Updated", MetaData.with("updated", "true"));
+        EventMessage<String> testEvent = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), "Updated", MetaData.with("updated", "true")
+        );
         org.axonframework.eventhandling.scheduling.ScheduleToken token =
                 testSubject.reschedule(null, Duration.ofDays(1), testEvent);
 

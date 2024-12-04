@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonMap;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -72,28 +71,28 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     void creationPolicy_NoneExists() throws Exception {
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StartingEvent("123")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
     void creationPolicy_OneAlreadyExists() throws Exception {
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StartingEvent("123")));
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StartingEvent("123")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StartingEvent("123")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
     void handleUnrelatedEvent() throws Exception {
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "Unrelated"));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Unrelated"));
         verify(sagaRepository, never()).find(isNull());
     }
 
     @Test
     void creationPolicy_CreationForced() throws Exception {
         StartingEvent startingEvent = new StartingEvent("123");
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), startingEvent));
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new ForcingStartEvent("123")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), startingEvent));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new ForcingStartEvent("123")));
         Collection<MyTestSaga> sagas = repositoryContents("123");
         assertEquals(2, sagas.size());
         for (MyTestSaga saga : sagas) {
@@ -106,20 +105,20 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     void creationPolicy_SagaNotCreated() throws Exception {
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new MiddleEvent("123")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new MiddleEvent("123")));
         assertEquals(0, repositoryContents("123").size());
     }
 
     @Test
     void mostSpecificHandlerEvaluatedFirst() throws Exception {
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StartingEvent("12")));
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StartingEvent("23")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StartingEvent("12")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StartingEvent("23")));
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("23").size());
 
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new MiddleEvent("12")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new MiddleEvent("12")));
         handle(new GenericEventMessage<>(
-                QualifiedNameUtils.fromDottedName("test.event"), new MiddleEvent("23"), singletonMap("catA", "value")
+                new QualifiedName("test", "event", "0.0.1"), new MiddleEvent("23"), singletonMap("catA", "value")
         ));
         assertEquals(0, repositoryContents("12").iterator().next().getSpecificHandlerInvocations());
         assertEquals(1, repositoryContents("23").iterator().next().getSpecificHandlerInvocations());
@@ -127,28 +126,28 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     void nullAssociationValueIsIgnored() throws Exception {
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StartingEvent(null)));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StartingEvent(null)));
 
         verify(sagaRepository, never()).find(null);
     }
 
     @Test
     void lifecycle_DestroyedOnEnd() throws Exception {
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StartingEvent("12")));
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StartingEvent("23")));
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new MiddleEvent("12")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StartingEvent("12")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StartingEvent("23")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new MiddleEvent("12")));
         handle(new GenericEventMessage<>(
-                QualifiedNameUtils.fromDottedName("test.event"), new MiddleEvent("23"), singletonMap("catA", "value")
+                new QualifiedName("test", "event", "0.0.1"), new MiddleEvent("23"), singletonMap("catA", "value")
         ));
 
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").iterator().next().getSpecificHandlerInvocations());
         assertEquals(1, repositoryContents("23").iterator().next().getSpecificHandlerInvocations());
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new EndingEvent("12")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new EndingEvent("12")));
         assertEquals(1, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").size());
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new EndingEvent("23")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new EndingEvent("23")));
         assertEquals(0, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").size());
     }
@@ -160,15 +159,15 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     void lifeCycle_ExistingInstanceIgnoresEvent() throws Exception {
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StartingEvent("12")));
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent()));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StartingEvent("12")));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StubDomainEvent()));
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("12").iterator().next().getCapturedEvents().size());
     }
 
     @Test
     void lifeCycle_IgnoredEventDoesNotCreateInstance() throws Exception {
-        handle(new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent()));
+        handle(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new StubDomainEvent()));
         assertEquals(0, repositoryContents("12").size());
     }
 

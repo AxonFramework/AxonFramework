@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FilteringDomainEventStreamTest {
@@ -38,11 +37,11 @@ class FilteringDomainEventStreamTest {
     @BeforeEach
     void setUp() throws Exception {
         event1 = new GenericDomainEventMessage<>("type", "1", 0L,
-                                                 QualifiedNameUtils.fromDottedName("test.event"), "Create type 1");
+                                                 new QualifiedName("test", "event", "0.0.1"), "Create type 1");
         event2 = new GenericDomainEventMessage<>("type2", "1", 0L,
-                                                 QualifiedNameUtils.fromDottedName("test.event"), "Create type 2");
+                                                 new QualifiedName("test", "event", "0.0.1"), "Create type 2");
         event3 = new GenericDomainEventMessage<>("type2", "1", 1L,
-                                                 QualifiedNameUtils.fromDottedName("test.event"), "Change type 2");
+                                                 new QualifiedName("test", "event", "0.0.1"), "Change type 2");
     }
 
     @Test

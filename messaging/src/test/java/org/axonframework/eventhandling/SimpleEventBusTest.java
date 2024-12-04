@@ -17,13 +17,12 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.mockito.Mockito.*;
 
 /**
@@ -75,6 +74,6 @@ class SimpleEventBusTest {
     }
 
     private EventMessage<Object> newEvent() {
-        return new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), new Object());
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object());
     }
 }

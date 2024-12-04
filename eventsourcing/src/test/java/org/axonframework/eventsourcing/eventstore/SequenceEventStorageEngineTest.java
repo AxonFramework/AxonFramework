@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -37,7 +37,6 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.any;
@@ -81,10 +80,12 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void aggregateEventsAreReadFromHistoricThenActive() {
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
-        DomainEventMessage<String> event2 =
-                new GenericDomainEventMessage<>("type", "aggregate", 1, QualifiedNameUtils.fromDottedName("test.event"), "test2");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 1, new QualifiedName("test", "event", "0.0.1"), "test2"
+        );
         when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1));
         when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event2));
 
@@ -110,10 +111,12 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void aggregateEventsAreReadFromActiveWhenNoHistoricEventsAvailable() {
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
-        DomainEventMessage<String> event2 =
-                new GenericDomainEventMessage<>("type", "aggregate", 1, QualifiedNameUtils.fromDottedName("test.event"), "test2");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 1, new QualifiedName("test", "event", "0.0.1"), "test2"
+        );
         when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
         when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1, event2));
 
@@ -138,10 +141,12 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void aggregateEventsAreReadFromHistoricWhenNoActiveEventsAvailable() {
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
-        DomainEventMessage<String> event2 =
-                new GenericDomainEventMessage<>("type", "aggregate", 1, QualifiedNameUtils.fromDottedName("test.event"), "test2");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 1, new QualifiedName("test", "event", "0.0.1"), "test2"
+        );
         when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1, event2));
         when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
 
@@ -170,8 +175,9 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void snapshotsStoredInActiveStorage() {
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
         testSubject.storeSnapshot(event1);
 
         verify(activeStorage).storeSnapshot(event1);
@@ -180,10 +186,12 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void eventStreamedFromHistoricThenActive() {
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
-        DomainEventMessage<String> event2 =
-                new GenericDomainEventMessage<>("type", "aggregate", 1, QualifiedNameUtils.fromDottedName("test.event"), "test2");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 1, new QualifiedName("test", "event", "0.0.1"), "test2"
+        );
         TrackingToken token1 = new GlobalSequenceTrackingToken(1);
         TrackingToken token2 = new GlobalSequenceTrackingToken(2);
 
@@ -206,8 +214,9 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void snapshotReadFromActiveThenHistoric() {
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
 
         when(historicStorage.readSnapshot("aggregate")).thenReturn(Optional.of(event1));
         when(activeStorage.readSnapshot("aggregate")).thenReturn(Optional.empty());
@@ -223,10 +232,12 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void snapshotReadFromActive() {
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
-        DomainEventMessage<String> event2 =
-                new GenericDomainEventMessage<>("type", "aggregate", 1, QualifiedNameUtils.fromDottedName("test.event"), "test2");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 1, new QualifiedName("test", "event", "0.0.1"), "test2"
+        );
 
         when(historicStorage.readSnapshot("aggregate")).thenReturn(Optional.of(event2));
         when(activeStorage.readSnapshot("aggregate")).thenReturn(Optional.of(event1));
@@ -285,12 +296,15 @@ class SequenceEventStorageEngineTest {
 
         testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
 
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
-        DomainEventMessage<String> event2 =
-                new GenericDomainEventMessage<>("type", "aggregate", 1, QualifiedNameUtils.fromDottedName("test.event"), "test2");
-        DomainEventMessage<String> event3 =
-                new GenericDomainEventMessage<>("type", "aggregate", 2, QualifiedNameUtils.fromDottedName("test.event"), "test3");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 1, new QualifiedName("test", "event", "0.0.1"), "test2"
+        );
+        DomainEventMessage<String> event3 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 2, new QualifiedName("test", "event", "0.0.1"), "test3"
+        );
         historicStorage.appendEvents(event1);
 
         activeStorage.appendEvents(event2, event3);
@@ -318,12 +332,15 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void aggregateEventsAreReadFromFirstSequenceNumber() {
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
-        DomainEventMessage<String> snapshotEvent =
-                new GenericDomainEventMessage<>("type", "aggregate", 1, QualifiedNameUtils.fromDottedName("test.snapshot"), "test2");
-        DomainEventMessage<String> event3 =
-                new GenericDomainEventMessage<>("type", "aggregate", 2, QualifiedNameUtils.fromDottedName("test.event"), "test3");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
+        DomainEventMessage<String> snapshotEvent = new GenericDomainEventMessage<>(
+                "type", "aggregate", 1, new QualifiedName("test", "snapshot", "0.0.1"), "test2"
+        );
+        DomainEventMessage<String> event3 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 2, new QualifiedName("test", "event", "0.0.1"), "test3"
+        );
 
         when(historicStorage.readEvents(eq("aggregate"), eq(0L))).thenReturn(DomainEventStream.of(event1));
         when(historicStorage.readEvents(eq("aggregate"), longThat(l -> l > 0))).thenReturn(DomainEventStream.empty());
@@ -352,12 +369,15 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void aggregateEventsAreReadFromFirstSequenceNumberHistoricOnly() {
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
-        DomainEventMessage<String> snapshotEvent =
-                new GenericDomainEventMessage<>("type", "aggregate", 1, QualifiedNameUtils.fromDottedName("test.snapshot"), "test2");
-        DomainEventMessage<String> event3 =
-                new GenericDomainEventMessage<>("type", "aggregate", 2, QualifiedNameUtils.fromDottedName("test.event"), "test3");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
+        DomainEventMessage<String> snapshotEvent = new GenericDomainEventMessage<>(
+                "type", "aggregate", 1, new QualifiedName("test", "snapshot", "0.0.1"), "test2"
+        );
+        DomainEventMessage<String> event3 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 2, new QualifiedName("test", "event", "0.0.1"), "test3"
+        );
 
         when(historicStorage.readEvents(eq("aggregate"), eq(0L)))
                 .thenReturn(DomainEventStream.of(event1, snapshotEvent, event3));
@@ -387,12 +407,15 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void aggregateEventsAreReadFromFirstSequenceNumberActiveOnly() {
-        DomainEventMessage<String> event1 =
-                new GenericDomainEventMessage<>("type", "aggregate", 0, QualifiedNameUtils.fromDottedName("test.event"), "test1");
-        DomainEventMessage<String> snapshotEvent =
-                new GenericDomainEventMessage<>("type", "aggregate", 1, QualifiedNameUtils.fromDottedName("test.snapshot"), "test3");
-        DomainEventMessage<String> event3 =
-                new GenericDomainEventMessage<>("type", "aggregate", 2, QualifiedNameUtils.fromDottedName("test.event"), "test4");
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 0, new QualifiedName("test", "event", "0.0.1"), "test1"
+        );
+        DomainEventMessage<String> snapshotEvent = new GenericDomainEventMessage<>(
+                "type", "aggregate", 1, new QualifiedName("test", "snapshot", "0.0.1"), "test3"
+        );
+        DomainEventMessage<String> event3 = new GenericDomainEventMessage<>(
+                "type", "aggregate", 2, new QualifiedName("test", "event", "0.0.1"), "test4"
+        );
 
         when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
 

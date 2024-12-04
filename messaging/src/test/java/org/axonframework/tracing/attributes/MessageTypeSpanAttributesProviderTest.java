@@ -18,14 +18,13 @@ package org.axonframework.tracing.attributes;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,7 +35,7 @@ class MessageTypeSpanAttributesProviderTest {
     @Test
     void correctTypeForQueryMessage() {
         Message<?> genericQueryMessage = new GenericQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), "myQueryName", "MyQuery", instanceOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "myQueryName", "MyQuery", instanceOf(String.class)
         );
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
@@ -45,7 +44,8 @@ class MessageTypeSpanAttributesProviderTest {
 
     @Test
     void correctTypeForCommandMessage() {
-        Message<?> genericQueryMessage = new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.command"), "payload");
+        Message<?> genericQueryMessage =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "payload");
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
         assertEquals("GenericCommandMessage", map.get("axon_message_type"));

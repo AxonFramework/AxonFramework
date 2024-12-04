@@ -103,7 +103,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
                                                                ((Message<?>) result).getMetaData());
                 } else {
                     QualifiedName name = result == null
-                            ? QualifiedNameUtils.fromDottedName("empty.result")
+                            ? new QualifiedName("axon.framework", "empty.result", "0.0.1")
                             : QualifiedNameUtils.fromClassName(result.getClass());
                     resultMessage = new GenericResultMessage<>(name, result);
                 }

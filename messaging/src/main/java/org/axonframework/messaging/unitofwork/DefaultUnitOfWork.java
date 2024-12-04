@@ -88,7 +88,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
                                                            ((Message<?>) result).getMetaData());
             } else {
                 QualifiedName name = result == null
-                        ? QualifiedNameUtils.fromDottedName("empty.result")
+                        ? new QualifiedName("axon.framework", "empty.result", "0.0.1")
                         : QualifiedNameUtils.fromClassName(result.getClass());
                 resultMessage = new GenericResultMessage<>(name, result);
             }
@@ -111,7 +111,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     @Override
     protected void setRollbackCause(Throwable cause) {
         QualifiedName name = cause == null
-                ? QualifiedNameUtils.fromDottedName("empty.rollback.cause")
+                ? new QualifiedName("axon.framework", "empty.rollback.cause", "0.0.1")
                 : QualifiedNameUtils.fromClassName(cause.getClass());
         setExecutionResult(new ExecutionResult(new GenericResultMessage<>(name, cause)));
     }

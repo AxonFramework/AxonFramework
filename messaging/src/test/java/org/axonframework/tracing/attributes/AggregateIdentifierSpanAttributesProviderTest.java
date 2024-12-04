@@ -19,13 +19,12 @@ package org.axonframework.tracing.attributes;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AggregateIdentifierSpanAttributesProviderTest {
@@ -35,7 +34,7 @@ class AggregateIdentifierSpanAttributesProviderTest {
     @Test
     void domainEventMessage() {
         Message<?> message = new GenericDomainEventMessage<>(
-                "MyType", "1729872981", 1, QualifiedNameUtils.fromDottedName("test.event"), "payload"
+                "MyType", "1729872981", 1, new QualifiedName("test", "event", "0.0.1"), "payload"
         );
 
         Map<String, String> map = provider.provideForMessage(message);
@@ -45,7 +44,7 @@ class AggregateIdentifierSpanAttributesProviderTest {
 
     @Test
     void genericEventMessage() {
-        Message<?> message = new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), "payload");
+        Message<?> message = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "payload");
 
         Map<String, String> map = provider.provideForMessage(message);
         assertEquals(0, map.size());

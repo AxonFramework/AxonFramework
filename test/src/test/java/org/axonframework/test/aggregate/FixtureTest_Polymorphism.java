@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -34,7 +34,6 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.createNew;
 
@@ -80,8 +79,9 @@ class FixtureTest_Polymorphism {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void commonCommandOnAggregate(String aggregateType) {
         String id = "id";
-        DomainEventMessage<CreatedEvent> creationEvent =
-                new GenericDomainEventMessage<>(aggregateType, id, 0, QualifiedNameUtils.fromDottedName("test.event"), new CreatedEvent(id));
+        DomainEventMessage<CreatedEvent> creationEvent = new GenericDomainEventMessage<>(
+                aggregateType, id, 0, new QualifiedName("test", "event", "0.0.1"), new CreatedEvent(id)
+        );
         fixture.given(creationEvent)
                .when(new CommonCommand(id))
                .expectResultMessagePayload(aggregateType + id);

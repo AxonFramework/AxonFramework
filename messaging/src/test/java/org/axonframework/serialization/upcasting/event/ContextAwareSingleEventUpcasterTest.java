@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -80,7 +79,7 @@ class ContextAwareSingleEventUpcasterTest {
         MetaData testMetaData = MetaData.with("key", "value");
 
         DomainEventMessage<SecondStubEvent> firstTestEventMessage = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, QualifiedNameUtils.fromDottedName("test.event"),
+                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"),
                 new SecondStubEvent(expectedContextEventString, expectedContextEventNumber), testMetaData
         );
         EventData<?> firstTestEventData = new TestDomainEventEntry(firstTestEventMessage, serializer);
@@ -88,8 +87,8 @@ class ContextAwareSingleEventUpcasterTest {
                 new InitialEventRepresentation(firstTestEventData, serializer);
 
         GenericDomainEventMessage<StubDomainEvent> secondTestEventMessage = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0,
-                QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent("oldName"), testMetaData
+                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"),
+                new StubDomainEvent("oldName"), testMetaData
         );
         EventData<?> secondTestEventData = new TestDomainEventEntry(secondTestEventMessage, serializer);
         InitialEventRepresentation secondTestRepresentation =

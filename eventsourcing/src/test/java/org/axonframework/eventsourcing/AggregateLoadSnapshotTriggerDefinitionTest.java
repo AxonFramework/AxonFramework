@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -37,7 +37,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.mockito.Mockito.*;
 
 /**
@@ -61,7 +60,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         mockSnapshotter = mock(Snapshotter.class);
         testSubject = new AggregateLoadTimeSnapshotTriggerDefinition(mockSnapshotter, 1000);
         aggregateIdentifier = "aggregateIdentifier";
-        DefaultUnitOfWork.startAndGet(new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.message"), "test"));
+        DefaultUnitOfWork.startAndGet(new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test"));
         aggregate = AnnotatedAggregate.initialize(
                 new StubAggregate(aggregateIdentifier),
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(StubAggregate.class),
@@ -82,7 +81,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
     void snapshotterTriggeredOnUnitOfWorkCleanup() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
@@ -102,7 +101,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.initializationFinished();
         trigger.eventHandled(testEvent);
@@ -118,7 +117,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.initializationFinished();
         trigger.eventHandled(testEvent);
@@ -134,7 +133,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.eventHandled(testEvent);
         trigger.initializationFinished();
@@ -150,7 +149,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1000), ZoneId.of("UTC"));
 
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.eventHandled(testEvent);
 
@@ -165,7 +164,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         trigger.eventHandled(testEvent);
 
@@ -188,7 +187,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, QualifiedNameUtils.fromDottedName("test.event"), "Mock contents"
+                "type", aggregateIdentifier, 0, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
         );
         CurrentUnitOfWork.commit();
         trigger.eventHandled(testEvent);

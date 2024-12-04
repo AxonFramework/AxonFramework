@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -363,7 +362,8 @@ class SegmentTest {
 
     private DomainEventMessage<Object> newStubDomainEvent(Object aggregateIdentifier) {
         return new GenericDomainEventMessage<>(
-                "aggregateType", aggregateIdentifier.toString(), 0L, QualifiedNameUtils.fromDottedName("test.event"), new Object()
+                "aggregateType", aggregateIdentifier.toString(), 0L,
+                new QualifiedName("test", "event", "0.0.1"), new Object()
         );
     }
 }

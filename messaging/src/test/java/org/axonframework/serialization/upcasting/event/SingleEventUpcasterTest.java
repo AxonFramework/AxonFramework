@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -58,7 +57,8 @@ class SingleEventUpcasterTest {
         String newValue = "newNameValue";
         MetaData metaData = MetaData.with("key", "value");
         DomainEventMessage<StubDomainEvent> testEvent = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent("oldName"), metaData
+                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"),
+                new StubDomainEvent("oldName"), metaData
         );
         EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster(newValue);
@@ -106,7 +106,7 @@ class SingleEventUpcasterTest {
     @Test
     void ignoresUnknownType() {
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, QualifiedNameUtils.fromDottedName("test.event"), "someString"
+                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"), "someString"
         );
         EventData<?> eventData = new TestDomainEventEntry(
                 testEvent, serializer
@@ -123,7 +123,7 @@ class SingleEventUpcasterTest {
     @Test
     void ignoresWrongVersion() {
         DomainEventMessage<StubDomainEvent> testEvent = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, QualifiedNameUtils.fromDottedName("test.event"), new StubDomainEvent("oldName")
+                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"), new StubDomainEvent("oldName")
         );
         EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");

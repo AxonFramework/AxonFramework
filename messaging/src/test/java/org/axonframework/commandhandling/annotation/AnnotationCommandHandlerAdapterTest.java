@@ -25,7 +25,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
@@ -41,7 +41,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -97,8 +96,9 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handlerDispatchingWithCustomCommandName() throws Exception {
-        CommandMessage<Long> testCommand =
-                new GenericCommandMessage<>(new GenericMessage<>(QualifiedNameUtils.fromDottedName("test.command"), 1L), "almostLong");
+        CommandMessage<Long> testCommand = new GenericCommandMessage<>(
+                new GenericMessage<>(new QualifiedName("test", "command", "0.0.1"), 1L), "almostLong"
+        );
         Object actualReturnValue = testSubject.handleSync(testCommand);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);

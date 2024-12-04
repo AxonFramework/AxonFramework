@@ -20,7 +20,7 @@ import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
@@ -30,7 +30,6 @@ import org.junit.jupiter.api.*;
 
 import java.util.Objects;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -52,7 +51,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     void getUpdateResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
         ResponseType<String> expectedUpdateResponseType = RESPONSE_TYPE;
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), TEST_QUERY, RESPONSE_TYPE, expectedUpdateResponseType
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, RESPONSE_TYPE, expectedUpdateResponseType
         );
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
@@ -72,7 +71,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     @Test
     void getQueryNameReturnsTheNameOfTheQueryAsSpecifiedInTheSubscriptionQuery() {
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
         );
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
@@ -90,7 +89,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     void getResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
         ResponseType<String> expectedResponseType = RESPONSE_TYPE;
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), TEST_QUERY, expectedResponseType, RESPONSE_TYPE
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, expectedResponseType, RESPONSE_TYPE
         );
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
@@ -109,7 +108,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     @Test
     void getIdentifierReturnsTheSameIdentifierAsSpecifiedInTheSubscriptionQuery() {
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
         );
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
@@ -127,7 +126,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     void getMetaDataReturnsTheSameMapAsWasInsertedInTheSubscriptionQuery() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
         ).withMetaData(expectedMetaData);
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
@@ -145,7 +144,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     void getPayloadReturnsAnIdenticalObjectAsInsertedThroughTheSubscriptionQuery() {
         TestQuery expectedQuery = TEST_QUERY;
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), expectedQuery, RESPONSE_TYPE, RESPONSE_TYPE
+                new QualifiedName("test", "query", "0.0.1"), expectedQuery, RESPONSE_TYPE, RESPONSE_TYPE
         );
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
@@ -162,7 +161,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     @Test
     void getPayloadTypeReturnsTheTypeOfTheInsertedSubscriptionQuery() {
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
         );
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
@@ -180,7 +179,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     void withMetaDataCompletelyReplacesTheInitialMetaDataMap() {
         MetaData testMetaData = MetaData.with("some-key", "some-value");
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
         ).withMetaData(testMetaData);
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
@@ -203,7 +202,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     void andMetaDataAppendsToTheExistingMetaData() {
         MetaData testMetaData = MetaData.with("some-key", "some-value");
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                QualifiedNameUtils.fromDottedName("test.query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
         ).withMetaData(testMetaData);
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()

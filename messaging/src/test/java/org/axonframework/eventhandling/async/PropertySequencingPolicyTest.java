@@ -18,10 +18,9 @@ package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -29,8 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Nils Christian Ehmke
  */
-@DisplayName("Unit-Test for the PropertySequencingPolicy")
-final class PropertySequencingPolicyTest {
+@DisplayName("Unit-Test for the PropertySequencingPolicy") final class PropertySequencingPolicyTest {
 
     @Test
     void propertyExtractorShouldReadCorrectValue() {
@@ -75,7 +73,7 @@ final class PropertySequencingPolicyTest {
     }
 
     private DomainEventMessage<?> newStubDomainEvent(final Object payload) {
-        return new GenericDomainEventMessage<>("type", "A", 0L, QualifiedNameUtils.fromDottedName("test.event"), payload);
+        return new GenericDomainEventMessage<>("type", "A", 0L, new QualifiedName("test", "event", "0.0.1"), payload);
     }
 
     private record TestEvent(String id) {

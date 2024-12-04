@@ -16,12 +16,11 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -89,10 +88,12 @@ class PrimitiveQueryHandlerResponseTypeTest {
      * @param <T>       the type being tested
      */
     private <T> void test(final T value, final Class<T> boxed, final Class<T> primitive) {
-        final QueryMessage<T, T> queryBoxed =
-                new GenericQueryMessage<>(QualifiedNameUtils.fromDottedName("test.query"), value, ResponseTypes.instanceOf(boxed));
-        final QueryMessage<T, T> queryPrimitive =
-                new GenericQueryMessage<>(QualifiedNameUtils.fromDottedName("test.query"), value, ResponseTypes.instanceOf(primitive));
+        final QueryMessage<T, T> queryBoxed = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), value, ResponseTypes.instanceOf(boxed)
+        );
+        final QueryMessage<T, T> queryPrimitive = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), value, ResponseTypes.instanceOf(primitive)
+        );
 
         final T responseBoxed = queryBus.query(queryBoxed).join().getPayload();
         final T responsePrimitive = queryBus.query(queryPrimitive).join().getPayload();

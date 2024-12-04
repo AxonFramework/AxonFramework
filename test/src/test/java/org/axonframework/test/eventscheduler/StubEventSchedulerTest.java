@@ -18,7 +18,7 @@ package org.axonframework.test.eventscheduler;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -27,7 +27,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -70,7 +69,7 @@ class StubEventSchedulerTest {
     }
 
     private EventMessage<MockEvent> event(MockEvent mockEvent) {
-        return new GenericEventMessage<>(QualifiedNameUtils.fromDottedName("test.event"), mockEvent);
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), mockEvent);
     }
 
     private static class MockEvent {

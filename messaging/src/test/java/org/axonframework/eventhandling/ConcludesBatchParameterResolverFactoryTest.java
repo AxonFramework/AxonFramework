@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.jupiter.api.*;
@@ -26,7 +26,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,7 +44,9 @@ class ConcludesBatchParameterResolverFactoryTest {
     @Test
     void onlyMatchesEventMessages() {
         assertTrue(testSubject.matches(asEventMessage("testEvent"), null));
-        assertFalse(testSubject.matches(new GenericCommandMessage<>(QualifiedNameUtils.fromDottedName("test.test"), "testCommand"), null));
+        assertFalse(testSubject.matches(new GenericCommandMessage<>(
+                new QualifiedName("test", "command", "0.0.1"), "testCommand"), null
+        ));
     }
 
     @Test
