@@ -17,9 +17,7 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-
-import static org.axonframework.common.BuilderUtils.assertNonEmpty;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import org.axonframework.common.Assert;
 
 /**
  * Utility class containing factory methods for the {@link QualifiedName} that align closely with the previous major
@@ -53,7 +51,7 @@ public final class QualifiedNameUtils {
      * @return A {@link QualifiedName} based on the given {@code clazz}.
      */
     public static QualifiedName fromClassName(@Nonnull Class<?> clazz) {
-        assertNonNull(clazz, "Cannot construct a QualifiedName based on a null Class.");
+        Assert.nonNull(clazz, () -> "Cannot construct a QualifiedName based on a null Class.");
         return new QualifiedName(clazz.getPackageName(), clazz.getSimpleName(), DEFAULT_REVISION);
     }
 
@@ -72,9 +70,8 @@ public final class QualifiedNameUtils {
      * @param dottedName The {@link String} to retrieve the {@link QualifiedName#namespace()} and
      *                   {@link QualifiedName#localName()} from.
      * @return A {@link QualifiedName} based on the given {@code dottedName}.
-     * @throws org.axonframework.common.AxonConfigurationException If the substring representing the
-     *                                                             {@link QualifiedName#localName()} is {@code null} or
-     *                                                             empty.
+     * @throws IllegalArgumentException If the substring representing the {@link QualifiedName#localName()} is
+     *                                  {@code null} or empty.
      */
     public static QualifiedName fromDottedName(@Nonnull String dottedName) {
         return fromDottedName(dottedName, DEFAULT_REVISION);
@@ -96,13 +93,12 @@ public final class QualifiedNameUtils {
      *                   {@link QualifiedName#localName()} from.
      * @param revision   The {@link String} resulting in the {@link QualifiedName#revision()}.
      * @return A {@link QualifiedName} based on the given {@code dottedName}.
-     * @throws org.axonframework.common.AxonConfigurationException If the substring representing the
-     *                                                             {@link QualifiedName#localName()} is {@code null} or
-     *                                                             empty.
+     * @throws IllegalArgumentException If the substring representing the {@link QualifiedName#localName()} is
+     *                                  {@code null} or empty.
      */
     public static QualifiedName fromDottedName(@Nonnull String dottedName,
                                                @Nonnull String revision) {
-        assertNonEmpty(dottedName, "Cannot construct a QualifiedName based on a null or empty String.");
+        Assert.nonEmpty(dottedName, "Cannot construct a QualifiedName based on a null or empty String.");
         int lastDot = dottedName.lastIndexOf('.');
         String namespace = dottedName.substring(0, Math.max(lastDot, 0));
         String localName = dottedName.substring(lastDot + 1);
