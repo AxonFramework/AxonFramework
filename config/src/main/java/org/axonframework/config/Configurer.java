@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineManager;
@@ -24,13 +25,17 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.CommandHandlerInterceptor;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.QueryHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -67,6 +72,22 @@ public interface Configurer extends LifecycleOperations {
     Configurer registerEventUpcaster(@Nonnull Function<Configuration, EventUpcaster> upcasterBuilder);
 
     /**
+     * Registers an commandHandlerInterceptor to be used intercept Command Messages before they are handled by the CommandHandler
+     *
+     * @param interceptorBuilder The function that returns an CommandHandlerInterceptor based on the configuration
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer registerCommandHandlerInterceptor(@Nonnull Function<Configuration, MessageHandlerInterceptor<? super CommandMessage<?>>> interceptorBuilder);
+
+    /**
+     * Registers an queryHandlerInterceptor to be used intercept Query Messages before they are handled by the QueryHandler
+     *
+     * @param interceptorBuilder The function that returns an QueryHandlerInterceptor based on the configuration
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer registerQueryHandlerInterceptor(@Nonnull Function<Configuration, MessageHandlerInterceptor<? super QueryMessage<?, ?>>> interceptorBuilder);
+
+    /**
      * Configures the Message Monitor to use for the Message processing components in this configuration, unless more
      * specific configuration based on the component's type, or type and name is available. The builder function
      * receives the type of component as well as its name as input, and is expected to return a MessageMonitor instance
@@ -101,7 +122,7 @@ public interface Configurer extends LifecycleOperations {
     default Configurer configureMessageMonitor(@Nonnull Class<?> componentType,
                                                @Nonnull Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return configureMessageMonitor(componentType,
-                                       (configuration, type, name) -> messageMonitorBuilder.apply(configuration));
+                (configuration, type, name) -> messageMonitorBuilder.apply(configuration));
     }
 
     /**
@@ -149,8 +170,8 @@ public interface Configurer extends LifecycleOperations {
     default Configurer configureMessageMonitor(@Nonnull Class<?> componentType, @Nonnull String componentName,
                                                @Nonnull Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return configureMessageMonitor(componentType,
-                                       componentName,
-                                       (configuration, type, name) -> messageMonitorBuilder.apply(configuration));
+                componentName,
+                (configuration, type, name) -> messageMonitorBuilder.apply(configuration));
     }
 
     /**
@@ -534,7 +555,6 @@ public interface Configurer extends LifecycleOperations {
      * an {@link AxonConfigurationException} is thrown.
      *
      * @return an instance of Event Processing Configurer
-     *
      * @throws AxonConfigurationException thrown if there are multiple {@link EventProcessingConfigurer}s
      */
     EventProcessingConfigurer eventProcessing() throws AxonConfigurationException;
@@ -544,13 +564,12 @@ public interface Configurer extends LifecycleOperations {
      * given consumer for configuration. If there aren't any pre-registered instances of
      * {@link EventProcessingConfigurer}, it will create an {@link EventProcessingModule} and register it as a module.
      * If there are multiple, an {@link AxonConfigurationException} is thrown.
-     *
+     * <p>
      * This method is identical to using {@link #eventProcessing()}, except that this variant allows for easier fluent
      * interfacing.
      *
      * @param eventProcessingConfigurer a consumer to configure the
      * @return an instance of Event Processing Configurer
-     *
      * @throws AxonConfigurationException thrown if there are multiple {@link EventProcessingConfigurer}s
      */
     default Configurer eventProcessing(@Nonnull Consumer<EventProcessingConfigurer> eventProcessingConfigurer)
