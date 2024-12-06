@@ -16,15 +16,19 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.lifecycle.Lifecycle;
+import org.axonframework.messaging.CommandHandlerInterceptor;
+import org.axonframework.messaging.QueryHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.modelling.saga.ResourceInjector;
+import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.MessageHandlerLookup;
 import org.axonframework.spring.config.SpringAggregateLookup;
@@ -102,7 +106,7 @@ public class InfraConfiguration {
 
         List<ConfigurerModule> sortedList = new ArrayList<>(configurerModules);
         sortedList.sort(Comparator.comparing(ConfigurerModule::order)
-                                  .thenComparing(AnnotationAwareOrderComparator.INSTANCE));
+                .thenComparing(AnnotationAwareOrderComparator.INSTANCE));
         sortedList.forEach(c -> c.configureModule(configurer));
         return configurer;
     }
@@ -142,6 +146,18 @@ public class InfraConfiguration {
     @Bean
     public ConfigurerModule eventUpcastersConfigurer(List<EventUpcaster> upcasters) {
         return configurer -> upcasters.forEach(u -> configurer.registerEventUpcaster(c -> u));
+    }
+
+    @ConditionalOnClass(CommandHandlerInterceptor.class)
+    @Bean
+    public ConfigurerModule commandHandlerInterceptorConfigurer(List<CommandHandlerInterceptor<? super CommandMessage<?>>> interceptors) {
+        return configurer -> interceptors.forEach(i -> configurer.registerCommandHandlerInterceptor(c -> i));
+    }
+
+    @ConditionalOnClass(QueryHandlerInterceptor.class)
+    @Bean
+    public ConfigurerModule queryHandlerInterceptorConfigurer(List<QueryHandlerInterceptor<? super QueryMessage<?,?>>> interceptors) {
+        return configurer -> interceptors.forEach(i -> configurer.registerQueryHandlerInterceptor(c -> i));
     }
 
     @ConditionalOnMissingBean

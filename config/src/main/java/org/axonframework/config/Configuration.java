@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.deadline.DeadlineManager;
@@ -28,8 +29,7 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -39,6 +39,7 @@ import org.axonframework.modelling.saga.repository.NoResourceInjector;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
@@ -411,6 +412,20 @@ public interface Configuration extends LifecycleOperations {
      * @return the EventUpcasterChain with all registered upcasters
      */
     EventUpcasterChain upcasterChain();
+
+    /**
+     * Returns all MessageHandlerInterceptors compatible with CommandMessage.
+     *
+     * @return the list of all registered MessageHandlerInterceptors
+     */
+    List<MessageHandlerInterceptor<? super CommandMessage<?>>> commandHandlerInterceptors();
+
+    /**
+     * Returns all MessageHandlerInterceptors compatible with QueryMessage.
+     *
+     * @return the list of all registered MessageHandlerInterceptors
+     */
+    List<MessageHandlerInterceptor<? super QueryMessage<?,?>>> queryHandlerInterceptors();
 
     /**
      * Returns the {@link SnapshotFilter} combining all defined filters per {@link AggregateConfigurer} in an {@link

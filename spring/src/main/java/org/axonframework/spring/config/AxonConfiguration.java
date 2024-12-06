@@ -17,6 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.config.Configuration;
@@ -25,16 +26,16 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.LifecycleHandler;
 import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.messaging.CommandHandlerInterceptor;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.QueryHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.springframework.beans.BeansException;
@@ -184,6 +185,16 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public EventUpcasterChain upcasterChain() {
         return config.upcasterChain();
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super CommandMessage<?>>> commandHandlerInterceptors() {
+        return config.commandHandlerInterceptors();
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> queryHandlerInterceptors() {
+        return config.queryHandlerInterceptors();
     }
 
     @Override
