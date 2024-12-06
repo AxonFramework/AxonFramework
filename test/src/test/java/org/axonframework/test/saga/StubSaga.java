@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.EndSaga;
@@ -57,7 +58,8 @@ public class StubSaga {
     @Inject
     private transient CommandGateway commandGateway;
 
-    private List<Object> handledEvents = new ArrayList<>();
+    private final List<Object> handledEvents = new ArrayList<>();
+
     private ScheduleToken timer;
 
     @StartSaga
@@ -73,22 +75,32 @@ public class StubSaga {
             associateWith("extraIdentifier", extraIdentifier.toString());
         }
 
-        timer = scheduler.schedule(message.getTimestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
-                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
+        timer = scheduler.schedule(
+                message.getTimestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
+                new GenericEventMessage<>(
+                        new QualifiedName("test", "event", "0.0.1"), new TimerTriggeredEvent(event.getIdentifier())
+                )
+        );
     }
 
     @StartSaga(forceNew = true)
     @SagaEventHandler(associationProperty = "identifier")
     public void handleForcedSagaStart(ForceTriggerSagaStartEvent event, @Timestamp Instant timestamp) {
         handledEvents.add(event);
-        timer = scheduler.schedule(timestamp.plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
-                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
+        timer = scheduler.schedule(
+                timestamp.plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
+                new GenericEventMessage<>(
+                        new QualifiedName("test", "event", "0.0.1"), new TimerTriggeredEvent(event.getIdentifier())
+                )
+        );
     }
 
     @SagaEventHandler(associationProperty = "identifier")
     public void handleEvent(TriggerExistingSagaEvent event, EventBus eventBus) {
         handledEvents.add(event);
-        eventBus.publish(new GenericEventMessage<>(new SagaWasTriggeredEvent(this)));
+        eventBus.publish(new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), new SagaWasTriggeredEvent(this)
+        ));
     }
 
     @SagaEventHandler(associationProperty = "identifier")
@@ -124,8 +136,12 @@ public class StubSaga {
     public void handleResetTriggerEvent(ResetTriggerEvent event) {
         handledEvents.add(event);
         scheduler.cancelSchedule(timer);
-        timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
-                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
+        timer = scheduler.schedule(
+                Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
+                new GenericEventMessage<>(
+                        new QualifiedName("test", "event", "0.0.1"), new TimerTriggeredEvent(event.getIdentifier())
+                )
+        );
     }
 
     @SagaEventHandler(associationProperty = "identifier", associationResolver = AssociationResolverStub.class)

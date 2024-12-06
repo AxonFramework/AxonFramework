@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -37,64 +38,63 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DefaultEventMessageConverterTest {
 
-	private EventMessageConverter eventMessageConverter = new DefaultEventMessageConverter();
+    private final EventMessageConverter eventMessageConverter = new DefaultEventMessageConverter();
 
-	@Test
-	void given_generic_event_message_when_converting_twice_then_resulting_event_should_be_the_same(){
-		Instant instant = Instant.EPOCH;
-		String id = UUID.randomUUID().toString();
+    @Test
+    void givenGenericEventMessageWhenConvertingTwiceThenResultingEventShouldBeTheSame() {
+        String id = UUID.randomUUID().toString();
+        QualifiedName name = new QualifiedName("test", "event", "0.0.1");
+        EventPayload payload = new EventPayload("hello");
+        Map<String, Object> metaData = new HashMap<>();
+        metaData.put("number", 100);
+        metaData.put("string", "world");
+        Instant instant = Instant.EPOCH;
 
-		Map<String, Object> metaData = new HashMap<>();
-		metaData.put("number", 100);
-		metaData.put("string", "world");
+        EventMessage<EventPayload> axonMessage =
+                new GenericEventMessage<>(id, name, payload, metaData, instant);
 
-		EventPayload payload = new EventPayload("hello");
+        EventMessage<EventPayload> convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(
+                eventMessageConverter.convertToOutboundMessage(axonMessage)
+        );
 
-		EventMessage<EventPayload> axonMessage = new GenericEventMessage<>(id, payload, metaData, instant);
+        assertEquals(instant, convertedAxonMessage.getTimestamp());
+        assertEquals(100, convertedAxonMessage.getMetaData().get("number"));
+        assertEquals("world", convertedAxonMessage.getMetaData().get("string"));
+        assertEquals("hello", convertedAxonMessage.getPayload().name);
+        assertEquals(id, convertedAxonMessage.getIdentifier());
+    }
 
-		EventMessage<EventPayload> convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(eventMessageConverter.convertToOutboundMessage(axonMessage));
+    @Test
+    void givenDomainEventMessageWhenConvertingTwiceThenResultingEventShouldBeTheSame() {
+        String aggId = UUID.randomUUID().toString();
+        String id = UUID.randomUUID().toString();
+        QualifiedName name = new QualifiedName("test", "event", "0.0.1");
+        EventPayload payload = new EventPayload("hello");
+        Map<String, Object> metaData = new HashMap<>();
+        metaData.put("number", 100);
+        metaData.put("string", "world");
+        Instant instant = Instant.EPOCH;
 
-		assertEquals(instant, convertedAxonMessage.getTimestamp());
-		assertEquals(100, convertedAxonMessage.getMetaData().get("number"));
-		assertEquals("world", convertedAxonMessage.getMetaData().get("string"));
-		assertEquals("hello", convertedAxonMessage.getPayload().name);
-		assertEquals(id, convertedAxonMessage.getIdentifier());
-	}
+        EventMessage<EventPayload> axonMessage =
+                new GenericDomainEventMessage<>("foo", aggId, 1, id, name, payload, metaData, instant);
+        EventMessage<EventPayload> convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(
+                eventMessageConverter.convertToOutboundMessage(axonMessage)
+        );
 
-	@Test
-	void given_domain_event_message_when_converting_twice_then_resulting_event_should_be_the_same(){
-		Instant instant = Instant.EPOCH;
-		String id = UUID.randomUUID().toString();
-		String aggId = UUID.randomUUID().toString();
+        assertInstanceOf(DomainEventMessage.class, convertedAxonMessage);
 
-		Map<String, Object> metaData = new HashMap<>();
-		metaData.put("number", 100);
-		metaData.put("string", "world");
+        DomainEventMessage<EventPayload> convertDomainMessage = (DomainEventMessage<EventPayload>) convertedAxonMessage;
+        assertEquals(instant, convertDomainMessage.getTimestamp());
+        assertEquals(100, convertDomainMessage.getMetaData().get("number"));
+        assertEquals("world", convertDomainMessage.getMetaData().get("string"));
+        assertEquals("hello", convertDomainMessage.getPayload().name);
+        assertEquals(id, convertDomainMessage.getIdentifier());
+        assertEquals("foo", convertDomainMessage.getType());
+        assertEquals(aggId, convertDomainMessage.getAggregateIdentifier());
+        assertEquals(1, convertDomainMessage.getSequenceNumber());
+    }
 
-		EventPayload payload = new EventPayload("hello");
+    private record EventPayload(String name) {
 
-		EventMessage<EventPayload> axonMessage = new GenericDomainEventMessage<>("foo", aggId, 1, payload, metaData, id, instant);
-		EventMessage<EventPayload> convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(eventMessageConverter.convertToOutboundMessage(axonMessage));
-
-		assertTrue(convertedAxonMessage instanceof DomainEventMessage);
-
-		DomainEventMessage<EventPayload> convertDomainMessage = (DomainEventMessage<EventPayload>) convertedAxonMessage;
-		assertEquals(instant, convertDomainMessage.getTimestamp());
-		assertEquals(100, convertDomainMessage.getMetaData().get("number"));
-		assertEquals("world", convertDomainMessage.getMetaData().get("string"));
-		assertEquals("hello", convertDomainMessage.getPayload().name);
-		assertEquals(id, convertDomainMessage.getIdentifier());
-		assertEquals("foo", convertDomainMessage.getType());
-		assertEquals(aggId, convertDomainMessage.getAggregateIdentifier());
-		assertEquals(1, convertDomainMessage.getSequenceNumber());
-	}
-
-	private class EventPayload{
-		private final String name;
-
-		EventPayload(String name){
-			this.name = name;
-		}
-	}
-
+    }
 }

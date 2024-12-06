@@ -29,7 +29,7 @@ import java.util.function.Function;
  * {@code Indices} typically refer to the name and value of the identifiers of the models that decided to publish this
  * event.
  *
- * @param <P> The type of payload carried by this {@link EventMessage}.
+ * @param <P> The type of {@link #getPayload() payload} contained in this {@link IndexedEventMessage}.
  * @author Allard Buijze
  * @author Michal Negacz
  * @author Milan Savić

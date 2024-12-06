@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,46 +16,36 @@
 
 package org.axonframework.deadline;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Map;
-import javax.annotation.Nonnull;
 
 /**
- * Represents a Message for a Deadline, specified by its deadline name and optionally containing a deadline payload.
- * Implementations of DeadlineMessage represent a fact (it's a specialization of EventMessage) that some deadline was
- * reached. The optional payload contains relevant data of the scheduled deadline.
+ * An {@link EventMessage} for a deadline, specified by its {@code deadlineName} and optionally containing a
+ * {@code deadlinePayload}.
+ * <p>
+ * Implementations of the {@link DeadlineMessage} represent a fact (it's a specialization of {@code EventMessage}) that
+ * some deadline was reached. The optional payload contains relevant data of the scheduled deadline.
  *
- * @param <T> The type of payload contained in this Message; may be {@link Void} if no payload was provided
+ * @param <P> The type of {@link #getPayload() payload} contained in this {@link DeadlineMessage}. May be {@link Void}
+ *            if no payload was provided.
  * @author Milan Savic
  * @author Steven van Beelen
- * @since 3.3
+ * @since 3.3.0
  */
-public interface DeadlineMessage<T> extends EventMessage<T> {
+public interface DeadlineMessage<P> extends EventMessage<P> {
 
     /**
-     * Retrieve a {@link String} representing the name of this DeadlineMessage.
+     * Returns the name of the {@link DeadlineMessage deadline} to be handled.
      *
-     * @return a {@link String} representing the name of this DeadlineMessage
+     * @return The name of the {@link DeadlineMessage deadline}.
      */
     String getDeadlineName();
 
-    /**
-     * Returns a copy of this DeadlineMessage with the given {@code metaData}. The payload remains unchanged.
-     *
-     * @param metaData The new MetaData for the Message
-     * @return a copy of this message with the given MetaData
-     */
     @Override
-    DeadlineMessage<T> withMetaData(@Nonnull Map<String, ?> metaData);
+    DeadlineMessage<P> withMetaData(@Nonnull Map<String, ?> metaData);
 
-    /**
-     * Returns a copy of this DeadlineMessage with its MetaData merged with given {@code additionalMetaData}. The
-     * payload remains unchanged.
-     *
-     * @param additionalMetaData The MetaData to merge into the DeadlineMessage
-     * @return a copy of this message with added additional MetaData
-     */
     @Override
-    DeadlineMessage<T> andMetaData(@Nonnull Map<String, ?> additionalMetaData);
+    DeadlineMessage<P> andMetaData(@Nonnull Map<String, ?> additionalMetaData);
 }

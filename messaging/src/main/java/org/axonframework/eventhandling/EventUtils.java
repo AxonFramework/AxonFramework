@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.Serializer;
@@ -36,8 +37,8 @@ public abstract class EventUtils {
 
     /**
      * Convert an {@link EventMessage} to a {@link TrackedEventMessage} using the given {@code trackingToken}. If the
-     * event is a {@link DomainEventMessage} the message will be converted to a {@link
-     * GenericTrackedDomainEventMessage}, otherwise a {@link GenericTrackedEventMessage} is returned.
+     * event is a {@link DomainEventMessage} the message will be converted to a
+     * {@link GenericTrackedDomainEventMessage}, otherwise a {@link GenericTrackedEventMessage} is returned.
      *
      * @param eventMessage  the message to convert
      * @param trackingToken the tracking token to use for the resulting message
@@ -56,8 +57,8 @@ public abstract class EventUtils {
     }
 
     /**
-     * Upcasts and deserializes the given {@code eventEntryStream} using the given {@code serializer} and {@code
-     * upcasterChain}.
+     * Upcasts and deserializes the given {@code eventEntryStream} using the given {@code serializer} and
+     * {@code upcasterChain}.
      * <p>
      * The list of events returned contains lazy deserializing events for optimization purposes. Events represented with
      * unknown classes are ignored if {@code skipUnknownTypes} is {@code true}
@@ -77,11 +78,12 @@ public abstract class EventUtils {
                 upcastAndDeserialize(eventEntryStream, upcasterChain,
                                      entry -> new InitialEventRepresentation(entry, serializer));
         return upcastResult.map(ir -> {
-            SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
-                                                                             new LazyDeserializingObject<>(
-                                                                                     ir::getData,
-                                                                                     ir.getType(), serializer),
-                                                                             ir.getMetaData());
+            SerializedMessage<?> serializedMessage = new SerializedMessage<>(
+                    ir.getMessageIdentifier(),
+                    QualifiedNameUtils.fromClassName(serializer.classForType(ir.getType())),
+                    new LazyDeserializingObject<>(ir::getData, ir.getType(), serializer),
+                    ir.getMetaData()
+            );
             if (ir.getAggregateIdentifier().isPresent()) {
                 return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(),
                                                               ir.getAggregateType().orElse(null),

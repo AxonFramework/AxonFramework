@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,12 +68,12 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void appendAndReadNonDomainEvent() {
-        testSubject.appendEvents(new GenericEventMessage<>("Hello world"));
+        testSubject.appendEvents(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Hello world"));
 
         List<? extends TrackedEventMessage<?>> actual = testSubject.readEvents(null, false)
-                                                                   .collect(toList());
+                                                                   .toList();
         assertEquals(1, actual.size());
-        assertFalse(actual.get(0) instanceof DomainEventMessage);
+        assertFalse(actual.getFirst() instanceof DomainEventMessage);
     }
 
     @Test
@@ -83,7 +84,10 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void storeAndLoadApplicationEvent() {
-        testSubject.appendEvents(new GenericEventMessage<>("application event", MetaData.with("key", "value")));
+        EventMessage<String> testEvent = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), "application event", MetaData.with("key", "value")
+        );
+        testSubject.appendEvents(testEvent);
         assertEquals(1, testSubject.readEvents(null, false).count());
         Optional<? extends TrackedEventMessage<?>> optionalFirst = testSubject.readEvents(null, false).findFirst();
         assertTrue(optionalFirst.isPresent());

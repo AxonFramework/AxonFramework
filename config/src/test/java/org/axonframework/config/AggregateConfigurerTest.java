@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -72,10 +73,9 @@ import static org.mockito.Mockito.*;
 public class AggregateConfigurerTest {
 
     private Configuration mockConfiguration;
-
     private EventStore testEventStore;
-    private ParameterResolverFactory testParameterResolverFactory;
-    private RevisionResolver revisionResolver = Mockito.mock(AnnotationRevisionResolver.class);
+    private final RevisionResolver revisionResolver = Mockito.mock(AnnotationRevisionResolver.class);
+
     private AggregateConfigurer<TestAggregate> testSubject;
 
     @BeforeEach
@@ -86,7 +86,7 @@ public class AggregateConfigurerTest {
         when(mockConfiguration.eventBus()).thenReturn(testEventStore);
         when(mockConfiguration.eventStore()).thenReturn(testEventStore);
 
-        testParameterResolverFactory = mock(ParameterResolverFactory.class);
+        ParameterResolverFactory testParameterResolverFactory = mock(ParameterResolverFactory.class);
         when(mockConfiguration.parameterResolverFactory()).thenReturn(testParameterResolverFactory);
         when(mockConfiguration.getComponent(eq(AggregateMetaModelFactory.class), any()))
                 .thenReturn(new AnnotatedAggregateMetaModelFactory(
@@ -111,11 +111,16 @@ public class AggregateConfigurerTest {
         configuration.start();
 
         CommandGateway commandGateway = configuration.commandGateway();
-        String aggregateAId = commandGateway.send(new CreateACommand("123"), ProcessingContext.NONE, String.class).join();
-        String aggregateBId = commandGateway.send(new CreateBCommand("456"), ProcessingContext.NONE, String.class).join();
-        String result1 = commandGateway.send(new DoSomethingCommand(aggregateAId), ProcessingContext.NONE, String.class).join();
-        String result2 = commandGateway.send(new DoSomethingCommand(aggregateBId), ProcessingContext.NONE, String.class).join();
-        String result3 = commandGateway.send(new BSpecificCommand(aggregateBId), ProcessingContext.NONE, String.class).join();
+        String aggregateAId = commandGateway.send(new CreateACommand("123"), ProcessingContext.NONE, String.class)
+                                            .join();
+        String aggregateBId = commandGateway.send(new CreateBCommand("456"), ProcessingContext.NONE, String.class)
+                                            .join();
+        String result1 = commandGateway.send(new DoSomethingCommand(aggregateAId), ProcessingContext.NONE, String.class)
+                                       .join();
+        String result2 = commandGateway.send(new DoSomethingCommand(aggregateBId), ProcessingContext.NONE, String.class)
+                                       .join();
+        String result3 = commandGateway.send(new BSpecificCommand(aggregateBId), ProcessingContext.NONE, String.class)
+                                       .join();
         assertEquals("A123", result1);
         assertEquals("B456", result2);
         assertEquals("bSpecific456", result3);
@@ -144,7 +149,8 @@ public class AggregateConfigurerTest {
     @Test
     void aggregateConfigurationCreatesRevisionSnapshotFilterForAggregateWithRevision() {
         DomainEventMessage<TestAggregateWithRevision> snapshotEvent = new GenericDomainEventMessage<>(
-                TestAggregateWithRevision.class.getName(), "some-aggregate-id", 0, new TestAggregateWithRevision()
+                TestAggregateWithRevision.class.getName(), "some-aggregate-id", 0,
+                new QualifiedName("test", "snapshot", "0.0.1"), new TestAggregateWithRevision()
         );
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, xStreamSerializer());
 
@@ -155,7 +161,7 @@ public class AggregateConfigurerTest {
 
         SnapshotFilter result = revisionAggregateConfigurerTestSubject.snapshotFilter();
 
-        assertTrue(result instanceof RevisionSnapshotFilter);
+        assertInstanceOf(RevisionSnapshotFilter.class, result);
         assertTrue(result.allow(testDomainEventData));
     }
 
@@ -191,7 +197,9 @@ public class AggregateConfigurerTest {
 
         CommandGateway commandGateway = config.commandGateway();
         String testAggregateIdentifier = "123";
-        commandGateway.send(new CreateACommand(testAggregateIdentifier), ProcessingContext.NONE).getResultMessage().join();
+        commandGateway.send(new CreateACommand(testAggregateIdentifier), ProcessingContext.NONE)
+                      .getResultMessage()
+                      .join();
         verify(lockFactory).obtainLock(testAggregateIdentifier);
 
         config.shutdown();
@@ -322,7 +330,9 @@ public class AggregateConfigurerTest {
     @Test
     void nullRevisionEventAndNullRevisionAggregateAllowed() {
         DomainEventMessage<TestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
-                TestAggregate.class.getSimpleName(), "some-aggregate-id", 0, new TestAggregate());
+                TestAggregate.class.getSimpleName(), "some-aggregate-id", 0,
+                new QualifiedName("test", "snapshot", "0.0.1"), new TestAggregate()
+        );
 
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, xStreamSerializer());
 
@@ -333,14 +343,15 @@ public class AggregateConfigurerTest {
 
         SnapshotFilter result = revisionAggregateConfigurerTestSubject.snapshotFilter();
 
-        assertTrue(result instanceof RevisionSnapshotFilter);
+        assertInstanceOf(RevisionSnapshotFilter.class, result);
         assertTrue(result.allow(testDomainEventData));
     }
 
     @Test
     void nonNullEventRevisionAndNullAggregateRevisionNotAllowed() {
         DomainEventMessage<TestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
-                TestAggregate.class.getSimpleName(), "some-aggregate-id", 0, new TestAggregate()
+                TestAggregate.class.getSimpleName(), "some-aggregate-id", 0,
+                new QualifiedName("test", "snapshot", "0.0.1"), new TestAggregate()
         );
         Serializer serializer = XStreamSerializer.builder()
                                                  .xStream(new XStream(new CompactDriver()))
@@ -356,7 +367,7 @@ public class AggregateConfigurerTest {
 
         SnapshotFilter result = revisionAggregateConfigurerTestSubject.snapshotFilter();
 
-        assertTrue(result instanceof RevisionSnapshotFilter);
+        assertInstanceOf(RevisionSnapshotFilter.class, result);
         assertFalse(result.allow(testDomainEventData));
     }
 
@@ -404,81 +415,28 @@ public class AggregateConfigurerTest {
         }
     }
 
-    private static class CreateACommand {
+    private record CreateACommand(String id) {
 
-        private final String id;
-
-        private CreateACommand(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
     }
 
-    private static class AlwaysCreationPolicyCommand {
+    private record AlwaysCreationPolicyCommand(@TargetAggregateIdentifier String id) {
 
-        @TargetAggregateIdentifier
-        private final String id;
-
-        private AlwaysCreationPolicyCommand(String id) {
-            this.id = id;
-        }
     }
 
-    private static class ACreatedEvent {
+    private record ACreatedEvent(String id) {
 
-        private final String id;
-
-        private ACreatedEvent(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
     }
 
-    private static class CreateBCommand {
+    private record CreateBCommand(String id) {
 
-        private final String id;
-
-        private CreateBCommand(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
     }
 
-    private static class DoSomethingCommand {
+    private record DoSomethingCommand(@TargetAggregateIdentifier String id) {
 
-        @TargetAggregateIdentifier
-        private final String id;
-
-        private DoSomethingCommand(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
     }
 
-    private static class BSpecificCommand {
+    private record BSpecificCommand(@TargetAggregateIdentifier String id) {
 
-        @TargetAggregateIdentifier
-        private final String id;
-
-        private BSpecificCommand(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
     }
 
     private static class A {
@@ -492,7 +450,7 @@ public class AggregateConfigurerTest {
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(CreateACommand cmd) {
-            handle(cmd.getId());
+            handle(cmd.id());
         }
 
         public void handle(String id) {
@@ -507,14 +465,15 @@ public class AggregateConfigurerTest {
 
         @EventSourcingHandler
         public void on(ACreatedEvent evt) {
-            this.id = evt.getId();
+            this.id = evt.id();
         }
 
         @CommandHandler
         public String handle(DoSomethingCommand cmd) {
-            return this.getClass().getSimpleName() + cmd.getId();
+            return this.getClass().getSimpleName() + cmd.id();
         }
 
+        @SuppressWarnings("unused")
         public String getId() {
             return id;
         }
@@ -528,12 +487,12 @@ public class AggregateConfigurerTest {
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(CreateBCommand cmd) {
-            super.handle(cmd.getId());
+            super.handle(cmd.id());
         }
 
         @CommandHandler
         public String handle(BSpecificCommand cmd) {
-            return "bSpecific" + cmd.getId();
+            return "bSpecific" + cmd.id();
         }
     }
 }

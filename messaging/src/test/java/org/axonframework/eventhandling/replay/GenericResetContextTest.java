@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.replay;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -38,7 +39,9 @@ class GenericResetContextTest {
     @Test
     void constructor() {
         ResetContext<Object> messageOne = asResetContext(TEST_PAYLOAD);
-        ResetContext<Object> messageTwo = asResetContext(new GenericMessage<>(TEST_PAYLOAD));
+        ResetContext<Object> messageTwo = asResetContext(new GenericMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), TEST_PAYLOAD
+        ));
         ResetContext<Object> messageThree = asResetContext(new GenericResetContext<>(TEST_PAYLOAD));
 
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");

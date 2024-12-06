@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,11 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -53,7 +56,7 @@ class DefaultQueryGatewayTest {
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
-        answer = new GenericQueryResponseMessage<>("answer");
+        answer = new GenericQueryResponseMessage<>(new QualifiedName("test", "query", "0.0.1"), "answer");
         MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         mockBus = mock(QueryBus.class);
         testSubject = DefaultQueryGateway.builder()
@@ -114,8 +117,11 @@ class DefaultQueryGatewayTest {
 
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
-        GenericMessage<String> testQuery =
-                new GenericMessage<>("query", MetaData.with(expectedMetaDataKey, expectedMetaDataValue));
+        GenericMessage<String> testQuery = new GenericMessage<>(
+                new QualifiedName("test", "query", "0.0.1"),
+                "query",
+                MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
+        );
 
         CompletableFuture<String> queryResponse = testSubject.query(testQuery, instanceOf(String.class));
         assertEquals("answer", queryResponse.get());
@@ -139,8 +145,11 @@ class DefaultQueryGatewayTest {
     @Test
     void pointToPointQueryWhenQueryBusReportsAnError() throws Exception {
         Throwable expected = new Throwable("oops");
+        QueryResponseMessage<String> testQuery = new GenericQueryResponseMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), expected, String.class
+        );
         when(mockBus.query(anyMessage(String.class, String.class)))
-                .thenReturn(completedFuture(new GenericQueryResponseMessage<>(String.class, expected)));
+                .thenReturn(completedFuture(testQuery));
 
         CompletableFuture<String> result = testSubject.query("query", String.class);
 
@@ -245,8 +254,10 @@ class DefaultQueryGatewayTest {
         when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
                 .thenReturn(Stream.of(answer));
 
-        GenericMessage<String> testQuery =
-                new GenericMessage<>("scatterGather", MetaData.with(expectedMetaDataKey, expectedMetaDataValue));
+        Message<String> testQuery = new GenericMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "scatterGather",
+                MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
+        );
 
         Stream<String> queryResponse =
                 testSubject.scatterGather(testQuery, instanceOf(String.class), expectedTimeout, expectedTimeUnit);
@@ -329,8 +340,10 @@ class DefaultQueryGatewayTest {
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
 
-        GenericMessage<String> testQuery =
-                new GenericMessage<>("subscription", MetaData.with(expectedMetaDataKey, expectedMetaDataValue));
+        Message<String> testQuery = new GenericMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "subscription",
+                MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
+        );
         testSubject.subscriptionQuery(testQuery, instanceOf(String.class), instanceOf(String.class));
 
         //noinspection unchecked
@@ -356,9 +369,9 @@ class DefaultQueryGatewayTest {
     void dispatchInterceptor() {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
         testSubject.registerDispatchInterceptor(messages -> (integer, queryMessage) -> new GenericQueryMessage<>(
-                "dispatch-" + queryMessage.getPayload(),
-                queryMessage.getQueryName(),
-                queryMessage.getResponseType()));
+                new QualifiedName("test", "query", "0.0.1"), queryMessage.getQueryName(),
+                "dispatch-" + queryMessage.getPayload(), queryMessage.getResponseType())
+        );
 
         testSubject.query("query", String.class).join();
 
@@ -369,9 +382,12 @@ class DefaultQueryGatewayTest {
 
     @Test
     void exceptionInInitialResultOfSubscriptionQueryReportedInMono() {
+        QueryResponseMessage<String> testResponse = new GenericQueryResponseMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), new MockException(), String.class
+        );
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
-                        Mono.just(new GenericQueryResponseMessage<>(String.class, new MockException())),
+                        Mono.just(testResponse),
                         Flux.empty(),
                         () -> true
                 ));
@@ -387,9 +403,12 @@ class DefaultQueryGatewayTest {
 
     @Test
     void nullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
+        QueryResponseMessage<String> testQuery = new GenericQueryResponseMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), (String) null, String.class
+        );
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
-                        Mono.just(new GenericQueryResponseMessage<>(String.class, (String) null)),
+                        Mono.just(testQuery),
                         Flux.empty(),
                         () -> true
                 ));
@@ -402,10 +421,13 @@ class DefaultQueryGatewayTest {
 
     @Test
     void nullUpdatesOfSubscriptionQuerySkipped() {
+        SubscriptionQueryUpdateMessage<String> testQuery = new GenericSubscriptionQueryUpdateMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), null, String.class
+        );
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.empty(),
-                        Flux.just(new GenericSubscriptionQueryUpdateMessage<>(String.class, null)),
+                        Flux.just(testQuery),
                         () -> true
                 ));
 
@@ -419,7 +441,9 @@ class DefaultQueryGatewayTest {
     @Test
     void payloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         when(mockBus.query(anyMessage(String.class, String.class)))
-                .thenReturn(completedFuture(new GenericQueryResponseMessage<String>("test") {
+                .thenReturn(completedFuture(new GenericQueryResponseMessage<>(
+                        new QualifiedName("test", "query", "0.0.1"), "test"
+                ) {
                     @Override
                     public String getPayload() {
                         throw new MockException("Faking serialization problem");
@@ -435,9 +459,9 @@ class DefaultQueryGatewayTest {
     @Test
     void streamingQueryIsLazy() {
         Publisher<QueryResponseMessage<Object>> response = Flux.just(
-                new GenericQueryResponseMessage("a"),
-                new GenericQueryResponseMessage("b"),
-                new GenericQueryResponseMessage("c")
+                new GenericQueryResponseMessage<>(new QualifiedName("test", "query", "0.0.1"), "a"),
+                new GenericQueryResponseMessage<>(new QualifiedName("test", "query", "0.0.1"), "b"),
+                new GenericQueryResponseMessage<>(new QualifiedName("test", "query", "0.0.1"), "c")
         );
 
         when(mockBus.streamingQuery(any()))
@@ -464,16 +488,17 @@ class DefaultQueryGatewayTest {
                 .thenReturn(Flux.error(new IllegalStateException("test")));
 
         StepVerifier.create(testSubject.streamingQuery("query", String.class))
-                .expectErrorMatches(t->t instanceof IllegalStateException && t.getMessage().equals("test"))
-                .verify();
+                    .expectErrorMatches(t -> t instanceof IllegalStateException && t.getMessage().equals("test"))
+                    .verify();
     }
 
     @Test
     void dispatchStreamingQueryWithMetaData() {
         when(mockBus.streamingQuery(any())).thenReturn(Flux.empty());
 
-        StreamingQueryMessage<String, String> testQuery =
-                new GenericStreamingQueryMessage<>("Query", String.class).andMetaData(MetaData.with("key", "value"));
+        StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Query", String.class
+        ).andMetaData(MetaData.with("key", "value"));
 
         StepVerifier.create(testSubject.streamingQuery(testQuery, String.class))
                     .verifyComplete();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryExecutionException;
@@ -159,23 +161,29 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingFluxQuery(boolean supportsStreaming) {
-        StreamingQueryMessage<FluxQuery, String> query =
-                new GenericStreamingQueryMessage<>(new FluxQuery(), String.class);
+        StreamingQueryMessage<FluxQuery, String> testQuery = new GenericStreamingQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), new FluxQuery(), String.class
+        );
 
-        StepVerifier.create(streamingQueryPayloads(query, supportsStreaming))
+        StepVerifier.create(streamingQueryPayloads(testQuery, supportsStreaming))
                     .expectNextCount(1000)
                     .verifyComplete();
     }
 
+    @Timeout(25)
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void concurrentStreamingQueries(boolean supportsStreaming) {
         int count = 100;
 
         StepVerifier.create(Flux.range(0, count)
-                                .flatMap(i -> streamingQueryPayloads(new GenericStreamingQueryMessage<>(new FluxQuery(),
-                                                                                                        String.class),
-                                                                     supportsStreaming)))
+                                .flatMap(i -> streamingQueryPayloads(
+                                        new GenericStreamingQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                                                                           new FluxQuery(),
+                                                                           String.class),
+                                        supportsStreaming
+                                ))
+                    )
                     .expectNextCount(count * 1000)
                     .verifyComplete();
     }
@@ -183,10 +191,11 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingErrorFluxQuery(boolean supportsStreaming) {
-        StreamingQueryMessage<ErrorFluxQuery, String> query =
-                new GenericStreamingQueryMessage<>(new ErrorFluxQuery(), String.class);
+        StreamingQueryMessage<ErrorFluxQuery, String> testQuery = new GenericStreamingQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), new ErrorFluxQuery(), String.class
+        );
 
-        StepVerifier.create(streamingQueryPayloads(query, supportsStreaming))
+        StepVerifier.create(streamingQueryPayloads(testQuery, supportsStreaming))
                     .expectErrorMatches(t -> t instanceof QueryExecutionException
                             && t.getMessage().equals("oops"))
                     .verify();
@@ -194,10 +203,11 @@ class StreamingQueryEndToEndTest {
 
     @Test
     void streamingHandlerErrorFluxQuery() {
-        StreamingQueryMessage<HandlerErrorFluxQuery, String> query =
-                new GenericStreamingQueryMessage<>(new HandlerErrorFluxQuery(), String.class);
+        StreamingQueryMessage<HandlerErrorFluxQuery, String> testQuery = new GenericStreamingQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), new HandlerErrorFluxQuery(), String.class
+        );
 
-        StepVerifier.create(streamingQueryPayloads(query, true))
+        StepVerifier.create(streamingQueryPayloads(testQuery, true))
                     .expectErrorMatches(t -> t instanceof QueryExecutionException
                             && t.getMessage().startsWith("Error starting stream"))
                     .verify();
@@ -206,10 +216,11 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingListQuery(boolean supportsStreaming) {
-        StreamingQueryMessage<ListQuery, String> query =
-                new GenericStreamingQueryMessage<>(new ListQuery(), String.class);
+        StreamingQueryMessage<ListQuery, String> testQuery = new GenericStreamingQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), new ListQuery(), String.class
+        );
 
-        StepVerifier.create(streamingQueryPayloads(query, supportsStreaming))
+        StepVerifier.create(streamingQueryPayloads(testQuery, supportsStreaming))
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
     }
@@ -217,10 +228,11 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void listQuery(boolean supportsStreaming) throws Throwable {
-        QueryMessage<ListQuery, List<String>> query =
-                new GenericQueryMessage<>(new ListQuery(), multipleInstancesOf(String.class));
+        QueryMessage<ListQuery, List<String>> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), new ListQuery(), multipleInstancesOf(String.class)
+        );
 
-        assertEquals(asList("a", "b", "c", "d"), directQueryPayload(query, supportsStreaming));
+        assertEquals(asList("a", "b", "c", "d"), directQueryPayload(testQuery, supportsStreaming));
     }
 
     private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage<?, R> query, boolean supportsStreaming) {

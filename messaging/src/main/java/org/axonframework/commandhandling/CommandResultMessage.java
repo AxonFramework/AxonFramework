@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 
 package org.axonframework.commandhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 /**
- * Message that represents a result from handling a {@link CommandMessage}.
+ * A {@link ResultMessage} that represents a result from handling a {@link CommandMessage}.
  *
- * @param <R> The type of payload contained in this Message
+ * @param <R> The type of {@link #getPayload() result} contained in this {@link CommandResultMessage}.
  * @author Milan Savic
- * @since 4.0
+ * @since 4.0.0
  */
 public interface CommandResultMessage<R> extends ResultMessage<R> {
 
@@ -38,5 +38,5 @@ public interface CommandResultMessage<R> extends ResultMessage<R> {
     CommandResultMessage<R> andMetaData(@Nonnull Map<String, ?> metaData);
 
     // TODO - @Override from ResultMessage and Message
-    <T> CommandResultMessage<T> withConvertedPayload(Function<R, T> conversion);
+    <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Function<R, T> conversion);
 }

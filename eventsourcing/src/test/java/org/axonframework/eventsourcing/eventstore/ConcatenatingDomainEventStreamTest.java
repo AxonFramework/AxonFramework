@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -40,20 +40,20 @@ class ConcatenatingDomainEventStreamTest {
     @BeforeEach
     void setUp() {
         event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 0,
-                                                 "Mock contents 1", MetaData.emptyInstance());
+                                                 new QualifiedName("test", "event", "0.0.1"), "Mock contents 1");
         event2 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 1,
-                                                 "Mock contents 2", MetaData.emptyInstance());
+                                                 new QualifiedName("test", "event", "0.0.1"), "Mock contents 2");
         event3 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 2,
-                                                 "Mock contents 3", MetaData.emptyInstance());
+                                                 new QualifiedName("test", "event", "0.0.1"), "Mock contents 3");
         event4 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 3,
-                                                 "Mock contents 4", MetaData.emptyInstance());
+                                                 new QualifiedName("test", "event", "0.0.1"), "Mock contents 4");
         event5 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 4,
-                                                 "Mock contents 5", MetaData.emptyInstance());
+                                                 new QualifiedName("test", "event", "0.0.1"), "Mock contents 5");
     }
 
     @Test
     void forEachRemaining() {
-        List<DomainEventMessage> expectedMessages = Arrays.asList(event1, event2, event3, event4, event5);
+        List<DomainEventMessage<String>> expectedMessages = Arrays.asList(event1, event2, event3, event4, event5);
 
         DomainEventStream concat = new ConcatenatingDomainEventStream(
                 DomainEventStream.of(event1, event2), // Initial stream - add all elements
@@ -70,7 +70,7 @@ class ConcatenatingDomainEventStreamTest {
 
     @Test
     void forEachRemainingKeepsDuplicateSequenceIdEventsInSameStream() {
-        List<DomainEventMessage> expectedMessages =
+        List<DomainEventMessage<String>> expectedMessages =
                 Arrays.asList(event1, event1, event2, event3, event4, event4, event5);
 
         DomainEventStream concat = new ConcatenatingDomainEventStream(
@@ -195,5 +195,4 @@ class ConcatenatingDomainEventStreamTest {
 
         assertEquals(event1.getSequenceNumber(), concat.getLastSequenceNumber());
     }
-
 }

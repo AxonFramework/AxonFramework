@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.reactivestreams.Publisher;
@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static org.axonframework.messaging.responsetypes.ResponseTypes.*;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 /**
@@ -55,10 +56,8 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void completingRegistrationOldApi() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(queryMessage, 1024);
@@ -74,10 +73,8 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void concurrentUpdateEmitting() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> registration = testSubject.registerUpdateHandler(queryMessage, 128);
@@ -96,19 +93,15 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void concurrentUpdateEmitting_WithBackpressure() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> registration = testSubject.registerUpdateHandler(queryMessage, 128);
 
         ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < 100; i++) {
-            executors.submit(() -> {
-                testSubject.emit(q -> true, "Update");
-            });
+            executors.submit(() -> testSubject.emit(q -> true, "Update"));
         }
         executors.shutdown();
         StepVerifier.create(registration.getUpdates())
@@ -120,10 +113,8 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void cancelingRegistrationDoesNotCompleteFluxOfUpdatesOldApi() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(queryMessage, 1024);
@@ -139,10 +130,8 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void completingRegistration() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
@@ -162,10 +151,8 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void queryUpdateEmitterIsTraced() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
@@ -178,18 +165,18 @@ class SimpleQueryUpdateEmitterTest {
         result.complete();
 
         spanFactory.verifySpanCompleted("QueryUpdateEmitter.scheduleQueryUpdateMessage");
-        spanFactory.verifySpanHasType("QueryUpdateEmitter.scheduleQueryUpdateMessage", TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.scheduleQueryUpdateMessage",
+                                      TestSpanFactory.TestSpanType.INTERNAL);
         spanFactory.verifySpanCompleted("QueryUpdateEmitter.emitQueryUpdateMessage");
-        spanFactory.verifySpanHasType("QueryUpdateEmitter.emitQueryUpdateMessage", TestSpanFactory.TestSpanType.DISPATCH);
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.emitQueryUpdateMessage",
+                                      TestSpanFactory.TestSpanType.DISPATCH);
     }
 
     @Test
     void differentUpdateAreDisambiguatedAndWrongTypesAreFilteredBasedOnQueryTypes() {
         SubscriptionQueryMessage<String, List<String>, Integer> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(Integer.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), instanceOf(Integer.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
@@ -210,10 +197,8 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void updateResponseTypeFilteringWorksForMultipleInstanceOfWithArrayAndList() {
         SubscriptionQueryMessage<String, List<String>, List<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.multipleInstancesOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
@@ -226,25 +211,23 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, 1234);
         testSubject.emit(any -> true, Optional.of("optional-payload"));
         testSubject.emit(any -> true, Optional.empty());
-        testSubject.emit(any -> true, new String[] { "array-item-1", "array-item-2" });
+        testSubject.emit(any -> true, new String[]{"array-item-1", "array-item-2"});
         testSubject.emit(any -> true, Arrays.asList("list-item-1", "list-item-2"));
         testSubject.emit(any -> true, Flux.just("flux-item-1", "flux-item-2"));
         testSubject.emit(any -> true, Mono.just("mono-item"));
         result.complete();
 
         StepVerifier.create(result.getUpdates().map(Message::getPayload))
-        			.expectNextMatches(actual -> equalTo(new String[] { "array-item-1", "array-item-2" }).matches(actual) )
-        			.expectNextMatches(actual -> equalTo(Arrays.asList("list-item-1", "list-item-2")).matches(actual) )
+                    .expectNextMatches(actual -> equalTo(new String[]{"array-item-1", "array-item-2"}).matches(actual))
+                    .expectNextMatches(actual -> equalTo(Arrays.asList("list-item-1", "list-item-2")).matches(actual))
                     .verifyComplete();
     }
 
     @Test
-    void updateResponseTypeFilteringWorksForOptionaInstanceOf() {
+    void updateResponseTypeFilteringWorksForOptionalInstanceOf() {
         SubscriptionQueryMessage<String, List<String>, Optional<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.optionalInstanceOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), optionalInstanceOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
@@ -257,25 +240,23 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, 1234);
         testSubject.emit(any -> true, Optional.of("optional-payload"));
         testSubject.emit(any -> true, Optional.empty());
-        testSubject.emit(any -> true, new String[] { "array-item-1", "array-item-2" });
+        testSubject.emit(any -> true, new String[]{"array-item-1", "array-item-2"});
         testSubject.emit(any -> true, Arrays.asList("list-item-1", "list-item-2"));
         testSubject.emit(any -> true, Flux.just("flux-item-1", "flux-item-2"));
         testSubject.emit(any -> true, Mono.just("mono-item"));
         result.complete();
 
         StepVerifier.create(result.getUpdates().map(Message::getPayload))
-        			.expectNext(Optional.of("optional-payload"), Optional.empty() )
+                    .expectNext(Optional.of("optional-payload"), Optional.empty())
                     .verifyComplete();
     }
 
-	@Test
+    @Test
     @SuppressWarnings("unchecked")
     void updateResponseTypeFilteringWorksForPublisherOf() {
         SubscriptionQueryMessage<String, List<String>, Publisher<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.publisherOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), publisherOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
@@ -288,7 +269,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, 1234);
         testSubject.emit(any -> true, Optional.of("optional-payload"));
         testSubject.emit(any -> true, Optional.empty());
-        testSubject.emit(any -> true, new String[] { "array-item-1", "array-item-2" });
+        testSubject.emit(any -> true, new String[]{"array-item-1", "array-item-2"});
         testSubject.emit(any -> true, Arrays.asList("list-item-1", "list-item-2"));
         testSubject.emit(any -> true, Flux.just("flux-item-1", "flux-item-2"));
         testSubject.emit(any -> true, Mono.just("mono-item"));
@@ -296,40 +277,42 @@ class SimpleQueryUpdateEmitterTest {
         result.complete();
 
         StepVerifier.create(result.getUpdates().map(Message::getPayload))
-        			.expectNextMatches( publisher -> {
-        				try {
-        					StepVerifier.create((Publisher<String>) publisher).expectNext("flux-item-1", "flux-item-2").verifyComplete();
-        				} catch (Exception e) {
-        					return false;
-        				}
-        				return true;
-        			})
-        			.expectNextMatches( publisher -> {
-        				try {
-        					StepVerifier.create((Publisher<String>) publisher).expectNext("mono-item").verifyComplete();
-        				} catch (Exception e) {
-        					return false;
-        				}
-        				return true;
-        			})
-        			.expectNextMatches( publisher -> {
-        				try {
-        					StepVerifier.create((Publisher<String>) publisher).verifyComplete();
-        				} catch (Exception e) {
-        					return false;
-        				}
-        				return true;
-        			})
+                    .expectNextMatches(publisher -> {
+                        try {
+                            StepVerifier.create((Publisher<String>) publisher)
+                                        .expectNext("flux-item-1", "flux-item-2")
+                                        .verifyComplete();
+                        } catch (Exception e) {
+                            return false;
+                        }
+                        return true;
+                    })
+                    .expectNextMatches(publisher -> {
+                        try {
+                            StepVerifier.create((Publisher<String>) publisher)
+                                        .expectNext("mono-item").verifyComplete();
+                        } catch (Exception e) {
+                            return false;
+                        }
+                        return true;
+                    })
+                    .expectNextMatches(publisher -> {
+                        try {
+                            StepVerifier.create((Publisher<String>) publisher)
+                                        .verifyComplete();
+                        } catch (Exception e) {
+                            return false;
+                        }
+                        return true;
+                    })
                     .verifyComplete();
     }
 
     @Test
     void multipleInstanceUpdatesAreDelivered() {
         SubscriptionQueryMessage<String, List<String>, List<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.multipleInstancesOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
@@ -338,22 +321,20 @@ class SimpleQueryUpdateEmitterTest {
         );
 
         result.getUpdates().subscribe();
-        testSubject.emit(any -> true, Arrays.asList("text1","text2"));
-        testSubject.emit(any -> true, Arrays.asList("text3","text4"));
+        testSubject.emit(any -> true, Arrays.asList("text1", "text2"));
+        testSubject.emit(any -> true, Arrays.asList("text3", "text4"));
         result.complete();
 
         StepVerifier.create(result.getUpdates().map(Message::getPayload))
-                    .expectNext(Arrays.asList("text1","text2"), Arrays.asList("text3","text4"))
+                    .expectNext(Arrays.asList("text1", "text2"), Arrays.asList("text3", "text4"))
                     .verifyComplete();
     }
 
     @Test
     void optionalUpdatesAreDelivered() {
         SubscriptionQueryMessage<String, Optional<String>, Optional<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.optionalInstanceOf(String.class),
-                ResponseTypes.optionalInstanceOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                optionalInstanceOf(String.class), optionalInstanceOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
@@ -367,17 +348,15 @@ class SimpleQueryUpdateEmitterTest {
         result.complete();
 
         StepVerifier.create(result.getUpdates().map(Message::getPayload))
-                    .expectNext(Optional.of("text1"),Optional.of("text2"))
+                    .expectNext(Optional.of("text1"), Optional.of("text2"))
                     .verifyComplete();
     }
 
     @Test
     void cancelingRegistrationDoesNotCompleteFluxOfUpdates() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
+                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
         UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(

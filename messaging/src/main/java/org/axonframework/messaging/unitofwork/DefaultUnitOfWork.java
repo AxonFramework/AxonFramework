@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.axonframework.messaging.unitofwork;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.concurrent.Callable;
@@ -75,14 +77,20 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
         R result;
         ResultMessage<R> resultMessage;
         try {
+            //noinspection DuplicatedCode
             result = task.call();
             if (result instanceof ResultMessage) {
-                //noinspection Duplicates
+                //noinspection unchecked
                 resultMessage = (ResultMessage<R>) result;
-            } else if(result instanceof Message) {
-                resultMessage = new GenericResultMessage<>(result, ((Message) result).getMetaData());
+            } else if (result instanceof Message) {
+                resultMessage = new GenericResultMessage<>(((Message<?>) result).name(),
+                                                           result,
+                                                           ((Message<?>) result).getMetaData());
             } else {
-                resultMessage = new GenericResultMessage<>(result);
+                QualifiedName name = result == null
+                        ? new QualifiedName("axon.framework", "empty.result", "0.0.1")
+                        : QualifiedNameUtils.fromClassName(result.getClass());
+                resultMessage = new GenericResultMessage<>(name, result);
             }
         } catch (Error | Exception e) {
             resultMessage = asResultMessage(e);
@@ -102,7 +110,10 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
 
     @Override
     protected void setRollbackCause(Throwable cause) {
-        setExecutionResult(new ExecutionResult(new GenericResultMessage<>(cause)));
+        QualifiedName name = cause == null
+                ? new QualifiedName("axon.framework", "empty.rollback.cause", "0.0.1")
+                : QualifiedNameUtils.fromClassName(cause.getClass());
+        setExecutionResult(new ExecutionResult(new GenericResultMessage<>(name, cause)));
     }
 
     @Override

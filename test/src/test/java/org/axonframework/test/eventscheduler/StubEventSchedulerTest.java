@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.test.eventscheduler;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -29,6 +30,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link StubEventScheduler}.
+ *
  * @author Allard Buijze
  */
 class StubEventSchedulerTest {
@@ -54,19 +57,19 @@ class StubEventSchedulerTest {
         testSubject.advanceTimeBy(Duration.ofMinutes(75), triggered::add);
 
         assertEquals(1, triggered.size());
-        assertEquals(triggerTime, triggered.get(0).getTimestamp());
+        assertEquals(triggerTime, triggered.getFirst().getTimestamp());
     }
 
     @Test
     void initializeAtDateTimeAfterSchedulingEvent() {
         testSubject.schedule(Instant.now().plus(Duration.ofDays(1)), event(new MockEvent()));
 
-        assertThrows(IllegalStateException.class, () ->
-                        testSubject.initializeAt(Instant.now().minus(10, ChronoUnit.MINUTES)));
+        assertThrows(IllegalStateException.class,
+                     () -> testSubject.initializeAt(Instant.now().minus(10, ChronoUnit.MINUTES)));
     }
 
     private EventMessage<MockEvent> event(MockEvent mockEvent) {
-        return new GenericEventMessage<>(mockEvent);
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), mockEvent);
     }
 
     private static class MockEvent {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,111 +16,178 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 
+import java.io.Serial;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
 
 /**
- * Generic implementation of a {@link DomainEventMessage}.
+ * Generic implementation of the {@link DomainEventMessage} interface.
  *
- * @param <T> The type of payload contained in this Message
+ * @param <P> The type of {@link #getPayload() payload} contained in this {@link EventMessage}.
+ * @author Allard Buijze
+ * @author Rene de Waele
+ * @author Steven van Beelen
+ * @since 2.0.0
  */
-public class GenericDomainEventMessage<T> extends GenericEventMessage<T> implements DomainEventMessage<T> {
+public class GenericDomainEventMessage<P> extends GenericEventMessage<P> implements DomainEventMessage<P> {
 
+    @Serial
     private static final long serialVersionUID = -1222000190977419970L;
-    private final String type;
+
+    private final String aggregateType;
     private final String aggregateIdentifier;
     private final long sequenceNumber;
 
     /**
-     * Initialize a DomainEventMessage originating from an Aggregate with the given {@code aggregateIdentifier},
-     * with given {@code sequenceNumber} and {@code payload}. The MetaData of the message is empty.
+     * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
+     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code name}, and {@code payload}.
+     * <p>
+     * The {@link MetaData} defaults to an empty instance.
      *
-     * @param type                The domain type
-     * @param aggregateIdentifier The identifier of the aggregate generating this message
-     * @param sequenceNumber      The message's sequence number
-     * @param payload             The application-specific payload of the message
+     * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
+     * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
+     * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
+     * @param name                The {@link QualifiedName name} for this {@link DomainEventMessage}.
+     * @param payload             The payload of type {@code P} for this {@link DomainEventMessage}.
      */
-    public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber, T payload) {
-        this(type, aggregateIdentifier, sequenceNumber, payload, MetaData.emptyInstance());
+    public GenericDomainEventMessage(String aggregateType,
+                                     String aggregateIdentifier,
+                                     long sequenceNumber,
+                                     @Nonnull QualifiedName name,
+                                     @Nonnull P payload) {
+        this(aggregateType, aggregateIdentifier, sequenceNumber, name, payload, MetaData.emptyInstance());
     }
 
     /**
-     * Initialize a DomainEventMessage originating from an Aggregate with the given {@code aggregateIdentifier},
-     * with given {@code sequenceNumber} and {@code payload} and {@code metaData}.
+     * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
+     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code name}, {@code payload}, and
+     * {@code metaData}.
      *
-     * @param type                The domain type
-     * @param aggregateIdentifier The identifier of the aggregate generating this message
-     * @param sequenceNumber      The message's sequence number
-     * @param payload             The application-specific payload of the message
-     * @param metaData            The MetaData to attach to the message
+     * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
+     * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
+     * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
+     * @param name                The {@link QualifiedName name} for this {@link DomainEventMessage}.
+     * @param payload             The payload of type {@code P} for this {@link DomainEventMessage}.
+     * @param metaData            The metadata for this {@link DomainEventMessage}.
      */
-    public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber, T payload,
-                                     Map<String, ?> metaData) {
-        this(type, aggregateIdentifier, sequenceNumber, new GenericMessage<>(payload, metaData), clock.instant());
+    public GenericDomainEventMessage(String aggregateType,
+                                     String aggregateIdentifier,
+                                     long sequenceNumber,
+                                     @Nonnull QualifiedName name,
+                                     @Nonnull P payload,
+                                     @Nonnull Map<String, ?> metaData) {
+        this(aggregateType,
+             aggregateIdentifier,
+             sequenceNumber,
+             new GenericMessage<>(name, payload, metaData),
+             clock.instant());
     }
 
     /**
-     * Initialize a DomainEventMessage originating from an Aggregate using existing data.
+     * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
+     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code messageIdentifier}, {@code name},
+     * {@code payload}, {@code metaData}, and {@code timestamp}.
      *
-     * @param type                The domain type
-     * @param aggregateIdentifier The identifier of the aggregate generating this message
-     * @param sequenceNumber      The message's sequence number
-     * @param payload             The application-specific payload of the message
-     * @param metaData            The MetaData to attach to the message
-     * @param messageIdentifier   The message identifier
-     * @param timestamp           The event's timestamp
+     * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
+     * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
+     * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
+     * @param messageIdentifier   The identifier of this {@link DomainEventMessage}.
+     * @param name                The {@link QualifiedName name} for this {@link DomainEventMessage}.
+     * @param payload             The payload of type {@code P} for this {@link DomainEventMessage}.
+     * @param metaData            The metadata for this {@link DomainEventMessage}.
+     * @param timestamp           The {@link Instant timestamp} of this {@link DomainEventMessage DomainEventMessage's}
+     *                            creation.
      */
-    public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber, T payload,
-                                     Map<String, ?> metaData, String messageIdentifier, Instant timestamp) {
-        this(type, aggregateIdentifier, sequenceNumber, new GenericMessage<>(messageIdentifier, payload, metaData),
+    public GenericDomainEventMessage(String aggregateType,
+                                     String aggregateIdentifier,
+                                     long sequenceNumber,
+                                     @Nonnull String messageIdentifier,
+                                     @Nonnull QualifiedName name,
+                                     @Nonnull P payload,
+                                     @Nonnull Map<String, ?> metaData,
+                                     @Nonnull Instant timestamp) {
+        this(aggregateType,
+             aggregateIdentifier,
+             sequenceNumber,
+             new GenericMessage<>(messageIdentifier, name, payload, metaData),
              timestamp);
     }
 
     /**
-     * Initialize a DomainEventMessage originating from an Aggregate using existing data. The timestamp of the event is
-     * supplied lazily to prevent unnecessary deserialization of the timestamp.
+     * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
+     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code delegate}, and
+     * {@code timestampSupplier}, intended to reconstruct another {@link DomainEventMessage}.
+     * <p>
+     * The timestamp of the event is supplied lazily through the given {@code timestampSupplier} to prevent unnecessary
+     * deserialization of the timestamp.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
      *
-     * @param type                The domain type
-     * @param aggregateIdentifier The identifier of the aggregate generating this message
-     * @param sequenceNumber      The message's sequence number
-     * @param delegate            The delegate message providing the payload, metadata and identifier of the event
-     * @param timestamp           The event's timestamp supplier
+     * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
+     * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
+     * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
+     * @param delegate            The {@link Message} containing {@link Message#getPayload() payload},
+     *                            {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
+     *                            {@link Message#getMetaData() metadata} for the {@link DomainEventMessage} to
+     *                            reconstruct.
+     * @param timestampSupplier   The {@link Instant timestampSupplier} of this
+     *                            {@link DomainEventMessage GenericDomainEventMessage's} creation.
      */
-    public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber, Message<T> delegate,
-                                     Supplier<Instant> timestamp) {
-        super(delegate, timestamp);
-        this.type = type;
+    public GenericDomainEventMessage(String aggregateType,
+                                     String aggregateIdentifier,
+                                     long sequenceNumber,
+                                     @Nonnull Message<P> delegate,
+                                     @Nonnull Supplier<Instant> timestampSupplier) {
+        super(delegate, timestampSupplier);
+        this.aggregateType = aggregateType;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
     }
 
     /**
-     * Initialize a DomainEventMessage originating from an Aggregate with the given {@code aggregateIdentifier},
-     * with given {@code sequenceNumber} and {@code payload}, {@code metaData} and {@code timestamp}.
+     * Constructs a {@link GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
+     * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code delegate}, and {@code timestamp},
+     * intended to reconstruct another {@link DomainEventMessage}.
+     * <p>
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#name() name},
+     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * {@code GenericEventMessage}.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
      *
-     * @param type                the aggregate type
-     * @param aggregateIdentifier the aggregate identifier
-     * @param sequenceNumber      the sequence number of the event
-     * @param delegate            The delegate message providing the payload, metadata and identifier of the event
-     * @param timestamp           the timestamp of the event
+     * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
+     * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
+     * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
+     * @param delegate            The {@link Message} containing {@link Message#getPayload() payload},
+     *                            {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
+     *                            {@link Message#getMetaData() metadata} for the {@link DomainEventMessage} to
+     *                            reconstruct.
+     * @param timestamp           The {@link Instant timestamp} of this {@link DomainEventMessage DomainEventMessage's}
+     *                            creation.
      */
-    public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber,
-                                     Message<T> delegate, Instant timestamp) {
+    public GenericDomainEventMessage(String aggregateType,
+                                     String aggregateIdentifier,
+                                     long sequenceNumber,
+                                     @Nonnull Message<P> delegate,
+                                     @Nonnull Instant timestamp) {
         super(delegate, timestamp);
-        this.type = type;
+        this.aggregateType = aggregateType;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
     }
 
     @Override
     public String getType() {
-        return type;
+        return aggregateType;
     }
 
     @Override
@@ -134,22 +201,28 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     }
 
     @Override
-    public GenericDomainEventMessage<T> withMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
         if (getMetaData().equals(metaData)) {
             return this;
         }
-        return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
-                                               getDelegate().withMetaData(metaData), getTimestamp());
+        return new GenericDomainEventMessage<>(aggregateType,
+                                               aggregateIdentifier,
+                                               sequenceNumber,
+                                               getDelegate().withMetaData(metaData),
+                                               getTimestamp());
     }
 
     @Override
-    public GenericDomainEventMessage<T> andMetaData(@Nonnull Map<String, ?> metaData) {
+    public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
         //noinspection ConstantConditions
         if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
             return this;
         }
-        return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
-                                               getDelegate().andMetaData(metaData), getTimestamp());
+        return new GenericDomainEventMessage<>(aggregateType,
+                                               aggregateIdentifier,
+                                               sequenceNumber,
+                                               getDelegate().andMetaData(metaData),
+                                               getTimestamp());
     }
 
     @Override
