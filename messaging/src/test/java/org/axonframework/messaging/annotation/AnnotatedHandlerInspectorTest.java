@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -75,7 +76,10 @@ class AnnotatedHandlerInspectorTest {
                     r -> new GenericMessage<>(fromClassName(r.getClass()), r)
             ));
         }
-        return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
+        QualifiedName type = result != null
+                ? fromClassName(result.getClass())
+                : new QualifiedName("axon.framework", "empty.result", "0.0.1");
+        return MessageStream.just(new GenericMessage<>(type, result));
     }
 
     @Test

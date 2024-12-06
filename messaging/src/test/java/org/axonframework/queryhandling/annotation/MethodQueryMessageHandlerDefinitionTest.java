@@ -106,7 +106,10 @@ class MethodQueryMessageHandlerDefinitionTest {
                     r -> new GenericMessage<>(fromClassName(r.getClass()), r)
             ));
         }
-        return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
+        QualifiedName type = result != null
+                ? fromClassName(result.getClass())
+                : new QualifiedName("axon.framework", "empty.result", "0.0.1");
+        return MessageStream.just(new GenericMessage<>(type, result));
     }
 
     private <R> QueryHandlingMember<R> messageHandler(String methodName) {

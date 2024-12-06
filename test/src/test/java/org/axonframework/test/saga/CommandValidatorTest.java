@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,17 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link CommandValidator}.
@@ -81,19 +80,12 @@ class CommandValidatorTest {
     }
 
     private List<CommandMessage<?>> listOfOneCommandMessage(Object msg) {
-        return Collections.singletonList(GenericCommandMessage.asCommandMessage(msg));
+        return Collections.singletonList(
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), msg)
+        );
     }
 
-    private static class SomeCommand {
+    private record SomeCommand(Object value) {
 
-        private final Object value;
-
-        public SomeCommand(Object value) {
-            this.value = value;
-        }
-
-        public Object getValue() {
-            return value;
-        }
     }
 }

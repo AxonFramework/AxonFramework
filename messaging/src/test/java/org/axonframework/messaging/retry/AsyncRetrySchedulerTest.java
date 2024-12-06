@@ -26,6 +26,7 @@ import reactor.test.StepVerifier;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -194,17 +195,52 @@ class AsyncRetrySchedulerTest {
         verify(mock).describeProperty("executor", executor);
     }
 
-    private record TestRetryPolicy(AtomicReference<Outcome> policyOutcome) implements RetryPolicy {
+    @SuppressWarnings("ClassCanBeRecord") // This class is spied, so it cannot be final like a record
+    private static class TestRetryPolicy implements RetryPolicy {
 
-        @Override
-        public Outcome defineFor(@Nonnull Message<?> message, @Nonnull Throwable cause,
-                                 @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
-            return policyOutcome.get();
+        private final AtomicReference<Outcome> policyOutcome;
+
+        private TestRetryPolicy(AtomicReference<Outcome> policyOutcome) {
+            this.policyOutcome = policyOutcome;
+        }
+
+            @Override
+            public Outcome defineFor(@Nonnull Message<?> message,
+                                     @Nonnull Throwable cause,
+                                     @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
+                return policyOutcome.get();
+            }
+
+            @Override
+            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+
+            }
+
+        public AtomicReference<Outcome> policyOutcome() {
+            return policyOutcome;
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (obj == null || obj.getClass() != this.getClass()) {
+                return false;
+            }
+            var that = (TestRetryPolicy) obj;
+            return Objects.equals(this.policyOutcome, that.policyOutcome);
+        }
 
+        @Override
+        public int hashCode() {
+            return Objects.hash(policyOutcome);
+        }
+
+        @Override
+        public String toString() {
+            return "TestRetryPolicy[" +
+                    "policyOutcome=" + policyOutcome + ']';
         }
     }
 

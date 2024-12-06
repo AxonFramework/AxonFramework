@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -108,7 +110,10 @@ class HandlerHierarchyTest {
                     r -> new GenericMessage<>(fromClassName(r.getClass()), r)
             ));
         }
-        return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
+        QualifiedName type = result != null
+                ? fromClassName(result.getClass())
+                : new QualifiedName("axon.framework", "empty.result", "0.0.1");
+        return MessageStream.just(new GenericMessage<>(type, result));
     }
 
     @Test

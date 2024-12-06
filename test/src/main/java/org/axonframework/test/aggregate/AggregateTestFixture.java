@@ -46,7 +46,6 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
@@ -106,6 +105,7 @@ import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 
 /**
  * A test fixture that allows the execution of given-when-then style test cases. For detailed usage information, see
@@ -403,7 +403,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     type,
                     aggregateIdentifier,
                     sequenceNumber++,
-                    new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload, metaData),
+                    new GenericMessage<>(fromClassName(payload.getClass()), payload, metaData),
                     deadlineManager.getCurrentDateTime()
             );
             this.givenEvents.add(eventMessage);
@@ -432,7 +432,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         finalizeConfiguration();
         for (Object command : commands) {
             CompletableFuture<Message<?>> result = new CompletableFuture<>();
-            CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command);
+            CommandMessage<Object> commandMessage = new GenericCommandMessage<>(fromClassName(command.getClass()),
+                                                                                command);
             executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, ProcessingContext.NONE)
                                                    .whenComplete(FutureUtils.alsoComplete(result)));
             result.join();
@@ -492,8 +493,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public ResultValidator<T> when(Object command, Map<String, ?> metaData) {
         return when(resultValidator -> {
-            CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command)
-                                                                         .andMetaData(metaData);
+            CommandMessage<Object> commandMessage = new GenericCommandMessage<>(fromClassName(command.getClass()),
+                                                                                command,
+                                                                                metaData);
             commandBus.dispatch(commandMessage, ProcessingContext.NONE)
                       .whenComplete((r, e) -> {
                           if (e == null) {

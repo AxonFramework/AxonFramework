@@ -23,6 +23,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
@@ -36,16 +37,21 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link SimpleCommandBus}.
+ *
  * @author Allard Buijze
  */
 class SimpleCommandBusTest {
+
+    private static final String PAYLOAD = "Say hi!";
+    private static final CommandMessage<String> TEST_COMMAND =
+            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), PAYLOAD);
 
     private SimpleCommandBus testSubject;
     private StubExecutor executor;
@@ -67,10 +73,10 @@ class SimpleCommandBusTest {
     @Test
     void dispatchCommandHandlerSubscribed() throws Exception {
         testSubject.subscribe(String.class.getName(), new StubCommandHandler("Hi!"));
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(asCommandMessage("Say hi!"),
-                                                                              ProcessingContext.NONE);
-        assertEquals("Hi!",
-                     actual.get().getPayload());
+
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
+
+        assertEquals("Hi!", actual.get().getPayload());
     }
 
 
@@ -79,7 +85,7 @@ class SimpleCommandBusTest {
         final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
         testSubject.subscribe(String.class.getName(), new MessageHandler<CommandMessage<?>, CommandResultMessage<?>>() {
             @Override
-            public Object handleSync(CommandMessage<?> command) throws Exception {
+            public Object handleSync(CommandMessage<?> command) {
                 return command;
             }
 
@@ -90,11 +96,11 @@ class SimpleCommandBusTest {
                 return MessageStream.just(GenericCommandResultMessage.asCommandResultMessage(message));
             }
         });
-        var actual = testSubject.dispatch(asCommandMessage("Say hi!"), ProcessingContext.NONE);
+        var actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertTrue(actual.isDone());
         assertFalse(actual.isCompletedExceptionally());
         Message<?> actualResult = actual.join();
-        assertEquals("Say hi!", actualResult.getPayload());
+        assertEquals(PAYLOAD, actualResult.getPayload());
         assertNotNull(unitOfWork.get());
     }
 
@@ -114,14 +120,13 @@ class SimpleCommandBusTest {
                 throw new RuntimeException();
             }
         });
-        testSubject.dispatch(asCommandMessage("Say hi!"), ProcessingContext.NONE);
+        testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertTrue(unitOfWork.get().isError());
     }
 
     @Test
     void dispatchCommandNoHandlerSubscribed() {
-        CommandMessage<Object> command = asCommandMessage("test");
-        var result = testSubject.dispatch(command, ProcessingContext.NONE);
+        var result = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
 
         assertTrue(result.isCompletedExceptionally());
         CompletionException actualException = assertThrows(CompletionException.class, result::join);
@@ -133,8 +138,8 @@ class SimpleCommandBusTest {
         StubCommandHandler commandHandler = new StubCommandHandler("Not important");
         Registration subscription = testSubject.subscribe(String.class.getName(), commandHandler);
         subscription.cancel();
-        CommandMessage<Object> command = asCommandMessage("Say hi!");
-        var actual = testSubject.dispatch(command, ProcessingContext.NONE);
+
+        var actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
 
         assertTrue(actual.isCompletedExceptionally());
         ExecutionException actualException = assertThrows(ExecutionException.class, actual::get);
@@ -147,8 +152,7 @@ class SimpleCommandBusTest {
         var ourFutureIsBright = new CompletableFuture<>();
         testSubject.subscribe(String.class.getName(), new StubCommandHandler(ourFutureIsBright));
 
-        var actual = testSubject.dispatch(GenericCommandMessage.asCommandMessage("some-string"),
-                                          ProcessingContext.NONE);
+        var actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
 
         assertFalse(actual.isDone());
         CompletableFuture<String> stringCompletableFuture = actual.thenApply(crm -> Thread.currentThread().getName());
@@ -166,8 +170,7 @@ class SimpleCommandBusTest {
         var ourFutureIsBright = new CompletableFuture<>();
         testSubject.subscribe(String.class.getName(), new StubCommandHandler(ourFutureIsBright));
 
-        var actual = testSubject.dispatch(GenericCommandMessage.asCommandMessage("some-string"),
-                                          ProcessingContext.NONE);
+        var actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
 
         assertFalse(actual.isDone());
         CompletableFuture<String> stringCompletableFuture = actual.thenApply(crm -> Thread.currentThread().getName());
@@ -184,7 +187,7 @@ class SimpleCommandBusTest {
         executor.enqueueTasks();
 
         var commandHandler = spy(new StubCommandHandler("ok"));
-        CommandMessage<Object> command = asCommandMessage(new Object());
+        CommandMessage<String> command = TEST_COMMAND;
         testSubject.subscribe(command.getCommandName(), commandHandler);
 
         var actual = testSubject.dispatch(command, ProcessingContext.NONE);
@@ -207,11 +210,10 @@ class SimpleCommandBusTest {
                 throw new MockException("Simulating exception");
             }
         };
-        CommandMessage<Object> command = asCommandMessage(new Object());
+        CommandMessage<String> command = TEST_COMMAND;
         testSubject.subscribe(command.getCommandName(), commandHandler);
 
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(
-                command, ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(command, ProcessingContext.NONE);
 
         assertTrue(actual.isCompletedExceptionally());
         ExecutionException exception = assertThrows(ExecutionException.class, actual::get);
@@ -222,7 +224,7 @@ class SimpleCommandBusTest {
     @Test
     void exceptionalStreamFromHandlerReturnedInCompletableFuture() {
         var commandHandler = new StubCommandHandler(new MockException("Simulating exception"));
-        CommandMessage<Object> command = asCommandMessage(new Object());
+        CommandMessage<String> command = TEST_COMMAND;
         testSubject.subscribe(command.getCommandName(), commandHandler);
 
         CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(
@@ -236,9 +238,7 @@ class SimpleCommandBusTest {
 
     @Test
     void exceptionIsThrownWhenNoHandlerIsRegistered() {
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(
-                asCommandMessage(new Object()),
-                ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
 
         assertTrue(actual.isCompletedExceptionally());
         ExecutionException exception = assertThrows(ExecutionException.class, actual::get);
@@ -251,7 +251,7 @@ class SimpleCommandBusTest {
         testSubject = new SimpleCommandBus(executor, List.of(lifecycleHandlerRegistrar));
 
         var commandHandler = new StubCommandHandler("ok");
-        CommandMessage<Object> command = asCommandMessage(new Object());
+        CommandMessage<String> command = TEST_COMMAND;
         testSubject.subscribe(command.getCommandName(), commandHandler);
 
         verify(lifecycleHandlerRegistrar, never()).registerHandlers(any());

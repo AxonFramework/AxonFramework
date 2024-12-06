@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -101,10 +100,9 @@ public interface CommandGateway {
      * @return A {@link CompletableFuture} which will be resolved successfully or exceptionally based on the eventual
      * command execution result.
      */
-    default CommandResult send(@Nonnull Object command, @Nonnull MetaData metaData,
-                               @Nullable ProcessingContext processingContext) {
-        return send(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), processingContext);
-    }
+    CommandResult send(@Nonnull Object command,
+                       @Nonnull MetaData metaData,
+                       @Nullable ProcessingContext processingContext);
 
     /**
      * Send the given command and wait for the result. The payload of the resulting message is returned, or a

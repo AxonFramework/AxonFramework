@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -42,7 +43,7 @@ class DefaultCommandGatewayTest {
     @BeforeEach
     void setUp() {
         mockCommandBus = mock(CommandBus.class);
-        testSubject = new DefaultCommandGateway(mockCommandBus);
+        testSubject = new DefaultCommandGateway(mockCommandBus, new ClassBasedMessageNameResolver());
     }
 
     @Test

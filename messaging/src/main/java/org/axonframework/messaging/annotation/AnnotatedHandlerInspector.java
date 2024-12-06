@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
@@ -212,7 +212,10 @@ public class AnnotatedHandlerInspector<T> {
                     r -> new GenericMessage<>(fromClassName(r.getClass()), r)
             ));
         }
-        return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
+        QualifiedName type = result != null
+                ? fromClassName(result.getClass())
+                : new QualifiedName("axon.framework", "empty.result", "0.0.1");
+        return MessageStream.just(new GenericMessage<>(type, result));
     }
 
     @SuppressWarnings("unchecked")
