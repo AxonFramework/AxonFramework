@@ -45,7 +45,7 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
      * Constructs a resource-overriding {@link ProcessingContext} using the provided parameters.
      *
      * @param delegate The {@link ProcessingContext} to <em>only</em> override the given {@code key} for.
-     * @param key      The {@link org.axonframework.common.Context.ResourceKey} to override in the {@code delegate}
+     * @param key      The {@link ResourceKey} to override in the {@code delegate}
      *                 {@link ProcessingContext}.
      * @param resource The resource of type {@code R} that's overridden with the given {@code key}.
      */
