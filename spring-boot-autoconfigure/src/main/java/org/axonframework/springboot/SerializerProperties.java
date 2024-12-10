@@ -120,6 +120,11 @@ public class SerializerProperties {
      */
     public enum SerializerType {
         /**
+         * Uses Avro based serializer to serialize objects into bytes as specified by Avro Specification using
+         * single object encoding.
+         */
+        AVRO,
+        /**
          * Uses the XStream based serializer, which is the default serializer. This serializer will serialize an object
          * into XML. The serialized format is not highly interoperable, but the XStream based serializer is capable
          * of serializing just about any object. This makes it a very suitable implementation to use as the "general

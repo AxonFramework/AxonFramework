@@ -19,6 +19,7 @@ package org.axonframework.serialization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -168,5 +169,13 @@ public class ChainingConverter implements Converter {
      */
     public void setAdditionalConverters(List<ContentTypeConverter> additionalConverters) {
         additionalConverters.forEach(this::registerConverter);
+    }
+
+    /**
+     * Retrieves the list of {@link ContentTypeConverter} registered in this {@link ChainingConverter} instance.
+     * @return unmodified list of content type converters.
+     */
+    public List<ContentTypeConverter> getContentTypeConverters() {
+        return Collections.unmodifiableList(this.converters);
     }
 }
