@@ -11,7 +11,7 @@ Any patch release made for an Axon project is tailored towards resolving bugs. T
 
 - Known Issues and Workarounds page link:https://github.com/AxonFramework/AxonFramework/pull/3193[#3193]
 
-==== Bug Fixes
+==== Bug fixes
 
 - Add retry on error behavior to persistent streams link:https://github.com/AxonFramework/AxonFramework/pull/3196[#3196]
 - [#3171] Ensure `AggregateAnnotationCommandHandler` default `CreationPolicyAggregateFactory` can kick in link:https://github.com/AxonFramework/AxonFramework/pull/3183[#3183]
