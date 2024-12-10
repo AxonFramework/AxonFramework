@@ -49,6 +49,7 @@ import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -56,16 +57,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryBusSpanFactory;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
-import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingConverter;
 import org.axonframework.serialization.JavaSerializer;
@@ -426,6 +418,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         commandBus.registerHandlerInterceptor(
                 new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
         );
+        axonConfiguration.commandHandlerInterceptors().forEach(commandBus::registerHandlerInterceptor);
         return commandBus;
     }
 
@@ -433,7 +426,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public SimpleQueryBus queryBus(Configuration axonConfiguration, TransactionManager transactionManager) {
-        return SimpleQueryBus.builder()
+        SimpleQueryBus queryBus =  SimpleQueryBus.builder()
                              .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
                              .transactionManager(transactionManager)
                              .errorHandler(axonConfiguration.getComponent(
@@ -443,6 +436,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                              .spanFactory(axonConfiguration.getComponent(QueryBusSpanFactory.class))
                              .build();
+        axonConfiguration.queryHandlerInterceptors().forEach(queryBus::registerHandlerInterceptor);
+        return queryBus;
     }
 
     @Bean
