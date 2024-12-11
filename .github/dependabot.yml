@@ -55,6 +55,8 @@ updates:
       versions: [ "[2.0.0,)" ]
     - dependency-name: "org.openrewrite:rewrite-test"
       versions: [ "[8.0.0,)" ]
+    - dependency-name: "org.quartz-scheduler:quartz"
+      versions: [ "[2.5.0,)" ]
     - dependency-name: "org.springframework:*"
       versions: [ "[6.0.0,)" ]
     - dependency-name: "org.springframework.boot:*"
