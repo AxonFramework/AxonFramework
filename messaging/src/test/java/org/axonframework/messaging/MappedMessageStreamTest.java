@@ -33,7 +33,7 @@ class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
     private static final Function<Entry<Message<String>>, Entry<Message<String>>> NO_OP_MAPPER = entry -> entry;
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         return new MappedMessageStream<>(MessageStream.fromIterable(messages), NO_OP_MAPPER);
     }
 

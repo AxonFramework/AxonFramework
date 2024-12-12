@@ -20,9 +20,10 @@ import org.junit.jupiter.api.Assumptions;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 
 /**
- * Test class validating the {@link StreamMessageStream} through the {@link MessageStreamTest} suite.
+ * Test class validating the {@link MessageStream#fromStream(Stream)} through the {@link MessageStreamTest} suite.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -30,7 +31,7 @@ import java.util.concurrent.ThreadLocalRandom;
 class StreamMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         return MessageStream.fromStream(messages.stream());
     }
 

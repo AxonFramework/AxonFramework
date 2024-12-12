@@ -29,7 +29,7 @@ import java.util.List;
 class FailedMessageStreamTest extends MessageStreamTest<Message<Void>> {
 
     @Override
-    MessageStream<Message<Void>> testSubject(List<Message<Void>> messages) {
+    MessageStream<Message<Void>> completedTestSubject(List<Message<Void>> messages) {
         Assumptions.abort("FailedMessageStream doesn't support successful streams");
         return null;
     }

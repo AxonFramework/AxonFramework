@@ -36,7 +36,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context context) implements Entry<M> {
+public record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context context) implements Entry<M> {
 
     /**
      * Construct a {@link SimpleEntry} with the given {@code message}, setting the {@link Context} to a
@@ -44,11 +44,11 @@ record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context c
      *
      * @param message The {@link Message} of type {@code M} contained in this {@link Entry}.
      */
-    SimpleEntry(@Nullable M message) {
+    public SimpleEntry(@Nullable M message) {
         this(message, new SimpleContext());
     }
 
-    SimpleEntry {
+    public SimpleEntry {
         assertNonNull(context, "The context cannot be null");
     }
 
@@ -68,7 +68,7 @@ record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context c
     }
 
     @Override
-    public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-        return this.context.withResource(key, resource);
+    public <T> Entry<M> withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+        return new SimpleEntry<>(message, context.withResource(key, resource));
     }
 }

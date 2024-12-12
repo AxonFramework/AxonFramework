@@ -17,25 +17,23 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import reactor.core.publisher.Flux;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
  * Implementation of the {@link MessageStream} that maps the {@link Entry entries}.
  *
- * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
+ * @param <DM> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @param <RM> The type of {@link Message} contained in the {@link Entry} as a result of mapping.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class MappedMessageStream<M extends Message<?>, RM extends Message<?>> implements MessageStream<RM> {
+class MappedMessageStream<DM extends Message<?>, RM extends Message<?>> extends DelegatingMessageStream<DM, RM> {
 
-    private final MessageStream<M> delegate;
-    private final Function<Entry<M>, Entry<RM>> mapper;
+    private final Function<Entry<DM>, Entry<RM>> mapper;
+    private final MessageStream<DM> delegate;
 
     /**
      * Construct a {@link MessageStream stream} mapping the {@link Entry entries} of the given
@@ -45,31 +43,17 @@ class MappedMessageStream<M extends Message<?>, RM extends Message<?>> implement
      *                 {@code mapper}.
      * @param mapper   The {@link Function} mapping {@link Entry entries}.
      */
-    MappedMessageStream(@Nonnull MessageStream<M> delegate,
-                        @Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+    MappedMessageStream(@Nonnull MessageStream<DM> delegate,
+                        @Nonnull Function<Entry<DM>, Entry<RM>> mapper) {
+        super(delegate);
         this.delegate = delegate;
         this.mapper = mapper;
     }
 
     @Override
-    public CompletableFuture<Entry<RM>> firstAsCompletableFuture() {
-        // CompletableFuture doesn't support empty completions, so null is used as placeholder
-        return delegate.firstAsCompletableFuture()
-                       .thenApply(entry -> entry == null ? null : mapper.apply(entry));
+    public Optional<Entry<RM>> next() {
+        return delegate.next().map(mapper);
     }
 
-    @Override
-    public Flux<Entry<RM>> asFlux() {
-        return delegate.asFlux()
-                       .map(mapper);
-    }
 
-    @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, Entry<RM>, R> accumulator) {
-        return delegate.reduce(
-                identity,
-                (base, message) -> accumulator.apply(base, mapper.apply(message))
-        );
-    }
 }

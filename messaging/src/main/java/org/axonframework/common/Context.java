@@ -35,6 +35,10 @@ import jakarta.annotation.Nonnull;
  */
 public interface Context {
 
+    static <T> Context with(ResourceKey<T> key, T value) {
+        return new SimpleContext().withResource(key, value);
+    }
+
     /**
      * Indicates whether a resource has been registered with the given {@code key} in this {@link Context}.
      *

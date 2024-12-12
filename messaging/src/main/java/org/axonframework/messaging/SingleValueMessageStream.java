@@ -21,13 +21,15 @@ import jakarta.annotation.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * A {@link MessageStream} implementation using a single {@link Entry entry} or {@link CompletableFuture}
- * completing to an entry as the source.
+ * A {@link MessageStream} implementation using a single {@link Entry entry} or {@link CompletableFuture} completing to
+ * an entry as the source.
  *
  * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
@@ -37,14 +39,14 @@ import java.util.function.Function;
 class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private final CompletableFuture<Entry<M>> source;
+    private final AtomicBoolean read = new AtomicBoolean(false);
 
     /**
      * Constructs a {@link MessageStream stream} wrapping the given {@link Entry entry} into a
      * {@link CompletableFuture#completedFuture(Object) completed CompletableFuture} as the single entry in this
      * stream.
      *
-     * @param entry The {@link Entry entry} which is the singular value contained in this
-     *              {@link MessageStream stream}.
+     * @param entry The {@link Entry entry} which is the singular value contained in this {@link MessageStream stream}.
      */
     SingleValueMessageStream(@Nullable Entry<M> entry) {
         this(CompletableFuture.completedFuture(entry));
@@ -54,8 +56,8 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M>
      * Constructs a {@link MessageStream stream} with the given {@code source} as the provider of the single
      * {@link Entry entry} in this stream.
      *
-     * @param source The {@link CompletableFuture} resulting in the singular {@link Entry entry} contained in
-     *               this {@link MessageStream stream}.
+     * @param source The {@link CompletableFuture} resulting in the singular {@link Entry entry} contained in this
+     *               {@link MessageStream stream}.
      */
     SingleValueMessageStream(@Nonnull CompletableFuture<Entry<M>> source) {
         this.source = source;
@@ -69,6 +71,48 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M>
     @Override
     public Flux<Entry<M>> asFlux() {
         return Flux.from(Mono.fromFuture(source));
+    }
+
+    @Override
+    public Optional<Entry<M>> next() {
+        Entry<M> current = source.getNow(null);
+        if (current != null && !read.getAndSet(true)) {
+            return Optional.of(current);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public void onAvailable(@Nonnull Runnable callback) {
+        if (source.isDone()) {
+            callback.run();
+        } else {
+            source.whenComplete((entry, throwable) -> {
+                callback.run();
+            });
+        }
+    }
+
+    @Override
+    public Optional<Throwable> error() {
+        return source.isCompletedExceptionally() ? Optional.of(source.exceptionNow()) : Optional.empty();
+    }
+
+    @Override
+    public boolean isCompleted() {
+        return source.isCompletedExceptionally() || read.get();
+    }
+
+    @Override
+    public boolean hasNextAvailable() {
+        return source.isDone() && !source.isCompletedExceptionally() && !read.get();
+    }
+
+    @Override
+    public void close() {
+        if (!source.isDone()) {
+            source.cancel(false);
+        }
     }
 
     @Override
