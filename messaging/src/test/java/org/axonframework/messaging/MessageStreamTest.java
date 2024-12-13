@@ -19,7 +19,7 @@ package org.axonframework.messaging;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
 import java.util.Collections;
@@ -80,6 +80,10 @@ public abstract class MessageStreamTest<M extends Message<?>> {
      */
     abstract MessageStream<M> failingTestSubject(List<M> messages,
                                                  Exception failure);
+
+    protected void publishAdditionalMessage(MessageStream<M> testSubject, M randomMessage) {
+        Assumptions.abort("This implementation doesn't support delayed publishing");
+    }
 
     /**
      * Constructs a random {@link Message} of type {@code M} to be used during testing.
@@ -654,4 +658,17 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                     .expectNextMatches(entry -> entry.message().equals(expectedMessage))
                     .verifyErrorMatches(expected::equals);
     }
+
+    @Test
+    void shouldInvokeCallbackOnceAdditionalMessagesBecomeAvailable() {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        MessageStream<M> testSubject = uncompletedTestSubject(List.of());
+        testSubject.onAvailable(() -> invoked.set(true));
+
+        assertFalse(invoked.get());
+        publishAdditionalMessage(testSubject, createRandomMessage());
+        assertTrue(invoked.get());
+    }
+
 }

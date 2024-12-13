@@ -19,7 +19,6 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Context;
-import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;
 
 import java.util.function.Function;
@@ -39,15 +38,20 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context context) implements Entry<M> {
 
     /**
-     * Construct a {@link SimpleEntry} with the given {@code message}, setting the {@link Context} to a
-     * {@link SimpleContext}.
+     * Construct a SimpleEntry with the given {@code message} and an empty {@link Context}.
      *
      * @param message The {@link Message} of type {@code M} contained in this {@link Entry}.
      */
     public SimpleEntry(@Nullable M message) {
-        this(message, new SimpleContext());
+        this(message, Context.empty());
     }
 
+    /**
+     * Construct a SimpleEntry with the given {@code message} and an empty {@link Context}.
+     *
+     * @param message The {@link Message} of type {@code M} contained in this {@link Entry}.
+     * @param context The Context associated with the {@link Message}
+     */
     public SimpleEntry {
         assertNonNull(context, "The context cannot be null");
     }

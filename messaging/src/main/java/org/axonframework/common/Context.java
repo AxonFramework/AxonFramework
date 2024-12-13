@@ -35,12 +35,29 @@ import jakarta.annotation.Nonnull;
  */
 public interface Context {
 
+    /**
+     * Create a Context with a single resource with the given initial {@code key} and {@code value}
+     *
+     * @param key   The key to add to the newly created Context
+     * @param value The value to assign to given key
+     * @param <T>   The type of the initial resource
+     * @return a Context with a single resource
+     */
     static <T> Context with(ResourceKey<T> key, T value) {
-        return new SimpleContext().withResource(key, value);
+        return new SimpleContext(key, value);
     }
 
     /**
-     * Indicates whether a resource has been registered with the given {@code key} in this {@link Context}.
+     * Creates an empty Context
+     *
+     * @return a Context with no resources assigned to it
+     */
+    static Context empty() {
+        return EmptyContext.INSTANCE;
+    }
+
+    /**
+     * Indicates whether a resource has been registered with the given {@code key} in this Context.
      *
      * @param key The key of the resource to check.
      * @return {@code true} if a resource is registered with this {@code key}, otherwise {@code false}.
@@ -58,14 +75,13 @@ public interface Context {
     <T> T getResource(@Nonnull ResourceKey<T> key);
 
     /**
-     * Constructs a copy of {@code this} {@link Context} adding the given {@code resources} under the given {@code key}
-     * to the copy.
+     * Constructs a copy of {@code this} Context with an additional {@code resource} for given {@code key}.
      *
      * @param key      The key under which to register the {@code resource}.
      * @param resource The resource to register.
      * @param <T>      The type of resource registered under the given {@code key}.
-     * @return A copy of {@code this} {@link Context} with the added given {@code resources} under the given {@code key}
-     * to the copy.
+     * @return A copy of {@code this} Context with the added given {@code resources} under the given {@code key} to the
+     * copy.
      */
     <T> Context withResource(@Nonnull ResourceKey<T> key,
                              @Nonnull T resource);
@@ -97,9 +113,9 @@ public interface Context {
         }
 
         /**
-         * Create a new {@link ResourceKey} for a resource of type {@code T}. The given {@code debugString} is part of
-         * the {@link #toString()} (if not {@code null} or empty) of the created key instance and may be used for
-         * debugging purposes.
+         * Create a new ResourceKey for a resource of type {@code T}. The given {@code debugString} is part of the
+         * {@link #toString()} (if not {@code null} or empty) of the created key instance and may be used for debugging
+         * purposes.
          *
          * @param debugString A {@link String} to recognize this key during debugging.
          * @param <T>         The type of resource of this key.

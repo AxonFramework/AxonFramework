@@ -16,17 +16,33 @@
 
 package org.axonframework.common;
 
-/**
- * Test class validating the {@link SimpleContext}.
- *
- * @author Steven van Beelen
- */
-public class SimpleContextTest extends ContextTestSuite<SimpleContext> {
+import jakarta.annotation.Nonnull;
 
-    private static final Context.ResourceKey<String> RANDOM_RESOURCE_KEY = Context.ResourceKey.create("RandomResource");
+/**
+ * Implementation that represents an empty Context.
+ */
+class EmptyContext implements Context {
+
+    /**
+     * Returns the singleton instance of the empty context.
+     */
+    public static final EmptyContext INSTANCE = new EmptyContext();
+
+    private EmptyContext() {
+    }
 
     @Override
-    public SimpleContext testSubject() {
-        return new SimpleContext(RANDOM_RESOURCE_KEY, "SimpleContext");
+    public boolean containsResource(@Nonnull ResourceKey<?> key) {
+        return false;
+    }
+
+    @Override
+    public <T> T getResource(@Nonnull ResourceKey<T> key) {
+        return null;
+    }
+
+    @Override
+    public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+        return Context.with(key, resource);
     }
 }

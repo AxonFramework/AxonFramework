@@ -19,7 +19,6 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Context;
-import org.axonframework.common.SimpleContext;
 import reactor.core.publisher.Flux;
 
 import java.util.Optional;
@@ -56,7 +55,7 @@ public interface MessageStream<M extends Message<?>> {
      * {@code iterable}.
      */
     static <M extends Message<?>> MessageStream<M> fromIterable(@Nonnull Iterable<M> iterable) {
-        return fromIterable(iterable, message -> new SimpleContext());
+        return fromIterable(iterable, message -> Context.empty());
     }
 
     /**
@@ -95,7 +94,7 @@ public interface MessageStream<M extends Message<?>> {
      * {@code stream}.
      */
     static <M extends Message<?>> MessageStream<M> fromStream(@Nonnull Stream<M> stream) {
-        return fromStream(stream, message -> new SimpleContext());
+        return fromStream(stream, message -> Context.empty());
     }
 
     /**
@@ -159,7 +158,7 @@ public interface MessageStream<M extends Message<?>> {
      * {@code flux}.
      */
     static <M extends Message<?>> MessageStream<M> fromFlux(@Nonnull Flux<M> flux) {
-        return fromFlux(flux, message -> new SimpleContext());
+        return fromFlux(flux, message -> Context.empty());
     }
 
     /**
@@ -190,7 +189,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return A stream containing at most one {@link Entry entry} from the given {@code future}.
      */
     static <M extends Message<?>> MessageStream<M> fromFuture(@Nonnull CompletableFuture<M> future) {
-        return fromFuture(future, message -> new SimpleContext());
+        return fromFuture(future, message -> Context.empty());
     }
 
     /**
@@ -226,7 +225,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return A stream consisting of a single {@link Entry entry} wrapping the given {@code message}.
      */
     static <M extends Message<?>> MessageStream<M> just(@Nullable M message) {
-        return just(message, m -> new SimpleContext());
+        return just(message, m -> Context.empty());
     }
 
     /**
