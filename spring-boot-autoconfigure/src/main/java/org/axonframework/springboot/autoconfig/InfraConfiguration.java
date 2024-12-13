@@ -19,7 +19,9 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.lifecycle.Lifecycle;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -102,7 +104,7 @@ public class InfraConfiguration {
 
         List<ConfigurerModule> sortedList = new ArrayList<>(configurerModules);
         sortedList.sort(Comparator.comparing(ConfigurerModule::order)
-                                  .thenComparing(AnnotationAwareOrderComparator.INSTANCE));
+                .thenComparing(AnnotationAwareOrderComparator.INSTANCE));
         sortedList.forEach(c -> c.configureModule(configurer));
         return configurer;
     }
@@ -142,6 +144,12 @@ public class InfraConfiguration {
     @Bean
     public ConfigurerModule eventUpcastersConfigurer(List<EventUpcaster> upcasters) {
         return configurer -> upcasters.forEach(u -> configurer.registerEventUpcaster(c -> u));
+    }
+
+    @ConditionalOnClass(MessageHandlerInterceptor.class)
+    @Bean
+    public ConfigurerModule messageHandlerInterceptorConfigurer(List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+        return configurer -> interceptors.forEach(i -> configurer.eventProcessing().registerDefaultHandlerInterceptor((c, n) -> i));
     }
 
     @ConditionalOnMissingBean
