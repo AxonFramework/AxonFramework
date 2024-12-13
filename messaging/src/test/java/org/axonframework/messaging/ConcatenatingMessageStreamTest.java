@@ -28,7 +28,7 @@ import java.util.concurrent.ThreadLocalRandom;
 class ConcatenatingMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         if (messages.isEmpty()) {
             return new ConcatenatingMessageStream<>(MessageStream.empty(), MessageStream.empty());
         } else if (messages.size() == 1) {
@@ -44,7 +44,7 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message<String>> 
     @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
-        return testSubject(messages).concatWith(MessageStream.failed(failure));
+        return completedTestSubject(messages).concatWith(MessageStream.failed(failure));
     }
 
     @Override

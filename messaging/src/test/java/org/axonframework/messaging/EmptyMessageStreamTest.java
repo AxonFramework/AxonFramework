@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
 
     @Override
-    MessageStream<Message<Void>> testSubject(List<Message<Void>> messages) {
+    MessageStream<Message<Void>> completedTestSubject(List<Message<Void>> messages) {
         Assumptions.assumeTrue(messages.isEmpty(), "EmptyMessageStream doesn't support content");
         return MessageStream.empty();
     }
@@ -59,9 +59,9 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
 
         CompletableFuture<Entry<Message<?>>> result = MessageStream.empty()
                                                                    .onErrorContinue(e -> {
-                                                                              invoked.set(true);
-                                                                              return MessageStream.empty();
-                                                                          })
+                                                                       invoked.set(true);
+                                                                       return MessageStream.empty();
+                                                                   })
                                                                    .firstAsCompletableFuture();
         assertTrue(result.isDone());
         assertNull(result.join());

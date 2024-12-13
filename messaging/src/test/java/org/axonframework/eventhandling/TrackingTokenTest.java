@@ -17,8 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Context;
-import org.axonframework.common.SimpleContext;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 
@@ -33,7 +32,7 @@ class TrackingTokenTest {
 
     @Test
     void addToContextAddsTheGivenTrackingTokenToTheGivenContext() {
-        Context testContext = new SimpleContext();
+        Context testContext = Context.empty();
         TestToken testToken = new TestToken();
 
         testContext = TrackingToken.addToContext(testContext, testToken);
@@ -43,7 +42,7 @@ class TrackingTokenTest {
 
     @Test
     void fromContextReturnsAnEmptyOptionalWhenNoTokenIsPresent() {
-        Context testContext = new SimpleContext();
+        Context testContext = Context.empty();
 
         Optional<TrackingToken> result = TrackingToken.fromContext(testContext);
 
@@ -52,7 +51,7 @@ class TrackingTokenTest {
 
     @Test
     void fromContextReturnsAnOptionalWithTheContainedToken() {
-        Context testContext = new SimpleContext();
+        Context testContext = Context.empty();
         TestToken testToken = new TestToken();
 
         testContext = TrackingToken.addToContext(testContext, testToken);
