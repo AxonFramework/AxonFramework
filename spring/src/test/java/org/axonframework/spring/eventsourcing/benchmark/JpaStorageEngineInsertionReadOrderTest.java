@@ -226,7 +226,7 @@ class JpaStorageEngineInsertionReadOrderTest {
     public static class TestContext {
 
         @Bean
-        public ComboPooledDataSource dataSource() throws PropertyVetoException {
+        public DataSource dataSource() throws PropertyVetoException {
             ComboPooledDataSource dataSource = new ComboPooledDataSource();
             dataSource.setDriverClass("org.hsqldb.jdbcDriver");
             dataSource.setJdbcUrl("jdbc:hsqldb:mem:axontest");
