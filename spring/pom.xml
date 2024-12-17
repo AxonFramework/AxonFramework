@@ -215,6 +215,11 @@
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>c3p0</groupId>
+            <artifactId>c3p0</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- Other -->
         <dependency>
             <groupId>commons-io</groupId>
