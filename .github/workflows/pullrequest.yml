@@ -1,6 +1,9 @@
 name: Axon Framework
 
 on:
+  push:
+    branches:
+      - 'experiment/java8-build'
   pull_request:
     paths-ignore:
       - 'docs/**'
