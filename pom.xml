@@ -123,7 +123,7 @@
         <xstream.version>1.4.20</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
-        <jobrunr.version>7.2.3</jobrunr.version>
+        <jobrunr.version>7.3.2</jobrunr.version>
         <quartz.version>2.3.2</quartz.version>
         <!-- Spring -->
         <spring.version>5.3.39</spring.version>
