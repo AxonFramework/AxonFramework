@@ -53,6 +53,7 @@ public class ClassBasedMessageNameResolver implements MessageNameResolver {
     }
 
     // todo: QualifiedName - what to do if the payload is already a message? Should we unwrap it?
+    // todo: what to do with null value? What if payload is null? Is it possible?
     @Override
     public QualifiedName resolve(Object payload) {
         Class<Object> payloadClass = ObjectUtils.nullSafeTypeOf(payload);
