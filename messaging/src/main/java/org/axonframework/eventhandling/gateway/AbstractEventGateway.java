@@ -140,7 +140,7 @@ public abstract class AbstractEventGateway {
         private EventBus eventBus;
         private List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors =
                 new CopyOnWriteArrayList<>();
-        private MessageNameResolver nameResolver;
+        private MessageNameResolver nameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link EventBus} used to publish events.
