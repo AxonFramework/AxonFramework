@@ -20,7 +20,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.*;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -41,6 +42,7 @@ public abstract class AbstractEventGateway {
 
     private final EventBus eventBus;
     private final List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors;
+    private final MessageNameResolver nameResolver;
 
     /**
      * Instantiate an {@link AbstractEventGateway} based on the fields contained in the {@link Builder}.
@@ -54,6 +56,7 @@ public abstract class AbstractEventGateway {
         builder.validate();
         this.eventBus = builder.eventBus;
         this.dispatchInterceptors = builder.dispatchInterceptors;
+        this.nameResolver = builder.nameResolver;
     }
 
     /**
@@ -63,6 +66,31 @@ public abstract class AbstractEventGateway {
      */
     protected void publish(@Nonnull Object event) {
         this.eventBus.publish(processInterceptors(asEventMessage(event)));
+    }
+
+    /**
+     * Returns the given event as an EventMessage. If {@code event} already implements EventMessage, it is returned
+     * as-is. If it is a Message, a new EventMessage will be created using the payload and meta data of the given
+     * message. Otherwise, the given {@code event} is wrapped into a GenericEventMessage as its payload.
+     *
+     * @param event the event to wrap as EventMessage
+     * @param <P>   The generic type of the expected payload of the resulting object
+     * @return an EventMessage containing given {@code event} as payload, or {@code event} if it already implements
+     * EventMessage.
+     */
+    @SuppressWarnings("unchecked")
+    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
+        if (event instanceof EventMessage<?>) {
+            return (EventMessage<E>) event;
+        } else if (event instanceof Message<?>) {
+            Message<E> message = (Message<E>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage<>(
+                nameResolver.resolve(event),
+                (E) event,
+                MetaData.emptyInstance()
+        );
     }
 
     /**
@@ -112,6 +140,7 @@ public abstract class AbstractEventGateway {
         private EventBus eventBus;
         private List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors =
                 new CopyOnWriteArrayList<>();
+        private MessageNameResolver nameResolver;
 
         /**
          * Sets the {@link EventBus} used to publish events.
@@ -149,6 +178,17 @@ public abstract class AbstractEventGateway {
             this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(dispatchInterceptors)
                     : new CopyOnWriteArrayList<>();
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         *
+         * @param nameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver nameResolver) {
+            this.nameResolver = nameResolver;
             return this;
         }
 
