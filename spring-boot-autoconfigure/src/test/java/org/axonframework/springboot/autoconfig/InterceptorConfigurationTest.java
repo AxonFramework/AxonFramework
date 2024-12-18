@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Test class validating the behavior of the {@link InfraConfiguration}.
  *
- * @author Steven van Beelen
+ * @author Christian Thiel
  */
 class InterceptorConfigurationTest {
 
@@ -125,7 +125,7 @@ class InterceptorConfigurationTest {
             assertThat(eventHandlingInterceptingOutcome.poll()).startsWith("Unordered");
         });
     }
-    
+
     @Test
     public void commandDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
@@ -178,7 +178,6 @@ class InterceptorConfigurationTest {
     }
 
 
-
     @ContextConfiguration
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
@@ -222,7 +221,6 @@ class InterceptorConfigurationTest {
         public Queue<String> eventHandlingInterceptingOutcome() {
             return new LinkedList<>();
         }
-        
 
         @Bean
         public CountDownLatch commandDispatchInterceptorInvocations() {
@@ -253,141 +251,132 @@ class InterceptorConfigurationTest {
         public Queue<String> eventDispatchingInterceptingOutcome() {
             return new LinkedList<>();
         }
-        
+
         @Bean
         @Order(100)
-        public MyCommandHandlerInterceptor myFirstCommandHandlerInterceptor(
-                @Qualifier("commandHandlerInterceptorInvocations") CountDownLatch commandHandlerInterceptorInvocations, 
-                @Qualifier("commandHandlingInterceptingOutcome") Queue<String> commandHandlingInterceptingOutcome) {
-            return new MyCommandHandlerInterceptor("Order-100", commandHandlerInterceptorInvocations, commandHandlingInterceptingOutcome);
+        public MyGenericHandlerInterceptor myFirstGenericHandlerInterceptor(
+                @Qualifier("commandHandlerInterceptorInvocations") CountDownLatch commandHandlerInterceptorInvocations,
+                @Qualifier("queryHandlerInterceptorInvocations") CountDownLatch queryHandlerInterceptorInvocations,
+                @Qualifier("eventHandlerInterceptorInvocations") CountDownLatch eventHandlerInterceptorInvocations,
+                @Qualifier("commandHandlingInterceptingOutcome") Queue<String> commandHandlingInterceptingOutcome,
+                @Qualifier("queryHandlingInterceptingOutcome") Queue<String> queryHandlingInterceptingOutcome,
+                @Qualifier("eventHandlingInterceptingOutcome") Queue<String> eventHandlingInterceptingOutcome
+        ) {
+            return new MyGenericHandlerInterceptor("Order-100",
+                    commandHandlerInterceptorInvocations,
+                    queryHandlerInterceptorInvocations,
+                    eventHandlerInterceptorInvocations,
+                    commandHandlingInterceptingOutcome,
+                    queryHandlingInterceptingOutcome,
+                    eventHandlingInterceptingOutcome);
         }
 
         @Bean
         @Order(0)
         public MyCommandHandlerInterceptor mySecondCommandHandlerInterceptor(
-                @Qualifier("commandHandlerInterceptorInvocations") CountDownLatch commandHandlerInterceptorInvocations, 
+                @Qualifier("commandHandlerInterceptorInvocations") CountDownLatch commandHandlerInterceptorInvocations,
                 @Qualifier("commandHandlingInterceptingOutcome") Queue<String> commandHandlingInterceptingOutcome) {
             return new MyCommandHandlerInterceptor("Order-0", commandHandlerInterceptorInvocations, commandHandlingInterceptingOutcome);
         }
 
         @Bean
         public MyCommandHandlerInterceptor myThirdCommandHandlerInterceptor(
-                @Qualifier("commandHandlerInterceptorInvocations") CountDownLatch commandHandlerInterceptorInvocations, 
+                @Qualifier("commandHandlerInterceptorInvocations") CountDownLatch commandHandlerInterceptorInvocations,
                 @Qualifier("commandHandlingInterceptingOutcome") Queue<String> commandHandlingInterceptingOutcome) {
             return new MyCommandHandlerInterceptor("Unordered", commandHandlerInterceptorInvocations, commandHandlingInterceptingOutcome);
-        }
-        
-        @Bean
-        @Order(100)
-        public MyQueryHandlerInterceptor myFirstQueryHandlerInterceptor(
-                @Qualifier("queryHandlerInterceptorInvocations") CountDownLatch queryHandlerInterceptorInvocations, 
-                @Qualifier("queryHandlingInterceptingOutcome") Queue<String> queryHandlingInterceptingOutcome) {
-            return new MyQueryHandlerInterceptor("Order-100", queryHandlerInterceptorInvocations, queryHandlingInterceptingOutcome);
         }
 
         @Bean
         @Order(0)
         public MyQueryHandlerInterceptor mySecondQueryHandlerInterceptor(
-                @Qualifier("queryHandlerInterceptorInvocations") CountDownLatch queryHandlerInterceptorInvocations, 
+                @Qualifier("queryHandlerInterceptorInvocations") CountDownLatch queryHandlerInterceptorInvocations,
                 @Qualifier("queryHandlingInterceptingOutcome") Queue<String> queryHandlingInterceptingOutcome) {
             return new MyQueryHandlerInterceptor("Order-0", queryHandlerInterceptorInvocations, queryHandlingInterceptingOutcome);
         }
 
         @Bean
         public MyQueryHandlerInterceptor myThirdQueryHandlerInterceptor(
-                @Qualifier("queryHandlerInterceptorInvocations") CountDownLatch queryHandlerInterceptorInvocations, 
+                @Qualifier("queryHandlerInterceptorInvocations") CountDownLatch queryHandlerInterceptorInvocations,
                 @Qualifier("queryHandlingInterceptingOutcome") Queue<String> queryHandlingInterceptingOutcome) {
             return new MyQueryHandlerInterceptor("Unordered", queryHandlerInterceptorInvocations, queryHandlingInterceptingOutcome);
-        }
-        
-        @Bean
-        @Order(100)
-        public MyEventHandlerInterceptor myFirstEventHandlerInterceptor(
-                @Qualifier("eventHandlerInterceptorInvocations") CountDownLatch eventHandlerInterceptorInvocations, 
-                @Qualifier("eventHandlingInterceptingOutcome") Queue<String> eventHandlingInterceptingOutcome) {
-            return new MyEventHandlerInterceptor("Order-100", eventHandlerInterceptorInvocations, eventHandlingInterceptingOutcome);
         }
 
         @Bean
         @Order(0)
         public MyEventHandlerInterceptor mySecondEventHandlerInterceptor(
-                @Qualifier("eventHandlerInterceptorInvocations") CountDownLatch eventHandlerInterceptorInvocations, 
+                @Qualifier("eventHandlerInterceptorInvocations") CountDownLatch eventHandlerInterceptorInvocations,
                 @Qualifier("eventHandlingInterceptingOutcome") Queue<String> eventHandlingInterceptingOutcome) {
             return new MyEventHandlerInterceptor("Order-0", eventHandlerInterceptorInvocations, eventHandlingInterceptingOutcome);
         }
 
         @Bean
         public MyEventHandlerInterceptor myThirdEventHandlerInterceptor(
-                @Qualifier("eventHandlerInterceptorInvocations") CountDownLatch eventHandlerInterceptorInvocations, 
+                @Qualifier("eventHandlerInterceptorInvocations") CountDownLatch eventHandlerInterceptorInvocations,
                 @Qualifier("eventHandlingInterceptingOutcome") Queue<String> eventHandlingInterceptingOutcome) {
             return new MyEventHandlerInterceptor("Unordered", eventHandlerInterceptorInvocations, eventHandlingInterceptingOutcome);
         }
 
+
         @Bean
         @Order(100)
-        public MyCommandDispatchInterceptor myFirstCommandDispatchInterceptor(
-                @Qualifier("commandDispatchInterceptorInvocations") CountDownLatch commandDispatchInterceptorInvocations, 
-                @Qualifier("commandDispatchingInterceptingOutcome") Queue<String> commandDispatchingInterceptingOutcome) {
-            return new MyCommandDispatchInterceptor("Order-100", commandDispatchInterceptorInvocations, commandDispatchingInterceptingOutcome);
+        public MyGenericDispatchInterceptor myFirstGenericDispatcherInterceptor(
+                @Qualifier("commandDispatchInterceptorInvocations") CountDownLatch commandDispatchInterceptorInvocations,
+                @Qualifier("queryDispatchInterceptorInvocations") CountDownLatch queryDispatchInterceptorInvocations,
+                @Qualifier("eventDispatchInterceptorInvocations") CountDownLatch eventDispatchInterceptorInvocations,
+                @Qualifier("commandDispatchingInterceptingOutcome") Queue<String> commandDispatchingInterceptingOutcome,
+                @Qualifier("queryDispatchingInterceptingOutcome") Queue<String> queryDispatchingInterceptingOutcome,
+                @Qualifier("eventDispatchingInterceptingOutcome") Queue<String> eventDispatchingInterceptingOutcome
+        ) {
+            return new MyGenericDispatchInterceptor("Order-100",
+                    commandDispatchInterceptorInvocations,
+                    queryDispatchInterceptorInvocations,
+                    eventDispatchInterceptorInvocations,
+                    commandDispatchingInterceptingOutcome,
+                    queryDispatchingInterceptingOutcome,
+                    eventDispatchingInterceptingOutcome);
         }
 
         @Bean
         @Order(0)
         public MyCommandDispatchInterceptor mySecondCommandDispatchInterceptor(
-                @Qualifier("commandDispatchInterceptorInvocations") CountDownLatch commandDispatchInterceptorInvocations, 
+                @Qualifier("commandDispatchInterceptorInvocations") CountDownLatch commandDispatchInterceptorInvocations,
                 @Qualifier("commandDispatchingInterceptingOutcome") Queue<String> commandDispatchingInterceptingOutcome) {
             return new MyCommandDispatchInterceptor("Order-0", commandDispatchInterceptorInvocations, commandDispatchingInterceptingOutcome);
         }
 
         @Bean
         public MyCommandDispatchInterceptor myThirdCommandDispatchInterceptor(
-                @Qualifier("commandDispatchInterceptorInvocations") CountDownLatch commandDispatchInterceptorInvocations, 
+                @Qualifier("commandDispatchInterceptorInvocations") CountDownLatch commandDispatchInterceptorInvocations,
                 @Qualifier("commandDispatchingInterceptingOutcome") Queue<String> commandDispatchingInterceptingOutcome) {
             return new MyCommandDispatchInterceptor("Unordered", commandDispatchInterceptorInvocations, commandDispatchingInterceptingOutcome);
-        }
-        
-        @Bean
-        @Order(100)
-        public MyQueryDispatchInterceptor myFirstQueryDispatchInterceptor(
-                @Qualifier("queryDispatchInterceptorInvocations") CountDownLatch queryDispatchInterceptorInvocations, 
-                @Qualifier("queryDispatchingInterceptingOutcome") Queue<String> queryDispatchingInterceptingOutcome) {
-            return new MyQueryDispatchInterceptor("Order-100", queryDispatchInterceptorInvocations, queryDispatchingInterceptingOutcome);
         }
 
         @Bean
         @Order(0)
         public MyQueryDispatchInterceptor mySecondQueryDispatchInterceptor(
-                @Qualifier("queryDispatchInterceptorInvocations") CountDownLatch queryDispatchInterceptorInvocations, 
+                @Qualifier("queryDispatchInterceptorInvocations") CountDownLatch queryDispatchInterceptorInvocations,
                 @Qualifier("queryDispatchingInterceptingOutcome") Queue<String> queryDispatchingInterceptingOutcome) {
             return new MyQueryDispatchInterceptor("Order-0", queryDispatchInterceptorInvocations, queryDispatchingInterceptingOutcome);
         }
 
         @Bean
         public MyQueryDispatchInterceptor myThirdQueryDispatchInterceptor(
-                @Qualifier("queryDispatchInterceptorInvocations") CountDownLatch queryDispatchInterceptorInvocations, 
+                @Qualifier("queryDispatchInterceptorInvocations") CountDownLatch queryDispatchInterceptorInvocations,
                 @Qualifier("queryDispatchingInterceptingOutcome") Queue<String> queryDispatchingInterceptingOutcome) {
             return new MyQueryDispatchInterceptor("Unordered", queryDispatchInterceptorInvocations, queryDispatchingInterceptingOutcome);
-        }
-        
-        @Bean
-        @Order(100)
-        public MyEventDispatchInterceptor myFirstEventDispatchInterceptor(
-                @Qualifier("eventDispatchInterceptorInvocations") CountDownLatch eventDispatchInterceptorInvocations, 
-                @Qualifier("eventDispatchingInterceptingOutcome") Queue<String> eventDispatchingInterceptingOutcome) {
-            return new MyEventDispatchInterceptor("Order-100", eventDispatchInterceptorInvocations, eventDispatchingInterceptingOutcome);
         }
 
         @Bean
         @Order(0)
         public MyEventDispatchInterceptor mySecondEventDispatchInterceptor(
-                @Qualifier("eventDispatchInterceptorInvocations") CountDownLatch eventDispatchInterceptorInvocations, 
+                @Qualifier("eventDispatchInterceptorInvocations") CountDownLatch eventDispatchInterceptorInvocations,
                 @Qualifier("eventDispatchingInterceptingOutcome") Queue<String> eventDispatchingInterceptingOutcome) {
             return new MyEventDispatchInterceptor("Order-0", eventDispatchInterceptorInvocations, eventDispatchingInterceptingOutcome);
         }
 
         @Bean
         public MyEventDispatchInterceptor myThirdEventDispatchInterceptor(
-                @Qualifier("eventDispatchInterceptorInvocations") CountDownLatch eventDispatchInterceptorInvocations, 
+                @Qualifier("eventDispatchInterceptorInvocations") CountDownLatch eventDispatchInterceptorInvocations,
                 @Qualifier("eventDispatchingInterceptingOutcome") Queue<String> eventDispatchingInterceptingOutcome) {
             return new MyEventDispatchInterceptor("Unordered", eventDispatchInterceptorInvocations, eventDispatchingInterceptingOutcome);
         }
@@ -458,7 +447,7 @@ class InterceptorConfigurationTest {
             @Override
             public Object handle(UnitOfWork<? extends T> unitOfWork, InterceptorChain interceptorChain) throws Exception {
                 invocation.countDown();
-                handlingOutcome.add(name +  ": " + unitOfWork.getMessage());
+                handlingOutcome.add(name + ": " + unitOfWork.getMessage());
                 return interceptorChain.proceed();
             }
         }
@@ -480,11 +469,100 @@ class InterceptorConfigurationTest {
             public BiFunction<Integer, T, T> handle(@NotNull List<? extends T> messages) {
                 return (index, message) -> {
                     invocation.countDown();
-                    handlingOutcome.add(name +  ": " + message);
+                    handlingOutcome.add(name + ": " + message);
                     return message;
                 };
             }
         }
+
+        public static class MyGenericDispatchInterceptor<T extends Message<?>> implements MessageDispatchInterceptor<T> {
+
+            private final String name;
+            private final CountDownLatch commandInvocation;
+            private final CountDownLatch queryInvocation;
+            private final CountDownLatch eventInvocation;
+            private final Queue<String> commandHandlingOutcome;
+            private final Queue<String> queryHandlingOutcome;
+            private final Queue<String> eventHandlingOutcome;
+
+            public MyGenericDispatchInterceptor(String name,
+                                                CountDownLatch commandInvocation,
+                                                CountDownLatch queryInvocation,
+                                                CountDownLatch eventInvocation,
+                                                Queue<String> commandHandlingOutcome,
+                                                Queue<String> queryHandlingOutcome,
+                                                Queue<String> eventHandlingOutcome) {
+                this.name = name;
+                this.commandInvocation = commandInvocation;
+                this.queryInvocation = queryInvocation;
+                this.eventInvocation = eventInvocation;
+                this.commandHandlingOutcome = commandHandlingOutcome;
+                this.queryHandlingOutcome = queryHandlingOutcome;
+                this.eventHandlingOutcome = eventHandlingOutcome;
+            }
+
+            @NotNull
+            @Override
+            public BiFunction<Integer, T, T> handle(@NotNull List<? extends T> messages) {
+                return (index, message) -> {
+                    if (message instanceof CommandMessage) {
+                        commandInvocation.countDown();
+                        commandHandlingOutcome.add(name);
+                    } else if (message instanceof QueryMessage) {
+                        queryInvocation.countDown();
+                        queryHandlingOutcome.add(name);
+                    } else {
+                        eventInvocation.countDown();
+                        eventHandlingOutcome.add(name);
+                    }
+                    return message;
+                };
+            }
+        }
+
+        public static class MyGenericHandlerInterceptor implements MessageHandlerInterceptor<Message<?>> {
+
+            private final String name;
+            private final CountDownLatch commandInvocation;
+            private final CountDownLatch queryInvocation;
+            private final CountDownLatch eventInvocation;
+            private final Queue<String> commandHandlingOutcome;
+            private final Queue<String> queryHandlingOutcome;
+            private final Queue<String> eventHandlingOutcome;
+
+            public MyGenericHandlerInterceptor(String name,
+                                               CountDownLatch commandInvocation,
+                                               CountDownLatch queryInvocation,
+                                               CountDownLatch eventInvocation,
+                                               Queue<String> commandHandlingOutcome,
+                                               Queue<String> queryHandlingOutcome,
+                                               Queue<String> eventHandlingOutcome) {
+                this.name = name;
+                this.commandInvocation = commandInvocation;
+                this.queryInvocation = queryInvocation;
+                this.eventInvocation = eventInvocation;
+                this.commandHandlingOutcome = commandHandlingOutcome;
+                this.queryHandlingOutcome = queryHandlingOutcome;
+                this.eventHandlingOutcome = eventHandlingOutcome;
+            }
+
+            @NotNull
+            @Override
+            public Object handle(UnitOfWork<?> unitOfWork, InterceptorChain interceptorChain) throws Exception {
+                if (unitOfWork.getMessage() instanceof CommandMessage) {
+                    commandInvocation.countDown();
+                    commandHandlingOutcome.add(name);
+                } else if (unitOfWork.getMessage() instanceof QueryMessage) {
+                    queryInvocation.countDown();
+                    queryHandlingOutcome.add(name);
+                } else {
+                    eventInvocation.countDown();
+                    eventHandlingOutcome.add(name);
+                }
+                return interceptorChain.proceed();
+            }
+        }
+
 
         public static class CommandHandlingComponent {
 
