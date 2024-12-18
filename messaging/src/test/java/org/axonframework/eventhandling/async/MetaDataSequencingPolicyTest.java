@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,10 +42,10 @@ public class MetaDataSequencingPolicyTest {
                 .metaDataKey("metaDataKey")
                 .build();
 
-        assertEquals("metaDataValue",
-                     metaDataPolicy.getSequenceIdentifierFor(newStubDomainEvent("42",
-                                                                                Collections.singletonMap("metaDataKey",
-                                                                                                         "metaDataValue"))));
+        DomainEventMessage<?> testEvent =
+                newStubDomainEvent("42", Collections.singletonMap("metaDataKey", "metaDataValue"));
+
+        assertEquals("metaDataValue", metaDataPolicy.getSequenceIdentifierFor(testEvent));
     }
 
     @Test
