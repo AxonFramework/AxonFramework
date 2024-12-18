@@ -49,12 +49,34 @@ class DefaultCommandGatewayTest {
 
     @Test
     void wrapsObjectIntoCommandMessage() throws ExecutionException, InterruptedException {
+        // given
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
                 new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), "OK")
         ));
+
+        // when
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
+
+        // then
         verify(mockCommandBus).dispatch(argThat(m -> m.getPayload().equals(payload)), isNull());
+        assertEquals("OK", result.getResultMessage().get().getPayload());
+    }
+
+    @Test
+    void resolvesQualifiedNameUsingMessageNameResolver() throws ExecutionException, InterruptedException {
+        // given
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), "OK")
+        ));
+
+        // when
+        TestPayload payload = new TestPayload();
+        CommandResult result = testSubject.send(payload, null);
+
+        // then
+        var expectedQualifiedName = new QualifiedName("org.axonframework.commandhandling.gateway", "TestPayload", "0.0.1");
+        verify(mockCommandBus).dispatch(argThat(m -> m.name().equals(expectedQualifiedName)), isNull());
         assertEquals("OK", result.getResultMessage().get().getPayload());
     }
 
@@ -65,7 +87,7 @@ class DefaultCommandGatewayTest {
         ));
         TestPayload payload = new TestPayload();
         var testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), payload);
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "1.0.0"), payload);
         CommandResult result = testSubject.send(testCommand, null);
         verify(mockCommandBus).dispatch(argThat(m -> m.equals(testCommand)), isNull());
         assertEquals("OK", result.getResultMessage().get().getPayload());
