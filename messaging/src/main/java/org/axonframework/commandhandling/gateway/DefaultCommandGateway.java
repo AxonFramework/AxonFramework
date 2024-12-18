@@ -17,11 +17,9 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageNameResolver;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -68,13 +66,33 @@ public class DefaultCommandGateway implements CommandGateway {
     public CommandResult send(@Nonnull Object command,
                               @Nullable ProcessingContext processingContext) {
         return new FutureCommandResult(
-                commandBus.dispatch(new GenericCommandMessage<>(nameResolver.resolve(command), command),
+                commandBus.dispatch(asCommandMessage(command),
                                     processingContext)
                           .thenCompose(
                                   msg -> msg instanceof ResultMessage<?> resultMessage && resultMessage.isExceptional()
                                           ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
                                           : CompletableFuture.completedFuture(msg)
                           )
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private <C> CommandMessage<C> asCommandMessage(Object command) {
+        if (command instanceof CommandMessage<?>) {
+            return (CommandMessage<C>) command;
+        }
+
+        if (command instanceof Message<?> message) {
+            return new GenericCommandMessage<>(
+                    message.name(),
+                    (C) message.getPayload(),
+                    message.getMetaData()
+            );
+        }
+
+        return new GenericCommandMessage<>(
+                nameResolver.resolve(command),
+                (C) command
         );
     }
 

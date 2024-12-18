@@ -52,6 +52,7 @@ public class ClassBasedMessageNameResolver implements MessageNameResolver {
         this.revision = revision;
     }
 
+    // todo: QualifiedName - what to do if the payload is already a message? Should we unwrap it?
     @Override
     public QualifiedName resolve(Object payload) {
         Class<Object> payloadClass = ObjectUtils.nullSafeTypeOf(payload);
