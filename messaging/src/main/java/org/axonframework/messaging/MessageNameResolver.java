@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import javax.annotation.Nonnull;
 import java.util.function.Function;
 
 /**
@@ -40,7 +41,7 @@ public interface MessageNameResolver extends Function<Object, QualifiedName> {
     <P> QualifiedName resolve(P payload);
 
     @Override
-    default QualifiedName apply(Object payload) {
+    default QualifiedName apply(@Nonnull Object payload) {
         return resolve(payload);
     }
 }

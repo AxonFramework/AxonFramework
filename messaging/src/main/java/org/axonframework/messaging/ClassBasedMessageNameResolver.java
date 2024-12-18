@@ -18,6 +18,8 @@ package org.axonframework.messaging;
 
 import org.axonframework.common.ObjectUtils;
 
+import javax.annotation.Nonnull;
+
 /**
  * A {@link MessageNameResolver} using the {@link Class} of the given {@code payload} to base th e
  * {@link QualifiedName type} on.
@@ -53,9 +55,8 @@ public class ClassBasedMessageNameResolver implements MessageNameResolver {
     }
 
     // todo: QualifiedName - what to do if the payload is already a message? Should we unwrap it?
-    // todo: what to do with null value? What if payload is null? Is it possible?
     @Override
-    public QualifiedName resolve(Object payload) {
+    public QualifiedName resolve(@Nonnull Object payload) {
         Class<Object> payloadClass = ObjectUtils.nullSafeTypeOf(payload);
         return new QualifiedName(payloadClass.getPackageName(),
                                  payloadClass.getSimpleName(),

@@ -51,20 +51,6 @@ class ClassBasedMessageNameResolverTest {
     }
 
     @Test
-    void shouldResolveToObjectClassWhenPayloadIsNull() {
-        // given
-        ClassBasedMessageNameResolver resolver = new ClassBasedMessageNameResolver();
-
-        // when
-        QualifiedName resolvedName = resolver.resolve(null);
-
-        // then
-        assertEquals(Object.class.getPackageName(), resolvedName.namespace());
-        assertEquals(Object.class.getSimpleName(), resolvedName.localName());
-        assertEquals(QualifiedNameUtils.DEFAULT_REVISION, resolvedName.revision());
-    }
-
-    @Test
     void shouldResolvePrimitiveTypeToCorrespondingWrapperClass() {
         // given
         ClassBasedMessageNameResolver resolver = new ClassBasedMessageNameResolver();
