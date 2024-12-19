@@ -28,12 +28,14 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -76,6 +78,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
     private final boolean startScheduler;
     private final boolean stopScheduler;
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Instantiate a {@link DbSchedulerEventScheduler} based on the fields contained in the
@@ -95,6 +98,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         useBinaryPojo = builder.useBinaryPojo;
         startScheduler = builder.startScheduler;
         stopScheduler = builder.stopScheduler;
+        messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -235,7 +239,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
                 data.getP(), byte[].class, data.getC(), data.getR()
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(deserializedPayload);
+        EventMessage<?> eventMessage = EventUtils.asEventMessage(deserializedPayload, messageNameResolver);
         if (!isNull(data.getM())) {
             SimpleSerializedObject<byte[]> serializedMetaData = new SimpleSerializedObject<>(
                     data.getM(), byte[].class, MetaData.class.getName(), null
@@ -250,7 +254,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
                 data.getSerializedPayload(), String.class, data.getPayloadClass(), data.getRevision()
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(deserializedPayload);
+        EventMessage<?> eventMessage = EventUtils.asEventMessage(deserializedPayload, messageNameResolver);
         if (!isNull(data.getSerializedMetadata())) {
             SimpleSerializedObject<String> serializedMetaData = new SimpleSerializedObject<>(
                     data.getSerializedMetadata(), String.class, MetaData.class.getName(), null
@@ -332,6 +336,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         private boolean useBinaryPojo = true;
         private boolean startScheduler = true;
         private boolean stopScheduler = true;
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the events. It should have either
@@ -421,6 +426,17 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
          */
         public Builder stopScheduler(boolean stopScheduler) {
             this.stopScheduler = stopScheduler;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

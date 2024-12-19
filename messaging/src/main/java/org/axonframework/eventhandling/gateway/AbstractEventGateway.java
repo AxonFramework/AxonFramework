@@ -21,7 +21,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventUtils;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.*;
 
 import java.util.List;
@@ -42,7 +41,7 @@ public abstract class AbstractEventGateway {
 
     private final EventBus eventBus;
     private final List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors;
-    private final MessageNameResolver nameResolver;
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Instantiate an {@link AbstractEventGateway} based on the fields contained in the {@link Builder}.
@@ -56,7 +55,7 @@ public abstract class AbstractEventGateway {
         builder.validate();
         this.eventBus = builder.eventBus;
         this.dispatchInterceptors = builder.dispatchInterceptors;
-        this.nameResolver = builder.nameResolver;
+        this.messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -65,7 +64,7 @@ public abstract class AbstractEventGateway {
      * @param event The event to publish.
      */
     protected void publish(@Nonnull Object event) {
-        this.eventBus.publish(processInterceptors(EventUtils.asEventMessage(event, nameResolver)));
+        this.eventBus.publish(processInterceptors(EventUtils.asEventMessage(event, messageNameResolver)));
     }
 
     /**
@@ -115,7 +114,7 @@ public abstract class AbstractEventGateway {
         private EventBus eventBus;
         private List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors =
                 new CopyOnWriteArrayList<>();
-        private MessageNameResolver nameResolver = new ClassBasedMessageNameResolver();
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link EventBus} used to publish events.
@@ -159,11 +158,11 @@ public abstract class AbstractEventGateway {
         /**
          * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
          *
-         * @param nameResolver which provides QualifiedName for Event messages
+         * @param messageNameResolver which provides QualifiedName for Event messages
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageNameResolver(MessageNameResolver nameResolver) {
-            this.nameResolver = nameResolver;
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

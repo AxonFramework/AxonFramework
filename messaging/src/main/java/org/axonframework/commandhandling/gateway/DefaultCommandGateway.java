@@ -42,7 +42,7 @@ import javax.annotation.Nullable;
 public class DefaultCommandGateway implements CommandGateway {
 
     private final CommandBus commandBus;
-    private final MessageNameResolver nameResolver;
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Initialize the {@link DefaultCommandGateway} to send commands through given {@code commandBus}. The
@@ -51,15 +51,15 @@ public class DefaultCommandGateway implements CommandGateway {
      * {@code nameResolver}.
      *
      * @param commandBus   The {@link CommandBus} to send commands on.
-     * @param nameResolver The {@link MessageNameResolver} resolving the
+     * @param messageNameResolver The {@link MessageNameResolver} resolving the
      *                     {@link org.axonframework.messaging.QualifiedName names} for
      *                     {@link org.axonframework.commandhandling.CommandMessage CommandMessages} being dispatched on
      *                     the {@code commandBus}.
      */
     public DefaultCommandGateway(@Nonnull CommandBus commandBus,
-                                 @Nonnull MessageNameResolver nameResolver) {
+                                 @Nonnull MessageNameResolver messageNameResolver) {
         this.commandBus = commandBus;
-        this.nameResolver = nameResolver;
+        this.messageNameResolver = messageNameResolver;
     }
 
     @Override
@@ -117,7 +117,7 @@ public class DefaultCommandGateway implements CommandGateway {
         }
 
         return new GenericCommandMessage<>(
-                nameResolver.resolve(command),
+                messageNameResolver.resolve(command),
                 (C) command,
                 metaData
         );
