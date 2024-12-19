@@ -29,34 +29,36 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
- * Message dispatch interceptor that adds the {$code username} and {$code authorities} from the authorized principle.
+ * A {@link MessageDispatchInterceptor} that adds the {$code username} and {$code authorities} from the authorized
+ * principle.
  *
  * @author Roald Bankras
- * @since 4.10.0
+ * @since 4.11.0
  */
-public class AuthorizationMessageDispatchInterceptor<T extends Message<?>> implements MessageDispatchInterceptor<T> {
+public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> implements MessageDispatchInterceptor<T> {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthorizationMessageDispatchInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(MessageAuthorizationDispatchInterceptor.class);
 
     @Nonnull
     @Override
     public T handle(@Nonnull T message) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
-            log.debug("No authentication found");
+            logger.debug("No authentication found.");
             return message;
         }
-        log.debug("Adding message metadata for username & authorities");
+
+        logger.debug("Adding message metadata for username & authorities.");
         Map<String, Object> authenticationDetails = new java.util.HashMap<>();
         authenticationDetails.put("username", authentication.getPrincipal());
         authenticationDetails.put("authorities", authentication.getAuthorities());
+        //noinspection unchecked
         return (T) message.andMetaData(authenticationDetails);
     }
 
     @Nonnull
     @Override
-    public BiFunction<Integer, T, T> handle(
-            @Nonnull List<? extends T> list) {
+    public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> list) {
         return (position, message) -> handle(message);
     }
 }

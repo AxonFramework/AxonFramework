@@ -19,7 +19,8 @@ package org.axonframework.spring.authorization;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
 import org.hamcrest.core.StringStartsWith;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.testcontainers.shaded.com.google.common.collect.Sets;
 
@@ -30,15 +31,16 @@ import java.util.UUID;
 import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
 import static org.axonframework.test.matchers.Matchers.predicate;
 
-class SecuredMethodMessageHandlerDefinitionTest {
+class SecuredMessageHandlerDefinitionTest {
 
     private static final UUID TEST_AGGREGATE_IDENTIFIER = UUID.randomUUID();
+
     private FixtureConfiguration<TestAggregate> testSubject;
 
     @BeforeEach
     void setUp() {
         testSubject = new AggregateTestFixture<>(TestAggregate.class)
-                .registerHandlerEnhancerDefinition(new SecuredMethodMessageHandlerDefinition());
+                .registerHandlerEnhancerDefinition(new SecuredMessageHandlerDefinition());
     }
 
     @Test
@@ -51,6 +53,7 @@ class SecuredMethodMessageHandlerDefinitionTest {
                            eventMessage -> eventMessage.getPayloadType().isAssignableFrom(AggregateCreatedEvent.class)
                    )));
     }
+
     @Test
     void shouldDenyWhenAuthorityDoesNotMatch() {
         Map<String, java.util.HashSet<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
@@ -61,6 +64,7 @@ class SecuredMethodMessageHandlerDefinitionTest {
                    .expectException(UnauthorizedMessageException.class)
                    .expectExceptionMessage(StringStartsWith.startsWith("Unauthorized message"));
     }
+
     @Test
     void shouldAllowUnannotatedMethods() {
         Map<String, Set<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
@@ -71,6 +75,7 @@ class SecuredMethodMessageHandlerDefinitionTest {
                            eventMessage -> eventMessage.getPayloadType().isAssignableFrom(AggregateUpdatedEvent.class)
                    )));
     }
+
     @Test
     void shouldDenyWhenNoAuthorityPresent() {
         testSubject.givenNoPriorActivity()

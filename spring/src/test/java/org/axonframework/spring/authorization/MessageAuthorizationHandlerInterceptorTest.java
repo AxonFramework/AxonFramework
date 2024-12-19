@@ -33,9 +33,17 @@ import java.util.UUID;
 
 import static org.hamcrest.core.StringStartsWith.startsWith;
 
+/**
+ * Test class validating the {@link MessageAuthorizationHandlerInterceptor}.
+ *
+ * @author Roald Bankras
+ */
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {AuthorizationMessageDispatchInterceptor.class, MessageAuthorizationInterceptor.class})
-class AuthorizationMessageDispatchInterceptorTest {
+@ContextConfiguration(classes = {
+        MessageAuthorizationDispatchInterceptor.class,
+        MessageAuthorizationHandlerInterceptor.class
+})
+class MessageAuthorizationHandlerInterceptorTest {
 
     private FixtureConfiguration<TestAggregate> fixture;
 
@@ -48,38 +56,27 @@ class AuthorizationMessageDispatchInterceptorTest {
     @WithMockUser(username = "admin", authorities = {"ROLE_aggregate.create"})
     public void shouldAuthorizeAndPropagateUsername() {
         UUID aggregateId = UUID.randomUUID();
-        fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor<>())
-               .registerCommandHandlerInterceptor(new MessageAuthorizationInterceptor<>())
+        fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>())
+               .registerCommandHandlerInterceptor(new MessageAuthorizationHandlerInterceptor<>())
                .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
                        "username")))
                .given()
                .when(new CreateAggregateCommand(aggregateId))
                .expectSuccessfulHandlerExecution()
-               .expectResultMessageMatching(Matchers.matches(message -> ((User) message.getMetaData()
-                                                                                       .get("username")).getUsername()
-                                                                                                        .equals("admin")));
-    }
-
-    @Test
-    public void shouldNotAuthorizeOnNoAuthentication() {
-        UUID aggregateId = UUID.randomUUID();
-        fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor<>())
-               .registerCommandHandlerInterceptor(new MessageAuthorizationInterceptor<>())
-               .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
-                       "username")))
-               .given()
-               .when(new CreateAggregateCommand(aggregateId))
-               .expectExceptionMessage("No authorities found");
+               .expectResultMessageMatching(Matchers.matches(
+                       message -> ((User) message.getMetaData().get("username")).getUsername().equals("admin")
+               ));
     }
 
     @Test
     @WithMockUser(username = "user", roles = {""})
-    public void shouldNotAuthorizeWhenRolesMismatch() {
+    public void shouldNotAuthorize() {
         UUID aggregateId = UUID.randomUUID();
-        fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor<>())
-               .registerCommandHandlerInterceptor(new MessageAuthorizationInterceptor<>())
-               .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
-                       "username")))
+        fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>())
+               .registerCommandHandlerInterceptor(new MessageAuthorizationHandlerInterceptor<>())
+               .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(
+                       new SimpleCorrelationDataProvider("username")
+               ))
                .given()
                .when(new CreateAggregateCommand(aggregateId))
                .expectException(UnauthorizedMessageException.class)

@@ -23,44 +23,47 @@ import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.GrantedAuthority;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
 
 /**
- * MessageHandlerDefinition that verifies authorization based on {@link org.springframework.security.access.annotation.Secured}
- * annotations on the message handler.
+ * MessageHandlerDefinition that verifies authorization based on
+ * {@link org.springframework.security.access.annotation.Secured} annotations on the message handler.
  *
  * @author Roald Bankras
- *
- * @since 4.10.0
+ * @since 4.11.0
  */
-public class SecuredMethodMessageHandlerDefinition implements HandlerEnhancerDefinition {
+public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         return original.annotationAttributes(Secured.class)
-                .map(attr -> (MessageHandlingMember<T>) new SecuredMessageHandlingMember<>(original, attr))
-                .orElse(original);
+                       .filter(attributes -> attributes.containsKey("secured"))
+                       .map(attributes -> (String[]) attributes.get("secured"))
+                       .map(securityConfiguration -> (MessageHandlingMember<T>) new SecuredMessageHandlingMember<>(
+                               original, securityConfiguration
+                       ))
+                       .orElse(original);
     }
 
     private static class SecuredMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> {
 
         private final Set<String> requiredRoles;
 
-        public SecuredMessageHandlingMember(MessageHandlingMember<T> delegate,
-                                            Map<String, Object> annotationAttributes) {
+        public SecuredMessageHandlingMember(MessageHandlingMember<T> delegate, String[] secureds) {
             super(delegate);
-            requiredRoles = new HashSet<>(Arrays.asList((String[]) annotationAttributes.get("secured")));
+            requiredRoles = new HashSet<>(Arrays.asList(secureds));
         }
 
         @Override
         public Object handle(@Nonnull Message<?> message, T target) throws Exception {
-            if(!hasRequiredRoles(message)) {
-                throw new UnauthorizedMessageException("Unauthorized message " + message.getIdentifier());
+            if (!hasRequiredRoles(message)) {
+                throw new UnauthorizedMessageException(
+                        "Unauthorized message with identifier [" + message.getIdentifier() + "]"
+                );
             }
             return super.handle(message, target);
         }
@@ -68,6 +71,7 @@ public class SecuredMethodMessageHandlerDefinition implements HandlerEnhancerDef
         private boolean hasRequiredRoles(@Nonnull Message<?> message) {
             Set<String> authorities = new HashSet<>();
             if (message.getMetaData().containsKey("authorities")) {
+                //noinspection unchecked
                 ((Collection<? extends GrantedAuthority>) message.getMetaData().get("authorities"))
                         .stream()
                         .map(GrantedAuthority::getAuthority)

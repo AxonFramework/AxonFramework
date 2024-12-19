@@ -21,8 +21,9 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
 import org.axonframework.test.matchers.Matchers;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
@@ -33,13 +34,16 @@ import java.util.UUID;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 
 /**
- * Command Authorization Interceptor test
+ * Test class validating the {@link MessageAuthorizationDispatchInterceptor}.
  *
  * @author Roald Bankras
  */
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {AuthorizationMessageDispatchInterceptor.class, MessageAuthorizationInterceptor.class})
-class MessageAuthorizationInterceptorTest {
+@ContextConfiguration(classes = {
+        MessageAuthorizationDispatchInterceptor.class,
+        MessageAuthorizationHandlerInterceptor.class
+})
+class MessageAuthorizationDispatchInterceptorTest {
 
     private FixtureConfiguration<TestAggregate> fixture;
 
@@ -52,24 +56,37 @@ class MessageAuthorizationInterceptorTest {
     @WithMockUser(username = "admin", authorities = {"ROLE_aggregate.create"})
     public void shouldAuthorizeAndPropagateUsername() {
         UUID aggregateId = UUID.randomUUID();
-        fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor<>())
-               .registerCommandHandlerInterceptor(new MessageAuthorizationInterceptor<>())
+        fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>())
+               .registerCommandHandlerInterceptor(new MessageAuthorizationHandlerInterceptor<>())
                .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
                        "username")))
                .given()
                .when(new CreateAggregateCommand(aggregateId))
                .expectSuccessfulHandlerExecution()
-               .expectResultMessageMatching(Matchers.matches(message -> ((User) message.getMetaData()
-                                                                                                  .get("username")).getUsername()
-                                                                                                        .equals("admin")));
+               .expectResultMessageMatching(Matchers.matches(
+                       message -> ((User) message.getMetaData().get("username")).getUsername().equals("admin")
+               ));
+    }
+
+    @Test
+    public void shouldNotAuthorizeOnNoAuthentication() {
+        UUID aggregateId = UUID.randomUUID();
+        fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>())
+               .registerCommandHandlerInterceptor(new MessageAuthorizationHandlerInterceptor<>())
+               .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
+                       "username")))
+               .given()
+               .when(new CreateAggregateCommand(aggregateId))
+               .expectException(UnauthorizedMessageException.class)
+               .expectExceptionMessage(startsWith("No authorities found"));
     }
 
     @Test
     @WithMockUser(username = "user", roles = {""})
-    public void shouldNotAuthorize() {
+    public void shouldNotAuthorizeWhenRolesMismatch() {
         UUID aggregateId = UUID.randomUUID();
-        fixture.registerCommandDispatchInterceptor(new AuthorizationMessageDispatchInterceptor<>())
-               .registerCommandHandlerInterceptor(new MessageAuthorizationInterceptor<>())
+        fixture.registerCommandDispatchInterceptor(new MessageAuthorizationDispatchInterceptor<>())
+               .registerCommandHandlerInterceptor(new MessageAuthorizationHandlerInterceptor<>())
                .registerCommandHandlerInterceptor(new CorrelationDataInterceptor<>(new SimpleCorrelationDataProvider(
                        "username")))
                .given()

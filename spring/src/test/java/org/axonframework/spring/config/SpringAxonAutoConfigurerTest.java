@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.axonframework.spring.authorization.SecuredMethodMessageHandlerDefinition;
+import org.axonframework.spring.authorization.SecuredMessageHandlerDefinition;
 import org.axonframework.spring.eventhandling.scheduling.quartz.QuartzEventSchedulerFactoryBean;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.junit.jupiter.api.AfterEach;
@@ -362,7 +362,7 @@ public class SpringAxonAutoConfigurerTest {
                         MethodQueryMessageHandlerDefinition.class,
                         ReplayAwareMessageHandlerWrapper.class,
                         DeadlineMethodMessageHandlerDefinition.class,
-                        SecuredMethodMessageHandlerDefinition.class,
+                        SecuredMessageHandlerDefinition.class,
                         MethodCreationPolicyDefinition.class,
                         MethodCreationPolicyDefinition.class,
                         MyHandlerEnhancerDefinition.class,
