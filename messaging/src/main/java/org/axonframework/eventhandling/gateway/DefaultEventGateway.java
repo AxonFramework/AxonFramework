@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageNameResolver;
 
 import java.util.List;
 import javax.annotation.Nonnull;
@@ -90,6 +91,12 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
         public Builder dispatchInterceptors(
                 List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors) {
             super.dispatchInterceptors(dispatchInterceptors);
+            return this;
+        }
+
+        @Override
+        public AbstractEventGateway.Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            super.messageNameResolver(messageNameResolver);
             return this;
         }
 

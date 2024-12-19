@@ -17,10 +17,7 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.IllegalPayloadAccessException;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
@@ -49,6 +46,7 @@ public class DefaultQueryGateway implements QueryGateway {
 
     private final QueryBus queryBus;
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors;
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Instantiate a {@link DefaultQueryGateway} based on the fields contained in the {@link Builder}.
@@ -62,6 +60,7 @@ public class DefaultQueryGateway implements QueryGateway {
         builder.validate();
         this.queryBus = builder.queryBus;
         this.dispatchInterceptors = builder.dispatchInterceptors;
+        this.messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -111,7 +110,7 @@ public class DefaultQueryGateway implements QueryGateway {
                    .map(Message::getPayload);
     }
 
-    private static <R, Q> StreamingQueryMessage<Q, R> asStreamingQueryMessage(Q query,
+    private <R, Q> StreamingQueryMessage<Q, R> asStreamingQueryMessage(Q query,
                                                                               String queryName,
                                                                               Class<R> responseType) {
         //noinspection unchecked
@@ -119,7 +118,7 @@ public class DefaultQueryGateway implements QueryGateway {
                 ? new GenericStreamingQueryMessage<>((Message<Q>) query,
                                                      queryName,
                                                      responseType)
-                : new GenericStreamingQueryMessage<>(QualifiedNameUtils.fromClassName(query.getClass()),
+                : new GenericStreamingQueryMessage<>(messageNameResolver.resolve(query),
                                                      queryName,
                                                      query,
                                                      responseType);
@@ -136,7 +135,7 @@ public class DefaultQueryGateway implements QueryGateway {
                        .map(QueryResponseMessage::getPayload);
     }
 
-    private static <R, Q> QueryMessage<Q, R> asQueryMessage(Q query,
+    private <R, Q> QueryMessage<Q, R> asQueryMessage(Q query,
                                                             String queryName,
                                                             ResponseType<R> responseType) {
         //noinspection unchecked
@@ -144,7 +143,7 @@ public class DefaultQueryGateway implements QueryGateway {
                 ? new GenericQueryMessage<>((Message<Q>) query,
                                             queryName,
                                             responseType)
-                : new GenericQueryMessage<>(QualifiedNameUtils.fromClassName(query.getClass()),
+                : new GenericQueryMessage<>(messageNameResolver.resolve(query),
                                             queryName,
                                             query,
                                             responseType);
@@ -166,7 +165,7 @@ public class DefaultQueryGateway implements QueryGateway {
         return getSubscriptionQueryResult(result);
     }
 
-    private static <Q, I, U> SubscriptionQueryMessage<Q, I, U> asSubscriptionQueryMessage(
+    private <Q, I, U> SubscriptionQueryMessage<Q, I, U> asSubscriptionQueryMessage(
             Q query,
             String queryName,
             ResponseType<I> initialResponseType,
@@ -178,7 +177,7 @@ public class DefaultQueryGateway implements QueryGateway {
                                                         queryName,
                                                         initialResponseType,
                                                         updateResponseType)
-                : new GenericSubscriptionQueryMessage<>(QualifiedNameUtils.fromClassName(query.getClass()),
+                : new GenericSubscriptionQueryMessage<>(messageNameResolver.resolve(query),
                                                         queryName,
                                                         query,
                                                         initialResponseType,
@@ -226,6 +225,7 @@ public class DefaultQueryGateway implements QueryGateway {
         private QueryBus queryBus;
         private List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors =
                 new CopyOnWriteArrayList<>();
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link QueryBus} to deliver {@link QueryMessage}s on received in this {@link QueryGateway}
@@ -265,6 +265,18 @@ public class DefaultQueryGateway implements QueryGateway {
             this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(dispatchInterceptors)
                     : new CopyOnWriteArrayList<>();
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 
