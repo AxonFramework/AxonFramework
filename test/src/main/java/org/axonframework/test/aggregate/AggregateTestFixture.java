@@ -427,6 +427,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         return andGivenCommands(commands);
     }
 
+    // fixme: QualifiedName - Similar to the given events, if the provided command is of type `CommandMessage`, the fixture dispatches it as is.
+    // Is not true anymore, because asCommandMessage had logic of passing existing message, it's not present in current implementation
+    // It's something to be discussed where to keep the logic of handling Message as a payload.
     @Override
     public TestExecutor<T> andGivenCommands(List<?> commands) {
         finalizeConfiguration();
