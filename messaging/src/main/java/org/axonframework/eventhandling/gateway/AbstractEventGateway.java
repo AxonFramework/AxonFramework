@@ -157,6 +157,7 @@ public abstract class AbstractEventGateway {
 
         /**
          * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
          *
          * @param messageNameResolver which provides QualifiedName for Event messages
          * @return the current Builder instance, for fluent interfacing
