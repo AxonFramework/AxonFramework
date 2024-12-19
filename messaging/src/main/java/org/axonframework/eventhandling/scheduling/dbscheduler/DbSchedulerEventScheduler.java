@@ -77,8 +77,8 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
     private final boolean useBinaryPojo;
     private final boolean startScheduler;
     private final boolean stopScheduler;
-    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
     private final MessageNameResolver messageNameResolver;
+    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     /**
      * Instantiate a {@link DbSchedulerEventScheduler} based on the fields contained in the
