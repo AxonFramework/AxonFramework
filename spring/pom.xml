@@ -113,6 +113,11 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <optional>true</optional>
+        </dependency>
         <!-- Validation -->
         <dependency>
             <groupId>javax.validation</groupId>
