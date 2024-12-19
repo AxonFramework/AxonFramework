@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.lifecycle.Lifecycle;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -127,8 +128,10 @@ class AxonAutoConfigurationTest {
     void ambiguousComponentsThrowExceptionWhenRequestedFromConfiguration() {
         ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
-                .withBean("gatewayOne", CommandGateway.class, () -> new DefaultCommandGateway(new SimpleCommandBus()))
-                .withBean("gatewayTwo", CommandGateway.class, () -> new DefaultCommandGateway(new SimpleCommandBus()))
+                .withBean("gatewayOne", CommandGateway.class,
+                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageNameResolver()))
+                .withBean("gatewayTwo", CommandGateway.class,
+                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageNameResolver()))
                 .withPropertyValues("axon.axonserver.enabled=false");
 
         AxonConfigurationException actual = assertThrows(AxonConfigurationException.class, () -> {
@@ -173,11 +176,11 @@ class AxonAutoConfigurationTest {
                 .withUserConfiguration(Context.class)
                 .withBean("gatewayOne",
                           CommandGateway.class,
-                          () -> new DefaultCommandGateway(new SimpleCommandBus()),
+                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageNameResolver()),
                           beanDefinition -> beanDefinition.setPrimary(true))
                 .withBean("gatewayTwo",
                           CommandGateway.class,
-                          () -> new DefaultCommandGateway(new SimpleCommandBus()),
+                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageNameResolver()),
                           beanDefinition -> beanDefinition.setPrimary(true))
                 .withPropertyValues("axon.axonserver.enabled=false");
 

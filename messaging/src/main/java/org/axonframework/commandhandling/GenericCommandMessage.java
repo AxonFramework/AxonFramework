@@ -21,7 +21,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.io.Serial;
 import java.util.Map;
@@ -42,32 +41,6 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
     private static final long serialVersionUID = 3282528436414939876L;
 
     private final String commandName;
-
-    /**
-     * Returns the given command as a {@link CommandMessage}. If {@code command} already implements
-     * {@code CommandMessage}, it is returned as-is. When the {@code command} is another implementation of
-     * {@link Message}, the {@link Message#getPayload()} and {@link Message#getMetaData()} are used as input for a new
-     * {@link GenericCommandMessage}. Otherwise, the given {@code command} is wrapped into a
-     * {@code GenericCommandMessage} as its payload.
-     *
-     * @param command The command to wrap as {@link CommandMessage}.
-     * @return A {@link CommandMessage} containing given {@code command} as payload, a {@code command} if it already
-     * implements {@code CommandMessage}, or a {@code CommandMessage} based on the result of
-     * {@link Message#getPayload()} and {@link Message#getMetaData()} for other {@link Message} implementations.
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public static <P> CommandMessage<P> asCommandMessage(@Nonnull Object command) {
-        if (command instanceof CommandMessage) {
-            return (CommandMessage<P>) command;
-        } else if (command instanceof Message<?> message) {
-            return new GenericCommandMessage<>(message.name(), (P) message.getPayload(), message.getMetaData());
-        }
-        return new GenericCommandMessage<>(QualifiedNameUtils.fromClassName(command.getClass()), (P) command,
-                                           MetaData.emptyInstance());
-    }
 
     /**
      * Constructs a {@link GenericCommandMessage} for the given {@code name} and {@code payload}.

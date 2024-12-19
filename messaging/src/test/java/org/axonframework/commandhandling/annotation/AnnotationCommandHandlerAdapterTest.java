@@ -51,6 +51,8 @@ import static org.mockito.Mockito.*;
  */
 class AnnotationCommandHandlerAdapterTest {
 
+    private static final QualifiedName TEST_NAME = new QualifiedName("test", "command", "0.0.1");
+
     private CommandBus mockBus;
     private MyCommandHandler mockTarget;
     private UnitOfWork<CommandMessage<?>> mockUnitOfWork;
@@ -80,7 +82,10 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handlerDispatchingVoidReturnType() throws Exception {
-        Object actualReturnValue = testSubject.handleSync(GenericCommandMessage.asCommandMessage(""));
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_NAME, "");
+
+        Object actualReturnValue = testSubject.handleSync(testCommand);
+
         assertNull(actualReturnValue);
         assertEquals(1, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
@@ -88,7 +93,10 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handlerDispatchingWithReturnType() throws Exception {
-        Object actualReturnValue = testSubject.handleSync(GenericCommandMessage.asCommandMessage(1L));
+        CommandMessage<Long> testCommand = new GenericCommandMessage<>(TEST_NAME, 1L);
+
+        Object actualReturnValue = testSubject.handleSync(testCommand);
+
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(1, mockTarget.returningHandlerInvoked);
@@ -96,9 +104,8 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handlerDispatchingWithCustomCommandName() throws Exception {
-        CommandMessage<Long> testCommand = new GenericCommandMessage<>(
-                new GenericMessage<>(new QualifiedName("test", "command", "0.0.1"), 1L), "almostLong"
-        );
+        CommandMessage<Long> testCommand =
+                new GenericCommandMessage<>(new GenericMessage<>(TEST_NAME, 1L), "almostLong");
         Object actualReturnValue = testSubject.handleSync(testCommand);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
@@ -109,7 +116,7 @@ class AnnotationCommandHandlerAdapterTest {
     @Test
     void handlerDispatchingThrowingException() {
         try {
-            testSubject.handleSync(GenericCommandMessage.asCommandMessage(new HashSet<>()));
+            testSubject.handleSync(new GenericCommandMessage<>(TEST_NAME, new HashSet<>()));
             fail("Expected exception");
         } catch (Exception ex) {
             assertEquals(Exception.class, ex.getClass());
@@ -132,19 +139,18 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handleNoHandlerForCommand() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage(new LinkedList<>());
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_NAME, new LinkedList<>());
 
         assertThrows(NoHandlerForCommandException.class, () -> testSubject.handleSync(command));
     }
 
     @Test
     void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() throws Exception {
+        CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(TEST_NAME, "");
         List<CommandMessage<?>> withInterceptor = new ArrayList<>();
         List<CommandMessage<?>> withoutInterceptor = new ArrayList<>();
         mockTarget = new MyInterceptingCommandHandler(withoutInterceptor, withInterceptor, new ArrayList<>());
         testSubject = new AnnotationCommandHandlerAdapter<>(mockTarget);
-
-        CommandMessage<String> testCommandMessage = GenericCommandMessage.asCommandMessage("");
 
         Object result = testSubject.handleSync(testCommandMessage);
 
@@ -157,11 +163,10 @@ class AnnotationCommandHandlerAdapterTest {
     @Test
     @Disabled("TODO #3062 - Exception Handler support")
     void exceptionHandlerAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
+        CommandMessage<List<?>> testCommandMessage = new GenericCommandMessage<>(TEST_NAME, new ArrayList<>());
         List<Exception> interceptedExceptions = new ArrayList<>();
         mockTarget = new MyInterceptingCommandHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions);
         testSubject = new AnnotationCommandHandlerAdapter<>(mockTarget);
-
-        CommandMessage<String> testCommandMessage = GenericCommandMessage.asCommandMessage(new ArrayList<>());
 
         try {
             testSubject.handleSync(testCommandMessage);

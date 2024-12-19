@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.tracing.DefaultCommandBusSpanFactory;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.tracing.IntermediateSpanFactoryTest;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
@@ -27,7 +28,8 @@ class DefaultCommandBusSpanFactoryTest
 
     @Test
     void createLocalDispatchCommand() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
+        CommandMessage<Object> command =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "MyCommand");
         test(spanFactory -> spanFactory.createDispatchCommandSpan(command, false),
              expectedSpan("CommandBus.dispatchCommand", TestSpanFactory.TestSpanType.INTERNAL)
                      .withMessage(command)
@@ -36,7 +38,8 @@ class DefaultCommandBusSpanFactoryTest
 
     @Test
     void createDistributedDispatchCommand() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
+        CommandMessage<Object> command =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "MyCommand");
         test(spanFactory -> spanFactory.createDispatchCommandSpan(command, true),
              expectedSpan("CommandBus.dispatchDistributedCommand", TestSpanFactory.TestSpanType.DISPATCH)
                      .withMessage(command)
@@ -46,7 +49,8 @@ class DefaultCommandBusSpanFactoryTest
 
     @Test
     void createLocalHandleCommand() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
+        CommandMessage<Object> command =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "MyCommand");
         test(spanFactory -> spanFactory.createHandleCommandSpan(command, false),
              expectedSpan("CommandBus.handleCommand", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                      .withMessage(command)
@@ -55,7 +59,8 @@ class DefaultCommandBusSpanFactoryTest
 
     @Test
     void createDistributedHandleCommandDefault() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
+        CommandMessage<Object> command =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "MyCommand");
         test(spanFactory -> spanFactory.createHandleCommandSpan(command, true),
              expectedSpan("CommandBus.handleDistributedCommand", TestSpanFactory.TestSpanType.HANDLER_CHILD)
                      .withMessage(command)
@@ -64,7 +69,8 @@ class DefaultCommandBusSpanFactoryTest
 
     @Test
     void createDistributedHandleCommandDistributedNotSameTrace() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
+        CommandMessage<Object> command =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "MyCommand");
         test(builder -> builder.distributedInSameTrace(false),
              spanFactory -> spanFactory.createHandleCommandSpan(command, true),
              expectedSpan("CommandBus.handleDistributedCommand", TestSpanFactory.TestSpanType.HANDLER_LINK)
@@ -74,7 +80,8 @@ class DefaultCommandBusSpanFactoryTest
 
     @Test
     void propagateContext() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("MyCommand");
+        CommandMessage<Object> command =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "MyCommand");
         testContextPropagation(command, DefaultCommandBusSpanFactory::propagateContext);
     }
 

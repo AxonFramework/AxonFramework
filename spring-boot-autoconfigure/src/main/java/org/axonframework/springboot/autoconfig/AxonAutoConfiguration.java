@@ -47,6 +47,7 @@ import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -252,7 +253,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean
     @Bean
     public CommandGateway commandGateway(CommandBus commandBus) {
-        return new DefaultCommandGateway(commandBus);
+        return new DefaultCommandGateway(commandBus, new ClassBasedMessageNameResolver());
     }
 
     @ConditionalOnMissingBean

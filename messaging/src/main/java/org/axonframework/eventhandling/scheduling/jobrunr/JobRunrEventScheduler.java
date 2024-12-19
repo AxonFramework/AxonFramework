@@ -21,12 +21,14 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -63,6 +65,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
     private final Serializer serializer;
     private final TransactionManager transactionManager;
     private final EventBus eventBus;
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Instantiate a {@link JobRunrEventScheduler} based on the fields contained in the
@@ -80,6 +83,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
         serializer = builder.serializer;
         transactionManager = builder.transactionManager;
         eventBus = builder.eventBus;
+        messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -237,7 +241,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
                 serializedPayload, String.class, payloadClass, revision
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        return GenericEventMessage.asEventMessage(deserializedPayload);
+        return EventUtils.asEventMessage(deserializedPayload, messageNameResolver);
     }
 
     private EventMessage<?> createMessage(
@@ -275,6 +279,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
         private Serializer serializer;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private EventBus eventBus;
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link JobScheduler} used for scheduling and triggering purposes of the events.
@@ -338,6 +343,18 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
         public Builder eventBus(EventBus eventBus) {
             assertNonNull(eventBus, "EventBus may not be null");
             this.eventBus = eventBus;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

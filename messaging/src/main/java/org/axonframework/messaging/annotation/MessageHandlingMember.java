@@ -27,6 +27,8 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.util.Optional;
 
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
+
 /**
  * Interface describing a handler for specific messages targeting entities of a specific type.
  *
@@ -113,7 +115,8 @@ public interface MessageHandlingMember<T> {
                                     @Nullable T target) {
         try {
             // TODO: 24-11-2023 proper impl
-            return MessageStream.just(GenericMessage.asMessage(handleSync(message, target)));
+            Object result = handleSync(message, target);
+            return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

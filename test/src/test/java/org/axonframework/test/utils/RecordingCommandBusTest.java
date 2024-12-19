@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,12 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 
+import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link RecordingCommandBus}.
+ *
  * @author Allard Buijze
  */
 class RecordingCommandBusTest {
@@ -42,8 +45,12 @@ class RecordingCommandBusTest {
 
     @Test
     void publishCommand() throws Exception {
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
-        var result = testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), ProcessingContext.NONE);
+        CommandMessage<String> firstTestCommand = new GenericCommandMessage<>(fromDottedName("test.command"), "First");
+        CommandMessage<String> secondTestCommand = new GenericCommandMessage<>(fromDottedName("test.command"), "Second");
+
+        testSubject.dispatch(firstTestCommand, ProcessingContext.NONE);
+        var result = testSubject.dispatch(secondTestCommand, ProcessingContext.NONE);
+
         Message<?> commandResultMessage = result.get();
         if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
             fail("Didn't expect handling to fail");
@@ -58,11 +65,13 @@ class RecordingCommandBusTest {
 
     @Test
     void publishCommandWithCallbackBehavior() throws Exception {
+        CommandMessage<String> firstTestCommand = new GenericCommandMessage<>(fromDottedName("test.command"), "First");
+        CommandMessage<String> secondTestCommand = new GenericCommandMessage<>(fromDottedName("test.command"), "Second");
+
         testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
-        var commandResultMessage = testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"),
-                                                        ProcessingContext.NONE)
-                                              .get();
+        testSubject.dispatch(firstTestCommand, ProcessingContext.NONE);
+
+        var commandResultMessage = testSubject.dispatch(secondTestCommand, ProcessingContext.NONE).get();
         if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
             fail("Didn't expect handling to fail");
         }
