@@ -20,8 +20,11 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.*;
@@ -68,6 +71,23 @@ class DefaultEventGatewayTest {
                 argThat((GenericEventMessage msg) -> msg.getPayload().equals("Event3")));
         verify(mockEventMessageTransformer).handle(
                 argThat((GenericEventMessage msg) -> msg.getPayload().equals("Event3")));
+    }
+
+    @Test
+    void publishMessage() {
+        // when
+        var payload = new TestPayload(UUID.randomUUID().toString());
+        var message = new GenericEventMessage<>(new QualifiedName("test", "TestPayload", "0.5.0"), payload);
+        testSubject.publish(message);
+
+        // then
+        verify(mockEventBus).publish(
+                argThat((GenericEventMessage msg) -> msg.equals(message)));
+        verify(mockEventMessageTransformer).handle(
+                argThat((GenericEventMessage msg) -> msg.equals(message)));
+    }
+
+    private record TestPayload(String value) {
     }
 
 }
