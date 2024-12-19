@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -40,56 +40,27 @@ class DefaultCommandGatewayTest {
 
     private DefaultCommandGateway testSubject;
     private CommandBus mockCommandBus;
+    private static final MessageNameResolver TEST_MESSAGE_NAME_RESOLVER = new MessageNameResolver() {
+        @Override
+        public <P> QualifiedName resolve(P payload) {
+            return new QualifiedName("test", payload.getClass().getSimpleName(), "0.5.0");
+        }
+    };
 
     @BeforeEach
     void setUp() {
         mockCommandBus = mock(CommandBus.class);
-        testSubject = new DefaultCommandGateway(mockCommandBus, new ClassBasedMessageNameResolver());
+        testSubject = new DefaultCommandGateway(mockCommandBus, TEST_MESSAGE_NAME_RESOLVER);
     }
 
     @Test
     void wrapsObjectIntoCommandMessage() throws ExecutionException, InterruptedException {
-        // given
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
                 new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), "OK")
         ));
-
-        // when
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
-
-        // then
         verify(mockCommandBus).dispatch(argThat(m -> m.getPayload().equals(payload)), isNull());
-        assertEquals("OK", result.getResultMessage().get().getPayload());
-    }
-
-    @Test
-    void resolvesQualifiedNameUsingMessageNameResolver() throws ExecutionException, InterruptedException {
-        // given
-        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), "OK")
-        ));
-
-        // when
-        TestPayload payload = new TestPayload();
-        CommandResult result = testSubject.send(payload, null);
-
-        // then
-        var expectedQualifiedName = new QualifiedName("org.axonframework.commandhandling.gateway", "TestPayload", "0.0.1");
-        verify(mockCommandBus).dispatch(argThat(m -> m.name().equals(expectedQualifiedName)), isNull());
-        assertEquals("OK", result.getResultMessage().get().getPayload());
-    }
-
-    @Test
-    void passCommandMessageAsIs() throws ExecutionException, InterruptedException {
-        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), "OK")
-        ));
-        TestPayload payload = new TestPayload();
-        var testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "1.0.0"), payload);
-        CommandResult result = testSubject.send(testCommand, null);
-        verify(mockCommandBus).dispatch(argThat(m -> m.equals(testCommand)), isNull());
         assertEquals("OK", result.getResultMessage().get().getPayload());
     }
 
@@ -112,6 +83,41 @@ class DefaultCommandGatewayTest {
         CommandResult result = testSubject.send(payload, null);
         verify(mockCommandBus).dispatch(argThat(m -> m.getPayload().equals(payload)), isNull());
         assertTrue(result.getResultMessage().isCompletedExceptionally());
+    }
+
+    @Test
+    void resolvesQualifiedNameUsingMessageNameResolver() throws ExecutionException, InterruptedException {
+        // given
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), "OK")
+        ));
+
+        // when
+        TestPayload payload = new TestPayload();
+        CommandResult result = testSubject.send(payload, null);
+
+        // then
+        var expectedQualifiedName = new QualifiedName("test", "TestPayload", "0.5.0");
+        verify(mockCommandBus).dispatch(argThat(m -> m.name().equals(expectedQualifiedName)), isNull());
+        assertEquals("OK", result.getResultMessage().get().getPayload());
+    }
+
+    @Test
+    void passCommandMessageAsIs() throws ExecutionException, InterruptedException {
+        // given
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), "OK")
+        ));
+
+        // when
+        TestPayload payload = new TestPayload();
+        var testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "1.0.0"), payload);
+        CommandResult result = testSubject.send(testCommand, null);
+
+        // then
+        verify(mockCommandBus).dispatch(argThat(m -> m.equals(testCommand)), isNull());
+        assertEquals("OK", result.getResultMessage().get().getPayload());
     }
 
     private static class TestPayload {

@@ -45,7 +45,7 @@ public class ClassBasedMessageNameResolver implements MessageNameResolver {
 
     /**
      * Constructs a {@link ClassBasedMessageNameResolver} using the given {@code revision} as the revision for all
-     * resolved {@link QualifiedName names}.
+     * resolved {@link QualifiedName names}. If payload is already a message the {@link QualifiedName name} of the message is used without any changes.
      *
      * @param revision The revision for all resolved {@link QualifiedName names} by this {@link MessageNameResolver}
      *                 implementation
@@ -54,12 +54,14 @@ public class ClassBasedMessageNameResolver implements MessageNameResolver {
         this.revision = revision;
     }
 
-    // todo: QualifiedName - what to do if the payload is already a message? Should we unwrap it?
     @Override
     public QualifiedName resolve(@Nonnull Object payload) {
+        if (payload instanceof Message<?>) {
+            return ((Message<?>) payload).name();
+        }
         Class<Object> payloadClass = ObjectUtils.nullSafeTypeOf(payload);
         return new QualifiedName(payloadClass.getPackageName(),
-                                 payloadClass.getSimpleName(),
-                                 revision);
+                payloadClass.getSimpleName(),
+                revision);
     }
 }

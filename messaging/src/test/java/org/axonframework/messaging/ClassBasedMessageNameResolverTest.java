@@ -71,7 +71,6 @@ class ClassBasedMessageNameResolverTest {
         ClassBasedMessageNameResolver resolver = new ClassBasedMessageNameResolver(customRevision);
 
         // when
-        class TestPayload {}
         QualifiedName resolvedName = resolver.resolve(new TestPayload());
 
         // then
@@ -79,4 +78,21 @@ class ClassBasedMessageNameResolverTest {
         assertEquals(TestPayload.class.getSimpleName(), resolvedName.localName());
         assertEquals(customRevision, resolvedName.revision());
     }
+
+    @Test
+    void shouldKeepQualifiedNameIfPayloadIsAMessageAndDoNotApplyResolverRevision() {
+        // given
+        String customRevision = "custom-rev";
+        ClassBasedMessageNameResolver resolver = new ClassBasedMessageNameResolver(customRevision);
+
+        // when
+        QualifiedName qualifiedName = new QualifiedName("test", "TestPayload", "0.5.0");
+        var payload = new GenericMessage<>(qualifiedName, new TestPayload());
+        QualifiedName resolvedName = resolver.resolve(payload);
+
+        // then
+        assertEquals(qualifiedName, resolvedName);
+    }
+
+    private static class TestPayload {}
 }
