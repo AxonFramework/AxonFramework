@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.*;
 
@@ -29,7 +30,6 @@ import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 
 /**
  * Abstract implementation of an EventGateway, which handles the dispatch interceptors. The
@@ -65,32 +65,7 @@ public abstract class AbstractEventGateway {
      * @param event The event to publish.
      */
     protected void publish(@Nonnull Object event) {
-        this.eventBus.publish(processInterceptors(asEventMessage(event)));
-    }
-
-    /**
-     * Returns the given event as an EventMessage. If {@code event} already implements EventMessage, it is returned
-     * as-is. If it is a Message, a new EventMessage will be created using the payload and meta data of the given
-     * message. Otherwise, the given {@code event} is wrapped into a GenericEventMessage as its payload.
-     *
-     * @param event the event to wrap as EventMessage
-     * @param <P>   The generic type of the expected payload of the resulting object
-     * @return an EventMessage containing given {@code event} as payload, or {@code event} if it already implements
-     * EventMessage.
-     */
-    @SuppressWarnings("unchecked")
-    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
-        if (event instanceof EventMessage<?>) {
-            return (EventMessage<E>) event;
-        } else if (event instanceof Message<?>) {
-            Message<E> message = (Message<E>) event;
-            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
-        }
-        return new GenericEventMessage<>(
-                nameResolver.resolve(event),
-                (E) event,
-                MetaData.emptyInstance()
-        );
+        this.eventBus.publish(processInterceptors(EventUtils.asEventMessage(event, nameResolver)));
     }
 
     /**
