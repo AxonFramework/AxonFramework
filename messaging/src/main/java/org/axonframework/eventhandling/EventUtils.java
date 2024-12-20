@@ -120,7 +120,7 @@ public abstract class EventUtils {
      * EventMessage.
      */
     @SuppressWarnings("unchecked")
-    public static <E> EventMessage<E> asEventMessage(@Nonnull Object event, Function<Object, QualifiedName> nameResolver) {
+    public static <E> EventMessage<E> asEventMessage(@Nonnull Object event, @Nonnull Function<Object, QualifiedName> nameResolver) {
         if (event instanceof EventMessage<?>) {
             return (EventMessage<E>) event;
         } else if (event instanceof Message<?>) {
