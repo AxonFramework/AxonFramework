@@ -40,7 +40,7 @@ final class NoAppendCondition implements AppendCondition {
 
     @Override
     public long consistencyMarker() {
-        return -1;
+        return Long.MAX_VALUE;
     }
 
     @Override

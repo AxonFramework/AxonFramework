@@ -16,12 +16,11 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.axonframework.eventsourcing.eventstore.EventCriteria.hasIndex;
 import static org.axonframework.eventsourcing.eventstore.SourcingCondition.conditionFor;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link NoAppendCondition}.
@@ -31,8 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class NoAppendConditionTest {
 
     @Test
-    void consistencyMarkerFixedToMinusOne() {
-        assertEquals(-1, AppendCondition.none().consistencyMarker());
+    void consistencyMarkerFixedToLongMax() {
+        assertEquals(Long.MAX_VALUE, AppendCondition.none().consistencyMarker());
     }
 
     @Test

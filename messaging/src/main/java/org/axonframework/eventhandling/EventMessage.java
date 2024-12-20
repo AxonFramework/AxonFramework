@@ -21,6 +21,8 @@ import org.axonframework.messaging.Message;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Represents a Message wrapping an Event, which is represented by its payload. An Event is a representation of an
@@ -76,4 +78,20 @@ public interface EventMessage<T> extends Message<T> {
      */
     @Override
     EventMessage<T> andMetaData(@Nonnull Map<String, ?> metaData);
+
+    /**
+     * Returns a copy of this EventMessage with its payload converted using given {@code conversion} function. If the
+     * function returns an equal payload, this Event Message instance is returned.
+     *
+     * @param conversion The function to apply to the payload of this message
+     * @param <C>        The type of payload returned by the conversion
+     * @return a copy of this message with the payload converted
+     */
+    default <C> EventMessage<C> withConvertedPayload(@Nonnull Function<T, C> conversion) {
+        T payload = getPayload();
+        if (Objects.equals(payload, conversion.apply(payload))) {
+            return (EventMessage<C>) this;
+        }
+        throw new UnsupportedOperationException("To be implemented");
+    }
 }
