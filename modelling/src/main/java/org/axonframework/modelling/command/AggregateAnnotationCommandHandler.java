@@ -22,7 +22,9 @@ import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -65,6 +67,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     private final Set<String> supportedCommandNames;
     private final Map<String, Set<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>>> supportedCommandsByName;
     private final CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory;
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
@@ -102,6 +105,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         this.commandTargetResolver = builder.commandTargetResolver;
         this.supportedCommandNames = new HashSet<>();
         this.supportedCommandsByName = new HashMap<>();
+        this.messageNameResolver = builder.messageNameResolver;
         AggregateModel<T> aggregateModel = builder.buildAggregateModel();
         this.creationPolicyAggregateFactory =
                 initializeAggregateFactory(aggregateModel.entityClass(), builder.creationPolicyAggregateFactory);
@@ -217,7 +221,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(message))
                        .handle(message, processingContext)
-                       .mapMessage(GenericCommandResultMessage::asCommandResultMessage);
+                       .mapMessage(m -> GenericCommandResultMessage.asCommandResultMessage(m, messageNameResolver::resolve));
     }
 
     @Override
@@ -268,6 +272,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
         private CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory;
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link Repository} used to add and load Aggregate instances of generic type {@code T} upon handling
@@ -366,6 +371,18 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         ) {
             assertNonNull(creationPolicyAggregateFactory, "CreationPolicyAggregateFactory may not be null");
             this.creationPolicyAggregateFactory = creationPolicyAggregateFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

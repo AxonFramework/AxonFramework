@@ -20,7 +20,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.eventhandling.EventUtils;
+import org.axonframework.messaging.*;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -28,7 +29,6 @@ import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 
 /**
  * Abstract implementation of an EventGateway, which handles the dispatch interceptors. The
@@ -41,6 +41,7 @@ public abstract class AbstractEventGateway {
 
     private final EventBus eventBus;
     private final List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors;
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Instantiate an {@link AbstractEventGateway} based on the fields contained in the {@link Builder}.
@@ -54,6 +55,7 @@ public abstract class AbstractEventGateway {
         builder.validate();
         this.eventBus = builder.eventBus;
         this.dispatchInterceptors = builder.dispatchInterceptors;
+        this.messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -62,7 +64,7 @@ public abstract class AbstractEventGateway {
      * @param event The event to publish.
      */
     protected void publish(@Nonnull Object event) {
-        this.eventBus.publish(processInterceptors(asEventMessage(event)));
+        this.eventBus.publish(processInterceptors(EventUtils.asEventMessage(event, messageNameResolver)));
     }
 
     /**
@@ -112,6 +114,7 @@ public abstract class AbstractEventGateway {
         private EventBus eventBus;
         private List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors =
                 new CopyOnWriteArrayList<>();
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link EventBus} used to publish events.
@@ -149,6 +152,18 @@ public abstract class AbstractEventGateway {
             this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(dispatchInterceptors)
                     : new CopyOnWriteArrayList<>();
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

@@ -58,6 +58,13 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     @Deprecated
     @SuppressWarnings("unchecked")
     public static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult) {
+        return asCommandResultMessage(commandResult, (cr) -> QualifiedNameUtils.fromClassName(cr.getClass()));
+    }
+
+    // todo: QualifiedName - documentation!
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    public static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult, @Nonnull Function<Object, QualifiedName> nameResolver) {
         if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage<R>) commandResult;
         } else if (commandResult instanceof Message) {
@@ -66,9 +73,10 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
         }
         QualifiedName name = commandResult == null
                 ? QualifiedNameUtils.fromDottedName("empty.command.result")
-                : QualifiedNameUtils.fromClassName(commandResult.getClass());
+                : nameResolver.apply(commandResult);
         return new GenericCommandResultMessage<>(name, (R) commandResult);
     }
+
 
     /**
      * Creates a Command Result Message with the given {@code exception} result.
