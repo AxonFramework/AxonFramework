@@ -19,6 +19,7 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -52,6 +53,36 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
     @Override
     public Flux<Entry<M>> asFlux() {
         return Flux.error(error);
+    }
+
+    @Override
+    public Optional<Entry<M>> next() {
+        return Optional.empty();
+    }
+
+    @Override
+    public void onAvailable(@Nonnull Runnable callback) {
+        // the stream is failed, so we can call the callback right away that there is relevant state to read
+        callback.run();
+    }
+
+    @Override
+    public Optional<Throwable> error() {
+        return Optional.of(error);
+    }
+
+    @Override
+    public boolean isCompleted() {
+        return true;
+    }
+
+    @Override
+    public boolean hasNextAvailable() {
+        return false;
+    }
+
+    @Override
+    public void close() {
     }
 
     @Override

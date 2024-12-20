@@ -19,6 +19,7 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
@@ -65,6 +66,46 @@ class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<
     public Flux<Entry<M>> asFlux() {
         return first.asFlux()
                     .concatWith(second.asFlux());
+    }
+
+    @Override
+    public Optional<Entry<M>> next() {
+        if (first.isCompleted() && first.error().isEmpty()) {
+            return second.next();
+        }
+        return first.next();
+    }
+
+    @Override
+    public void onAvailable(@Nonnull Runnable callback) {
+        first.onAvailable(() -> {
+            if (first.isCompleted() && first.error().isEmpty()) {
+                second.onAvailable(callback);
+            } else {
+                callback.run();
+            }
+        });
+    }
+
+    @Override
+    public Optional<Throwable> error() {
+        return first.isCompleted() ? first.error().or(second::error) : first.error();
+    }
+
+    @Override
+    public boolean isCompleted() {
+        return first.isCompleted() && second.isCompleted();
+    }
+
+    @Override
+    public boolean hasNextAvailable() {
+        return first.isCompleted() && first.error().isEmpty() ? second.hasNextAvailable() : first.hasNextAvailable();
+    }
+
+    @Override
+    public void close() {
+        first.close();
+        second.close();
     }
 
     @Override

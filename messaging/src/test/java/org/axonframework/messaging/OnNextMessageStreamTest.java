@@ -42,7 +42,7 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
     };
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         return new OnNextMessageStream<>(MessageStream.fromIterable(messages), NO_OP_ON_NEXT);
     }
 

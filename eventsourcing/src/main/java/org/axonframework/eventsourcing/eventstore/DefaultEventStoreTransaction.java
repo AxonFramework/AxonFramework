@@ -23,8 +23,11 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * The default {@link EventStoreTransaction}.
@@ -49,7 +52,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     private final ResourceKey<Long> appendPositionKey;
 
     /**
-     * Constructs a {@link DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
+     * Constructs a {@code DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
      * {@link #appendEvent(EventMessage) append events} originating from the given {@code context}.
      *
      * @param eventStorageEngine The {@link AsyncEventStorageEngine} used to
@@ -69,7 +72,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition,
+    public MessageStream<? extends EventMessage<?>> source(@Nonnull SourcingCondition condition,
                                                  @Nonnull ProcessingContext context) {
         context.updateResource(
                 appendConditionKey,
@@ -96,16 +99,30 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private void attachAppendEventsStep() {
         processingContext.onPrepareCommit(
-                commitContext -> {
+                context -> {
                     AppendCondition appendCondition =
-                            commitContext.computeResourceIfAbsent(appendConditionKey, AppendCondition::none);
-                    List<EventMessage<?>> eventQueue = commitContext.getResource(eventQueueKey);
-                    return eventStorageEngine.appendEvents(appendCondition, eventQueue)
-                                             .whenComplete((position, exception) -> commitContext.putResource(
-                                                     appendPositionKey, position
-                                             ));
+                            context.computeResourceIfAbsent(appendConditionKey, AppendCondition::none);
+                    List<EventMessage<?>> eventQueue = context.getResource(eventQueueKey);
+                    // TODO - Use a indexer function to define the indices to assign to each event
+                    var indexEventQueue = eventQueue.stream()
+                                                    .map(e -> IndexedEventMessage.asIndexedEvent(e,
+                                                                                                 appendCondition.criteria()
+                                                                                                                .indices()))
+                                                    .toList();
+                    return eventStorageEngine.appendEvents(appendCondition, (IndexedEventMessage<?>) indexEventQueue)
+                                             .thenAccept(tx -> {
+                                                 processingContext.onCommit(c -> doCommit(context, tx));
+                                                 processingContext.onError((ctx, p, e) -> tx.rollback());
+                                             });
                 }
         );
+    }
+
+    private CompletableFuture<Long> doCommit(ProcessingContext commitContext,
+                                             AsyncEventStorageEngine.AppendTransaction tx) {
+        return tx.commit()
+                 .whenComplete((position, exception) ->
+                                       commitContext.putResource(appendPositionKey, position));
     }
 
     @Override
@@ -115,6 +132,6 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     @Override
     public long appendPosition(@Nonnull ProcessingContext context) {
-        return context.computeResourceIfAbsent(appendPositionKey, () -> -1L);
+        return getOrDefault(context.getResource(appendPositionKey), -1L);
     }
 }

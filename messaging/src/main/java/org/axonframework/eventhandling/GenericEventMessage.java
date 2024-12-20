@@ -25,6 +25,8 @@ import org.axonframework.serialization.CachingSupplier;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
@@ -157,5 +159,19 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
     @Override
     protected String describeType() {
         return "GenericEventMessage";
+    }
+
+    @Override
+    public <C> EventMessage<C> withConvertedPayload(@jakarta.annotation.Nonnull Function<T, C> conversion) {
+        T payload = getPayload();
+        C converted = conversion.apply(payload);
+        if (Objects.equals(converted, payload)) {
+            //noinspection unchecked
+            return (EventMessage<C>) this;
+        }
+        return new GenericEventMessage<>(this.getIdentifier(),
+                                         converted,
+                                         getMetaData(),
+                                         getTimestamp());
     }
 }
