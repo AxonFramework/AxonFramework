@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,7 +161,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                 });
         creationPolicyAggregateFactory = new Component<>(
                 () -> parent, name("creationPolicyAggregateFactory"),
-                c -> new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType()));
+                c -> null);
         commandHandler = new Component<>(
                 () -> parent, name("aggregateCommandHandler"),
                 c -> AggregateAnnotationCommandHandler.<A>builder()
@@ -281,12 +281,16 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Defines the factory to create new Aggregates instances of the type under configuration when initializing those
-     * instances from non constructor Command handlers annotated with
+     * Defines the factory to create new aggregate instances of the type under configuration when initializing those
+     * instances from non-constructor command handlers annotated with
      * {@link org.axonframework.modelling.command.CreationPolicy}.
+     * <p>
+     * When {@link #withSubtypes(Class[]) subtypes} are provided, the given {@link CreationPolicyAggregateFactory} is
+     * used for every implementation of the aggregate under construction.
      *
-     * @param creationPolicyAggregateFactoryBuilder The builder function for the CreationPolicyAggregateFactory
-     * @return this configurer instance for chaining
+     * @param creationPolicyAggregateFactoryBuilder The builder function for the
+     *                                              {@link CreationPolicyAggregateFactory}.
+     * @return This configurer instance for chaining.
      */
     public AggregateConfigurer<A> configureCreationPolicyAggregateFactory(
             Function<Configuration, CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactoryBuilder

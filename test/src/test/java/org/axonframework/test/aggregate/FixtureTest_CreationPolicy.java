@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,6 +183,26 @@ class FixtureTest_CreationPolicy {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void whenProtectedConstructorCombinedWithAlwaysPolicyThenAggregateWorksAsExpected() {
         new AggregateTestFixture<>(TestAggregateWithProtectedNoArgConstructor.class)
+                .givenNoPriorActivity()
+                .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID, PUBLISH_EVENTS))
+                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
+                .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void whenPolymorphicAggregateWithUniquelyNamedCreateIfMissingPolicyOnChildThenWorksAsExpected() {
+        new AggregateTestFixture<>(TestAggregateParentForPolymorphicCase.class)
+                .withSubtypes(TestAggregateChildForPolymorphicCase.class)
+                .givenNoPriorActivity()
+                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
+                .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
+                .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void whenPolymorphicAggregateWithUniquelyNamedAlwaysPolicyOnChildThenWorksAsExpected() {
+        new AggregateTestFixture<>(TestAggregateParentForPolymorphicCase.class)
+                .withSubtypes(TestAggregateChildForPolymorphicCase.class)
                 .givenNoPriorActivity()
                 .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                 .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
@@ -482,6 +502,49 @@ class FixtureTest_CreationPolicy {
 
         protected TestAggregateWithProtectedNoArgConstructor() {
             // Constructor made protected on purpose for testing.
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
+        public void handle(CreateOrUpdateCommand command) {
+            if (command.shouldPublishEvent()) {
+                apply(new CreatedOrUpdatedEvent(command.getId()));
+            }
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(AlwaysCreateWithoutResultCommand command) {
+            if (command.shouldPublishEvent()) {
+                apply(new AlwaysCreatedEvent(command.getId()));
+            }
+        }
+
+        @EventSourcingHandler
+        private void on(CreatedOrUpdatedEvent event) {
+            this.id = event.getId();
+        }
+
+        @EventSourcingHandler
+        public void on(AlwaysCreatedEvent event) {
+            this.id = event.getId();
+        }
+    }
+
+    public static abstract class TestAggregateParentForPolymorphicCase {
+
+        @AggregateIdentifier
+        protected ComplexAggregateId id;
+
+        public TestAggregateParentForPolymorphicCase() {
+            // Constructor made public on purpose for testing.
+        }
+    }
+
+    public static class TestAggregateChildForPolymorphicCase extends TestAggregateParentForPolymorphicCase {
+
+        public TestAggregateChildForPolymorphicCase() {
+            // Constructor made public on purpose for testing.
         }
 
         @CommandHandler

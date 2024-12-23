@@ -465,7 +465,8 @@ public class SimpleQueryBus implements QueryBus {
         Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
                                                           .doOnError(error -> logger.error(
                                                                   "An error happened while trying to report an initial result. Query: {}",
-                                                                  query, error));
+                                                                  query,
+                                                                  error));
         UpdateHandlerRegistration<U> updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, updateBufferSize);
 
@@ -621,8 +622,8 @@ public class SimpleQueryBus implements QueryBus {
      * <p>
      * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to
      * {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler},
-     * the {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter} and the {@link QueryBusSpanFactory} defaults to a
-     * {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
+     * the {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter} and the {@link QueryBusSpanFactory} defaults
+     * to a {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
      */
     public static class Builder {
 
@@ -633,7 +634,11 @@ public class SimpleQueryBus implements QueryBus {
                                                                                              .build();
         private DuplicateQueryHandlerResolver duplicateQueryHandlerResolver = DuplicateQueryHandlerResolution.logAndAccept();
         private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder()
-                                                                                .spanFactory(DefaultQueryUpdateEmitterSpanFactory.builder().spanFactory(NoOpSpanFactory.INSTANCE).build())
+                                                                                .spanFactory(
+                                                                                        DefaultQueryUpdateEmitterSpanFactory.builder()
+                                                                                                                            .spanFactory(
+                                                                                                                                    NoOpSpanFactory.INSTANCE)
+                                                                                                                            .build())
                                                                                 .build();
         private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
                                                                             .spanFactory(NoOpSpanFactory.INSTANCE)
