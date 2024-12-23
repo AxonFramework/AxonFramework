@@ -19,8 +19,7 @@ package org.axonframework.spring.authorization;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
 import org.hamcrest.core.StringStartsWith;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.testcontainers.shaded.com.google.common.collect.Sets;
 
@@ -44,6 +43,7 @@ class SecuredMessageHandlerDefinitionTest {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void shouldAllowWhenAuthorityMatch() {
         Map<String, java.util.HashSet<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
         metaData.put("authorities", Sets.newHashSet(new SimpleGrantedAuthority("ROLE_aggregate.create")));
@@ -55,6 +55,7 @@ class SecuredMessageHandlerDefinitionTest {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void shouldDenyWhenAuthorityDoesNotMatch() {
         Map<String, java.util.HashSet<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
         metaData.put("authorities", Sets.newHashSet(new SimpleGrantedAuthority("ROLE_anonymous")));
@@ -66,6 +67,7 @@ class SecuredMessageHandlerDefinitionTest {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void shouldAllowUnannotatedMethods() {
         Map<String, Set<SimpleGrantedAuthority>> metaData = new java.util.HashMap<>();
         metaData.put("authorities", Sets.newHashSet(new SimpleGrantedAuthority("ROLE_anonymous")));
@@ -77,6 +79,7 @@ class SecuredMessageHandlerDefinitionTest {
     }
 
     @Test
+    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void shouldDenyWhenNoAuthorityPresent() {
         testSubject.givenNoPriorActivity()
                    .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER))

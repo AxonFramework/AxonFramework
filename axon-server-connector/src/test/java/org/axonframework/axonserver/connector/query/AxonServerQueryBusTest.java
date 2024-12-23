@@ -30,7 +30,11 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
-import org.axonframework.axonserver.connector.*;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.TargetContextResolver;
+import org.axonframework.axonserver.connector.TestTargetContextResolver;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.common.FutureUtils;
@@ -41,21 +45,41 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.GenericStreamingQueryMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryExecutionException;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.StreamingQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.TestSpanFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -125,7 +149,7 @@ class AxonServerQueryBusTest {
 
         when(mockConnection.queryChannel()).thenReturn(mockQueryChannel);
         when(mockQueryChannel.registerQueryHandler(any(), any()))
-                .thenReturn(() -> FutureUtils.emptyCompletedFuture());
+                .thenReturn(FutureUtils::emptyCompletedFuture);
 
         when(localSegment.subscribe(any(), any(), any())).thenReturn(() -> true);
     }
@@ -267,7 +291,7 @@ class AxonServerQueryBusTest {
             result.get();
             fail("Expected exception");
         } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof AxonServerQueryDispatchException);
+            assertInstanceOf(AxonServerQueryDispatchException.class, e.getCause());
             assertEquals("Faking problems", e.getCause().getMessage());
         }
 
@@ -290,7 +314,7 @@ class AxonServerQueryBusTest {
 
         assertTrue(result.get().isExceptional());
         Throwable actual = result.get().exceptionResult();
-        assertTrue(actual instanceof QueryExecutionException);
+        assertInstanceOf(QueryExecutionException.class, actual);
         AxonServerRemoteQueryHandlingException remoteQueryHandlingException =
                 (AxonServerRemoteQueryHandlingException) actual.getCause();
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), remoteQueryHandlingException.getErrorCode());
@@ -316,7 +340,7 @@ class AxonServerQueryBusTest {
 
         assertTrue(result.get().isExceptional());
         Throwable actual = result.get().exceptionResult();
-        assertTrue(actual instanceof QueryExecutionException);
+        assertInstanceOf(QueryExecutionException.class, actual);
         AxonServerNonTransientRemoteQueryHandlingException remoteQueryHandlingException =
                 (AxonServerNonTransientRemoteQueryHandlingException) actual.getCause();
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(),
@@ -341,7 +365,7 @@ class AxonServerQueryBusTest {
     @Test
     void subscribeHandler() {
         when(mockQueryChannel.registerQueryHandler(any(), any()))
-                .thenReturn(() -> FutureUtils.emptyCompletedFuture());
+                .thenReturn(FutureUtils::emptyCompletedFuture);
 
         Registration result = testSubject.subscribe(TEST_QUERY, String.class, q -> "test: " + q.getPayloadType());
 
@@ -488,18 +512,16 @@ class AxonServerQueryBusTest {
     @Test
     void dispatchInterceptor() {
         List<Object> results = new LinkedList<>();
-        //noinspection resource
         testSubject.registerDispatchInterceptor(messages -> (a, b) -> {
             results.add(b.getPayload());
             return b;
         });
 
         testSubject.query(new GenericQueryMessage<>("payload", new InstanceResponseType<>(String.class)));
-        assertEquals("payload", results.get(0));
+        assertEquals("payload", results.getFirst());
         assertEquals(1, results.size());
     }
 
-    @SuppressWarnings("resource")
     @Test
     void handlerInterceptorRegisteredWithLocalSegment() {
         MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor =
@@ -604,7 +626,6 @@ class AxonServerQueryBusTest {
 
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
 
-        //noinspection resource
         assertThrows(ShutdownInProgressException.class,
                      () -> testSubject.subscriptionQuery(testSubscriptionQuery));
     }
@@ -637,7 +658,7 @@ class AxonServerQueryBusTest {
         AtomicReference<QueryHandler> queryHandlerRef = new AtomicReference<>();
         doAnswer(i -> {
             queryHandlerRef.set(i.getArgument(0));
-            return (io.axoniq.axonserver.connector.Registration) () -> FutureUtils.emptyCompletedFuture();
+            return (io.axoniq.axonserver.connector.Registration) FutureUtils::emptyCompletedFuture;
         }).when(mockQueryChannel)
           .registerQueryHandler(any(), any());
 
@@ -651,8 +672,10 @@ class AxonServerQueryBusTest {
 
         // We create a subscription to force a registration for this type of query.
         // It doesn't get invoked because the localSegment is mocked
-        //noinspection resource
-        testSubject.subscribe("testQuery", String.class, (MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>>) message -> "ok");
+        testSubject.subscribe(
+                "testQuery", String.class,
+                (MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>>) message -> "ok"
+        );
         assertWithin(1, TimeUnit.SECONDS, () -> assertNotNull(queryHandlerRef.get()));
 
         QueryHandler queryHandler = queryHandlerRef.get();
@@ -767,10 +790,11 @@ class AxonServerQueryBusTest {
 
         // We create a subscription to force a registration for this type of query.
         // It doesn't get invoked because the localSegment is mocked
-        //noinspection resource
-        queryInProgressTestSubject.subscribe("testQuery",
-                                             String.class,
-                                             (MessageHandler<QueryMessage<?, String>>) message -> "ok");
+        queryInProgressTestSubject.subscribe(
+                "testQuery",
+                String.class,
+                (MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>>) message -> "ok"
+        );
         await().atMost(Duration.ofSeconds(1))
                .pollDelay(Duration.ofMillis(250))
                .untilAsserted(() -> assertNotNull(handlerReference.get()));
@@ -937,7 +961,7 @@ class AxonServerQueryBusTest {
         }
     }
 
-    private static class NoOpReplyChannel implements ReplyChannel<QueryResponse> {
+    private static class StubReplyChannel implements ReplyChannel<QueryResponse> {
 
         private final AtomicReference<QueryResponse> responseReference;
 

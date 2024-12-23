@@ -40,7 +40,6 @@ import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.NoArgumentConstructorCreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;

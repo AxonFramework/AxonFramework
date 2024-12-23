@@ -25,9 +25,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -35,8 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Test correct operations of the {@link GenericMessage} class.

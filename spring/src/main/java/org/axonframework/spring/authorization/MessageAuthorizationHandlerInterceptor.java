@@ -49,7 +49,7 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         T message = unitOfWork.getMessage();
         if (!AnnotationUtils.isAnnotationPresent(message.getPayloadType(), Secured.class)) {
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }
         Secured annotation = message.getPayloadType()
                                     .getAnnotation(Secured.class);
@@ -75,7 +75,7 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
                                     .map(SimpleGrantedAuthority::new)
                                     .collect(Collectors.toSet()));
         if (!authorities.isEmpty()) {
-            return interceptorChain.proceed();
+            return interceptorChain.proceedSync();
         }
         throw new UnauthorizedMessageException(
                 "Unauthorized message with identifier [" + message.getIdentifier() + "]"

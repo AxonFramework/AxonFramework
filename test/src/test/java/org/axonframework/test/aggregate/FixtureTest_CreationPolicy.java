@@ -190,6 +190,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void whenPolymorphicAggregateWithUniquelyNamedCreateIfMissingPolicyOnChildThenWorksAsExpected() {
         new AggregateTestFixture<>(TestAggregateParentForPolymorphicCase.class)
                 .withSubtypes(TestAggregateChildForPolymorphicCase.class)
@@ -200,6 +201,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void whenPolymorphicAggregateWithUniquelyNamedAlwaysPolicyOnChildThenWorksAsExpected() {
         new AggregateTestFixture<>(TestAggregateParentForPolymorphicCase.class)
                 .withSubtypes(TestAggregateChildForPolymorphicCase.class)

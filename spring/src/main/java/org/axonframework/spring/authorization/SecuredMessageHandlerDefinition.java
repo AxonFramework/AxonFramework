@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.authorization;
 
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -23,11 +24,13 @@ import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.GrantedAuthority;
 
-import javax.annotation.Nonnull;
+import java.lang.reflect.Executable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nonnull;
 
 /**
  * MessageHandlerDefinition that verifies authorization based on
@@ -40,7 +43,9 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        return original.annotationAttributes(Secured.class)
+        return original.unwrap(Executable.class)
+                       .map(executable -> AnnotationUtils.findAnnotationAttributes(executable, Secured.class)
+                                                         .orElse(Map.of()))
                        .filter(attributes -> attributes.containsKey("secured"))
                        .map(attributes -> (String[]) attributes.get("secured"))
                        .map(securityConfiguration -> (MessageHandlingMember<T>) new SecuredMessageHandlingMember<>(
@@ -59,13 +64,13 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, T target) throws Exception {
+        public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
             if (!hasRequiredRoles(message)) {
                 throw new UnauthorizedMessageException(
                         "Unauthorized message with identifier [" + message.getIdentifier() + "]"
                 );
             }
-            return super.handle(message, target);
+            return super.handleSync(message, target);
         }
 
         private boolean hasRequiredRoles(@Nonnull Message<?> message) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,7 +185,8 @@ public class SimpleQueryBus implements QueryBus {
                        () -> "Direct query does not support Flux as a return type.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
-        List<MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>>> handlers = getHandlersForMessage(interceptedQuery);
+        List<MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>>> handlers =
+                getHandlersForMessage(interceptedQuery);
         CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
         try {
             ResponseType<R> responseType = interceptedQuery.getResponseType();
@@ -399,7 +400,8 @@ public class SimpleQueryBus implements QueryBus {
                        () -> "Scatter-Gather query does not support Flux as a return type.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
-        List<MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>>> handlers = getHandlersForMessage(interceptedQuery);
+        List<MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>>> handlers =
+                getHandlersForMessage(interceptedQuery);
         if (handlers.isEmpty()) {
             monitorCallback.reportIgnored();
             return Stream.empty();
