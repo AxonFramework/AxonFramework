@@ -27,6 +27,7 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -92,9 +93,7 @@ class QueryProcessingTaskIntegrationTest {
                                                                 .build();
         querySerializer = new QuerySerializer(serializer, serializer, config);
         queryHandlingComponent1 = new QueryHandlingComponent1();
-        //noinspection resource
         new AnnotationQueryHandlerAdapter<>(queryHandlingComponent1).subscribe(localSegment);
-        //noinspection resource
         new AnnotationQueryHandlerAdapter<>(new QueryHandlingComponent2()).subscribe(localSegment);
     }
 
@@ -718,8 +717,11 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void responsePendingReturnsTrueForUncompletedTask() {
-        QueryMessage<FluxQuery, Publisher<String>> testQuery =
-                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"),
+                new FluxQuery(1000),
+                ResponseTypes.publisherOf(String.class)
+        );
         QueryRequest testRequest = querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
         QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
                                                                   testRequest,
@@ -733,8 +735,11 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void responsePendingReturnsFalseForCompletedTask() {
-        QueryMessage<FluxQuery, Publisher<String>> testQuery =
-                new GenericQueryMessage<>(new FluxQuery(1), ResponseTypes.publisherOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"),
+                new FluxQuery(1),
+                ResponseTypes.publisherOf(String.class)
+        );
         QueryRequest testRequest = querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
         QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
                                                                   testRequest,
@@ -747,7 +752,7 @@ class QueryProcessingTaskIntegrationTest {
         testSubject.run();
         testSubject.request(1);
         assertEquals(1, responseHandler.sent().size());
-        assertOrder(responseHandler.sent().get(0));
+        assertOrder(responseHandler.sent().getFirst());
         assertTrue(responseHandler.completed());
         assertFalse(testSubject.resultPending());
     }

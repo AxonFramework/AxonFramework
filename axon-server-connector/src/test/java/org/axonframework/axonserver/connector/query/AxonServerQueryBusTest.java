@@ -43,8 +43,8 @@ import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -210,12 +210,13 @@ class AxonServerQueryBusTest {
     class LocalSegmentShortCutEnabled {
 
         private Registration registration;
-        private final QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World",
-                                                                                         TEST_QUERY,
-                                                                                         instanceOf(String.class));
+        private final QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, "Hello, World", instanceOf(String.class)
+        );
 
-        private final StreamingQueryMessage<String, String> testStreamingQuery =
-                new GenericStreamingQueryMessage<>("Hello, World", TEST_QUERY, String.class);
+        private final StreamingQueryMessage<String, String> testStreamingQuery = new GenericStreamingQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, "Hello, World", String.class
+        );
 
         @BeforeEach
         void setUp() {
@@ -240,8 +241,9 @@ class AxonServerQueryBusTest {
 
         @Test
         void queryWhenLocalHandlerIsPresent() {
-            when(localSegment.query(testQuery))
-                    .thenReturn(CompletableFuture.completedFuture(new GenericQueryResponseMessage<>("ok")));
+            when(localSegment.query(testQuery)).thenReturn(CompletableFuture.completedFuture(
+                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query", "0.0.1"), "ok")
+            ));
 
             testSubject.query(testQuery);
 
@@ -260,8 +262,9 @@ class AxonServerQueryBusTest {
 
         @Test
         void streamingQueryWhenLocalHandlerIsPresent() {
-            when(localSegment.streamingQuery(testStreamingQuery))
-                    .thenReturn(Flux.just(new GenericQueryResponseMessage<>("ok")));
+            when(localSegment.streamingQuery(testStreamingQuery)).thenReturn(Flux.just(
+                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query", "0.0.1"), "ok")
+            ));
 
             StepVerifier.create(Flux.from(testSubject.streamingQuery(testStreamingQuery))
                                     .map(Message::getPayload))
@@ -823,8 +826,11 @@ class AxonServerQueryBusTest {
         when(localSegment.query(any())).thenAnswer(i -> {
             responseLatch.await();
             QueryMessage<?, ?> message = i.getArgument(0);
-            QueryResponseMessage<?> queryResponse = new GenericQueryResponseMessage<>(message.getPayload()).withMetaData(
-                    MetaData.with("response", message.getPayload()));
+            QueryResponseMessage<?> queryResponse = new GenericQueryResponseMessage<>(
+                    new QualifiedName("test", "query", "0.0.1"),
+                    message.getPayload(),
+                    MetaData.with("response", message.getPayload())
+            );
             return CompletableFuture.completedFuture(queryResponse);
         });
 
