@@ -16,6 +16,8 @@
 
 package org.axonframework.integrationtests.deadline;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.config.Configuration;
@@ -453,8 +455,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         //noinspection resource
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
-            uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
-                    .asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload(FAKE_IDENTIFIER),
+            uow.transformMessage(deadlineMessage -> asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload(FAKE_IDENTIFIER),
                                        deadlineMessage.getTimestamp()));
             return chain.proceedSync();
         });
@@ -470,8 +471,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         //noinspection resource
-        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
-                GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(),
+        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(),
                                                          new DeadlinePayload(FAKE_IDENTIFIER),
                                                          m.getTimestamp()));
         configuration.eventStore().publish(testEventMessage);
@@ -533,6 +533,16 @@ public abstract class AbstractDeadlineManagerTestSuite {
                 deadlineMessage.getDeadlineName(),
                 new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload),
                 deadlineMessage::getTimestamp
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <P> DeadlineMessage<P> asDeadlineMessage(String deadlineName,
+                                                            Object payload,
+                                                            Instant expiryTime) {
+        var name = QualifiedNameUtils.fromClassName(payload.getClass());
+        return new GenericDeadlineMessage<>(
+                deadlineName, new GenericMessage<>(name, (P) payload), () -> expiryTime
         );
     }
 

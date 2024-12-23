@@ -17,8 +17,14 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.Timestamp;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
@@ -28,7 +34,6 @@ import org.junit.jupiter.api.*;
 import java.time.Duration;
 import java.time.Instant;
 
-import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -317,6 +322,16 @@ class FixtureTest_Deadlines {
                .published(new TriggerSagaStartEvent(AGGREGATE_ID, "sagaEndingDeadline"))
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(0);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <P> DeadlineMessage<P> asDeadlineMessage(String deadlineName,
+                                                           Object payload,
+                                                           Instant expiryTime) {
+        var messageName = QualifiedNameUtils.fromClassName(payload.getClass());
+        return new GenericDeadlineMessage<>(
+                deadlineName, new GenericMessage<>(messageName, (P) payload), () -> expiryTime
+        );
     }
 
     private static class ResetAllTriggeredEvent {

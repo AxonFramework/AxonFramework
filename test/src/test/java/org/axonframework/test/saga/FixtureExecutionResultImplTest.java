@@ -24,7 +24,9 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -666,8 +668,10 @@ class FixtureExecutionResultImplTest {
     }
 
     private ScheduledDeadlineInfo createDeadline(Instant expiryTime) {
-        DeadlineMessage<String> deadlineMessage =
-                GenericDeadlineMessage.asDeadlineMessage("deadlineName", "payload", expiryTime);
+        var payload = "payload";
+        DeadlineMessage<String> deadlineMessage = new GenericDeadlineMessage<>(
+                "deadlineName", new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload), () -> expiryTime
+        );
         return new ScheduledDeadlineInfo(expiryTime, "deadlineName", "1", 0, deadlineMessage, null);
     }
 
