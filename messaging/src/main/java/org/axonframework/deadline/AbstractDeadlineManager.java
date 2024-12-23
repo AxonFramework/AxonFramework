@@ -119,8 +119,6 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
      * @param <P>              The generic type of the expected payload of the resulting object
      * @return a DeadlineMessage using the {@code deadlineName} as its deadline name and containing the given
      * {@code messageOrPayload} as the payload
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
      */
     @SuppressWarnings("unchecked")
     protected <P> DeadlineMessage<P> asDeadlineMessage(@Nonnull String deadlineName,

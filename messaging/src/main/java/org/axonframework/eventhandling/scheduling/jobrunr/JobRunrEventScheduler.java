@@ -240,11 +240,11 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
                 serializedPayload, String.class, payloadClass, revision
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        return asEventMessage(deserializedPayload, messageNameResolver);
+        return asEventMessage(deserializedPayload);
     }
 
     @SuppressWarnings("unchecked")
-    private static <E> EventMessage<E> asEventMessage(@Nonnull Object event, @Nonnull Function<Object, QualifiedName> nameResolver) {
+    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
         if (event instanceof EventMessage<?>) {
             return (EventMessage<E>) event;
         } else if (event instanceof Message<?>) {
@@ -252,7 +252,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
             return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                nameResolver.apply(event),
+                messageNameResolver.resolve(event),
                 (E) event,
                 MetaData.emptyInstance()
         );

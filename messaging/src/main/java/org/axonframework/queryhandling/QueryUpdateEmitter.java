@@ -96,6 +96,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
         } else if (payload instanceof Message) {
             return new GenericSubscriptionQueryUpdateMessage<>((Message<U>) payload);
         }
+        // todo: use MessageNameResolver below
         return new GenericSubscriptionQueryUpdateMessage<>(
                 QualifiedNameUtils.fromClassName(payload.getClass()), (U) payload
         );

@@ -238,7 +238,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
                 data.getP(), byte[].class, data.getC(), data.getR()
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        EventMessage<?> eventMessage = asEventMessage(deserializedPayload, messageNameResolver);
+        EventMessage<?> eventMessage = asEventMessage(deserializedPayload);
         if (!isNull(data.getM())) {
             SimpleSerializedObject<byte[]> serializedMetaData = new SimpleSerializedObject<>(
                     data.getM(), byte[].class, MetaData.class.getName(), null
@@ -249,7 +249,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
     }
 
     @SuppressWarnings("unchecked")
-    private static <E> EventMessage<E> asEventMessage(@Nonnull Object event, @Nonnull Function<Object, QualifiedName> nameResolver) {
+    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
         if (event instanceof EventMessage<?>) {
             return (EventMessage<E>) event;
         } else if (event instanceof Message<?>) {
@@ -257,7 +257,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
             return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                nameResolver.apply(event),
+                messageNameResolver.resolve(event),
                 (E) event,
                 MetaData.emptyInstance()
         );
@@ -268,7 +268,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
                 data.getSerializedPayload(), String.class, data.getPayloadClass(), data.getRevision()
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        EventMessage<?> eventMessage = asEventMessage(deserializedPayload, messageNameResolver);
+        EventMessage<?> eventMessage = asEventMessage(deserializedPayload);
         if (!isNull(data.getSerializedMetadata())) {
             SimpleSerializedObject<String> serializedMetaData = new SimpleSerializedObject<>(
                     data.getSerializedMetadata(), String.class, MetaData.class.getName(), null

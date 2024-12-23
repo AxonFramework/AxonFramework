@@ -122,6 +122,8 @@ This layer of indirection will allow us to provide the freedom that currently is
 The factory methods that would construct a `Mesage` implementation based on a given `Object` have been removed from Axon Framework.
 These factory methods no longer align with the new API, which expects that the `QualifiedName` is set consciously.
 Hence, users of the factory methods need to revert to using the constructor of the `Message` implementation instead.
+Here's a revised version with improved grammar and clarity:
+If a user needs to specify custom `Metadata` for a `Message`, they can use the `Gateway` method overloads that accept `Metadata` as an additional parameter alongside the payload.
 
 ## Message Stream
 

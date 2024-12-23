@@ -131,7 +131,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         Assert.state(initialized, () -> "Scheduler is not yet initialized");
-        EventMessage eventMessage = asEventMessage(event, messageNameResolver);
+        EventMessage eventMessage = asEventMessage(event);
         String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getIdentifier();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
@@ -144,7 +144,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     }
 
     @SuppressWarnings("unchecked")
-    private static <E> EventMessage<E> asEventMessage(@Nonnull Object event, @Nonnull Function<Object, QualifiedName> nameResolver) {
+    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
         if (event instanceof EventMessage<?>) {
             return (EventMessage<E>) event;
         } else if (event instanceof Message<?>) {
@@ -152,7 +152,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                nameResolver.apply(event),
+                messageNameResolver.resolve(event),
                 (E) event,
                 MetaData.emptyInstance()
         );

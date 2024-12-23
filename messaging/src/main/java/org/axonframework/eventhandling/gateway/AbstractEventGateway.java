@@ -25,7 +25,6 @@ import org.axonframework.messaging.*;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
@@ -65,11 +64,11 @@ public abstract class AbstractEventGateway {
      * @param event The event to publish.
      */
     protected void publish(@Nonnull Object event) {
-        this.eventBus.publish(processInterceptors(asEventMessage(event, messageNameResolver)));
+        this.eventBus.publish(processInterceptors(asEventMessage(event)));
     }
 
     @SuppressWarnings("unchecked")
-    private static <E> EventMessage<E> asEventMessage(@Nonnull Object event, @Nonnull Function<Object, QualifiedName> nameResolver) {
+    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
         if (event instanceof EventMessage<?>) {
             return (EventMessage<E>) event;
         } else if (event instanceof Message<?>) {
@@ -77,7 +76,7 @@ public abstract class AbstractEventGateway {
             return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                nameResolver.apply(event),
+                messageNameResolver.resolve(event),
                 (E) event,
                 MetaData.emptyInstance()
         );
