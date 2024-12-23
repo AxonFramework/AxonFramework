@@ -38,7 +38,9 @@ class GenericSubscriptionQueryUpdateMessageTest {
     void messageCreation() {
         String payload = "payload";
 
-        SubscriptionQueryUpdateMessage<Object> result = GenericSubscriptionQueryUpdateMessage.asUpdateMessage(payload);
+        SubscriptionQueryUpdateMessage<String> result = new GenericSubscriptionQueryUpdateMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), payload, String.class
+        );
 
         assertEquals(payload, result.getPayload());
     }
@@ -82,59 +84,6 @@ class GenericSubscriptionQueryUpdateMessageTest {
 
         assertEquals(original.getPayload(), result.getPayload());
         assertEquals(newMetaData, result.getMetaData());
-    }
-
-    // todo: should we remove support for creation based on existing message?
-    @Test
-    void messageCreationBasedOnExistingMessage() {
-        SubscriptionQueryUpdateMessage<String> original =
-                new GenericSubscriptionQueryUpdateMessage<>(new QualifiedName("test", "query", "0.0.1"), "payload");
-
-        SubscriptionQueryUpdateMessage<Object> result = GenericSubscriptionQueryUpdateMessage.asUpdateMessage(original);
-
-        assertEquals(result, original);
-    }
-
-    @Test
-    void messageCreationBasedOnResultMessage() {
-        Map<String, String> metaData = Collections.singletonMap("k1", "v1");
-        CommandResultMessage<String> resultMessage = asCommandResultMessage(
-                new GenericResultMessage<>(new QualifiedName("test", "command", "0.0.1"), "result", metaData)
-        );
-
-        SubscriptionQueryUpdateMessage<Object> result =
-                GenericSubscriptionQueryUpdateMessage.asUpdateMessage(resultMessage);
-
-        assertEquals(result.getPayload(), resultMessage.getPayload());
-        assertEquals(result.getMetaData(), resultMessage.getMetaData());
-    }
-
-    @Test
-    void messageCreationBasedOnExceptionalResultMessage() {
-        Map<String, String> metaData = Collections.singletonMap("k1", "v1");
-        RuntimeException exception = new RuntimeException();
-        CommandResultMessage<String> resultMessage = asCommandResultMessage(
-                new GenericResultMessage<>(new QualifiedName("test", "query", "0.0.1"), exception, metaData)
-        );
-
-        SubscriptionQueryUpdateMessage<Object> result =
-                GenericSubscriptionQueryUpdateMessage.asUpdateMessage(resultMessage);
-
-        assertEquals(result.getMetaData(), resultMessage.getMetaData());
-        assertTrue(result.isExceptional());
-        assertEquals(exception, result.exceptionResult());
-    }
-
-    @Test
-    void messageCreationBasedOnAnyMessage() {
-        Map<String, String> metaData = Collections.singletonMap("k1", "v1");
-        Message<String> message =
-                new GenericMessage<>(new QualifiedName("test", "query", "0.0.1"), "payload", metaData);
-
-        SubscriptionQueryUpdateMessage<Object> result = GenericSubscriptionQueryUpdateMessage.asUpdateMessage(message);
-
-        assertEquals(result.getPayload(), message.getPayload());
-        assertEquals(result.getMetaData(), message.getMetaData());
     }
 
     @SuppressWarnings("unchecked")

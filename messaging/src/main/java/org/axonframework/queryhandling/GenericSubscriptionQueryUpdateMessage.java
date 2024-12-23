@@ -46,39 +46,6 @@ public class GenericSubscriptionQueryUpdateMessage<U>
     private static final long serialVersionUID = 5872479410321475147L;
 
     /**
-     * Creates {@link GenericSubscriptionQueryUpdateMessage} from provided {@code payload} which represents incremental
-     * update. The provided {@code payload} may not be {@code null}.
-     *
-     * @param payload incremental update
-     * @param <U>     type of the {@link GenericSubscriptionQueryUpdateMessage}
-     * @return created a {@link SubscriptionQueryUpdateMessage} with the given {@code payload}.
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public static <U> SubscriptionQueryUpdateMessage<U> asUpdateMessage(Object payload) {
-        if (payload instanceof SubscriptionQueryUpdateMessage) {
-            return (SubscriptionQueryUpdateMessage<U>) payload;
-        } else if (payload instanceof ResultMessage) {
-            ResultMessage<U> resultMessage = (ResultMessage<U>) payload;
-            if (resultMessage.isExceptional()) {
-                Throwable cause = resultMessage.exceptionResult();
-                return new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromClassName(cause.getClass()),
-                                                                   cause,
-                                                                   resultMessage.getMetaData(),
-                                                                   resultMessage.getPayloadType());
-            }
-            return new GenericSubscriptionQueryUpdateMessage<>(resultMessage);
-        } else if (payload instanceof Message) {
-            return new GenericSubscriptionQueryUpdateMessage<>((Message<U>) payload);
-        }
-        return new GenericSubscriptionQueryUpdateMessage<>(
-                QualifiedNameUtils.fromClassName(payload.getClass()), (U) payload
-        );
-    }
-
-    /**
      * Constructs a {@link GenericSubscriptionQueryUpdateMessage} for the given {@code name} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
