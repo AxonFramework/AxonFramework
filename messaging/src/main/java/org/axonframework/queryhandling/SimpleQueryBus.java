@@ -582,8 +582,41 @@ public class SimpleQueryBus implements QueryBus {
                 Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync();
                 return Flux.from(query.getResponseType()
                                       .convert(queryResponse))
-                           .map(GenericQueryResponseMessage::asResponseMessage);
+                           .map(this::asResponseMessage);
             });
+        }
+    }
+
+    /**
+     * Creates a QueryResponseMessage for the given {@code result}. If result already implements QueryResponseMessage,
+     * it is returned directly. Otherwise, a new QueryResponseMessage is created with the result as payload.
+     *
+     * @param result The result of a Query, to be wrapped in a QueryResponseMessage
+     * @param <R>    The type of response expected
+     * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
+     * QueryResponseMessage.
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
+     */
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    private <R> QueryResponseMessage<R> asResponseMessage(Object result) {
+        if (result instanceof QueryResponseMessage) {
+            return (QueryResponseMessage<R>) result;
+        } else if (result instanceof ResultMessage) {
+            ResultMessage<R> resultMessage = (ResultMessage<R>) result;
+            return new GenericQueryResponseMessage<>(
+                    QualifiedNameUtils.fromClassName(resultMessage.getPayload().getClass()),
+                    resultMessage.getPayload(),
+                    resultMessage.getMetaData()
+            );
+        } else if (result instanceof Message) {
+            Message<R> message = (Message<R>) result;
+            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(message.getPayload().getClass()),
+                    message.getPayload(),
+                    message.getMetaData());
+        } else {
+            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(result.getClass()), (R) result);
         }
     }
 
