@@ -107,15 +107,15 @@
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.11.0</gson.version>
         <jackson.version>2.18.2</jackson.version>
-        <xstream.version>1.4.20</xstream.version>
+        <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
         <jobrunr.version>7.3.2</jobrunr.version>
         <quartz.version>2.4.0</quartz.version>
         <!-- Spring -->
-        <spring.version>6.1.11</spring.version>
-        <spring.boot.version>3.3.2</spring.boot.version>
-        <spring-security.version>6.1.5</spring-security.version>
+        <spring.version>6.2.1</spring.version>
+        <spring.boot.version>3.4.1</spring.boot.version>
+        <spring-security.version>6.4.2</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.2.2</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
