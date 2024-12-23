@@ -20,7 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventUtils;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.*;
 
 import java.util.List;
@@ -64,7 +64,13 @@ public abstract class AbstractEventGateway {
      * @param event The event to publish.
      */
     protected void publish(@Nonnull Object event) {
-        this.eventBus.publish(processInterceptors(EventUtils.asEventMessage(event, messageNameResolver)));
+        // todo: QualifiedName assert is not a message and documentation
+        var eventMessage = new GenericEventMessage<>(
+                messageNameResolver.apply(event),
+                event,
+                MetaData.emptyInstance()
+        );
+        this.eventBus.publish(processInterceptors(eventMessage));
     }
 
     /**

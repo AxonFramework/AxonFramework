@@ -56,4 +56,6 @@ public interface EventGateway extends MessageDispatchInterceptorSupport<EventMes
      * @param events The collection of events to publish
      */
     void publish(@Nonnull List<?> events);
+
+    // todo: add something like publish(Object event, MetaData metaData, ProcessingContext context) to allow for additional meta data to be added
 }
