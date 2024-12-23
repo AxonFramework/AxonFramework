@@ -16,9 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedMessage;
@@ -27,7 +24,6 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.InitialEventRepresentation;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 
-import javax.annotation.Nonnull;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
