@@ -85,7 +85,7 @@ public abstract class MessageStreamUtils {
                                                                         @Nonnull BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
         Reducer<M, R> reducer = new Reducer<>(source, identity, accumulator);
         source.onAvailable(reducer::process);
-        return reducer.completableFuture();
+        return reducer.result();
     }
 
     /**
@@ -108,7 +108,7 @@ public abstract class MessageStreamUtils {
             MessageStream<M> source) {
         FirstResult<M> firstResult = new FirstResult<>(source);
         source.onAvailable(firstResult::process);
-        return firstResult.completableFuture();
+        return firstResult.result();
     }
 
     private static class FluxStreamAdapter<M extends Message<?>> {
@@ -146,7 +146,7 @@ public abstract class MessageStreamUtils {
     private static class Reducer<M extends Message<?>, R> {
 
 
-        private final CompletableFuture<R> completableFuture;
+        private final CompletableFuture<R> result;
         private final MessageStream<M> source;
         private final BiFunction<R, MessageStream.Entry<M>, R> accumulator;
         private final AtomicBoolean processingGate = new AtomicBoolean(false);
@@ -158,11 +158,11 @@ public abstract class MessageStreamUtils {
             this.source = source;
             this.intermediateResult = new AtomicReference<>(identity);
             this.accumulator = accumulator;
-            this.completableFuture = new CompletableFuture<>();
+            this.result = new CompletableFuture<>();
         }
 
-        public CompletableFuture<R> completableFuture() {
-            return completableFuture;
+        public CompletableFuture<R> result() {
+            return result;
         }
 
         public void process() {
@@ -174,14 +174,14 @@ public abstract class MessageStreamUtils {
                         nextItem.ifPresent(e -> intermediateResult.updateAndGet(i -> accumulator.apply(i, e)));
                     }
                     if (source.isCompleted()) {
-                        source.error().ifPresentOrElse(completableFuture::completeExceptionally,
-                                                       () -> completableFuture.complete(intermediateResult.get()));
+                        source.error().ifPresentOrElse(result::completeExceptionally,
+                                                       () -> result.complete(intermediateResult.get()));
                     }
                 } finally {
                     processingGate.set(false);
                 }
                 continueOnCurrentThread =
-                        !completableFuture.isDone() && (source.hasNextAvailable() || source.isCompleted());
+                        !result.isDone() && (source.hasNextAvailable() || source.isCompleted());
             }
         }
     }
@@ -190,7 +190,7 @@ public abstract class MessageStreamUtils {
 
         private final MessageStream<M> source;
         private final AtomicBoolean processingGate = new AtomicBoolean(false);
-        private final CompletableFuture<MessageStream.Entry<M>> completableFuture = new CompletableFuture<>();
+        private final CompletableFuture<MessageStream.Entry<M>> result = new CompletableFuture<>();
 
         public FirstResult(MessageStream<M> source) {
             this.source = source;
@@ -199,12 +199,12 @@ public abstract class MessageStreamUtils {
         public void process() {
             if (!processingGate.getAndSet(true)) {
                 try {
-                    if (!completableFuture.isDone() && source.hasNextAvailable()) {
-                        source.next().ifPresent(completableFuture::complete);
+                    if (!result.isDone() && source.hasNextAvailable()) {
+                        source.next().ifPresent(result::complete);
                     }
-                    if (source.isCompleted() && !completableFuture.isDone()) {
-                        source.error().ifPresentOrElse(completableFuture::completeExceptionally,
-                                                       () -> completableFuture.complete(null));
+                    if (source.isCompleted() && !result.isDone()) {
+                        source.error().ifPresentOrElse(result::completeExceptionally,
+                                                       () -> result.complete(null));
                     }
                 } finally {
                     processingGate.set(false);
@@ -212,8 +212,8 @@ public abstract class MessageStreamUtils {
             }
         }
 
-        public CompletableFuture<MessageStream.Entry<M>> completableFuture() {
-            return completableFuture;
+        public CompletableFuture<MessageStream.Entry<M>> result() {
+            return result;
         }
     }
 }

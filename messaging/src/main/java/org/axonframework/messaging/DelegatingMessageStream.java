@@ -43,30 +43,35 @@ public abstract class DelegatingMessageStream<DM extends Message<?>, RM extends 
         this.delegate = delegate;
     }
 
+    @Override
     public void onAvailable(@Nonnull Runnable callback) {
         delegate.onAvailable(callback);
     }
 
+    @Override
     public Optional<Throwable> error() {
         return delegate.error();
     }
 
+    @Override
     public boolean isCompleted() {
         return delegate.isCompleted();
     }
 
+    @Override
     public boolean hasNextAvailable() {
         return delegate.hasNextAvailable();
     }
 
+    @Override
     public void close() {
         delegate.close();
     }
 
     /**
-     * Returns the delegate as provided in the constructor
+     * Returns the delegate as provided in the constructor.
      *
-     * @return the delegate as provided in the constructor
+     * @return the delegate as provided in the constructor.
      */
     protected MessageStream<DM> delegate() {
         return delegate;
