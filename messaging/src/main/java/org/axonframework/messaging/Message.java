@@ -75,8 +75,18 @@ public interface Message<T> extends Serializable {
      * @return the type of payload.
      * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
      */
-    @Deprecated // TODO #3085 - Introduce QualifiedName
+    @Deprecated // TODO #3085 - Replace for getMessageType once fully integrated
     Class<T> getPayloadType();
+
+    /**
+     * Returns the message {@link QualifiedName name} of this {@link Message}.
+     *
+     * @return The message {@link QualifiedName name} of this {@link Message}.
+     */
+    default QualifiedName name() {
+        Class<T> payloadType = getPayloadType();
+        return new QualifiedName(payloadType.getPackageName(), payloadType.getSimpleName(), "0.0.1");
+    }
 
     /**
      * Returns a copy of this Message with the given {@code metaData}. The payload remains unchanged.

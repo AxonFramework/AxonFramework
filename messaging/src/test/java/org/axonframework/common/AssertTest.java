@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,41 @@
 
 package org.axonframework.common;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@code static} methods of the {@link Assert} utility.
+ *
  * @author Allard Buijze
  */
 class AssertTest {
 
     @Test
-    void state_Accept() {
+    void stateAccept() {
         Assert.state(true, () -> "Hello");
     }
 
     @Test
-    void state_Fail() {
+    void stateFail() {
         assertThrows(IllegalStateException.class, () -> Assert.state(false, () -> "Hello"));
     }
 
     @Test
-    void isTrue_Accept() {
+    void isTrueAccept() {
         Assert.isTrue(true, () -> "Hello");
     }
 
     @Test
-    void isTrue_Fail() {
+    void isTrueFail() {
         assertThrows(IllegalArgumentException.class, () -> Assert.isTrue(false, () -> "Hello"));
+    }
+
+    @Test
+    void nonEmpty() {
+        assertDoesNotThrow(() -> Assert.nonEmpty("some-text", "Reacts fine on some text"));
+        assertThrows(IllegalArgumentException.class, () -> Assert.nonEmpty(null, "Should fail on null"));
+        assertThrows(IllegalArgumentException.class, () -> Assert.nonEmpty("", "Should fail on an empty string"));
     }
 }
