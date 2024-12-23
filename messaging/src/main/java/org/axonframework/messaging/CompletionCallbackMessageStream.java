@@ -115,11 +115,6 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
     }
 
     @Override
-    public void close() {
-        delegate.close();
-    }
-
-    @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
                                            @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return delegate.reduce(identity, accumulator)

@@ -298,35 +298,35 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Returns an Optional carrying the next item from the stream, if such item was available. If no item is available
+     * Returns an Optional carrying the next {@link Entry entry} from the stream, if such entry was available. If no entry is available
      * for reading, this method returns an empty Optional.
      * <p>
      * This method will never block for elements becoming available.
      *
-     * @return an optional carrying the next item, if available
+     * @return An optional carrying the next {@link Entry entry}, if available.
      */
     Optional<Entry<M>> next();
 
     /**
-     * Registers the callback to invoke when items are available for reading or when the stream completes (either
-     * normally or with an error). An invocation of this method does not in any way guarantee that items are indeed
-     * available, or that the stream has indeed completed. Implementations may choose to suppress repeated invocations
-     * of the callback if no elements have been read in the meantime.
+     * Registers the callback to invoke when {@link Entry entries} are available for reading or when the stream completes (either
+     * normally or with an error). An invocation of this method does not in any way guarantee that entries are indeed
+     * available, or that the stream has indeed been completed. Implementations may choose to suppress repeated invocations
+     * of the callback if no entries have been read in the meantime.
      *
-     * @param callback The callback to invoke when items are available for reading, or the stream completes
+     * @param callback The callback to invoke when {@link Entry entries} are available for reading, or the stream completes.
      */
     void onAvailable(@Nonnull Runnable callback);
 
     /**
      * Indicates whether any error has been reported in this stream. Implementations may choose to not return any error
-     * here until the all elements that were available for reading before any error occurred have been consumed.
+     * here until all {@link Entry entries} that were available for reading before any error occurred have been consumed.
      *
-     * @return an optional containing the possible error this stream completed with
+     * @return An optional containing the possible error this stream completed with.
      */
     Optional<Throwable> error();
 
     /**
-     * Indicates whether this stream has completed. A completed stream will never return any more elements from
+     * Indicates whether this stream has been completed. A completed stream will never return any more {@link Entry entries} from
      * {@link #next()}, and {@link #hasNextAvailable()} will always return {@code false}. If the stream completed with
      * an error, {@link #error()} will report so.
      *
@@ -335,17 +335,17 @@ public interface MessageStream<M extends Message<?>> {
     boolean isCompleted();
 
     /**
-     * Indicates whether an element is available for immediate reading. When elements are reported available, there is
-     * no guarantee that {@link #next()} will indeed return an element. However, besides any concurrent activity on this
-     * stream, it is guaranteed that no messages are available for reading when this method returns {@code false}.
+     * Indicates whether an {@link Entry entry} is available for immediate reading. When entries are reported available, there is
+     * no guarantee that {@link #next()} will indeed return an entry. However, besides any concurrent activity on this
+     * stream, it is guaranteed that no entries are available for reading when this method returns {@code false}.
      *
-     * @return whether messages are possibly available for reading
+     * @return {@code true} when there are {@link Entry entries} available for reading, {@code false} otherwise.
      */
     boolean hasNextAvailable();
 
     /**
      * Closes this stream, freeing any possible resources occupied by the underlying stream. After invocation, some
-     * elements may still be available for reading.
+     * {@link Entry entries} may still be available for reading.
      */
     void close();
 
@@ -451,12 +451,12 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Casts this stream to the given type. THis method is provided to be more flexible with generics. It is the
+     * Casts this stream to the given type. This method is provided to be more flexible with generics. It is the
      * caller's responsibility to ensure the cast is valid. Failure to do so may result in {@link ClassCastException}
      * when reading elements.
      *
-     * @param <T> The type of Message to cast the MessageStream to
-     * @return this instance
+     * @param <T> The type of {@link Message} to cast the MessageStream to.
+     * @return This instance, cast to the given {@link Message} of type {@code T}.
      */
     @SuppressWarnings("unchecked")
     default <T extends Message<?>> MessageStream<T> cast() {

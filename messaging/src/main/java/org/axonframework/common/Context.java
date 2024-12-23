@@ -36,21 +36,21 @@ import jakarta.annotation.Nonnull;
 public interface Context {
 
     /**
-     * Create a Context with a single resource with the given initial {@code key} and {@code value}
+     * Create a Context with a single resource with the given initial {@code key} and {@code value}.
      *
-     * @param key   The key to add to the newly created Context
-     * @param value The value to assign to given key
-     * @param <T>   The type of the initial resource
-     * @return a Context with a single resource
+     * @param key   The key to add to the newly created Context.
+     * @param value The value to assign to given key.
+     * @param <T>   The type of the initial resource.
+     * @return A Context with a single resource.
      */
     static <T> Context with(ResourceKey<T> key, T value) {
         return new SimpleContext(key, value);
     }
 
     /**
-     * Creates an empty Context
+     * Creates an empty Context.
      *
-     * @return a Context with no resources assigned to it
+     * @return A Context with no resources assigned to it.
      */
     static Context empty() {
         return EmptyContext.INSTANCE;

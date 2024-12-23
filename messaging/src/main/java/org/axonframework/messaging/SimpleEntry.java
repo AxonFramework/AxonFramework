@@ -47,10 +47,9 @@ public record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Co
     }
 
     /**
-     * Construct a SimpleEntry with the given {@code message} and an empty {@link Context}.
-     *
-     * @param message The {@link Message} of type {@code M} contained in this {@link Entry}.
-     * @param context The Context associated with the {@link Message}
+     * Compact construct asserting the {@code context} is not {@code null}.
+     * @param context The context for this entry
+     * @param message The message for this entry
      */
     public SimpleEntry {
         assertNonNull(context, "The context cannot be null");

@@ -23,8 +23,11 @@ import java.util.Optional;
 /**
  * Abstract implementation of an MessageStream that delegates calls to a given delegate.
  *
- * @param <DM> The type of Message handled by the delegate
- * @param <RM> The type of Message handled by this MessageStream
+ * @param <DM> The type of Message handled by the delegate.
+ * @param <RM> The type of Message handled by this MessageStream.
+ *
+ * @since 5.0.0
+ * @author Allard Buijze
  */
 public abstract class DelegatingMessageStream<DM extends Message<?>, RM extends Message<?>>
         implements MessageStream<RM> {
@@ -32,9 +35,9 @@ public abstract class DelegatingMessageStream<DM extends Message<?>, RM extends 
     private final MessageStream<DM> delegate;
 
     /**
-     * Constructs the DelegatingMessageStream with given {@code delegate} to receive calls
+     * Constructs the DelegatingMessageStream with given {@code delegate} to receive calls.
      *
-     * @param delegate The instance to delegate calls to
+     * @param delegate The instance to delegate calls to.
      */
     public DelegatingMessageStream(@Nonnull MessageStream<DM> delegate) {
         this.delegate = delegate;

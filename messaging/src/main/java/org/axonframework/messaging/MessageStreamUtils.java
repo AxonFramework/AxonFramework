@@ -24,9 +24,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import javax.annotation.Nonnull;
 
 /**
- * Utility methods to work with {@link MessageStream}s.
+ * Utility methods to work with {@link MessageStream MessageStreams}.
+ *
+ * @since 5.0.0
+ * @author Allard Buijze
  */
 public abstract class MessageStreamUtils {
 
@@ -34,68 +38,71 @@ public abstract class MessageStreamUtils {
     }
 
     /**
-     * Creates a Flux containing the elements provided by the given {@code source} MessageStream. Note that multiple
-     * invocations of this method on the same {@code source}, or otherwise any components consuming messages from the
-     * given {@code source} will cause elements to be consumed by only one of the fluxes or competing consumers.
+     * Creates a Flux containing the {@link MessageStream.Entry entries} provided by the given {@code source}. Note
+     * that multiple invocations of this method on the same {@code source}, or otherwise any components consuming
+     * entries from the given {@code source} will cause entries to be consumed by only one of the fluxes or competing
+     * consumers.
      *
      * @param source The MessageStream providing the elements
      * @param <M>    The type of Message returned by the source
      * @return a Flux with the elements provided by the source
      */
-    public static <M extends Message<?>> Flux<MessageStream.Entry<M>> asFlux(MessageStream<M> source) {
+    public static <M extends Message<?>> Flux<MessageStream.Entry<M>> asFlux(@Nonnull MessageStream<M> source) {
         return Flux.create(emitter -> {
-            FluxTask<M> fluxTask = new FluxTask<>(source, emitter);
+            FluxStreamAdapter<M> fluxTask = new FluxStreamAdapter<>(source, emitter);
             emitter.onRequest(i -> fluxTask.process());
             source.onAvailable(fluxTask::process);
         });
     }
 
     /**
-     * Returns a CompletableFuture that completes with the given reduction of messages read from the {@code source}. The
+     * Returns a {@code CompletableFuture} that completes with the given reduction of messages read from the {@code source}. The
      * reduction is computed by applying the given {@code accumulator} function on the result of the previous invocation
-     * in combination with each element returned by the given {@code source}. The very first invocation of the
-     * accumulator function is given the {@code identity}.
+     * in combination with each {@link MessageStream.Entry entry} returned by the given {@code source}. The very first 
+     * invocation of the accumulator function is given the {@code identity}.
      * <p>
-     * If the given {@code source} completes normally without producing any messages, the returned CompletableFuture
+     * If the given {@code source} completes normally without producing any entries, the returned {@code CompletableFuture}
      * completes with the given {@code identity}.
      * <p>
-     * If the given {@code source} completes with an error, whether elements have been produced or not, the returned
-     * CompletableFuture completes exceptionally with that error.
+     * If the given {@code source} completes with an error, whether entries have been produced or not, the returned
+     * {@code CompletableFuture} completes exceptionally with that error.
      * <p>
      * <em>Multi-threading</em><br/>
-     * The accumulator function is invoked either on the thread calling this method, when messages are immediately
-     * available for reading, or on the thread on which elements are reported to be available for reading from the given
+     * The accumulator function is invoked either on the thread calling this method, when entries are immediately
+     * available for reading, or on the thread on which entries are reported to be available for reading from the given
      * {@code source}. The accumulator function does not need to be thread-safe.
      *
-     * @param source      The MessageStream to consumer messages from
-     * @param identity    The initial value to use for the accumulation
-     * @param accumulator The function to combine the current reduction result with the next element from the
-     *                    MessageStream
-     * @param <M>         The type of Message to consume from the MessageStream
-     * @param <R>         The type of result expected from the reduction operation
-     * @return a CompletableFuture that completes with the result of the reduction operation
+     * @param source      The {@link MessageStream} to consume messages from.
+     * @param identity    The initial value to use for the accumulation.
+     * @param accumulator The function to combine the current reduction result with the next
+     *                    {@link MessageStream.Entry entry} from the {@link MessageStream}.
+     * @param <M>         The type of {@link Message} to consume from the {@link MessageStream}.
+     * @param <R>         The type of result expected from the reduction operation.
+     * @return A {@code CompletableFuture} that completes with the result of the reduction operation.
      */
-    public static <M extends Message<?>, R> CompletableFuture<R> reduce(MessageStream<M> source,
-                                                                        R identity,
-                                                                        BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
+    public static <M extends Message<?>, R> CompletableFuture<R> reduce(@Nonnull MessageStream<M> source,
+                                                                        @Nonnull R identity,
+                                                                        @Nonnull BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
         Reducer<M, R> reducer = new Reducer<>(source, identity, accumulator);
         source.onAvailable(reducer::process);
         return reducer.completableFuture();
     }
 
     /**
-     * Returns a CompletableFuture that completes with the first element from the given {@code source}.
+     * Returns a {@code CompletableFuture} that completes with the first {@link MessageStream.Entry entry} from the
+     * given {@code source}.
      * <p>
-     * If the given source completed without producing any elements, the returned CompletableFuture will either complete
-     * with a {@code null} result, of the source completed normally, or exceptionally if the source completed with an
-     * error.
+     * If the given source has completed without producing any entries, the returned {@code CompletableFuture} will
+     * either complete with a {@code null} result if the source completed normally, or exceptionally if the source
+     * completed with an error.
      * <p>
-     * Once the first element is read from the source, it is automatically closed and any subsequent elements in the
+     * Once the first entry is read from the source, it is automatically closed, and any subsequent entries in the
      * {@code source} are ignored.
      *
-     * @param source The source to read the first message from
-     * @param <M>    The type of Message produced by the stream
-     * @return a CompletableFuture that completes with the first message from the stream
+     * @param source The source to read the first {@link MessageStream.Entry entry} from.
+     * @param <M>    The type of {@link Message} produced by the stream.
+     * @return A {@code CompletableFuture} that completes with the first {@link MessageStream.Entry entry} from the
+     *         stream.
      */
     public static <M extends Message<?>> CompletableFuture<MessageStream.Entry<M>> firstAsCompletableFuture(
             MessageStream<M> source) {
@@ -104,13 +111,13 @@ public abstract class MessageStreamUtils {
         return firstResult.completableFuture();
     }
 
-    private static class FluxTask<M extends Message<?>> {
+    private static class FluxStreamAdapter<M extends Message<?>> {
 
         private final AtomicBoolean processingGate = new AtomicBoolean(false);
         private final MessageStream<M> source;
         private final FluxSink<MessageStream.Entry<M>> emitter;
 
-        public FluxTask(MessageStream<M> source, FluxSink<MessageStream.Entry<M>> emitter) {
+        public FluxStreamAdapter(MessageStream<M> source, FluxSink<MessageStream.Entry<M>> emitter) {
             this.source = source;
             this.emitter = emitter;
         }
@@ -151,7 +158,7 @@ public abstract class MessageStreamUtils {
             this.source = source;
             this.intermediateResult = new AtomicReference<>(identity);
             this.accumulator = accumulator;
-            this.completableFuture = new CompletableFuture<R>();
+            this.completableFuture = new CompletableFuture<>();
         }
 
         public CompletableFuture<R> completableFuture() {

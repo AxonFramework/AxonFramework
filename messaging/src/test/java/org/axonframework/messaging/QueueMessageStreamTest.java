@@ -54,7 +54,7 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>> {
     MessageStream<EventMessage<String>> failingTestSubject(List<EventMessage<String>> messages, Exception failure) {
         QueueMessageStream<EventMessage<String>> testSubject = new QueueMessageStream<>();
         messages.forEach(m -> testSubject.offer(m, Context.empty()));
-        testSubject.complete(failure);
+        testSubject.completeExceptionally(failure);
         return testSubject;
     }
 

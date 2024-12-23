@@ -56,8 +56,7 @@ class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStrea
 
     @Override
     public Optional<Entry<M>> next() {
-        MessageStream<M> currentDelegate = resolveCurrentDelegate();
-        return currentDelegate.next();
+        return resolveCurrentDelegate().next();
     }
 
     @Override
