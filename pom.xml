@@ -76,6 +76,7 @@
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <!-- Database -->
         <c3p0.version>0.9.1.2</c3p0.version>
+        <hikari.version>6.2.1</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
         <hibernate-core.version>6.6.3.Final</hibernate-core.version>
         <mysql-connector-java.version>9.1.0</mysql-connector-java.version>
@@ -247,6 +248,11 @@
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
                 <version>${hibernate-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikari.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hsqldb</groupId>
