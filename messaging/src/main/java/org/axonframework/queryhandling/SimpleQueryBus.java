@@ -93,6 +93,7 @@ public class SimpleQueryBus implements QueryBus {
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final QueryBusSpanFactory spanFactory;
+    private final MessageNameResolver messageNameResolver;
 
     private final QueryUpdateEmitter queryUpdateEmitter;
 
@@ -111,6 +112,7 @@ public class SimpleQueryBus implements QueryBus {
         this.queryUpdateEmitter = builder.queryUpdateEmitter;
         this.duplicateQueryHandlerResolver = builder.duplicateQueryHandlerResolver;
         this.spanFactory = builder.spanFactory;
+        this.messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -540,7 +542,7 @@ public class SimpleQueryBus implements QueryBus {
      * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
      * {@link QualifiedName name}.
      */
-    private static <R> QueryResponseMessage<R> asNullableResponseMessage(Class<R> declaredType, Object result) {
+    private <R> QueryResponseMessage<R> asNullableResponseMessage(Class<R> declaredType, Object result) {
         if (result instanceof QueryResponseMessage) {
             //noinspection unchecked
             return (QueryResponseMessage<R>) result;
@@ -549,25 +551,25 @@ public class SimpleQueryBus implements QueryBus {
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
             if (resultMessage.isExceptional()) {
                 Throwable cause = resultMessage.exceptionResult();
-                return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(cause.getClass()), cause,
+                return new GenericQueryResponseMessage<>(messageNameResolver.resolve(cause), cause,
                         resultMessage.getMetaData(),
                         declaredType);
             }
             return new GenericQueryResponseMessage<>(
-                    QualifiedNameUtils.fromClassName(resultMessage.getPayload().getClass()),
+                    messageNameResolver.resolve(resultMessage.getPayload()),
                     resultMessage.getPayload(),
                     resultMessage.getMetaData()
             );
         } else if (result instanceof Message) {
             //noinspection unchecked
             Message<R> message = (Message<R>) result;
-            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(message.getPayload().getClass()),
+            return new GenericQueryResponseMessage<>(messageNameResolver.resolve(message.getPayload()),
                     message.getPayload(),
                     message.getMetaData());
         } else {
             QualifiedName name = result == null
                     ? QualifiedNameUtils.fromDottedName("empty.query.response")
-                    : QualifiedNameUtils.fromClassName(result.getClass());
+                    : messageNameResolver.resolve(result.getClass());
             //noinspection unchecked
             return new GenericQueryResponseMessage<>(name, (R) result, declaredType);
         }
@@ -606,17 +608,17 @@ public class SimpleQueryBus implements QueryBus {
         } else if (result instanceof ResultMessage) {
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
             return new GenericQueryResponseMessage<>(
-                    QualifiedNameUtils.fromClassName(resultMessage.getPayload().getClass()),
+                    messageNameResolver.resolve(resultMessage.getPayload()),
                     resultMessage.getPayload(),
                     resultMessage.getMetaData()
             );
         } else if (result instanceof Message) {
             Message<R> message = (Message<R>) result;
-            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(message.getPayload().getClass()),
+            return new GenericQueryResponseMessage<>(messageNameResolver.resolve(message.getPayload()),
                     message.getPayload(),
                     message.getMetaData());
         } else {
-            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(result.getClass()), (R) result);
+            return new GenericQueryResponseMessage<>(messageNameResolver.resolve(result), (R) result);
         }
     }
 
@@ -723,6 +725,7 @@ public class SimpleQueryBus implements QueryBus {
         private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
                                                                             .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                             .build();
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link MessageMonitor} used to monitor query messages. Defaults to a {@link NoOpMessageMonitor}.
@@ -806,6 +809,18 @@ public class SimpleQueryBus implements QueryBus {
         public Builder spanFactory(@Nonnull QueryBusSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 
