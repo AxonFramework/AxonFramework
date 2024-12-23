@@ -32,7 +32,6 @@ import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.queryhandling.GenericQueryResponseMessage.asResponseMessage;
 
 /**
  * Implementation of the QueryGateway interface that allows the registration of dispatchInterceptors.
@@ -101,6 +100,23 @@ public class DefaultQueryGateway implements QueryGateway {
                          }
                      });
         return result;
+    }
+
+    /**
+     * Creates a Query Response Message with given {@code declaredType} and {@code exception}.
+     *
+     * @param declaredType The declared type of the Query Response Message to be created
+     * @param exception    The Exception describing the cause of an error
+     * @param <R>          The type of the payload
+     * @return a message containing exception result
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
+     */
+    @Deprecated
+    private <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
+        return new GenericQueryResponseMessage<>(messageNameResolver.resolve(exception.getClass()),
+                exception,
+                declaredType);
     }
 
     @Override

@@ -126,23 +126,6 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
     }
 
     /**
-     * Creates a Query Response Message with given {@code declaredType} and {@code exception}.
-     *
-     * @param declaredType The declared type of the Query Response Message to be created
-     * @param exception    The Exception describing the cause of an error
-     * @param <R>          The type of the payload
-     * @return a message containing exception result
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    public static <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
-        return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()),
-                                                 exception,
-                                                 declaredType);
-    }
-
-    /**
      * Constructs a {@link GenericQueryResponseMessage} for the given {@code name} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.

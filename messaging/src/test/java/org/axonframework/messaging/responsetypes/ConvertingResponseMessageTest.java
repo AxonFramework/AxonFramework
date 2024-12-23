@@ -19,6 +19,7 @@ package org.axonframework.messaging.responsetypes;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.junit.jupiter.api.*;
@@ -45,11 +46,17 @@ class ConvertingResponseMessageTest {
 
     @Test
     void illegalAccessPayloadWhenResultIsExceptional() {
-        QueryResponseMessage<?> msg = GenericQueryResponseMessage.asResponseMessage(List.class, new RuntimeException());
+        QueryResponseMessage<?> msg = asResponseMessage(List.class, new RuntimeException());
         QueryResponseMessage<List<String>> wrapped =
                 new ConvertingResponseMessage<>(ResponseTypes.multipleInstancesOf(String.class), msg);
 
         assertEquals(List.class, wrapped.getPayloadType());
         assertThrows(IllegalPayloadAccessException.class, wrapped::getPayload);
+    }
+
+    private static <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
+        return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()),
+                exception,
+                declaredType);
     }
 }
