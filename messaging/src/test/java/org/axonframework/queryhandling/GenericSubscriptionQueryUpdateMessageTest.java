@@ -34,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
+// todo: should we remove support for that?
 class GenericSubscriptionQueryUpdateMessageTest {
 
     @Test
