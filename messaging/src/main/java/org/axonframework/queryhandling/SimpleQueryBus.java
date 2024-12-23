@@ -20,13 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.QualifiedNameUtils;
-import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -74,7 +68,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
-import static org.axonframework.queryhandling.GenericQueryResponseMessage.asNullableResponseMessage;
 
 /**
  * Implementation of the QueryBus that dispatches queries to the handlers within the JVM. Any timeouts are ignored by
@@ -529,6 +522,55 @@ public class SimpleQueryBus implements QueryBus {
             }
             return buildCompletableFuture(responseType, queryResponse);
         });
+    }
+
+    /**
+     * Creates a QueryResponseMessage for the given {@code result} with a {@code declaredType} as the result type.
+     * Providing both the result type and the result allows the creation of a nullable response message, as the
+     * implementation does not have to check the type itself, which could result in a
+     * {@link java.lang.NullPointerException}. If result already implements QueryResponseMessage, it is returned
+     * directly. Otherwise a new QueryResponseMessage is created with the declared type as the result type and the
+     * result as payload.
+     *
+     * @param declaredType The declared type of the Query Response Message to be created.
+     * @param result       The result of a Query, to be wrapped in a QueryResponseMessage
+     * @param <R>          The type of response expected
+     * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
+     * QueryResponseMessage.
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
+     */
+    private static <R> QueryResponseMessage<R> asNullableResponseMessage(Class<R> declaredType, Object result) {
+        if (result instanceof QueryResponseMessage) {
+            //noinspection unchecked
+            return (QueryResponseMessage<R>) result;
+        } else if (result instanceof ResultMessage) {
+            //noinspection unchecked
+            ResultMessage<R> resultMessage = (ResultMessage<R>) result;
+            if (resultMessage.isExceptional()) {
+                Throwable cause = resultMessage.exceptionResult();
+                return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(cause.getClass()), cause,
+                        resultMessage.getMetaData(),
+                        declaredType);
+            }
+            return new GenericQueryResponseMessage<>(
+                    QualifiedNameUtils.fromClassName(resultMessage.getPayload().getClass()),
+                    resultMessage.getPayload(),
+                    resultMessage.getMetaData()
+            );
+        } else if (result instanceof Message) {
+            //noinspection unchecked
+            Message<R> message = (Message<R>) result;
+            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(message.getPayload().getClass()),
+                    message.getPayload(),
+                    message.getMetaData());
+        } else {
+            QualifiedName name = result == null
+                    ? QualifiedNameUtils.fromDottedName("empty.query.response")
+                    : QualifiedNameUtils.fromClassName(result.getClass());
+            //noinspection unchecked
+            return new GenericQueryResponseMessage<>(name, (R) result, declaredType);
+        }
     }
 
     private <Q, R> ResultMessage<Publisher<QueryResponseMessage<R>>> interceptAndInvokeStreaming(
