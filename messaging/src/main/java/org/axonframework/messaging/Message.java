@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -24,7 +25,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 /**
  * Representation of a Message, containing a Payload and MetaData. Typical examples of Messages are Commands, Events and
@@ -75,8 +75,18 @@ public interface Message<T> extends Serializable {
      * @return the type of payload.
      * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
      */
-    @Deprecated
+    @Deprecated // TODO #3085 - Replace for getMessageType once fully integrated
     Class<T> getPayloadType();
+
+    /**
+     * Returns the message {@link QualifiedName name} of this {@link Message}.
+     *
+     * @return The message {@link QualifiedName name} of this {@link Message}.
+     */
+    default QualifiedName name() {
+        Class<T> payloadType = getPayloadType();
+        return new QualifiedName(payloadType.getPackageName(), payloadType.getSimpleName(), "0.0.1");
+    }
 
     /**
      * Returns a copy of this Message with the given {@code metaData}. The payload remains unchanged.

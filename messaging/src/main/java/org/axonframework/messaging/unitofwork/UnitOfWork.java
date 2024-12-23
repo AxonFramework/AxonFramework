@@ -41,7 +41,7 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @since 0.6
  */
-@Deprecated
+@Deprecated // TODO #3064 Remove when AsyncUnitOfWork is fully integrated
 public interface UnitOfWork<T extends Message<?>> {
 
     /**

@@ -18,19 +18,18 @@ Use `CurrentUnitOfWork.isStarted()` to find out if one is available.
 One reason to require access to the current unit of work is to attach resources that need to be reused several times during the course of message processing, or if created resources need to be cleaned up when the unit of work completes.
 In such case, the `unitOfWork.getOrComputeResource()` and the lifecycle callback methods, such as `onRollback()`, `afterCommit()` and `onCleanup()` allow you to register resources and declare actions to be taken during the processing of this unit of work.
 
-____
 
-**Using the Unit of Work**
-
-Note that the Unit of Work is merely a buffer of changes, not a replacement for transactions.
+[NOTE]
+.Transaction guarantees with the Unit Of Work
+====
+The Unit of Work is merely a buffer of changes, not a replacement for transactions.
 Although all staged changes are only committed when the Unit of Work is committed, its commit is not atomic.
 That means that when a commit fails, some changes might have been persisted, while others have not been.
 Best practices dictate that a command should never contain more than one action.
 If you stick to that practice, a unit of work will contain a single action, making it safe to use as-is.
 If you have more actions in your unit of work, then you could consider attaching a transaction to the unit of work's commit.
 Use `unitOfWork.onCommit(..)` to register actions that need to be taken when the unit of work is being committed.
-
-____
+====
 
 Your handlers may throw an Exception as a result of processing a message.
 By default, unchecked exceptions will cause the `UnitOfWork` to roll back all changes.
@@ -70,16 +69,14 @@ try {
 }
 ----
 
-____
-
-**The Unit of Works and its Message**
-
+[NOTE]
+.The Unit Of Work is focused around a Message
+====
 The Unit of Work revolves around messages.
 It is always started with a message to be processed.
 As a result of a Unit-of-Work's execution (`executeWithResult(...)`) a `ResultMessage` will be returned and the actual execution result will be the payload of that `ResultMessage`.
 If problems arose during message processing, we get an exceptional `ResultMessage` - `isExceptional()` will return `true` and `exceptionResult()` will get us the actual `Throwable` indicating what went wrong.
-
-____
+====
 
 A `UnitOfWork` knows several phases.
 Each time it progresses to another phase, the listeners are notified.

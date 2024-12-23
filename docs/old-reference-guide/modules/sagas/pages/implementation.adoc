@@ -55,7 +55,7 @@ Events need to be redirected to the appropriate saga instances. To do so, some i
 [[saga-manager]]
 === Saga manager
 
-Like any component that handles events, the processing is done by an xref:events:event-processors/README.adoc[Event Processor].
+Like any component that handles events, the processing is done by an xref:events:event-processors/index.adoc[Event Processor].
 However, Sagas are not singleton instances handling events.
 They have individual life cycles that need to be managed.
 
@@ -117,16 +117,16 @@ The latter two arguments may refer to the same cache, or to different ones. This
 Although a Saga requires a <<saga-manager,manager>>, <<saga-repository-and-saga-store,repository / store>> and wiring to the right message busses, configuring a Saga is straightforward.
 When using the Configuration API, Axon will use sensible defaults for most components.
 
-As a specific type of xref:events:event-handlers.adoc[Event Handling Component], configuration of a Saga is closely related to the configuration of xref:events:event-processors/README.adoc[Event Processors].
+As a specific type of xref:events:event-handlers.adoc[Event Handling Component], configuration of a Saga is closely related to the configuration of xref:events:event-processors/index.adoc[Event Processors].
 Due to this, configuring a processor will impact the behaviour of a Saga, albeit on a non-functional level.
-The configuration of xref:events:event-processors/README.adoc#error-handling[error handling] or xref:events:event-processors/README.adoc#_assigning_handlers_to_processors[processor assignment rules], for example, are thus equally valid for Sagas as long as the right processor name is used during configuration.
+The configuration of xref:events:event-processors/index.adoc#error-handling[error handling] or xref:events:event-processors/index.adoc#_assigning_handlers_to_processors[processor assignment rules], for example, are thus equally valid for Sagas as long as the right processor name is used during configuration.
 
 ____
 
 *Default Saga Processor name*
 
 As a Saga is a type of event handler, it is part of an Event Processor.
-Without defining any xref:events:event-processors/README.adoc#_assigning_handlers_to_processors[assignment rules], a Saga's processor name equals the Saga name appended with "Processor",
+Without defining any xref:events:event-processors/index.adoc#_assigning_handlers_to_processors[assignment rules], a Saga's processor name equals the Saga name appended with "Processor",
 
 With a Saga called `MySaga`, that would mean the processor is called `MySagaProcessor`.
 

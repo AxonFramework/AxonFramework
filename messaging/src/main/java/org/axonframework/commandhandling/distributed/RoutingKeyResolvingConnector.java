@@ -41,7 +41,7 @@ public class RoutingKeyResolvingConnector implements Connector {
             return delegate.dispatch(command, processingContext);
         } else {
             return delegate.dispatch(command,
-                                     processingContext.branchedWithResource(RoutingStrategy.ROUTING_KEY, routingKey));
+                                     processingContext.withResource(RoutingStrategy.ROUTING_KEY, routingKey));
         }
     }
 

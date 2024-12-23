@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,8 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
     public <M extends CommandMessage<?>, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(
             @Nonnull M message,
             @Nonnull ProcessingContext context,
-            @Nonnull InterceptorChain<M, R> interceptorChain) {
+            @Nonnull InterceptorChain<M, R> interceptorChain
+    ) {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                 context,
                 interceptorChain,

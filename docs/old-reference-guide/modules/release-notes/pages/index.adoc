@@ -1,0 +1,33 @@
+= Release Notes
+:page-aliases: README.adoc
+:navtitle: Release Notes
+
+The release notes section for the Axon framework for all major/minor releases.
+
+[cols="<,<"]
+|===
+|Release Type |Version 
+
+|**Major** |xref:major-releases.adoc#_release_4_10[4.10]
+| |xref:major-releases.adoc#_release_4_9[4.9]
+| |xref:major-releases.adoc#_release_4_8[4.8]
+| |xref:major-releases.adoc#_release_4_7[4.7]
+| |xref:major-releases.adoc#_release_4_6[4.6]
+| |xref:major-releases.adoc#_release_4_5[4.5]
+| |xref:major-releases.adoc#_release_4_4[4.4]
+| |xref:major-releases.adoc#_release_4_3[4.3]
+| |xref:major-releases.adoc#_release_4_2[4.2]
+| |xref:major-releases.adoc#_release_4_1[4.1]
+| |xref:major-releases.adoc#_release_4_0[4.0]
+|**Minor** |xref:minor-releases.adoc#_release_4_10[4.10]
+| |xref:minor-releases.adoc#_release_4_9[4.9]
+| |xref:minor-releases.adoc#_release_4_8[4.8]
+| |xref:minor-releases.adoc#_release_4_7[4.7]
+| |xref:minor-releases.adoc#_release_4_6[4.6]
+| |xref:minor-releases.adoc#_release_4_5[4.5]
+| |xref:minor-releases.adoc#_release_4_4[4.4]
+| |xref:minor-releases.adoc#_release_4_3[4.3]
+| |xref:minor-releases.adoc#_release_4_2[4.2]
+| |xref:minor-releases.adoc#_release_4_1[4.1]
+| |xref:minor-releases.adoc#_release_4_0[4.0]
+|===

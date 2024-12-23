@@ -59,7 +59,7 @@ ____
 *Caveats for the JobRunr implementation.*
 
 Since the non-Pro version of JobRunr has no way to search for deadlines, besides by id, all of the `cancelAll` methods are not implemented for the `JobRunrDeadlineManager`.
-The link:../../../extensions/jobrunrpro.md[JobRunr Pro extension] does support those but requires the Pro version of JobRunr.
+The xref:jobrunr-pro-extension-reference:ROOT:index.adoc[JobRunr Pro extension] does support those but requires the Pro version of JobRunr.
 
 *Caveats for the DbScheduler implementation.*
 
@@ -84,6 +84,7 @@ class DeadlineSchedulingWithPayloadComponent {
 }
 ----
 
+[#_handling_a_deadline]
 == Handling a deadline
 
 We have now seen how to schedule a deadline.
@@ -138,7 +139,7 @@ public void on() {
 == Using time in your application
 
 In cases where applications need to access the clock, they can take advantage of the clock used in the EventMessage, by accessing `GenericEventMessage.clock`.
-This clock is set to Clock.systemUTC at runtime, and manipulated to simulate time during xref:testing:README.adoc[testing].
+This clock is set to Clock.systemUTC at runtime, and manipulated to simulate time during xref:testing:index.adoc[testing].
 
 [source,java]
 ----

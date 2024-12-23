@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ package org.axonframework.eventhandling;
  *
  * @param <T> The type of payload contained in this Message
  * @author Rene de Waele
+ * @deprecated In favor of returning entries that contain a token and event message separately
  */
+@Deprecated
 public interface TrackedEventMessage<T> extends EventMessage<T> {
 
     /**

@@ -99,6 +99,21 @@ class AnnotatedSagaTest {
     }
 
     @Test
+    void fixtureApi_AggregatePublishedHistoricEventWithMetaData() {
+        String extraIdentifier = UUID.randomUUID().toString();
+        Map<String, String> metaData = new HashMap<>();
+        metaData.put("extraIdentifier", extraIdentifier);
+
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.givenAPublished(new TriggerSagaStartEvent("id"), metaData)
+               .whenPublishingA(new TriggerSagaStartEvent("id"))
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadlines()
+               .expectAssociationWith("identifier", "id")
+               .expectAssociationWith("extraIdentifier", extraIdentifier);
+    }
+
+    @Test
     void fixtureApi_NonTransientResourceInjected() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.registerResource(new NonTransientResource());

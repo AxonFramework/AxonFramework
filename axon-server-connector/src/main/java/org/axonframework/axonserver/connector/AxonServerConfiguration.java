@@ -139,6 +139,12 @@ public class AxonServerConfiguration {
     private FlowControlConfiguration commandFlowControl;
 
     /**
+     * A toggle dictating whether to invoke query handlers directly if they are registered in the local environment.
+     * Defaults to {@code false}.
+     */
+    private boolean shortcutQueriesToLocalHandlers = false;
+
+    /**
      * The number of threads executing commands. Defaults to {@code 10} threads.
      */
     private int commandThreads = 10;
@@ -189,9 +195,9 @@ public class AxonServerConfiguration {
     /**
      * Flag that allows block-listing of event types to be enabled.
      * <p>
-     * Disabling this may have serious performance impact, as it requires all
-     * {@link EventMessage events} from Axon Server to be sent to clients, even if a
-     * client is unable to process the event. Default is to have block-listing enabled.
+     * Disabling this may have serious performance impact, as it requires all {@link EventMessage events} from Axon
+     * Server to be sent to clients, even if a client is unable to process the event. Default is to have block-listing
+     * enabled.
      */
     private boolean eventBlockListingEnabled = true;
 
@@ -241,8 +247,7 @@ public class AxonServerConfiguration {
 
     /**
      * Defines the number of threads that should be used for connection management activities by the
-     * {@link AxonServerConnectionFactory} used by the
-     * {@link AxonServerConnectionManager}.
+     * {@link AxonServerConnectionFactory} used by the {@link AxonServerConnectionManager}.
      * <p>
      * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
      * validating heartbeats, etc.
@@ -263,8 +268,7 @@ public class AxonServerConfiguration {
     private Eventhandling eventhandling = new Eventhandling();
 
     /**
-     * Properties describing the settings for the
-     * {@link AxonServerEventStore EventStore}.
+     * Properties describing the settings for the {@link AxonServerEventStore EventStore}.
      */
     private EventStoreConfiguration eventStoreConfiguration = new EventStoreConfiguration();
 
@@ -299,6 +303,14 @@ public class AxonServerConfiguration {
      */
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public boolean isShortcutQueriesToLocalHandlers() {
+        return shortcutQueriesToLocalHandlers;
+    }
+
+    public void setShortcutQueriesToLocalHandlers(boolean shortcutQueriesToLocalHandlers) {
+        this.shortcutQueriesToLocalHandlers = shortcutQueriesToLocalHandlers;
     }
 
     /**
@@ -799,9 +811,9 @@ public class AxonServerConfiguration {
     /**
      * Flag that allows block-listing of event types to be enabled.
      * <p>
-     * Disabling this may have serious performance impact, as it requires all
-     * {@link EventMessage events} from Axon Server to be sent to clients, even if a
-     * client is unable to process the event. Default is to have block-listing enabled.
+     * Disabling this may have serious performance impact, as it requires all {@link EventMessage events} from Axon
+     * Server to be sent to clients, even if a client is unable to process the event. Default is to have block-listing
+     * enabled.
      *
      * @return Flag that allows block-listing of event types to be enabled.
      */
@@ -812,9 +824,9 @@ public class AxonServerConfiguration {
     /**
      * Sets flag that allows block-listing of event types to be enabled.
      * <p>
-     * Disabling this may have serious performance impact, as it requires all
-     * {@link EventMessage events} from Axon Server to be sent to clients, even if a
-     * client is unable to process the event. Default is to have block-listing enabled.
+     * Disabling this may have serious performance impact, as it requires all {@link EventMessage events} from Axon
+     * Server to be sent to clients, even if a client is unable to process the event. Default is to have block-listing
+     * enabled.
      *
      * @param eventBlockListingEnabled Flag that allows block-listing of event types to be enabled.
      */
@@ -964,8 +976,7 @@ public class AxonServerConfiguration {
 
     /**
      * The number of threads that should be used for connection management activities by the
-     * {@link AxonServerConnectionFactory} used by the
-     * {@link AxonServerConnectionManager}.
+     * {@link AxonServerConnectionFactory} used by the {@link AxonServerConnectionManager}.
      * <p>
      * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
      * validating heartbeats, etc.
@@ -973,8 +984,7 @@ public class AxonServerConfiguration {
      * Defaults to a pool size of {@code 2} threads.
      *
      * @return The number of threads that should be used for connection management activities by the
-     * {@link AxonServerConnectionFactory} used by the
-     * {@link AxonServerConnectionManager}.
+     * {@link AxonServerConnectionFactory} used by the {@link AxonServerConnectionManager}.
      */
     public int getConnectionManagementThreadPoolSize() {
         return connectionManagementThreadPoolSize;
@@ -982,8 +992,7 @@ public class AxonServerConfiguration {
 
     /**
      * Define the number of threads that should be used for connection management activities by the
-     * {@link AxonServerConnectionFactory} used by the
-     * {@link AxonServerConnectionManager}.
+     * {@link AxonServerConnectionFactory} used by the {@link AxonServerConnectionManager}.
      * <p>
      * This includes activities related to connecting to Axon Server, setting up instruction streams, sending and
      * validating heartbeats, etc.
@@ -991,9 +1000,8 @@ public class AxonServerConfiguration {
      * Defaults to a pool size of {@code 2} threads.
      *
      * @param connectionManagementThreadPoolSize The number of threads that should be used for connection management
-     *                                           activities by the
-     *                                           {@link AxonServerConnectionFactory} used
-     *                                           by the {@link AxonServerConnectionManager}.
+     *                                           activities by the {@link AxonServerConnectionFactory} used by the
+     *                                           {@link AxonServerConnectionManager}.
      */
     public void setConnectionManagementThreadPoolSize(int connectionManagementThreadPoolSize) {
         this.connectionManagementThreadPoolSize = connectionManagementThreadPoolSize;
@@ -1302,8 +1310,8 @@ public class AxonServerConfiguration {
              * The load balancing strategy tells Axon Server how to share the event handling load among all available
              * application instances running this event processor, by moving segments from one instance to another. Note
              * that load balancing is <b>only</b> supported for
-             * {@link StreamingEventProcessor StreamingEventProcessors}, as only
-             * {@code StreamingEventProcessors} are capable of splitting the event handling load in segments.
+             * {@link StreamingEventProcessor StreamingEventProcessors}, as only {@code StreamingEventProcessors} are
+             * capable of splitting the event handling load in segments.
              * <p>
              * As the strategies names may change per Axon Server version it is recommended to check the documentation
              * for the possible strategies.
@@ -1506,6 +1514,11 @@ public class AxonServerConfiguration {
         private int initialSegmentCount = 1;
 
         /**
+         * The number of threads used to process tasks (e.g. event handling) for the persistent stream. Defaults to 1.
+         */
+        private int threadCount = 1;
+
+        /**
          * The sequencing policy to use for the persistent stream.
          * <p>
          * Supported sequencing policies are:
@@ -1525,7 +1538,11 @@ public class AxonServerConfiguration {
         private List<String> sequencingPolicyParameters = new LinkedList<>();
 
         /**
-         * Expression to filter out events in a persistent stream.
+         * Expression to filter out events in a persistent stream, expecting the Axon Server Query Language as its
+         * syntax.
+         * <p>
+         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
+         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
          */
         private String filter;
 
@@ -1562,6 +1579,25 @@ public class AxonServerConfiguration {
          */
         public void setInitialSegmentCount(int initialSegmentCount) {
             this.initialSegmentCount = initialSegmentCount;
+        }
+
+        /**
+         * The number of threads used to process tasks (e.g. event handling) for the persistent stream. Defaults to 1.
+         *
+         * @return The number of threads used to process tasks (e.g. event handling) for the persistent stream.
+         */
+        public int getThreadCount() {
+            return threadCount;
+        }
+
+        /**
+         * Sets the number of threads used to process tasks (e.g. event handling) for the persistent stream.
+         *
+         * @param threadCount The number of threads used to process tasks (e.g. event handling) for the persistent
+         *                    stream.
+         */
+        public void setThreadCount(int threadCount) {
+            this.threadCount = threadCount;
         }
 
         /**
@@ -1616,7 +1652,10 @@ public class AxonServerConfiguration {
         }
 
         /**
-         * Expression to filter out events in a persistent stream.
+         * Expression to filter out events in a persistent stream, using Axon Server Query Language as its syntax.
+         * <p>
+         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
+         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
          *
          * @return The filter expression.
          */
@@ -1625,8 +1664,11 @@ public class AxonServerConfiguration {
         }
 
         /**
-         * Sets the expression to filter out events in a persistent stream.
-         * <p>This value is only used for creating the persistent stream.</p>
+         * Sets the expression to filter out events in a persistent stream, expecting the Axon Server Query Language as
+         * its syntax.
+         * <p>
+         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
+         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
          *
          * @param filter The filter expression.
          */

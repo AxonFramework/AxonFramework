@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,12 @@ package org.axonframework.queryhandling.annotation;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.annotation.UnsupportedHandlerException;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryHandler;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -99,7 +96,7 @@ class MethodQueryMessageHandlerDefinitionTest {
 
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<Message<Object>> returnTypeConverter(Object result) {
+    private static MessageStream<?> returnTypeConverter(Object result) {
         return result instanceof CompletableFuture<?>
                 ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
                 : MessageStream.just(GenericMessage.asMessage(result));

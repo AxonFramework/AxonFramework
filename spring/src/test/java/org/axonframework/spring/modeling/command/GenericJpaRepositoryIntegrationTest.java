@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.axonframework.spring.modeling.command;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
@@ -184,16 +185,15 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
 
         @Bean
         public DataSource dataSource() throws PropertyVetoException {
-            ComboPooledDataSource dataSource = new ComboPooledDataSource();
-            dataSource.setDriverClass("org.hsqldb.jdbcDriver");
-            dataSource.setJdbcUrl("jdbc:hsqldb:mem:axontest");
-            dataSource.setUser("sa");
-            dataSource.setMaxPoolSize(50);
-            dataSource.setMinPoolSize(1);
+            HikariConfig config = new HikariConfig();
+            config.setDriverClassName("org.hsqldb.jdbcDriver");
+            config.setJdbcUrl("jdbc:hsqldb:mem:axontest");
+            config.setUsername("sa");
+            config.setMaximumPoolSize(50);
             Properties dataSourceProperties = new Properties();
             dataSourceProperties.setProperty("hsqldb.log_size", "0");
-            dataSource.setProperties(dataSourceProperties);
-            return dataSource;
+            config.setDataSourceProperties(dataSourceProperties);
+            return new HikariDataSource(config);
         }
 
         @Bean("entityManagerFactory")

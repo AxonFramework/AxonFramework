@@ -48,6 +48,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.awaitility.Awaitility.await;
@@ -117,6 +118,35 @@ class PersistentStreamConnectionTest {
 
         mockPersistentStream.closeSegment(0);
     }
+
+    @Test
+    void retryFailedHandler() {
+        List<EventMessage<?>> eventMessages = new LinkedList<>();
+        AtomicInteger failureCountDown = new AtomicInteger(2);
+        AtomicInteger attempts = new AtomicInteger();
+        testSubject.open(m -> {
+            attempts.incrementAndGet();
+            if (failureCountDown.getAndDecrement() > 0) {
+                throw new IllegalStateException("Cannot invoke handler");
+            }
+            eventMessages.addAll(m);
+        });
+        MockPersistentStream mockPersistentStream = mockPersistentStreams.get(STREAM_ID);
+        mockPersistentStream.publish(0, eventWithToken(0, "AggregateId-1", 0));
+        mockPersistentStream.publish(0, eventWithToken(1, "AggregateId-1", 1));
+        await().atMost(Duration.ofSeconds(4))
+               .pollDelay(Duration.ofMillis(100))
+               .until(() -> attempts.get() == 3);
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(100))
+               .until(() -> eventMessages.size() == 2);
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(100))
+               .until(() -> mockPersistentStream.lastAcknowledged(0) == 1);
+
+        mockPersistentStream.closeSegment(0);
+    }
+
 
     private static EventWithToken eventWithToken(int token,
                                                  @SuppressWarnings("SameParameterValue") String aggregateId,

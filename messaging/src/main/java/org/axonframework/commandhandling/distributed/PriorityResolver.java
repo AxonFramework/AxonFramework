@@ -16,13 +16,12 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 public interface PriorityResolver<M extends Message<?>> {
 
-    ProcessingContext.ResourceKey<Integer> PRIORITY_KEY = ProcessingContext.ResourceKey.create("Priority");
+    ResourceKey<Integer> PRIORITY_KEY = ResourceKey.create("Priority");
 
     int priorityFor(M message);
-
 }

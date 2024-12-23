@@ -16,26 +16,33 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assumptions;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-class StreamMessageStreamTest extends MessageStreamTest<String> {
+/**
+ * Test class validating the {@link StreamMessageStream} through the {@link MessageStreamTest} suite.
+ *
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ */
+class StreamMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    StreamMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
-        return new StreamMessageStream<>(values.stream());
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        return MessageStream.fromStream(messages.stream());
     }
 
     @Override
-    StreamMessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+                                                      Exception failure) {
         Assumptions.abort("StreamMessageStream doesn't support failures");
         return null;
     }
 
     @Override
-    String createRandomValidStreamEntry() {
-        return "TestValue-" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

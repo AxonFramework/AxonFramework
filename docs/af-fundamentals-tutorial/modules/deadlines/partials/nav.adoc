@@ -1,6 +1,0 @@
-// `deadlines` module navigation
-* xref:deadlines:index.adoc[]
-** xref:deadlines:deciding.adoc[]
-** xref:deadlines:implementing.adoc[]
-** xref:deadlines:testing.adoc[]
-** xref:deadlines:advanced.adoc[]

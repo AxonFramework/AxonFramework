@@ -1,4 +1,5 @@
 = Event Handlers
+:navtitle: Handling
 
 An _Event Handler_ is a method that is capable of handling an `EventMessage`.
 As such, the method will react to the occurrences within an application.
@@ -64,8 +65,11 @@ Typically, an application will have a single `EventProcessingConfiguration` defi
 
 To register objects with `@EventHandler` methods, consider the following samples:
 
-==== Axon Configuration API
-
+[tabs]
+====
+Configuration API::
++
+--
 The `Configurer` exposes several options towards registering an Event Handling Component:
 
 [source,java]
@@ -73,19 +77,29 @@ The `Configurer` exposes several options towards registering an Event Handling C
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureEventHandler(Configurer configurer) {
-        configurer.registerEventHandler(config -> new MyEventHandlingComponent());
+        configurer.registerEventHandler(
+                config -> new MyEventHandlingComponent()
+        );
 
         // or, when the handling component contains several message handler types:
-        configurer.registerMessageHandler(config -> new MyEventHandlingComponent());
+        configurer.registerMessageHandler(
+                config -> new MyEventHandlingComponent()
+        );
 
         // or, directly on the EventProcessingConfigurer:
         configurer.eventProcessing()
-                  .registerEventHandler(config -> new MyEventHandlingComponent());
+            .registerEventHandler(config ->
+                new MyEventHandlingComponent()
+            );
     }
 }
 ----
+--
 
-==== Spring Boot auto configuration
+
+Spring Boot::
++
+--
 
 In a Spring Boot environment, simply adding the Event Handling Components to the Application Context is sufficient:
 
@@ -100,3 +114,5 @@ public class MyEventHandlingComponent {
     }
 }
 ----
+--
+====

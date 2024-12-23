@@ -37,7 +37,7 @@ import java.util.function.Consumer;
  * @author Allard Buijze
  * @since 3.0
  */
-@Deprecated
+@Deprecated // TODO #3064 Remove once old UnitOfWork is removed
 public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOfWork<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractUnitOfWork.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
- * The default HandlerDefinition implementation in Axon. It implements the rules of annotated handlers used
- * in all the different types of handlers in Axon.
+ * The default HandlerDefinition implementation in Axon. It implements the rules of annotated handlers used in all the
+ * different types of handlers in Axon.
  * <p>
  * For this implementation to recognize a handler method, it should be (meta)annotated with {@link MessageHandler}. It
  * is recommended to meta-annotated members, and preconfigure the expected {@code messageType}. For example, and event
@@ -46,10 +46,12 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
-                                                                @Nonnull Method method,
-                                                                @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                                Function<Object, MessageStream<?>> returnTypeConverter) {
+    public <T> Optional<MessageHandlingMember<T>> createHandler(
+            @Nonnull Class<T> declaringType,
+            @Nonnull Method method,
+            @Nonnull ParameterResolverFactory parameterResolverFactory,
+            @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
+    ) {
         return findAnnotationAttributes(method, MessageHandler.class)
                 .map(attr -> new MethodInvokingMessageHandlingMember<>(
                         method,

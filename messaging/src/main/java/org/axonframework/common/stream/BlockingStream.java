@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,10 @@ public interface BlockingStream<M> extends AutoCloseable {
     /**
      * Checks whether or not the next message in the stream is available. If so this method returns {@code true}
      * immediately. If not it returns {@code false} immediately.
+     * <p>
+     * Note that if {@code this} {@link BlockingStream} has only recently been constructed, the chance is high there are
+     * <b>no</b> events present yet. Hence, it is recommended to use {@link #hasNextAvailable(int, TimeUnit)} with a
+     * reasonable time window or {@link #setOnAvailableCallback(Runnable)} instead.
      *
      * @return true if a message is available or becomes available before the given timeout, false otherwise
      */

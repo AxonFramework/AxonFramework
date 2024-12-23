@@ -15,7 +15,7 @@ This is done using Interceptors.
 === Command dispatch interceptors
 
 Message dispatch interceptors are invoked when a command is dispatched on a command bus.
-They have the ability to alter the command message by adding metadata.
+They can alter the command message by adding metadata.
 They can also block the command by throwing an exception.
 These interceptors are always invoked on the thread that dispatches the command.
 
@@ -60,21 +60,19 @@ In fact, a command that lacks information should be blocked as early as possible
 Therefore, an interceptor should check all incoming commands for the availability of such information.
 This is called structural validation.
 
-Axon Framework has support for JSR 303 Bean Validation based validation.
+Axon Framework has support for the JSR 303 Bean Validation specification.
 This allows you to annotate the fields on commands with annotations like `@NotEmpty` and `@Pattern`.
 You need to include a JSR 303 implementation (such as Hibernate-Validator) on your classpath.
 Then, configure a `BeanValidationInterceptor` on your command bus, and it will automatically find and configure your validator implementation.
 While it uses sensible defaults, you can fine-tune it to your specific needs.
 
-____
-
-*Interceptor Ordering Tip*
-
+[TIP]
+.Interceptor Ordering
+====
 You want to spend as few resources on an invalid command as possible.
 Therefore, this interceptor is generally placed at the front of the interceptor chain.
 In some cases, a `LoggingInterceptor` or `AuditingInterceptor` might need to be placed first, with the validating interceptor immediately following it.
-
-____
+====
 
 The `BeanValidationInterceptor` also implements `MessageHandlerInterceptor`, allowing you to configure it as a handler interceptor as well.
 
@@ -272,15 +270,13 @@ public class EventProcessorConfiguration {
 }
 ----
 
-____
-
-*Interceptor Registration*
-
+[NOTE]
+.Interceptor Registration
+====
 Different from the `CommandBus` and `QueryBus`, which both can have handler interceptors and dispatch interceptors, the `EventBus` can only register dispatch interceptors.
 This is because the sole purpose of the `EventBus` is event publishing/dispatching, thus they are where event dispatch interceptors are registered.
-`EventProcessor`s are in charge of handling event messages, thus they are where event handler interceptors are registered.
-
-____
+An `EventProcessor` is in charge of handling event messages, thus event handler interceptors are registered on them directly.
+====
 
 == Query interceptors
 
@@ -308,22 +304,20 @@ You need to include a JSR 303 implementation (such as Hibernate-Validator) on yo
 Then, configure a `BeanValidationInterceptor` on your query bus, and it will automatically find and configure your validator implementation.
 While it uses sensible defaults, you can fine-tune it to your specific needs.
 
-____
-
-*Interceptor Ordering Tip*
-
-You want to spend as few resources on an invalid queries as possible.
+[TIP]
+.Interceptor Ordering Tip
+====
+You want to spend as few resources on invalid queries as possible.
 Therefore, this interceptor is generally placed at the front of the interceptor chain.
 In some cases, a logging or auditing interceptor might need to be placed first, with the validating interceptor immediately following it.
-
-____
+====
 
 The `BeanValidationInterceptor` also implements `MessageHandlerInterceptor`, allowing you to configure it as a handler interceptor as well.
 
 === Query handler interceptors
 
 Message handler interceptors can take action both before and after query processing.
-Interceptors can even block query processing altogether, for example for security reasons.
+Interceptors can even block query processing altogether, for example, for security reasons.
 
 Interceptors must implement the `MessageHandlerInterceptor` interface.
 This interface declares one method, `handle`, that takes two parameters: the current `UnitOfWork` and an `InterceptorChain`.
@@ -353,7 +347,7 @@ If an `EventMessage` specific interceptor is desired, the `messageType` paramete
 
 The following snippets shows some possible approaches of using the `@MessageHandlerInterceptor` annotation:
 
-==== Simple `@MessageHandlerInterceptor` method
+*Simple `@MessageHandlerInterceptor` method*
 
 [source,java]
 ----
@@ -368,7 +362,7 @@ public class CardSummaryProjection {
 }
 ----
 
-==== `@MessageHandlerInterceptor` method defining the Message type
+*`@MessageHandlerInterceptor` method defining the Message type*
 
 [source,java]
 ----
@@ -383,7 +377,7 @@ public class CardSummaryProjection {
 }
 ----
 
-==== `@MessageHandlerInterceptor` method defining the Message and payload type
+*`@MessageHandlerInterceptor` method defining the Message and payload type*
 
 [source,java]
 ----
@@ -401,7 +395,7 @@ public class CardSummaryProjection {
 }
 ----
 
-==== `@MessageHandlerInterceptor` method defining an InterceptorChain parameter
+*`@MessageHandlerInterceptor` method defining an InterceptorChain parameter*
 
 [source,java]
 ----
@@ -441,7 +435,7 @@ You can introduce `@ExceptionHandler` annotated methods in any message handling 
 Furthermore, you can choose to react to all exceptions or define specific exception/message combinations to which the handler should respond.
 Check the following samples for some snippets on how to use this:
 
-==== Aggregate exception handlers
+*Aggregate exception handlers*
 
 [source,java]
 ----
@@ -487,7 +481,17 @@ class GiftCard {
 }
 ----
 
-==== Projector exception handlers
+[NOTE]
+.Exception Handling for Aggregate Constructors
+====
+
+The `@ExceptionHandler` annotated methods require an existing component instance to work.
+Because of this, exception handlers *do not* work for (command handling) constructors of an aggregate.
+
+If you thus expect exceptions on an aggregate's command handler that you need to handle differently, it is recommended to use Axon's xref:axon-framework-commands:command-handlers.adoc#_aggregate_command_handler_creation_policy[creation policy].
+====
+
+*Projector exception handlers*
 
 [source,java]
 ----
@@ -532,14 +536,3 @@ class CardSummaryProjection {
     }
 }
 ----
-
-____
-
-*Exception Handling for Aggregate Constructors*
-
-The `@ExceptionHandler` annotated methods require an existing component instance to work.
-Because of this, exception handlers *do not* work for (command handling) constructors of an aggregate.
-
-If you thus expect exceptions on an aggregate's command handler that you need to handle differently, it is recommended to use Axon's xref:axon-framework-commands:command-handlers.adoc#_aggregate_command_handler_creation_policy[creation policy].
-
-____

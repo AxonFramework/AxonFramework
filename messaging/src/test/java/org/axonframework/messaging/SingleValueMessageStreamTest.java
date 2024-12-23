@@ -16,29 +16,36 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assumptions;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
-class SingleValueMessageStreamTest extends MessageStreamTest<String> {
+/**
+ * Test class validating the {@link SingleValueMessageStream} through the {@link MessageStreamTest} suite.
+ *
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ */
+class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    SingleValueMessageStream<Message<String>> createTestSubject(List<Message<String>> values) {
-        Assumptions.assumeTrue(values.size() == 1, "SingleValueMessageStream only supports a single value");
-        return new SingleValueMessageStream<>(values.getFirst());
+    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+        Assumptions.assumeTrue(messages.size() == 1, "SingleValueMessageStream only supports a single value");
+        return MessageStream.just(messages.getFirst());
     }
 
     @Override
-    SingleValueMessageStream<Message<String>> createTestSubject(List<Message<String>> values, Exception failure) {
-        Assumptions.assumeTrue(values.isEmpty(),
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+                                                      Exception failure) {
+        Assumptions.assumeTrue(messages.isEmpty(),
                                "SingleValueMessageStream only supports failures without regular values");
-        return new SingleValueMessageStream<>(CompletableFuture.failedFuture(failure));
+        return MessageStream.fromFuture(CompletableFuture.failedFuture(failure));
     }
 
     @Override
-    String createRandomValidStreamEntry() {
-        return "test-" + ThreadLocalRandom.current().nextInt(10000);
+    Message<String> createRandomMessage() {
+        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

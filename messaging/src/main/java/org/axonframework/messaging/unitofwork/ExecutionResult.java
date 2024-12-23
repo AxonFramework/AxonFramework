@@ -25,6 +25,7 @@ import java.util.Objects;
  *
  * @author Rene de Waele
  */
+@Deprecated // TODO #3064 Remove when AsyncUnitOfWork is fully integrated
 public class ExecutionResult {
 
     private final ResultMessage<?> result;

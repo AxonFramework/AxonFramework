@@ -7,7 +7,7 @@ Especially when it comes to failures when handling a command or a query, message
 == Handler execution exception
 
 The `HandlerExecutionException` marks an exception which originates from a message handling member.
-Since an xref:events:README.adoc[Event] message is unidirectional, handling an event does not include any return values.
+Since an xref:events:index.adoc[Event] message is unidirectional, handling an event does not include any return values.
 As such, the `HandlerExecutionException` should only be returned as an exceptional result from handling a command.
 Axon provides a more concrete implementation of this exception for failed command and query handling, respectively the `CommandExecutionException` and `QueryExecutionException`.
 

@@ -113,10 +113,14 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
         if (logger.isDebugEnabled()) {
             Optional<Cause> optionalCause = letter.cause();
             if (optionalCause.isPresent()) {
-                logger.debug("Adding dead letter with message id [{}] because [{}].", letter.message().getIdentifier(), optionalCause.get());
+                logger.debug("Adding dead letter with message id [{}] because [{}].",
+                             letter.message().getIdentifier(),
+                             optionalCause.get().type());
             } else {
-                logger.debug("Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
-                             letter.message().getIdentifier(), sequenceIdentifier);
+                logger.debug(
+                        "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
+                        letter.message().getIdentifier(),
+                        sequenceIdentifier);
             }
         }
 

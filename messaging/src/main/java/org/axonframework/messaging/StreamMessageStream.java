@@ -16,32 +16,62 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-class StreamMessageStream<T extends Message<?>> implements MessageStream<T> {
+/**
+ * A {@link MessageStream} implementation using a {@link Stream} as the source for {@link Entry entries}.
+ *
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+class StreamMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final Stream<T> source;
+    private final Stream<Entry<M>> source;
 
-    public StreamMessageStream(Stream<T> source) {
+    /**
+     * Constructs a {@link MessageStream stream} using the given {@code source} to provide the
+     * {@link Entry entries}.
+     *
+     * @param source The {@link Stream} providing the {@link Entry entries} for this
+     *               {@link MessageStream stream}.
+     */
+    StreamMessageStream(@Nonnull Stream<Entry<M>> source) {
         this.source = source;
     }
 
     @Override
-    public CompletableFuture<T> asCompletableFuture() {
-        return CompletableFuture.completedFuture(source.findFirst().orElse(null));
+    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
+        return CompletableFuture.completedFuture(source.findFirst()
+                                                       .orElse(null));
     }
 
     @Override
-    public Flux<T> asFlux() {
+    public Flux<Entry<M>> asFlux() {
         return Flux.fromStream(source);
     }
 
     @Override
-    public <R extends Message<?>> MessageStream<R> map(Function<T, R> mapper) {
+    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new StreamMessageStream<>(source.map(mapper));
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
+        return CompletableFuture.completedFuture(
+                source.sequential()
+                      .reduce(identity, accumulator, (thisResult, thatResult) -> {
+                          throw new UnsupportedOperationException(
+                                  "Cannot combine reduce results as parallelized reduce is not supported.");
+                      })
+        );
     }
 }

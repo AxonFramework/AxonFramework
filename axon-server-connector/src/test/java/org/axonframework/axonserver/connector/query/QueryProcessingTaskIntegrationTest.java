@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,14 +91,16 @@ class QueryProcessingTaskIntegrationTest {
                                                                 .build();
         querySerializer = new QuerySerializer(serializer, serializer, config);
         queryHandlingComponent1 = new QueryHandlingComponent1();
+        //noinspection resource
         new AnnotationQueryHandlerAdapter<>(queryHandlingComponent1).subscribe(localSegment);
+        //noinspection resource
         new AnnotationQueryHandlerAdapter<>(new QueryHandlingComponent2()).subscribe(localSegment);
     }
 
     @Test
     void directQueryWhenRequesterDoesntSupportStreaming() {
-        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
-                                                                                            ResponseTypes.publisherOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
@@ -118,8 +120,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void queryProcessingTaskIsTraced() {
-        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
-                                                                                            ResponseTypes.publisherOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
@@ -136,8 +138,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void directQueryWhenRequesterDoesntSupportStreamingAndFlowControlMessagesComesBeforeQueryExecution() {
-        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
-                                                                                            ResponseTypes.publisherOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
@@ -157,8 +159,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void directQueryWhenRequesterDoesntSupportStreamingAndCancelMessagesComesBeforeQueryExecution() {
-        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
-                                                                                            ResponseTypes.publisherOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
@@ -177,8 +179,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void streamingQuery() {
-        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
-                                                                                            ResponseTypes.publisherOf(String.class));
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -210,8 +212,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingAList() {
         QueryMessage<ListQuery, List<String>> queryMessage =
-                new GenericQueryMessage<>(new ListQuery(1000),
-                                          ResponseTypes.multipleInstancesOf(String.class));
+                new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -243,8 +244,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingAListWhenReactorIsNotOnClasspath() {
         QueryMessage<ListQuery, List<String>> queryMessage =
-                new GenericQueryMessage<>(new ListQuery(1000),
-                                          ResponseTypes.multipleInstancesOf(String.class));
+                new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -274,11 +274,9 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void streamingAListWhenReactorIsNotOnClasspathWithConcurrentRequests()
-            throws InterruptedException {
+    void streamingAListWhenReactorIsNotOnClasspathWithConcurrentRequests() throws InterruptedException {
         QueryMessage<ListQuery, List<String>> queryMessage =
-                new GenericQueryMessage<>(new ListQuery(1000),
-                                          ResponseTypes.multipleInstancesOf(String.class));
+                new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -327,8 +325,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingQueryWithConcurrentRequests() throws InterruptedException {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new FluxQuery(1000),
-                                          ResponseTypes.publisherOf(String.class));
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -535,8 +532,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void fluxEmittingErrorAfterAWhile() {
-        QueryMessage<ErroringAfterAWhileFluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new ErroringAfterAWhileFluxQuery(), ResponseTypes.publisherOf(String.class));
+        QueryMessage<ErrorAfterAWhileFluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new ErrorAfterAWhileFluxQuery(), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -562,8 +559,8 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void fluxEmittingErrorRightAway() {
-        QueryMessage<ErroringFluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new ErroringFluxQuery(), ResponseTypes.publisherOf(String.class));
+        QueryMessage<ErrorFluxQuery, Publisher<String>> queryMessage =
+                new GenericQueryMessage<>(new ErrorFluxQuery(), ResponseTypes.publisherOf(String.class));
 
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
@@ -691,6 +688,42 @@ class QueryProcessingTaskIntegrationTest {
         assertTrue(responseHandler.completed());
     }
 
+    @Test
+    void responsePendingReturnsTrueForUncompletedTask() {
+        QueryMessage<FluxQuery, Publisher<String>> testQuery =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
+        QueryRequest testRequest = querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
+                                                                  testRequest,
+                                                                  responseHandler,
+                                                                  querySerializer,
+                                                                  CLIENT_ID,
+                                                                  queryBusSpanFactory);
+
+        assertTrue(testSubject.resultPending());
+    }
+
+    @Test
+    void responsePendingReturnsFalseForCompletedTask() {
+        QueryMessage<FluxQuery, Publisher<String>> testQuery =
+                new GenericQueryMessage<>(new FluxQuery(1), ResponseTypes.publisherOf(String.class));
+        QueryRequest testRequest = querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
+                                                                  testRequest,
+                                                                  responseHandler,
+                                                                  querySerializer,
+                                                                  CLIENT_ID,
+                                                                  queryBusSpanFactory);
+
+        assertTrue(testSubject.resultPending());
+        testSubject.run();
+        testSubject.request(1);
+        assertEquals(1, responseHandler.sent().size());
+        assertOrder(responseHandler.sent().get(0));
+        assertTrue(responseHandler.completed());
+        assertFalse(testSubject.resultPending());
+    }
+
     private void assertOrder(List<QueryResponse> responses) {
         for (int i = 0; i < responses.size(); i++) {
             QueryResponseMessage<String> responseMessage =
@@ -717,6 +750,7 @@ class QueryProcessingTaskIntegrationTest {
                                     .build();
     }
 
+    @SuppressWarnings("unused") // Suppressing query handler unused message, as they are used.
     private static class QueryHandlingComponent1 {
 
         private final AtomicBoolean fluxQueryCancelled = new AtomicBoolean();
@@ -752,6 +786,7 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
+    @SuppressWarnings("unused") // Suppressing query handler unused message, as they are used.
     private static class QueryHandlingComponent2 {
 
         @QueryHandler
@@ -763,23 +798,23 @@ class QueryProcessingTaskIntegrationTest {
         }
 
         @QueryHandler
-        public Flux<String> erroringFluxQuery(ErroringFluxQuery query) {
+        public Flux<String> errorFluxQuery(ErrorFluxQuery query) {
             return Flux.error(new RuntimeException("oops"));
         }
 
         @QueryHandler
-        public Flux<String> erroringFluxQuery(ErroringAfterAWhileFluxQuery query) {
+        public Flux<String> errorFluxQuery(ErrorAfterAWhileFluxQuery query) {
             return Flux.just("0", "1", "2")
                        .concatWith(Flux.error(new RuntimeException("oops")));
         }
 
         @QueryHandler
-        public Flux<String> erroringFluxQuery(ThrowingExceptionFluxQuery query) {
+        public Flux<String> errorFluxQuery(ThrowingExceptionFluxQuery query) {
             throw new RuntimeException("oops");
         }
 
         @QueryHandler
-        public Flux<String> erroringFluxQuery(ThrowingExceptionListQuery query) {
+        public Flux<String> errorFluxQuery(ThrowingExceptionListQuery query) {
             throw new RuntimeException("oops");
         }
     }
@@ -823,11 +858,11 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
-    private static class ErroringFluxQuery {
+    private static class ErrorFluxQuery {
 
     }
 
-    private static class ErroringAfterAWhileFluxQuery {
+    private static class ErrorAfterAWhileFluxQuery {
 
     }
 

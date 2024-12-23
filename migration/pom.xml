@@ -30,6 +30,20 @@
         Module containing OpenRewrite migration recipes.
     </description>
 
+    <properties>
+        <jackson.version>2.17.2</jackson.version><!-- Don't upgrade due to rewrite-migrate not compatible with newer version -->
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.axonframework</groupId>
@@ -38,7 +52,6 @@
             <version>4.7.6</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.openrewrite.recipe</groupId>
             <artifactId>rewrite-migrate-java</artifactId>

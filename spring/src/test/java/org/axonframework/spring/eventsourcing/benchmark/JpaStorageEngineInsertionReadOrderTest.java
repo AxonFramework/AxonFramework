@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.axonframework.spring.eventsourcing.benchmark;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -81,11 +82,11 @@ class JpaStorageEngineInsertionReadOrderTest {
     void setUp() {
         txTemplate = new TransactionTemplate(tx);
         testSubject = JpaEventStorageEngine.builder()
-                .snapshotSerializer(serializer)
-                .eventSerializer(serializer)
-                .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
-                .transactionManager(new SpringTransactionManager(tx))
-                .build();
+                                           .snapshotSerializer(serializer)
+                                           .eventSerializer(serializer)
+                                           .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
+                                           .transactionManager(new SpringTransactionManager(tx))
+                                           .build();
     }
 
     @AfterEach
@@ -112,7 +113,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         }
 
         assertEquals(expectedEventCount, readEvents.size(),
-                "The actually read list of events is shorted than the expected value");
+                     "The actually read list of events is shorted than the expected value");
     }
 
     @Test
@@ -139,7 +140,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         }
 
         assertEquals(expectedEventCount, counter,
-                "The actually read list of events is shorted than the expected value");
+                     "The actually read list of events is shorted than the expected value");
     }
 
     @Test
@@ -152,11 +153,11 @@ class JpaStorageEngineInsertionReadOrderTest {
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
 
         EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder()
-                .storageEngine(testSubject)
-                .cachedEvents(20)
-                .fetchDelay(100)
-                .cleanupDelay(1000)
-                .build();
+                                                                  .storageEngine(testSubject)
+                                                                  .cachedEvents(20)
+                                                                  .fetchDelay(100)
+                                                                  .cleanupDelay(1000)
+                                                                  .build();
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
 
@@ -173,7 +174,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         }
 
         assertEquals(expectedEventCount, counter,
-                "The actually read list of events is shorted than the expected value");
+                     "The actually read list of events is shorted than the expected value");
     }
 
     private Thread[] storeEvents(int threadCount, int eventsPerThread, int inverseRollbackRate) {
@@ -186,7 +187,9 @@ class JpaStorageEngineInsertionReadOrderTest {
                     try {
                         txTemplate.execute(ts -> {
                             testSubject.appendEvents(EventStoreTestUtils.createEvent(
-                                    EventStoreTestUtils.AGGREGATE, (long) threadIndex * eventsPerThread + s, "Thread" + threadIndex
+                                    EventStoreTestUtils.AGGREGATE,
+                                    (long) threadIndex * eventsPerThread + s,
+                                    "Thread" + threadIndex
                             ));
                             if (s % inverseRollbackRate == 0) {
                                 throw new RuntimeException("Rolling back on purpose");
@@ -225,17 +228,17 @@ class JpaStorageEngineInsertionReadOrderTest {
     public static class TestContext {
 
         @Bean
-        public ComboPooledDataSource dataSource() throws PropertyVetoException {
-            ComboPooledDataSource dataSource = new ComboPooledDataSource();
-            dataSource.setDriverClass("org.hsqldb.jdbcDriver");
-            dataSource.setJdbcUrl("jdbc:hsqldb:mem:axontest");
-            dataSource.setUser("sa");
-            dataSource.setMaxPoolSize(50);
-            dataSource.setMinPoolSize(1);
+        public DataSource dataSource() throws PropertyVetoException {
+            HikariConfig config = new HikariConfig();
+            config.setDriverClassName("org.hsqldb.jdbcDriver");
+            config.setJdbcUrl("jdbc:hsqldb:mem:test");
+            config.setUsername("sa");
+            config.setPassword("");
+            config.setMaximumPoolSize(50);
             Properties dataSourceProperties = new Properties();
             dataSourceProperties.setProperty("hsqldb.log_size", "0");
-            dataSource.setProperties(dataSourceProperties);
-            return dataSource;
+            config.setDataSourceProperties(dataSourceProperties);
+            return new HikariDataSource(config);
         }
 
         @Bean

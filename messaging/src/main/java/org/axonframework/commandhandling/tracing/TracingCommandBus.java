@@ -26,9 +26,9 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.Span;
 
-import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A CommandBus wrapper that adds tracing for outgoing and incoming commands. It creates a span for Dispatching the
@@ -81,10 +81,8 @@ public class TracingCommandBus implements CommandBus {
         @Override
         public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
                                                           ProcessingContext processingContext) {
-            return MessageStream.fromFuture(spanFactory.createHandleCommandSpan(message, false)
-                                                       .runSupplierAsync(() -> handler.handle(message,
-                                                                                              processingContext)
-                                                                                      .asCompletableFuture()));
+            return spanFactory.createHandleCommandSpan(message, false)
+                              .runSupplier(() -> handler.handle(message, processingContext));
         }
 
         @Override

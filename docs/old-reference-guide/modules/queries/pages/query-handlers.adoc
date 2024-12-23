@@ -1,4 +1,5 @@
 = Query Handlers
+:navtitle: Handling
 
 The handling of a query comes down to an annotated handler returning the query's response. The goal of this chapter is to describe what such an `@QueryHandler` annotated method looks like, as well as describing the call order and response type options. For configuration of query handlers and the `QueryBus`, it is recommended to read the xref:configuration.adoc[Configuration] section.
 
@@ -42,18 +43,17 @@ public class CardSummaryProjection {
 
 ----
 
-From the above sample we want to highlight two specifics when it comes to writing a query handler:
+From the above sample, we want to highlight two specifics when it comes to writing a query handler:
 
 . The `@QueryHandler` annotation which marks a function as a query handler method.
 . The method in question is defined by the return type `CardSummary`, which is called the query response type, and the `FetchCardSummaryQuery` which is the query payload.
 
-____
+[TIP]
+.Storing a query model
+====
 
-*Storing a Query Model*
-
-For the purpose of the example we have chosen to use a regular `Map` as the storage approach. In a real life system, this would be replaced by a form of database or repository layer for example.
-
-____
+For the purpose of the example we have chosen to use a regular `Map` as the storage approach. In a real life system, this would be replaced by a form of database or repository layer, for example.
+====
 
 == Query handler call order
 
@@ -119,10 +119,9 @@ To query for a single object, the `ReponseTypes#instanceOf(Class)` method should
 * A primitive of `Class`
 * An `Optional` of `Class`
 
-____
-
-*Primitive Return Types*
-
+[NOTE]
+.Primitive Return Types
+====
 Among the usual Objects, it is also possible for queries to return primitive data types:
 
 [source,java]
@@ -136,8 +135,7 @@ public class QueryHandler {
 ----
 
 Note that the querying party will retrieve a boxed result instead of the primitive type.
-
-____
+====
 
 === Supported multiple instances return values
 

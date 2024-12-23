@@ -1,6 +1,6 @@
 = Event Processing
 
-Typically, application components contain one or more xref:events:event-processors/README.adoc[Event Processors] which are responsible for processing incoming events. Tracking Event Processors have configuration aspects that can be changed at runtime to accommodate for changes in the system topology.
+Typically, application components contain one or more xref:events:event-processors/index.adoc[Event Processors] which are responsible for processing incoming events. Tracking Event Processors have configuration aspects that can be changed at runtime to accommodate for changes in the system topology.
 
 == Increasing and decreasing segment counts
 

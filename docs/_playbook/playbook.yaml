@@ -1,6 +1,6 @@
 site:
   title: Axon Framework docs PREVIEW
-  start_page: axon_framework_ref::index.adoc
+  start_page: axon-framework-reference::index.adoc
 
 content:
   sources:

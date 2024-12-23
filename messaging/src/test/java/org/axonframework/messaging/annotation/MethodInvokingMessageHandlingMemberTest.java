@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +42,7 @@ class MethodInvokingMessageHandlingMemberTest {
 
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<Message<Object>> returnTypeConverter(Object result) {
+    private static MessageStream<?> returnTypeConverter(Object result) {
         return result instanceof CompletableFuture<?>
                 ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
                 : MessageStream.just(GenericMessage.asMessage(result));
@@ -49,13 +50,17 @@ class MethodInvokingMessageHandlingMemberTest {
 
     @BeforeEach
     void setUp() {
-        testSubject = new MethodInvokingMessageHandlingMember<>(
-                AnnotatedHandler.class.getMethods()[0],
-                EventMessage.class,
-                String.class,
-                ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class),
-                MethodInvokingMessageHandlingMemberTest::returnTypeConverter
-        );
+        try {
+            testSubject = new MethodInvokingMessageHandlingMember<>(
+                    AnnotatedHandler.class.getMethod("handlingMethod", String.class),
+                    EventMessage.class,
+                    String.class,
+                    ClasspathParameterResolverFactory.forClass(AnnotatedHandler.class),
+                    MethodInvokingMessageHandlingMemberTest::returnTypeConverter
+            );
+        } catch (NoSuchMethodException e) {
+            fail(e.getMessage());
+        }
     }
 
     @Test

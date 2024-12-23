@@ -6,24 +6,42 @@ However, given there are tons of things we want to adjust (as shown below), and 
 We can take this list to better to deduce what we will tackle for Axon Framework 5, and what will move to Axon Framework
 6+.
 
-* Update JDK to 21
-* Module restructuring, as described [here](modularity.md#desired-structure)
-* Separate JPA/JDBC/Spring/... into extensions, as described [here](modularity.md#extensions)
-* Reactive programming support
-* Decouple message name from payload type through use of (e.g.) `QualifiedName`
-* Adjust Event Store API to support DCB
-* "Lean API" - layering what's there into smaller chunks for flexibility
-* Configuration API breakdown from one module to one-per-module
-* From Serializer to Converter & moving upcasting logic to the Converter
+* Update JDK to 21 
+  * Issue [#3066](https://github.com/AxonFramework/AxonFramework/issues/3066)
+* Module restructuring, as described [here](modularity.md#desired-structure) 
+  * Issue [#3080](https://github.com/AxonFramework/AxonFramework/issues/3080)
+* Separate JPA/JDBC/Spring/... into extensions, as described [here](modularity.md#extensions) 
+  * Issue [#3080](https://github.com/AxonFramework/AxonFramework/issues/3080)
+* Reactive programming support 
+  * Issue [#3069](https://github.com/AxonFramework/AxonFramework/issues/3069)
+* Decouple message name from payload type through use of (e.g.) `QualifiedName` 
+  * Issue [#3085](https://github.com/AxonFramework/AxonFramework/issues/3085)
+* Adjust Event Store API to support DCB 
+  * Issue [#3101](https://github.com/AxonFramework/AxonFramework/issues/3101)
+* "Lean API" - layering what's there into smaller chunks for flexibility 
+  * Spread over all the "revise XYZ logic" stories
+* Configuration API breakdown from one module to one-per-module 
+  * Spread over all the "revise XYZ logic"
+* From Serializer to Converter & moving upcasting logic to the Converter 
+  * Issue [#3102](https://github.com/AxonFramework/AxonFramework/issues/3102)
 * From Saga to Process Manager & dropping AF-specific Saga/Process storage 
-* Declarative aggregate configuration i.o. annotation-based
-* Revamp Deadline Messaging solution to use consistent hashing
-* Rethink Command Bus messaging pattern
-* Rethink Query Bus API, by merging direct/scatter-gather into streaming
-* Carry result back to Dispatch Interceptors
-* Change Event Scheduling into an Event Store concern
-* Rework Snapshotting process to provide choice in snapshot format next to the Aggregate object
-* Add message schema support
+  * Issue [#3097](https://github.com/AxonFramework/AxonFramework/issues/3097)
+* Declarative aggregate configuration i.o. annotation-based 
+  * Issue [#3067](https://github.com/AxonFramework/AxonFramework/issues/3067)
+* Revamp Deadline Messaging solution to use consistent hashing 
+  * Issue [#3065](https://github.com/AxonFramework/AxonFramework/issues/3065)
+* Rethink Command Bus messaging pattern 
+  * Issue [#3077](https://github.com/AxonFramework/AxonFramework/issues/3077)
+* Rethink Query Bus API, by merging direct/scatter-gather into streaming 
+  * Issue [#3079](https://github.com/AxonFramework/AxonFramework/issues/3079)
+* Carry result back to Dispatch Interceptors 
+  * Issue [#3103](https://github.com/AxonFramework/AxonFramework/issues/3103)
+* Change Event Scheduling into an Event Store concern 
+  * Issue [#3104](https://github.com/AxonFramework/AxonFramework/issues/3104)
+* Rework Snapshotting process to provide choice in snapshot format next to the Aggregate object 
+  * Issue [#3105](https://github.com/AxonFramework/AxonFramework/issues/3105)
+* Add message schema support 
+  * Issue [#3106](https://github.com/AxonFramework/AxonFramework/issues/3106)
 
 ## Base
 - Use JDK21 as the base.
@@ -70,10 +88,10 @@ We can take this list to better to deduce what we will tackle for Axon Framework
   Doing so, we ensure that, for example, both Spring's Imperative and Reactive Transaction logic is maintained whenever the users code enters the framework.
 
 ## Messages
-* Disconnect message name from payload type. 
+- Disconnect message name from payload type. 
   This means during handler subscription, that you need to provide a name. 
   Annotation based may default to the FQCN, still.
-* Make the notion of 'namespaces' to all messages explicit. 
+- Make the notion of 'namespaces' to all messages explicit. 
   This is already present at the moment, but it's part of the payloadType. 
   Exposes this directly allows a (cleaner) mapping from messages-to-namespace, and namespaces-to-context.
 * Usage of the namespaces may also allow an easier integration of multi tenancy within the core of the Framework.
@@ -92,7 +110,7 @@ We can take this list to better to deduce what we will tackle for Axon Framework
   Without doing so, we can not guarantee that we can map the respective context implementations (e.g., `ThreadLocal` or `Context` (Project Reactor)) over to Axon Framework's `ProcessingContext`.
 
 ## Message Handling
-* A Message Handler should be capable of defining the business name of the message it handles,
+- A Message Handler should be capable of defining the business name of the message it handles,
   and the type it wants to receive it in.
 - A generic form of "stateful message handler" is a beneficial for any message handler in the system.
   For example, stateful command handlers would be a way to deal differently with your Command Model than the current aggregate approach.
@@ -156,8 +174,8 @@ We can take this list to better to deduce what we will tackle for Axon Framework
 ## Configuration
 - Break up Configuration module, to not have one module that depends on all other modules.
 - Define Message Handling Component configuration (MHC-configuration), without Annotations.
-* Drop default Serializer, to enforce users to think about the Serializer to use.
-* Revamp the configuration to allow a 'higher-level' configuration component,
+- Drop default Serializer, to enforce users to think about the Serializer to use.
+- Revamp the configuration to allow a 'higher-level' configuration component,
    like a "Command Handling Component Configuration" or "Command Center Configuration".
   Through this, we can have a user define a message handler, appending any type of additional behavior required.
   Furthermore, this allows us to eliminate unclear config options (e.g., why have a Parameter Resolver for the Repository?).

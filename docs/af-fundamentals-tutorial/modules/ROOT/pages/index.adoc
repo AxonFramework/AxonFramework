@@ -1,6 +1,0 @@
-=  Axon Framework Fundamentals
-:page-needs-improvement: intro, toc
-:page-needs-intro: Add an introduction section explaining the intention of the tutorial
-:page-needs-toc: Add table of contents
-
-

@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Sara Pellegrini
  * @author Steven van Beelen
  */
+// TODO #3064 - Rename to UnitOfWorkTest once old version is removed.
 class AsyncUnitOfWorkTest extends ProcessingLifecycleTest<AsyncUnitOfWork> {
 
     @Override
@@ -97,17 +98,7 @@ class AsyncUnitOfWorkTest extends ProcessingLifecycleTest<AsyncUnitOfWork> {
         }
     }
 
-    private class CustomPhase implements ProcessingLifecycle.Phase {
+    private record CustomPhase(int order) implements ProcessingLifecycle.Phase {
 
-        private final int order;
-
-        public CustomPhase(int order) {
-            this.order = order;
-        }
-
-        @Override
-        public int order() {
-            return order;
-        }
     }
 }

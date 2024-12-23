@@ -1,4 +1,4 @@
-* xref:monitoring:README.adoc[]
+* xref:monitoring:index.adoc[]
 ** xref:monitoring:tracing.adoc[]
 ** xref:monitoring:metrics.adoc[]
 ** xref:monitoring:health.adoc[]

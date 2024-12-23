@@ -42,7 +42,7 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  * @author Allard Buijze
  * @since 3.0
  */
-@Deprecated
+@Deprecated // TODO #3064 Remove once old AbstractUnitOfWork is removed
 public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
 
     private final List<MessageProcessingContext<T>> processingContexts;

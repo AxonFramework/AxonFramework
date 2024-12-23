@@ -36,6 +36,7 @@ import java.util.function.Function;
  * @author Rene de Waele
  * @since 3.0
  */
+@Deprecated // TODO #3064 Remove when AsyncUnitOfWork is fully integrated
 public class MessageProcessingContext<T extends Message<?>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageProcessingContext.class);

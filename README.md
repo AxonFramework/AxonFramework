@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://getbootstrap.com/">
+  <a href="https://www.axoniq.io/products/axon-framework">
     <img src="https://www.axoniq.io/hubfs/axon-framework.svg" alt="Axon Framework logo" width="200" height="200">
   </a>
 </p>
@@ -64,6 +64,7 @@ Furthermore, below are several other helpful resources:
 * If the guide doesn't help, our [forum](https://discuss.axoniq.io/) provides a place to ask questions you have during development.
 * The [hotel demo](https://github.com/AxonIQ/hotel-demo) shows a fleshed-out example of using Axon Framework.
 * The [code samples repository](https://github.com/AxonIQ/code-samples) contains more in-depth samples you can benefit from.
+* You can [Ask Axon Guru](https://gurubase.io/g/axon-framework), it is an Axon-focused AI to answer your questions.
 
 ## Receiving help
 
