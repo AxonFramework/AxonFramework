@@ -200,12 +200,11 @@ public class SimpleQueryBus implements QueryBus {
                         GenericQueryResponseMessage<R> queryResponseMessage =
                                 responseType.convertExceptional(resultMessage.exceptionResult())
                                             .map(exceptionalResult -> new GenericQueryResponseMessage<>(
-                                                    QualifiedNameUtils.fromClassName(exceptionalResult.getClass()),
+                                                    messageNameResolver.resolve(exceptionalResult),
                                                     exceptionalResult
                                             ))
                                             .orElse(new GenericQueryResponseMessage<>(
-                                                    QualifiedNameUtils.fromClassName(resultMessage.exceptionResult()
-                                                                                                  .getClass()),
+                                                    messageNameResolver.resolve(resultMessage.exceptionResult()),
                                                     resultMessage.exceptionResult(),
                                                     responseType.responseMessagePayloadType()
                                             ));
