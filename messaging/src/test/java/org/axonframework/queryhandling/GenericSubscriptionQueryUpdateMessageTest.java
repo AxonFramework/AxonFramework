@@ -16,7 +16,6 @@
 
 package org.axonframework.queryhandling;
 
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
@@ -25,7 +24,6 @@ import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
-// todo: should we remove support for that?
 class GenericSubscriptionQueryUpdateMessageTest {
 
     @Test
@@ -87,6 +84,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
         assertEquals(newMetaData, result.getMetaData());
     }
 
+    // todo: should we remove support for creation based on existing message?
     @Test
     void messageCreationBasedOnExistingMessage() {
         SubscriptionQueryUpdateMessage<String> original =
