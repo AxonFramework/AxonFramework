@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,7 +78,8 @@ class DefaultEventGatewayTest {
     void publishMessage() {
         // when
         var payload = new TestPayload(UUID.randomUUID().toString());
-        var message = new GenericEventMessage<>(new QualifiedName("test", "TestPayload", "0.5.0"), payload);
+        var message = new GenericEventMessage<>(new QualifiedName("test", "TestPayload", "0.5.0"), payload)
+                .withMetaData(MetaData.with("key", "value"));
         testSubject.publish(message);
 
         // then
