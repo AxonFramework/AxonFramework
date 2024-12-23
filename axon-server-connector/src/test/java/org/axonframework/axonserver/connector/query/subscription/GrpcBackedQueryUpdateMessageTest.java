@@ -21,6 +21,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
@@ -97,13 +98,20 @@ class GrpcBackedQueryUpdateMessageTest {
     @Test
     void getPayloadThrowsIllegalPayloadExceptionWhenUpdateIsExceptional() {
         SubscriptionQueryUpdateMessage<TestQueryUpdate> testSubscriptionQueryUpdateMessage =
-                GenericSubscriptionQueryUpdateMessage.asUpdateMessage(TestQueryUpdate.class, new RuntimeException());
+                asUpdateMessage(TestQueryUpdate.class, new RuntimeException());
         QueryUpdate testQueryUpdate =
                 subscriptionMessageSerializer.serialize(testSubscriptionQueryUpdateMessage);
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
         assertThrows(IllegalPayloadAccessException.class, testSubject::getPayload);
+    }
+
+    private static <U> SubscriptionQueryUpdateMessage<U> asUpdateMessage(Class<U> declaredType, Throwable exception) {
+        return new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()),
+                exception,
+                MetaData.emptyInstance(),
+                declaredType);
     }
 
     @Test

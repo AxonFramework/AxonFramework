@@ -79,25 +79,6 @@ public class GenericSubscriptionQueryUpdateMessage<U>
     }
 
     /**
-     * Creates a {@link GenericSubscriptionQueryUpdateMessage} with the given {@code declaredType} and {@code exception}
-     * result.
-     *
-     * @param declaredType The declared type of the Subscription Query Update Message to be created
-     * @param exception    The exception describing the cause of an error
-     * @param <U>          type of the {@link GenericSubscriptionQueryUpdateMessage}
-     * @return a message containing exception result
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    public static <U> SubscriptionQueryUpdateMessage<U> asUpdateMessage(Class<U> declaredType, Throwable exception) {
-        return new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()),
-                                                           exception,
-                                                           MetaData.emptyInstance(),
-                                                           declaredType);
-    }
-
-    /**
      * Constructs a {@link GenericSubscriptionQueryUpdateMessage} for the given {@code name} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
