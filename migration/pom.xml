@@ -31,7 +31,7 @@
     </description>
 
     <properties>
-        <jackson.version>2.17.2</jackson.version><!-- Don't upgrade due to rewrite-migrate not compatible with newer version -->
+        <jackson.version>2.17.3</jackson.version><!-- Don't upgrade due to rewrite-migrate not compatible with newer version -->
     </properties>
 
     <dependencyManagement>
