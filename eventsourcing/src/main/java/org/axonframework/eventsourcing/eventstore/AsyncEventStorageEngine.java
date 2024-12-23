@@ -50,7 +50,7 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * <p>
      * Events will be appended in the order that they are offered in, validating the given {@code condition} before
      * being stored. Note that all events should have a unique event identifier. When storing
-     * {@link IndexedEventMessage indexed events} the {@link IndexedEventMessage#indices() indices} will be stored as
+     * {@link IndexedEventMessage indexed events} the {@link IndexedEventMessage#tags() indices} will be stored as
      * well.
      * <p>
      * By default, this method creates a {@link List} of the offered events and then invokes
@@ -69,7 +69,7 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * <p>
      * Events will be appended in the order that they are offered in, validating the given {@code condition} before
      * being stored. Note that all events should have a unique event identifier. When storing
-     * {@link IndexedEventMessage indexed events} the {@link IndexedEventMessage#indices() indices} will be stored as
+     * {@link IndexedEventMessage indexed events} the {@link IndexedEventMessage#tags() indices} will be stored as
      * well.
      *
      * @param events The {@link List} of {@link EventMessage events} to append to the underlying storage solution.

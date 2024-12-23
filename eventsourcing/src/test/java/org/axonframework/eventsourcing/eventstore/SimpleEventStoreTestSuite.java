@@ -56,7 +56,7 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
     protected static final String NOT_MATCHING_CONTEXT = "some-other-context";
     protected static final String TEST_AGGREGATE_ID = "someId";
     protected static final EventCriteria TEST_AGGREGATE_CRITERIA =
-            EventCriteria.hasIndex(new Index("aggregateIdentifier", TEST_AGGREGATE_ID));
+            EventCriteria.hasTag(new Tag("aggregateIdentifier", TEST_AGGREGATE_ID));
 
     protected ESE storageEngine;
 
@@ -158,8 +158,8 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
                                                int expectedPosition,
                                                EventCriteria expectedCriteria) {
         assertInstanceOf(GenericIndexedEventMessage.class, actual.message());
-        Set<Index> actualIndices = ((GenericIndexedEventMessage<?>) actual.message()).indices();
-        assertTrue(actualIndices.containsAll(expectedCriteria.indices()));
+        Set<Tag> actualTags = ((GenericIndexedEventMessage<?>) actual.message()).tags();
+        assertTrue(actualTags.containsAll(expectedCriteria.tags()));
         assertTrackedEntry(actual, expected, expectedPosition);
     }
 

@@ -37,8 +37,8 @@ class GenericIndexedEventMessageTest {
     private static final MetaData TEST_META_DATA = MetaData.with("key", "value");
     private static final EventMessage<String> TEST_EVENT = GenericEventMessage.<String>asEventMessage("event")
                                                                               .withMetaData(TEST_META_DATA);
-    private static final Index TEST_INDEX = new Index("key", "value");
-    private static final Set<Index> TEST_INDICES = Set.of(TEST_INDEX);
+    private static final Tag TEST_TAG = new Tag("key", "value");
+    private static final Set<Tag> TEST_INDICES = Set.of(TEST_TAG);
 
     private GenericIndexedEventMessage<String> testSubject;
 
@@ -53,7 +53,7 @@ class GenericIndexedEventMessageTest {
         assertEquals(TEST_EVENT.getPayload(), testSubject.getPayload());
         assertEquals(TEST_META_DATA, testSubject.getMetaData());
         assertEquals(TEST_EVENT.getTimestamp(), testSubject.getTimestamp());
-        assertEquals(TEST_INDICES, testSubject.indices());
+        assertEquals(TEST_INDICES, testSubject.tags());
     }
 
     @Test
@@ -94,17 +94,17 @@ class GenericIndexedEventMessageTest {
     }
 
     @Test
-    void updateIndicesReturnsIndexedEventMessageWithChangedIndices() {
-        Index testIndex = new Index("some-key", "some-value");
+    void updateIndicesReturnsIndexedEventMessageWithChangedTags() {
+        Tag testTag = new Tag("some-key", "some-value");
 
-        Set<Index> result = testSubject.updateIndices(current -> {
-                                           Set<Index> newIndices = new HashSet<>(current);
-                                           newIndices.add(testIndex);
+        Set<Tag> result = testSubject.updateIndices(current -> {
+                                           Set<Tag> newIndices = new HashSet<>(current);
+                                           newIndices.add(testTag);
                                            return newIndices;
                                        })
-                                       .indices();
+                                     .tags();
 
-        assertTrue(result.contains(testIndex));
-        assertTrue(result.contains(TEST_INDEX));
+        assertTrue(result.contains(testTag));
+        assertTrue(result.contains(TEST_TAG));
     }
 }

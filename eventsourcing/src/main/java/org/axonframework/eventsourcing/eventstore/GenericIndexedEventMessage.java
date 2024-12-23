@@ -36,19 +36,19 @@ import java.util.function.Function;
 public class GenericIndexedEventMessage<P> implements IndexedEventMessage<P> {
 
     private final EventMessage<P> delegate;
-    private final Set<Index> indices;
+    private final Set<Tag> tags;
 
     /**
      * Construct an {@link IndexedEventMessage} using the given {@code delegate} for all {@link EventMessage} operations
-     * and the given {@code indices} for the {@link #indices()} method.
+     * and the given {@code tags} for the {@link #tags()} method.
      *
      * @param delegate The delegate {@link EventMessage} used for all {@code EventMessage} related operations.
-     * @param indices  The {@link Set} of {@link Index Indices} relating to the given {@code delegate}.
+     * @param tags  The {@link Set} of {@link Tag Indices} relating to the given {@code delegate}.
      */
     public GenericIndexedEventMessage(@Nonnull EventMessage<P> delegate,
-                                      @Nonnull Set<Index> indices) {
+                                      @Nonnull Set<Tag> tags) {
         this.delegate = delegate;
-        this.indices = indices;
+        this.tags = tags;
     }
 
     @Override
@@ -77,27 +77,27 @@ public class GenericIndexedEventMessage<P> implements IndexedEventMessage<P> {
     }
 
     @Override
-    public Set<Index> indices() {
-        return this.indices;
+    public Set<Tag> tags() {
+        return this.tags;
     }
 
     @Override
     public EventMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
         return getMetaData().equals(metaData)
                 ? this
-                : new GenericIndexedEventMessage<>(this.delegate.withMetaData(metaData), this.indices);
+                : new GenericIndexedEventMessage<>(this.delegate.withMetaData(metaData), this.tags);
     }
 
     @Override
     public EventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
         return getMetaData().equals(metaData)
                 ? this
-                : new GenericIndexedEventMessage<>(this.delegate.andMetaData(metaData), this.indices);
+                : new GenericIndexedEventMessage<>(this.delegate.andMetaData(metaData), this.tags);
     }
 
     @Override
-    public IndexedEventMessage<P> updateIndices(@Nonnull Function<Set<Index>, Set<Index>> updater) {
-        return new GenericIndexedEventMessage<>(this, updater.apply(this.indices));
+    public IndexedEventMessage<P> updateIndices(@Nonnull Function<Set<Tag>, Set<Tag>> updater) {
+        return new GenericIndexedEventMessage<>(this, updater.apply(this.tags));
     }
 
     @Override
@@ -109,11 +109,11 @@ public class GenericIndexedEventMessage<P> implements IndexedEventMessage<P> {
             return false;
         }
         GenericIndexedEventMessage<?> that = (GenericIndexedEventMessage<?>) o;
-        return Objects.equals(delegate, that.delegate) && Objects.equals(indices, that.indices);
+        return Objects.equals(delegate, that.delegate) && Objects.equals(tags, that.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(delegate, indices);
+        return Objects.hash(delegate, tags);
     }
 }

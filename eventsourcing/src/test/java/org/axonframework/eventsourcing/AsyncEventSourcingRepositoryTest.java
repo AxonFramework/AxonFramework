@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
 class AsyncEventSourcingRepositoryTest {
 
     private static final String TEST_CONTEXT = "DEFAULT_CONTEXT";
-    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.hasIndex(new Index("aggregateId", "id"));
+    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.hasTag(new Tag("aggregateId", "id"));
 
     private AsyncEventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
@@ -210,7 +210,7 @@ class AsyncEventSourcingRepositoryTest {
     }
 
     private static boolean conditionPredicate(SourcingCondition condition) {
-        return condition.criteria().indices().containsAll(TEST_MODEL_CRITERIA.indices());
+        return condition.criteria().tags().containsAll(TEST_MODEL_CRITERIA.tags());
     }
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?

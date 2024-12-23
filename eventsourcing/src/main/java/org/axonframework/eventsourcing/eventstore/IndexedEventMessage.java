@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * An {@link EventMessage} containing {@link Index Indices}.
+ * An {@link EventMessage} containing {@link Tag Indices}.
  * <p>
  * {@code Indices} typically refer to the name and value of the identifiers of the models that decided to publish this
  * event.
@@ -44,45 +44,45 @@ public interface IndexedEventMessage<P> extends EventMessage<P> {
      * Converts the given {@code event} into an {@link IndexedEventMessage} by adding the given {@code indices} to it.
      * <p>
      * If the {@code event} is already an {@link IndexedEventMessage}, the {@code indices} are added to the existing
-     * {@link #indices()}.
+     * {@link #tags()}.
      *
      * @param event   The {@link EventMessage} to convert into an {@link IndexedEventMessage}, combined with the given
      *                {@code indices}.
-     * @param indices The {@link Set} of {@link Index Indices} to set for the given {@code event} that is being
+     * @param indices The {@link Set} of {@link Tag Indices} to set for the given {@code event} that is being
      *                converted.
      * @param <P>     The type of payload carried by the given {@code event}.
      * @return An {@link IndexedEventMessage} based on the given {@code event} and {@code indices}.
      */
     static <P> IndexedEventMessage<P> asIndexedEvent(@Nonnull EventMessage<P> event,
-                                                     @Nonnull Set<Index> indices) {
+                                                     @Nonnull Set<Tag> indices) {
         return event instanceof IndexedEventMessage<P> taggedEvent
                 ? taggedEvent.updateIndices(mergeWith(indices))
                 : new GenericIndexedEventMessage<>(event, indices);
     }
 
-    private static Function<Set<Index>, Set<Index>> mergeWith(Set<Index> indices) {
+    private static Function<Set<Tag>, Set<Tag>> mergeWith(Set<Tag> indices) {
         return oldIndices -> {
-            HashSet<Index> mutableIndices = new HashSet<>(oldIndices);
+            HashSet<Tag> mutableIndices = new HashSet<>(oldIndices);
             mutableIndices.addAll(indices);
             return new HashSet<>(mutableIndices);
         };
     }
 
     /**
-     * Return the {@link Set} of {@link Index Indices} of this indexed {@link EventMessage}.
+     * Return the {@link Set} of {@link Tag Indices} of this indexed {@link EventMessage}.
      *
-     * @return The {@link Set} of {@link Index Indices} of this indexed {@link EventMessage}.
+     * @return The {@link Set} of {@link Tag Indices} of this indexed {@link EventMessage}.
      */
-    Set<Index> indices();
+    Set<Tag> tags();
 
     /**
-     * Construct a new {@link IndexedEventMessage} using the given {@code updater} to adjust the {@link #indices()} of
+     * Construct a new {@link IndexedEventMessage} using the given {@code updater} to adjust the {@link #tags()} of
      * the new event.
      *
-     * @param updater The {@link Function} returning a new {@link Set} of {@link Index Indices} based on the existing
-     *                {@link #indices()}.
-     * @return A new {@link IndexedEventMessage} using the given {@code updater} to adjust the {@link #indices()} of the
+     * @param updater The {@link Function} returning a new {@link Set} of {@link Tag Indices} based on the existing
+     *                {@link #tags()}.
+     * @return A new {@link IndexedEventMessage} using the given {@code updater} to adjust the {@link #tags()} of the
      * new event.
      */
-    IndexedEventMessage<P> updateIndices(@Nonnull Function<Set<Index>, Set<Index>> updater);
+    IndexedEventMessage<P> updateIndices(@Nonnull Function<Set<Tag>, Set<Tag>> updater);
 }

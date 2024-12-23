@@ -85,27 +85,27 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     @Override
     public CompletableFuture<Long> appendEvents(@Nonnull AppendCondition condition,
                                                 @Nonnull List<? extends EventMessage<?>> events) {
-        int indexCount = condition.criteria().indices().size();
-        if (indexCount > 1) {
-            return CompletableFuture.failedFuture(tooManyIndices(indexCount, 1));
+        int tagCount = condition.criteria().tags().size();
+        if (tagCount > 1) {
+            return CompletableFuture.failedFuture(tooManyIndices(tagCount, 1));
         }
 
         synchronized (this.events) {
             long head = this.events.isEmpty() ? -1 : this.events.lastKey();
             List<? extends EventMessage<?>> eventsToAppend;
 
-            if (indexCount != 0) {
+            if (tagCount != 0) {
                 if (this.events.tailMap(condition.consistencyMarker() + 1)
                                .values()
                                .stream()
                                .filter(event -> event instanceof IndexedEventMessage<?>)
                                .map(event -> (IndexedEventMessage<?>) event)
                                .anyMatch(indexedEvent -> condition.criteria()
-                                                                  .matchingIndices(indexedEvent.indices()))) {
+                                                                  .matchingTags(indexedEvent.tags()))) {
                     return CompletableFuture.failedFuture(consistencyMarkerSurpassed(condition.consistencyMarker()));
                 }
                 eventsToAppend = events.stream()
-                                       .map(event -> asIndexedEvent(event, condition.criteria().indices()))
+                                       .map(event -> asIndexedEvent(event, condition.criteria().tags()))
                                        .toList();
             } else {
                 eventsToAppend = new ArrayList<>(events);
@@ -157,20 +157,20 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     private static boolean match(EventMessage<?> event, EventCriteria criteria) {
         // TODO #3085 Remove usage of getPayloadType in favor of QualifiedName solution
         return matchingType(event.getPayloadType().getName(), criteria.types())
-                && matchingIndices(event, criteria);
+                && matchingTags(event, criteria);
     }
 
     private static boolean matchingType(String eventName, Set<String> types) {
         return types.isEmpty() || types.contains(eventName);
     }
 
-    private static boolean matchingIndices(EventMessage<?> event, EventCriteria criteria) {
-        if (criteria.indices().isEmpty()) {
+    private static boolean matchingTags(EventMessage<?> event, EventCriteria criteria) {
+        if (criteria.tags().isEmpty()) {
             // No criteria are present, so we match successfully.
             return true;
         }
         if (event instanceof IndexedEventMessage<?> indexedEvent) {
-            return criteria.matchingIndices(indexedEvent.indices());
+            return criteria.matchingTags(indexedEvent.tags());
         }
         return false;
     }

@@ -51,7 +51,7 @@ final class NoEventCriteria implements EventCriteria {
     }
 
     @Override
-    public Set<Index> indices() {
+    public Set<Tag> tags() {
         return Set.of();
     }
 }

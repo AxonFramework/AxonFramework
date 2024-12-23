@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class IndexedEventMessageTest {
 
     private static final EventMessage<String> TEST_EVENT = GenericEventMessage.asEventMessage("some-event");
-    private static final Set<Index> TEST_INDICES = Set.of(new Index("key", "value"));
+    private static final Set<Tag> TEST_INDICES = Set.of(new Tag("key", "value"));
 
     @Test
     void wrapIntoIndexedEventMessage() {
@@ -43,14 +43,14 @@ class IndexedEventMessageTest {
         assertEquals(TEST_EVENT.getPayload(), result.getPayload());
         assertEquals(TEST_EVENT.getMetaData(), result.getMetaData());
         assertEquals(TEST_EVENT.getTimestamp(), result.getTimestamp());
-        assertEquals(TEST_INDICES, result.indices());
+        assertEquals(TEST_INDICES, result.tags());
     }
 
     @Test
-    void mergeIndicesOfGivenIndexedEventMessageAndGivenIndices() {
+    void mergeIndicesOfGivenIndexedEventMessageAndGivenTags() {
         IndexedEventMessage<String> testEvent = new GenericIndexedEventMessage<>(TEST_EVENT, TEST_INDICES);
-        Set<Index> testIndices = Set.of(new Index("newKey", "newValue"));
-        Set<Index> expectedIndices = new HashSet<>(TEST_INDICES);
+        Set<Tag> testIndices = Set.of(new Tag("newKey", "newValue"));
+        Set<Tag> expectedIndices = new HashSet<>(TEST_INDICES);
         expectedIndices.addAll(testIndices);
 
         IndexedEventMessage<String> result = IndexedEventMessage.asIndexedEvent(testEvent, testIndices);
@@ -59,6 +59,6 @@ class IndexedEventMessageTest {
         assertEquals(testEvent.getPayload(), result.getPayload());
         assertEquals(testEvent.getMetaData(), result.getMetaData());
         assertEquals(testEvent.getTimestamp(), result.getTimestamp());
-        assertEquals(expectedIndices, result.indices());
+        assertEquals(expectedIndices, result.tags());
     }
 }
