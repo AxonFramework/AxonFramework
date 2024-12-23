@@ -1,4 +1,4 @@
-* xref::index.adoc[]]
+* xref::index.adoc[]
 * xref::upgrading-to-4-7.adoc[]
 
 include::messaging-concepts:partial$nav.adoc[]
@@ -26,3 +26,5 @@ include::monitoring:partial$nav.adoc[]
 * xref::modules.adoc[]
 
 include::release-notes:partial$nav.adoc[]
+
+* xref::known-issues-and-workarounds.adoc[]
