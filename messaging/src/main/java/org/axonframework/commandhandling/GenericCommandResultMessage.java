@@ -39,21 +39,6 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     private static final long serialVersionUID = 9013948836930094183L;
 
     /**
-     * Creates a Command Result Message with the given {@code exception} result.
-     *
-     * @param exception The {@link Throwable} describing the error representing the response of this
-     *                  {@link CommandResultMessage}.
-     * @param <R>       The type of payload contained in this {@link CommandResultMessage}.
-     * @return a message containing exception result
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    public static <R> CommandResultMessage<R> asCommandResultMessage(@Nonnull Throwable exception) {
-        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()), exception);
-    }
-
-    /**
      * Constructs a {@link GenericResultMessage} for the given {@code name} and {@code commandResult}.
      * <p>
      * Uses the correlation data of the current Unit of Work, if present.

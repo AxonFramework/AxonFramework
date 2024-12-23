@@ -75,7 +75,6 @@ class SimpleCommandBusTest {
         assertEquals("Hi!", actual.get().getPayload());
     }
 
-
     @Test
     void dispatchCommandImplicitUnitOfWorkIsCommittedOnReturnValue() {
         final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
@@ -322,7 +321,8 @@ class SimpleCommandBusTest {
         }
     }
 
-    private static GenericCommandResultMessage<?> asCommandResultMessage(CommandMessage<?> payload){
+    private static GenericCommandResultMessage<?> asCommandResultMessage(CommandMessage<?> message){
+        var payload = message.getPayload();
         return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload);
     }
 }
