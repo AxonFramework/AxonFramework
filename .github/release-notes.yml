@@ -4,9 +4,9 @@ changelog:
       labels: [ "Type: Feature" ]
     - title: ":chart_with_upwards_trend: Enhancements"
       labels: [ "Type: Enhancement" ]
-    - title: ":beetle: Bug Fixes"
+    - title: ":beetle: Bug fixes"
       labels: [ "Type: Bug" ]
-    - title: ":hammer_and_wrench: Dependency Upgrade"
+    - title: ":hammer_and_wrench: Dependency upgrades"
       labels: [ "Type: Dependency Upgrade" ]
   issues:
     exclude:

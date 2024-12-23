@@ -17,167 +17,128 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
+import org.axonframework.common.StringUtils;
 
-import static org.axonframework.common.BuilderUtils.assertNonEmpty;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import java.io.Serializable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Interface describing a qualified name.
+ * Interface describing a qualified name, providing space for a {@link #namespace() namespace},
+ * {@link #localName() local name}, and {@link #revision() revision}.
  * <p>
  * Useful to provide clear names to {@link Message Messages}, {@link MessageHandler MessageHandlers}, and other
  * components that require naming.
+ * <p>
+ * Note that all characters <b>except</b> for the semicolon ({@code :}) are allowed for any of the three parameters. The
+ * semicolon acts as a delimiter for the {@link #toString()} and thus is a reserved character.
  *
+ * @param namespace The {@link String} representing the {@link #namespace()} of this {@link QualifiedName}. The
+ *                  {@code namespace} may represent a (bounded) context, package, or whatever other "space" this
+ *                  {@link QualifiedName} applies too.
+ * @param localName The {@link String} representing the {@link #localName()} of this {@link QualifiedName}. The
+ *                  {@code localName} may represent a {@link Message Message's} name, a {@link MessageHandler} its name,
+ *                  or whatever other business specific concept this {@link QualifiedName} should represent.
+ * @param revision  The {@link String} representing the {@link #revision()} of this {@link QualifiedName}. The
+ *                  {@code revision} typically represents the version of the {@link Message Message's}
+ *                  {@link Message#getPayload() payload}. Or, for a {@link MessageHandler}, it specifies the version or
+ *                  versions of a {@code Message} that the handler is able to handle.
  * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface QualifiedName {
+public record QualifiedName(@Nonnull String namespace,
+                            @Nonnull String localName,
+                            @Nonnull String revision) implements Serializable {
 
     /**
-     * Construct a {@link QualifiedName} based on the given {@code clazz}.
-     * <p>
-     * The {@link Class#getPackageName()} will become the {@link #namespace()}, and the {@link Class#getSimpleName()}
-     * will be the {@link #localName()}.
-     *
-     * @param clazz The {@link Class} to extract a {@link #namespace()} and {@link #localName()} from.
-     * @return A {@link QualifiedName} based on the given {@code clazz}.
+     * The semantic version is retrieved from <a href="https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string">semver.org</a>.
      */
-    static QualifiedName className(@Nonnull Class<?> clazz) {
-        assertNonNull(clazz, "Cannot construct a QualifiedName based on a null Class.");
-        return new SimpleQualifiedName(clazz.getPackageName(), clazz.getSimpleName());
+    private static final String SEMVER_REGEX = "(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?";
+    private static final String DEBUG_STRING_REGEX = "^([^:]+):([^:]+):(" + SEMVER_REGEX + ")$";
+    private static final Pattern DEBUG_STRING_PATTERN = Pattern.compile(DEBUG_STRING_REGEX);
+    private static final int NAMESPACE_GROUP = 1;
+    private static final int LOCAL_NAME_GROUP = 2;
+    private static final int REVISION_GROUP = 3;
+
+    /**
+     * The delimiter, a semicolon ({@code :}), used between the {@link #namespace()}, {@link #localName()}, and
+     * {@link #revision()}.
+     */
+    public static final String DELIMITER = ":";
+
+    /**
+     * Compact constructor asserting whether the {@code namespace}, {@code localName}, and {@code revision} are non-null
+     * and not empty.
+     */
+    public QualifiedName {
+        Assert.assertThat(
+                namespace,
+                n -> StringUtils.nonEmptyOrNull(n) && !n.contains(DELIMITER),
+                () -> new IllegalArgumentException(
+                        "The given namespace [" + namespace
+                                + "] is unsupported because it is null, empty, or contains a semicolon (:)."
+                )
+        );
+        Assert.assertThat(
+                localName,
+                l -> StringUtils.nonEmptyOrNull(l) && !l.contains(DELIMITER),
+                () -> new IllegalArgumentException(
+                        "The given local name [" + localName
+                                + "] is unsupported because it is null, empty, or contains a semicolon (:)."
+                )
+        );
+        Assert.assertThat(
+                revision,
+                r -> StringUtils.nonEmptyOrNull(r) && !r.contains(DELIMITER),
+                () -> new IllegalArgumentException(
+                        "The given revision [" + revision
+                                + "] is unsupported because it is null, empty, or contains a semicolon (:)."
+                )
+        );
     }
 
     /**
-     * Construct a {@link QualifiedName} based on the given {@code dottedName}.
+     * Reconstruct a {@link QualifiedName} based on the output of {@link QualifiedName#toString()}.
      * <p>
-     * All information <em>before</em> the last dot ({@code .}) in the given {@code dottedName} will be set as the
-     * {@link #namespace()}. In turn, all text <em>after</em> the last dot in the given {@code dottedName} will become
-     * the {@link #localName()}.
+     * The output of {@code QualifiedName#toString()} is a concatenation of  the {@link #namespace()},
+     * {@link #localName()}, and {@link #revision()}, split by means of a semicolon ({@code :}).
      * <p>
-     * For example, given a {@link String} of {@code "my.context.BusinessOperation"}, the {@link #namespace()} would
-     * become {@code "my.context"} and the {@link #localName()} would be {@code "BusinessOperation"}.
+     * Thus, if {@code #namespace()} returns {@code "my.context"}, the {@code #localName()} returns
+     * {@code "BusinessName"}, and the {@code #revision()} returns {@code "1.0.5"}, the result of <b>this</b> operation
+     * would be {@code "my.context:BusinessName:1.0.5"}.
      *
-     * @param dottedName The {@link String} to retrieve the {@link #namespace()} and {@link #localName()} from.
-     * @return A {@link QualifiedName} based on the given {@code dottedName}.
-     * @throws org.axonframework.common.AxonConfigurationException If the substring representing the
-     *                                                             {@link #localName()} is {@code null} or empty.
+     * @param s The output of {@link QualifiedName#toString()}, given to reconstruct it into a {@link QualifiedName}.
+     * @return A reconstructed {@link QualifiedName} based on the expected output of {@link QualifiedName#toString()}.
      */
-    static QualifiedName dottedName(@Nonnull String dottedName) {
-        assertNonEmpty(dottedName, "Cannot construct a QualifiedName based on a null or empty String.");
-        int lastDot = dottedName.lastIndexOf('.');
-        String namespace = dottedName.substring(0, Math.max(lastDot, 0));
-        String localName = dottedName.substring(lastDot + 1);
-        return new SimpleQualifiedName(namespace, localName);
+    public static QualifiedName fromString(@Nonnull String s) {
+        Assert.nonEmpty(s, "Cannot construct a QualifiedName based on a null or empty String.");
+        Matcher matcher = DEBUG_STRING_PATTERN.matcher(s);
+        Assert.isTrue(matcher.matches(),
+                      () -> "The given simple String [" + s + "] does not match the expected pattern.");
+
+        return new QualifiedName(matcher.group(NAMESPACE_GROUP),
+                                 matcher.group(LOCAL_NAME_GROUP),
+                                 matcher.group(REVISION_GROUP));
     }
-
-    /**
-     * Reconstruct a {@link QualifiedName} based on the output of {@link QualifiedName#toSimpleString()}.
-     * <p>
-     * The output of the {@code QualifiedName#toSimpleString()} depends on which fields are set in the
-     * {@code QualifiedName}. If there is only a non-empty {@link #localName()}, only the {@code localName} will be
-     * printed. When the {@link #namespace()} is non-empty, the {@code localName} will be post-fixed with
-     * {@code "@({namespace})"}. And when the {@link #revision()} is non-empty, the {@code localName} (and possibly
-     * {@code namespace}) will be post-fixed with {@code "#[{revision}]"}.
-     * <p>
-     * Thus, if {@code localName()} returns {@code "BusinessName"}, the {@code namespace()} returns
-     * {@code "my.context"}, and the {@code revision()} returns {@code "3"}, a simple {@link String} would be
-     * {@code "BusinessName @(my.context) #[3]"}.
-     *
-     * @param simpleString The output of {@link QualifiedName#toSimpleString()}, given to reconstruct it into a
-     *                     {@link QualifiedName}.
-     * @return A reconstructed {@link QualifiedName} based on the expected output of
-     * {@link QualifiedName#toSimpleString()}.
-     */
-    @SuppressWarnings("DuplicateExpressions")
-    static QualifiedName simpleStringName(@Nonnull String simpleString) {
-        assertNonEmpty(simpleString, "Cannot construct a QualifiedName based on a null or empty String.");
-        int bracketOffset = 1;
-        int signAndBracketOffset = 2;
-
-        String namespace = "";
-        String localName;
-        String revision = "";
-        int lastAt = simpleString.lastIndexOf('@');
-        int lastHash = simpleString.lastIndexOf('#');
-        int length = simpleString.length();
-
-        if (onlyHasLocalName(lastAt, lastHash)) {
-            localName = simpleString;
-        } else if (hasLocalNameAndNamespace(lastAt, lastHash)) {
-            localName = simpleString.substring(0, lastAt - bracketOffset);
-            namespace = simpleString.substring(lastAt + signAndBracketOffset, length - bracketOffset);
-        } else if (hasLocalNameAndRevision(lastAt, lastHash)) {
-            localName = simpleString.substring(0, lastHash - bracketOffset);
-            revision = simpleString.substring(lastHash + signAndBracketOffset, length - bracketOffset);
-        } else {
-            localName = simpleString.substring(0, lastAt - bracketOffset);
-            namespace = simpleString.substring(lastAt + signAndBracketOffset, lastHash - signAndBracketOffset);
-            revision = simpleString.substring(lastHash + signAndBracketOffset, length - bracketOffset);
-        }
-
-        return new SimpleQualifiedName(namespace, localName, revision);
-    }
-
-    private static boolean hasLocalNameAndRevision(int lastAt, int lastHash) {
-        return lastAt == -1 && lastHash != -1;
-    }
-
-    private static boolean hasLocalNameAndNamespace(int lastAt, int lastHash) {
-        return lastAt != -1 && lastHash == -1;
-    }
-
-    private static boolean onlyHasLocalName(int lastAt, int lastHash) {
-        return lastAt == -1 && lastHash == -1;
-    }
-
-    /**
-     * Returns the namespace this {@link QualifiedName} refers too.
-     * <p>
-     * The namespace may represent a (bounded) context, package, or whatever other "space" this name applies too.
-     *
-     * @return The namespace this {@link QualifiedName} refers too.
-     */
-    @Nonnull
-    String namespace();
-
-    /**
-     * Returns the local name this {@link QualifiedName} refers too.
-     * <p>
-     * The local name may represent a {@link Message Message's} name, a {@link MessageHandler} its name, or whatever
-     * other business specific concept this name should represent.
-     *
-     * @return The local name this {@link QualifiedName} refers too.
-     */
-    @Nonnull
-    String localName();
-
-    /**
-     * Returns the revision of this {@link QualifiedName}.
-     *
-     * @return The revision of this {@link QualifiedName}.
-     */
-    @Nonnull
-    String revision();
 
     /**
      * Prints the {@link QualifiedName} in a simplified {@link String}.
      * <p>
-     * If there is only a non-empty {@link #localName()}, only the {@code localName} will be printed. When the
-     * {@link #namespace()} is non-empty, the {@code localName} will be post-fixed with {@code "@({namespace})"}. And
-     * when the {@link #revision()} is non-empty, the {@code localName} (and possibly {@code namespace}) will be
-     * post-fixed with {@code "#[{revision}]"}.
+     * The {@link #namespace()}, {@link #localName()}, and {@link #revision()} are split by means of a semicolon
+     * ({@code :}).
      * <p>
-     * Thus, if {@code localName()} returns {@code "BusinessName"}, the {@code namespace()} returns
-     * {@code "my.context"}, and the {@code revision()} returns {@code "3"}, the result of this operation would be
-     * {@code "BusinessName @(my.context) #[3]"}.
+     * Thus, if {@code #namespace()} returns {@code "my.context"}, the {@code #localName()} returns
+     * {@code "BusinessName"}, and the {@code #revision()} returns {@code "1.0.5"}, the result of <b>this</b> operation
+     * would be {@code "my.context:BusinessName:1.0.5"}.
      *
-     * @return A simple {@link String} based on the {@link #localName()}, and {@link #namespace()} (if non-empty) and
-     * {@link #revision()} (if non-empty).
+     * @return A simple {@link String} based on the {@link #localName()}, {@link #namespace()}, and {@link #revision()},
+     * delimited by a semicolon ({@code :}).
      */
-    default String toSimpleString() {
-        return localName()
-                + (namespace().isBlank() ? "" : " @(" + namespace() + ")")
-                + (revision().isBlank() ? "" : " #[" + revision() + "]");
+    @Override
+    public String toString() {
+        return namespace + DELIMITER + localName + DELIMITER + revision;
     }
 }

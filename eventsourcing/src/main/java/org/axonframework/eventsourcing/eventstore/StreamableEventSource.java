@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MessageStream;
@@ -43,6 +44,10 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
     /**
      * Open an {@link MessageStream event stream} containing all {@link EventMessage events} of the given
      * {@code context} matching the given {@code condition}.
+     * <p>
+     * To retrieve the {@link TrackingToken position} of the returned events, the
+     * {@link TrackingToken#fromContext(Context)} operation should be used by providing the entire
+     * {@link org.axonframework.messaging.MessageStream.Entry} wrapping the returned events.
      * <p>
      * Note that the returned stream is <em>infinite</em>, so beware of applying terminal operations to the returned
      * stream.
