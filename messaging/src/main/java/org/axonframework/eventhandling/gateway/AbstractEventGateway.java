@@ -20,11 +20,12 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventUtils;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.*;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
@@ -64,7 +65,22 @@ public abstract class AbstractEventGateway {
      * @param event The event to publish.
      */
     protected void publish(@Nonnull Object event) {
-        this.eventBus.publish(processInterceptors(EventUtils.asEventMessage(event, messageNameResolver)));
+        this.eventBus.publish(processInterceptors(asEventMessage(event, messageNameResolver)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E> EventMessage<E> asEventMessage(@Nonnull Object event, @Nonnull Function<Object, QualifiedName> nameResolver) {
+        if (event instanceof EventMessage<?>) {
+            return (EventMessage<E>) event;
+        } else if (event instanceof Message<?>) {
+            Message<E> message = (Message<E>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage<>(
+                nameResolver.apply(event),
+                (E) event,
+                MetaData.emptyInstance()
+        );
     }
 
     /**

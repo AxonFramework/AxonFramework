@@ -21,15 +21,13 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventUtils;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
-import org.axonframework.messaging.MessageNameResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.SerializedObject;
@@ -44,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import static java.util.Objects.isNull;
@@ -241,7 +240,22 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
                 serializedPayload, String.class, payloadClass, revision
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        return EventUtils.asEventMessage(deserializedPayload, messageNameResolver);
+        return asEventMessage(deserializedPayload, messageNameResolver);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E> EventMessage<E> asEventMessage(@Nonnull Object event, @Nonnull Function<Object, QualifiedName> nameResolver) {
+        if (event instanceof EventMessage<?>) {
+            return (EventMessage<E>) event;
+        } else if (event instanceof Message<?>) {
+            Message<E> message = (Message<E>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage<>(
+                nameResolver.apply(event),
+                (E) event,
+                MetaData.emptyInstance()
+        );
     }
 
     private EventMessage<?> createMessage(

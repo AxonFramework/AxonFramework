@@ -22,12 +22,10 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
-import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.*;
@@ -49,6 +47,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
@@ -132,7 +131,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         Assert.state(initialized, () -> "Scheduler is not yet initialized");
-        EventMessage eventMessage = EventUtils.asEventMessage(event, messageNameResolver);
+        EventMessage eventMessage = asEventMessage(event, messageNameResolver);
         String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getIdentifier();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
@@ -143,6 +142,22 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         }
         return tr;
     }
+
+    @SuppressWarnings("unchecked")
+    private static <E> EventMessage<E> asEventMessage(@Nonnull Object event, @Nonnull Function<Object, QualifiedName> nameResolver) {
+        if (event instanceof EventMessage<?>) {
+            return (EventMessage<E>) event;
+        } else if (event instanceof Message<?>) {
+            Message<E> message = (Message<E>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage<>(
+                nameResolver.apply(event),
+                (E) event,
+                MetaData.emptyInstance()
+        );
+    }
+
 
     /**
      * Builds the JobDetail instance for Quartz, which defines the Job that needs to be executed when the trigger

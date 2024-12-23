@@ -107,33 +107,6 @@ public abstract class EventUtils {
         return upcasterChain.upcast(eventEntryStream.map(entryConverter));
     }
 
-    /**
-     * Returns the given event as an EventMessage. If {@code event} already implements EventMessage, it is returned
-     * as-is. If it is a Message, a new EventMessage will be created using the payload and meta data of the given
-     * message. Otherwise, the given {@code event} is wrapped into a GenericEventMessage as its payload.
-     *
-     * <b>Note:</b> This method is intended for internal use only.
-     *
-     * @param event the event to wrap as EventMessage
-     * @param <P>   The generic type of the expected payload of the resulting object
-     * @return an EventMessage containing given {@code event} as payload, or {@code event} if it already implements
-     * EventMessage.
-     */
-    @SuppressWarnings("unchecked")
-    public static <E> EventMessage<E> asEventMessage(@Nonnull Object event, @Nonnull Function<Object, QualifiedName> nameResolver) {
-        if (event instanceof EventMessage<?>) {
-            return (EventMessage<E>) event;
-        } else if (event instanceof Message<?>) {
-            Message<E> message = (Message<E>) event;
-            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
-        }
-        return new GenericEventMessage<>(
-                nameResolver.apply(event),
-                (E) event,
-                MetaData.emptyInstance()
-        );
-    }
-
     private EventUtils() {
         // Utility class
     }

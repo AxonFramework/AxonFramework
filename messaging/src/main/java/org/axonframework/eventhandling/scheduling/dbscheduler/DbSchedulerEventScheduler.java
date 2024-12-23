@@ -28,15 +28,13 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventUtils;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
-import org.axonframework.messaging.MessageNameResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.SerializedObject;
@@ -47,6 +45,7 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
@@ -239,7 +238,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
                 data.getP(), byte[].class, data.getC(), data.getR()
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        EventMessage<?> eventMessage = EventUtils.asEventMessage(deserializedPayload, messageNameResolver);
+        EventMessage<?> eventMessage = asEventMessage(deserializedPayload, messageNameResolver);
         if (!isNull(data.getM())) {
             SimpleSerializedObject<byte[]> serializedMetaData = new SimpleSerializedObject<>(
                     data.getM(), byte[].class, MetaData.class.getName(), null
@@ -249,12 +248,27 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         return eventMessage;
     }
 
+    @SuppressWarnings("unchecked")
+    private static <E> EventMessage<E> asEventMessage(@Nonnull Object event, @Nonnull Function<Object, QualifiedName> nameResolver) {
+        if (event instanceof EventMessage<?>) {
+            return (EventMessage<E>) event;
+        } else if (event instanceof Message<?>) {
+            Message<E> message = (Message<E>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage<>(
+                nameResolver.apply(event),
+                (E) event,
+                MetaData.emptyInstance()
+        );
+    }
+
     private EventMessage<?> fromDbSchedulerEventData(DbSchedulerHumanReadableEventData data) {
         SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
                 data.getSerializedPayload(), String.class, data.getPayloadClass(), data.getRevision()
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        EventMessage<?> eventMessage = EventUtils.asEventMessage(deserializedPayload, messageNameResolver);
+        EventMessage<?> eventMessage = asEventMessage(deserializedPayload, messageNameResolver);
         if (!isNull(data.getSerializedMetadata())) {
             SimpleSerializedObject<String> serializedMetaData = new SimpleSerializedObject<>(
                     data.getSerializedMetadata(), String.class, MetaData.class.getName(), null
