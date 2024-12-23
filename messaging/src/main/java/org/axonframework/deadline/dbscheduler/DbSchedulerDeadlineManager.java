@@ -66,7 +66,6 @@ import javax.annotation.Nullable;
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineToken.TASK_NAME;
 import static org.slf4j.LoggerFactory.getLogger;
 

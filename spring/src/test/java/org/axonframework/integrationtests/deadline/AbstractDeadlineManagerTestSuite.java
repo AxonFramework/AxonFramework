@@ -22,6 +22,7 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
@@ -32,9 +33,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
@@ -286,10 +285,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void handlerInterceptorOnAggregate() {
         //noinspection resource
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
-            uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
-                    .asDeadlineMessage(deadlineMessage.getDeadlineName(),
-                                       new DeadlinePayload(FAKE_IDENTIFIER),
-                                       deadlineMessage.getTimestamp()));
+            uow.transformMessage(AbstractDeadlineManagerTestSuite::asDeadlineMessage);
             return chain.proceedSync();
         });
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
@@ -301,10 +297,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void dispatchInterceptorOnAggregate() {
         //noinspection resource
-        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
-                GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(),
-                                                         new DeadlinePayload(FAKE_IDENTIFIER),
-                                                         m.getTimestamp()));
+        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) -> asDeadlineMessage(m));
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
@@ -532,6 +525,15 @@ public abstract class AbstractDeadlineManagerTestSuite {
         SagaStore<MySaga> sagaStore = configuration.eventProcessingConfiguration().sagaStore();
         Set<String> sagaIds = sagaStore.findSagas(MySaga.class, new AssociationValue("id", IDENTIFIER.toString()));
         assertEquals(live, sagaIds.isEmpty());
+    }
+
+    private static DeadlineMessage<DeadlinePayload> asDeadlineMessage(DeadlineMessage<?> deadlineMessage) {
+        var payload = new DeadlinePayload(FAKE_IDENTIFIER);
+        return new GenericDeadlineMessage<>(
+                deadlineMessage.getDeadlineName(),
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload),
+                deadlineMessage::getTimestamp
+        );
     }
 
     private static class CreateMyAggregateCommand {

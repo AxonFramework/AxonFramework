@@ -16,17 +16,16 @@
 
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.GenericResultMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.*;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -100,7 +99,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     @Test
     void messageCreationBasedOnResultMessage() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v1");
-        CommandResultMessage<String> resultMessage = GenericCommandResultMessage.asCommandResultMessage(
+        CommandResultMessage<String> resultMessage = asCommandResultMessage(
                 new GenericResultMessage<>(new QualifiedName("test", "command", "0.0.1"), "result", metaData)
         );
 
@@ -115,7 +114,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     void messageCreationBasedOnExceptionalResultMessage() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v1");
         RuntimeException exception = new RuntimeException();
-        CommandResultMessage<String> resultMessage = GenericCommandResultMessage.asCommandResultMessage(
+        CommandResultMessage<String> resultMessage = asCommandResultMessage(
                 new GenericResultMessage<>(new QualifiedName("test", "query", "0.0.1"), exception, metaData)
         );
 
@@ -137,5 +136,16 @@ class GenericSubscriptionQueryUpdateMessageTest {
 
         assertEquals(result.getPayload(), message.getPayload());
         assertEquals(result.getMetaData(), message.getMetaData());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult) {
+        if (commandResult instanceof CommandResultMessage) {
+            return (CommandResultMessage<R>) commandResult;
+        } else if (commandResult instanceof Message) {
+            Message<R> commandResultMessage = (Message<R>) commandResult;
+            return new GenericCommandResultMessage<>(commandResultMessage);
+        }
+        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(commandResult.getClass()), (R) commandResult);
     }
 }

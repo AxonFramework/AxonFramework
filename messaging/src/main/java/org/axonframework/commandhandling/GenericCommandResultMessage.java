@@ -18,10 +18,7 @@ package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.GenericResultMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.*;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
 import java.io.Serial;
@@ -40,6 +37,21 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
 
     @Serial
     private static final long serialVersionUID = 9013948836930094183L;
+
+    /**
+     * Creates a Command Result Message with the given {@code exception} result.
+     *
+     * @param exception The {@link Throwable} describing the error representing the response of this
+     *                  {@link CommandResultMessage}.
+     * @param <R>       The type of payload contained in this {@link CommandResultMessage}.
+     * @return a message containing exception result
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
+     */
+    @Deprecated
+    public static <R> CommandResultMessage<R> asCommandResultMessage(@Nonnull Throwable exception) {
+        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()), exception);
+    }
 
     /**
      * Constructs a {@link GenericResultMessage} for the given {@code name} and {@code commandResult}.

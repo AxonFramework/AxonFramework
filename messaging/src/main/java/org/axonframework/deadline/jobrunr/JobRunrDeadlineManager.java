@@ -19,22 +19,11 @@ package org.axonframework.deadline.jobrunr;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.deadline.AbstractDeadlineManager;
-import org.axonframework.deadline.DeadlineException;
-import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.DeadlineManagerSpanFactory;
-import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
-import org.axonframework.deadline.GenericDeadlineMessage;
+import org.axonframework.deadline.*;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.Serializer;
@@ -55,7 +44,6 @@ import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.axonframework.deadline.jobrunr.LabelUtils.getCombinedLabel;
 import static org.axonframework.deadline.jobrunr.LabelUtils.getLabel;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -116,6 +104,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
         this.serializer = builder.serializer;
         this.transactionManager = builder.transactionManager;
         this.spanFactory = builder.spanFactory;
+        this.messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -268,6 +257,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
         private DeadlineManagerSpanFactory spanFactory = DefaultDeadlineManagerSpanFactory.builder()
                                                                                           .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                           .build();
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link JobScheduler} used for scheduling and triggering purposes of the deadlines.
@@ -336,6 +326,18 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
         public Builder spanFactory(@Nonnull DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

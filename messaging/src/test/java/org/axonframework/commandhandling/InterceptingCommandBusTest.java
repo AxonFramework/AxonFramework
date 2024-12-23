@@ -17,13 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.MockException;
@@ -71,7 +65,7 @@ class InterceptingCommandBusTest {
     void dispatchInterceptorsInvokedOnDispatch() throws Exception {
         CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "test");
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
-                GenericCommandResultMessage.asCommandResultMessage("ok")));
+                asCommandResultMessage("ok")));
 
         CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, ProcessingContext.NONE);
 
@@ -110,7 +104,7 @@ class InterceptingCommandBusTest {
     void dualProceedCausesDuplicateMessageDispatch() throws Exception {
         CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "test");
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
-                GenericCommandResultMessage.asCommandResultMessage("ok")));
+                asCommandResultMessage("ok")));
 
         doAnswer(i -> {
             i.callRealMethod();
@@ -150,7 +144,7 @@ class InterceptingCommandBusTest {
         AtomicReference<CommandMessage<?>> handledMessage = new AtomicReference<>();
         testSubject.subscribe("test", message -> {
             handledMessage.set(message);
-            return GenericCommandResultMessage.asCommandResultMessage("ok");
+            return asCommandResultMessage("ok");
         });
 
         ArgumentCaptor<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlerCaptor = ArgumentCaptor.forClass(
@@ -179,7 +173,7 @@ class InterceptingCommandBusTest {
                 .when(handlerInterceptor2).interceptOnHandle(any(), any(), any());
 
         MessageHandler<CommandMessage<?>, CommandResultMessage<?>> actualHandler = subscribeHandler(
-                message -> GenericCommandResultMessage.asCommandResultMessage("ok"));
+                message -> asCommandResultMessage("ok"));
 
         ProcessingContext context = mock(ProcessingContext.class);
         var result = actualHandler.handle(testCommand, context);
@@ -203,7 +197,7 @@ class InterceptingCommandBusTest {
         MessageHandler<CommandMessage<?>, CommandResultMessage<?>> actualHandler = subscribeHandler(
                 message -> {
                     handledMessages.add(message);
-                    return GenericCommandResultMessage.asCommandResultMessage("ok");
+                    return asCommandResultMessage("ok");
                 });
 
         ProcessingContext processingContext = mock(ProcessingContext.class);
@@ -249,6 +243,10 @@ class InterceptingCommandBusTest {
                 MessageHandler.class);
         verify(mockCommandBus).subscribe(eq("test"), handlerCaptor.capture());
         return handlerCaptor.getValue();
+    }
+
+    private static GenericCommandResultMessage<String> asCommandResultMessage(String payload){
+        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload);
     }
 
     private static class AddMetaDataCountInterceptor<M extends Message<?>>

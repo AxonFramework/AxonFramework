@@ -17,11 +17,11 @@
 package org.axonframework.deadline;
 
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -40,6 +40,7 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
 
     private final List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
+    protected MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
     /**
      * Run a given {@code deadlineCall} immediately, or schedule it for the {@link UnitOfWork} it's 'prepare commit'
@@ -105,4 +106,37 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
         }
         return intercepted;
     }
+
+    /**
+     * Returns the given {@code deadlineName} and {@code messageOrPayload} as a DeadlineMessage which expires at the
+     * given {@code expiryTime}. If the {@code messageOrPayload} parameter is of type {@link Message}, a new
+     * {@code DeadlineMessage} instance will be created using the payload and meta data of the given message. Otherwise,
+     * the given {@code messageOrPayload} is wrapped into a {@code GenericDeadlineMessage} as its payload.
+     *
+     * @param deadlineName     The name for this {@link DeadlineMessage}.
+     * @param messageOrPayload A {@link Message} or payload to wrap as a DeadlineMessage
+     * @param expiryTime       The timestamp at which the deadline expires
+     * @param <P>              The generic type of the expected payload of the resulting object
+     * @return a DeadlineMessage using the {@code deadlineName} as its deadline name and containing the given
+     * {@code messageOrPayload} as the payload
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
+     */
+    @SuppressWarnings("unchecked")
+    protected <P> DeadlineMessage<P> asDeadlineMessage(@Nonnull String deadlineName,
+                                                       Object messageOrPayload,
+                                                       @Nonnull Instant expiryTime) {
+        if (messageOrPayload instanceof Message) {
+            return new GenericDeadlineMessage<>(deadlineName,
+                    (Message<P>) messageOrPayload,
+                    () -> expiryTime);
+        }
+        QualifiedName name = messageOrPayload == null
+                ? QualifiedNameUtils.fromDottedName("empty.deadline.payload")
+                : messageNameResolver.resolve(messageOrPayload.getClass());
+        return new GenericDeadlineMessage<>(
+                deadlineName, new GenericMessage<>(name, (P) messageOrPayload), () -> expiryTime
+        );
+    }
+
 }

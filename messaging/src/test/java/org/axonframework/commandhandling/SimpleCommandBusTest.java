@@ -19,11 +19,7 @@ package org.axonframework.commandhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
@@ -93,7 +89,7 @@ class SimpleCommandBusTest {
             public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
                                                                  ProcessingContext processingContext) {
                 unitOfWork.set(processingContext);
-                return MessageStream.just(GenericCommandResultMessage.asCommandResultMessage(message));
+                return MessageStream.just(asCommandResultMessage(message));
             }
         });
         var actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
@@ -324,5 +320,9 @@ class SimpleCommandBusTest {
         public Object handleSync(CommandMessage<?> message) {
             throw new UnsupportedOperationException("handleSync should not be invoked");
         }
+    }
+
+    private static GenericCommandResultMessage<?> asCommandResultMessage(CommandMessage<?> payload){
+        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload);
     }
 }
