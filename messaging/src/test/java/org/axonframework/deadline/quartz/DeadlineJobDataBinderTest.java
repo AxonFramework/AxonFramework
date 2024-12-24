@@ -19,7 +19,9 @@ package org.axonframework.deadline.quartz;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.TestScopeDescriptor;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -53,7 +55,11 @@ class DeadlineJobDataBinderTest {
 
     public DeadlineJobDataBinderTest() {
         DeadlineMessage<String> testDeadlineMessage =
-                GenericDeadlineMessage.asDeadlineMessage(TEST_DEADLINE_NAME, TEST_DEADLINE_PAYLOAD, Instant.now());
+                new GenericDeadlineMessage<>(
+                        TEST_DEADLINE_NAME,
+                        new GenericMessage<>(QualifiedNameUtils.fromClassName(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
+                        Instant::now
+                );
         testMetaData = MetaData.with("some-key", "some-value");
         this.testDeadlineMessage = testDeadlineMessage.withMetaData(testMetaData);
         testDeadlineScope = new TestScopeDescriptor("aggregate-type", "aggregate-identifier");

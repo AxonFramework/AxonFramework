@@ -18,6 +18,7 @@ package org.axonframework.messaging.retry;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -31,8 +32,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ExponentialBackOffRetryPolicyTest {
 
-    private final Message<?> message = GenericMessage.asMessage("test");
+    private final Message<?> message = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test");
     private final MockException failure = new MockException("Simulating failure");
+
     private ExponentialBackOffRetryPolicy testSubject;
 
     @BeforeEach

@@ -19,6 +19,8 @@ package org.axonframework.test.aggregate;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.deadline.ScheduledDeadlineInfo;
 import org.axonframework.test.deadline.StubDeadlineManager;
@@ -347,9 +349,10 @@ class ResultValidatorImplTest {
     }
 
     private ScheduledDeadlineInfo createDeadline(Instant expiryTime) {
-        DeadlineMessage<String> deadlineMessage = GenericDeadlineMessage.asDeadlineMessage("deadlineName",
-                                                                                           "payload",
-                                                                                           expiryTime);
+        var payload = "payload";
+        DeadlineMessage<String> deadlineMessage = new GenericDeadlineMessage<>(
+                "deadlineName", new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload), () -> expiryTime
+        );
         return new ScheduledDeadlineInfo(expiryTime, "deadlineName", "1", 0, deadlineMessage, null);
     }
 

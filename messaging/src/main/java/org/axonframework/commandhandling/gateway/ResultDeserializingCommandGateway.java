@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Serializer;
 
@@ -38,6 +39,13 @@ public class ResultDeserializingCommandGateway implements CommandGateway {
     @Override
     public CommandResult send(@Nonnull Object command, @Nullable ProcessingContext processingContext) {
         return new SerializingCommandResult(serializer, delegate.send(command, processingContext));
+    }
+
+    @Override
+    public CommandResult send(@Nonnull Object command,
+                              @Nonnull MetaData metaData,
+                              @Nullable ProcessingContext processingContext) {
+        return new SerializingCommandResult(serializer, delegate.send(command, metaData, processingContext));
     }
 
     private static class SerializingCommandResult implements CommandResult {

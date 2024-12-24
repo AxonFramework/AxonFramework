@@ -35,16 +35,12 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.jobrunr.DeadlineDetails;
+import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryEventData;
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.SerializedObject;
@@ -66,7 +62,6 @@ import javax.annotation.Nullable;
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineToken.TASK_NAME;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -134,6 +129,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         this.useBinaryPojo = builder.useBinaryPojo;
         this.startScheduler = builder.startScheduler;
         this.stopScheduler = builder.stopScheduler;
+        this.messageNameResolver = builder.messageNameResolver;
     }
 
     @Override
@@ -446,6 +442,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         private DeadlineManagerSpanFactory spanFactory = DefaultDeadlineManagerSpanFactory.builder()
                                                                                           .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                           .build();
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+
         private boolean useBinaryPojo = true;
         private boolean startScheduler = true;
         private boolean stopScheduler = true;
@@ -558,6 +556,18 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
          */
         public Builder stopScheduler(boolean stopScheduler) {
             this.stopScheduler = stopScheduler;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

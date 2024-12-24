@@ -20,18 +20,14 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.deadline.AbstractDeadlineManager;
-import org.axonframework.deadline.DeadlineException;
-import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.DeadlineManagerSpanFactory;
-import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
+import org.axonframework.deadline.*;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
@@ -57,7 +53,6 @@ import javax.annotation.Nonnull;
 import static java.util.Date.from;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ExceptionUtils.findException;
-import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.quartz.JobKey.jobKey;
 
 /**
@@ -115,6 +110,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         this.serializer = builder.serializer.get();
         this.refireImmediatelyPolicy = builder.refireImmediatelyPolicy;
         this.spanFactory = builder.spanFactory;
+        this.messageNameResolver = builder.messageNameResolver;
 
         try {
             initialize();
@@ -272,6 +268,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         private DeadlineManagerSpanFactory spanFactory = DefaultDeadlineManagerSpanFactory.builder()
                                                                                           .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                           .build();
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
@@ -353,6 +350,18 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         public Builder refireImmediatelyPolicy(Predicate<Throwable> refireImmediatelyPolicy) {
             assertNonNull(refireImmediatelyPolicy, "The refire policy may not be null");
             this.refireImmediatelyPolicy = refireImmediatelyPolicy;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

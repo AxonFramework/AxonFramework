@@ -18,6 +18,7 @@ package org.axonframework.messaging.interceptors;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
@@ -38,7 +39,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,6 +52,8 @@ class ExceptionHandlerTest {
     private static final String COMMAND_HANDLER_INVOKED = "command";
     private static final String EVENT_HANDLER_INVOKED = "event";
     private static final String QUERY_HANDLER_INVOKED = "query";
+
+    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
 
     private AtomicReference<String> invokedHandler;
     private List<String> invokedExceptionHandlers;
@@ -71,8 +73,9 @@ class ExceptionHandlerTest {
 
     @Test
     void exceptionHandlerIsInvokedForAnCommandHandlerThrowingAnException() {
-        CommandMessage<SomeCommand> command =
-                asCommandMessage(new SomeCommand(() -> new RuntimeException("some-exception")));
+        CommandMessage<SomeCommand> command = new GenericCommandMessage<>(
+                TEST_COMMAND_NAME, new SomeCommand(() -> new RuntimeException("some-exception"))
+        );
 
         try {
             Object result = handle(command);
@@ -122,8 +125,9 @@ class ExceptionHandlerTest {
     @Test
     @Disabled("TODO #3062 - Exception Handler support")
     void exceptionHandlersAreInvokedInHandlerPriorityOrder() {
-        CommandMessage<SomeCommand> command =
-                asCommandMessage(new SomeCommand(() -> new IllegalStateException("some-exception")));
+        CommandMessage<SomeCommand> command = new GenericCommandMessage<>(
+                TEST_COMMAND_NAME, new SomeCommand(() -> new IllegalStateException("some-exception"))
+        );
 
         assertThrows(IllegalStateException.class, () -> handle(command));
 

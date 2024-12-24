@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
@@ -63,13 +64,13 @@ class ComplexAggregateStructureTest {
         bookAggregate.handle(command(new UpdateParagraphCommand("book1", 0, 1, "Hello world2")));
 
         assertEquals("Hello world",
-                     bookAggregate.getAggregateRoot().getPages().get(0).getParagraphs().get(0).getText());
+                     bookAggregate.getAggregateRoot().getPages().getFirst().getParagraphs().get(0).getText());
         assertEquals("Hello world2",
-                     bookAggregate.getAggregateRoot().getPages().get(0).getParagraphs().get(1).getText());
+                     bookAggregate.getAggregateRoot().getPages().getFirst().getParagraphs().get(1).getText());
     }
 
     private CommandMessage<Object> command(Object payload) {
-        return GenericCommandMessage.asCommandMessage(payload);
+        return new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), payload);
     }
 
     @SuppressWarnings("unused")
@@ -98,13 +99,13 @@ class ComplexAggregateStructureTest {
 
         @EventSourcingHandler
         protected void handle(BookCreatedEvent event) {
-            this.bookId = event.getBookId();
+            this.bookId = event.bookId();
         }
 
         @EventSourcingHandler
         protected void handle(PageCreatedEvent event) {
-            this.lastPage = event.getPageId();
-            pages.add(new Page(event.getPageId()));
+            this.lastPage = event.pageId();
+            pages.add(new Page(event.pageId()));
         }
 
         public List<Page> getPages() {
@@ -138,8 +139,8 @@ class ComplexAggregateStructureTest {
 
         @EventSourcingHandler
         protected void handle(ParagraphCreatedEvent event) {
-            this.lastParagraphId = event.getParagraphId();
-            this.paragraphs.add(new Paragraph(event.getParagraphId()));
+            this.lastParagraphId = event.paragraphId();
+            this.paragraphs.add(new Paragraph(event.paragraphId()));
         }
 
         public List<Paragraph> getParagraphs() {
@@ -171,8 +172,8 @@ class ComplexAggregateStructureTest {
 
         @EventSourcingHandler
         public void handle(ParagraphUpdatedEvent event) {
-            if (event.getParagraphId() == paragraphId) {
-                this.text = event.getText();
+            if (event.paragraphId() == paragraphId) {
+                this.text = event.text();
             }
         }
 
@@ -198,17 +199,8 @@ class ComplexAggregateStructureTest {
         }
     }
 
-    public static class BookCreatedEvent {
+    public record BookCreatedEvent(String bookId) {
 
-        private final String bookId;
-
-        public BookCreatedEvent(String bookId) {
-            this.bookId = bookId;
-        }
-
-        public String getBookId() {
-            return bookId;
-        }
     }
 
     public static class CreatePageCommand {
@@ -226,24 +218,8 @@ class ComplexAggregateStructureTest {
     }
 
     @SuppressWarnings("unused")
-    public static class PageCreatedEvent {
+    public record PageCreatedEvent(String bookId, int pageId) {
 
-        private final String bookId;
-
-        private final int pageId;
-
-        public PageCreatedEvent(String bookId, int pageId) {
-            this.bookId = bookId;
-            this.pageId = pageId;
-        }
-
-        public String getBookId() {
-            return bookId;
-        }
-
-        public int getPageId() {
-            return pageId;
-        }
     }
 
     @SuppressWarnings("unused")
@@ -268,29 +244,8 @@ class ComplexAggregateStructureTest {
     }
 
     @SuppressWarnings("unused")
-    public static class ParagraphCreatedEvent {
+    public record ParagraphCreatedEvent(String bookId, int pageNumber, int paragraphId) {
 
-        private final String bookId;
-        private final int pageNumber;
-        private final int paragraphId;
-
-        public ParagraphCreatedEvent(String bookId, int pageNumber, int paragraphId) {
-            this.bookId = bookId;
-            this.pageNumber = pageNumber;
-            this.paragraphId = paragraphId;
-        }
-
-        public String getBookId() {
-            return bookId;
-        }
-
-        public int getPageNumber() {
-            return pageNumber;
-        }
-
-        public int getParagraphId() {
-            return paragraphId;
-        }
     }
 
     public static class UpdateParagraphCommand {
@@ -327,34 +282,7 @@ class ComplexAggregateStructureTest {
     }
 
     @SuppressWarnings("unused")
-    public static class ParagraphUpdatedEvent {
+    public record ParagraphUpdatedEvent(String bookId, int pageNumber, int paragraphId, String text) {
 
-        private final String bookId;
-        private final int pageNumber;
-        private final int paragraphId;
-        private final String text;
-
-        public ParagraphUpdatedEvent(String bookId, int pageNumber, int paragraphId, String text) {
-            this.bookId = bookId;
-            this.pageNumber = pageNumber;
-            this.paragraphId = paragraphId;
-            this.text = text;
-        }
-
-        public String getBookId() {
-            return bookId;
-        }
-
-        public int getPageNumber() {
-            return pageNumber;
-        }
-
-        public int getParagraphId() {
-            return paragraphId;
-        }
-
-        public String getText() {
-            return text;
-        }
     }
 }

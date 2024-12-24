@@ -16,10 +16,11 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -130,8 +131,23 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
                     .filter(ch -> ch.canHandle(command, processingContext))
                     .findFirst()
                     .map(handler -> handler.handle(command, processingContext, target)
-                                           .mapMessage(GenericCommandResultMessage::asCommandResultMessage))
+                                           .mapMessage(AnnotationCommandHandlerAdapter::asCommandResultMessage))
                     .orElseGet(() -> MessageStream.failed(new NoHandlerForCommandException(command)));
+    }
+
+    // todo: QualifiedName - use MessageNameResolver
+    @SuppressWarnings("unchecked")
+    private static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult) {
+        if (commandResult instanceof CommandResultMessage) {
+            return (CommandResultMessage<R>) commandResult;
+        } else if (commandResult instanceof Message) {
+            Message<R> commandResultMessage = (Message<R>) commandResult;
+            return new GenericCommandResultMessage<>(commandResultMessage);
+        }
+        QualifiedName name = commandResult == null
+                ? QualifiedNameUtils.fromDottedName("empty.command.result")
+                : QualifiedNameUtils.fromClassName(commandResult.getClass());
+        return new GenericCommandResultMessage<>(name, (R) commandResult);
     }
 
     @Override

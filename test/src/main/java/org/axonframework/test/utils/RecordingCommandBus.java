@@ -18,10 +18,14 @@ package org.axonframework.test.utils;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,8 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
-import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
 /**
  * CommandBus implementation that does not perform any actions on subscriptions or dispatched commands, but records them
@@ -59,6 +61,20 @@ public class RecordingCommandBus implements CommandBus {
         } catch (Throwable throwable) {
             return CompletableFuture.failedFuture(throwable);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult) {
+        if (commandResult instanceof CommandResultMessage) {
+            return (CommandResultMessage<R>) commandResult;
+        } else if (commandResult instanceof Message) {
+            Message<R> commandResultMessage = (Message<R>) commandResult;
+            return new GenericCommandResultMessage<>(commandResultMessage);
+        }
+        QualifiedName name = commandResult == null
+                ? QualifiedNameUtils.fromDottedName("empty.command.result")
+                : QualifiedNameUtils.fromClassName(commandResult.getClass());
+        return new GenericCommandResultMessage<>(name, (R) commandResult);
     }
 
     @Override

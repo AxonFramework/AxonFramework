@@ -16,6 +16,9 @@
 
 package org.axonframework.test.aggregate;
 
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.core.IsNull;
@@ -26,7 +29,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -422,5 +424,9 @@ class FixtureTest_RegularParams {
         assertTrue(e.getMessage().contains("The published events do not match the expected events"));
         assertTrue(e.getMessage().contains("org.axonframework.test.aggregate.MyEvent <|> "));
         assertTrue(e.getMessage().contains("probable cause"));
+    }
+
+    private static <R> CommandResultMessage<R> asCommandResultMessage(Throwable exception) {
+        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()), exception);
     }
 }

@@ -53,11 +53,7 @@ public record QualifiedName(@Nonnull String namespace,
                             @Nonnull String localName,
                             @Nonnull String revision) implements Serializable {
 
-    /**
-     * The semantic version is retrieved from <a href="https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string">semver.org</a>.
-     */
-    private static final String SEMVER_REGEX = "(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?";
-    private static final String DEBUG_STRING_REGEX = "^([^:]+):([^:]+):(" + SEMVER_REGEX + ")$";
+    private static final String DEBUG_STRING_REGEX = "^([^:]+):([^:]+):([^:]+)$";
     private static final Pattern DEBUG_STRING_PATTERN = Pattern.compile(DEBUG_STRING_REGEX);
     private static final int NAMESPACE_GROUP = 1;
     private static final int LOCAL_NAME_GROUP = 2;

@@ -24,6 +24,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.utils.MockException;
@@ -38,6 +39,9 @@ import static org.mockito.Mockito.*;
 
 class RetryingCommandBusTest {
 
+    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final QualifiedName TEST_RESULT_NAME = new QualifiedName("test", "result", "0.0.1");
+
     private CommandBus delegate;
     private RetryScheduler retryScheduler;
     private RetryingCommandBus testSubject;
@@ -51,34 +55,38 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldReturnSuccessResultImmediately() throws ExecutionException, InterruptedException {
-        Message<Object> result = GenericMessage.asMessage("OK");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "Test");
+        Message<Object> result = new GenericMessage<>(TEST_RESULT_NAME, "OK");
         when(delegate.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(result));
 
         ProcessingContext processingContext = mock();
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(GenericCommandMessage.asCommandMessage(
-                "Test"), processingContext);
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(testCommand, processingContext);
 
         assertSame(result, actual.get());
     }
 
     @Test
     void shouldDelegateToRetrySchedulerOnFailure() throws ExecutionException, InterruptedException {
-        Message<Object> successResult = GenericMessage.asMessage("OK");
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "Test");
+        Message<Object> successResult = new GenericMessage<>(TEST_RESULT_NAME, "OK");
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException("Simulating failure")));
-        when(retryScheduler.scheduleRetry(any(), any(), any(), any())).thenAnswer(i -> MessageStream.just(successResult));
+        when(retryScheduler.scheduleRetry(any(), any(), any(), any()))
+                .thenAnswer(i -> MessageStream.just(successResult));
 
         ProcessingContext processingContext = mock();
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage(
-                "Test");
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(command, processingContext);
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(testCommand, processingContext);
 
-        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage<?>, Message<?>>> dispatcherCaptor = ArgumentCaptor.forClass(RetryScheduler.Dispatcher.class);
-        verify(retryScheduler).scheduleRetry(eq(command), eq(processingContext), isA(MockException.class), dispatcherCaptor.capture());
+        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage<?>, Message<?>>> dispatcherCaptor =
+                ArgumentCaptor.forClass(RetryScheduler.Dispatcher.class);
+        verify(retryScheduler).scheduleRetry(eq(testCommand),
+                                             eq(processingContext),
+                                             isA(MockException.class),
+                                             dispatcherCaptor.capture());
 
         verify(delegate, times(1)).dispatch(any(), any());
 
-        dispatcherCaptor.getValue().dispatch(command, processingContext);
+        dispatcherCaptor.getValue().dispatch(testCommand, processingContext);
 
         verify(delegate, times(2)).dispatch(any(), any());
 
@@ -87,21 +95,28 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldReturnedFailureIfRetrySchedulerReturnsFailure() {
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "Test");
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException("Simulating failure")));
-        when(retryScheduler.scheduleRetry(any(), any(), any(), any())).thenAnswer(i -> MessageStream.failed(new MockException("Simulating failure")));
+        when(retryScheduler.scheduleRetry(any(),
+                                          any(),
+                                          any(),
+                                          any())).thenAnswer(i -> MessageStream.failed(new MockException(
+                "Simulating failure")));
 
         ProcessingContext processingContext = mock();
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage(
-                "Test");
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(command, processingContext);
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(testCommand, processingContext);
 
-        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage<?>, Message<?>>> dispatcherCaptor = ArgumentCaptor.forClass(RetryScheduler.Dispatcher.class);
-        verify(retryScheduler).scheduleRetry(eq(command), eq(processingContext), isA(MockException.class), dispatcherCaptor.capture());
+        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage<?>, Message<?>>> dispatcherCaptor =
+                ArgumentCaptor.forClass(RetryScheduler.Dispatcher.class);
+        verify(retryScheduler).scheduleRetry(eq(testCommand),
+                                             eq(processingContext),
+                                             isA(MockException.class),
+                                             dispatcherCaptor.capture());
 
         verify(delegate, times(1)).dispatch(any(), any());
 
-        dispatcherCaptor.getValue().dispatch(command, processingContext);
+        dispatcherCaptor.getValue().dispatch(testCommand, processingContext);
 
         verify(delegate, times(2)).dispatch(any(), any());
 

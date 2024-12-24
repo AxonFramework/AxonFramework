@@ -47,39 +47,6 @@ public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements
     private final String deadlineName;
 
     /**
-     * Returns the given {@code deadlineName} and {@code messageOrPayload} as a DeadlineMessage which expires at the
-     * given {@code expiryTime}. If the {@code messageOrPayload} parameter is of type {@link Message}, a new
-     * {@code DeadlineMessage} instance will be created using the payload and meta data of the given message. Otherwise,
-     * the given {@code messageOrPayload} is wrapped into a {@code GenericDeadlineMessage} as its payload.
-     *
-     * @param deadlineName     The name for this {@link DeadlineMessage}.
-     * @param messageOrPayload A {@link Message} or payload to wrap as a DeadlineMessage
-     * @param expiryTime       The timestamp at which the deadline expires
-     * @param <P>              The generic type of the expected payload of the resulting object
-     * @return a DeadlineMessage using the {@code deadlineName} as its deadline name and containing the given
-     * {@code messageOrPayload} as the payload
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public static <P> DeadlineMessage<P> asDeadlineMessage(@Nonnull String deadlineName,
-                                                           @Nullable Object messageOrPayload,
-                                                           @Nonnull Instant expiryTime) {
-        if (messageOrPayload instanceof Message) {
-            return new GenericDeadlineMessage<>(deadlineName,
-                                                (Message<P>) messageOrPayload,
-                                                () -> expiryTime);
-        }
-        QualifiedName name = messageOrPayload == null
-                ? QualifiedNameUtils.fromDottedName("empty.deadline.payload")
-                : QualifiedNameUtils.fromClassName(messageOrPayload.getClass());
-        return new GenericDeadlineMessage<>(
-                deadlineName, new GenericMessage<>(name, (P) messageOrPayload), () -> expiryTime
-        );
-    }
-
-    /**
      * Constructs a {@link GenericDeadlineMessage} for the given {@code name} and {@code deadlineName}.
      * <p>
      * The {@link #getPayload()} defaults to {@code null} and the {@link MetaData} defaults to an empty instance.

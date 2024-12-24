@@ -18,11 +18,7 @@ package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.GenericResultMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.*;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
 import java.io.Serial;
@@ -41,49 +37,6 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
 
     @Serial
     private static final long serialVersionUID = 9013948836930094183L;
-
-    /**
-     * Returns the given {@code commandResult} as a {@link CommandResultMessage} instance. If {@code commandResult}
-     * already implements {@link CommandResultMessage}, it is returned as-is. If {@code commandResult} implements
-     * {@link Message}, payload and meta data will be used to construct new {@link GenericCommandResultMessage}.
-     * Otherwise, the given {@code commandResult} is wrapped into a {@link GenericCommandResultMessage} as its payload.
-     *
-     * @param commandResult The result to be wrapped in a {@link CommandResultMessage}.
-     * @param <R>           The type of payload contained in this {@link CommandResultMessage}.
-     * @return a Message containing given {@code commandResult} as payload, or {@code commandResult} if already
-     * implements {@link CommandResultMessage}
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult) {
-        if (commandResult instanceof CommandResultMessage) {
-            return (CommandResultMessage<R>) commandResult;
-        } else if (commandResult instanceof Message) {
-            Message<R> commandResultMessage = (Message<R>) commandResult;
-            return new GenericCommandResultMessage<>(commandResultMessage);
-        }
-        QualifiedName name = commandResult == null
-                ? QualifiedNameUtils.fromDottedName("empty.command.result")
-                : QualifiedNameUtils.fromClassName(commandResult.getClass());
-        return new GenericCommandResultMessage<>(name, (R) commandResult);
-    }
-
-    /**
-     * Creates a Command Result Message with the given {@code exception} result.
-     *
-     * @param exception The {@link Throwable} describing the error representing the response of this
-     *                  {@link CommandResultMessage}.
-     * @param <R>       The type of payload contained in this {@link CommandResultMessage}.
-     * @return a message containing exception result
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    public static <R> CommandResultMessage<R> asCommandResultMessage(@Nonnull Throwable exception) {
-        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()), exception);
-    }
 
     /**
      * Constructs a {@link GenericResultMessage} for the given {@code name} and {@code commandResult}.

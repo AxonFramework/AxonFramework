@@ -19,12 +19,8 @@ package org.axonframework.test.deadline;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.deadline.GenericDeadlineMessage;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.test.FixtureExecutionException;
 
@@ -41,8 +37,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
-
-import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
+import javax.annotation.Nullable;
 
 /**
  * Stub implementation of {@link DeadlineManager}. Records all scheduled, canceled and met deadlines.
@@ -108,6 +103,22 @@ public class StubDeadlineManager implements DeadlineManager {
                                                          scheduledMessage,
                                                          deadlineScope));
         return scheduledMessage.getIdentifier();
+    }
+
+    private static <P> DeadlineMessage<P> asDeadlineMessage(@Nonnull String deadlineName,
+                                                           @Nullable Object messageOrPayload,
+                                                           @Nonnull Instant expiryTime) {
+        if (messageOrPayload instanceof Message) {
+            return new GenericDeadlineMessage<>(deadlineName,
+                    (Message<P>) messageOrPayload,
+                    () -> expiryTime);
+        }
+        QualifiedName name = messageOrPayload == null
+                ? QualifiedNameUtils.fromDottedName("empty.deadline.payload")
+                : QualifiedNameUtils.fromClassName(messageOrPayload.getClass());
+        return new GenericDeadlineMessage<>(
+                deadlineName, new GenericMessage<>(name, (P) messageOrPayload), () -> expiryTime
+        );
     }
 
     @Nonnull

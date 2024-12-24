@@ -43,6 +43,7 @@ import static org.mockito.Mockito.*;
 class GenericMessageTest {
 
     private final Map<String, ?> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
+
     private UnitOfWork<?> unitOfWork;
 
     @BeforeEach
@@ -57,6 +58,21 @@ class GenericMessageTest {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.clear(CurrentUnitOfWork.get());
         }
+    }
+
+    @Test
+    void containsDataAsExpected() {
+        String testIdentifier = "testIdentifier";
+        QualifiedName testName = new QualifiedName("test", "message", "0.0.1");
+        String testPayload = "payload";
+        MetaData testMetaData = MetaData.emptyInstance();
+
+        Message<String> testSubject = new GenericMessage<>(testIdentifier, testName, testPayload, testMetaData);
+
+        assertEquals(testIdentifier, testSubject.getIdentifier());
+        assertEquals(testName, testSubject.name());
+        assertEquals(testPayload, testSubject.getPayload());
+        assertEquals(testMetaData, testSubject.getMetaData());
     }
 
     @Test
@@ -93,25 +109,6 @@ class GenericMessageTest {
     }
 
     @Test
-    void asMessageReturnsProvidedMessageAsIs() {
-        Message<String> testMessage = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "payload");
-
-        Message<?> result = GenericMessage.asMessage(testMessage);
-
-        assertEquals(testMessage, result);
-    }
-
-    @Test
-    void asMessageWrapsProvidedObjectsInMessage() {
-        String testPayload = "payload";
-
-        Message<?> result = GenericMessage.asMessage(testPayload);
-
-        assertNotEquals(testPayload, result);
-        assertEquals(testPayload, result.getPayload());
-    }
-
-    @Test
     void whenCorrelationDataProviderThrowsException_thenCatchException() {
         unitOfWork = new DefaultUnitOfWork<>(
                 new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Input 1")
@@ -120,7 +117,7 @@ class GenericMessageTest {
         unitOfWork.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
         CannotConvertBetweenTypesException exception = new CannotConvertBetweenTypesException("foo");
 
-        Message<?> result = GenericMessage.asMessage(exception);
+        Message<?> result = new GenericMessage<>(new QualifiedName("test", "exception", "0.0.1"), exception);
 
         assertNotNull(result);
     }

@@ -28,9 +28,7 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.*;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -49,6 +47,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
@@ -77,6 +76,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     private final EventBus eventBus;
     private final EventJobDataBinder jobDataBinder;
     private final TransactionManager transactionManager;
+    private final MessageNameResolver messageNameResolver;
 
     private String groupIdentifier = DEFAULT_GROUP_NAME;
     private volatile boolean initialized;
@@ -97,6 +97,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         eventBus = builder.eventBus;
         jobDataBinder = builder.jobDataBinderSupplier.get();
         transactionManager = builder.transactionManager;
+        messageNameResolver = builder.messageNameResolver;
 
         try {
             initialize();
@@ -130,7 +131,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         Assert.state(initialized, () -> "Scheduler is not yet initialized");
-        EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
+        EventMessage eventMessage = asEventMessage(event);
         String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getIdentifier();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
@@ -141,6 +142,22 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         }
         return tr;
     }
+
+    @SuppressWarnings("unchecked")
+    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
+        if (event instanceof EventMessage<?>) {
+            return (EventMessage<E>) event;
+        } else if (event instanceof Message<?>) {
+            Message<E> message = (Message<E>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage<>(
+                messageNameResolver.resolve(event),
+                (E) event,
+                MetaData.emptyInstance()
+        );
+    }
+
 
     /**
      * Builds the JobDetail instance for Quartz, which defines the Job that needs to be executed when the trigger
@@ -325,6 +342,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         private Supplier<EventJobDataBinder> jobDataBinderSupplier;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private Supplier<Serializer> serializer;
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
@@ -388,6 +406,18 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
             this.serializer = () -> serializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 
