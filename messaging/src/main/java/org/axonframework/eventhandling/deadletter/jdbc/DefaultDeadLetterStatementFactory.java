@@ -106,7 +106,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
                                               long sequenceIndex) throws SQLException {
         String sql = "INSERT INTO " + schema.deadLetterTable() + " "
                 + "(" + schema.deadLetterFields() + ") "
-                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         PreparedStatement statement = connection.prepareStatement(sql);
         AtomicInteger fieldIndex = new AtomicInteger(1);
         E eventMessage = letter.message();
@@ -139,6 +139,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
         SerializedObject<byte[]> serializedMetaData = eventMessage.serializeMetaData(eventSerializer, byte[].class);
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getClass().getName());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getIdentifier());
+        statement.setString(fieldIndex.getAndIncrement(), eventMessage.name().toString());
         statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(eventMessage.getTimestamp()));
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getName());
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getRevision());

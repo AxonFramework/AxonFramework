@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.Test;
+import org.axonframework.messaging.QualifiedName;
+import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.Map;
@@ -26,6 +27,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link GenericDomainEventMessage}.
+ *
  * @author Allard Buijze
  */
 class GenericDomainEventMessageTest {
@@ -35,11 +38,17 @@ class GenericDomainEventMessageTest {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
-        GenericDomainEventMessage<Object> message1 = new GenericDomainEventMessage<>("type", id, seqNo, payload);
+        DomainEventMessage<Object> message1 = new GenericDomainEventMessage<>(
+                "type", id, seqNo, new QualifiedName("test", "event", "0.0.1"), payload
+        );
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericDomainEventMessage<Object> message2 = new GenericDomainEventMessage<>("type", id, seqNo, payload, metaData);
-        GenericDomainEventMessage<Object> message3 = new GenericDomainEventMessage<>("type", id, seqNo, payload, metaDataMap);
+        DomainEventMessage<Object> message2 = new GenericDomainEventMessage<>(
+                "type", id, seqNo, new QualifiedName("test", "event", "0.0.1"), payload, metaData
+        );
+        DomainEventMessage<Object> message3 = new GenericDomainEventMessage<>(
+                "type", id, seqNo, new QualifiedName("test", "event", "0.0.1"), payload, metaDataMap
+        );
 
         assertSame(id, message1.getAggregateIdentifier());
         assertEquals(seqNo, message1.getSequenceNumber());
@@ -72,7 +81,9 @@ class GenericDomainEventMessageTest {
         String id = UUID.randomUUID().toString();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>("type", id, seqNo, payload, metaData);
+        GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>(
+                "type", id, seqNo, new QualifiedName("test", "event", "0.0.1"), payload, metaData
+        );
         GenericDomainEventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
         GenericDomainEventMessage<Object> message2 = message.withMetaData(
                 MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
@@ -88,7 +99,9 @@ class GenericDomainEventMessageTest {
         String id = UUID.randomUUID().toString();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>("type", id, seqNo, payload, metaData);
+        GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>(
+                "type", id, seqNo, new QualifiedName("test", "event", "0.0.1"), payload, metaData
+        );
         GenericDomainEventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
         GenericDomainEventMessage<Object> message2 = message.andMetaData(
                 MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
@@ -101,8 +114,12 @@ class GenericDomainEventMessageTest {
 
     @Test
     void testToString() {
-        String actual = new GenericDomainEventMessage<>("AggregateType", "id1", 1, "MyPayload").andMetaData(MetaData.with("key", "value").and("key2", 13)).toString();
-        assertTrue(actual.startsWith("GenericDomainEventMessage{payload={MyPayload}, metadata={"), "Wrong output: " + actual);
+        String actual = new GenericDomainEventMessage<>(
+                "AggregateType", "id1", 1, new QualifiedName("test", "event", "0.0.1"), "MyPayload"
+        ).andMetaData(MetaData.with("key", "value").and("key2", 13))
+         .toString();
+        assertTrue(actual.startsWith("GenericDomainEventMessage{payload={MyPayload}, metadata={"),
+                   "Wrong output: " + actual);
         assertTrue(actual.contains("'key'->'value'"), "Wrong output: " + actual);
         assertTrue(actual.contains("'key2'->'13'"), "Wrong output: " + actual);
         assertTrue(actual.contains("', timestamp='"), "Wrong output: " + actual);

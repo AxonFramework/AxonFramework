@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.Serializer;
 import org.junit.jupiter.api.*;
 
@@ -43,22 +44,24 @@ class DomainEventEntryTest {
     void domainEventEntryWrapEventsCorrectly() {
         Instant testTimestamp = Instant.now();
 
-        String expectedType = "type";
+        String expectedAggregateType = "aggregateType";
         String expectedAggregateId = randomUUID().toString();
         long expectedSequenceNumber = 2L;
+        QualifiedName expectedType = new QualifiedName("test", "event", "0.0.1");
         String expectedPayload = "Payload";
         MetaData expectedMetaData = new MetaData(Collections.singletonMap("Key", "Value"));
         Instant expectedTimestamp = DateTimeUtils.parseInstant(DateTimeUtils.formatInstant(testTimestamp));
         String expectedEventIdentifier = randomUUID().toString();
 
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                expectedType, expectedAggregateId, expectedSequenceNumber, expectedPayload, expectedMetaData,
-                expectedEventIdentifier, testTimestamp
+                expectedAggregateType, expectedAggregateId, expectedSequenceNumber,
+                expectedEventIdentifier, expectedType,
+                expectedPayload, expectedMetaData, testTimestamp
         );
 
         DomainEventEntry result = new DomainEventEntry(testEvent, serializer);
 
-        assertEquals(expectedType, result.getType());
+        assertEquals(expectedAggregateType, result.getType());
         assertEquals(expectedAggregateId, result.getAggregateIdentifier());
         assertEquals(expectedSequenceNumber, result.getSequenceNumber());
         assertEquals(expectedEventIdentifier, result.getEventIdentifier());

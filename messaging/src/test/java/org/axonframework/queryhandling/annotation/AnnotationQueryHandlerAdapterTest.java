@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package org.axonframework.queryhandling.annotation;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryBus;
@@ -36,6 +36,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -55,7 +57,6 @@ class AnnotationQueryHandlerAdapterTest {
         testSubject = new AnnotationQueryHandlerAdapter<>(new MyQueryHandler());
     }
 
-    @SuppressWarnings("resource")
     @Test
     void subscribe() {
         when(queryBus.subscribe(any(), any(), any())).thenReturn(() -> true);
@@ -86,33 +87,37 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void handleQuery() throws Exception {
         String testResponse = "hello";
-        QueryMessage<String, String> testQueryMessage =
-                new GenericQueryMessage<>(testResponse, ResponseTypes.instanceOf(String.class));
-        Object result = testSubject.handleSync(testQueryMessage);
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), testResponse, instanceOf(String.class)
+        );
+        Object result = testSubject.handleSync(testQuery);
 
         assertEquals(testResponse, result);
     }
 
     @Test
     void handleQueryWithException() {
-        QueryMessage<String, Integer> testQuery =
-                new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class));
+        QueryMessage<String, Integer> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "hello", instanceOf(Integer.class)
+        );
 
         assertThrows(MockException.class, () -> testSubject.handleSync(testQuery));
     }
 
     @Test
     void handleQueryWithEmptyOptional() throws Exception {
-        QueryMessage<String, String> testQuery =
-                new GenericQueryMessage<>("hello", "noEcho", ResponseTypes.instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "noEcho", "hello", instanceOf(String.class)
+        );
 
         assertNull(testSubject.handleSync(testQuery));
     }
 
     @Test
     void handleQueryWithProvidedOptional() throws Exception {
-        QueryMessage<String, String> testQuery =
-                new GenericQueryMessage<>("hello", "Hello", ResponseTypes.instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello", "hello", instanceOf(String.class)
+        );
 
         assertEquals("hello", testSubject.handleSync(testQuery));
     }
@@ -120,21 +125,23 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void handleQueryForCollection() throws Exception {
         int testResponse = 5;
-        QueryMessage<Integer, List<String>> testQueryMessage =
-                new GenericQueryMessage<>(testResponse, ResponseTypes.multipleInstancesOf(String.class));
+        QueryMessage<Integer, List<String>> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), testResponse, multipleInstancesOf(String.class)
+        );
 
         //noinspection unchecked
-        Collection<String> result = (Collection<String>) testSubject.handleSync(testQueryMessage);
+        Collection<String> result = (Collection<String>) testSubject.handleSync(testQuery);
 
         assertEquals(testResponse, result.size());
     }
 
     @Test
     void handleQueryThrowsNoHandlerForQueryException() {
-        QueryMessage<Long, List<String>> testQueryMessage =
-                new GenericQueryMessage<>(42L, ResponseTypes.multipleInstancesOf(String.class));
+        QueryMessage<Long, List<String>> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), 42L, multipleInstancesOf(String.class)
+        );
 
-        assertThrows(NoHandlerForQueryException.class, () -> testSubject.handleSync(testQueryMessage));
+        assertThrows(NoHandlerForQueryException.class, () -> testSubject.handleSync(testQuery));
     }
 
     @Test
@@ -145,22 +152,25 @@ class AnnotationQueryHandlerAdapterTest {
                 new MyInterceptingQueryHandler(withoutInterceptor, withInterceptor, new ArrayList<>())
         );
 
-        QueryMessage<String, String> testQueryMessage =
-                new GenericQueryMessage<>("Hi", "Hello", ResponseTypes.instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello", "Hi", instanceOf(String.class)
+        );
 
-        String result = (String) testSubject.handleSync(testQueryMessage);
+        String result = (String) testSubject.handleSync(testQuery);
 
         assertEquals("Hi", result);
-        assertEquals(Collections.singletonList(testQueryMessage), withInterceptor);
-        assertEquals(Collections.singletonList(testQueryMessage), withoutInterceptor);
+        assertEquals(Collections.singletonList(testQuery), withInterceptor);
+        assertEquals(Collections.singletonList(testQuery), withoutInterceptor);
     }
 
     @Test
     void canHandleMessage() {
-        QueryMessage<String, Integer> testIntegerQuery =
-                new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class));
-        QueryMessage<String, Long> testLongQuery =
-                new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Long.class));
+        QueryMessage<String, Integer> testIntegerQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "hello", instanceOf(Integer.class)
+        );
+        QueryMessage<String, Long> testLongQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "hello", instanceOf(Long.class)
+        );
 
         assertTrue(testSubject.canHandle(testIntegerQuery));
         assertFalse(testSubject.canHandle(testLongQuery));
@@ -174,16 +184,17 @@ class AnnotationQueryHandlerAdapterTest {
                 new MyInterceptingQueryHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions)
         );
 
-        QueryMessage<ArrayList<Object>, Object> testQueryMessage =
-                new GenericQueryMessage<>(new ArrayList<>(), ResponseTypes.instanceOf(Object.class));
+        QueryMessage<ArrayList<Object>, Object> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), new ArrayList<>(), instanceOf(Object.class)
+        );
 
-        Object result = testSubject.handleSync(testQueryMessage);
+        Object result = testSubject.handleSync(testQuery);
 
         assertNull(result);
         assertFalse(interceptedExceptions.isEmpty());
         assertEquals(1, interceptedExceptions.size());
-        Exception interceptedException = interceptedExceptions.get(0);
-        assertTrue(interceptedException instanceof RuntimeException);
+        Exception interceptedException = interceptedExceptions.getFirst();
+        assertInstanceOf(RuntimeException.class, interceptedException);
         assertEquals("Some exception", interceptedException.getMessage());
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package org.axonframework.deadline.annotation;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.EventHandler;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.axonframework.messaging.QualifiedName;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,7 +39,9 @@ class DeadlineMethodMessageHandlerDefinitionTest {
 
     @Test
     void deadlineManagerIsEvaluatedBeforeGenericEventHandler() throws Exception {
-        handlerAdapter.handleSync(new GenericDeadlineMessage<>("someDeadline", "test"));
+        handlerAdapter.handleSync(new GenericDeadlineMessage<>(
+                "someDeadline", new QualifiedName("test", "deadline", "0.0.1"), "test"
+        ));
 
         assertThat("Deadline handler is invoked", listener.deadlineCounter.get() == 1);
         assertThat("Event handler was not invoked", listener.eventCounter.get() == 0);
@@ -47,18 +49,21 @@ class DeadlineMethodMessageHandlerDefinitionTest {
 
     @Test
     void namedDeadlineManagerIsEvaluatedBeforeGenericOne() throws Exception {
-        handlerAdapter.handleSync(new GenericDeadlineMessage<>("specificDeadline", "test"));
+        handlerAdapter.handleSync(new GenericDeadlineMessage<>(
+                "specificDeadline", new QualifiedName("test", "deadline", "0.0.1"), "test"
+        ));
 
         assertThat("Generic Deadline handler was not invoked", listener.deadlineCounter.get() == 0);
         assertThat("Specific Deadline handler was invoked", listener.specificDeadlineCounter.get() == 1);
     }
 
 
-    private class Listener {
+    @SuppressWarnings("unused")
+    private static class Listener {
 
-        private AtomicInteger eventCounter = new AtomicInteger();
-        private AtomicInteger deadlineCounter = new AtomicInteger();
-        private AtomicInteger specificDeadlineCounter = new AtomicInteger();
+        private final AtomicInteger eventCounter = new AtomicInteger();
+        private final AtomicInteger deadlineCounter = new AtomicInteger();
+        private final AtomicInteger specificDeadlineCounter = new AtomicInteger();
 
         @EventHandler
         public void handleA(String event) {

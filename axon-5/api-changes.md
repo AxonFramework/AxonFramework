@@ -132,6 +132,35 @@ Other API changes
 
 TODO
 
+Stored format changes
+=====================
+
+## Dead Letters
+
+1. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` has renamed the `messageType` column to
+   `eventType`.
+2. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` has renamed the `type` column to
+   `aggregateType`.
+3. The JPA `org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry` expects the `QualifiedName` to be
+   present under the `type` column, non-nullable.
+4. The JDBC `org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema` has renamed the `messageType` column to
+   `eventType`.
+5. The JDBC `org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema` has renamed the `type` column to
+   `aggregateType`.
+6. The JDBC `org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema` expects the `QualifiedName` to be present
+   under the `type` column, non-nullable.
+
+## Deadlines
+
+1. The JobRunr `org.axonframework.deadline.jobrunr.DeadlineDetails` expects the `QualifiedName` to be present under the
+   field `type`.
+2. The Quartz `org.axonframework.deadline.quartz.DeadlineJob` expects the QualifiedName to be present in the
+   `JobDataMap` under the key `qualifiedType`.
+3. The dbscheduler `org.axonframework.deadline.dbscheduler.DbSchedulerBinaryDeadlineDetails` expects the `QualifiedName`
+   to be present under the field `t`.
+4. The dbscheduler `org.axonframework.deadline.dbscheduler.DbSchedulerHumanReadableDeadlineDetails` expects the
+   `QualifiedName` to be present under the field `type`.
+
 Moved / Remove Classes
 ======================
 
@@ -153,3 +182,25 @@ Moved / Remove Classes
 | org.axonframework.messaging.unitofwork.ExecutionResult          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
 | org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
 | org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`                                     |
+
+Method Signature Changes
+========================
+
+### Constructors
+
+| Constructor                                                                                | What                           | Why                                          | 
+|--------------------------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
+| One org.axonframework.messaging.AbstractMessage constructor                                | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| One org.axonframework.serialization.SerializedMessage constructor                          | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.messaging.GenericMessage constructors                      | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.commandhandling.GenericCommandMessage constructors         | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.eventhandling.GenericEventMessage constructors             | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.eventhandling.GenericDomainEventMessage constructors       | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericQueryMessage constructors             | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericSubscriptionQueryMessage constructors | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericStreamingQueryMessage constructors    | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.deadline.GenericDeadlineMessage constructors               | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.messaging.GenericResultMessage constructors                | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |

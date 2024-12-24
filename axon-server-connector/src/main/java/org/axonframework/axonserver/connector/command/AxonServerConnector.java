@@ -34,6 +34,7 @@ import org.axonframework.commandhandling.distributed.PriorityResolver;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
@@ -83,6 +84,7 @@ public class AxonServerConnector implements Connector {
 
         return CompletableFuture.completedFuture(new GenericMessage<>(
                 commandResponse.getMessageIdentifier(),
+                new QualifiedName("axon.framework.placeholder", "generic.command.response", "5.0.0"),
                 commandResponse.getPayload().getData().toByteArray(),
                 convertMap(commandResponse.getMetaDataMap(), this::convertToMetaDataValue)
         ));
@@ -185,11 +187,16 @@ public class AxonServerConnector implements Connector {
     }
 
     private CommandMessage<?> convertToCommandMessage(Command command) {
-        return new GenericCommandMessage<>(new GenericMessage<>(command.getMessageIdentifier(),
-                                                                command.getPayload().getData().toByteArray(),
-                                                                convertMap(command.getMetaDataMap(),
-                                                                           this::convertToMetaDataValue)),
-                                           command.getName());
+        SerializedObject commandPayload = command.getPayload();
+        return new GenericCommandMessage<>(
+                new GenericMessage<>(
+                        command.getMessageIdentifier(),
+                        QualifiedName.fromString(command.getName()),
+                        commandPayload.getData().toByteArray(),
+                        convertMap(command.getMetaDataMap(), this::convertToMetaDataValue)
+                ),
+                command.getName()
+        );
     }
 
     private CommandResponse createResult(Command command, Message<?> result) {
