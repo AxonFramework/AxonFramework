@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -53,5 +54,10 @@ final class NoEventCriteria implements EventCriteria {
     @Override
     public Set<Tag> tags() {
         return Set.of();
+    }
+
+    @Override
+    public boolean matchingTags(@Nonnull Set<Tag> tags) {
+        return true;
     }
 }
