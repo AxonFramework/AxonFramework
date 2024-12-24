@@ -23,7 +23,6 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
@@ -99,13 +98,6 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
                                                     @Nonnull Instant at) {
         validate(context);
         return eventStorageEngine.tokenAt(at);
-    }
-
-    @Override
-    public CompletableFuture<TrackingToken> tokenSince(@Nonnull String context,
-                                                       @Nonnull Duration since) {
-        validate(context);
-        return eventStorageEngine.tokenSince(since);
     }
 
     @Override

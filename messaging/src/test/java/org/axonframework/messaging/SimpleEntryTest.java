@@ -22,7 +22,7 @@ import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.ContextTestSuite;
 import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
@@ -60,7 +60,7 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
         MetaData expectedMetaData = MetaData.from(Map.of("key", "value"));
         String expectedResourceValue = "test";
         ResourceKey<String> expectedContextKey = ResourceKey.create(expectedResourceValue);
-        Context testContext = new SimpleContext().withResource(expectedContextKey, expectedResourceValue);
+        Context testContext = new SimpleContext(expectedContextKey, expectedResourceValue);
 
         Entry<Message<Object>> testSubject = new SimpleEntry<>(expectedMessage, testContext);
 
