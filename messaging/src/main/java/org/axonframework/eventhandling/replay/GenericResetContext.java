@@ -43,7 +43,6 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
     /**
      * The {@link QualifiedName name} of <em>any</em> {@link GenericResetContext} instance.
      */
-    // TODO different PR
     public static final QualifiedName NAME = new QualifiedName("axon.framework", "resetContext", "5.0.0");
 
     /**
