@@ -42,9 +42,9 @@ class GenericQueryMessageTest {
 
     @Test
     void queryNameResemblesMessagePayloadTypeClassName() {
-        QualifiedName testType = new QualifiedName("test", "query", "0.0.1");
+        QualifiedName testName = new QualifiedName("test", "query", "0.0.1");
         String testPayload = "payload";
-        Message<?> testMessage = new GenericMessage<>(testType, testPayload);
+        Message<?> testMessage = new GenericMessage<>(testName, testPayload);
 
         String result = QueryMessage.queryName(testMessage);
 
