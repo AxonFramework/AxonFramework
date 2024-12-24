@@ -23,8 +23,10 @@ package org.axonframework.common;
  */
 public class SimpleContextTest extends ContextTestSuite<SimpleContext> {
 
+    private static final Context.ResourceKey<String> RANDOM_RESOURCE_KEY = Context.ResourceKey.create("RandomResource");
+
     @Override
     public SimpleContext testSubject() {
-        return new SimpleContext();
+        return new SimpleContext(RANDOM_RESOURCE_KEY, "SimpleContext");
     }
 }

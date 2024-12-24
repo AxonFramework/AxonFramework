@@ -17,11 +17,9 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import reactor.core.publisher.Flux;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -36,7 +34,10 @@ import java.util.function.Function;
 class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     private final MessageStream<M> delegate;
+    private final AtomicReference<MessageStream<M>> onErrorStream = new AtomicReference<>();
     private final Function<Throwable, MessageStream<M>> onError;
+    private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
+    });
 
     /**
      * Construct an {@link MessageStream stream} that will proceed on the resulting {@code MessageStream} from the given
@@ -54,48 +55,52 @@ class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStrea
     }
 
     @Override
-    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
-        return delegate.firstAsCompletableFuture()
-                       .exceptionallyCompose(exception -> onError.apply(exception)
-                                                                 .firstAsCompletableFuture());
+    public Optional<Entry<M>> next() {
+        return resolveCurrentDelegate().next();
     }
 
     @Override
-    public Flux<Entry<M>> asFlux() {
-        return delegate.asFlux()
-                       .onErrorResume(exception -> onError.apply(exception)
-                                                          .asFlux());
+    public void onAvailable(@Nonnull Runnable callback) {
+        resolveCurrentDelegate().onAvailable(callback);
+        this.callback.set(callback);
+    }
+
+    private MessageStream<M> resolveCurrentDelegate() {
+        if (!delegate.isCompleted() || delegate.error().isEmpty()) {
+            return delegate;
+        } else if (onErrorStream.get() != null) {
+            return onErrorStream.get();
+        } else {
+            synchronized (this) {
+                MessageStream<M> newMessageStream = onErrorStream.updateAndGet((c) -> {
+                    if (c == null) {
+                        return onError.apply(delegate.error().orElse(null));
+                    }
+                    return c;
+                });
+                newMessageStream.onAvailable(callback.get());
+                return newMessageStream;
+            }
+        }
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
-        StatefulAccumulator<R> wrapped = new StatefulAccumulator<>(identity, accumulator);
-        return delegate.reduce(identity, wrapped)
-                       .exceptionallyCompose(exception -> onError.apply(exception)
-                                                                 .reduce(wrapped.latest(), wrapped));
+    public Optional<Throwable> error() {
+        return resolveCurrentDelegate().error();
     }
 
-    private class StatefulAccumulator<R> implements BiFunction<R, Entry<M>, R> {
+    @Override
+    public boolean isCompleted() {
+        return resolveCurrentDelegate().isCompleted();
+    }
 
-        private final AtomicReference<R> latest;
-        private final BiFunction<R, Entry<M>, R> accumulator;
+    @Override
+    public boolean hasNextAvailable() {
+        return resolveCurrentDelegate().hasNextAvailable();
+    }
 
-        public StatefulAccumulator(R identity,
-                                   BiFunction<R, Entry<M>, R> accumulator) {
-            this.latest = new AtomicReference<>(identity);
-            this.accumulator = accumulator;
-        }
-
-        @Override
-        public R apply(R initial, Entry<M> entry) {
-            R result = accumulator.apply(initial, entry);
-            latest.set(result);
-            return result;
-        }
-
-        R latest() {
-            return latest.get();
-        }
+    @Override
+    public void close() {
+        resolveCurrentDelegate().close();
     }
 }
