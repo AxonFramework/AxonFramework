@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,13 +45,17 @@ class DefaultInterceptorChainTest {
     @SuppressWarnings("unchecked")
     void chainWithDifferentProceedCalls() throws Exception {
         MessageHandlerInterceptor interceptor1 = (unitOfWork, interceptorChain) -> {
-            unitOfWork.transformMessage(m -> new GenericMessage<>("testing"));
+            unitOfWork.transformMessage(m -> new GenericMessage<>(
+                    new QualifiedName("test", "message", "0.0.1"), "testing"
+            ));
             return interceptorChain.proceedSync();
         };
         MessageHandlerInterceptor interceptor2 = (unitOfWork, interceptorChain) -> interceptorChain.proceedSync();
 
 
-        unitOfWork.transformMessage(m -> new GenericMessage<>("original"));
+        unitOfWork.transformMessage(m -> new GenericMessage<>(
+                new QualifiedName("test", "message", "0.0.1"), "original"
+        ));
         DefaultInterceptorChain testSubject = new DefaultInterceptorChain(
                 unitOfWork, asList(interceptor1, interceptor2), mockHandler
         );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,38 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
-/**
- * Abstract implementation of a {@link Message} that delegates to an existing message. Extend this decorator class to
- * extend the message with additional features.
- *
- * @author Rene de Waele
- */
-public abstract class MessageDecorator<T> implements Message<T> {
+import java.io.Serial;
 
+/**
+ * Abstract implementation of a {@link Message} that delegates to an existing message.
+ * <p>
+ * Extend this decorator class to extend the message with additional features.
+ *
+ * @param <P> The type of {@link #getPayload() payload} contained in this {@link MessageDecorator}.
+ * @author Steven van Beelen
+ * @author Rene de Waele
+ * @since 3.0.0
+ */
+public abstract class MessageDecorator<P> implements Message<P> {
+
+    @Serial
     private static final long serialVersionUID = 3969631713723578521L;
 
-    private final Message<T> delegate;
+    private final Message<P> delegate;
 
     /**
-     * Initializes a new decorator with given {@code delegate} message. The decorator delegates to the delegate for
-     * the message's payload, metadata and identifier.
+     * Initializes a new decorator with given {@code delegate} {@link Message}.
+     * <p>
+     * The decorator delegates to the delegate for the message's {@link #getIdentifier() identifier},
+     * {@link #name() type}, {@link #getPayload() payload}, and {@link #getMetaData() metadata}.
      *
-     * @param delegate the message delegate
+     * @param delegate The {@link Message} delegate.
      */
-    protected MessageDecorator(Message<T> delegate) {
+    protected MessageDecorator(@Nonnull Message<P> delegate) {
         this.delegate = delegate;
     }
 
@@ -46,18 +56,24 @@ public abstract class MessageDecorator<T> implements Message<T> {
         return delegate.getIdentifier();
     }
 
+    @Nonnull
+    @Override
+    public QualifiedName name() {
+        return delegate.name();
+    }
+
     @Override
     public MetaData getMetaData() {
         return delegate.getMetaData();
     }
 
     @Override
-    public T getPayload() {
+    public P getPayload() {
         return delegate.getPayload();
     }
 
     @Override
-    public Class<T> getPayloadType() {
+    public Class<P> getPayloadType() {
         return delegate.getPayloadType();
     }
 
@@ -76,7 +92,7 @@ public abstract class MessageDecorator<T> implements Message<T> {
      *
      * @return the delegate message
      */
-    protected Message<T> getDelegate() {
+    protected Message<P> getDelegate() {
         return delegate;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 /**
- * Message that represents a result of handling some form of request message.
+ * A {@link Message} that represents a result of handling some form of request message.
  *
- * @param <R> The type of payload contained in this Message
+ * @param <R> The type of {@link #getPayload() result} contained in this {@link ResultMessage}.
  * @author Milan Savic
- * @since 4.0
+ * @since 4.0.0
  */
 public interface ResultMessage<R> extends Message<R> {
 
@@ -95,7 +95,8 @@ public interface ResultMessage<R> extends Message<R> {
      * @param expectedRepresentation a {@link Class} representing the expected format
      * @param <T>                    the generic type representing the expected format
      * @return the serialized exception as a {@link SerializedObject}
-     * @deprecated Serialization is removed from messages themselves. Instead, use {@link #withConvertedPayload(Function)}
+     * @deprecated Serialization is removed from messages themselves. Instead, use
+     * {@link #withConvertedPayload(Function)}
      */
     @Deprecated
     default <T> SerializedObject<T> serializeExceptionResult(Serializer serializer, Class<T> expectedRepresentation) {
