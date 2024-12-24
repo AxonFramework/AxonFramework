@@ -298,6 +298,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
+    public ContinuedGivenState givenAPublished(Object event, Map<String, ?> metaData) {
+        EventMessage<?> msg = GenericEventMessage.asEventMessage(event).andMetaData(metaData);
+        handleInSaga(timeCorrectedEventMessage(msg));
+        return this;
+    }
+
+    @Override
     public ContinuedGivenState givenCurrentTime(Instant currentTime) {
         eventScheduler.initializeAt(currentTime);
         deadlineManager.initializeAt(currentTime);

@@ -1,0 +1,58 @@
+= Known Issues and Workarounds
+:navtitle: Known Issues and Workarounds
+
+As with any tool, library, or framework, there are well-known issues you might find with Axon Framework.
+Since Axon Framework integrates with many other tools, it is challenging to find the perfect solution for every scenario.
+
+This page provides the biggest "gotchas," with optional workarounds.
+
+[NOTE]
+.Where is issue XYZ?
+====
+This page can by no means contain **all** possible issues.
+However, we are open for suggestions.
+
+This documentation, just as the framework, is open source.
+Hence, if you have found something problematic that you think should be added to the list, be sure to file an issue and (ideally!) a pull request.
+
+You can make an enhancement request by clicking link:https://github.com/AxonFramework/AxonFramework/issues/new?assignees=&labels=Type%3A+Enhancement&projects=&template=2_enhancement_request.md[here].
+When looking to provide a pull request, be sure to adjust link:https://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/serialization.adochttps://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/known-issues-and-workarounds.adoc[this file].
+====
+
+== PostgreSQL and large object storage
+
+When storing the serialized formats of, for example, xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[tokens], xref:axon-framework-reference:sagas:index.adoc[sagas], xref:axon-framework-reference:tuning:event-snapshots.adoc[snapshots], or xref:axon-framework-reference:events:infrastructure.adoc[events], it is good to know Axon uses JPAs `@Lob` annotation for these columns.
+
+This choice combined with link:https://www.postgresql.org/[PostgreSQL] and Hibernate, causes unexpected behavior for most.
+
+PostgreSQL has a feature called link:https://www.postgresql.org/docs/current/largeobjects.html["Large Object Storage"], which moves `LOB`, `BLOB`, and `CLOB` columns to a singular large object storage table.
+Instead of the `LOB`/`BLOB`/`CLOB` type, the column will be of type `OID` (object identifier).
+Hences, the rows will contain this `OID` instead of the data directly.
+Hibernate will default `@Lob` annotated fields to go through this Large Object Storage feature, by automatically mapping to the `OID` type.
+
+Hence, in such a setup, all your serialized tokens, sagas, snapshots, and events will automatically move to another table, with all added overhead coming with it.
+Using xref:axon-server-reference::index.adoc[Axon Server] will, obviously, resolve this for your events and snapshots, as you would no longer use an RDBMS in that case.
+However, even when using Axon Server, the predicament remains for tokens and sagas.
+
+For those cases, it would be wise to adjust the Hibernate mapping.
+The most straightforward way, is to enforce the use of the `BYTEA` column type; with some additional steps, of course.
+For a full explanation and walkthrough, please check the xref:axon-framework-reference:tuning:rdbms-tuning.adoc#_postgresql_lob_annotated_columns_and_default_hibernate_mapping[PostegreSQL, LOB annotated columns, and default Hibernate mapping] tuning page.
+
+== Sequence generation issues with JPA Entities
+
+For the JPA entities that require a generated sequence, we decided to use the default `@GeneratedValue` annotation back in 2016.
+In the pre-Hibernate-6 age, this typically resulted in the construction of a single sequence generator that would be reused by several tables.
+This can be regarded as suboptimal, as frequently, the sequence generator would be reused between tables.
+
+Especially given the nature of the `global_index` column on the `domain_event_entry` table, which is used to keep the progress in xref:axon-framework-reference:events:event-processors/streaming.adoc[streaming event processors], a reused generator, causes unexpected gaps in event processing.
+Although Axon Framework can deal with these gaps, they make the queries to the `domain_event_entry` table rather bulky.
+
+Just as with any event storage solution, using a dedicated event store implementation like xref:axon-server-reference::index.adoc[Axon Server] will solve the problem entirely.
+Instead of using Axon Server, it is also possible to define sequence generators manually for Axon's entities.
+The xref:axon-framework-reference:tuning:rdbms-tuning.adoc[Relational Database Tuning page] contains a section on how to do this, called xref:axon-framework-reference:tuning:rdbms-tuning.adoc#auto_increment_and_sequences[Auto-Increment and Sequences].
+
+As described earlier, the `@GeneratedValue` was introduced in 2016.
+With the recent move to Hibernate 6, which defaults the increment value to 50, the problem of gaps or unintended reuse between tables has only become bigger.
+Especially when combining this with Axon's xref:multitenancy-extension-reference::index.adoc[multitenancy] extension, the new default behavior of Hibernate 6 might cause uniqueness issues in this way.
+
+Hence, given the history on the subject, and the Axon-team having explained this predicament more frequent than they can count, we intend to address the sequence generation behavior in Axon Framework 5.

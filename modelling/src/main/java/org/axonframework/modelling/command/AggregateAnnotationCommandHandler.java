@@ -16,7 +16,13 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
@@ -36,7 +42,14 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -50,9 +63,9 @@ import static org.axonframework.modelling.command.AggregateCreationPolicy.NEVER;
  * annotations may appear on methods, in which case a specific aggregate instance needs to be targeted by the command,
  * or on the constructor. The latter will create a new Aggregate instance, which is then stored in the repository.
  * <p>
- * Despite being an {@link CommandHandlingComponent} it does not actually handle the commands. During registration to the
- * {@link CommandBus} it registers the {@link CommandHandlingComponent}s directly instead of itself so duplicate command
- * handlers can be detected and handled correctly.
+ * Despite being an {@link CommandHandlingComponent} it does not actually handle the commands. During registration to
+ * the {@link CommandBus} it registers the {@link CommandHandlingComponent}s directly instead of itself so duplicate
+ * command handlers can be detected and handled correctly.
  *
  * @param <T> the type of aggregate this handler handles commands for
  * @author Allard Buijze
@@ -107,16 +120,30 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         this.supportedCommandsByName = new HashMap<>();
         this.messageNameResolver = builder.messageNameResolver;
         AggregateModel<T> aggregateModel = builder.buildAggregateModel();
-        this.creationPolicyAggregateFactory =
-                initializeAggregateFactory(aggregateModel.entityClass(), builder.creationPolicyAggregateFactory);
+        // Suppressing cast to Class<? extends T> as we are definitely dealing with implementations of T.
+        //noinspection unchecked
+        this.factoryPerType = initializeAggregateFactories(
+                aggregateModel.types()
+                              .map(type -> (Class<? extends T>) type)
+                              .collect(Collectors.toList()),
+                builder.creationPolicyAggregateFactory
+        );
+
         this.handlers = initializeHandlers(aggregateModel);
     }
 
-    private CreationPolicyAggregateFactory<T> initializeAggregateFactory(Class<? extends T> aggregateClass,
-                                                                         CreationPolicyAggregateFactory<T> configuredAggregateFactory) {
-        return configuredAggregateFactory != null
-                ? configuredAggregateFactory
-                : new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateClass);
+    private Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> initializeAggregateFactories(
+            List<Class<? extends T>> aggregateTypes,
+            CreationPolicyAggregateFactory<T> configuredAggregateFactory
+    ) {
+        Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> typeToFactory = new HashMap<>();
+        for (Class<? extends T> aggregateType : aggregateTypes) {
+            typeToFactory.put(aggregateType, configuredAggregateFactory != null
+                    ? configuredAggregateFactory
+                    : new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType)
+            );
+        }
+        return typeToFactory;
     }
 
     /**
@@ -134,7 +161,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                         messageHandler -> commandBus.subscribe(entry.getKey(), messageHandler)
                 ))
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
         return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
@@ -152,7 +179,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                       .flatMap(List::stream)
                       .collect(Collectors.groupingBy(this::getHandlerSignature))
                       .forEach((signature, commandHandlers) -> initializeHandler(
-                              aggregateModel, commandHandlers.get(0), handlersFound
+                              aggregateModel, commandHandlers.getFirst(), handlersFound
                       ));
 
         return handlersFound;
@@ -175,7 +202,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
             Optional<AggregateCreationPolicy> policy = handler.unwrap(CreationPolicyMember.class)
                                                               .map(CreationPolicyMember::creationPolicy);
 
-            MessageHandler<CommandMessage<?>, CommandResultMessage<?>> messageHandler = null;
+            MessageHandler<CommandMessage<?>, CommandResultMessage<?>> messageHandler;
             if (cmh.isFactoryHandler()) {
                 assertThat(
                         policy,
@@ -184,19 +211,15 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                 );
                 messageHandler = new AggregateConstructorCommandHandler(handler);
             } else {
-                switch (policy.orElse(NEVER)) {
-                    case ALWAYS:
-                        messageHandler =
-                                new AlwaysCreateAggregateCommandHandler(handler, creationPolicyAggregateFactory);
-                        break;
-                    case CREATE_IF_MISSING:
-                        messageHandler =
-                                new AggregateCreateOrUpdateCommandHandler(handler, creationPolicyAggregateFactory);
-                        break;
-                    case NEVER:
-                        messageHandler = new AggregateCommandHandler(handler);
-                        break;
-                }
+                messageHandler = switch (policy.orElse(NEVER)) {
+                    case ALWAYS -> new AlwaysCreateAggregateCommandHandler(
+                            handler, factoryPerType.get(handler.declaringClass())
+                    );
+                    case CREATE_IF_MISSING -> new AggregateCreateOrUpdateCommandHandler(
+                            handler, factoryPerType.get(handler.declaringClass())
+                    );
+                    case NEVER -> new AggregateCommandHandler(handler);
+                };
             }
             handlersFound.add(messageHandler);
             supportedCommandsByName.computeIfAbsent(cmh.commandName(), key -> new HashSet<>()).add(messageHandler);
@@ -374,16 +397,19 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         /**
-         * Sets the {@link CreationPolicyAggregateFactory<T>} for generic type {@code T}. The aggregate factory must
-         * produce a new instance of the Aggregate root based on the supplied Identifier.
+         * Sets the {@link CreationPolicyAggregateFactory<T>} for generic type {@code T}.
+         * <p>
+         * The aggregate factory must produce a new instance of the aggregate root based on the supplied identifier.
+         * When dealing with a polymorphic aggregate, the given {@code creationPolicyAggregateFactory} will be used for
+         * <b>every</b> {@link AggregateModel#types() type}.
          *
-         * @param creationPolicyAggregateFactory that returns the aggregate instance based on the identifier
-         * @return the current Builder instance, for fluent interfacing
+         * @param creationPolicyAggregateFactory The {@link CreationPolicyAggregateFactory} the constructs an aggregate
+         *                                       instance based on an identifier.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder<T> creationPolicyAggregateFactory(
                 CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory
         ) {
-            assertNonNull(creationPolicyAggregateFactory, "CreationPolicyAggregateFactory may not be null");
             this.creationPolicyAggregateFactory = creationPolicyAggregateFactory;
             return this;
         }

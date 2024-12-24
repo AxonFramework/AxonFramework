@@ -27,6 +27,7 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -714,6 +715,48 @@ class QueryProcessingTaskIntegrationTest {
         assertTrue(responseHandler.completed());
     }
 
+    @Test
+    void responsePendingReturnsTrueForUncompletedTask() {
+        QueryMessage<FluxQuery, Publisher<String>> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"),
+                new FluxQuery(1000),
+                ResponseTypes.publisherOf(String.class)
+        );
+        QueryRequest testRequest = querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
+                                                                  testRequest,
+                                                                  responseHandler,
+                                                                  querySerializer,
+                                                                  CLIENT_ID,
+                                                                  queryBusSpanFactory);
+
+        assertTrue(testSubject.resultPending());
+    }
+
+    @Test
+    void responsePendingReturnsFalseForCompletedTask() {
+        QueryMessage<FluxQuery, Publisher<String>> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"),
+                new FluxQuery(1),
+                ResponseTypes.publisherOf(String.class)
+        );
+        QueryRequest testRequest = querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
+                                                                  testRequest,
+                                                                  responseHandler,
+                                                                  querySerializer,
+                                                                  CLIENT_ID,
+                                                                  queryBusSpanFactory);
+
+        assertTrue(testSubject.resultPending());
+        testSubject.run();
+        testSubject.request(1);
+        assertEquals(1, responseHandler.sent().size());
+        assertOrder(responseHandler.sent().getFirst());
+        assertTrue(responseHandler.completed());
+        assertFalse(testSubject.resultPending());
+    }
+
     private void assertOrder(List<QueryResponse> responses) {
         for (int i = 0; i < responses.size(); i++) {
             QueryResponseMessage<String> responseMessage =
@@ -739,6 +782,7 @@ class QueryProcessingTaskIntegrationTest {
                                     .build();
     }
 
+    @SuppressWarnings("unused") // Suppressing query handler unused message, as they are used.
     private static class QueryHandlingComponent1 {
 
         private final AtomicBoolean fluxQueryCancelled = new AtomicBoolean();
@@ -774,6 +818,7 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
+    @SuppressWarnings("unused") // Suppressing query handler unused message, as they are used.
     private static class QueryHandlingComponent2 {
 
         @QueryHandler

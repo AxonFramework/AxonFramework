@@ -1,2 +1,0 @@
-* xref::indices.adoc[]
-* xref::auto-increment.adoc[]
