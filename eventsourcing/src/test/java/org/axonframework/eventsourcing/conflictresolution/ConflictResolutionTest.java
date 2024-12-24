@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.conflictresolution;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -34,7 +35,8 @@ class ConflictResolutionTest {
     private Method method;
     private ConflictResolution subject;
     private ConflictResolver conflictResolver;
-    private CommandMessage<String> commandMessage = new GenericCommandMessage<>("test");
+    private final CommandMessage<String> commandMessage =
+            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
 
     @BeforeEach
     void setUp() throws Exception {

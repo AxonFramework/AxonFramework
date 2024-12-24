@@ -25,6 +25,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
@@ -95,8 +96,10 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handlerDispatchingWithCustomCommandName() throws Exception {
-        Object actualReturnValue = testSubject.handleSync(new GenericCommandMessage<>(new GenericMessage<>(1L),
-                                                                                      "almostLong"));
+        CommandMessage<Long> testCommand = new GenericCommandMessage<>(
+                new GenericMessage<>(new QualifiedName("test", "command", "0.0.1"), 1L), "almostLong"
+        );
+        Object actualReturnValue = testSubject.handleSync(testCommand);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
@@ -115,7 +118,6 @@ class AnnotationCommandHandlerAdapterTest {
         fail("Shouldn't make it till here");
     }
 
-    @SuppressWarnings("resource")
     @Test
     void subscribe() {
         testSubject.subscribe(mockBus);
@@ -154,7 +156,7 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     @Disabled("TODO #3062 - Exception Handler support")
-    void exceptionHandlerAnnotatedMethodsAreSupportedForCommandHandlingComponents() throws Exception {
+    void exceptionHandlerAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
         List<Exception> interceptedExceptions = new ArrayList<>();
         mockTarget = new MyInterceptingCommandHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions);
         testSubject = new AnnotationCommandHandlerAdapter<>(mockTarget);
@@ -170,11 +172,12 @@ class AnnotationCommandHandlerAdapterTest {
 
         assertFalse(interceptedExceptions.isEmpty());
         assertEquals(1, interceptedExceptions.size());
-        Exception interceptedException = interceptedExceptions.get(0);
+        Exception interceptedException = interceptedExceptions.getFirst();
         assertInstanceOf(RuntimeException.class, interceptedException);
         assertEquals("Some exception", interceptedException.getMessage());
     }
 
+    @SuppressWarnings("unused")
     private static class MyCommandHandler {
 
         private int voidHandlerInvoked;
@@ -240,7 +243,7 @@ class AnnotationCommandHandlerAdapterTest {
             return chain.proceedSync();
         }
 
-        @ExceptionHandler(resultType = Exception.class)
+        @ExceptionHandler
         public void handle(Exception exception) {
             interceptedExceptions.add(exception);
         }

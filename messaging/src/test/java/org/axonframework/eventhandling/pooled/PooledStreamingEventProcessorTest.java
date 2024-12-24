@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -134,7 +135,8 @@ class PooledStreamingEventProcessorTest {
                                              .initialSegmentCount(8)
                                              .claimExtensionThreshold(500)
                                              .spanFactory(DefaultEventProcessorSpanFactory.builder()
-                                                                  .spanFactory(spanFactory).build());
+                                                                                          .spanFactory(spanFactory)
+                                                                                          .build());
         return customization.apply(processorBuilder).build();
     }
 
@@ -154,9 +156,8 @@ class PooledStreamingEventProcessorTest {
                                                           .when(spy)
                                                           .initializeTokenSegments(any(), anyInt(), any());
 
-        List<EventMessage<Integer>> events = IntStream.range(0, 100)
-                                                      .mapToObj(GenericEventMessage::new)
-                                                      .collect(Collectors.toList());
+        List<EventMessage<Integer>> events =
+                createEvents(100);
         events.forEach(stubMessageSource::publishMessage);
         mockEventHandlerInvoker();
         testSubject.start();
@@ -204,9 +205,8 @@ class PooledStreamingEventProcessorTest {
     }
 
     private void startAndAssertProcessorClaimsAllTokens() {
-        List<EventMessage<Integer>> events = IntStream.range(0, 100)
-                                                      .mapToObj(GenericEventMessage::new)
-                                                      .collect(Collectors.toList());
+        List<EventMessage<Integer>> events =
+                createEvents(100);
         events.forEach(stubMessageSource::publishMessage);
         mockEventHandlerInvoker();
 
@@ -239,9 +239,7 @@ class PooledStreamingEventProcessorTest {
                 }
         ).when(stubEventHandler).handle(any(), any(), any());
 
-        List<EventMessage<Integer>> events = IntStream.range(0, 8)
-                                                      .mapToObj(GenericEventMessage::new)
-                                                      .collect(Collectors.toList());
+        List<EventMessage<Integer>> events = createEvents(8);
         events.forEach(stubMessageSource::publishMessage);
         testSubject.start();
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
@@ -274,11 +272,9 @@ class PooledStreamingEventProcessorTest {
                     countDownLatch.countDown();
                     return null;
                 }
-        ).when(stubEventHandler).handle(any(),any(), any());
+        ).when(stubEventHandler).handle(any(), any(), any());
 
-        List<EventMessage<Integer>> events = IntStream.range(0, 8)
-                                                      .mapToObj(GenericEventMessage::new)
-                                                      .collect(Collectors.toList());
+        List<EventMessage<Integer>> events = createEvents(8);
         events.forEach(stubMessageSource::publishMessage);
         testSubject.start();
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
@@ -308,9 +304,7 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
         testSubject.shutDown();
 
-        List<EventMessage<Integer>> events = IntStream.range(0, 100)
-                                                      .mapToObj(GenericEventMessage::new)
-                                                      .collect(Collectors.toList());
+        List<EventMessage<Integer>> events = createEvents(100);
         events.forEach(stubMessageSource::publishMessage);
 
         testSubject.start();
@@ -331,9 +325,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void allTokensUpdatedToLatestValue() {
-        List<EventMessage<Integer>> events = IntStream.range(0, 100)
-                                                      .mapToObj(GenericEventMessage::new)
-                                                      .collect(Collectors.toList());
+        List<EventMessage<Integer>> events = createEvents(100);
         events.forEach(stubMessageSource::publishMessage);
         mockEventHandlerInvoker();
 
@@ -350,14 +342,22 @@ class PooledStreamingEventProcessorTest {
         });
     }
 
+    // TODO - Discuss: Perfect candidate to move to a commons test utils module?
+    private static List<EventMessage<Integer>> createEvents(int number) {
+        return IntStream.range(0, number)
+                        .mapToObj(i -> new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), i))
+                        .collect(Collectors.toList());
+    }
+
     private long tokenPosition(TrackingToken token) {
         return token == null ? 0 : token.position().orElse(0);
     }
 
     @Test
     void exceptionWhileHandlingEventAbortsWorker() throws Exception {
+        QualifiedName testName = new QualifiedName("test", "event", "0.0.1");
         List<EventMessage<Integer>> events = Stream.of(1, 2, 2, 4, 5)
-                                                   .map(GenericEventMessage::new)
+                                                   .map(i -> new GenericEventMessage<>(testName, i))
                                                    .collect(Collectors.toList());
         mockEventHandlerInvoker();
         doThrow(new RuntimeException("Simulating worker failure"))
@@ -500,7 +500,7 @@ class PooledStreamingEventProcessorTest {
 
         //noinspection unchecked
         ArgumentCaptor<EventMessage<?>> handledEventsCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        verify(stubEventHandler, timeout(500).times(2)).handle(handledEventsCaptor.capture(),any(), any());
+        verify(stubEventHandler, timeout(500).times(2)).handle(handledEventsCaptor.capture(), any(), any());
         List<EventMessage<?>> handledEvents = handledEventsCaptor.getAllValues();
         assertEquals(2, handledEvents.size());
         for (EventMessage<?> validatedEvent : handledEvents) {
@@ -524,7 +524,7 @@ class PooledStreamingEventProcessorTest {
         mockEventHandlerInvoker();
 
         Stream.of(0, 1, 2, 3)
-              .map(GenericEventMessage::new)
+              .map(i -> new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), i))
               .forEach(testMessageSource::publishMessage);
 
         testSubject.start();
@@ -540,7 +540,7 @@ class PooledStreamingEventProcessorTest {
         });
 
         Stream.of(4, 5, 6, 7)
-              .map(GenericEventMessage::new)
+              .map(i -> new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), i))
               .forEach(testMessageSource::publishMessage);
         testMessageSource.runOnAvailableCallback();
 
@@ -558,7 +558,9 @@ class PooledStreamingEventProcessorTest {
     void shutdownCompletesAfterAbortingWorkPackages()
             throws InterruptedException, ExecutionException, TimeoutException {
         testSubject.start();
-        Stream.of(1, 2, 2, 4, 5).map(GenericEventMessage::new).forEach(stubMessageSource::publishMessage);
+        Stream.of(1, 2, 2, 4, 5)
+              .map(i -> new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), i))
+              .forEach(stubMessageSource::publishMessage);
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
 
@@ -595,7 +597,7 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
 
         Stream.of(1, 2, 2, 4, 5)
-              .map(GenericEventMessage::new)
+              .map(i -> new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), i))
               .forEach(stubMessageSource::publishMessage);
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
@@ -633,7 +635,7 @@ class PooledStreamingEventProcessorTest {
 
         // After one exception the Coordinator#errorWaitBackOff is 1 second. After this, the Coordinator should proceed.
         Stream.of(1, 2, 2, 4, 5)
-              .map(GenericEventMessage::new)
+              .map(i -> new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), i))
               .forEach(stubMessageSource::publishMessage);
         assertWithin(1500, TimeUnit.MILLISECONDS, () -> assertFalse(testSubject.isError()));
     }
@@ -653,7 +655,7 @@ class PooledStreamingEventProcessorTest {
 
         // After one exception the Coordinator#errorWaitBackOff is 1 second. After this, the Coordinator should proceed.
         Stream.of(1, 2, 2, 4, 5)
-              .map(GenericEventMessage::new)
+              .map(i -> new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), i))
               .forEach(stubMessageSource::publishMessage);
         assertWithin(1500, TimeUnit.MILLISECONDS, () -> assertFalse(testSubject.isError()));
     }
@@ -804,7 +806,7 @@ class PooledStreamingEventProcessorTest {
         int testTokenClaimInterval = 5000;
 
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(2)
-                .tokenClaimInterval(testTokenClaimInterval)));
+                                                           .tokenClaimInterval(testTokenClaimInterval)));
         testSubject.start();
         // Assert the single WorkPackage is in progress prior to invoking the merge.
         assertWithin(
@@ -816,12 +818,16 @@ class PooledStreamingEventProcessorTest {
         testSubject.releaseSegment(testSegmentId, 180, TimeUnit.SECONDS);
 
         // Assert the MergeTask is done and completed successfully.
-        assertWithin(testTokenClaimInterval, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        assertWithin(testTokenClaimInterval,
+                     TimeUnit.MILLISECONDS,
+                     () -> assertEquals(1, testSubject.processingStatus().size()));
 
         testSubject.claimSegment(testSegmentId);
 
         // Assert the Coordinator has only one WorkPackage at work now.
-        assertWithin(testTokenClaimInterval, TimeUnit.MILLISECONDS, () -> assertEquals(2, testSubject.processingStatus().size()));
+        assertWithin(testTokenClaimInterval,
+                     TimeUnit.MILLISECONDS,
+                     () -> assertEquals(2, testSubject.processingStatus().size()));
     }
 
     @Test
@@ -855,7 +861,7 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
         assertWithin(2,
                      TimeUnit.SECONDS,
-                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+                     () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length));
         testSubject.shutDown();
 
         testSubject.resetTokens();
@@ -913,7 +919,7 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
         assertWithin(2,
                      TimeUnit.SECONDS,
-                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+                     () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length));
         testSubject.shutDown();
 
         testSubject.resetTokens(StreamableMessageSource::createTailToken);
@@ -941,12 +947,12 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
         assertWithin(2,
                      TimeUnit.SECONDS,
-                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+                     () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length));
         testSubject.shutDown();
 
         testSubject.resetTokens(StreamableMessageSource::createTailToken, expectedContext);
 
-        verify(stubEventHandler).performReset(eq(expectedContext), any() );
+        verify(stubEventHandler).performReset(eq(expectedContext), any());
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
@@ -972,7 +978,7 @@ class PooledStreamingEventProcessorTest {
         mockEventHandlerInvoker();
 
         Stream.of(1, 2, 2, 4, 5)
-              .map(GenericEventMessage::new)
+              .map(i -> new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), i))
               .forEach(stubMessageSource::publishMessage);
 
         assertWithin(
@@ -1176,9 +1182,7 @@ class PooledStreamingEventProcessorTest {
 
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
 
-        List<EventMessage<Integer>> events = IntStream.range(0, 100)
-                                                      .mapToObj(GenericEventMessage::new)
-                                                      .collect(Collectors.toList());
+        List<EventMessage<Integer>> events = createEvents(100);
         testSubject.start();
 
         events.forEach(stubMessageSource::publishMessage);
@@ -1211,9 +1215,7 @@ class PooledStreamingEventProcessorTest {
     void isCaughtUpWhenDoneProcessing() throws Exception {
         mockSlowEventHandler();
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
-        List<EventMessage<Integer>> events = IntStream.range(0, 3)
-                                                      .mapToObj(GenericEventMessage::new)
-                                                      .collect(Collectors.toList());
+        List<EventMessage<Integer>> events = createEvents(3);
         events.forEach(stubMessageSource::publishMessage);
 
         testSubject.start();
@@ -1228,9 +1230,7 @@ class PooledStreamingEventProcessorTest {
         );
         assertWithin(
                 5, TimeUnit.SECONDS,
-                () -> {
-                    assertTrue(testSubject.processingStatus().get(0).isCaughtUp());
-                }
+                () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp())
         );
         Instant now = Instant.now();
         //It should have taken 2 seconds (rounded down) or more this will fail, want changed to normal mock, then it goes faster
@@ -1242,14 +1242,11 @@ class PooledStreamingEventProcessorTest {
         setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
 
         CountDownLatch countDownLatch = new CountDownLatch(3);
-        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceedSync();
         }));
-        IntStream.range(0, 3)
-                 .mapToObj(GenericEventMessage::new)
-                 .forEach(stubMessageSource::publishMessage);
+        createEvents(3).forEach(stubMessageSource::publishMessage);
 
         testSubject.start();
 
@@ -1264,7 +1261,6 @@ class PooledStreamingEventProcessorTest {
         setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
 
         CountDownLatch countDownLatch = new CountDownLatch(3);
-        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceedSync();
@@ -1305,9 +1301,7 @@ class PooledStreamingEventProcessorTest {
         }).when(stubEventHandler)
           .handle(any(), any(), any());
 
-        List<EventMessage<Integer>> events = IntStream.range(0, 42)
-                                                      .mapToObj(GenericEventMessage::new)
-                                                      .collect(Collectors.toList());
+        List<EventMessage<Integer>> events = createEvents(42);
         events.forEach(stubMessageSource::publishMessage);
 
         testSubject.start();
@@ -1352,9 +1346,7 @@ class PooledStreamingEventProcessorTest {
         }).when(stubEventHandler)
           .handle(any(), any(), any());
 
-        List<EventMessage<Integer>> events = IntStream.range(0, 42)
-                                                      .mapToObj(GenericEventMessage::new)
-                                                      .collect(Collectors.toList());
+        List<EventMessage<Integer>> events = createEvents(42);
         events.forEach(stubMessageSource::publishMessage);
 
         testSubject.start();
