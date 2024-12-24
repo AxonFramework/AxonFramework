@@ -79,7 +79,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     private final List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlers;
     private final Set<String> supportedCommandNames;
     private final Map<String, Set<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>>> supportedCommandsByName;
-    private final CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory;
+    private final Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> factoryPerType;
     private final MessageNameResolver messageNameResolver;
 
     /**
