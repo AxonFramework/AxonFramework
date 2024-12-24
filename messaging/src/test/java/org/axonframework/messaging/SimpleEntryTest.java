@@ -26,7 +26,6 @@ import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -37,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
     private static final Message<Object> TEST_MESSAGE =
-            new GenericMessage<>(fromDottedName("test.message"), "some-payload");
+            new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "some-payload");
 
     @Override
     public SimpleEntry<Message<?>> testSubject() {

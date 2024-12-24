@@ -20,6 +20,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
@@ -33,11 +34,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class AsyncRetrySchedulerTest {
+
+    private static final QualifiedName TEST_NAME = new QualifiedName("test", "message", "0.0.1");
 
     private AsyncRetryScheduler testSubject;
     private RetryPolicy retryPolicy;
@@ -63,7 +65,7 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldReturnFailedStreamIfPolicyOutcomeIsNoRetry() {
-        Message<Object> testMessage = new GenericMessage<>(fromDottedName("test.message"), "stub");
+        Message<Object> testMessage = new GenericMessage<>(TEST_NAME, "stub");
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
 
         MessageStream<Message<?>> actual =
@@ -77,7 +79,7 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldScheduleRetryIfPolicyOutcomeIsRetry() {
-        Message<Object> testMessage = new GenericMessage<>(fromDottedName("test.message"), "stub");
+        Message<Object> testMessage = new GenericMessage<>(TEST_NAME, "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any())).thenReturn(MessageStream.empty());
@@ -103,7 +105,7 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldRescheduleAgainWhenRetryReturnsFailedStream() {
-        Message<Object> testMessage = new GenericMessage<>(fromDottedName("test.message"), "stub");
+        Message<Object> testMessage = new GenericMessage<>(TEST_NAME, "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any()))
@@ -134,8 +136,8 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldReturnFailedStreamIfFailureIsNotFirstItemInStream() {
-        Message<Object> testMessage = new GenericMessage<>(fromDottedName("test.message"), "stub");
-        Message<String> responseMessage = new GenericMessage<>(fromDottedName("test.message"), "OK");
+        Message<Object> testMessage = new GenericMessage<>(TEST_NAME, "stub");
+        Message<String> responseMessage = new GenericMessage<>(TEST_NAME, "OK");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any())).thenAnswer(
@@ -164,7 +166,7 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldNotScheduleAnotherRetryWhenPolicyIndicatesSo() {
-        Message<Object> testMessage = new GenericMessage<>(fromDottedName("test.message"), "stub");
+        Message<Object> testMessage = new GenericMessage<>(TEST_NAME, "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any())).thenAnswer(i -> MessageStream.failed(new MockException("Retry error")));
@@ -204,17 +206,17 @@ class AsyncRetrySchedulerTest {
             this.policyOutcome = policyOutcome;
         }
 
-            @Override
-            public Outcome defineFor(@Nonnull Message<?> message,
-                                     @Nonnull Throwable cause,
-                                     @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
-                return policyOutcome.get();
-            }
+        @Override
+        public Outcome defineFor(@Nonnull Message<?> message,
+                                 @Nonnull Throwable cause,
+                                 @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
+            return policyOutcome.get();
+        }
 
-            @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
 
-            }
+        }
 
         public AtomicReference<Outcome> policyOutcome() {
             return policyOutcome;

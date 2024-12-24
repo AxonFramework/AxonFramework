@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
-
 /**
  * Test class validating the {@link MappedMessageStream} through the {@link MessageStreamTest} suite.
  *
@@ -47,7 +45,7 @@ class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return new GenericMessage<>(fromDottedName("test.message"),
+        return new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

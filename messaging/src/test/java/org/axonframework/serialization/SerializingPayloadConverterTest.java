@@ -18,12 +18,12 @@ package org.axonframework.serialization;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -43,7 +43,8 @@ class SerializingPayloadConverterTest {
     @Test
     void convertDelegatesToSerializer() {
         when(serializer.convert(any(), any(Type.class))).thenReturn("test");
-        Message<Object> original = new GenericMessage<>(fromDottedName("test.message"), "test", Map.of("key", "value"));
+        Message<Object> original =
+                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test", Map.of("key", "value"));
 
         Message<String> actual = testSubject.convertPayload(original, String.class);
 

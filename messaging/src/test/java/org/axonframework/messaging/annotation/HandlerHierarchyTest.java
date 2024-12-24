@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

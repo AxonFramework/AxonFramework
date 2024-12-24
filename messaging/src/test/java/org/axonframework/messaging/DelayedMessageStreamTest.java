@@ -26,7 +26,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -54,7 +53,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return new GenericMessage<>(fromDottedName("test.message"),
+        return new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 

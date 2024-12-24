@@ -21,12 +21,12 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -35,6 +35,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Allard Buijze
  */
 class RecordingCommandBusTest {
+
+    private static final QualifiedName TEST_NAME = new QualifiedName("test", "command", "0.0.1");
 
     private RecordingCommandBus testSubject;
 
@@ -45,8 +47,8 @@ class RecordingCommandBusTest {
 
     @Test
     void publishCommand() throws Exception {
-        CommandMessage<String> firstTestCommand = new GenericCommandMessage<>(fromDottedName("test.command"), "First");
-        CommandMessage<String> secondTestCommand = new GenericCommandMessage<>(fromDottedName("test.command"), "Second");
+        CommandMessage<String> firstTestCommand = new GenericCommandMessage<>(TEST_NAME, "First");
+        CommandMessage<String> secondTestCommand = new GenericCommandMessage<>(TEST_NAME, "Second");
 
         testSubject.dispatch(firstTestCommand, ProcessingContext.NONE);
         var result = testSubject.dispatch(secondTestCommand, ProcessingContext.NONE);
@@ -65,8 +67,8 @@ class RecordingCommandBusTest {
 
     @Test
     void publishCommandWithCallbackBehavior() throws Exception {
-        CommandMessage<String> firstTestCommand = new GenericCommandMessage<>(fromDottedName("test.command"), "First");
-        CommandMessage<String> secondTestCommand = new GenericCommandMessage<>(fromDottedName("test.command"), "Second");
+        CommandMessage<String> firstTestCommand = new GenericCommandMessage<>(TEST_NAME, "First");
+        CommandMessage<String> secondTestCommand = new GenericCommandMessage<>(TEST_NAME, "Second");
 
         testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
         testSubject.dispatch(firstTestCommand, ProcessingContext.NONE);

@@ -21,8 +21,6 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
-
 /**
  * Test class validating the {@link IterableMessageStream} through the {@link MessageStreamTest} suite.
  *
@@ -45,7 +43,7 @@ class IterableMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return new GenericMessage<>(fromDottedName("test.message"),
+        return new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

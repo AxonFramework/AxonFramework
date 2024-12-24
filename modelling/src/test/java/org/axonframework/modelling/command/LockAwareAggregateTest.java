@@ -19,12 +19,12 @@ package org.axonframework.modelling.command;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -83,7 +83,7 @@ class LockAwareAggregateTest {
 
     @Test
     void handleMethodInvokesWrappedAggregateAndInspectsLock() throws Exception {
-        Message<?> testMessage = new GenericMessage<>(fromDottedName("test.message"), "some-message");
+        Message<?> testMessage = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "some-message");
 
         testSubject.handle(testMessage);
 

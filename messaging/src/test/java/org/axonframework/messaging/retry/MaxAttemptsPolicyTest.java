@@ -19,6 +19,7 @@ package org.axonframework.messaging.retry;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -28,13 +29,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromDottedName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class MaxAttemptsPolicyTest {
 
-    private final Message<?> message = new GenericMessage<>(fromDottedName("test.message"), "test");
+    private final Message<?> message = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test");
     private final MockException failure = new MockException("Simulating failure");
     private MaxAttemptsPolicy testSubject;
     private RetryPolicy mock;
