@@ -65,7 +65,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer),
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer),
                 new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer),
-                // TODO For AF5, we should base the name on the query field, as that's the "old" queryName.
+                // TODO #3079 - For AF5, we should base the name on the query field, as that's the "old" queryName.
                 createName(new GrpcSerializedObject(queryRequest.getResponseType()), serializer)
         );
     }
