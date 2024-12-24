@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package org.axonframework.spring.config.annotation;
 
-import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.spring.utils.StubDomainEvent;
 
 import java.util.UUID;
@@ -29,9 +29,6 @@ import java.util.UUID;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 
-/**
- * @author Allard Buijze
- */
 public class StubAggregate {
 
     private int invocationCount;
@@ -39,6 +36,7 @@ public class StubAggregate {
     @AggregateIdentifier
     private String identifier;
 
+    @SuppressWarnings("unused")
     public StubAggregate() {
         identifier = UUID.randomUUID().toString();
     }
@@ -47,25 +45,30 @@ public class StubAggregate {
         this.identifier = identifier.toString();
     }
 
+    @SuppressWarnings("unused")
     public void doSomething() {
         apply(new StubDomainEvent());
     }
 
     @EventSourcingHandler
-    protected void handle(EventMessage event) {
-        identifier = ((DomainEventMessage) event).getAggregateIdentifier();
+    protected void handle(EventMessage<?> event) {
+        identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
         invocationCount++;
     }
 
+    @SuppressWarnings("unused")
     public int getInvocationCount() {
         return invocationCount;
     }
 
-    public DomainEventMessage createSnapshotEvent() {
-        return new GenericDomainEventMessage<>("test", identifier, (long) 5,
-                                               new StubDomainEvent(), MetaData.emptyInstance());
+    @SuppressWarnings("unused")
+    public DomainEventMessage<?> createSnapshotEvent() {
+        return new GenericDomainEventMessage<>(
+                "test", identifier, 5L, new QualifiedName("test", "snapshot", "0.0.1"), new StubDomainEvent()
+        );
     }
 
+    @SuppressWarnings("unused")
     public void delete() {
         apply(new StubDomainEvent());
         markDeleted();

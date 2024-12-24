@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -372,7 +372,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     private EventMessage<Object> timeCorrectedEventMessage(Object event) {
         EventMessage<?> msg = GenericEventMessage.asEventMessage(event);
-        return new GenericEventMessage<>(msg.getIdentifier(), msg.getPayload(), msg.getMetaData(), currentTime());
+        return new GenericEventMessage<>(
+                msg.getIdentifier(), msg.name(), msg.getPayload(), msg.getMetaData(), currentTime()
+        );
     }
 
     @Override
@@ -470,12 +472,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
 
         private final String aggregateIdentifier;
-        private final String type;
+        private final String aggregateType;
         private int sequenceNumber = 0;
 
         public AggregateEventPublisherImpl(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
-            this.type = "Stub_" + aggregateIdentifier;
+            this.aggregateType = "Stub_" + aggregateIdentifier;
         }
 
         @Override
@@ -501,11 +503,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         private void publish(Object... events) {
             for (Object event : events) {
                 EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(event);
-                handleInSaga(new GenericDomainEventMessage<>(type, aggregateIdentifier,
+                handleInSaga(new GenericDomainEventMessage<>(aggregateType,
+                                                             aggregateIdentifier,
                                                              sequenceNumber++,
+                                                             eventMessage.getIdentifier(),
+                                                             eventMessage.name(),
                                                              eventMessage.getPayload(),
                                                              eventMessage.getMetaData(),
-                                                             eventMessage.getIdentifier(),
                                                              currentTime()));
             }
         }
@@ -551,10 +555,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                              .findFirst()
                              .ifPresent(field -> {
                                  throw new AssertionError(format(
-                                         "Field %s.%s is injected with a resource,"
-                                                 + " but it doesn't have the 'transient' modifier."
-                                                 + "\nMark field as 'transient' or disable this check using:"
-                                                 + "\nfixture.withTransienceCheckDisabled()",
+                                         """
+                                                 Field %s.%s is injected with a resource,\
+                                                  but it doesn't have the 'transient' modifier.\
+                                                 
+                                                 Mark field as 'transient' or disable this check using:\
+                                                 
+                                                 fixture.withTransienceCheckDisabled()""",
                                          field.getDeclaringClass(),
                                          field.getName()
                                  ));

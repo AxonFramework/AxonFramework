@@ -25,6 +25,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -203,10 +204,16 @@ public class SimpleQueryBus implements QueryBus {
                     if (!(resultMessage.exceptionResult() instanceof NoHandlerForQueryException)) {
                         GenericQueryResponseMessage<R> queryResponseMessage =
                                 responseType.convertExceptional(resultMessage.exceptionResult())
-                                            .map(GenericQueryResponseMessage::new)
+                                            .map(exceptionalResult -> new GenericQueryResponseMessage<>(
+                                                    QualifiedNameUtils.fromClassName(exceptionalResult.getClass()),
+                                                    exceptionalResult
+                                            ))
                                             .orElse(new GenericQueryResponseMessage<>(
-                                                    responseType.responseMessagePayloadType(),
-                                                    resultMessage.exceptionResult()));
+                                                    QualifiedNameUtils.fromClassName(resultMessage.exceptionResult()
+                                                                                                  .getClass()),
+                                                    resultMessage.exceptionResult(),
+                                                    responseType.responseMessagePayloadType()
+                                            ));
 
 
                         result.complete(queryResponseMessage);
@@ -467,8 +474,8 @@ public class SimpleQueryBus implements QueryBus {
         Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
                                                           .doOnError(error -> logger.error(
                                                                   "An error happened while trying to report an initial result. Query: {}",
-                                                                  query,
-                                                                  error));
+                                                                  query, error
+                                                          ));
         UpdateHandlerRegistration<U> updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, updateBufferSize);
 

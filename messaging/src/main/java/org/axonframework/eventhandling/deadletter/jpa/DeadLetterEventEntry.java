@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.util.Arrays;
@@ -43,10 +44,13 @@ import static java.util.Objects.requireNonNull;
 public class DeadLetterEventEntry {
 
     @Basic(optional = false)
-    private String messageType;
+    private String eventType;
 
     @Column(nullable = false)
     private String eventIdentifier;
+
+    @Column(nullable = false)
+    private String name;
 
     @Basic(optional = false)
     private String timeStamp;
@@ -68,7 +72,7 @@ public class DeadLetterEventEntry {
     private byte[] metaData;
 
     @Basic
-    private String type;
+    private String aggregateType;
 
     @Basic
     private String aggregateIdentifier;
@@ -90,12 +94,14 @@ public class DeadLetterEventEntry {
 
     /**
      * Constructs a new {@link DeadLetterEventEntry} using the provided parameters. Parameters can be null if it's not
-     * relevant for the {@code messageType}. For example, a {@link DomainEventMessage} contains an
-     * {@code aggregateType}, {@code aggregateIdentifier} and {@code sequenceNumber}, but a
+     * relevant for the {@code eventType}. For example, a {@link DomainEventMessage} contains an {@code aggregateType},
+     * {@code aggregateIdentifier} and {@code sequenceNumber}, but a
      * {@link org.axonframework.eventhandling.GenericEventMessage} does not.
      *
-     * @param messageType         The message type (required).
-     * @param messageIdentifier   The identifier of the message (required).
+     * @param eventType           The event type (required).
+     * @param eventIdentifier     The identifier of the message (required).
+     * @param name                The {@link EventMessage#name()} as a {@code String}, based on the output of
+     *                            {@link QualifiedName#toString()}.
      * @param messageTimestamp    The timestamp of the message (required).
      * @param payloadType         The payload's type of the message.
      * @param payloadRevision     The payload's revision of the message.
@@ -107,22 +113,33 @@ public class DeadLetterEventEntry {
      * @param tokenType           The type of tracking token the message.
      * @param token               The serialized tracking token.
      */
-    public DeadLetterEventEntry(String messageType, String messageIdentifier, String messageTimestamp,
+    public DeadLetterEventEntry(String eventType,
+                                String eventIdentifier,
+                                String name,
+                                String messageTimestamp,
                                 String payloadType,
-                                String payloadRevision, byte[] payload, byte[] metaData, String aggregateType,
-                                String aggregateIdentifier, Long sequenceNumber, String tokenType, byte[] token) {
-        requireNonNull(messageType,
-                       "Message type should be provided by the DeadLetterJpaConverter, otherwise it can never be converted back.");
-        requireNonNull(messageIdentifier, "All EventMessage implementations require a message identifier.");
+                                String payloadRevision,
+                                byte[] payload,
+                                byte[] metaData,
+                                String aggregateType,
+                                String aggregateIdentifier,
+                                Long sequenceNumber,
+                                String tokenType,
+                                byte[] token) {
+        requireNonNull(eventType,
+                       "Event type should be provided by the DeadLetterJpaConverter, otherwise it can never be converted back.");
+        requireNonNull(eventIdentifier, "All EventMessage implementations require a message identifier.");
+        requireNonNull(name, "All EventMessage implementations require a name.");
         requireNonNull(messageTimestamp, "All EventMessage implementations require a timestamp.");
-        this.messageType = messageType;
-        this.eventIdentifier = messageIdentifier;
+        this.eventType = eventType;
+        this.eventIdentifier = eventIdentifier;
+        this.name = name;
         this.timeStamp = messageTimestamp;
         this.payloadType = payloadType;
         this.payloadRevision = payloadRevision;
         this.payload = payload;
         this.metaData = metaData;
-        this.type = aggregateType;
+        this.aggregateType = aggregateType;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
         this.tokenType = tokenType;
@@ -130,14 +147,15 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the message type, which is defined by the {@link DeadLetterJpaConverter} that mapped this entry. Used
-     * for later matching whether a converter can convert it back to an
+     * Returns the event type, which is defined by the {@link DeadLetterJpaConverter} that mapped this entry.
+     * <p>
+     * Used for later matching whether a converter can convert it back to an
      * {@link org.axonframework.eventhandling.EventMessage}.
      *
-     * @return The message type.
+     * @return The event type.
      */
-    public String getMessageType() {
-        return messageType;
+    public String getEventType() {
+        return eventType;
     }
 
     /**
@@ -147,6 +165,17 @@ public class DeadLetterEventEntry {
      */
     public String getEventIdentifier() {
         return eventIdentifier;
+    }
+
+    /**
+     * Returns the original {@link EventMessage#name() name} of the dead-letter, based on the
+     * {@link QualifiedName#toString()} output.
+     *
+     * @return The original {@link EventMessage#name() name} of the dead-letter, based on the
+     * {@link QualifiedName#toString()} output.
+     */
+    public String getName() {
+        return name;
     }
 
     /**
@@ -164,11 +193,7 @@ public class DeadLetterEventEntry {
      * @return The original payload.
      */
     public SimpleSerializedObject<byte[]> getPayload() {
-        return new SimpleSerializedObject<>(
-                payload,
-                byte[].class,
-                payloadType,
-                payloadRevision);
+        return new SimpleSerializedObject<>(payload, byte[].class, payloadType, payloadRevision);
     }
 
     /**
@@ -177,11 +202,7 @@ public class DeadLetterEventEntry {
      * @return The original metadata.
      */
     public SimpleSerializedObject<byte[]> getMetaData() {
-        return new SimpleSerializedObject<>(
-                metaData,
-                byte[].class,
-                MetaData.class.getName(),
-                null);
+        return new SimpleSerializedObject<>(metaData, byte[].class, MetaData.class.getName(), null);
     }
 
     /**
@@ -189,8 +210,8 @@ public class DeadLetterEventEntry {
      *
      * @return The original aggregate type.
      */
-    public String getType() {
-        return type;
+    public String getAggregateType() {
+        return aggregateType;
     }
 
     /**
@@ -202,7 +223,6 @@ public class DeadLetterEventEntry {
     public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
-
 
     /**
      * Returns the original {@link DomainEventMessage#getSequenceNumber()}, if it was a {@code DomainEventMessage}.
@@ -224,11 +244,7 @@ public class DeadLetterEventEntry {
         if (token == null) {
             return null;
         }
-        return new SimpleSerializedObject<>(
-                token,
-                byte[].class,
-                tokenType,
-                null);
+        return new SimpleSerializedObject<>(token, byte[].class, tokenType, null);
     }
 
     @Override
@@ -239,73 +255,51 @@ public class DeadLetterEventEntry {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         DeadLetterEventEntry that = (DeadLetterEventEntry) o;
-
-        if (!messageType.equals(that.messageType)) {
-            return false;
-        }
-        if (!Objects.equals(eventIdentifier, that.eventIdentifier)) {
-            return false;
-        }
-        if (!Objects.equals(timeStamp, that.timeStamp)) {
-            return false;
-        }
-        if (!Objects.equals(payloadType, that.payloadType)) {
-            return false;
-        }
-        if (!Objects.equals(payloadRevision, that.payloadRevision)) {
-            return false;
-        }
-        if (!Arrays.equals(payload, that.payload)) {
-            return false;
-        }
-        if (!Arrays.equals(metaData, that.metaData)) {
-            return false;
-        }
-        if (!Objects.equals(type, that.type)) {
-            return false;
-        }
-        if (!Objects.equals(aggregateIdentifier, that.aggregateIdentifier)) {
-            return false;
-        }
-        if (!Objects.equals(sequenceNumber, that.sequenceNumber)) {
-            return false;
-        }
-        if (!Objects.equals(tokenType, that.tokenType)) {
-            return false;
-        }
-        return Arrays.equals(token, that.token);
+        return Objects.equals(eventType, that.eventType)
+                && Objects.equals(eventIdentifier, that.eventIdentifier)
+                && Objects.equals(name, that.name)
+                && Objects.equals(timeStamp, that.timeStamp)
+                && Objects.equals(payloadType, that.payloadType)
+                && Objects.equals(payloadRevision, that.payloadRevision)
+                && Objects.deepEquals(payload, that.payload)
+                && Objects.deepEquals(metaData, that.metaData)
+                && Objects.equals(aggregateType, that.aggregateType)
+                && Objects.equals(aggregateIdentifier, that.aggregateIdentifier)
+                && Objects.equals(sequenceNumber, that.sequenceNumber)
+                && Objects.equals(tokenType, that.tokenType)
+                && Objects.deepEquals(token, that.token);
     }
 
     @Override
     public int hashCode() {
-        int result = messageType.hashCode();
-        result = 31 * result + (eventIdentifier != null ? eventIdentifier.hashCode() : 0);
-        result = 31 * result + (timeStamp != null ? timeStamp.hashCode() : 0);
-        result = 31 * result + (payloadType != null ? payloadType.hashCode() : 0);
-        result = 31 * result + (payloadRevision != null ? payloadRevision.hashCode() : 0);
-        result = 31 * result + Arrays.hashCode(payload);
-        result = 31 * result + Arrays.hashCode(metaData);
-        result = 31 * result + (type != null ? type.hashCode() : 0);
-        result = 31 * result + (aggregateIdentifier != null ? aggregateIdentifier.hashCode() : 0);
-        result = 31 * result + (sequenceNumber != null ? sequenceNumber.hashCode() : 0);
-        result = 31 * result + (tokenType != null ? tokenType.hashCode() : 0);
-        result = 31 * result + Arrays.hashCode(token);
-        return result;
+        return Objects.hash(eventType,
+                            eventIdentifier,
+                            name,
+                            timeStamp,
+                            payloadType,
+                            payloadRevision,
+                            Arrays.hashCode(payload),
+                            Arrays.hashCode(metaData),
+                            aggregateType,
+                            aggregateIdentifier,
+                            sequenceNumber,
+                            tokenType,
+                            Arrays.hashCode(token));
     }
 
     @Override
     public String toString() {
         return "DeadLetterEventEntry{" +
-                "messageType='" + messageType + '\'' +
+                "eventType='" + eventType + '\'' +
                 ", eventIdentifier='" + eventIdentifier + '\'' +
+                ", name='" + name + '\'' +
                 ", timeStamp='" + timeStamp + '\'' +
                 ", payloadType='" + payloadType + '\'' +
                 ", payloadRevision='" + payloadRevision + '\'' +
                 ", payload=" + Arrays.toString(payload) +
                 ", metaData=" + Arrays.toString(metaData) +
-                ", type='" + type + '\'' +
+                ", aggregateType='" + aggregateType + '\'' +
                 ", aggregateIdentifier='" + aggregateIdentifier + '\'' +
                 ", sequenceNumber=" + sequenceNumber +
                 ", tokenType='" + tokenType + '\'' +

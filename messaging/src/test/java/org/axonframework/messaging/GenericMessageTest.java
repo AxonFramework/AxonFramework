@@ -61,18 +61,21 @@ class GenericMessageTest {
 
     @Test
     void correlationDataAddedToNewMessage() {
-        assertEquals(correlationData, new HashMap<>(new GenericMessage<>(new Object()).getMetaData()));
+        Message<Object> testMessage = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), new Object());
+        assertEquals(correlationData, new HashMap<>(testMessage.getMetaData()));
 
         MetaData newMetaData = MetaData.from(Collections.singletonMap("whatever", new Object()));
-        assertEquals(newMetaData.mergedWith(correlationData),
-                     new GenericMessage<>(new Object(), newMetaData).getMetaData());
+        Message<Object> testMessageWithMetaData =
+                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), new Object(), newMetaData);
+        assertEquals(newMetaData.mergedWith(correlationData), testMessageWithMetaData.getMetaData());
     }
 
     @Test
     void messageSerialization() throws IOException {
         Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
 
-        GenericMessage<String> message = new GenericMessage<>("payload", metaDataMap);
+        Message<String> message =
+                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "payload", metaDataMap);
 
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
 
@@ -91,7 +94,7 @@ class GenericMessageTest {
 
     @Test
     void asMessageReturnsProvidedMessageAsIs() {
-        GenericMessage<String> testMessage = new GenericMessage<>("payload");
+        Message<String> testMessage = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "payload");
 
         Message<?> result = GenericMessage.asMessage(testMessage);
 
@@ -110,7 +113,9 @@ class GenericMessageTest {
 
     @Test
     void whenCorrelationDataProviderThrowsException_thenCatchException() {
-        unitOfWork = new DefaultUnitOfWork<>(new GenericEventMessage<>("Input 1"));
+        unitOfWork = new DefaultUnitOfWork<>(
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Input 1")
+        );
         CurrentUnitOfWork.set(unitOfWork);
         unitOfWork.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
         CannotConvertBetweenTypesException exception = new CannotConvertBetweenTypesException("foo");

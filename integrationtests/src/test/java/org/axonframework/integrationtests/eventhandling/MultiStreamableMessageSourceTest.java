@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.junit.jupiter.api.*;
 
@@ -106,7 +107,9 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void simplePublishAndConsumeDomainEventMessage() throws InterruptedException {
-        EventMessage<?> publishedEvent = new GenericDomainEventMessage<>("Aggregate", "id", 0, "Event1");
+        EventMessage<?> publishedEvent = new GenericDomainEventMessage<>(
+                "Aggregate", "id", 0, new QualifiedName("test", "event", "0.0.1"), "Event1"
+        );
 
         eventStoreA.publish(publishedEvent);
         BlockingStream<TrackedEventMessage<?>> singleEventStream =

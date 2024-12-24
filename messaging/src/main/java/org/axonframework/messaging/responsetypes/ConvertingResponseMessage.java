@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,27 @@
 
 package org.axonframework.messaging.responsetypes;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nonnull;
 
 /**
- * Implementation of a QueryResponseMessage that is aware of the requested response type and performs a just-in-time
- * conversion to ensure the response is formatted as requested.
+ * Implementation of a {@link QueryResponseMessage} that is aware of the requested response type and performs a
+ * just-in-time conversion to ensure the response is formatted as requested.
  * <p>
  * The conversion is generally used to accommodate response types that aren't compatible with serialization, such as
  * {@link OptionalResponseType}.
  *
- * @param <R> the type of response expected
+ * @param <R> The type of {@link #getPayload() payload} contained in this {@link QueryResponseMessage}.
  * @author Allard Buijze
- * @since 4.3
+ * @since 4.3.0
  */
 public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
 
@@ -43,11 +44,11 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     private final QueryResponseMessage<?> responseMessage;
 
     /**
-     * Initialize a response message, using {@code expectedResponseType} to convert the payload from the {@code
-     * responseMessage}, if necessary.
+     * Initialize a response message, using {@code expectedResponseType} to convert the payload from the
+     * {@code responseMessage}, if necessary.
      *
-     * @param expectedResponseType an instance describing the expected response type
-     * @param responseMessage      the message containing the actual response from the handler
+     * @param expectedResponseType An instance describing the expected response type.
+     * @param responseMessage      The message containing the actual response from the handler.
      */
     public ConvertingResponseMessage(ResponseType<R> expectedResponseType,
                                      QueryResponseMessage<?> responseMessage) {
@@ -83,6 +84,12 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     @Override
     public String getIdentifier() {
         return responseMessage.getIdentifier();
+    }
+
+    @Nonnull
+    @Override
+    public QualifiedName name() {
+        return responseMessage.name();
     }
 
     @Override

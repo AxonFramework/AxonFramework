@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
@@ -24,12 +23,14 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.deadline.ScheduledDeadlineInfo;
 import org.axonframework.test.deadline.StubDeadlineManager;
+import org.axonframework.test.eventscheduler.EventConsumer;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
@@ -50,6 +51,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,6 +64,9 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class)
 class FixtureExecutionResultImplTest {
+
+    private static final EventConsumer<EventMessage<?>> NO_OP = i -> {
+    };
 
     private FixtureExecutionResultImpl<StubSaga> testSubject;
     private RecordingCommandBus commandBus;
@@ -100,9 +105,10 @@ class FixtureExecutionResultImplTest {
                 sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, StubSaga.class,
                 AllFieldsFilter.instance(), errorHandler);
 
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
-        GenericEventMessage<TriggerSagaStartEvent> firstEventMessage =
-                new GenericEventMessage<>(new TriggerSagaStartEvent(identifier));
+        commandBus.dispatch(asCommandMessage("First"), ProcessingContext.NONE);
+        EventMessage<TriggerSagaStartEvent> firstEventMessage = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), new TriggerSagaStartEvent(identifier)
+        );
         eventBus.publish(firstEventMessage);
         Exception testException = new IllegalArgumentException("First");
         assertThrows(IllegalArgumentException.class,
@@ -110,18 +116,22 @@ class FixtureExecutionResultImplTest {
 
         testSubject.startRecording();
 
-        GenericEventMessage<TriggerSagaEndEvent> endEventMessage =
-                new GenericEventMessage<>(new TriggerSagaEndEvent(identifier));
+        EventMessage<TriggerSagaEndEvent> endEventMessage = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), new TriggerSagaEndEvent(identifier)
+        );
         eventBus.publish(endEventMessage);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("Second"), ProcessingContext.NONE);
         IllegalArgumentException secondException = new IllegalArgumentException("Second");
         errorHandler.onError(secondException, endEventMessage, eventMessageHandler);
 
         testSubject.expectPublishedEvents(endEventMessage.getPayload());
-        testSubject.expectPublishedEventsMatching(payloadsMatching(exactSequenceOf(deepEquals(endEventMessage.getPayload()), andNoMore())));
-
+        testSubject.expectPublishedEventsMatching(
+                payloadsMatching(exactSequenceOf(deepEquals(endEventMessage.getPayload()), andNoMore()))
+        );
         testSubject.expectDispatchedCommands("Second");
-        testSubject.expectDispatchedCommandsMatching(payloadsMatching(exactSequenceOf(deepEquals("Second"), andNoMore())));
+        testSubject.expectDispatchedCommandsMatching(
+                payloadsMatching(exactSequenceOf(deepEquals("Second"), andNoMore()))
+        );
 
         assertThrows(AxonAssertionError.class, () -> testSubject.expectSuccessfulHandlerExecution());
         assertTrue(errorHandler.getException().isPresent());
@@ -134,12 +144,20 @@ class FixtureExecutionResultImplTest {
                 (exception, event, eventHandler) -> {/* No-op */}
         );
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
-        testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, deadlineManager, eventBus,
-                                                       commandBus, StubSaga.class, AllFieldsFilter.instance(), errorHandler);
+        testSubject = new FixtureExecutionResultImpl<>(sagaStore,
+                                                       eventScheduler,
+                                                       deadlineManager,
+                                                       eventBus,
+                                                       commandBus,
+                                                       StubSaga.class,
+                                                       AllFieldsFilter.instance(),
+                                                       errorHandler);
         testSubject.startRecording();
-        GenericEventMessage<TriggerSagaEndEvent> eventMessage = new GenericEventMessage<>(new TriggerSagaEndEvent(identifier));
+        EventMessage<TriggerSagaEndEvent> eventMessage = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), new TriggerSagaEndEvent(identifier)
+        );
         eventBus.publish(eventMessage);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Command"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("Command"), ProcessingContext.NONE);
         errorHandler.onError(new IllegalArgumentException("First"), eventMessage, eventMessageHandler);
 
         testSubject.startRecording();
@@ -150,7 +168,10 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectPublishedEvents_WrongCount() {
-        eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
+        EventMessage<TriggerSagaEndEvent> testEvent = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), new TriggerSagaEndEvent(identifier)
+        );
+        eventBus.publish(testEvent);
 
         assertThrows(
                 AxonAssertionError.class,
@@ -162,7 +183,10 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectPublishedEvents_WrongType() {
-        eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
+        EventMessage<TriggerSagaEndEvent> testEvent = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), new TriggerSagaEndEvent(identifier)
+        );
+        eventBus.publish(testEvent);
 
         assertThrows(
                 AxonAssertionError.class,
@@ -172,7 +196,10 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectPublishedEvents_FailedMatcher() {
-        eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
+        EventMessage<TriggerSagaEndEvent> testEvent = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), new TriggerSagaEndEvent(identifier)
+        );
+        eventBus.publish(testEvent);
 
         assertThrows(
                 AxonAssertionError.class, () -> testSubject.expectPublishedEvents(new FailingMatcher<EventMessage<?>>())
@@ -181,54 +208,57 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectDispatchedCommands_FailedCount() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"), ProcessingContext.NONE);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Third"), ProcessingContext.NONE);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Fourth"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("First"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("Second"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("Third"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("Fourth"), ProcessingContext.NONE);
 
         assertThrows(AxonAssertionError.class, () -> testSubject.expectDispatchedCommands("First", "Second", "Third"));
     }
 
     @Test
     void expectDispatchedCommands_FailedType() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("First"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("Second"), ProcessingContext.NONE);
 
         assertThrows(AxonAssertionError.class, () -> testSubject.expectDispatchedCommands("First", "Third"));
     }
 
     @Test
     void expectDispatchedCommands() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("First"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("Second"), ProcessingContext.NONE);
 
         testSubject.expectDispatchedCommands("First", "Second");
     }
 
     @Test
     void expectDispatchedCommands_ObjectsNotImplementingEquals() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")), ProcessingContext.NONE);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage(new SimpleCommand("First")), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage(new SimpleCommand("Second")),
+                            ProcessingContext.NONE);
 
         testSubject.expectDispatchedCommands(new SimpleCommand("First"), new SimpleCommand("Second"));
     }
 
     @Test
     void expectDispatchedCommands_ObjectsNotImplementingEquals_FailedField() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")), ProcessingContext.NONE);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage(new SimpleCommand("First")), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage(new SimpleCommand("Second")), ProcessingContext.NONE);
 
         AxonAssertionError e = assertThrows(
                 AxonAssertionError.class,
                 () -> testSubject.expectDispatchedCommands(new SimpleCommand("Second"), new SimpleCommand("Third"))
         );
-        assertTrue(e.getMessage().contains("Expected <SimpleCommand{content='Second'"), "Wrong message: " + e.getMessage());
+
+        assertTrue(e.getMessage().contains("Expected <SimpleCommand[content=Second"),
+                   "Wrong message: " + e.getMessage());
     }
 
     @Test
     void expectDispatchedCommands_ObjectsNotImplementingEquals_WrongType() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")), ProcessingContext.NONE);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage(new SimpleCommand("First")), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage(new SimpleCommand("Second")), ProcessingContext.NONE);
 
         AxonAssertionError e = assertThrows(
                 AxonAssertionError.class,
@@ -239,7 +269,7 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectNoDispatchedCommands_Failed() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"), ProcessingContext.NONE);
+        commandBus.dispatch(asCommandMessage("First"), ProcessingContext.NONE);
         assertThrows(AxonAssertionError.class, testSubject::expectNoDispatchedCommands);
     }
 
@@ -257,7 +287,11 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectNoScheduledEvents_EventIsScheduled() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
+        EventMessage<TimerTriggeredEvent> testEvent =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), applicationEvent);
+
+        eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
+
         assertThrows(AxonAssertionError.class, testSubject::expectNoScheduledEvents);
     }
 
@@ -268,16 +302,23 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectNoScheduledEvents_ScheduledEventIsTriggered() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
+        EventMessage<TimerTriggeredEvent> testEvent =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), applicationEvent);
+
+        eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
         eventScheduler.advanceToNextTrigger();
+
         testSubject.expectNoScheduledEvents();
     }
 
     @Test
     void expectScheduledEvent_WrongDateTime() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
-        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
-        });
+        EventMessage<TimerTriggeredEvent> testEvent =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), applicationEvent);
+
+        eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), NO_OP);
+
         assertThrows(
                 AxonAssertionError.class,
                 () -> testSubject.expectScheduledEvent(Duration.ofSeconds(1), applicationEvent)
@@ -286,9 +327,12 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectScheduledEvent_WrongClass() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
-        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
-        });
+        EventMessage<TimerTriggeredEvent> testEvent =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), applicationEvent);
+
+        eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), NO_OP);
+
         assertThrows(
                 AxonAssertionError.class,
                 () -> testSubject.expectScheduledEventOfType(Duration.ofSeconds(1), Object.class)
@@ -297,22 +341,31 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectScheduledEvent_WrongEvent() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
-        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
-        });
+        EventMessage<TimerTriggeredEvent> testEvent =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), applicationEvent);
+        EventMessage<TimerTriggeredEvent> unexpectedEvent = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), new TimerTriggeredEvent("unexpected")
+        );
+
+        eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), NO_OP);
+
         assertThrows(
                 AxonAssertionError.class,
                 () -> testSubject.expectScheduledEvent(
-                        Duration.ofSeconds(1), new GenericEventMessage<>(new TimerTriggeredEvent("unexpected"))
+                        Duration.ofSeconds(1), unexpectedEvent
                 )
         );
     }
 
     @Test
     void expectScheduledEvent_FailedMatcher() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
-        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
-        });
+        EventMessage<TimerTriggeredEvent> testEvent =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), applicationEvent);
+
+        eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), NO_OP);
+
         assertThrows(
                 AxonAssertionError.class,
                 () -> testSubject.expectScheduledEvent(Duration.ofSeconds(1), new FailingMatcher<>())
@@ -321,21 +374,30 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void expectScheduledEvent_Found() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
-        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
-        });
+        EventMessage<TimerTriggeredEvent> testEvent =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), applicationEvent);
+
+        eventScheduler.schedule(Duration.ofSeconds(1), testEvent);
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), NO_OP);
+
         testSubject.expectScheduledEvent(Duration.ofMillis(500), applicationEvent);
     }
 
     @Test
     void expectScheduledEvent_FoundInMultipleCandidates() {
-        eventScheduler.schedule(
-                Duration.ofSeconds(1), new GenericEventMessage<>(new TimerTriggeredEvent("unexpected1"))
+        EventMessage<TimerTriggeredEvent> testEventOne = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), new TimerTriggeredEvent("unexpected1")
         );
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
-        eventScheduler.schedule(
-                Duration.ofSeconds(1), new GenericEventMessage<>(new TimerTriggeredEvent("unexpected2"))
+        EventMessage<TimerTriggeredEvent> testEventTwo =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), applicationEvent);
+        EventMessage<TimerTriggeredEvent> testEventThree = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), new TimerTriggeredEvent("unexpected2")
         );
+
+        eventScheduler.schedule(Duration.ofSeconds(1), testEventOne);
+        eventScheduler.schedule(Duration.ofSeconds(1), testEventTwo);
+        eventScheduler.schedule(Duration.ofSeconds(1), testEventThree);
+
         testSubject.expectScheduledEvent(Duration.ofSeconds(1), applicationEvent);
     }
 
@@ -423,7 +485,10 @@ class FixtureExecutionResultImplTest {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.anything()));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom,
+                                                                         deadlineWindowTo,
+                                                                         Matchers.anything()));
     }
 
     @Test
@@ -431,21 +496,31 @@ class FixtureExecutionResultImplTest {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
 
-        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.nullValue()));
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom,
+                                                                               deadlineWindowTo,
+                                                                               Matchers.nullValue()));
     }
 
     @Test
     void noDeadlineMatchingInTimeframeWithDeadlineAtFrom() {
-        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(deadlineWindowFrom)));
+        when(deadlineManager.getScheduledDeadlines())
+                .thenReturn(Collections.singletonList(createDeadline(deadlineWindowFrom)));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.anything()));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom,
+                                                                         deadlineWindowTo,
+                                                                         Matchers.anything()));
     }
 
     @Test
     void noDeadlineMatchingInTimeframeWithDeadlineAtTo() {
-        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(deadlineWindowTo)));
+        when(deadlineManager.getScheduledDeadlines())
+                .thenReturn(Collections.singletonList(createDeadline(deadlineWindowTo)));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.anything()));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom,
+                                                                         deadlineWindowTo,
+                                                                         Matchers.anything()));
     }
 
     @Test
@@ -454,7 +529,9 @@ class FixtureExecutionResultImplTest {
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
-        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.anything()));
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom,
+                                                                               deadlineWindowTo,
+                                                                               Matchers.anything()));
     }
 
     @Test
@@ -464,7 +541,8 @@ class FixtureExecutionResultImplTest {
         Object deadline = deadlineInfo.deadlineMessage().getPayload();
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline));
     }
 
     @Test
@@ -472,7 +550,9 @@ class FixtureExecutionResultImplTest {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
 
-        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, new Object()));
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom,
+                                                                       deadlineWindowTo,
+                                                                       new Object()));
     }
 
     @Test
@@ -481,7 +561,8 @@ class FixtureExecutionResultImplTest {
         Object deadline = deadlineInfo.deadlineMessage().getPayload();
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline));
     }
 
     @Test
@@ -490,7 +571,8 @@ class FixtureExecutionResultImplTest {
         Object deadline = deadlineInfo.deadlineMessage().getPayload();
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline));
     }
 
     @Test
@@ -499,8 +581,12 @@ class FixtureExecutionResultImplTest {
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
-        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadlineBefore.deadlineMessage().getPayload()));
-        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadlineAfter.deadlineMessage().getPayload()));
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom,
+                                                                       deadlineWindowTo,
+                                                                       deadlineBefore.deadlineMessage().getPayload()));
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom,
+                                                                       deadlineWindowTo,
+                                                                       deadlineAfter.deadlineMessage().getPayload()));
     }
 
     @Test
@@ -509,7 +595,10 @@ class FixtureExecutionResultImplTest {
         ScheduledDeadlineInfo deadline = createDeadline(expiryTime);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, String.class));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom,
+                                                                       deadlineWindowTo,
+                                                                       String.class));
     }
 
     @Test
@@ -517,7 +606,9 @@ class FixtureExecutionResultImplTest {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
 
-        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, Integer.class));
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom,
+                                                                             deadlineWindowTo,
+                                                                             Integer.class));
     }
 
     @Test
@@ -525,7 +616,10 @@ class FixtureExecutionResultImplTest {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowFrom);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, String.class));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom,
+                                                                       deadlineWindowTo,
+                                                                       String.class));
     }
 
     @Test
@@ -533,7 +627,10 @@ class FixtureExecutionResultImplTest {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowTo);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, String.class));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom,
+                                                                       deadlineWindowTo,
+                                                                       String.class));
     }
 
     @Test
@@ -542,7 +639,9 @@ class FixtureExecutionResultImplTest {
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
-        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, String.class));
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom,
+                                                                             deadlineWindowTo,
+                                                                             String.class));
     }
 
     @Test
@@ -551,7 +650,10 @@ class FixtureExecutionResultImplTest {
         ScheduledDeadlineInfo deadline = createDeadline(expiryTime);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName"));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom,
+                                                                         deadlineWindowTo,
+                                                                         "deadlineName"));
     }
 
     @Test
@@ -559,7 +661,9 @@ class FixtureExecutionResultImplTest {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
 
-        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "otherName"));
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom,
+                                                                               deadlineWindowTo,
+                                                                               "otherName"));
     }
 
     @Test
@@ -567,7 +671,10 @@ class FixtureExecutionResultImplTest {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowFrom);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName"));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom,
+                                                                         deadlineWindowTo,
+                                                                         "deadlineName"));
     }
 
     @Test
@@ -575,7 +682,10 @@ class FixtureExecutionResultImplTest {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowTo);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
-        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName"));
+        assertThrows(AxonAssertionError.class,
+                     () -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom,
+                                                                         deadlineWindowTo,
+                                                                         "deadlineName"));
     }
 
     @Test
@@ -584,29 +694,19 @@ class FixtureExecutionResultImplTest {
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
-        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName"));
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom,
+                                                                               deadlineWindowTo,
+                                                                               "deadlineName"));
     }
 
     private ScheduledDeadlineInfo createDeadline(Instant expiryTime) {
-        DeadlineMessage<String> deadlineMessage = GenericDeadlineMessage.asDeadlineMessage("deadlineName", "payload", expiryTime);
+        DeadlineMessage<String> deadlineMessage =
+                GenericDeadlineMessage.asDeadlineMessage("deadlineName", "payload", expiryTime);
         return new ScheduledDeadlineInfo(expiryTime, "deadlineName", "1", 0, deadlineMessage, null);
     }
 
-    private static class SimpleCommand {
+    private record SimpleCommand(String content) {
 
-        @SuppressWarnings({"FieldCanBeLocal", "unused"})
-        private final String content;
-
-        public SimpleCommand(String content) {
-            this.content = content;
-        }
-
-        @Override
-        public String toString() {
-            return "SimpleCommand{" +
-                    "content='" + content + '\'' +
-                    '}';
-        }
     }
 
     private static class FailingMatcher<T> extends BaseMatcher<List<? extends T>> {

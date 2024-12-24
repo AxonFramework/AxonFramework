@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.eventsourcing.utils.TestSerializer;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,10 +37,9 @@ class SnapshotFilterTest {
 
     private static final DomainEventData<?> NO_SNAPSHOT_DATA = null;
     private static final DomainEventData<?> MOCK_SNAPSHOT_DATA = mock(DomainEventData.class);
-    private static final SnapshotEventEntry TEST_SNAPSHOT_DATA = new SnapshotEventEntry(
-            new GenericDomainEventMessage<>("some-type", "some-aggregate-id", 0, "some-payload"),
-            TestSerializer.xStreamSerializer()
-    );
+    private static final SnapshotEventEntry TEST_SNAPSHOT_DATA = new SnapshotEventEntry(new GenericDomainEventMessage<>(
+            "some-type", "some-aggregate-id", 0, new QualifiedName("test", "snapshot", "0.0.1"), "some-payload"
+    ), TestSerializer.xStreamSerializer());
 
     @Test
     void allowAllReturnsTrue() {

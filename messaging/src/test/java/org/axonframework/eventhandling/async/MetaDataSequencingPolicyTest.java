@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -67,7 +68,9 @@ public class MetaDataSequencingPolicyTest {
     }
 
     private DomainEventMessage<?> newStubDomainEvent(final Object payload, Map<String, String> metaData) {
-        return new GenericDomainEventMessage<>("type", "A", 0L, payload, MetaData.from(metaData));
+        return new GenericDomainEventMessage<>(
+                "aggregateType", "A", 0L, new QualifiedName("test", "event", "0.0.1"), payload, MetaData.from(metaData)
+        );
     }
 
     private DomainEventMessage<?> newStubDomainEvent(final Object payload) {

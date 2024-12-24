@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -34,9 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SegmentTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SegmentTest.class);
-
-    private List<DomainEventMessage> domainEventMessages;
+    private List<DomainEventMessage<?>> domainEventMessages;
 
     @BeforeEach
     void before() {
@@ -45,11 +40,10 @@ class SegmentTest {
 
     @Test
     void segmentSplitAddsUp() {
-
         final List<Long> identifiers = domainEventMessages.stream().map(de -> {
             final String aggregateIdentifier = de.getAggregateIdentifier();
             return UUID.fromString(aggregateIdentifier).getLeastSignificantBits();
-        }).collect(Collectors.toList());
+        }).toList();
 
         // segment 0, mask 0;
         final long count = identifiers.stream().filter(Segment.ROOT_SEGMENT::matches).count();
@@ -237,7 +231,6 @@ class SegmentTest {
             assertThat(segmentMasks[0].getMask(), is(0x1));
             assertThat(segmentMasks[1].getMask(), is(0x3));
             assertThat(segmentMasks[2].getMask(), is(0x3));
-
         }
 
         {
@@ -299,7 +292,7 @@ class SegmentTest {
 
             for (Segment segment : segments) {
                 assertEquals(segment, Segment.computeSegment(segment.getSegmentId(), segmentIds),
-                        "Got wrong segment for " + segmentCount + " number of segments");
+                             "Got wrong segment for " + segmentCount + " number of segments");
             }
         }
     }
@@ -346,7 +339,9 @@ class SegmentTest {
     @Test
     void itemsAssignedToOnlyOneSegment() {
         for (int j = 0; j < 10; j++) {
-            List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, ThreadLocalRandom.current().nextInt(50) + 1);
+            List<Segment> segments = Segment.splitBalanced(
+                    Segment.ROOT_SEGMENT, ThreadLocalRandom.current().nextInt(50) + 1
+            );
             for (int i = 0; i < 100_000; i++) {
                 String value = UUID.randomUUID().toString();
                 assertEquals(1, segments.stream().filter(s -> s.matches(value)).count());
@@ -354,19 +349,21 @@ class SegmentTest {
         }
     }
 
-    private List<DomainEventMessage> produceEvents() {
-        final ArrayList<DomainEventMessage> events = new ArrayList<>();
+    private List<DomainEventMessage<?>> produceEvents() {
+        final ArrayList<DomainEventMessage<?>> events = new ArrayList<>();
         // Produce a set of
         for (int i = 0; i < 10000; i++) {
             String aggregateIdentifier = UUID.randomUUID().toString();
-            final DomainEventMessage domainEventMessage = newStubDomainEvent(aggregateIdentifier);
+            final DomainEventMessage<?> domainEventMessage = newStubDomainEvent(aggregateIdentifier);
             events.add(domainEventMessage);
         }
         return events;
     }
 
-    private DomainEventMessage newStubDomainEvent(String aggregateIdentifier) {
-        return new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
-                                               new Object(), MetaData.emptyInstance());
+    private DomainEventMessage<Object> newStubDomainEvent(Object aggregateIdentifier) {
+        return new GenericDomainEventMessage<>(
+                "aggregateType", aggregateIdentifier.toString(), 0L,
+                new QualifiedName("test", "event", "0.0.1"), new Object()
+        );
     }
 }
