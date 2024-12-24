@@ -24,25 +24,25 @@ import java.util.Set;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * An {@link EventCriteria} implementation dedicated towards a single {@link Index}.
+ * An {@link EventCriteria} implementation dedicated towards a single {@link Tag}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-final class SingleIndexCriteria implements EventCriteria {
+final class SingleTagCriteria implements EventCriteria {
 
-    private final Index index;
+    private final Tag tag;
 
     /**
-     * Construct a {@link SingleIndexCriteria} using the given {@code index} as the singular {@link Index} of this
+     * Construct a {@link SingleTagCriteria} using the given {@code tag} as the singular {@link Tag} of this
      * {@link EventCriteria}.
      *
-     * @param index The singular {@link Index} of this {@link EventCriteria}.
+     * @param tag The singular {@link Tag} of this {@link EventCriteria}.
      */
-    SingleIndexCriteria(@Nonnull Index index) {
-        assertNonNull(index, "The Index cannot be null");
+    SingleTagCriteria(@Nonnull Tag tag) {
+        assertNonNull(tag, "The Tag cannot be null");
 
-        this.index = index;
+        this.tag = tag;
     }
 
     @Override
@@ -51,8 +51,8 @@ final class SingleIndexCriteria implements EventCriteria {
     }
 
     @Override
-    public Set<Index> indices() {
-        return Set.of(index);
+    public Set<Tag> tags() {
+        return Set.of(tag);
     }
 
     @Override
@@ -63,12 +63,12 @@ final class SingleIndexCriteria implements EventCriteria {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        SingleIndexCriteria that = (SingleIndexCriteria) o;
-        return Objects.equals(index, that.index);
+        SingleTagCriteria that = (SingleTagCriteria) o;
+        return Objects.equals(tag, that.tag);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(index);
+        return Objects.hashCode(tag);
     }
 }

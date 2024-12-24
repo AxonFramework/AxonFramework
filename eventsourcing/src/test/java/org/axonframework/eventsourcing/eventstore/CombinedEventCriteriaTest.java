@@ -31,42 +31,42 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CombinedEventCriteriaTest {
 
-    private Index testIndexOne;
-    private Index testIndexTwo;
+    private Tag testTagOne;
+    private Tag testTagTwo;
 
     private CombinedEventCriteria testSubject;
 
     @BeforeEach
     void setUp() {
-        testIndexOne = new Index("keyOne", "valueOne");
-        testIndexTwo = new Index("keySecond", "valueSecond");
+        testTagOne = new Tag("keyOne", "valueOne");
+        testTagTwo = new Tag("keySecond", "valueSecond");
 
-        testSubject = new CombinedEventCriteria(new SingleIndexCriteria(testIndexOne),
-                                                new SingleIndexCriteria(testIndexTwo));
+        testSubject = new CombinedEventCriteria(new SingleTagCriteria(testTagOne),
+                                                new SingleTagCriteria(testTagTwo));
     }
 
     @Test
     void throwsAxonConfigurationExceptionWhenConstructingWithNullFirstOrSecondEventCriteria() {
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class,
-                     () -> new CombinedEventCriteria(null, new SingleIndexCriteria(testIndexTwo)));
+                     () -> new CombinedEventCriteria(null, new SingleTagCriteria(testTagTwo)));
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class,
-                     () -> new CombinedEventCriteria(new SingleIndexCriteria(testIndexOne), null));
+                     () -> new CombinedEventCriteria(new SingleTagCriteria(testTagOne), null));
     }
 
     @Test
     void containsExpectedData() {
-        assertTrue(testSubject.indices().contains(testIndexOne));
-        assertTrue(testSubject.indices().contains(testIndexTwo));
+        assertTrue(testSubject.tags().contains(testTagOne));
+        assertTrue(testSubject.tags().contains(testTagTwo));
         assertTrue(testSubject.types().isEmpty());
     }
 
     @Test
-    void matchingIndicesMatchesOnContainedIndices() {
-        assertTrue(testSubject.matchingIndices(Set.of(testIndexOne, testIndexTwo)));
-        assertFalse(testSubject.matchingIndices(Set.of(testIndexOne)));
-        assertFalse(testSubject.matchingIndices(Set.of(testIndexTwo)));
-        assertFalse(testSubject.matchingIndices(Set.of(new Index("non-existing-key", "non-existing-value"))));
+    void matchingTagsMatchesOnContainedTags() {
+        assertTrue(testSubject.matchingTags(Set.of(testTagOne, testTagTwo)));
+        assertFalse(testSubject.matchingTags(Set.of(testTagOne)));
+        assertFalse(testSubject.matchingTags(Set.of(testTagTwo)));
+        assertFalse(testSubject.matchingTags(Set.of(new Tag("non-existing-key", "non-existing-value"))));
     }
 }

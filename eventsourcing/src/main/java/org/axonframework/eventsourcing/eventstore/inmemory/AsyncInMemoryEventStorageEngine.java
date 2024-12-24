@@ -17,12 +17,20 @@
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Context;
 import org.axonframework.common.SimpleContext;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
+import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.GenericTaggedEventMessage;
+import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventsourcing.eventstore.StreamingCondition;
+import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,13 +39,16 @@ import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import static org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException.consistencyMarkerSurpassed;
 import static org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException.tooManyIndices;
-import static org.axonframework.eventsourcing.eventstore.IndexedEventMessage.asIndexedEvent;
 
 /**
  * Thread-safe {@link AsyncEventStorageEngine} implementation storing events in memory.
@@ -52,7 +63,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final NavigableMap<Long, EventMessage<?>> events = new ConcurrentSkipListMap<>();
+    private final NavigableMap<Long, TaggedEventMessage<EventMessage<?>>> events = new ConcurrentSkipListMap<>();
 
     private final Clock clock;
     private final long offset;
@@ -85,39 +96,45 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     @Override
     public CompletableFuture<Long> appendEvents(@Nonnull AppendCondition condition,
                                                 @Nonnull List<? extends EventMessage<?>> events) {
-        int indexCount = condition.criteria().indices().size();
-        if (indexCount > 1) {
-            return CompletableFuture.failedFuture(tooManyIndices(indexCount, 1));
+        int tagCount = condition.criteria().tags().size();
+        if (tagCount > 1) {
+            return CompletableFuture.failedFuture(tooManyIndices(tagCount, 1));
         }
 
         synchronized (this.events) {
             long head = this.events.isEmpty() ? -1 : this.events.lastKey();
-            List<? extends EventMessage<?>> eventsToAppend;
+            List<TaggedEventMessage<EventMessage<?>>> eventsToAppend;
 
-            if (indexCount != 0) {
+            if (tagCount != 0) {
                 if (this.events.tailMap(condition.consistencyMarker() + 1)
                                .values()
                                .stream()
-                               .filter(event -> event instanceof IndexedEventMessage<?>)
-                               .map(event -> (IndexedEventMessage<?>) event)
                                .anyMatch(indexedEvent -> condition.criteria()
-                                                                  .matchingIndices(indexedEvent.indices()))) {
+                                                                  .matchingTags(indexedEvent.tags()))) {
                     return CompletableFuture.failedFuture(consistencyMarkerSurpassed(condition.consistencyMarker()));
                 }
+                //noinspection unchecked
                 eventsToAppend = events.stream()
-                                       .map(event -> asIndexedEvent(event, condition.criteria().indices()))
+                                       .map(event -> new GenericTaggedEventMessage<>(
+                                               event, condition.criteria().tags()
+                                       ))
+                                       .map(taggedEvent -> (TaggedEventMessage<EventMessage<?>>) taggedEvent)
                                        .toList();
             } else {
-                eventsToAppend = new ArrayList<>(events);
+                //noinspection unchecked
+                eventsToAppend = events.stream()
+                                       .map(event -> new GenericTaggedEventMessage<>(event, Set.of()))
+                                       .map(taggedEvent -> (TaggedEventMessage<EventMessage<?>>) taggedEvent)
+                                       .toList();
             }
 
-            for (EventMessage<?> event : eventsToAppend) {
+            for (TaggedEventMessage<EventMessage<?>> taggedEvent : eventsToAppend) {
                 head++;
-                this.events.put(head, event);
+                this.events.put(head, taggedEvent);
 
                 if (logger.isDebugEnabled()) {
                     logger.debug("Appended event [{}] with position [{}] and timestamp [{}].",
-                                 event.getIdentifier(), head, event.getTimestamp());
+                                 taggedEvent.event().getIdentifier(), head, taggedEvent.event().getTimestamp());
                 }
             }
             return CompletableFuture.completedFuture(head);
@@ -148,31 +165,24 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                       .entrySet()
                       .stream()
                       .filter(entry -> match(entry.getValue(), criteria)),
-                Map.Entry::getValue,
-                entry -> TrackingToken.addToContext(new SimpleContext(),
-                                                    new GlobalSequenceTrackingToken(entry.getKey()))
+                entry -> entry.getValue().event(),
+                entry -> {
+                    Context context = new SimpleContext();
+                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(entry.getKey()));
+                    Set<Tag> tags = entry.getValue().tags();
+                    return tags.isEmpty() ? context : Tag.addToContext(context, tags);
+                }
         );
     }
 
-    private static boolean match(EventMessage<?> event, EventCriteria criteria) {
+    private static boolean match(TaggedEventMessage<?> taggedEvent, EventCriteria criteria) {
         // TODO #3085 Remove usage of getPayloadType in favor of QualifiedName solution
-        return matchingType(event.getPayloadType().getName(), criteria.types())
-                && matchingIndices(event, criteria);
+        return matchingType(taggedEvent.event().getPayloadType().getName(), criteria.types())
+                && criteria.matchingTags(taggedEvent.tags());
     }
 
     private static boolean matchingType(String eventName, Set<String> types) {
         return types.isEmpty() || types.contains(eventName);
-    }
-
-    private static boolean matchingIndices(EventMessage<?> event, EventCriteria criteria) {
-        if (criteria.indices().isEmpty()) {
-            // No criteria are present, so we match successfully.
-            return true;
-        }
-        if (event instanceof IndexedEventMessage<?> indexedEvent) {
-            return criteria.matchingIndices(indexedEvent.indices());
-        }
-        return false;
     }
 
     @Override
@@ -210,7 +220,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         return events.entrySet()
                      .stream()
                      .filter(positionToEventEntry -> {
-                         EventMessage<?> event = positionToEventEntry.getValue();
+                         EventMessage<?> event = positionToEventEntry.getValue().event();
                          Instant eventTimestamp = event.getTimestamp();
                          logger.debug("instant [{}]", eventTimestamp);
                          return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);

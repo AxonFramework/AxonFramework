@@ -34,10 +34,10 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 final class CombinedEventCriteria implements EventCriteria {
 
     private final Set<String> types;
-    private final Set<Index> indices;
+    private final Set<Tag> tags;
 
     /**
-     * Constructs a {@link CombinedEventCriteria} combining the {@link #types()} and {@link #indices()} of the given
+     * Constructs a {@link CombinedEventCriteria} combining the {@link #types()} and {@link #tags()} of the given
      * {@code first} and {@code second} {@link EventCriteria}.
      *
      * @param first  The {@link EventCriteria} to combine with the {@code second} into a single {@code EventCriteria}.
@@ -50,8 +50,8 @@ final class CombinedEventCriteria implements EventCriteria {
 
         this.types = new HashSet<>(first.types());
         this.types.addAll(second.types());
-        this.indices = new HashSet<>(first.indices());
-        this.indices.addAll(second.indices());
+        this.tags = new HashSet<>(first.tags());
+        this.tags.addAll(second.tags());
     }
 
     @Override
@@ -60,8 +60,8 @@ final class CombinedEventCriteria implements EventCriteria {
     }
 
     @Override
-    public Set<Index> indices() {
-        return Set.copyOf(indices);
+    public Set<Tag> tags() {
+        return Set.copyOf(tags);
     }
 
     @Override
@@ -73,11 +73,11 @@ final class CombinedEventCriteria implements EventCriteria {
             return false;
         }
         CombinedEventCriteria that = (CombinedEventCriteria) o;
-        return Objects.equals(types, that.types) && Objects.equals(indices, that.indices);
+        return Objects.equals(types, that.types) && Objects.equals(tags, that.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(types, indices);
+        return Objects.hash(types, tags);
     }
 }

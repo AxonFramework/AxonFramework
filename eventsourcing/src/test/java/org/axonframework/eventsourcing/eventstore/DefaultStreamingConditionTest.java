@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class DefaultStreamingConditionTest {
 
     private static final GlobalSequenceTrackingToken TEST_POSITION = new GlobalSequenceTrackingToken(1337);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.hasIndex(new Index("key", "value"));
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.hasTag(new Tag("key", "value"));
 
     private DefaultStreamingCondition testSubject;
 
@@ -61,7 +61,7 @@ class DefaultStreamingConditionTest {
 
     @Test
     void withCriteriaCombinesGivenWithExistingCriteria() {
-        EventCriteria testCriteria = EventCriteria.hasIndex(new Index("other-key", "other-value"));
+        EventCriteria testCriteria = EventCriteria.hasTag(new Tag("other-key", "other-value"));
         EventCriteria expectedCriteria = testCriteria.combine(TEST_CRITERIA);
 
         StreamingCondition result = testSubject.with(testCriteria);

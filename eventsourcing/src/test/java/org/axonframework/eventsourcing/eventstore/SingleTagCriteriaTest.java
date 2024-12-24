@@ -22,26 +22,26 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link SingleIndexCriteria}.
+ * Test class validating the {@link SingleTagCriteria}.
  *
  * @author Steven van Beelen
  */
-class SingleIndexCriteriaTest {
+class SingleTagCriteriaTest {
 
     @Test
-    void throwsAxonConfigurationExceptionWhenConstructingWithNullIndex() {
+    void throwsAxonConfigurationExceptionWhenConstructingWithNullTag() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> new SingleIndexCriteria(null));
+        assertThrows(AxonConfigurationException.class, () -> new SingleTagCriteria(null));
     }
 
     @Test
     void containsExpectedData() {
-        Index testIndex = new Index("key", "value");
+        Tag testTag = new Tag("key", "value");
 
-        EventCriteria testSubject = new SingleIndexCriteria(testIndex);
+        EventCriteria testSubject = new SingleTagCriteria(testTag);
 
-        assertEquals(1, testSubject.indices().size());
-        assertTrue(testSubject.indices().contains(testIndex));
+        assertEquals(1, testSubject.tags().size());
+        assertTrue(testSubject.tags().contains(testTag));
         assertTrue(testSubject.types().isEmpty());
     }
 }
