@@ -24,6 +24,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.io.Serial;
 import java.util.Map;
@@ -41,11 +42,6 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
     private static final long serialVersionUID = -6872386525166762225L;
 
     /**
-     * The {@link QualifiedName name} of <em>any</em> {@link GenericResetContext} instance.
-     */
-    public static final QualifiedName NAME = new QualifiedName("axon.framework", "resetContext", "5.0.0");
-
-    /**
      * Returns the given {@code messageOrPayload} as a {@link ResetContext}. If {@code messageOrPayload} already
      * implements {@code ResetContext}, it is returned as-is. If it implements {@link Message}, {@code messageOrPayload}
      * will be cast to {@code Message} and current time is used to create a {@code ResetContext}. Otherwise, the given
@@ -55,7 +51,10 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
      * @param <T>              the type of payload contained in the message
      * @return a {@link ResetContext} containing given {@code messageOrPayload} as payload, or the
      * {@code messageOrPayload} if it already implements {@code ResetContext}.
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
      */
+    @Deprecated
     @SuppressWarnings("unchecked")
     public static <T> ResetContext<T> asResetContext(Object messageOrPayload) {
         if (messageOrPayload instanceof ResetContext) {
@@ -63,33 +62,36 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
         } else if (messageOrPayload instanceof Message) {
             return new GenericResetContext<>((Message<T>) messageOrPayload);
         }
-        return new GenericResetContext<>((T) messageOrPayload);
+        QualifiedName name = messageOrPayload == null
+                ? new QualifiedName("axon.framework", "empty.reset.context", "5.0.0")
+                : QualifiedNameUtils.fromClassName(messageOrPayload.getClass());
+        return new GenericResetContext<>(name, (T) messageOrPayload);
     }
 
     /**
-     * Constructs a {@link GenericResetContext} for the given {@code payload}.
+     * Constructs a {@link GenericResetContext} for the given {@code name} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
-     * <p>
-     * The {@link #name()} defaults to {@link #NAME}.
      *
+     * @param name    The {@link QualifiedName name} for this {@link ResetContext}.
      * @param payload The payload of type {@code P} for this {@link ResetContext}.
      */
-    public GenericResetContext(@Nullable P payload) {
-        this(payload, MetaData.emptyInstance());
+    public GenericResetContext(@Nonnull QualifiedName name,
+                               @Nullable P payload) {
+        this(name, payload, MetaData.emptyInstance());
     }
 
     /**
-     * Constructs a {@link GenericResetContext} for the given {@code payload} and {@code metaData}.
-     * <p>
-     * The {@link #name()} defaults to {@link #NAME}.
+     * Constructs a {@link GenericResetContext} for the given {@code name}, {@code payload}, and {@code metaData}.
      *
+     * @param name     The {@link QualifiedName name} for this {@link ResetContext}.
      * @param payload  The payload of type {@code P} for this {@link ResetContext}.
      * @param metaData The metadata for this {@link ResetContext}.
      */
-    public GenericResetContext(@Nullable P payload,
+    public GenericResetContext(@Nonnull QualifiedName name,
+                               @Nullable P payload,
                                @Nonnull Map<String, ?> metaData) {
-        this(new GenericMessage<>(NAME, payload, metaData));
+        this(new GenericMessage<>(name, payload, metaData));
     }
 
     /**
