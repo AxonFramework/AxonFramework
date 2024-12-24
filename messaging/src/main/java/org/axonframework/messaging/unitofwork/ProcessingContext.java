@@ -17,7 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Context;
+import org.axonframework.messaging.Context;
 
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
