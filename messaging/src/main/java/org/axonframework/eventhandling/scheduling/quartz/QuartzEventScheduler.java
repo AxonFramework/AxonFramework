@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -82,10 +84,10 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     /**
      * Instantiate a {@link QuartzEventScheduler} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link Scheduler} and {@link EventBus} are not {@code null},
-     * and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
-     * The EventBus, TransactionManager and EventJobDataBinder will be tied to the Scheduler's context. If this
-     * initialization step fails, this will too result in an AxonConfigurationException.
+     * Will assert that the {@link Scheduler} and {@link EventBus} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}. The EventBus, TransactionManager and
+     * EventJobDataBinder will be tied to the Scheduler's context. If this initialization step fails, this will too
+     * result in an AxonConfigurationException.
      *
      * @param builder the {@link Builder} used to instantiate a {@link QuartzEventScheduler} instance
      */
@@ -113,9 +115,9 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     /**
      * Instantiate a Builder to be able to create a {@link QuartzEventScheduler}.
      * <p>
-     * The {@link EventJobDataBinder} is defaulted to a {@link DirectEventJobDataBinder} using the configured {@link
-     * Serializer}, and the {@link TransactionManager} defaults to a {@link NoTransactionManager}. Note that if the
-     * {@code Serializer} is not set, the configuration expects the {@code EventJobDataBinder} to be set.
+     * The {@link EventJobDataBinder} is defaulted to a {@link DirectEventJobDataBinder} using the configured
+     * {@link Serializer}, and the {@link TransactionManager} defaults to a {@link NoTransactionManager}. Note that if
+     * the {@code Serializer} is not set, the configuration expects the {@code EventJobDataBinder} to be set.
      * <p>
      * The {@link Scheduler} and {@link EventBus} are <b>hard requirements</b> and as such should be provided.
      *
@@ -144,8 +146,8 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
      * Builds the JobDetail instance for Quartz, which defines the Job that needs to be executed when the trigger
      * fires.
      * <p/>
-     * The resulting JobDetail must be identified by the given {@code jobKey} and represent a Job that dispatches
-     * the given {@code event}.
+     * The resulting JobDetail must be identified by the given {@code jobKey} and represent a Job that dispatches the
+     * given {@code event}.
      * <p/>
      * This method may be safely overridden to change behavior. Defaults to a JobDetail to fire a {@link FireEventJob}.
      *
@@ -232,11 +234,16 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
      */
     public static class DirectEventJobDataBinder implements EventJobDataBinder {
 
+        /**
+         * Key pointing to the {@link Message#name()} as a {@code String} of the deadline in the {@link JobDataMap}.
+         */
+        public static final String NAME = "name";
+
         private final Serializer serializer;
 
         /**
-         * Instantiate a {@link DirectEventJobDataBinder} with the provided {@link Serializer} for
-         * de-/serializing event messages.
+         * Instantiate a {@link DirectEventJobDataBinder} with the provided {@link Serializer} for de-/serializing event
+         * messages.
          *
          * @param serializer the {@link Serializer} used for de-/serializing event messages
          */
@@ -248,9 +255,10 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         public JobDataMap toJobData(Object event) {
             JobDataMap jobData = new JobDataMap();
 
-            EventMessage eventMessage = (EventMessage) event;
+            EventMessage<?> eventMessage = (EventMessage<?>) event;
 
             jobData.put(MESSAGE_ID, eventMessage.getIdentifier());
+            jobData.put(NAME, eventMessage.name().toString());
             jobData.put(MESSAGE_TIMESTAMP, eventMessage.getTimestamp().toString());
 
             SerializedObject<byte[]> serializedPayload =
@@ -269,6 +277,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         @Override
         public Object fromJobData(JobDataMap jobDataMap) {
             return new GenericEventMessage<>((String) jobDataMap.get(MESSAGE_ID),
+                                             QualifiedName.fromString((String) jobDataMap.get(NAME)),
                                              deserializePayload(jobDataMap),
                                              deserializeMetaData(jobDataMap),
                                              retrieveDeadlineTimestamp(jobDataMap));
@@ -303,9 +312,9 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     /**
      * Builder class to instantiate a {@link QuartzEventScheduler}.
      * <p>
-     * The {@link EventJobDataBinder} is defaulted to a {@link DirectEventJobDataBinder} using the configured {@link
-     * Serializer}, and the {@link TransactionManager} defaults to a {@link NoTransactionManager}. Note that if the
-     * {@code Serializer} is not set, the configuration expects the {@code EventJobDataBinder} to be set.
+     * The {@link EventJobDataBinder} is defaulted to a {@link DirectEventJobDataBinder} using the configured
+     * {@link Serializer}, and the {@link TransactionManager} defaults to a {@link NoTransactionManager}. Note that if
+     * the {@code Serializer} is not set, the configuration expects the {@code EventJobDataBinder} to be set.
      * <p>
      * The {@link Scheduler} and {@link EventBus} are <b>hard requirements</b> and as such should be provided.
      */

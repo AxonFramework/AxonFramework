@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.Serializer;
@@ -33,9 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static java.util.Spliterator.DISTINCT;
-import static java.util.Spliterator.NONNULL;
-import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterator.*;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
@@ -65,7 +64,10 @@ public abstract class EventStreamUtils {
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public static DomainEventStream upcastAndDeserializeDomainEvents(
-            Stream<? extends DomainEventData<?>> eventEntryStream, Serializer serializer, EventUpcaster upcasterChain) {
+            Stream<? extends DomainEventData<?>> eventEntryStream,
+            Serializer serializer,
+            EventUpcaster upcasterChain
+    ) {
         AtomicReference<Long> currentSequenceNumber = new AtomicReference<>();
         Stream<IntermediateEventRepresentation> upcastResult =
                 upcastAndDeserialize(eventEntryStream, upcasterChain, entry -> {
@@ -74,11 +76,12 @@ public abstract class EventStreamUtils {
                     return result;
                 });
         Stream<? extends DomainEventMessage<?>> stream = upcastResult.map(ir -> {
-            SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
-                                                                             new LazyDeserializingObject<>(
-                                                                                     ir::getData,
-                                                                                     ir.getType(), serializer),
-                                                                             ir.getMetaData());
+            SerializedMessage<?> serializedMessage = new SerializedMessage<>(
+                    ir.getMessageIdentifier(),
+                    QualifiedNameUtils.fromClassName(serializer.classForType(ir.getType())),
+                    new LazyDeserializingObject<>(ir::getData, ir.getType(), serializer),
+                    ir.getMetaData()
+            );
             if (ir.getTrackingToken().isPresent()) {
                 return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(), ir.getAggregateType().get(),
                                                               ir.getAggregateIdentifier().get(),

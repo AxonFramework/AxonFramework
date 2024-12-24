@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.responsetypes.PublisherResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.reactivestreams.Publisher;
@@ -23,23 +24,25 @@ import org.reactivestreams.Publisher;
 import java.util.Map;
 
 /**
- * A special type of {@link QueryMessage} used for initiating streaming queries. It's special since it hard codes the
- * response type to {@link PublisherResponseType}.
+ * A {@link QueryMessage} used for initiating streaming queries.
+ * <p>
+ * It hard codes the {@link #getResponseType() response type} to an {@link PublisherResponseType} implementation.
  *
- * @param <Q> the type of streaming query payload
- * @param <R> the type of the result streamed via {@link Publisher}
+ * @param <P> The type of {@link #getPayload() payload} expressing the query in this {@link StreamingQueryMessage}.
+ * @param <R> The type of {@link #getResponseType() response} expected from this {@link StreamingQueryMessage} streamed
+ *            via {@link Publisher}.
  * @author Milan Savic
  * @author Stefan Dragisic
  * @since 4.6.0
  */
-public interface StreamingQueryMessage<Q, R> extends QueryMessage<Q, Publisher<R>> {
+public interface StreamingQueryMessage<P, R> extends QueryMessage<P, Publisher<R>> {
 
     @Override
     ResponseType<Publisher<R>> getResponseType();
 
     @Override
-    StreamingQueryMessage<Q, R> withMetaData(Map<String, ?> metaData);
+    StreamingQueryMessage<P, R> withMetaData(@Nonnull Map<String, ?> metaData);
 
     @Override
-    StreamingQueryMessage<Q, R> andMetaData(Map<String, ?> additionalMetaData);
+    StreamingQueryMessage<P, R> andMetaData(@Nonnull Map<String, ?> additionalMetaData);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.axonframework.messaging.unitofwork;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.Arrays;
@@ -90,13 +92,20 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
         for (MessageProcessingContext<T> processingContext : processingContexts) {
             this.processingContext = processingContext;
             try {
+                //noinspection DuplicatedCode
                 result = task.call();
                 if (result instanceof ResultMessage) {
+                    //noinspection unchecked
                     resultMessage = (ResultMessage<R>) result;
-                } else if(result instanceof Message) {
-                    resultMessage = new GenericResultMessage<>(result, ((Message) result).getMetaData());
+                } else if (result instanceof Message) {
+                    resultMessage = new GenericResultMessage<>(((Message<?>) result).name(),
+                                                               result,
+                                                               ((Message<?>) result).getMetaData());
                 } else {
-                    resultMessage = new GenericResultMessage<>(result);
+                    QualifiedName name = result == null
+                            ? new QualifiedName("axon.framework", "empty.result", "0.0.1")
+                            : QualifiedNameUtils.fromClassName(result.getClass());
+                    resultMessage = new GenericResultMessage<>(name, result);
                 }
             } catch (Error | Exception e) {
                 if (rollbackConfiguration.rollBackOn(e)) {
@@ -123,8 +132,8 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     }
 
     /**
-     * Returns a Map of {@link ExecutionResult} per Message. If the Unit of Work has not been given a task
-     * to execute, the ExecutionResult is {@code null} for each Message.
+     * Returns a Map of {@link ExecutionResult} per Message. If the Unit of Work has not been given a task to execute,
+     * the ExecutionResult is {@code null} for each Message.
      *
      * @return a Map of ExecutionResult per Message processed by this Unit of Work
      */
@@ -164,8 +173,9 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
 
     @Override
     protected void setRollbackCause(Throwable cause) {
-        processingContexts.forEach(context -> context
-                .setExecutionResult(new ExecutionResult(new GenericResultMessage<>(cause))));
+        processingContexts.forEach(context -> context.setExecutionResult(new ExecutionResult(
+                new GenericResultMessage<>(QualifiedNameUtils.fromClassName(cause.getClass()), cause)
+        )));
     }
 
     @Override
@@ -220,5 +230,4 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     public boolean isFirstMessage() {
         return isFirstMessage(getMessage());
     }
-
 }

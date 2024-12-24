@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.eventsourcing.utils.TestSerializer;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.Serializer;
 import org.junit.jupiter.api.*;
@@ -48,10 +49,8 @@ class RevisionSnapshotFilterTest {
                                       .build();
 
         DomainEventMessage<RightAggregateTypeAndRevision> snapshotEvent = new GenericDomainEventMessage<>(
-                RightAggregateTypeAndRevision.class.getName(),
-                "some-aggregate-id",
-                0,
-                new RightAggregateTypeAndRevision("some-state")
+                RightAggregateTypeAndRevision.class.getName(), "some-aggregate-id", 0,
+                new QualifiedName("test", "snapshot", "0.0.1"), new RightAggregateTypeAndRevision("some-state")
         );
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, serializer);
 
@@ -67,7 +66,8 @@ class RevisionSnapshotFilterTest {
                                       .build();
 
         DomainEventMessage<WrongAggregateType> snapshotEvent = new GenericDomainEventMessage<>(
-                WrongAggregateType.class.getName(), "some-aggregate-id", 0, new WrongAggregateType("some-state")
+                WrongAggregateType.class.getName(), "some-aggregate-id", 0,
+                new QualifiedName("test", "snapshot", "0.0.1"), new WrongAggregateType("some-state")
         );
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, serializer);
 
@@ -84,7 +84,7 @@ class RevisionSnapshotFilterTest {
 
         DomainEventMessage<RightAggregateTypeAndWrongRevision> snapshotEvent = new GenericDomainEventMessage<>(
                 RightAggregateTypeAndWrongRevision.class.getName(), "some-aggregate-id", 0,
-                new RightAggregateTypeAndWrongRevision("some-state")
+                new QualifiedName("test", "snapshot", "0.0.1"), new RightAggregateTypeAndWrongRevision("some-state")
         );
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, serializer);
 
@@ -123,44 +123,17 @@ class RevisionSnapshotFilterTest {
     }
 
     @Revision(EXPECTED_REVISION)
-    private static class RightAggregateTypeAndRevision {
+    private record RightAggregateTypeAndRevision(String state) {
 
-        private final String state;
-
-        private RightAggregateTypeAndRevision(String state) {
-            this.state = state;
-        }
-
-        public String getState() {
-            return state;
-        }
     }
 
     @Revision("some-other-revision")
-    private static class WrongAggregateType {
+    private record WrongAggregateType(String state) {
 
-        private final String state;
-
-        private WrongAggregateType(String state) {
-            this.state = state;
-        }
-
-        public String getState() {
-            return state;
-        }
     }
 
     @Revision("some-other-revision")
-    private static class RightAggregateTypeAndWrongRevision {
+    private record RightAggregateTypeAndWrongRevision(String state) {
 
-        private final String state;
-
-        private RightAggregateTypeAndWrongRevision(String state) {
-            this.state = state;
-        }
-
-        public String getState() {
-            return state;
-        }
     }
 }

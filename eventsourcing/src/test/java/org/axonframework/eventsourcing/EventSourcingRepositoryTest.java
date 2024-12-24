@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.utils.StubDomainEvent;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -41,7 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.axonframework.messaging.MetaData.emptyInstance;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -77,7 +77,9 @@ class EventSourcingRepositoryTest {
                                                                                       .spanFactory(testSpanFactory)
                                                                                       .build())
                                              .build();
-        unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
+        unitOfWork = DefaultUnitOfWork.startAndGet(
+                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test")
+        );
     }
 
     @AfterEach
@@ -90,10 +92,12 @@ class EventSourcingRepositoryTest {
     @Test
     void loadAndSaveAggregate() {
         String identifier = UUID.randomUUID().toString();
-        DomainEventMessage event1 =
-                new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
-        DomainEventMessage event2 =
-                new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance());
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", identifier, 1L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+        );
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+                "type", identifier, 2L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+        );
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
 
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
@@ -119,10 +123,12 @@ class EventSourcingRepositoryTest {
     @Test
     void loadAndSaveAggregateIsTracedCorrectly() {
         String identifier = UUID.randomUUID().toString();
-        DomainEventMessage event1 =
-                new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
-        DomainEventMessage event2 =
-                new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance());
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", identifier, 1L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+        );
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+                "type", identifier, 2L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+        );
         when(mockEventStore.readEvents(identifier)).thenAnswer(invocation -> {
             testSpanFactory.verifySpanActive("Repository.load");
             testSpanFactory.verifySpanCompleted("Repository.obtainLock");
@@ -151,10 +157,12 @@ class EventSourcingRepositoryTest {
     @Test
     void filterEventsByType() {
         String identifier = UUID.randomUUID().toString();
-        DomainEventMessage event1 =
-                new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
-        DomainEventMessage event2 =
-                new GenericDomainEventMessage<>("otherType", identifier, (long) 1, "Other contents", emptyInstance());
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+                "type", identifier, 1L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+        );
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+                "otherType", identifier, 1L, new QualifiedName("test", "event", "0.0.1"), "Other contents"
+        );
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
 
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
@@ -169,8 +177,10 @@ class EventSourcingRepositoryTest {
     void load_FirstEventIsSnapshot() {
         String identifier = UUID.randomUUID().toString();
         TestAggregate aggregate = new TestAggregate(identifier);
-        when(mockEventStore.readEvents(identifier)).thenReturn(
-                DomainEventStream.of(new GenericDomainEventMessage<>("type", identifier, 10, aggregate)));
+        DomainEventMessage<TestAggregate> testSnapshot = new GenericDomainEventMessage<>(
+                "type", identifier, 10, new QualifiedName("test", "snapshot", "0.0.1"), aggregate
+        );
+        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(testSnapshot));
         assertSame(aggregate, testSubject.load(identifier).getWrappedAggregate().getAggregateRoot());
     }
 
@@ -178,9 +188,15 @@ class EventSourcingRepositoryTest {
     void loadWithConflictingChanges() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
-                new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
-                new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance()),
-                new GenericDomainEventMessage<>("type", identifier, (long) 3, "Mock contents", emptyInstance())
+                new GenericDomainEventMessage<>(
+                        "type", identifier, 1L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                ),
+                new GenericDomainEventMessage<>(
+                        "type", identifier, 2L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                ),
+                new GenericDomainEventMessage<>(
+                        "type", identifier, 3L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                )
         ));
 
         testSubject.load(identifier, 1L);
@@ -198,9 +214,15 @@ class EventSourcingRepositoryTest {
     void loadWithConflictingChanges_NoConflictResolverSet_UsingTooHighExpectedVersion() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
-                new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
-                new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance()),
-                new GenericDomainEventMessage<>("type", identifier, (long) 3, "Mock contents", emptyInstance())
+                new GenericDomainEventMessage<>(
+                        "type", identifier, 1L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                ),
+                new GenericDomainEventMessage<>(
+                        "type", identifier, 2L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                ),
+                new GenericDomainEventMessage<>(
+                        "type", identifier, 3L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                )
         ));
 
         try {
@@ -217,9 +239,15 @@ class EventSourcingRepositoryTest {
     void loadEventsWithSnapshotter() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
-                new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
-                new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance()),
-                new GenericDomainEventMessage<>("type", identifier, (long) 3, "Mock contents", emptyInstance())
+                new GenericDomainEventMessage<>(
+                        "type", identifier, 1L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                ),
+                new GenericDomainEventMessage<>(
+                        "type", identifier, 2L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                ),
+                new GenericDomainEventMessage<>(
+                        "type", identifier, 3L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                )
         ));
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier);
         aggregate.execute(r -> r.apply(new StubDomainEvent()));
@@ -238,6 +266,7 @@ class EventSourcingRepositoryTest {
                 EventSourcingRepository.builder(TestAggregate.class)
                                        .eventStore(mockEventStore);
 
+        //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtypes(null));
     }
 
@@ -247,6 +276,7 @@ class EventSourcingRepositoryTest {
                 EventSourcingRepository.builder(TestAggregate.class)
                                        .eventStore(mockEventStore);
 
+        //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtype(null));
     }
 
@@ -270,8 +300,8 @@ class EventSourcingRepositoryTest {
     @AggregateRoot(type = "type")
     private static class TestAggregate {
 
-        private List<EventMessage<?>> handledEvents = new ArrayList<>();
-        private List<EventMessage<?>> liveEvents = new ArrayList<>();
+        private final List<EventMessage<?>> handledEvents = new ArrayList<>();
+        private final List<EventMessage<?>> liveEvents = new ArrayList<>();
 
         @AggregateIdentifier
         private String identifier;
@@ -289,7 +319,7 @@ class EventSourcingRepositoryTest {
         }
 
         @EventSourcingHandler
-        protected void handle(EventMessage event) {
+        protected void handle(EventMessage<?> event) {
             identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
             handledEvents.add(event);
             if (AggregateLifecycle.isLive()) {
