@@ -17,7 +17,12 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.IllegalPayloadAccessException;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
@@ -285,11 +290,11 @@ public class DefaultQueryGateway implements QueryGateway {
         }
 
         /**
-         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when publishing {@link QueryMessage QueryMessages}.
          * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
          *
-         * @param messageNameResolver which provides QualifiedName for Event messages
-         * @return the current Builder instance, for fluent interfacing
+         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link QueryMessage QueryMessages}.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
             assertNonNull(messageNameResolver, "MessageNameResolver may not be null");

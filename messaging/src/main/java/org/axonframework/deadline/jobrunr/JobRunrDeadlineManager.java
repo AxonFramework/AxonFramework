@@ -19,11 +19,26 @@ package org.axonframework.deadline.jobrunr;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.deadline.*;
+import org.axonframework.deadline.AbstractDeadlineManager;
+import org.axonframework.deadline.DeadlineException;
+import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineManagerSpanFactory;
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
+import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.ExecutionException;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.Serializer;
@@ -330,11 +345,11 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
         }
 
         /**
-         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
          * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
          *
-         * @param messageNameResolver which provides QualifiedName for Event messages
-         * @return the current Builder instance, for fluent interfacing
+         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link EventMessage EventMessages}.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
             assertNonNull(messageNameResolver, "MessageNameResolver may not be null");

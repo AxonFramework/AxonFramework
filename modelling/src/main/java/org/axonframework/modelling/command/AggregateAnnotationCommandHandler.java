@@ -421,13 +421,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         /**
-         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for dispatched Command messages.
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when dispatching {@link CommandMessage CommandMessages}.
          * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
          *
-         * @param messageNameResolver which provides QualifiedName for Event messages
-         * @return the current Builder instance, for fluent interfacing
+         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link CommandMessage CommandMessages}.
+         * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+        public Builder<T> messageNameResolver(MessageNameResolver messageNameResolver) {
             assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
             this.messageNameResolver = messageNameResolver;
             return this;
