@@ -21,7 +21,7 @@ import org.axonframework.common.ObjectUtils;
 import javax.annotation.Nonnull;
 
 /**
- * A {@link MessageNameResolver} using the {@link Class} of the given {@code payload} to base th e
+ * A {@link MessageNameResolver} using the {@link Class} of the given {@code payload} to base the
  * {@link QualifiedName type} on.
  * <p>
  * The {@link Class#getPackageName()} becomes the {@link QualifiedName#namespace()} and the

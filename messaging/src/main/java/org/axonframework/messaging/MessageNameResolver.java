@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging;
 
-import javax.annotation.Nonnull;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 /**
  * Functional interface describing a resolver from {@link Message#getPayload() Message payload} to it's
@@ -34,6 +34,7 @@ public interface MessageNameResolver extends Function<Object, QualifiedName> {
 
     /**
      * Resolves a {@link QualifiedName name} for the given {@code payload}.
+     * If the given {@code payload} is already a {@link Message} implementation, the {@link Message#name() Qualified Name} is returned.
      *
      * @param payload The {@link Message#getPayload() Message payload} to resolve a {@link QualifiedName name} for.
      * @return The {@link QualifiedName name} for the given {@code payload}.

@@ -28,7 +28,13 @@ import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -38,8 +44,6 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.CreationPolicyMember;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -53,6 +57,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -415,7 +421,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         /**
-         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for dispatched Command messages.
          * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
          *
          * @param messageNameResolver which provides QualifiedName for Event messages

@@ -102,7 +102,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
     private static <T> QualifiedName getName(Message<T> message) {
         MessageHeaders headers = message.getHeaders();
         return headers.containsKey(MESSAGE_NAME)
-                ? QualifiedName.fromString(Objects.toString(headers.get(MESSAGE_NAME))) // todo: QualifiedName - should we use MessageNameResolver here?
+                ? QualifiedName.fromString(Objects.toString(headers.get(MESSAGE_NAME)))
                 : QualifiedNameUtils.fromClassName(message.getClass());
     }
 
