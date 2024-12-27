@@ -20,7 +20,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
@@ -318,10 +317,10 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         }
 
         /**
-         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when scheduling {@link DeadlineMessage DeadlineMessages}.
          * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
          *
-         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link EventMessage EventMessages}.
+         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link DeadlineMessage DeadlineMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageNameResolver messageNameResolver) {

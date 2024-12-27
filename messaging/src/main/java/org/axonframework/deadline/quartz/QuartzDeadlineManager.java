@@ -26,7 +26,6 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ClassBasedMessageNameResolver;
@@ -361,10 +360,10 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         }
 
         /**
-         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when scheduling {@link DeadlineMessage DeadlineMessages}.
          * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
          *
-         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link EventMessage EventMessages}.
+         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link DeadlineMessage DeadlineMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
