@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A {@link MessageStream} implementation using an {@link Iterable} as the source for {@link Entry entries}.
+ * A {@link MessageStream} implementation using an {@link Iterator} as the source for {@link Entry entries}.
  *
  * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
@@ -38,7 +38,7 @@ class IteratorMessageStream<M extends Message<?>> implements MessageStream<M> {
     /**
      * Constructs a {@link MessageStream stream} using the given {@code source} to provide the {@link Entry entries}.
      *
-     * @param source The {@link Iterable} providing the {@link Entry entries} for this {@link MessageStream stream}.
+     * @param source The {@link Iterator} providing the {@link Entry entries} for this {@link MessageStream stream}.
      */
     IteratorMessageStream(@Nonnull Iterator<? extends Entry<M>> source) {
         this.source = source;

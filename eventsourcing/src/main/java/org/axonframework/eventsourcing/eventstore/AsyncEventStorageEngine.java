@@ -48,9 +48,8 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * Append one or more {@link EventMessage events} to the underlying storage solution.
      * <p>
      * Events will be appended in the order that they are offered in, validating the given {@code condition} before
-     * being stored. Note that all events should have a unique event identifier. When storing
-     * {@link IndexedEventMessage indexed events} the {@link IndexedEventMessage#indices() indices} will be stored as
-     * well.
+     * being stored. Note that all events should have a unique event identifier. {@link Tag Tags} paired with the
+     * {@code events} will be stored as well.
      * <p>
      * By default, this method creates a {@link List} of the offered events and then invokes
      * {@link #appendEvents(AppendCondition, List)}.
@@ -68,9 +67,8 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * Appends a {@link List} of {@link EventMessage events} to the underlying storage solution.
      * <p>
      * Events will be appended in the order that they are offered in, validating the given {@code condition} before
-     * being stored. Note that all events should have a unique event identifier. When storing
-     * {@link IndexedEventMessage indexed events} the {@link IndexedEventMessage#indices() indices} will be stored as
-     * well.
+     * being stored. Note that all events should have a unique event identifier. {@link Tag Tags} paired with the
+     * {@code events} will be stored as well.
      *
      * @param condition The condition describing the transactional requirements for the append transaction
      * @param events    The {@link List} of {@link EventMessage events} to append to the underlying storage solution.

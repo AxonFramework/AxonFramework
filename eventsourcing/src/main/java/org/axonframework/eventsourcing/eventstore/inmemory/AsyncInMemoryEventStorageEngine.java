@@ -25,9 +25,11 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.IndexedEventMessage;
+import org.axonframework.eventsourcing.eventstore.GenericTaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
+import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
 import org.slf4j.Logger;
@@ -65,7 +67,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final NavigableMap<Long, EventMessage<?>> eventStorage = new ConcurrentSkipListMap<>();
+    private final NavigableMap<Long, TaggedEventMessage<EventMessage<?>>> eventStorage = new ConcurrentSkipListMap<>();
     private final ReentrantLock appendLock = new ReentrantLock();
 
     private final Set<MapBackedMessageStream> openStreams = new CopyOnWriteArraySet<>();
@@ -90,33 +92,12 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         this.offset = offset;
     }
 
-    private static boolean match(EventMessage<?> event, EventCriteria criteria) {
-        // TODO #3085 Remove usage of getPayloadType in favor of QualifiedName solution
-        return matchingType(event.getPayloadType().getName(), criteria.types())
-                && matchingIndices(event, criteria);
-    }
-
-    private static boolean matchingType(String eventName, Set<String> types) {
-        return types.isEmpty() || types.contains(eventName);
-    }
-
-    private static boolean matchingIndices(EventMessage<?> event, EventCriteria criteria) {
-        if (criteria.indices().isEmpty()) {
-            // No criteria are present, so we match successfully.
-            return true;
-        }
-        if (event instanceof IndexedEventMessage<?> indexedEvent) {
-            return criteria.matchingIndices(indexedEvent.indices());
-        }
-        return false;
-    }
-
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<IndexedEventMessage<?>> events) {
-        int indexCount = condition.criteria().indices().size();
-        if (indexCount > 1) {
-            return CompletableFuture.failedFuture(tooManyIndices(indexCount, 1));
+        int tagCount = condition.criteria().tags().size();
+        if (tagCount > 1) {
+            return CompletableFuture.failedFuture(tooManyIndices(tagCount, 1));
         }
         if (containsConflicts(condition)) {
             // early failure, since we know conflicts already exist at insert-time
@@ -201,7 +182,6 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
             logger.debug("Start streaming events with condition [{}].", condition);
         }
 
-
         return eventsToMessageStream(condition.position().position().orElse(-1L), Long.MAX_VALUE, condition.criteria());
     }
 
@@ -209,6 +189,16 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         MapBackedMessageStream mapBackedMessageStream = new MapBackedMessageStream(start, end, criteria);
         openStreams.add(mapBackedMessageStream);
         return mapBackedMessageStream;
+    }
+
+    private static boolean match(TaggedEventMessage<?> taggedEvent, EventCriteria criteria) {
+        // TODO #3085 Remove usage of getPayloadType in favor of QualifiedName solution
+        return matchingType(taggedEvent.event().getPayloadType().getName(), criteria.types())
+                && criteria.matchingTags(taggedEvent.tags());
+    }
+
+    private static boolean matchingType(String eventName, Set<String> types) {
+        return types.isEmpty() || types.contains(eventName);
     }
 
     @Override

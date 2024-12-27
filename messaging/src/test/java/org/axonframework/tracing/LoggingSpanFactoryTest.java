@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package org.axonframework.tracing;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -30,6 +32,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class LoggingSpanFactoryTest {
 
+    private static final EventMessage<String> TEST_EVENT =
+            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "payload");
+    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+
     @Test
     void createRootTraceReturnsNoOpSpan() {
         Span trace = LoggingSpanFactory.INSTANCE.createRootTrace(() -> "Trace");
@@ -38,23 +44,19 @@ class LoggingSpanFactoryTest {
 
     @Test
     void createHandlerSpanReturnsNoOpSpan() {
-        Span trace = LoggingSpanFactory.INSTANCE.createHandlerSpan(() -> "Trace",
-                                                                   new GenericEventMessage<>("payload"),
-                                                                   true);
+        Span trace = LoggingSpanFactory.INSTANCE.createHandlerSpan(() -> "Trace", TEST_EVENT, true);
         assertNotNull(trace);
     }
 
     @Test
     void createDispatchSpanReturnsNoOpSpan() {
-        Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace",
-                                                                    new GenericEventMessage<>("payload"));
+        Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", TEST_EVENT);
         assertNotNull(trace);
     }
 
     @Test
     void createInternalSpanWithMessageReturnsNoOpSpan() {
-        Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace",
-                                                                    new GenericEventMessage<>("payload"));
+        Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", TEST_EVENT);
         assertNotNull(trace);
     }
 
@@ -66,8 +68,8 @@ class LoggingSpanFactoryTest {
 
     @Test
     void propagateContextReturnsOriginal() {
-        GenericEventMessage<String> message = new GenericEventMessage<>("payload");
-        GenericEventMessage<String> result = NoOpSpanFactory.INSTANCE.propagateContext(message);
+        EventMessage<String> message = TEST_EVENT;
+        EventMessage<String> result = NoOpSpanFactory.INSTANCE.propagateContext(message);
         assertSame(message, result);
     }
 
@@ -83,7 +85,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void internalSpanCanBeStartedAndEndedWithUnitOfWorkActive() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
@@ -97,9 +99,8 @@ class LoggingSpanFactoryTest {
 
     @Test
     void handlingSpanCanBeStartedAndEnded() {
-        GenericEventMessage message = new GenericEventMessage("payload");
         assertDoesNotThrow(() -> {
-            Span trace = LoggingSpanFactory.INSTANCE.createHandlerSpan(() -> "Trace", message, true);
+            Span trace = LoggingSpanFactory.INSTANCE.createHandlerSpan(() -> "Trace", TEST_EVENT, true);
             trace.start()
                  .recordException(new RuntimeException("My test exception"))
                  .end();
@@ -118,7 +119,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void dispatchSpanCanBeStartedAndEnded() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
         assertDoesNotThrow(() -> {
             Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", command);
             trace.start()
@@ -129,12 +130,11 @@ class LoggingSpanFactoryTest {
 
     @Test
     void dispatchSpanCanBeStartedAndEndedWhileUnitOfWorkActive() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
-        GenericEventMessage message = new GenericEventMessage("payload");
         assertDoesNotThrow(() -> {
-            Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", message);
+            Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", TEST_EVENT);
             trace.start()
                  .recordException(new RuntimeException("My test exception"))
                  .end();
@@ -144,9 +144,8 @@ class LoggingSpanFactoryTest {
 
     @Test
     void internalSpanWithMessageCanBeStartedAndEnded() {
-        GenericEventMessage message = new GenericEventMessage("payload");
         assertDoesNotThrow(() -> {
-            Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", message);
+            Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", TEST_EVENT);
             trace.start()
                  .recordException(new RuntimeException("My test exception"))
                  .end();
@@ -155,12 +154,11 @@ class LoggingSpanFactoryTest {
 
     @Test
     void internalSpanWithMessageCanBeStartedAndEndedWhileUnitOfWorkActive() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
-        GenericEventMessage message = new GenericEventMessage("payload");
         assertDoesNotThrow(() -> {
-            Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", message);
+            Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", TEST_EVENT);
             trace.start()
                  .recordException(new RuntimeException("My test exception"))
                  .end();

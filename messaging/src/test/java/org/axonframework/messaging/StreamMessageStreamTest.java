@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -44,6 +44,7 @@ class StreamMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
+        return new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"),
+                                    "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
@@ -99,6 +100,21 @@ class AnnotatedSagaTest {
     }
 
     @Test
+    void fixtureApi_AggregatePublishedHistoricEventWithMetaData() {
+        String extraIdentifier = UUID.randomUUID().toString();
+        Map<String, String> metaData = new HashMap<>();
+        metaData.put("extraIdentifier", extraIdentifier);
+
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.givenAPublished(new TriggerSagaStartEvent("id"), metaData)
+               .whenPublishingA(new TriggerSagaStartEvent("id"))
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadlines()
+               .expectAssociationWith("identifier", "id")
+               .expectAssociationWith("extraIdentifier", extraIdentifier);
+    }
+
+    @Test
     void fixtureApi_NonTransientResourceInjected() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.registerResource(new NonTransientResource());
@@ -123,11 +139,13 @@ class AnnotatedSagaTest {
                .expectNoScheduledDeadlines();
     }
 
-    @Test// testing issue AXON-279
+    @Test
     void fixtureApi_PublishedEvent_NoHistoricActivity() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
-               .whenPublishingA(new GenericEventMessage<>(new TriggerSagaStartEvent("id")))
+               .whenPublishingA(new GenericEventMessage<>(
+                       new QualifiedName("test", "event", "0.0.1"), new TriggerSagaStartEvent("id")
+               ))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", "id")
                .expectNoScheduledDeadlines();

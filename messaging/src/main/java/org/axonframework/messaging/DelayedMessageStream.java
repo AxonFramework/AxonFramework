@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -40,12 +41,11 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
     private DelayedMessageStream(@Nonnull CompletableFuture<MessageStream<M>> delegate) {
         this.delegate = delegate;
     }
-
     /**
      * Creates a {@link MessageStream stream} that delays actions to its {@code delegate} when it becomes available.
      * <p>
      * If the given {@code delegate} has already {@link CompletableFuture#isDone() completed}, it returns the
-     * {@code MessageStream} immediately from it. Otherwise, it returns a {@link DelayedMessageStream} instance wrapping
+     * {@code MessageStream} immediately from it. Otherwise, it returns a DelayedMessageStream instance wrapping
      * the given {@code delegate}.
      *
      * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream stream} to delegate to
@@ -56,16 +56,19 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      */
     public static <M extends Message<?>> MessageStream<M> create(
             @Nonnull CompletableFuture<MessageStream<M>> delegate) {
-        if (delegate.isDone()) {
+        CompletableFuture<MessageStream<M>> safeDelegate = delegate
+                .exceptionallyCompose(CompletableFuture::failedFuture)
+                .thenApply(ms -> Objects.requireNonNullElse(ms, EmptyMessageStream.instance()));
+        if (safeDelegate.isDone()) {
             try {
                 return delegate.get();
             } catch (InterruptedException e) {
-                return new DelayedMessageStream<>(delegate);
+                return new DelayedMessageStream<>(safeDelegate);
             } catch (ExecutionException e) {
                 return MessageStream.failed(e.getCause());
             }
         }
-        return new DelayedMessageStream<>(delegate.exceptionallyCompose(CompletableFuture::failedFuture));
+        return new DelayedMessageStream<>(safeDelegate);
     }
 
     @Override

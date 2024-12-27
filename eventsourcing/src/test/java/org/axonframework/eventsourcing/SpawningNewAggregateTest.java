@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
@@ -35,10 +38,8 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 import org.mockito.quality.*;
 
-import java.util.Objects;
 import java.util.concurrent.Callable;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.createNew;
 import static org.junit.jupiter.api.Assertions.*;
@@ -103,8 +104,11 @@ class SpawningNewAggregateTest {
     @Disabled("TODO #3070 - Revise the Repository")
     void spawningNewAggregate() throws Exception {
         initializeAggregate1Repository(repositoryProvider);
-        commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
-                            ProcessingContext.NONE);
+        CreateAggregate1Command testPayload = new CreateAggregate1Command("id", "aggregate2Id");
+        CommandMessage<CreateAggregate1Command> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+
+        commandBus.dispatch(testCommand, ProcessingContext.NONE);
 
         verify(aggregate1Repository).newInstance(any());
         verify(repositoryProvider).repositoryFor(Aggregate2.class);
@@ -123,8 +127,12 @@ class SpawningNewAggregateTest {
     void spawningNewAggregateWhenThereIsNoRepositoryForIt() throws Exception {
         initializeAggregate1Repository(repositoryProvider);
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(null);
+        CreateAggregate1Command testPayload = new CreateAggregate1Command("id", "aggregate2Id");
+        CommandMessage<CreateAggregate1Command> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+
         commandBus.dispatch(
-                asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
+                testCommand,
                 ProcessingContext.NONE
 //                , (commandMessage, commandResultMessage) -> {
 //                    if (commandResultMessage.isExceptional()) {
@@ -145,8 +153,12 @@ class SpawningNewAggregateTest {
     @Disabled("TODO #3070 - Revise the Repository")
     void spawningNewAggregateWhenThereIsNoRepositoryProviderProvided() throws Exception {
         initializeAggregate1Repository(null);
+        CreateAggregate1Command testPayload = new CreateAggregate1Command("id", "aggregate2Id");
+        CommandMessage<CreateAggregate1Command> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+
         commandBus.dispatch(
-                asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
+                testCommand,
                 ProcessingContext.NONE
 //                , (commandMessage, commandResultMessage) -> {
 //                    if (commandResultMessage.isExceptional()) {
@@ -164,92 +176,22 @@ class SpawningNewAggregateTest {
 
     @SuppressWarnings("unchecked")
     private void initializeAggregate1Repository(RepositoryProvider repositoryProvider) throws Exception {
-        when(aggregate1Repository.newInstance(any())).thenAnswer(invocation ->
-                                                                         EventSourcedAggregate
-                                                                                 .initialize((Callable<Aggregate1>) invocation
-                                                                                                     .getArguments()[0],
-                                                                                             aggregate1Model,
-                                                                                             eventStore,
-                                                                                             repositoryProvider));
+        when(aggregate1Repository.newInstance(any())).thenAnswer(
+                invocation -> EventSourcedAggregate.initialize((Callable<Aggregate1>) invocation.getArguments()[0],
+                                                               aggregate1Model, eventStore, repositoryProvider)
+        );
     }
 
-    private static class CreateAggregate1Command {
+    private record CreateAggregate1Command(String id, String aggregate2Id) {
 
-        private final String id;
-        private final String aggregate2Id;
-
-        private CreateAggregate1Command(String id, String aggregate2Id) {
-            this.id = id;
-            this.aggregate2Id = aggregate2Id;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        String getAggregate2Id() {
-            return aggregate2Id;
-        }
     }
 
-    private static class Aggregate1CreatedEvent {
+    private record Aggregate1CreatedEvent(String id) {
 
-        private final String id;
-
-        private Aggregate1CreatedEvent(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            Aggregate1CreatedEvent that = (Aggregate1CreatedEvent) o;
-            return Objects.equals(id, that.id);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
-        }
     }
 
-    private static class Aggregate2CreatedEvent {
+    private record Aggregate2CreatedEvent(String id) {
 
-        private final String id;
-
-        private Aggregate2CreatedEvent(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            Aggregate2CreatedEvent that = (Aggregate2CreatedEvent) o;
-            return Objects.equals(id, that.id);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
-        }
     }
 
     @SuppressWarnings("unused")
@@ -264,14 +206,14 @@ class SpawningNewAggregateTest {
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(CreateAggregate1Command command) throws Exception {
-            apply(new Aggregate1CreatedEvent(command.getId()));
+            apply(new Aggregate1CreatedEvent(command.id()));
 
-            createNew(Aggregate2.class, () -> new Aggregate2(command.getAggregate2Id()));
+            createNew(Aggregate2.class, () -> new Aggregate2(command.aggregate2Id()));
         }
 
         @EventSourcingHandler
         public void on(Aggregate1CreatedEvent event) {
-            this.id = event.getId();
+            this.id = event.id();
         }
     }
 
@@ -291,7 +233,7 @@ class SpawningNewAggregateTest {
 
         @EventSourcingHandler
         public void on(Aggregate2CreatedEvent event) {
-            this.id = event.getId();
+            this.id = event.id();
         }
     }
 }

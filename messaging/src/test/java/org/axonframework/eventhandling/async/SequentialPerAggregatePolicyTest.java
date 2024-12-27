@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,19 @@
 
 package org.axonframework.eventhandling.async;
 
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.Test;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
+import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link SequentialPerAggregatePolicy}.
+ *
  * @author Allard Buijze
  */
 class SequentialPerAggregatePolicyTest {
@@ -39,7 +41,9 @@ class SequentialPerAggregatePolicyTest {
         Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
         Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
         Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString()));
-        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<>("bla"));
+        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), "bla"
+        ));
 
         assertEquals(id1, id2);
         assertNotEquals(id1, id3);
@@ -47,8 +51,9 @@ class SequentialPerAggregatePolicyTest {
         assertNull(id4);
     }
 
-    private DomainEventMessage newStubDomainEvent(String aggregateIdentifier) {
-        return new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
-                                                     new Object(), MetaData.emptyInstance());
+    private DomainEventMessage<Object> newStubDomainEvent(String aggregateIdentifier) {
+        return new GenericDomainEventMessage<>(
+                "aggregateType", aggregateIdentifier, 0L, new QualifiedName("test", "event", "0.0.1"), new Object()
+        );
     }
 }

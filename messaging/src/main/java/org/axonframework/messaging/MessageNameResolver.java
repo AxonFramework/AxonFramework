@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2010-2024. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.messaging;
+
+import java.util.function.Function;
+import javax.annotation.Nonnull;
+
+/**
+ * Functional interface describing a resolver from {@link Message#getPayload() Message payload} to it's
+ * {@link QualifiedName name}. Used to set the {@link Message#name() Message name} when putting the given payload on its
+ * respective bus.
+ *
+ * @author Allard Buijze
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+@FunctionalInterface
+public interface MessageNameResolver extends Function<Object, QualifiedName> {
+
+    /**
+     * Resolves a {@link QualifiedName name} for the given {@code payload}.
+     * If the given {@code payload} is already a {@link Message} implementation, the {@link Message#name() Qualified Name} is returned.
+     *
+     * @param payload The {@link Message#getPayload() Message payload} to resolve a {@link QualifiedName name} for.
+     * @return The {@link QualifiedName name} for the given {@code payload}.
+     */
+    <P> QualifiedName resolve(P payload);
+
+    @Override
+    default QualifiedName apply(@Nonnull Object payload) {
+        return resolve(payload);
+    }
+}

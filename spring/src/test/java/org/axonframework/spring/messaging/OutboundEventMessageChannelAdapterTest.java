@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package org.axonframework.spring.messaging;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.spring.utils.StubDomainEvent;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
@@ -29,6 +29,8 @@ import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link OutboundEventMessageChannelAdapter}.
+ *
  * @author Allard Buijze
  * @author Nakul Mishra
  */
@@ -48,7 +50,9 @@ class OutboundEventMessageChannelAdapterTest {
     @Test
     void messageForwardedToChannel() {
         StubDomainEvent event = new StubDomainEvent();
-        testSubject.handle(singletonList(new GenericEventMessage<>(event)));
+        EventMessage<StubDomainEvent> testMessage =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), event);
+        testSubject.handle(singletonList(testMessage));
 
         verify(mockChannel).send(messageWithPayload(event));
     }
@@ -60,19 +64,20 @@ class OutboundEventMessageChannelAdapterTest {
         verify(mockEventBus).subscribe(any());
     }
 
-    @SuppressWarnings({"unchecked"})
     @Test
     void filterBlocksEvents() {
-        testSubject = new OutboundEventMessageChannelAdapter(mockEventBus, mockChannel, m -> !m.getPayloadType().isAssignableFrom(Class.class));
+        testSubject = new OutboundEventMessageChannelAdapter(
+                mockEventBus, mockChannel, m -> !m.getPayloadType().isAssignableFrom(Class.class)
+        );
         testSubject.handle(singletonList(newDomainEvent()));
         verify(mockEventBus, never()).publish(isA(EventMessage.class));
     }
 
     private EventMessage<String> newDomainEvent() {
-        return new GenericEventMessage<>("Mock");
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Mock");
     }
 
     private Message<?> messageWithPayload(final StubDomainEvent event) {
-        return argThat(x -> event.equals(((Message) x).getPayload()));
+        return argThat(x -> event.equals(x.getPayload()));
     }
 }

@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 
 /**
  * Implementation that represents an empty Context.
+ * @since 5.0.0
+ * @author Allard Buijze
  */
 class EmptyContext implements Context {
 

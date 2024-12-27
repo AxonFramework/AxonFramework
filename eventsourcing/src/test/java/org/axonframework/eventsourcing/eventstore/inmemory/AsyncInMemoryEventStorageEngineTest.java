@@ -28,7 +28,7 @@ import org.junit.jupiter.api.*;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.eventsourcing.eventstore.EventCriteria.hasIndex;
+import static org.axonframework.eventsourcing.eventstore.EventCriteria.hasTag;
 import static org.axonframework.eventsourcing.eventstore.SourcingCondition.conditionFor;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
@@ -53,7 +53,7 @@ class AsyncInMemoryEventStorageEngineTest extends StorageEngineTestSuite<AsyncIn
     @Test
     void appendEventsThrowsAppendConditionAssertionExceptionWhenToManyIndicesAreGiven() {
         SourcingCondition firstCondition = conditionFor(TEST_CRITERIA);
-        SourcingCondition secondCondition = conditionFor(hasIndex(new Index("aggregateId", "other-aggregate-id")));
+        SourcingCondition secondCondition = conditionFor(hasTag(new Tag("aggregateId", "other-aggregate-id")));
 
         CompletableFuture<AsyncEventStorageEngine.AppendTransaction> result = testSubject.appendEvents(AppendCondition.from(
                 firstCondition.combine(secondCondition)));

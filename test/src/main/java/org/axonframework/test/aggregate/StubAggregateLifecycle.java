@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateLifecycle;
-import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.ApplyMore;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -31,9 +33,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Stub implementation of an AggregateLifecycle that registers all applied events for verification later. This
- * lifecycle instance can be activated (see {@link #activate()}) and deactivated (see {@link #close()}) at will. Events
- * applied while it is active are stored and can be retrieved using {@link #getAppliedEvents()} or
+ * Stub implementation of an AggregateLifecycle that registers all applied events for verification later. This lifecycle
+ * instance can be activated (see {@link #activate()}) and deactivated (see {@link #close()}) at will. Events applied
+ * while it is active are stored and can be retrieved using {@link #getAppliedEvents()} or
  * {@link #getAppliedEventPayloads()}.
  */
 public class StubAggregateLifecycle extends AggregateLifecycle {
@@ -96,7 +98,8 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
 
     @Override
     protected <T> ApplyMore doApply(T payload, MetaData metaData) {
-        appliedMessages.add(new GenericEventMessage<>(payload, metaData));
+        QualifiedName eventName = QualifiedNameUtils.fromClassName(payload.getClass());
+        appliedMessages.add(new GenericEventMessage<>(eventName, payload, metaData));
 
         return new ApplyMore() {
             @Override

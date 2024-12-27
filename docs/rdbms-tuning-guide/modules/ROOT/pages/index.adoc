@@ -1,8 +1,0 @@
-:navtitle: Relational Databases
-= Relational Databases
-
-When using Axon Framework together with a relational database,
-there are several considerations to take into account when tuning the database for optimal performance:
-
-. Using the xref::indices.adoc[correct indices] for the different types of queries used
-. Configuring the xref::auto-increment.adoc[right auto-increment configuration] when using JPA

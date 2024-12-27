@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.Message;
 
+import java.io.Serial;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -27,9 +28,16 @@ import javax.annotation.Nonnull;
  * Generic implementation of a {@link DomainEventMessage} that is also a {@link TrackedEventMessage}.
  *
  * @param <T> The type of payload contained in this Message
+ * @deprecated In favor of pairing the {@link TrackingToken} through the
+ * {@link org.axonframework.messaging.MessageStream.Entry} its {@link org.axonframework.common.Context} with an
+ * {@link EventMessage}.
  */
-public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessage<T> implements
-                                                                                      TrackedEventMessage<T> {
+@Deprecated
+public class GenericTrackedDomainEventMessage<T>
+        extends GenericDomainEventMessage<T>
+        implements TrackedEventMessage<T> {
+
+    @Serial
     private static final long serialVersionUID = 6211645167637822558L;
     private final TrackingToken trackingToken;
 

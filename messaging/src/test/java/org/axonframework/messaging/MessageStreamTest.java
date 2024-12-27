@@ -42,7 +42,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     /**
      * Construct a test subject using the given {@code messages} as the source.
      * <p>
-     * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entires} for the
+     * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entries} for the
      * {@link MessageStream stream} under test.
      *
      * @param messages The {@link Message Message} of type {@code M} acting as the source for the
@@ -55,7 +55,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
      * Construct a test subject using the given {@code messages} as the source. The resulting stream should not report
      * as completed if given messages are consumed.
      * <p>
-     * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entires} for the
+     * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entries} for the
      * {@link MessageStream stream} under test.
      *
      * @param messages The {@link Message Message} of type {@code M} acting as the source for the
@@ -70,7 +70,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
      * Construct a test subject using the given {@code messages} as the source, which will fail due to the given
      * {@code failure}.
      * <p>
-     * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entires} for the
+     * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entries} for the
      * {@link MessageStream stream} under test.
      *
      * @param messages The {@link Message Message} of type {@code M} acting as the source for the
@@ -113,7 +113,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
-    void shouldInvokeOnAvailableCallbackWhenCompleted() {
+    void shouldInvokeOnAvailableCallbackWhenCompletedExceptionally() {
         MessageStream<M> testSubject = failingTestSubject(List.of(), new RuntimeException("Oops"));
 
         AtomicBoolean invoked = new AtomicBoolean(false);

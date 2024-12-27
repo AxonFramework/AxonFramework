@@ -28,7 +28,9 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * MessageStream implementation that uses a Queue to make elements available to a consumer.
  *
- * @param <M> The type of Message managed by this stream
+ * @param <M> The type of Message managed by this stream.
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public class QueueMessageStream<M extends Message<?>> implements MessageStream<M> {
 
@@ -43,7 +45,7 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
-     * Constructs an instance with an unbounded queue. Offering elements will always be possible, as long as memory
+     * Constructs an instance with an unbounded queue. Offering {@link Entry entries} will always be possible, as long as memory
      * permits.
      */
     public QueueMessageStream() {
@@ -51,29 +53,29 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
     }
 
     /**
-     * Construct an instance with given {@code queue} as the underlying queue. Offering and consuming items will depend
+     * Construct an instance with given {@code queue} as the underlying queue. Offering and consuming {@link Entry entries} will depend
      * on the semantics of the implementation of the queue.
      * <p>
-     * Note that delivery and consumption of items is done through {@link BlockingQueue#offer(Object)} and
+     * Note that delivery and consumption of entries is done through {@link BlockingQueue#offer(Object)} and
      * {@link BlockingQueue#poll()}, respectively. This means that a queue must be available to buffer elements.
      * Implementations of a {@link java.util.concurrent.TransferQueue} typically don't have this, and will therefore not
      * work.
      *
-     * @param queue The queue to use to store messages in transit from producer to consumer
+     * @param queue The queue to use to store {@link Entry entries} in transit from producer to consumer.
      */
-    public QueueMessageStream(BlockingQueue<Entry<M>> queue) {
+    public QueueMessageStream(@Nonnull BlockingQueue<Entry<M>> queue) {
         this.queue = queue;
     }
 
     /**
      * Add the given {@code message} and accompanying {@code context} available for reading by a consumer. Any callback
-     * that has been registered with be notified of the availability of a new element.
+     * that has been registered will be notified of the availability of a new {@link Entry entry}.
      * <p>
      * If the underling buffer has insufficient space to store the offered element, the method returns {@code false}.
      *
-     * @param message The message to add to the queue
-     * @param context The context to accompany the message
-     * @return {@code true} if the message was successfully buffered. Otherwise {@code false}
+     * @param message The message to add to the queue.
+     * @param context The context to accompany the message.
+     * @return {@code true} if the message was successfully buffered. Otherwise {@code false}.
      */
     public boolean offer(@Nonnull M message, @Nonnull Context context) {
         if (queue.offer(new SimpleEntry<>(message, context))) {
@@ -84,10 +86,10 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
     }
 
     /**
-     * Marks the queue as completed, indicating to any consumer that no more messages will become available.
+     * Marks the queue as completed, indicating to any consumer that no more {@link Entry entries} will become available.
      * <p>
      * Note that there is no validation on offering items whether the stream is completed. It is the caller's
-     * responsibility to ensure no Messages are {@link #offer(Message, Context) offered} after completion.
+     * responsibility to ensure no {@link Message Messages} are {@link #offer(Message, Context) offered} after completion.
      */
     public void complete() {
         completed.set(true);
@@ -103,19 +105,19 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
      *
      * @param error The cause of the exceptional completion
      */
-    public void complete(Throwable error) {
+    public void completeExceptionally(@Nonnull Throwable error) {
         errorRef.set(error);
         completed.set(true);
         onAvailableCallbackRef.get().run();
     }
 
     /**
-     * Registers given {@code callback} to be invoked when messages have been consumed from the underlying queue. Any
-     * previously registered callback will be replaced.
+     * Registers given {@code callback} to be invoked when {@link Entry entries} have been consumed from the underlying 
+     * queue. Any previously registered callback will be replaced.
      * <p>
      * The given {@code callback} is also notified when the consumer has requested to {@link #close()} this stream.
      *
-     * @param callback The callback to invoke when messages are consumed
+     * @param callback The callback to invoke when {@link Entry entries} are consumed.
      */
     public void onConsumeCallback(@Nonnull Runnable callback) {
         this.onConsumeCallback.set(callback);
@@ -123,9 +125,10 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
 
     /**
      * Whether the consumer has requested to {@link #close()} this stream. This is a signal to producing components to
-     * stop emitting more messages, complete the stream, and release any sources associated with this stream.
+     * stop emitting more {@link Message messages}, complete the stream, and release any sources associated with this 
+     * stream.
      *
-     * @return {@code true} if a close was requested, otherwise {@code false}
+     * @return {@code true} if a close was requested, otherwise {@code false}.
      */
     public boolean isClosed() {
         return closed.get();

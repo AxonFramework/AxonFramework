@@ -22,6 +22,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
+
 /**
  * Interface to interact with a MessageHandlingMember instance through a chain of interceptors, which were used to build
  * up this chain. Unlike regular handlers, interceptors have the ability to act on messages on their way to the regular
@@ -53,7 +55,8 @@ public interface MessageHandlerInterceptorMemberChain<T> {
                                     @Nonnull T target,
                                     @Nonnull MessageHandlingMember<? super T> handler) {
         try {
-            return MessageStream.just(GenericMessage.asMessage(handleSync(message, target, handler)));
+            Object result = handleSync(message, target, handler);
+            return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

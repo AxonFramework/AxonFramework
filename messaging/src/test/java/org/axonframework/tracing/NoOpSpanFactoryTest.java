@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.axonframework.tracing;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,40 +29,43 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class NoOpSpanFactoryTest {
 
+    private static final EventMessage<String> TEST_EVENT =
+            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "payload");
+
     @Test
     void createRootTraceReturnsNoOpSpan() {
         Span trace = NoOpSpanFactory.INSTANCE.createRootTrace(() -> "Trace");
-        assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
+        assertInstanceOf(NoOpSpanFactory.NoOpSpan.class, trace);
     }
 
     @Test
     void createHandlerSpanReturnsNoOpSpan() {
-        Span trace = NoOpSpanFactory.INSTANCE.createHandlerSpan(() -> "Trace", new GenericEventMessage<>("payload"), true);
-        assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
+        Span trace = NoOpSpanFactory.INSTANCE.createHandlerSpan(() -> "Trace", TEST_EVENT, true);
+        assertInstanceOf(NoOpSpanFactory.NoOpSpan.class, trace);
     }
 
     @Test
     void createDispatchSpanReturnsNoOpSpan() {
-        Span trace = NoOpSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", new GenericEventMessage<>("payload"));
-        assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
+        Span trace = NoOpSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", TEST_EVENT);
+        assertInstanceOf(NoOpSpanFactory.NoOpSpan.class, trace);
     }
 
     @Test
     void createInternalSpanWithMessageReturnsNoOpSpan() {
-        Span trace = NoOpSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", new GenericEventMessage<>("payload"));
-        assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
+        Span trace = NoOpSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", TEST_EVENT);
+        assertInstanceOf(NoOpSpanFactory.NoOpSpan.class, trace);
     }
 
     @Test
     void createInternalSpanWithoutMessageReturnsNoOpSpan() {
         Span trace = NoOpSpanFactory.INSTANCE.createInternalSpan(() -> "Trace");
-        assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
+        assertInstanceOf(NoOpSpanFactory.NoOpSpan.class, trace);
     }
 
     @Test
     void propagateContextReturnsOriginal() {
-        GenericEventMessage<String> message = new GenericEventMessage<>("payload");
-        GenericEventMessage<String> result = NoOpSpanFactory.INSTANCE.propagateContext(message);
+        EventMessage<String> message = TEST_EVENT;
+        EventMessage<String> result = NoOpSpanFactory.INSTANCE.propagateContext(message);
         assertSame(message, result);
     }
 

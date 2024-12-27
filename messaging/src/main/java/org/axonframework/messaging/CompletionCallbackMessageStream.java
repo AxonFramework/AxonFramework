@@ -101,22 +101,12 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
     }
 
     @Override
-    public boolean isCompleted() {
-        return delegate.isCompleted();
-    }
-
-    @Override
     public boolean hasNextAvailable() {
         boolean b = delegate.hasNextAvailable();
         if (!b) {
             invokeOnCompleted();
         }
         return b;
-    }
-
-    @Override
-    public void close() {
-        delegate.close();
     }
 
     @Override

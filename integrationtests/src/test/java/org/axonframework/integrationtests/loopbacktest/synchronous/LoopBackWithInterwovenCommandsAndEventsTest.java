@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -65,7 +66,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
     void setUp() {
         AggregateConfigurer<MyAggregate> aggregateConfigurer =
                 AggregateConfigurer.defaultConfiguration(MyAggregate.class)
-                                   .configureAggregateFactory(c -> new AggregateFactory<MyAggregate>() {
+                                   .configureAggregateFactory(c -> new AggregateFactory<>() {
                                        @Override
                                        public MyAggregate createAggregateRoot(String aggregateIdentifier,
                                                                               DomainEventMessage<?> firstEvent) {
@@ -105,8 +106,9 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
         Repository<MyAggregate> repository = configuration.repository(MyAggregate.class);
         configuration.commandGateway().sendAndWait(command);
 
-        UnitOfWork<CommandMessage<?>> unitOfWork =
-                DefaultUnitOfWork.startAndGet(GenericCommandMessage.asCommandMessage("loading"));
+        CommandMessage<String> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "loading");
+        UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(testCommand);
         MyAggregate loadedAggregate = repository.load(aggregateIdentifier).invoke(Function.identity());
         unitOfWork.commit();
 
@@ -136,10 +138,6 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
         return descriptions;
     }
 
-    /**
-     * @author Gerard de Leeuw
-     * @since 0.1.0 on 4-1-2017
-     */
     @AggregateRoot
     public static class MyAggregate {
 
