@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -353,7 +354,7 @@ public class DefaultConfigurer implements Configurer {
      */
     protected CommandGateway defaultCommandGateway(Configuration config) {
         return defaultComponent(CommandGateway.class, config)
-                .orElseGet(() -> new DefaultCommandGateway(config.commandBus()));
+                .orElseGet(() -> new DefaultCommandGateway(config.commandBus(), new ClassBasedMessageNameResolver()));
     }
 
     /**

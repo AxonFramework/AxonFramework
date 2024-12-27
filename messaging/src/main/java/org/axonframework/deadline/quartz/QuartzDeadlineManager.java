@@ -28,10 +28,12 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
@@ -57,7 +59,6 @@ import javax.annotation.Nonnull;
 import static java.util.Date.from;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ExceptionUtils.findException;
-import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.quartz.JobKey.jobKey;
 
 /**
@@ -115,6 +116,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         this.serializer = builder.serializer.get();
         this.refireImmediatelyPolicy = builder.refireImmediatelyPolicy;
         this.spanFactory = builder.spanFactory;
+        this.messageNameResolver = builder.messageNameResolver;
 
         try {
             initialize();
@@ -272,6 +274,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         private DeadlineManagerSpanFactory spanFactory = DefaultDeadlineManagerSpanFactory.builder()
                                                                                           .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                           .build();
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
@@ -353,6 +356,19 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         public Builder refireImmediatelyPolicy(Predicate<Throwable> refireImmediatelyPolicy) {
             assertNonNull(refireImmediatelyPolicy, "The refire policy may not be null");
             this.refireImmediatelyPolicy = refireImmediatelyPolicy;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when scheduling {@link DeadlineMessage DeadlineMessages}.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link DeadlineMessage DeadlineMessages}.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

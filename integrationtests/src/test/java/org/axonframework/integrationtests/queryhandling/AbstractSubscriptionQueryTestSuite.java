@@ -134,7 +134,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         chatQueryHandler.emitter.complete(String.class, TEST_PAYLOAD::equals);
         chatQueryHandler.emitter.emit(String.class,
                                       TEST_PAYLOAD::equals,
-                                      GenericSubscriptionQueryUpdateMessage.asUpdateMessage("Update12"));
+                                      new GenericSubscriptionQueryUpdateMessage<>(new QualifiedName("test", "query-string", "0.0.1"), "Update12"));
 
 
         StepVerifier.create(result1.initialResult().map(Message::getPayload))
@@ -148,7 +148,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         chatQueryHandler.emitter.emit(Integer.class,
                                       m -> m == 5,
-                                      GenericSubscriptionQueryUpdateMessage.asUpdateMessage(1));
+                                      new GenericSubscriptionQueryUpdateMessage<>(new QualifiedName("test", "query-integer", "0.0.1"), 1));
         chatQueryHandler.emitter.complete(Integer.class, m -> m == 5);
         chatQueryHandler.emitter.emit(Integer.class, m -> m == 5, 2);
 
@@ -873,10 +873,10 @@ public abstract class AbstractSubscriptionQueryTestSuite {
             Executors.newSingleThreadExecutor().submit(() -> {
                 emitter.emit(String.class,
                              TEST_PAYLOAD::equals,
-                             GenericSubscriptionQueryUpdateMessage.asUpdateMessage("Update1"));
+                             new GenericSubscriptionQueryUpdateMessage<>(new QualifiedName("test", "query-string", "0.0.1"), "Update1"));
                 emitter.emit(String.class,
                              TEST_PAYLOAD::equals,
-                             GenericSubscriptionQueryUpdateMessage.asUpdateMessage("Update2"));
+                             new GenericSubscriptionQueryUpdateMessage<>(new QualifiedName("test", "query-string", "0.0.1"), "Update2"));
                 emitter.complete(String.class, TEST_PAYLOAD::equals);
                 latch.countDown();
             });

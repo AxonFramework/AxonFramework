@@ -106,6 +106,9 @@ import static org.mockito.Mockito.*;
  */
 class DefaultConfigurerTest {
 
+    private static final GenericCommandMessage<String> TEST_COMMAND =
+            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
+
     private EntityManagerFactory entityManagerFactory;
     private EntityManager entityManager;
 
@@ -132,8 +135,7 @@ class DefaultConfigurerTest {
                         StubAggregate.class).buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(EventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
@@ -264,7 +266,8 @@ class DefaultConfigurerTest {
 
         config.start();
 
-        config.commandGateway().sendAndWait(GenericCommandMessage.asCommandMessage("test"));
+        config.commandGateway()
+              .sendAndWait(TEST_COMMAND);
         CommandMessage<String> testCommand = new GenericCommandMessage<>(
                 new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test"), "update"
         );
@@ -298,8 +301,7 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
@@ -324,8 +326,7 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertTrue(config.getModules().stream().anyMatch(m -> m instanceof AggregateConfiguration));
@@ -372,8 +373,7 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
@@ -398,8 +398,7 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertEquals(1, defaultMonitor.getMessages().size());
         assertEquals(1, commandBusMonitor.getMessages().size());
@@ -440,7 +439,7 @@ class DefaultConfigurerTest {
                                                         c -> new WeakReferenceCache())).buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+        var result = config.commandBus().dispatch(TEST_COMMAND,
                                                   ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));

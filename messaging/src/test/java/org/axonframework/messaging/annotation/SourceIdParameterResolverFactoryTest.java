@@ -74,7 +74,8 @@ class SourceIdParameterResolverFactoryTest {
     void doesNotMatchWhenAnnotatedForCommandMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
-        CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage("test");
+        CommandMessage<Object> commandMessage =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
         assertFalse(resolver.matches(commandMessage, null));
     }
 

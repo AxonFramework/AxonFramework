@@ -28,8 +28,13 @@ import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -50,7 +55,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -78,6 +86,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     private final Set<String> supportedCommandNames;
     private final Map<String, Set<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>>> supportedCommandsByName;
     private final Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> factoryPerType;
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
@@ -115,6 +124,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         this.commandTargetResolver = builder.commandTargetResolver;
         this.supportedCommandNames = new HashSet<>();
         this.supportedCommandsByName = new HashMap<>();
+        this.messageNameResolver = builder.messageNameResolver;
         AggregateModel<T> aggregateModel = builder.buildAggregateModel();
         // Suppressing cast to Class<? extends T> as we are definitely dealing with implementations of T.
         //noinspection unchecked
@@ -240,7 +250,21 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(message))
                        .handle(message, processingContext)
-                       .mapMessage(GenericCommandResultMessage::asCommandResultMessage);
+                       .mapMessage(m -> asCommandResultMessage(m, messageNameResolver::resolve));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult, @Nonnull Function<Object, QualifiedName> nameResolver) {
+        if (commandResult instanceof CommandResultMessage) {
+            return (CommandResultMessage<R>) commandResult;
+        } else if (commandResult instanceof Message) {
+            Message<R> commandResultMessage = (Message<R>) commandResult;
+            return new GenericCommandResultMessage<>(commandResultMessage);
+        }
+        QualifiedName name = commandResult == null
+                ? QualifiedNameUtils.fromDottedName("empty.command.result")
+                : nameResolver.apply(commandResult);
+        return new GenericCommandResultMessage<>(name, (R) commandResult);
     }
 
     @Override
@@ -291,6 +315,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
         private CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory;
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link Repository} used to add and load Aggregate instances of generic type {@code T} upon handling
@@ -392,6 +417,19 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                 CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory
         ) {
             this.creationPolicyAggregateFactory = creationPolicyAggregateFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when dispatching {@link CommandMessage CommandMessages}.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link CommandMessage CommandMessages}.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> messageNameResolver(MessageNameResolver messageNameResolver) {
+            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 
