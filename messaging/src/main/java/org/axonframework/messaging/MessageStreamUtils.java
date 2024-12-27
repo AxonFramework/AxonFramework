@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
@@ -24,13 +25,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
 
 /**
  * Utility methods to work with {@link MessageStream MessageStreams}.
  *
- * @since 5.0.0
  * @author Allard Buijze
+ * @since 5.0.0
  */
 public abstract class MessageStreamUtils {
 
@@ -38,14 +38,14 @@ public abstract class MessageStreamUtils {
     }
 
     /**
-     * Creates a Flux containing the {@link MessageStream.Entry entries} provided by the given {@code source}. Note
-     * that multiple invocations of this method on the same {@code source}, or otherwise any components consuming
-     * entries from the given {@code source} will cause entries to be consumed by only one of the fluxes or competing
+     * Creates a Flux containing the {@link MessageStream.Entry entries} provided by the given {@code source}. Note that
+     * multiple invocations of this method on the same {@code source}, or otherwise any components consuming entries
+     * from the given {@code source} will cause entries to be consumed by only one of the fluxes or competing
      * consumers.
      *
-     * @param source The MessageStream providing the elements
-     * @param <M>    The type of Message returned by the source
-     * @return a Flux with the elements provided by the source
+     * @param source The MessageStream providing the elements.
+     * @param <M>    The type of Message returned by the source.
+     * @return A Flux with the elements provided by the source.
      */
     public static <M extends Message<?>> Flux<MessageStream.Entry<M>> asFlux(@Nonnull MessageStream<M> source) {
         return Flux.create(emitter -> {
@@ -56,13 +56,13 @@ public abstract class MessageStreamUtils {
     }
 
     /**
-     * Returns a {@code CompletableFuture} that completes with the given reduction of messages read from the {@code source}. The
-     * reduction is computed by applying the given {@code accumulator} function on the result of the previous invocation
-     * in combination with each {@link MessageStream.Entry entry} returned by the given {@code source}. The very first 
-     * invocation of the accumulator function is given the {@code identity}.
+     * Returns a {@code CompletableFuture} that completes with the given reduction of messages read from the
+     * {@code source}. The reduction is computed by applying the given {@code accumulator} function on the result of the
+     * previous invocation in combination with each {@link MessageStream.Entry entry} returned by the given
+     * {@code source}. The very first invocation of the accumulator function is given the {@code identity}.
      * <p>
-     * If the given {@code source} completes normally without producing any entries, the returned {@code CompletableFuture}
-     * completes with the given {@code identity}.
+     * If the given {@code source} completes normally without producing any entries, the returned
+     * {@code CompletableFuture} completes with the given {@code identity}.
      * <p>
      * If the given {@code source} completes with an error, whether entries have been produced or not, the returned
      * {@code CompletableFuture} completes exceptionally with that error.
@@ -102,10 +102,11 @@ public abstract class MessageStreamUtils {
      * @param source The source to read the first {@link MessageStream.Entry entry} from.
      * @param <M>    The type of {@link Message} produced by the stream.
      * @return A {@code CompletableFuture} that completes with the first {@link MessageStream.Entry entry} from the
-     *         stream.
+     * stream.
      */
     public static <M extends Message<?>> CompletableFuture<MessageStream.Entry<M>> firstAsCompletableFuture(
-            MessageStream<M> source) {
+            @Nonnull MessageStream<M> source
+    ) {
         FirstResult<M> firstResult = new FirstResult<>(source);
         source.onAvailable(firstResult::process);
         return firstResult.result();

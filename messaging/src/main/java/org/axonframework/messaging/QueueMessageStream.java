@@ -28,10 +28,9 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * MessageStream implementation that uses a Queue to make elements available to a consumer.
  *
- * @param <M> The type of Message managed by this stream
- *
- * @since 5.0.0
+ * @param <M> The type of Message managed by this stream.
  * @author Allard Buijze
+ * @since 5.0.0
  */
 public class QueueMessageStream<M extends Message<?>> implements MessageStream<M> {
 
@@ -76,7 +75,7 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
      *
      * @param message The message to add to the queue.
      * @param context The context to accompany the message.
-     * @return {@code true} if the message was successfully buffered. Otherwise {@code false}
+     * @return {@code true} if the message was successfully buffered. Otherwise {@code false}.
      */
     public boolean offer(@Nonnull M message, @Nonnull Context context) {
         if (queue.offer(new SimpleEntry<>(message, context))) {
@@ -106,7 +105,7 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
      *
      * @param error The cause of the exceptional completion
      */
-    public void completeExceptionally(Throwable error) {
+    public void completeExceptionally(@Nonnull Throwable error) {
         errorRef.set(error);
         completed.set(true);
         onAvailableCallbackRef.get().run();

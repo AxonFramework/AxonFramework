@@ -298,8 +298,8 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Returns an Optional carrying the next {@link Entry entry} from the stream, if such entry was available. If no entry is available
-     * for reading, this method returns an empty Optional.
+     * Returns an Optional carrying the next {@link Entry entry} from the stream, if such entry was available. If no
+     * entry is available for reading, this method returns an empty Optional.
      * <p>
      * This method will never block for elements becoming available.
      *
@@ -308,36 +308,39 @@ public interface MessageStream<M extends Message<?>> {
     Optional<Entry<M>> next();
 
     /**
-     * Registers the callback to invoke when {@link Entry entries} are available for reading or when the stream completes (either
-     * normally or with an error). An invocation of this method does not in any way guarantee that entries are indeed
-     * available, or that the stream has indeed been completed. Implementations may choose to suppress repeated invocations
-     * of the callback if no entries have been read in the meantime.
+     * Registers the callback to invoke when {@link Entry entries} are available for reading or when the stream
+     * completes (either normally or with an error). An invocation of this method does not in any way guarantee that
+     * entries are indeed available, or that the stream has indeed been completed. Implementations may choose to
+     * suppress repeated invocations of the callback if no entries have been read in the meantime.
      *
-     * @param callback The callback to invoke when {@link Entry entries} are available for reading, or the stream completes.
+     * @param callback The callback to invoke when {@link Entry entries} are available for reading, or the stream
+     *                 completes.
      */
     void onAvailable(@Nonnull Runnable callback);
 
     /**
      * Indicates whether any error has been reported in this stream. Implementations may choose to not return any error
-     * here until all {@link Entry entries} that were available for reading before any error occurred have been consumed.
+     * here until all {@link Entry entries} that were available for reading before any error occurred have been
+     * consumed.
      *
      * @return An optional containing the possible error this stream completed with.
      */
     Optional<Throwable> error();
 
     /**
-     * Indicates whether this stream has been completed. A completed stream will never return any more {@link Entry entries} from
-     * {@link #next()}, and {@link #hasNextAvailable()} will always return {@code false}. If the stream completed with
-     * an error, {@link #error()} will report so.
+     * Indicates whether this stream has been completed. A completed stream will never return any more
+     * {@link Entry entries} from {@link #next()}, and {@link #hasNextAvailable()} will always return {@code false}. If
+     * the stream completed with an error, {@link #error()} will report so.
      *
      * @return {@code true} if the stream completed, otherwise {@code false}.
      */
     boolean isCompleted();
 
     /**
-     * Indicates whether an {@link Entry entry} is available for immediate reading. When entries are reported available, there is
-     * no guarantee that {@link #next()} will indeed return an entry. However, besides any concurrent activity on this
-     * stream, it is guaranteed that no entries are available for reading when this method returns {@code false}.
+     * Indicates whether an {@link Entry entry} is available for immediate reading. When entries are reported available,
+     * there is no guarantee that {@link #next()} will indeed return an entry. However, besides any concurrent activity
+     * on this stream, it is guaranteed that no entries are available for reading when this method returns
+     * {@code false}.
      *
      * @return {@code true} when there are {@link Entry entries} available for reading, {@code false} otherwise.
      */
