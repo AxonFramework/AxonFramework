@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,7 +60,8 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>> {
 
     @Override
     EventMessage<String> createRandomMessage() {
-        return new GenericEventMessage<>(UUID.randomUUID().toString());
+        return new GenericEventMessage<>(new QualifiedName("test", "message", "0.0.1"),
+                                         "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test
