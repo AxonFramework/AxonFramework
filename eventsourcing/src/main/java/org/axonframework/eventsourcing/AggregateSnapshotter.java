@@ -268,11 +268,11 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         /**
-         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} for snapshots.
          * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
          *
-         * @param messageNameResolver which provides QualifiedName for Event messages
-         * @return the current Builder instance, for fluent interfacing
+         * @param messageNameResolver The {@link MessageNameResolver} providing the {@link QualifiedName} for snapshots.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
             assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
