@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
-import org.axonframework.eventsourcing.eventstore.Index;
+import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
