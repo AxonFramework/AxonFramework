@@ -82,8 +82,9 @@ public interface EventMessage<P> extends Message<P> {
      * @return a copy of this message with the payload converted
      */
     default <C> EventMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        T payload = getPayload();
+        P payload = getPayload();
         if (Objects.equals(payload, conversion.apply(payload))) {
+            //noinspection unchecked
             return (EventMessage<C>) this;
         }
         throw new UnsupportedOperationException("To be implemented");

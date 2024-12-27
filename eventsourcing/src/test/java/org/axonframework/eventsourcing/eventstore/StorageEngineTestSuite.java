@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.utils.AssertUtils;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
@@ -55,8 +56,8 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         TEST_DOMAIN_ID = UUID.randomUUID().toString();
         OTHER_DOMAIN_ID = UUID.randomUUID().toString();
 
-        TEST_CRITERIA = EventCriteria.hasIndex(new Index("TEST", TEST_DOMAIN_ID));
-        OTHER_CRITERIA = EventCriteria.hasIndex(new Index("OTHER", OTHER_DOMAIN_ID));
+        TEST_CRITERIA = EventCriteria.hasTag(new Tag("TEST", TEST_DOMAIN_ID));
+        OTHER_CRITERIA = EventCriteria.hasTag(new Tag("OTHER", OTHER_DOMAIN_ID));
 
         testSubject = buildStorageEngine();
     }
@@ -70,18 +71,18 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
 
     @Test
     void streamingFromStartReturnsSelectedMessages() {
-        IndexedEventMessage<?> expectedEventOne = indexedEventMessage("event-0", TEST_CRITERIA.indices());
-        IndexedEventMessage<?> expectedEventTwo = indexedEventMessage("event-1", TEST_CRITERIA.indices());
-        IndexedEventMessage<?> expectedEventThree = indexedEventMessage("event-4", TEST_CRITERIA.indices());
+        TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_CRITERIA.tags());
+        TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_CRITERIA.tags());
+        TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_CRITERIA.tags());
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         testSubject.appendEvents(AppendCondition.none(),
                                  expectedEventOne,
                                  expectedEventTwo,
-                                 indexedEventMessage("event-2", OTHER_CRITERIA.indices()),
-                                 indexedEventMessage("event-3", OTHER_CRITERIA.indices()),
+                                 taggedEventMessage("event-2", OTHER_CRITERIA.tags()),
+                                 taggedEventMessage("event-3", OTHER_CRITERIA.tags()),
                                  expectedEventThree,
-                                 indexedEventMessage("event-5", OTHER_CRITERIA.indices()),
-                                 indexedEventMessage("event-6", OTHER_CRITERIA.indices()))
+                                 taggedEventMessage("event-5", OTHER_CRITERIA.tags()),
+                                 taggedEventMessage("event-6", OTHER_CRITERIA.tags()))
                    .thenCompose(AppendTransaction::commit).join();
 
         MessageStream<EventMessage<?>> result = testSubject.tailToken()
@@ -91,27 +92,27 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
                                                            .join();
 
         StepVerifier.create(result.asFlux())
-                    .assertNext(entry -> assertEvent(entry.message(), expectedEventOne))
-                    .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo))
-                    .assertNext(entry -> assertEvent(entry.message(), expectedEventThree))
+                    .assertNext(entry -> assertEvent(entry.message(), expectedEventOne.event()))
+                    .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo.event()))
+                    .assertNext(entry -> assertEvent(entry.message(), expectedEventThree.event()))
                     .thenCancel()
                     .verify();
     }
 
     @Test
     void streamingFromSpecificPositionReturnsSelectedMessages() {
-        IndexedEventMessage<?> expectedEventOne = indexedEventMessage("event-0", TEST_CRITERIA.indices());
-        IndexedEventMessage<?> expectedEventTwo = indexedEventMessage("event-1", TEST_CRITERIA.indices());
-        IndexedEventMessage<?> expectedEventThree = indexedEventMessage("event-4", TEST_CRITERIA.indices());
+        TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_CRITERIA.tags());
+        TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_CRITERIA.tags());
+        TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_CRITERIA.tags());
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         testSubject.appendEvents(AppendCondition.none(),
                                  expectedEventOne,
                                  expectedEventTwo,
-                                 indexedEventMessage("event-2", OTHER_CRITERIA.indices()),
-                                 indexedEventMessage("event-3", OTHER_CRITERIA.indices()),
+                                 taggedEventMessage("event-2", OTHER_CRITERIA.tags()),
+                                 taggedEventMessage("event-3", OTHER_CRITERIA.tags()),
                                  expectedEventThree,
-                                 indexedEventMessage("event-5", OTHER_CRITERIA.indices()),
-                                 indexedEventMessage("event-6", OTHER_CRITERIA.indices())
+                                 taggedEventMessage("event-5", OTHER_CRITERIA.tags()),
+                                 taggedEventMessage("event-6", OTHER_CRITERIA.tags())
                    )
                    .thenCompose(AppendTransaction::commit).join();
 
@@ -125,8 +126,8 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         StepVerifier.create(testSubject.stream(StreamingCondition.startingFrom(tokenOfFirstMessage).with(TEST_CRITERIA))
                                        .asFlux())
                     // we've skipped the first two
-                    .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo))
-                    .assertNext(entry -> assertEvent(entry.message(), expectedEventThree))
+                    .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo.event()))
+                    .assertNext(entry -> assertEvent(entry.message(), expectedEventThree.event()))
                     .thenCancel()
                     .verify();
     }
@@ -134,13 +135,13 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
     @Test
     void streamingAfterLastPositionReturnsEmptyStream() {
         testSubject.appendEvents(AppendCondition.none(),
-                                 indexedEventMessage("event-0", TEST_CRITERIA.indices()),
-                                 indexedEventMessage("event-1", TEST_CRITERIA.indices()),
-                                 indexedEventMessage("event-2", TEST_CRITERIA.indices()),
-                                 indexedEventMessage("event-3", TEST_CRITERIA.indices()),
-                                 indexedEventMessage("event-4", TEST_CRITERIA.indices()),
-                                 indexedEventMessage("event-5", TEST_CRITERIA.indices()),
-                                 indexedEventMessage("event-6", TEST_CRITERIA.indices()))
+                                 taggedEventMessage("event-0", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-1", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-2", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-3", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-4", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-5", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-6", TEST_CRITERIA.tags()))
                    .thenCompose(AppendTransaction::commit)
                    .join();
 
@@ -158,12 +159,12 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
     @Test
     void sourcingEventsReturnsMatchingAggregateEvents() {
         testSubject.appendEvents(AppendCondition.none(),
-                                 indexedEventMessage("event-0", TEST_CRITERIA.indices()),
-                                 indexedEventMessage("event-1", TEST_CRITERIA.indices()),
-                                 indexedEventMessage("event-2", OTHER_CRITERIA.indices()),
-                                 indexedEventMessage("event-3", OTHER_CRITERIA.indices()),
-                                 indexedEventMessage("event-4", OTHER_CRITERIA.indices()),
-                                 indexedEventMessage("event-5", TEST_CRITERIA.indices()))
+                                 taggedEventMessage("event-0", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-1", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-2", OTHER_CRITERIA.tags()),
+                                 taggedEventMessage("event-3", OTHER_CRITERIA.tags()),
+                                 taggedEventMessage("event-4", OTHER_CRITERIA.tags()),
+                                 taggedEventMessage("event-5", TEST_CRITERIA.tags()))
                    .thenCompose(AppendTransaction::commit)
                    .join();
 
@@ -176,15 +177,15 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
     @Test
     void transactionRejectedWithConflictingEventsInStore() {
         testSubject.appendEvents(AppendCondition.none(),
-                                 indexedEventMessage("event-0", TEST_CRITERIA.indices()),
-                                 indexedEventMessage("event-1", TEST_CRITERIA.indices()))
+                                 taggedEventMessage("event-0", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-1", TEST_CRITERIA.tags()))
                    .thenApply(AppendTransaction::commit)
                    .join();
 
 
         CompletableFuture<Long> actual = testSubject.appendEvents(AppendCondition.withCriteria(TEST_CRITERIA),
-                                                                  indexedEventMessage("event-2",
-                                                                                      TEST_CRITERIA.indices()))
+                                                                  taggedEventMessage("event-2",
+                                                                                     TEST_CRITERIA.tags()))
                                                     .thenCompose(AppendTransaction::commit);
 
         ExecutionException actualException = assertThrows(ExecutionException.class,
@@ -197,9 +198,9 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         AppendCondition appendCondition = AppendCondition.withCriteria(TEST_CRITERIA);
 
         var firstTx = testSubject.appendEvents(appendCondition,
-                                               indexedEventMessage("event-0", TEST_CRITERIA.indices()));
+                                               taggedEventMessage("event-0", TEST_CRITERIA.tags()));
         var secondTx = testSubject.appendEvents(appendCondition,
-                                                indexedEventMessage("event-1", TEST_CRITERIA.indices()));
+                                                taggedEventMessage("event-1", TEST_CRITERIA.tags()));
 
         CompletableFuture<Long> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
         assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
@@ -216,11 +217,11 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         AppendCondition appendCondition2 = new DefaultAppendCondition(-1, OTHER_CRITERIA);
 
         AppendTransaction firstTx = testSubject.appendEvents(appendCondition1,
-                                                             indexedEventMessage("event-0", TEST_CRITERIA.indices()))
+                                                             taggedEventMessage("event-0", TEST_CRITERIA.tags()))
                                                .get(1, TimeUnit.SECONDS);
         AppendTransaction secondTx = testSubject.appendEvents(appendCondition2,
-                                                              indexedEventMessage("event-0",
-                                                                                  TEST_CRITERIA.indices()))
+                                                              taggedEventMessage("event-0",
+                                                                                 TEST_CRITERIA.tags()))
                                                 .get(1, TimeUnit.SECONDS);
 
         CompletableFuture<Long> firstCommit = firstTx.commit();
@@ -237,8 +238,8 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
     @Test
     void eventsPublishedAreIncludedInOpenStreams() {
         testSubject.appendEvents(AppendCondition.none(),
-                                 indexedEventMessage("event-0", TEST_CRITERIA.indices()),
-                                 indexedEventMessage("event-1", TEST_CRITERIA.indices()))
+                                 taggedEventMessage("event-0", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-1", TEST_CRITERIA.tags()))
                    .thenCompose(AppendTransaction::commit)
                    .join();
 
@@ -251,7 +252,7 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(stream.next().isPresent()));
 
         testSubject.appendEvents(AppendCondition.none(),
-                                 indexedEventMessage("event-3", TEST_CRITERIA.indices()))
+                                 taggedEventMessage("event-3", TEST_CRITERIA.tags()))
                    .thenCompose(AppendTransaction::commit)
                    .join();
 
@@ -272,8 +273,10 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         assertEquals(expected.getMetaData(), actual.getMetaData());
     }
 
-    protected static IndexedEventMessage<?> indexedEventMessage(String payload, Set<Index> indices) {
-        return IndexedEventMessage.asIndexedEvent(GenericEventMessage.asEventMessage(payload),
-                                                  indices);
+    protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags) {
+        return new GenericTaggedEventMessage<>(
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload),
+                tags
+        );
     }
 }

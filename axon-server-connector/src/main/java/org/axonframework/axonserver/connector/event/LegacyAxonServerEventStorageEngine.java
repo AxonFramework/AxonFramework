@@ -36,12 +36,13 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.Index;
-import org.axonframework.eventsourcing.eventstore.IndexedEventMessage;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
+import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.Converter;
 
 import java.time.Instant;
@@ -64,21 +65,21 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
     }
 
     @Nullable
-    private static String resolveAggregateIdentifier(Set<Index> indices) {
-        if (indices.isEmpty()) {
+    private static String resolveAggregateIdentifier(Set<Tag> tags) {
+        if (tags.isEmpty()) {
             return null;
-        } else if (indices.size() > 1) {
-            throw new IllegalArgumentException("condition must provide exactly one index");
+        } else if (tags.size() > 1) {
+            throw new IllegalArgumentException("Condition must provide exactly one tag");
         } else {
-            return indices.iterator().next().value();
+            return tags.iterator().next().value();
         }
     }
 
-    private static String resolveAggregateType(Set<Index> indices) {
+    private static String resolveAggregateType(Set<Tag> indices) {
         if (indices.isEmpty()) {
             return null;
         } else if (indices.size() > 1) {
-            throw new IllegalArgumentException("condition must provide as most one index");
+            throw new IllegalArgumentException("Condition must provide exactly one tag");
         } else {
             return indices.iterator().next().key();
         }
@@ -86,13 +87,13 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
 
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
-                                                             @Nonnull List<IndexedEventMessage<?>> events) {
-        if (condition.criteria().indices().size() > 1) {
+                                                             @Nonnull List<TaggedEventMessage<?>> events) {
+        if (condition.criteria().tags().size() > 1) {
             return CompletableFuture.failedFuture(new IllegalArgumentException(
                     "Condition must provide at most one index"));
         }
-        String aggregateType = resolveAggregateType(condition.criteria().indices());
-        String aggregateIdentifier = resolveAggregateIdentifier(condition.criteria().indices());
+        String aggregateType = resolveAggregateType(condition.criteria().tags());
+        String aggregateIdentifier = resolveAggregateIdentifier(condition.criteria().tags());
         AtomicLong consistencyMarker = new AtomicLong(condition.consistencyMarker());
 
         if (aggregateIdentifier != null && condition.consistencyMarker() == Long.MAX_VALUE) {
@@ -101,17 +102,19 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
         }
 
         AppendEventsTransaction tx = connection.eventChannel().startAppendEventsTransaction();
-        events.forEach(event -> {
+        events.forEach(taggedEvent -> {
+            EventMessage<?> event = taggedEvent.event();
             byte[] payload = payloadConverter.convert(event.getPayload(), byte[].class);
-            Event.Builder builder = Event.newBuilder().setPayload(SerializedObject.newBuilder()
-                                                                                  .setData(ByteString.copyFrom(payload))
-                                                                                  // TODO - Make the type explicit on Message
-                                                                                  .setType(event.getPayload().getClass()
-                                                                                                .getName())
-                                                                                  // TODO - Make revision explicit on Message
-                                                                                  .setRevision("").build())
-                                         .setMessageIdentifier(event.getIdentifier()).setTimestamp(event.getTimestamp()
-                                                                                                        .toEpochMilli());
+            Event.Builder builder = Event.newBuilder()
+                                         .setPayload(SerializedObject.newBuilder()
+                                                                     .setData(ByteString.copyFrom(payload))
+                                                                     // TODO - Make the type explicit on Message
+                                                                     .setType(event.getPayload().getClass()
+                                                                                   .getName())
+                                                                     // TODO - Make revision explicit on Message
+                                                                     .setRevision("").build())
+                                         .setMessageIdentifier(event.getIdentifier())
+                                         .setTimestamp(event.getTimestamp().toEpochMilli());
             if (aggregateIdentifier != null && aggregateType != null) {
                 long aggregateSequenceNumber = consistencyMarker.incrementAndGet();
                 builder.setAggregateIdentifier(aggregateIdentifier).setAggregateType(aggregateType)
@@ -174,19 +177,20 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
 
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        String aggregateIdentifier = resolveAggregateIdentifier(condition.criteria().indices());
+        String aggregateIdentifier = resolveAggregateIdentifier(condition.criteria().tags());
         AggregateEventStream aggregateStream = connection.eventChannel().openAggregateStream(aggregateIdentifier);
-        return MessageStream.fromStream(aggregateStream.asStream(), this::convertToMessage, event -> Context.with(
-                                                                                                                    LegacyResources.AGGREGATE_IDENTIFIER_KEY,
-                                                                                                                    event.getAggregateIdentifier()).withResource(LegacyResources.AGGREGATE_TYPE_KEY,
-                                                                                                                                                                 event.getAggregateType())
-                                                                                                            .withResource(
-                                                                                                                    LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                                                                                                    event.getAggregateSequenceNumber()));
+        return MessageStream.fromStream(
+                aggregateStream.asStream(),
+                this::convertToMessage,
+                event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+                                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
+                                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
+                                              event.getAggregateSequenceNumber()));
     }
 
     private EventMessage<byte[]> convertToMessage(Event event) {
         return new GenericEventMessage<>(event.getMessageIdentifier(),
+                                         new QualifiedName("test", "event", "0.0.1"),
                                          event.getPayload().getData().toByteArray(),
                                          getMetaData(event.getMetaDataMap()),
                                          Instant.ofEpochMilli(event.getTimestamp()));

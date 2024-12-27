@@ -74,8 +74,8 @@ public sealed interface EventCriteria permits AnyEvent, SingleTagCriteria, Combi
      * @param value The index value of the {@link EventCriteria} being constructed.
      * @return A simple {@link EventCriteria}.
      */
-    static EventCriteria hasIndex(@Nonnull String key, @Nonnull String value) {
-        return hasIndex(new Index(key, value));
+    static EventCriteria hasTag(@Nonnull String key, @Nonnull String value) {
+        return hasTag(new Tag(key, value));
     }
 
     /**

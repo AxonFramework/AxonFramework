@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import static java.util.Arrays.asList;
 
 /**
- * Provides a mechanism to {@link #appendEvents(AppendCondition, IndexedEventMessage[])}  append} as well as retrieve
+ * Provides a mechanism to {@link #appendEvents(AppendCondition, TaggedEventMessage[])}  append} as well as retrieve
  * {@link EventMessage events} from an underlying storage mechanism.
  * <p>
  * Retrieval can be done either through {@link #source(SourcingCondition) sourcing} or
@@ -56,10 +56,10 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      *
      * @param condition The condition describing the transactional requirements for the append transaction
      * @param events    One or more {@link EventMessage events} to append to the underlying storage solution.
-     * @return A transaction instance that can be committed or rolled back.
+     * @return A {@link AppendTransaction transaction} instance that can be committed or rolled back.
      */
     default CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
-                                                              @Nonnull IndexedEventMessage<?>... events) {
+                                                              @Nonnull TaggedEventMessage<?>... events) {
         return appendEvents(condition, asList(events));
     }
 
@@ -72,10 +72,10 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      *
      * @param condition The condition describing the transactional requirements for the append transaction
      * @param events    The {@link List} of {@link EventMessage events} to append to the underlying storage solution.
-     * @return A transaction instance that can be committed or rolled back.
+     * @return A {@link AppendTransaction transaction} instance that can be committed or rolled back.
      */
     CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
-                                                      @Nonnull List<IndexedEventMessage<?>> events);
+                                                      @Nonnull List<TaggedEventMessage<?>> events);
 
     /**
      * Creates a <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
@@ -141,15 +141,16 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
     CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
 
     /**
-     * Interface representing the transaction of an appendEvents invocation. Events may only be visible to consumers
-     * after the invocation of {@link #commit()}.
+     * Interface representing the transaction of an appendEvents invocation.
+     * <p>
+     * Events may only be visible to consumers after the invocation of {@link #commit()}.
      */
     interface AppendTransaction {
 
         /**
          * Commit any underlying transactions to make the appended events visible to consumers.
          *
-         * @return a Completable Future that completes with the new consistency marker for the transaction
+         * @return A {@code CompletableFuture} that completes with the new consistency marker for the transaction.
          */
         CompletableFuture<Long> commit();
 

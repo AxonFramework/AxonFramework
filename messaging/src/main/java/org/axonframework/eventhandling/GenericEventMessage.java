@@ -207,16 +207,13 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     }
 
     @Override
-    public <C> EventMessage<C> withConvertedPayload(@jakarta.annotation.Nonnull Function<T, C> conversion) {
-        T payload = getPayload();
+    public <C> EventMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
+        P payload = getPayload();
         C converted = conversion.apply(payload);
         if (Objects.equals(converted, payload)) {
             //noinspection unchecked
             return (EventMessage<C>) this;
         }
-        return new GenericEventMessage<>(this.getIdentifier(),
-                                         converted,
-                                         getMetaData(),
-                                         getTimestamp());
+        return new GenericEventMessage<>(this.getIdentifier(), this.name(), converted, getMetaData(), getTimestamp());
     }
 }

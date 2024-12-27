@@ -19,10 +19,10 @@ package org.axonframework.eventsourcing.eventstore.inmemory;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.Index;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
+import org.axonframework.eventsourcing.eventstore.Tag;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
