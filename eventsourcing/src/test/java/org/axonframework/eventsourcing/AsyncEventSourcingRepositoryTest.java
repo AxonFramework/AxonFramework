@@ -20,13 +20,17 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
+import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -42,7 +46,7 @@ import static org.mockito.Mockito.*;
 class AsyncEventSourcingRepositoryTest {
 
     private static final String TEST_CONTEXT = "DEFAULT_CONTEXT";
-    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.hasIndex(new Index("aggregateId", "id"));
+    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.hasTag(new Tag("aggregateId", "id"));
 
     private AsyncEventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
@@ -172,7 +176,7 @@ class AsyncEventSourcingRepositoryTest {
         verify(eventStoreTransaction).onAppend(callback.capture());
         assertEquals("null-0-1", result.resultNow().entity());
 
-        callback.getValue().accept(new GenericEventMessage<>("live"));
+        callback.getValue().accept(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "live"));
         assertEquals("null-0-1-live", result.resultNow().entity());
     }
 
@@ -210,11 +214,11 @@ class AsyncEventSourcingRepositoryTest {
     }
 
     private static boolean conditionPredicate(SourcingCondition condition) {
-        return condition.criteria().indices().containsAll(TEST_MODEL_CRITERIA.indices());
+        return condition.criteria().tags().containsAll(TEST_MODEL_CRITERIA.tags());
     }
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     private static DomainEventMessage<?> domainEvent(int seq) {
-        return new GenericDomainEventMessage<>("test", "id", seq, seq);
+        return new GenericDomainEventMessage<>("test", "id", seq, new QualifiedName("test", "event", "0.0.1"), seq);
     }
 }

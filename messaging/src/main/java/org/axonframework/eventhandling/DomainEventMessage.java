@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,22 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.Map;
-import javax.annotation.Nonnull;
 
 /**
- * Represents a Message that wraps a DomainEvent and an Event representing an important change in the Domain. In
- * contrast to a regular EventMessage, a DomainEventMessages contains the identifier of the Aggregate that reported it.
- * The DomainEventMessage's sequence number allows Messages to be placed in their order of generation.
+ * An {@link EventMessage} that wraps a domain event representing an important change in the domain.
+ * <p>
+ * In contrast to a regular {@code EventMessage}, a {@link DomainEventMessage} contains the identifier of the Aggregate
+ * that reported it. The {@code DomainEventMessage's} sequence number allows messages to be placed in their order of
+ * generation.
  *
- * @param <T> The type of payload contained in this Message
+ * @param <P> The type of {@link #getPayload() payload} contained in this {@link DomainEventMessage}.
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
-public interface DomainEventMessage<T> extends EventMessage<T> {
+public interface DomainEventMessage<P> extends EventMessage<P> {
 
     /**
      * Returns the sequence number that allows DomainEvents originating from the same Aggregate to be placed in the
@@ -56,15 +59,16 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
     String getType();
 
     /**
-     * Returns a copy of this DomainEventMessage with the given {@code metaData}. The payload, {@link #getTimestamp()
-     * Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the {@link #getAggregateIdentifier()
-     * Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain unchanged.
+     * Returns a copy of this DomainEventMessage with the given {@code metaData}. The payload,
+     * {@link #getTimestamp() Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the
+     * {@link #getAggregateIdentifier() Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain
+     * unchanged.
      *
      * @param metaData The new MetaData for the Message
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DomainEventMessage<T> withMetaData(@Nonnull Map<String, ?> metaData);
+    DomainEventMessage<P> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Returns a copy of this DomainEventMessage with its MetaData merged with the given {@code metaData}. The payload,
@@ -76,5 +80,5 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DomainEventMessage<T> andMetaData(@Nonnull Map<String, ?> metaData);
+    DomainEventMessage<P> andMetaData(@Nonnull Map<String, ?> metaData);
 }

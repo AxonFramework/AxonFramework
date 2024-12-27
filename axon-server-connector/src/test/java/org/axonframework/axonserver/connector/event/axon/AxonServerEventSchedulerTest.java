@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,10 +36,12 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -85,7 +87,7 @@ public class AxonServerEventSchedulerTest {
                                   public StreamObserver<PlatformInboundInstruction> openStream(
                                           StreamObserver<PlatformOutboundInstruction> responseObserver
                                   ) {
-                                      return new StreamObserver<PlatformInboundInstruction>() {
+                                      return new StreamObserver<>() {
                                           @Override
                                           public void onNext(PlatformInboundInstruction platformInboundInstruction) {
                                               // Not needed
@@ -118,7 +120,7 @@ public class AxonServerEventSchedulerTest {
                     public void rescheduleEvent(RescheduleEventRequest request,
                                                 StreamObserver<ScheduleToken> responseObserver) {
                         String token = request.getToken();
-                        if (request.getToken().equals("")) {
+                        if (request.getToken().isEmpty()) {
                             token = UUID.randomUUID().toString();
                         }
                         scheduled.put(token, request.getEvent());
@@ -177,7 +179,7 @@ public class AxonServerEventSchedulerTest {
     void schedule() {
         org.axonframework.eventhandling.scheduling.ScheduleToken token =
                 testSubject.schedule(Instant.now().plus(Duration.ofMinutes(5)), "TestEvent");
-        assertTrue(token instanceof SimpleScheduleToken);
+        assertInstanceOf(SimpleScheduleToken.class, token);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
         assertNotNull(scheduled.get(simpleScheduleToken.getTokenId()));
     }
@@ -203,7 +205,7 @@ public class AxonServerEventSchedulerTest {
 
         org.axonframework.eventhandling.scheduling.ScheduleToken token =
                 testSubject.schedule(Instant.now().plus(Duration.ofMinutes(5)), "TestEvent");
-        assertTrue(token instanceof SimpleScheduleToken);
+        assertInstanceOf(SimpleScheduleToken.class, token);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
         assertNotNull(scheduled.get(simpleScheduleToken.getTokenId()));
         verify(spyConnectionManager).getConnection("textContext");
@@ -223,7 +225,7 @@ public class AxonServerEventSchedulerTest {
             testSubject.schedule(Instant.now().plus(Duration.ofMinutes(5)), "TestEvent");
             fail("Expected Exception");
         } catch (Exception e) {
-            assertTrue(e instanceof AxonServerException);
+            assertInstanceOf(AxonServerException.class, e);
             assertTrue(e.getMessage().contains("Timeout"));
         }
     }
@@ -232,7 +234,7 @@ public class AxonServerEventSchedulerTest {
     void scheduleWithDuration() {
         org.axonframework.eventhandling.scheduling.ScheduleToken token =
                 testSubject.schedule(Duration.ofMinutes(5), "TestEvent");
-        assertTrue(token instanceof SimpleScheduleToken);
+        assertInstanceOf(SimpleScheduleToken.class, token);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
         assertNotNull(scheduled.get(simpleScheduleToken.getTokenId()));
     }
@@ -260,10 +262,12 @@ public class AxonServerEventSchedulerTest {
     @Test
     void reschedule() {
         String token = "12345";
+        EventMessage<String> testEvent = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), "Updated", MetaData.with("updated", "true")
+        );
+
         scheduled.put(token, Event.newBuilder().build());
-        testSubject.reschedule(new SimpleScheduleToken(token),
-                               Duration.ofDays(1),
-                               new GenericEventMessage<>("Updated", MetaData.with("updated", "true")));
+        testSubject.reschedule(new SimpleScheduleToken(token), Duration.ofDays(1), testEvent);
 
         assertNotNull(scheduled.get(token));
         assertEquals(1, scheduled.get(token).getMetaDataCount());
@@ -271,10 +275,13 @@ public class AxonServerEventSchedulerTest {
 
     @Test
     void rescheduleWithoutToken() {
+        EventMessage<String> testEvent = new GenericEventMessage<>(
+                new QualifiedName("test", "event", "0.0.1"), "Updated", MetaData.with("updated", "true")
+        );
         org.axonframework.eventhandling.scheduling.ScheduleToken token =
-                testSubject.reschedule(null, Duration.ofDays(1),
-                                       new GenericEventMessage<>("Updated", MetaData.with("updated", "true")));
-        assertTrue(token instanceof SimpleScheduleToken);
+                testSubject.reschedule(null, Duration.ofDays(1), testEvent);
+
+        assertInstanceOf(SimpleScheduleToken.class, token);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
         assertNotNull(scheduled.get(simpleScheduleToken.getTokenId()));
     }

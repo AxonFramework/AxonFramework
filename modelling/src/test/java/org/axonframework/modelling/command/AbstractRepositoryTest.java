@@ -18,7 +18,9 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -169,8 +171,7 @@ class AbstractRepositoryTest {
 
     @Test
     void sendWorksAsExpected() throws Exception {
-        DeadlineMessage<String> testMsg =
-                GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload", Instant.now());
+        DeadlineMessage<String> testMsg = aDeadlineMessage();
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
 
@@ -193,8 +194,7 @@ class AbstractRepositoryTest {
 
     @Test
     void sendFailsSilentlyOnAggregateNotFoundException() throws Exception {
-        DeadlineMessage<String> testMsg =
-                GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload", Instant.now());
+        DeadlineMessage<String> testMsg = aDeadlineMessage();
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), "some-other-aggregate-id");
 
@@ -215,5 +215,14 @@ class AbstractRepositoryTest {
         assertFalse(uow.isRolledBack());
         assertTrue(uow.getExecutionResult().isExceptionResult());
         assertEquals("Throwing checked exception", uow.getExecutionResult().getExceptionResult().getMessage());
+    }
+
+    private static DeadlineMessage<String> aDeadlineMessage() {
+        var payload = "payload";
+        return new GenericDeadlineMessage<>(
+                "deadline-name",
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload),
+                Instant::now
+        );
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package org.axonframework.deadline.dbscheduler;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -26,14 +29,12 @@ import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.io.Serializable;
 import java.util.Objects;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 
 /**
- * Pojo that contains the needed information for a {@link com.github.kagkarlsson.scheduler.task.Task} handling a deadline. Will be
- * serialized and deserialized using the configured {@link Serializer} on the
+ * Pojo that contains the needed information for a {@link com.github.kagkarlsson.scheduler.task.Task} handling a
+ * deadline. Will be serialized and deserialized using the configured {@link Serializer} on the
  * {@link com.github.kagkarlsson.scheduler.Scheduler}. This object is used with the
  * {@link DbSchedulerDeadlineManager#humanReadableTask()}.
  *
@@ -44,6 +45,7 @@ import static java.lang.String.format;
 public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
 
     private String deadlineName;
+    private String name;
     private String scopeDescriptor;
     private String scopeDescriptorClass;
     private String payload;
@@ -59,6 +61,8 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
      * Creates a new {@link DbSchedulerHumanReadableDeadlineDetails} object, likely based on a {@link DeadlineMessage}.
      *
      * @param deadlineName         The {@link String} with the name of the deadline.
+     * @param name                 The {@link DeadlineMessage#name()} of the deadline as a
+     *                             {@link QualifiedName#toString()}.
      * @param scopeDescriptor      The {@link String} which tells what the scope is of the deadline.
      * @param scopeDescriptorClass The {@link String} which tells what the class of the scope descriptor is.
      * @param payload              The {@link String} with the payload. This can be null.
@@ -67,11 +71,16 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
      * @param metaData             The {@link String} containing the metadata about the deadline. This can be null.
      */
     @SuppressWarnings("squid:S107")
-    public DbSchedulerHumanReadableDeadlineDetails(@Nonnull String deadlineName, @Nonnull String scopeDescriptor,
-                                                   @Nonnull String scopeDescriptorClass, @Nullable String payload,
-                                                   @Nullable String payloadClass, @Nullable String payloadRevision,
-                                                   @Nullable String metaData) {
+    DbSchedulerHumanReadableDeadlineDetails(@Nonnull String deadlineName,
+                                            @Nonnull String name,
+                                            @Nonnull String scopeDescriptor,
+                                            @Nonnull String scopeDescriptorClass,
+                                            @Nullable String payload,
+                                            @Nullable String payloadClass,
+                                            @Nullable String payloadRevision,
+                                            @Nullable String metaData) {
         this.deadlineName = deadlineName;
+        this.name = name;
         this.scopeDescriptor = scopeDescriptor;
         this.scopeDescriptorClass = scopeDescriptorClass;
         this.payload = payload;
@@ -100,15 +109,15 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
         SerializedObject<String> serializedDescriptor = serializer.serialize(descriptor, String.class);
         SerializedObject<String> serializedPayload = serializer.serialize(message.getPayload(), String.class);
         SerializedObject<String> serializedMetaData = serializer.serialize(message.getMetaData(), String.class);
-        return new DbSchedulerHumanReadableDeadlineDetails(
-                deadlineName,
-                serializedDescriptor.getData(),
-                serializedDescriptor.getType().getName(),
-                serializedPayload.getData(),
-                serializedPayload.getType().getName(),
-                serializedPayload.getType().getRevision(),
-                serializedMetaData.getData()
-        );
+
+        return new DbSchedulerHumanReadableDeadlineDetails(deadlineName,
+                                                           message.name().toString(),
+                                                           serializedDescriptor.getData(),
+                                                           serializedDescriptor.getType().getName(),
+                                                           serializedPayload.getData(),
+                                                           serializedPayload.getType().getName(),
+                                                           serializedPayload.getType().getRevision(),
+                                                           serializedMetaData.getData());
     }
 
     /**
@@ -119,6 +128,16 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
     public String getDeadlineName() {
         return deadlineName;
     }
+
+    /**
+     * Returns the {@link DeadlineMessage#name()} of this deadline.
+     *
+     * @return The {@link DeadlineMessage#name()} of this deadline.
+     */
+    public String getName() {
+        return name;
+    }
+
 
     /**
      * Returns the serialized {@link String} which tells what the scope is of the deadline.
@@ -182,27 +201,21 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
      */
     @SuppressWarnings("rawtypes")
     public GenericDeadlineMessage asDeadLineMessage(Serializer serializer) {
-        return new GenericDeadlineMessage<>(
-                deadlineName,
-                getDeserializedPayload(serializer),
-                getDeserializedMetaData(serializer));
+        return new GenericDeadlineMessage<>(deadlineName,
+                                            QualifiedName.fromString(name),
+                                            getDeserializedPayload(serializer),
+                                            getDeserializedMetaData(serializer));
     }
 
     private Object getDeserializedPayload(Serializer serializer) {
-        SimpleSerializedObject<String> serializedDeadlinePayload = new SimpleSerializedObject<>(
-                payload,
-                String.class,
-                payloadClass,
-                payloadRevision
-        );
+        SimpleSerializedObject<String> serializedDeadlinePayload =
+                new SimpleSerializedObject<>(payload, String.class, payloadClass, payloadRevision);
         return serializer.deserialize(serializedDeadlinePayload);
     }
 
     private MetaData getDeserializedMetaData(Serializer serializer) {
-
-        SimpleSerializedObject<String> serializedDeadlineMetaData = new SimpleSerializedObject<>(
-                metaData, String.class, MetaData.class.getName(), null
-        );
+        SimpleSerializedObject<String> serializedDeadlineMetaData =
+                new SimpleSerializedObject<>(metaData, String.class, MetaData.class.getName(), null);
         return serializer.deserialize(serializedDeadlineMetaData);
     }
 
@@ -213,15 +226,15 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
      * @return the {@link ScopeDescriptor} that is serialized using the supplied {@link Serializer}.
      */
     public ScopeDescriptor getDeserializedScopeDescriptor(Serializer serializer) {
-        SimpleSerializedObject<String> serializedDeadlineScope = new SimpleSerializedObject<>(
-                scopeDescriptor, String.class, scopeDescriptorClass, null
-        );
+        SimpleSerializedObject<String> serializedDeadlineScope =
+                new SimpleSerializedObject<>(scopeDescriptor, String.class, scopeDescriptorClass, null);
         return serializer.deserialize(serializedDeadlineScope);
     }
 
     @Override
     public String toString() {
         return format("DbScheduler deadline details, deadlineName: [%s], " +
+                              "name: [%s], " +
                               "scopeDescriptor: [%s], " +
                               "scopeDescriptorClass: [%s], " +
                               "payload: [%s], " +
@@ -229,6 +242,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
                               "payloadRevision: [%s], " +
                               "metadata: [%s]",
                       deadlineName,
+                      name,
                       scopeDescriptor,
                       scopeDescriptorClass,
                       payload,
@@ -240,6 +254,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(deadlineName,
+                            name,
                             scopeDescriptor,
                             scopeDescriptorClass,
                             payload,
@@ -258,6 +273,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
         }
         final DbSchedulerHumanReadableDeadlineDetails other = (DbSchedulerHumanReadableDeadlineDetails) obj;
         return Objects.equals(this.deadlineName, other.deadlineName) &&
+                Objects.equals(this.name, other.name) &&
                 Objects.equals(this.scopeDescriptor, other.scopeDescriptor) &&
                 Objects.equals(this.scopeDescriptorClass, other.scopeDescriptorClass) &&
                 Objects.equals(this.payload, other.payload) &&

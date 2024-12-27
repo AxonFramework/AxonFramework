@@ -35,9 +35,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
+    private static final Message<Object> TEST_MESSAGE =
+            new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "some-payload");
+
     @Override
     public SimpleEntry<Message<?>> testSubject() {
-        return new SimpleEntry<>(GenericMessage.asMessage("some-payload"));
+        return new SimpleEntry<>(TEST_MESSAGE);
     }
 
     @Test
@@ -47,7 +50,7 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
     @Test
     void containsExpectedData() {
-        Message<Object> expected = GenericMessage.asMessage("some-payload");
+        Message<Object> expected = TEST_MESSAGE;
 
         Entry<Message<Object>> testSubject = new SimpleEntry<>(expected);
 
@@ -56,7 +59,7 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
     @Test
     void mapsContainedMessageAndContextAsExpected() {
-        Message<Object> expectedMessage = GenericMessage.asMessage("some-payload");
+        Message<Object> expectedMessage = TEST_MESSAGE;
         MetaData expectedMetaData = MetaData.from(Map.of("key", "value"));
         String expectedResourceValue = "test";
         ResourceKey<String> expectedContextKey = ResourceKey.create(expectedResourceValue);

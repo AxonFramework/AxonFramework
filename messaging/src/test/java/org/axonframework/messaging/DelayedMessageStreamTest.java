@@ -53,7 +53,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
+        return new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"),
+                                    "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test

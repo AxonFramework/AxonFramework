@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,10 +138,14 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
 
         Optional<Cause> optionalCause = letter.cause();
         if (optionalCause.isPresent()) {
-            logger.info("Adding dead letter with message id [{}] because [{}].", letter.message().getIdentifier(), optionalCause.get());
+            logger.info("Adding dead letter with message id [{}] because [{}].",
+                        letter.message().getIdentifier(),
+                        optionalCause.get().type());
         } else {
-            logger.info("Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
-                        letter.message().getIdentifier(), stringSequenceIdentifier);
+            logger.info(
+                    "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
+                    letter.message().getIdentifier(),
+                    stringSequenceIdentifier);
         }
 
         DeadLetterEventEntry entry = converters
@@ -305,7 +309,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                 .findFirst()
                 .orElseThrow(() -> new NoJpaConverterFoundException(String.format(
                         "No converter found to convert message of class [%s].",
-                        entry.getMessage().getMessageType())));
+                        entry.getMessage().getEventType())
+                ));
         MetaData deserializedDiagnostics = eventSerializer.deserialize(entry.getDiagnostics());
         return new JpaDeadLetter<>(entry,
                                    deserializedDiagnostics,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -58,6 +59,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -104,6 +106,9 @@ import static org.mockito.Mockito.*;
  */
 class DefaultConfigurerTest {
 
+    private static final GenericCommandMessage<String> TEST_COMMAND =
+            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
+
     private EntityManagerFactory entityManagerFactory;
     private EntityManager entityManager;
 
@@ -130,8 +135,7 @@ class DefaultConfigurerTest {
                         StubAggregate.class).buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(EventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
@@ -262,8 +266,12 @@ class DefaultConfigurerTest {
 
         config.start();
 
-        config.commandGateway().sendAndWait(GenericCommandMessage.asCommandMessage("test"));
-        config.commandGateway().sendAndWait(new GenericCommandMessage<>(new GenericMessage<>("test"), "update"));
+        config.commandGateway()
+              .sendAndWait(TEST_COMMAND);
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(
+                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test"), "update"
+        );
+        config.commandGateway().sendAndWait(testCommand);
         assertEquals(1, counter.get());
         assertNotNull(config.repository(StubAggregate.class));
     }
@@ -293,8 +301,7 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
@@ -319,8 +326,7 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertTrue(config.getModules().stream().anyMatch(m -> m instanceof AggregateConfiguration));
@@ -352,7 +358,9 @@ class DefaultConfigurerTest {
                                                         c -> transactionManager)
                                                 .configureCommandBus(c -> new InterceptingCommandBus(
                                                         new SimpleCommandBus(Runnable::run),
-                                                        List.of(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class))),
+                                                        List.of(new TransactionManagingInterceptor<>(c.getComponent(
+                                                                TransactionManager.class
+                                                        ))),
                                                         Collections.emptyList()))
                                                 .configureAggregate(defaultConfiguration(StubAggregate.class).configureRepository(
                                                         c -> GenericJpaRepository.builder(StubAggregate.class)
@@ -365,8 +373,7 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
 
         config.start();
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
@@ -391,8 +398,7 @@ class DefaultConfigurerTest {
                                                 .buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
-                                                  ProcessingContext.NONE);
+        var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertEquals(1, defaultMonitor.getMessages().size());
         assertEquals(1, commandBusMonitor.getMessages().size());
@@ -433,7 +439,7 @@ class DefaultConfigurerTest {
                                                         c -> new WeakReferenceCache())).buildConfiguration();
         config.start();
 
-        var result = config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"),
+        var result = config.commandBus().dispatch(TEST_COMMAND,
                                                   ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
@@ -519,14 +525,12 @@ class DefaultConfigurerTest {
         Serializer serializer = TestSerializer.xStreamSerializer();
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
 
-        DomainEventMessage<String> testDomainEvent = new GenericDomainEventMessage<>("StubAggregate",
-                                                                                     "some-aggregate-id",
-                                                                                     0,
-                                                                                     "some-payload");
-        DomainEventData<byte[]> snapshotData = new AbstractSnapshotEventEntry<>(testDomainEvent,
-                                                                                serializer,
-                                                                                byte[].class) {
-        };
+        DomainEventMessage<String> testDomainEvent = new GenericDomainEventMessage<>(
+                "StubAggregate", "some-aggregate-id", 0, new QualifiedName("test", "event", "0.0.1"), "some-payload"
+        );
+        DomainEventData<byte[]> snapshotData =
+                new AbstractSnapshotEventEntry<>(testDomainEvent, serializer, byte[].class) {
+                };
         DomainEventData<byte[]> domainEventData = new DomainEventEntry(testDomainEvent, serializer);
         // Firstly snapshot data will be retrieved (and filtered), secondly event data.
         doReturn(Stream.of(snapshotData), Collections.singletonList(domainEventData)).when(transactionManager)

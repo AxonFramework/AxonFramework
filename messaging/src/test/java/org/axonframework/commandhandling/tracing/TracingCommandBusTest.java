@@ -25,18 +25,16 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class TracingCommandBusTest {
@@ -58,6 +56,9 @@ class TracingCommandBusTest {
 
     @Test
     void dispatchIsCorrectlyTraced() {
+        CommandMessage<String> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Say hi!");
+
         when(delegate.dispatch(any(), any())).thenAnswer(
                 i -> {
                     spanFactory.verifySpanActive("CommandBus.dispatchCommand");
@@ -66,23 +67,27 @@ class TracingCommandBusTest {
                     return FutureUtils.emptyCompletedFuture();
                 }
         );
-        testSubject.dispatch(asCommandMessage("Say hi!"), ProcessingContext.NONE);
+
+        testSubject.dispatch(testCommand, ProcessingContext.NONE);
         spanFactory.verifySpanCompleted("CommandBus.dispatchCommand");
     }
 
 
     @Test
     void dispatchIsCorrectlyTracedDuringException() {
-        when(delegate.dispatch(any(), any()))
-                .thenAnswer(i -> {
-                    spanFactory.verifySpanPropagated("CommandBus.dispatchCommand",
-                                                     i.getArgument(0, CommandMessage.class));
-                    return CompletableFuture.failedFuture(new RuntimeException("Some exception"));
-                });
+        CommandMessage<String> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Say hi!");
+
+        when(delegate.dispatch(any(), any())).thenAnswer(i -> {
+            spanFactory.verifySpanPropagated("CommandBus.dispatchCommand",
+                                             i.getArgument(0, CommandMessage.class));
+            return CompletableFuture.failedFuture(new RuntimeException("Some exception"));
+        });
         testSubject.subscribe(String.class.getName(), command -> {
             throw new RuntimeException("Some exception");
         });
-        var actual = testSubject.dispatch(asCommandMessage("Say hi!"), ProcessingContext.NONE);
+
+        var actual = testSubject.dispatch(testCommand, ProcessingContext.NONE);
 
         assertTrue(actual.isCompletedExceptionally());
 
@@ -93,6 +98,8 @@ class TracingCommandBusTest {
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Test
     void verifyHandlerSpansAreCreatedOnHandlerInvocation() {
+        CommandMessage<String> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Test");
         ArgumentCaptor<MessageHandler> captor = ArgumentCaptor.forClass(MessageHandler.class);
         when(delegate.subscribe(anyString(), captor.capture())).thenReturn(null);
 
@@ -106,17 +113,19 @@ class TracingCommandBusTest {
             public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
                                                               ProcessingContext processingContext) {
                 spanFactory.verifySpanActive("CommandBus.handleCommand");
-                return MessageStream.just(new GenericMessage<>("ok"));
+                return MessageStream.just(new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "ok"));
             }
         });
 
-        captor.getValue().handle(GenericCommandMessage.asCommandMessage("Test"), ProcessingContext.NONE);
+        captor.getValue().handle(testCommand, ProcessingContext.NONE);
         spanFactory.verifySpanCompleted("CommandBus.handleCommand");
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Test
     void verifyHandlerSpansAreCompletedOnExceptionInHandlerInvocation() {
+        CommandMessage<String> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Test");
         ArgumentCaptor<MessageHandler> captor = ArgumentCaptor.forClass(MessageHandler.class);
         when(delegate.subscribe(anyString(), captor.capture())).thenReturn(null);
 
@@ -135,7 +144,7 @@ class TracingCommandBusTest {
         });
 
         try {
-            captor.getValue().handle(GenericCommandMessage.asCommandMessage("Test"), ProcessingContext.NONE);
+            captor.getValue().handle(testCommand, ProcessingContext.NONE);
             fail("Expected a MockException to be thrown from handling a command!");
         } catch (MockException e) {
             spanFactory.verifySpanCompleted("CommandBus.handleCommand");

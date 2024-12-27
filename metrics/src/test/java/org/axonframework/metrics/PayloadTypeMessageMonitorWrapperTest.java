@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ package org.axonframework.metrics;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -29,14 +31,15 @@ import org.mockito.junit.jupiter.*;
 import java.lang.reflect.Field;
 import java.util.Map;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> & MetricSet> {
 
-    private static final CommandMessage<Object> STRING_MESSAGE = asCommandMessage("stringCommand");
-    private static final CommandMessage<Object> INTEGER_MESSAGE = asCommandMessage(1);
+    private static final CommandMessage<Object> STRING_MESSAGE =
+            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "stringCommand");
+    private static final CommandMessage<Object> INTEGER_MESSAGE =
+            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), 1);
 
     private PayloadTypeMessageMonitorWrapper<CapacityMonitor> testSubject;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -58,6 +57,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     private final RepositoryProvider repositoryProvider;
     private final ParameterResolverFactory parameterResolverFactory;
     private final HandlerDefinition handlerDefinition;
+    private final MessageNameResolver messageNameResolver;
 
     private final Map<Class<?>, AggregateModel<?>> aggregateModels = new ConcurrentHashMap<>();
 
@@ -76,6 +76,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         this.repositoryProvider = builder.repositoryProvider;
         this.parameterResolverFactory = builder.buildParameterResolverFactory();
         this.handlerDefinition = builder.buildHandlerDefinition();
+        this.messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -99,9 +100,9 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     }
 
     @Override
-    protected DomainEventMessage createSnapshot(Class<?> aggregateType,
-                                                String aggregateIdentifier,
-                                                DomainEventStream eventStream) {
+    protected DomainEventMessage<?> createSnapshot(Class<?> aggregateType,
+                                                   String aggregateIdentifier,
+                                                   DomainEventStream eventStream) {
         DomainEventMessage<?> firstEvent = eventStream.peek();
         AggregateFactory<?> aggregateFactory = getAggregateFactory(aggregateType);
         if (aggregateFactory == null) {
@@ -121,7 +122,10 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         if (aggregate.isDeleted()) {
             return null;
         }
-        return new GenericDomainEventMessage<>(aggregate.type(), aggregate.identifierAsString(), aggregate.version(),
+        return new GenericDomainEventMessage<>(aggregate.type(),
+                                               aggregate.identifierAsString(),
+                                               aggregate.version(),
+                                               messageNameResolver.resolve(aggregateType),
                                                aggregate.getAggregateRoot());
     }
 
@@ -171,6 +175,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         private RepositoryProvider repositoryProvider;
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         @Override
         public Builder spanFactory(@Nonnull SnapshotterSpanFactory spanFactory) {
@@ -259,6 +264,19 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         public Builder handlerDefinition(HandlerDefinition handlerDefinition) {
             assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
             this.handlerDefinition = handlerDefinition;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} for snapshots.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver The {@link MessageNameResolver} providing the {@link QualifiedName} for snapshots.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

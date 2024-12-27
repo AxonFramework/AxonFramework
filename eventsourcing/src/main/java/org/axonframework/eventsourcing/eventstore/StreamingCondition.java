@@ -57,12 +57,12 @@ public sealed interface StreamingCondition permits DefaultStreamingCondition, St
 
     /**
      * The {@link EventCriteria} used to filter the stream of events. Defaults to
-     * {@link EventCriteria#noCriteria() no criteria}, hence allowing all events
+     * {@link EventCriteria#anyEvent() no criteria}, hence allowing any events
      *
      * @return The {@link EventCriteria} used to filter the stream of events.
      */
     default EventCriteria criteria() {
-        return EventCriteria.noCriteria();
+        return EventCriteria.anyEvent();
     }
 
     /**

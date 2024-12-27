@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,16 @@ package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.Test;
+import org.axonframework.messaging.QualifiedName;
+import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link FullConcurrencyPolicy}.
+ *
  * @author Allard Buijze
  * @author Henrique Sena
  */
@@ -39,8 +41,10 @@ class FullConcurrencyPolicyTest {
         assertNotNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
     }
 
-    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage<>("type", aggregateIdentifier.toString(), (long) 0,
-                                                     new Object(), MetaData.emptyInstance());
+    private DomainEventMessage<Object> newStubDomainEvent(Object aggregateIdentifier) {
+        return new GenericDomainEventMessage<>(
+                "aggregateType", aggregateIdentifier.toString(), 0L,
+                new QualifiedName("test", "event", "0.0.1"), new Object()
+        );
     }
 }

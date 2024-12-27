@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package org.axonframework.messaging.interceptors;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -37,7 +39,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,6 +52,8 @@ class ExceptionHandlerTest {
     private static final String COMMAND_HANDLER_INVOKED = "command";
     private static final String EVENT_HANDLER_INVOKED = "event";
     private static final String QUERY_HANDLER_INVOKED = "query";
+
+    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
 
     private AtomicReference<String> invokedHandler;
     private List<String> invokedExceptionHandlers;
@@ -70,14 +73,15 @@ class ExceptionHandlerTest {
 
     @Test
     void exceptionHandlerIsInvokedForAnCommandHandlerThrowingAnException() {
-        CommandMessage<SomeCommand> command =
-                asCommandMessage(new SomeCommand(() -> new RuntimeException("some-exception")));
+        CommandMessage<SomeCommand> command = new GenericCommandMessage<>(
+                TEST_COMMAND_NAME, new SomeCommand(() -> new RuntimeException("some-exception"))
+        );
 
         try {
             Object result = handle(command);
             assertNull(result);
         } catch (Exception e) {
-            assertTrue(e instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, e);
         }
 
         assertEquals(COMMAND_HANDLER_INVOKED, invokedHandler.get());
@@ -93,7 +97,7 @@ class ExceptionHandlerTest {
             Object result = handle(event);
             assertNull(result);
         } catch (Exception e) {
-            assertTrue(e instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, e);
         }
 
         assertEquals(EVENT_HANDLER_INVOKED, invokedHandler.get());
@@ -103,15 +107,15 @@ class ExceptionHandlerTest {
     @Test
     void exceptionHandlerIsInvokedForAnQueryHandlerThrowingAnException() {
         QueryMessage<SomeQuery, SomeQueryResponse> query = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"),
                 new SomeQuery(() -> new RuntimeException("some-exception")),
-                ResponseTypes.instanceOf(SomeQueryResponse.class)
-        );
+                ResponseTypes.instanceOf(SomeQueryResponse.class));
 
         try {
             Object result = handle(query);
             assertNull(result);
         } catch (Exception e) {
-            assertTrue(e instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, e);
         }
 
         assertEquals(QUERY_HANDLER_INVOKED, invokedHandler.get());
@@ -121,8 +125,9 @@ class ExceptionHandlerTest {
     @Test
     @Disabled("TODO #3062 - Exception Handler support")
     void exceptionHandlersAreInvokedInHandlerPriorityOrder() {
-        CommandMessage<SomeCommand> command =
-                asCommandMessage(new SomeCommand(() -> new IllegalStateException("some-exception")));
+        CommandMessage<SomeCommand> command = new GenericCommandMessage<>(
+                TEST_COMMAND_NAME, new SomeCommand(() -> new IllegalStateException("some-exception"))
+        );
 
         assertThrows(IllegalStateException.class, () -> handle(command));
 
@@ -157,16 +162,8 @@ class ExceptionHandlerTest {
     }
 
     @SuppressWarnings("unused") // suppress not-invoked exception handler warning.
-    private static class ExceptionHandlingComponent {
-
-        private final AtomicReference<String> invokedHandler;
-        private final List<String> invokedExceptionHandlers;
-
-        private ExceptionHandlingComponent(AtomicReference<String> invokedHandler,
-                                           List<String> invokedExceptionHandlers) {
-            this.invokedHandler = invokedHandler;
-            this.invokedExceptionHandlers = invokedExceptionHandlers;
-        }
+    private record ExceptionHandlingComponent(AtomicReference<String> invokedHandler,
+                                              List<String> invokedExceptionHandlers) {
 
         @ExceptionHandler
         public void leastSpecificExceptionHandler() {
@@ -232,31 +229,16 @@ class ExceptionHandlerTest {
         }
     }
 
-    private static class SomeCommand {
+    private record SomeCommand(Supplier<Exception> exceptionSupplier) {
 
-        private final Supplier<Exception> exceptionSupplier;
-
-        private SomeCommand(Supplier<Exception> exceptionSupplier) {
-            this.exceptionSupplier = exceptionSupplier;
-        }
     }
 
-    private static class SomeEvent {
+    private record SomeEvent(Supplier<Exception> exceptionSupplier) {
 
-        private final Supplier<Exception> exceptionSupplier;
-
-        private SomeEvent(Supplier<Exception> exceptionSupplier) {
-            this.exceptionSupplier = exceptionSupplier;
-        }
     }
 
-    private static class SomeQuery {
+    private record SomeQuery(Supplier<Exception> exceptionSupplier) {
 
-        private final Supplier<Exception> exceptionSupplier;
-
-        private SomeQuery(Supplier<Exception> exceptionSupplier) {
-            this.exceptionSupplier = exceptionSupplier;
-        }
     }
 
     private static class SomeQueryResponse {

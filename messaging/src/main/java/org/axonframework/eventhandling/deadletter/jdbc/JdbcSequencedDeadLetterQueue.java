@@ -203,7 +203,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
             Optional<Cause> optionalCause = letter.cause();
             if (optionalCause.isPresent()) {
                 logger.info("Adding dead letter with message id [{}] because [{}].",
-                            letter.message().getIdentifier(), optionalCause.get());
+                            letter.message().getIdentifier(),
+                            optionalCause.get().type());
             } else {
                 logger.info(
                         "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",

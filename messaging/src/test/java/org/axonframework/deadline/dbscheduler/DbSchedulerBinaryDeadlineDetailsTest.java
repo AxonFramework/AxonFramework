@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ import com.github.kagkarlsson.scheduler.serializer.Serializer;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.TestScopeDescriptor;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.*;
 import org.axonframework.serialization.TestSerializer;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -49,7 +48,8 @@ class DbSchedulerBinaryDeadlineDetailsTest {
     @ParameterizedTest
     void shouldBeSerializable(Serializer serializer) {
         DbSchedulerBinaryDeadlineDetails expected = new DbSchedulerBinaryDeadlineDetails(
-                "deadlinename",
+                "deadlineName",
+                "deadlineName",
                 "someScope".getBytes(),
                 "org.axonframework.modelling.command.AggregateScopeDescriptor",
                 "{\"foo\":\"bar\"}".getBytes(),
@@ -59,7 +59,7 @@ class DbSchedulerBinaryDeadlineDetailsTest {
         );
         byte[] serialized = serializer.serialize(expected);
         DbSchedulerBinaryDeadlineDetails result = serializer.deserialize(DbSchedulerBinaryDeadlineDetails.class,
-                                                                         serialized);
+                serialized);
         assertEquals(expected, result);
     }
 
@@ -104,7 +104,10 @@ class DbSchedulerBinaryDeadlineDetailsTest {
     }
 
     private static DeadlineMessage<?> getMessage() {
-        return GenericDeadlineMessage.asDeadlineMessage(TEST_DEADLINE_NAME, TEST_DEADLINE_PAYLOAD, Instant.now())
-                                     .withMetaData(getMetaData());
+        return new GenericDeadlineMessage<>(
+                TEST_DEADLINE_NAME,
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
+                Instant::now
+        ).withMetaData(META_DATA);
     }
 }
