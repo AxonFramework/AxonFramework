@@ -44,6 +44,13 @@ class TagTest {
     }
 
     @Test
+    void identicalTagsAreEqual() {
+        Tag testSubject = new Tag(TEST_KEY, TEST_VALUE);
+
+        assertEquals(testSubject, testSubject);
+    }
+
+    @Test
     void assertsEventAndTagsAreNonNull() {
         //noinspection DataFlowIssue
         assertThrows(IllegalArgumentException.class, () -> new Tag(null, TEST_VALUE));
