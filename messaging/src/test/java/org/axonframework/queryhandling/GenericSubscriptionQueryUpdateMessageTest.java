@@ -16,9 +16,6 @@
 
 package org.axonframework.queryhandling;
 
-import jakarta.annotation.Nullable;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.*;
 import org.junit.jupiter.api.*;
 
@@ -86,14 +83,4 @@ class GenericSubscriptionQueryUpdateMessageTest {
         assertEquals(newMetaData, result.getMetaData());
     }
 
-    @SuppressWarnings("unchecked")
-    private static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult) {
-        if (commandResult instanceof CommandResultMessage) {
-            return (CommandResultMessage<R>) commandResult;
-        } else if (commandResult instanceof Message) {
-            Message<R> commandResultMessage = (Message<R>) commandResult;
-            return new GenericCommandResultMessage<>(commandResultMessage);
-        }
-        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(commandResult.getClass()), (R) commandResult);
-    }
 }

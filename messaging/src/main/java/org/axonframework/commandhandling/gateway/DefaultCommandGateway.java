@@ -50,11 +50,11 @@ public class DefaultCommandGateway implements CommandGateway {
      * {@link org.axonframework.commandhandling.CommandMessage CommandMessages} are resolved through the given
      * {@code nameResolver}.
      *
-     * @param commandBus   The {@link CommandBus} to send commands on.
+     * @param commandBus          The {@link CommandBus} to send commands on.
      * @param messageNameResolver The {@link MessageNameResolver} resolving the
-     *                     {@link org.axonframework.messaging.QualifiedName names} for
-     *                     {@link org.axonframework.commandhandling.CommandMessage CommandMessages} being dispatched on
-     *                     the {@code commandBus}.
+     *                            {@link org.axonframework.messaging.QualifiedName names} for
+     *                            {@link org.axonframework.commandhandling.CommandMessage CommandMessages} being
+     *                            dispatched on the {@code commandBus}.
      */
     public DefaultCommandGateway(@Nonnull CommandBus commandBus,
                                  @Nonnull MessageNameResolver messageNameResolver) {
@@ -67,11 +67,11 @@ public class DefaultCommandGateway implements CommandGateway {
                               @Nullable ProcessingContext processingContext) {
         return new FutureCommandResult(
                 commandBus.dispatch(asCommandMessage(command, MetaData.emptyInstance()), processingContext)
-                        .thenCompose(
-                                msg -> msg instanceof ResultMessage<?> resultMessage && resultMessage.isExceptional()
-                                        ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
-                                        : CompletableFuture.completedFuture(msg)
-                        )
+                          .thenCompose(
+                                  msg -> msg instanceof ResultMessage<?> resultMessage && resultMessage.isExceptional()
+                                          ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
+                                          : CompletableFuture.completedFuture(msg)
+                          )
         );
     }
 
@@ -81,26 +81,27 @@ public class DefaultCommandGateway implements CommandGateway {
                               @Nullable ProcessingContext processingContext) {
         return new FutureCommandResult(
                 commandBus.dispatch(asCommandMessage(command, metaData), processingContext)
-                        .thenCompose(
-                                msg -> msg instanceof ResultMessage<?> resultMessage && resultMessage.isExceptional()
-                                        ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
-                                        : CompletableFuture.completedFuture(msg)
-                        )
+                          .thenCompose(
+                                  msg -> msg instanceof ResultMessage<?> resultMessage && resultMessage.isExceptional()
+                                          ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
+                                          : CompletableFuture.completedFuture(msg)
+                          )
         );
     }
 
     // todo: QualifiedName - leave it here or create some CommandMessageFactory?
+
     /**
-     * Returns the given command as a {@link CommandMessage}. If {@code command} already implements {@code
-     * CommandMessage}, it is returned as-is. When the {@code command} is another implementation of {@link Message}, the
-     * {@link Message#getPayload()} and {@link Message#getMetaData()} are used as input for a new {@link
-     * GenericCommandMessage}. Otherwise, the given {@code command} is wrapped into a {@code GenericCommandMessage} as
-     * its payload.
+     * Returns the given command as a {@link CommandMessage}. If {@code command} already implements
+     * {@code CommandMessage}, it is returned as-is. When the {@code command} is another implementation of
+     * {@link Message}, the {@link Message#getPayload()} and {@link Message#getMetaData()} are used as input for a new
+     * {@link GenericCommandMessage}. Otherwise, the given {@code command} is wrapped into a
+     * {@code GenericCommandMessage} as its payload.
      *
      * @param command The command to wrap as {@link CommandMessage}.
      * @return A {@link CommandMessage} containing given {@code command} as payload, a {@code command} if it already
-     * implements {@code CommandMessage}, or a {@code CommandMessage} based on the result of {@link
-     * Message#getPayload()} and {@link Message#getMetaData()} for other {@link Message} implementations.
+     * implements {@code CommandMessage}, or a {@code CommandMessage} based on the result of
+     * {@link Message#getPayload()} and {@link Message#getMetaData()} for other {@link Message} implementations.
      */
     @SuppressWarnings("unchecked")
     private <C> CommandMessage<C> asCommandMessage(Object command, MetaData metaData) {
