@@ -28,9 +28,9 @@ import java.util.Set;
  * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or
  * {@link EventStoreTransaction#appendEvent(EventMessage) appending} events.
  * <p>
- * During sourcing or streaming, the {@link #types()} and {@link #tags()} are used as a filter. While appending
- * events, the {@code #types()} and {@code #tags()} are used to validate the consistency boundary of the event(s) to
- * append. The latter happens starting from the {@link AppendCondition#consistencyMarker()}.
+ * During sourcing or streaming, the {@link #types()} and {@link #tags()} are used as a filter. While appending events,
+ * the {@code #types()} and {@code #tags()} are used to validate the consistency boundary of the event(s) to append. The
+ * latter happens starting from the {@link AppendCondition#consistencyMarker()}.
  *
  * @author Michal Negacz
  * @author Milan Savić
@@ -39,10 +39,10 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public sealed interface EventCriteria permits NoEventCriteria, SingleTagCriteria, CombinedEventCriteria {
+public sealed interface EventCriteria permits AnyEvent, SingleTagCriteria, CombinedEventCriteria {
 
     /**
-     * Construct a {@link EventCriteria} that contains no criteria at all.
+     * Construct a {@link EventCriteria} that allows <b>any</b> events.
      * <p>
      * Use this instance when all events are of interest during
      * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or when there are no consistency
@@ -53,8 +53,8 @@ public sealed interface EventCriteria permits NoEventCriteria, SingleTagCriteria
      *
      * @return An {@link EventCriteria} that contains no criteria at all.
      */
-    static EventCriteria noCriteria() {
-        return NoEventCriteria.INSTANCE;
+    static EventCriteria anyEvent() {
+        return AnyEvent.INSTANCE;
     }
 
     /**
@@ -77,8 +77,8 @@ public sealed interface EventCriteria permits NoEventCriteria, SingleTagCriteria
     Set<String> types();
 
     /**
-     * A {@link Set} of {@link Tag Tags} applicable for sourcing, streaming, or appending events. An {@code Tag}
-     * can, for example, refer to a model's (aggregate) identifier name and value.
+     * A {@link Set} of {@link Tag Tags} applicable for sourcing, streaming, or appending events. An {@code Tag} can,
+     * for example, refer to a model's (aggregate) identifier name and value.
      *
      * @return The {@link Set} of {@link Tag Tags} applicable for sourcing, streaming, or appending events.
      */
@@ -89,8 +89,7 @@ public sealed interface EventCriteria permits NoEventCriteria, SingleTagCriteria
      * <p>
      * Returns {@code true} if they are deemed to be equal, {@code false} otherwise.
      *
-     * @param tags The {@link Set} of {@link Tag Tags} to compare with {@code this EventCriteria} its
-     *                {@link #tags()}.
+     * @param tags The {@link Set} of {@link Tag Tags} to compare with {@code this EventCriteria} its {@link #tags()}.
      * @return {@code true} if they are deemed to be equal, {@code false} otherwise.
      */
     default boolean matchingTags(@Nonnull Set<Tag> tags) {

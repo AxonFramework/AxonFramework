@@ -23,7 +23,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Set;
 
 /**
- * A no-op implementation of the {@link EventCriteria}.
+ * Implementation of the {@link EventCriteria} allowing <b>any</b> event.
  * <p>
  * Use this instance when all events are of interest during
  * {@link StreamableEventSource#open(String, org.axonframework.eventsourcing.eventstore.StreamingCondition) streaming}
@@ -35,14 +35,14 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-final class NoEventCriteria implements EventCriteria {
+final class AnyEvent implements EventCriteria {
 
     /**
-     * Default instance of the {@link NoEventCriteria}.
+     * Default instance of the {@link AnyEvent}.
      */
-    static final NoEventCriteria INSTANCE = new NoEventCriteria();
+    static final AnyEvent INSTANCE = new AnyEvent();
 
-    private NoEventCriteria() {
+    private AnyEvent() {
         // No-arg constructor to enforce use of INSTANCE constant.
     }
 

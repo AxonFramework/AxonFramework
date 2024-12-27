@@ -43,12 +43,12 @@ class StartingFromTest {
     @Test
     void containsExpectedData() {
         assertEquals(TEST_POSITION, testSubject.position());
-        assertEquals(EventCriteria.noCriteria(), testSubject.criteria());
+        assertEquals(EventCriteria.anyEvent(), testSubject.criteria());
     }
 
     @Test
     void withCriteriaReplaceNoCriteriaForGivenCriteria() {
-        assertEquals(EventCriteria.noCriteria(), testSubject.criteria());
+        assertEquals(EventCriteria.anyEvent(), testSubject.criteria());
 
         StreamingCondition result = testSubject.with(TEST_CRITERIA);
 

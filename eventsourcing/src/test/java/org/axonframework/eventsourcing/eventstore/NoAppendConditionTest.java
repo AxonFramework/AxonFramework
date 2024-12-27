@@ -37,7 +37,7 @@ class NoAppendConditionTest {
 
     @Test
     void criteriaFixedToNoCriteria() {
-        assertEquals(EventCriteria.noCriteria(), AppendCondition.none().criteria());
+        assertEquals(EventCriteria.anyEvent(), AppendCondition.none().criteria());
     }
 
     @Test
