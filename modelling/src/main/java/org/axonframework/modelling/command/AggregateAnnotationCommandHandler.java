@@ -422,6 +422,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
             this.messageNameResolver = messageNameResolver;
             return this;
         }

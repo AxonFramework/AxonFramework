@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -368,6 +368,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
             this.messageNameResolver = messageNameResolver;
             return this;
         }
