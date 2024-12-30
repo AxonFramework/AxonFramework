@@ -36,6 +36,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.Tag;
@@ -108,6 +109,7 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
                                                                                                             .size(),
                                                                                                    1));
         }
+
         String aggregateType = resolveAggregateType(condition.criteria().tags());
         String aggregateIdentifier = resolveAggregateIdentifier(condition.criteria().tags());
         AtomicLong consistencyMarker = new AtomicLong(condition.consistencyMarker());
@@ -116,29 +118,39 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
             return CompletableFuture.failedFuture(new IllegalArgumentException(
                     "ConsistencyMarker must be provided explicitly in legacy mode"));
         }
+        try {
+            assertValidTags(events, aggregateType, aggregateIdentifier);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
 
         AppendEventsTransaction tx = connection.eventChannel().startAppendEventsTransaction();
-        events.forEach(taggedEvent -> {
-            EventMessage<?> event = taggedEvent.event();
-            byte[] payload = payloadConverter.convert(event.getPayload(), byte[].class);
-            Event.Builder builder = Event.newBuilder()
-                                         .setPayload(SerializedObject.newBuilder()
-                                                                     .setData(ByteString.copyFrom(payload))
-                                                                     .setType(event.name().namespace() + "."
-                                                                                      + event.name().localName())
-                                                                     .setRevision(event.name().revision())
-                                                                     .build())
-                                         .setMessageIdentifier(event.getIdentifier())
-                                         .setTimestamp(event.getTimestamp().toEpochMilli());
-            if (aggregateIdentifier != null && aggregateType != null) {
-                long aggregateSequenceNumber = consistencyMarker.incrementAndGet();
-                builder.setAggregateIdentifier(aggregateIdentifier).setAggregateType(aggregateType)
-                       .setAggregateSequenceNumber(aggregateSequenceNumber);
-            }
-            buildMetaData(event.getMetaData(), builder.getMetaDataMap());
-            Event message = builder.build();
-            tx.appendEvent(message);
-        });
+        try {
+            events.forEach(taggedEvent -> {
+                EventMessage<?> event = taggedEvent.event();
+                byte[] payload = payloadConverter.convert(event.getPayload(), byte[].class);
+                Event.Builder builder = Event.newBuilder()
+                                             .setPayload(SerializedObject.newBuilder()
+                                                                         .setData(ByteString.copyFrom(payload))
+                                                                         .setType(event.name().namespace() + "."
+                                                                                          + event.name().localName())
+                                                                         .setRevision(event.name().revision())
+                                                                         .build())
+                                             .setMessageIdentifier(event.getIdentifier())
+                                             .setTimestamp(event.getTimestamp().toEpochMilli());
+                if (aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty()) {
+                    long aggregateSequenceNumber = consistencyMarker.incrementAndGet();
+                    builder.setAggregateIdentifier(aggregateIdentifier).setAggregateType(aggregateType)
+                           .setAggregateSequenceNumber(aggregateSequenceNumber);
+                }
+                buildMetaData(event.getMetaData(), builder.getMetaDataMap());
+                Event message = builder.build();
+                tx.appendEvent(message);
+            });
+        } catch (Exception e) {
+            tx.rollback();
+            return CompletableFuture.failedFuture(e);
+        }
 
         return CompletableFuture.completedFuture(new AppendTransaction() {
             @Override
@@ -170,6 +182,24 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
                 tx.rollback();
             }
         });
+    }
+
+    private void assertValidTags(List<TaggedEventMessage<?>> events, String aggregateType, String aggregateIdentifier) {
+        for (TaggedEventMessage<?> taggedEvent : events) {
+            if (taggedEvent.tags().size() > 1) {
+                throw new IllegalArgumentException(
+                        "An Event Storage engine in Aggregate mode does not support multiple tags per event");
+            } else if (taggedEvent.tags().size() == 1) {
+                Tag tag = taggedEvent.tags().iterator().next();
+                if (aggregateType == null
+                        || aggregateIdentifier == null
+                        || !aggregateType.equals(tag.key())
+                        || !aggregateIdentifier.equals(tag.value())) {
+                    throw new IllegalArgumentException(
+                            "An Event Storage engine in Aggregate mode does not support tags that do not match the append condition");
+                }
+            }
+        }
     }
 
     private void buildMetaData(MetaData metaData, Map<String, MetaDataValue> metaDataMap) {

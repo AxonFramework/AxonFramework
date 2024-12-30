@@ -33,7 +33,7 @@ import java.nio.charset.StandardCharsets;
 class LegacyAxonServerEventStorageEngineTest extends
         AggregateBasedStorageEngineTestSuite<LegacyAxonServerEventStorageEngine> {
 
-    private static AxonServerContainer axonServerContainer = new AxonServerContainer()
+    private static final AxonServerContainer axonServerContainer = new AxonServerContainer()
             .withAxonServerHostname("localhost")
             .withDevMode(true);
     private static AxonServerConnection connection;
@@ -55,7 +55,9 @@ class LegacyAxonServerEventStorageEngineTest extends
 
     @Override
     protected LegacyAxonServerEventStorageEngine buildStorageEngine() throws IOException {
-        AxonServerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(), axonServerContainer.getHttpPort());
+        AxonServerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
+                                                  axonServerContainer.getHttpPort(),
+                                                  "default");
         return new LegacyAxonServerEventStorageEngine(connection, new Converter() {
             @Override
             public boolean canConvert(Class<?> sourceType, Class<?> targetType) {

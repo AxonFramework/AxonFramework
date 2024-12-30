@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.event;
+package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.Context;
 
