@@ -1107,7 +1107,12 @@ class Coordinator {
                                                    return clock.instant().plusSeconds(errorWaitTime);
                                                }
                                                Instant nextBackOffRetry = current.plusSeconds(errorWaitTime);
-                                               return current.isAfter(nextBackOffRetry) ? current : nextBackOffRetry;
+                                               Instant releaseDeadline = current.isAfter(nextBackOffRetry) ? current : nextBackOffRetry;
+                                               logger.debug("Processor [{}] set release deadline claim to [{}] for Segment [#{}].",
+                                                            name,
+                                                            releaseDeadline,
+                                                            segmentId);
+                                               return releaseDeadline;
                                            }
                                    );
                                    segmentReleasedAction.accept(work.segment());
