@@ -994,7 +994,10 @@ class Coordinator {
             // If a work package has been aborted by something else than the Coordinator. We should abandon it.
             workPackages.values().stream()
                         .filter(WorkPackage::isAbortTriggered)
-                        .forEach(workPackage -> abortWorkPackage(workPackage, null));
+                        .forEach(workPackage -> {
+                            calculateReleaseDeadlineUsingBackOff(workPackage.segment().getSegmentId());
+                            abortWorkPackage(workPackage, null);
+                        });
 
             // Chances are no events were scheduled at all. Scheduling regardless will ensure the token claim is held.
             workPackages.values()
@@ -1095,26 +1098,6 @@ class Coordinator {
                        .thenRun(() -> transactionManager.executeInTransaction(
                                () -> {
                                    tokenStore.releaseClaim(name, segmentId);
-                                   int errorWaitTime = releasesLastBackOffSeconds.compute(segmentId,
-                                                                                          (i, current) -> current
-                                                                                                  == null ? 1 : Math.min(
-                                                                                                  current * 2,
-                                                                                                  60));
-                                   releasesDeadlines.compute(
-                                           segmentId,
-                                           (i, current) -> {
-                                               if (current == null) {
-                                                   return clock.instant().plusSeconds(errorWaitTime);
-                                               }
-                                               Instant nextBackOffRetry = current.plusSeconds(errorWaitTime);
-                                               Instant releaseDeadline = current.isAfter(nextBackOffRetry) ? current : nextBackOffRetry;
-                                               logger.debug("Processor [{}] set release deadline claim to [{}] for Segment [#{}].",
-                                                            name,
-                                                            releaseDeadline,
-                                                            segmentId);
-                                               return releaseDeadline;
-                                           }
-                                   );
                                    segmentReleasedAction.accept(work.segment());
                                }
                        ))
@@ -1124,6 +1107,28 @@ class Coordinator {
                                        segmentId, name, throwable);
                            return null;
                        });
+        }
+
+        private void calculateReleaseDeadlineUsingBackOff(int segmentId) {
+            int errorWaitTime = releasesLastBackOffSeconds.compute(
+                    segmentId,
+                    (i, current) -> current == null ? 1 : Math.min(current * 2, 60)
+            );
+            releasesDeadlines.compute(
+                    segmentId,
+                    (i, current) -> {
+                        if (current == null) {
+                            return clock.instant().plusSeconds(errorWaitTime);
+                        }
+                        Instant nextBackOffRetry = current.plusSeconds(errorWaitTime);
+                        Instant releaseDeadline = current.isAfter(nextBackOffRetry) ? current : nextBackOffRetry;
+                        logger.debug("Processor [{}] set release deadline claim to [{}] for Segment [#{}].",
+                                     name,
+                                     releaseDeadline,
+                                     segmentId);
+                        return releaseDeadline;
+                    }
+            );
         }
     }
 }
