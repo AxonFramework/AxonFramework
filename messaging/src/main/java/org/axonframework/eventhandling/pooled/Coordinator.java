@@ -99,6 +99,7 @@ class Coordinator {
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState;
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
+    private final Map<Integer, Integer> releasesLastBackOffSeconds = new ConcurrentHashMap<>();
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
@@ -271,15 +272,21 @@ class Coordinator {
      * is currently taken by another processor instance, the result will be unsuccessful.
      * <p>
      * The token will immediately be claimed, but processing of the token will start after the invocation of this
-     * instruction has been completed successfully by scheduling the coordinator. This will see the claimed token
-     * and start a {@link WorkPackage} for it.
+     * instruction has been completed successfully by scheduling the coordinator. This will see the claimed token and
+     * start a {@link WorkPackage} for it.
      *
      * @param segmentId the identifier of the segment to claim
      * @return a {@link CompletableFuture} indicating whether the claim was executed successfully
      */
     public CompletableFuture<Boolean> claimSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        coordinatorTasks.add(new ClaimTask(result, name, segmentId, workPackages, releasesDeadlines, tokenStore, transactionManager));
+        coordinatorTasks.add(new ClaimTask(result,
+                                           name,
+                                           segmentId,
+                                           workPackages,
+                                           releasesDeadlines,
+                                           tokenStore,
+                                           transactionManager));
         scheduleCoordinator();
         return result;
     }
@@ -295,7 +302,9 @@ class Coordinator {
                 }
                 tokenStoreInitialized.set(true);
             } catch (Exception e) {
-                logger.info("Error while initializing the Token Store. This may simply indicate concurrent attempts to initialize.", e);
+                logger.info(
+                        "Error while initializing the Token Store. This may simply indicate concurrent attempts to initialize.",
+                        e);
             }
         });
         return tokenStoreInitialized.get();
@@ -400,7 +409,7 @@ class Coordinator {
         private long tokenClaimInterval = 5000;
         private long claimExtensionThreshold = 5000;
         private Clock clock = GenericEventMessage.clock;
-        private MaxSegmentProvider  maxSegmentProvider;
+        private MaxSegmentProvider maxSegmentProvider;
         private int initialSegmentCount = 16;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
         private Runnable shutdownAction = () -> {
@@ -569,7 +578,6 @@ class Coordinator {
          *
          * @param initialSegmentCount an {@code int} specifying the initial segment count used to create segments on
          *                            start up
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder initialSegmentCount(int initialSegmentCount) {
@@ -601,7 +609,6 @@ class Coordinator {
          * actions. Defaults to a no-op.
          *
          * @param shutdownAction the action to perform when the coordinator is shut down
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder onShutdown(Runnable shutdownAction) {
@@ -615,7 +622,6 @@ class Coordinator {
          *
          * @param coordinatorExtendsClaims A flag dictating whether this coordinator will
          *                                 {@link WorkPackage#extendClaimIfThresholdIsMet() extend claims}.
-         *
          * @return The current Builder instance, for fluent interfacing.
          */
         Builder coordinatorClaimExtension(boolean coordinatorExtendsClaims) {
@@ -670,8 +676,7 @@ class Coordinator {
 
     /**
      * A {@link Runnable} defining the entire coordination process dealt with by a {@link Coordinator}. This task will
-     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in
-     * this
+     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
      * sense means:
      * <ol>
      *     <li>Abort {@link WorkPackage WorkPackages} for which {@link #releaseUntil(int, Instant)} has been invoked.</li>
@@ -704,7 +709,9 @@ class Coordinator {
             }
 
             if (!runState.get().isRunning()) {
-                logger.debug("Stopped processing. Runnable flag is false.\nReleasing claims and closing the event stream for Processor [{}].", name);
+                logger.debug(
+                        "Stopped processing. Runnable flag is false.\nReleasing claims and closing the event stream for Processor [{}].",
+                        name);
                 abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
                 closeQuietly(eventStream);
                 return;
@@ -723,7 +730,9 @@ class Coordinator {
                         });
 
             if (coordinatorExtendsClaims) {
-                logger.debug("Processor [{}] will extend the claim of work packages that are busy processing events and have met the claim threshold.", name);
+                logger.debug(
+                        "Processor [{}] will extend the claim of work packages that are busy processing events and have met the claim threshold.",
+                        name);
                 // Extend the claims of each work package busy processing events.
                 // Doing so relieves this effort from the work package as an optimization.
                 workPackages.values()
@@ -760,7 +769,7 @@ class Coordinator {
                 unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
                 try {
                     TrackingToken streamStartPosition = lastScheduledToken;
-                    if(!releaseSegmentsIfTooManyClaimed()) {
+                    if (!releaseSegmentsIfTooManyClaimed()) {
                         logger.debug("Processor [{}] will try to claim new segments.", name);
                         Map<Segment, TrackingToken> newSegments = claimNewSegments();
 
@@ -772,11 +781,13 @@ class Coordinator {
                             streamStartPosition = streamStartPosition == null || otherUnwrapped == null
                                     ? null : streamStartPosition.lowerBound(otherUnwrapped);
                             workPackages.computeIfAbsent(segment.getSegmentId(),
-                                    wp -> workPackageFactory.apply(segment, token));
+                                                         wp -> workPackageFactory.apply(segment, token));
                         }
 
                         if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
-                            logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
+                            logger.info("Processor [{}] claimed {} new segments for processing",
+                                        name,
+                                        newSegments.size());
                         }
                     }
                     ensureOpenStream(streamStartPosition);
@@ -1074,21 +1085,38 @@ class Coordinator {
         }
 
         private CompletableFuture<Void> abortWorkPackage(WorkPackage work, Exception cause) {
+            int segmentId = work.segment().getSegmentId();
             return work.abort(cause)
                        .thenRun(() -> {
-                           if (workPackages.remove(work.segment().getSegmentId(), work)) {
+                           if (workPackages.remove(segmentId, work)) {
                                logger.debug("Processor [{}] released claim on {}.", name, work.segment());
                            }
                        })
                        .thenRun(() -> transactionManager.executeInTransaction(
                                () -> {
-                                   tokenStore.releaseClaim(name, work.segment().getSegmentId());
+                                   tokenStore.releaseClaim(name, segmentId);
+                                   int errorWaitTime = releasesLastBackOffSeconds.compute(segmentId,
+                                                                                          (i, current) -> current
+                                                                                                  == null ? 1 : Math.min(
+                                                                                                  current * 2,
+                                                                                                  60));
+                                   releasesDeadlines.compute(
+                                           segmentId,
+                                           (i, current) -> {
+                                               if (current == null) {
+                                                   return clock.instant().plusSeconds(errorWaitTime);
+                                               }
+                                               Instant nextBackOffRetry = current.plusSeconds(errorWaitTime);
+                                               return current.isAfter(nextBackOffRetry) ? current : nextBackOffRetry;
+                                           }
+                                   );
                                    segmentReleasedAction.accept(work.segment());
                                }
                        ))
+
                        .exceptionally(throwable -> {
                            logger.info("An exception occurred during the abort of work package [{}] on [{}] processor.",
-                                       work.segment().getSegmentId(), name, throwable);
+                                       segmentId, name, throwable);
                            return null;
                        });
         }
