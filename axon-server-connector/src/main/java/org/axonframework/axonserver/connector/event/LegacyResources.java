@@ -19,7 +19,10 @@ package org.axonframework.axonserver.connector.event;
 import org.axonframework.common.Context;
 
 /**
- * Utility class to obtain resources used in previous versions of Axon Framework
+ * Utility class to obtain resources used in previous versions of Axon Framework.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public abstract class LegacyResources {
 

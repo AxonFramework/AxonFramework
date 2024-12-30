@@ -40,10 +40,10 @@ import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test suite validating the {@link SimpleEventStore} and {@link DefaultEventStoreTransaction} for different
- * implementations of the {@link AsyncEventStorageEngine}.
+ * Test suite validating implementations of {@link AsyncEventStorageEngine} implementations that are aggregate-based.
  *
- * @author Steven van Beelen
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEventStorageEngine> {
 

@@ -125,7 +125,7 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
 
         StepVerifier.create(testSubject.stream(StreamingCondition.startingFrom(tokenOfFirstMessage).with(TEST_CRITERIA))
                                        .asFlux())
-                    // we've skipped the first two
+                    // we've skipped the first one
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo.event()))
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventThree.event()))
                     .thenCancel()

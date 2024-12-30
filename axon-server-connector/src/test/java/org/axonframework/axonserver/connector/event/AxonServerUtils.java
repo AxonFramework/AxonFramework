@@ -38,6 +38,9 @@ import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Utility class to work with Axon Server in tests.
+ */
 public class AxonServerUtils {
 
     public static void purgeEventsFromAxonServer(String hostname, int port) throws IOException {

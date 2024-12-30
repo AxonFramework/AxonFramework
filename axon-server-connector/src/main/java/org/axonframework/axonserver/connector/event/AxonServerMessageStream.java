@@ -32,7 +32,10 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * MessageStream implementation backed by a Stream of Events from Axon Server
+ * A {@code MessageStream} implementation backed by a Stream of Events from Axon Server.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 class AxonServerMessageStream implements MessageStream<EventMessage<?>> {
 
@@ -46,7 +49,8 @@ class AxonServerMessageStream implements MessageStream<EventMessage<?>> {
      * @param stream           The backing stream to Axon Server to read from
      * @param messageConverter The function to convert Axon Server events to Event Messages
      */
-    public AxonServerMessageStream(EventStream stream, Function<Event, EventMessage<byte[]>> messageConverter) {
+    public AxonServerMessageStream(@Nonnull EventStream stream,
+                                   @Nonnull Function<Event, EventMessage<byte[]>> messageConverter) {
         this.stream = stream;
         this.messageConverter = messageConverter;
     }

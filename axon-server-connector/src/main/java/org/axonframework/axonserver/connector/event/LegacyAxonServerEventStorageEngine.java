@@ -53,13 +53,27 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Event Storage Engine implementation that uses the aggregate-oriented APIs of Axon Server, allowing it to interact
+ * with versions that do not have DCB support.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
+ */
 public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngine {
 
     private final AxonServerConnection connection;
     private final Converter payloadConverter;
 
-    public LegacyAxonServerEventStorageEngine(io.axoniq.axonserver.connector.AxonServerConnection connection,
-                                              Converter payloadConverter) {
+    /**
+     * Initialize the {@code LegacyAxonServerEventStorageEngine} with given {@code connection} to Axon Server and given
+     * {@code payloadConverter} to convert payloads of appended messages (to bytes).
+     *
+     * @param connection       The backing connection to Axon Server
+     * @param payloadConverter The converter to use to serialize payloads to bytes
+     */
+    public LegacyAxonServerEventStorageEngine(@Nonnull AxonServerConnection connection,
+                                              @Nonnull Converter payloadConverter) {
         this.connection = connection;
         this.payloadConverter = payloadConverter;
     }
@@ -89,8 +103,10 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
         if (condition.criteria().tags().size() > 1) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException(
-                    "Condition must provide at most one index"));
+            return CompletableFuture.failedFuture(AppendConditionAssertionException.tooManyIndices(condition.criteria()
+                                                                                                            .tags()
+                                                                                                            .size(),
+                                                                                                   1));
         }
         String aggregateType = resolveAggregateType(condition.criteria().tags());
         String aggregateIdentifier = resolveAggregateIdentifier(condition.criteria().tags());
@@ -108,11 +124,10 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
             Event.Builder builder = Event.newBuilder()
                                          .setPayload(SerializedObject.newBuilder()
                                                                      .setData(ByteString.copyFrom(payload))
-                                                                     // TODO - Make the type explicit on Message
-                                                                     .setType(event.getPayload().getClass()
-                                                                                   .getName())
-                                                                     // TODO - Make revision explicit on Message
-                                                                     .setRevision("").build())
+                                                                     .setType(event.name().namespace() + "."
+                                                                                      + event.name().localName())
+                                                                     .setRevision(event.name().revision())
+                                                                     .build())
                                          .setMessageIdentifier(event.getIdentifier())
                                          .setTimestamp(event.getTimestamp().toEpochMilli());
             if (aggregateIdentifier != null && aggregateType != null) {
@@ -207,20 +222,14 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
         return metaData;
     }
 
-    public Object convertFromMetaDataValue(MetaDataValue value) {
-        switch (value.getDataCase()) {
-            case TEXT_VALUE:
-                return value.getTextValue();
-            case DOUBLE_VALUE:
-                return value.getDoubleValue();
-            case NUMBER_VALUE:
-                return value.getNumberValue();
-            case BOOLEAN_VALUE:
-                return value.getBooleanValue();
-            case DATA_NOT_SET, BYTES_VALUE:
-            default:
-                return null;
-        }
+    private Object convertFromMetaDataValue(MetaDataValue value) {
+        return switch (value.getDataCase()) {
+            case TEXT_VALUE -> value.getTextValue();
+            case DOUBLE_VALUE -> value.getDoubleValue();
+            case NUMBER_VALUE -> value.getNumberValue();
+            case BOOLEAN_VALUE -> value.getBooleanValue();
+            default -> null;
+        };
     }
 
     @Override
@@ -253,6 +262,7 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
 
     @Override
     public void describeTo(@javax.annotation.Nonnull ComponentDescriptor descriptor) {
-
+        descriptor.describeProperty("connection", connection);
+        descriptor.describeProperty("payloadConverter", payloadConverter);
     }
 }
