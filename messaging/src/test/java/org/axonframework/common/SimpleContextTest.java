@@ -16,6 +16,8 @@
 
 package org.axonframework.common;
 
+import org.axonframework.messaging.SimpleContext;
+
 /**
  * Test class validating the {@link SimpleContext}.
  *

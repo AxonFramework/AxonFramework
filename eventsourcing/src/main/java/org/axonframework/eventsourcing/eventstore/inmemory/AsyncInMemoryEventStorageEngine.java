@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Context;
-import org.axonframework.common.SimpleContext;
+import org.axonframework.messaging.SimpleContext;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;

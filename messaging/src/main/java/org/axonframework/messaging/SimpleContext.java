@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.common;
+package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Context;
 
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;

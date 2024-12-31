@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.SimpleContext;
+import org.axonframework.messaging.SimpleContext;
 import org.axonframework.messaging.Context;
 import org.junit.jupiter.api.*;
 
