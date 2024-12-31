@@ -152,7 +152,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
             return (ResultMessage<R>) new GenericResultMessage<>(resultMessage);
         }
         QualifiedName name = result == null
-                ? QualifiedNameUtils.fromDottedName("empty.result")
+                ? new QualifiedName("axon.framework", "empty.result", "0.0.1")
                 : QualifiedNameUtils.fromClassName(result.getClass());
         //noinspection unchecked
         return new GenericResultMessage<>(name, (R) result);

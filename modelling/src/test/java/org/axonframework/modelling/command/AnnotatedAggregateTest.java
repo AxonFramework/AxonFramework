@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
@@ -35,13 +37,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class AnnotatedAggregateTest {
+
+    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
 
     private final String ID = "id";
     private Repository<AggregateRoot> repository;
@@ -60,12 +63,14 @@ public class AnnotatedAggregateTest {
     // Tests for issue #1248 - https://github.com/AxonFramework/AxonFramework/issues/1248
     @Test
     void applyingMultipleEventsInAndThenPublishesWithRightState() {
-        Command command = new Command(ID, 2);
-        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
+        Command testPayload = new Command(ID, 2);
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, testPayload);
+        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
+
         Aggregate<AggregateRoot> aggregate =
                 uow.executeWithResult(() -> repository.newInstance(() -> {
                        AggregateRoot root = new AggregateRoot();
-                       root.handle(command);
+                       root.handle(testPayload);
                        return root;
                    }))
                    .getPayload();
@@ -80,12 +85,14 @@ public class AnnotatedAggregateTest {
 
     @Test
     void applyingEventInHandlerPublishesInRightOrder() {
-        Command command = new Command(ID, 0);
-        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
+        Command testPayload = new Command(ID, 0);
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, testPayload);
+        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
+
         Aggregate<AggregateRoot> aggregate =
                 uow.executeWithResult(() -> repository.newInstance(() -> {
                        AggregateRoot root = new AggregateRoot();
-                       root.handle(command);
+                       root.handle(testPayload);
                        return root;
                    }))
                    .getPayload();
@@ -101,8 +108,10 @@ public class AnnotatedAggregateTest {
     // Test for issue #1506 - https://github.com/AxonFramework/AxonFramework/issues/1506
     @Test
     void lastSequenceReturnsNullIfNoEventsHaveBeenPublishedYet() {
-        final Command command = new Command(ID, 0);
-        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
+        final Command testPayload = new Command(ID, 0);
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, testPayload);
+        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
+
         AnnotatedAggregate<AggregateRoot> testSubject =
                 (AnnotatedAggregate<AggregateRoot>) uow.executeWithResult(
                         () -> repository.newInstance(AggregateRoot::new)).getPayload();
@@ -113,12 +122,14 @@ public class AnnotatedAggregateTest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void conditionalApplyingEventInHandlerPublishesInRightOrder(boolean applyConditional) {
-        Command_2 command = new Command_2(ID, 0, applyConditional);
-        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
+        Command_2 testPayload = new Command_2(ID, 0, applyConditional);
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, testPayload);
+        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
+
         Aggregate<AggregateRoot> aggregate =
                 uow.executeWithResult(() -> repository.newInstance(() -> {
                        AggregateRoot root = new AggregateRoot();
-                       root.handle(command, sideEffect);
+                       root.handle(testPayload, sideEffect);
                        return root;
                    }))
                    .getPayload();
@@ -141,95 +152,26 @@ public class AnnotatedAggregateTest {
         }
     }
 
-    private static class Command {
+    private record Command(String id, int value) {
 
-        private final String id;
-        private final int value;
-
-        private Command(String id, int value) {
-            this.id = id;
-            this.value = value;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public int getValue() {
-            return value;
-        }
     }
 
-    private static class Command_2 {
+    private record Command_2(String id, int value, boolean condition) {
 
-        private final String id;
-        private final int value;
-        private final boolean condition;
-
-        private Command_2(String id, int value, boolean condition) {
-            this.id = id;
-            this.value = value;
-            this.condition = condition;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public int getValue() {
-            return value;
-        }
-
-        public boolean condition() {
-            return condition;
-        }
     }
 
-    private static class Event_1 {
+    private record Event_1(String id, int value) {
 
-        private final String id;
-        private final int value;
-
-        private Event_1(String id, int value) {
-            this.id = id;
-            this.value = value;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public int getValue() {
-            return value;
-        }
     }
 
     @SuppressWarnings("WeakerAccess")
-    private static class Event_2 {
+    private record Event_2(String id) {
 
-        private final String id;
-
-        Event_2(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
     }
 
     @SuppressWarnings("WeakerAccess")
-    private static class Event_3 {
+    private record Event_3(String id) {
 
-        private final String id;
-
-        Event_3(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
     }
 
     @SuppressWarnings({"unused", "WeakerAccess"})
@@ -246,7 +188,7 @@ public class AnnotatedAggregateTest {
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(Command command) {
-            ApplyMore andThen = apply(new Event_1(command.getId(), 0));
+            ApplyMore andThen = apply(new Event_1(command.id(), 0));
             for (int i = 0; i < command.value; i++) {
                 andThen = andThen.andThenApply(() -> new Event_1(id, value + 1));
             }
@@ -255,18 +197,18 @@ public class AnnotatedAggregateTest {
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(Command_2 command, StubSideEffect sideEffect) {
-            apply(new Event_1(command.getId(), 0))
-                    .andThenApplyIf(() -> command.condition, () -> new Event_2(command.getId()))
+            apply(new Event_1(command.id(), 0))
+                    .andThenApplyIf(() -> command.condition, () -> new Event_2(command.id()))
                     .andThenApply(() -> new Event_3(id))
-                    .andThen(() -> sideEffect.doSomething(command.getId()))
-                    .andThenIf(() -> command.condition, () -> sideEffect.doSomethingConditional(command.getId()));
+                    .andThen(() -> sideEffect.doSomething(command.id()))
+                    .andThenIf(() -> command.condition, () -> sideEffect.doSomethingConditional(command.id()));
         }
 
         @EventHandler
         public void on(Event_1 event) {
-            this.id = event.getId();
+            this.id = event.id();
             this.value = event.value;
-            apply(new Event_2(event.getId()));
+            apply(new Event_2(event.id()));
         }
 
         @EventHandler
@@ -287,7 +229,9 @@ public class AnnotatedAggregateTest {
                     .parameterResolverFactory(
                             MultiParameterResolverFactory.ordered(
                                     new SimpleResourceParameterResolverFactory(resources),
-                                    ClasspathParameterResolverFactory.forClassLoader(Thread.currentThread().getContextClassLoader())
+                                    ClasspathParameterResolverFactory.forClassLoader(
+                                            Thread.currentThread().getContextClassLoader()
+                                    )
                             ));
         }
 
@@ -336,6 +280,7 @@ public class AnnotatedAggregateTest {
     }
 
     public interface StubSideEffect {
+
         void doSomething(String id);
 
         void doSomethingConditional(String id);

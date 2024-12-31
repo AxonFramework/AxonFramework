@@ -34,6 +34,7 @@ class LoggingSpanFactoryTest {
 
     private static final EventMessage<String> TEST_EVENT =
             new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "payload");
+    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
 
     @Test
     void createRootTraceReturnsNoOpSpan() {
@@ -84,7 +85,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void internalSpanCanBeStartedAndEndedWithUnitOfWorkActive() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
@@ -118,7 +119,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void dispatchSpanCanBeStartedAndEnded() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
         assertDoesNotThrow(() -> {
             Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", command);
             trace.start()
@@ -129,7 +130,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void dispatchSpanCanBeStartedAndEndedWhileUnitOfWorkActive() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
@@ -153,7 +154,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void internalSpanWithMessageCanBeStartedAndEndedWhileUnitOfWorkActive() {
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {

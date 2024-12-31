@@ -90,7 +90,6 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      *
      * @param name    The {@link QualifiedName name} for this {@link EventMessage}.
      * @param payload The payload of type {@code P} for this {@link EventMessage}.
-     * @see #asEventMessage(Object)
      */
     public GenericEventMessage(@Nonnull QualifiedName name,
                                @Nonnull P payload) {
@@ -103,7 +102,6 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * @param name     The {@link QualifiedName name} for this {@link EventMessage}.
      * @param payload  The payload of type {@code P} for this {@link EventMessage}.
      * @param metaData The metadata for this {@link EventMessage}.
-     * @see #asEventMessage(Object)
      */
     public GenericEventMessage(@Nonnull QualifiedName name,
                                @Nonnull P payload,
@@ -120,7 +118,6 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * @param payload    The payload of type {@code P} for this {@link EventMessage}.
      * @param metaData   The metadata for this {@link EventMessage}.
      * @param timestamp  The {@link Instant timestamp} of this {@link EventMessage EventMessage's} creation.
-     * @see #asEventMessage(Object)
      */
     public GenericEventMessage(@Nonnull String identifier,
                                @Nonnull QualifiedName name,

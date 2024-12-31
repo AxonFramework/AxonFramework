@@ -18,8 +18,12 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -28,8 +32,8 @@ import org.axonframework.test.AxonAssertionError;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
+import java.time.Instant;
 
-import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -301,6 +305,15 @@ class FixtureTest_Deadlines {
                .andGivenCommands(CREATE_COMMAND)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectTriggeredDeadlines("fakeDeadlineDetails");
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <P> DeadlineMessage<P> asDeadlineMessage(String deadlineName,
+                                                           Object payload,
+                                                           Instant expiryTime) {
+        return new GenericDeadlineMessage<>(
+                deadlineName, new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), (P) payload), () -> expiryTime
+        );
     }
 
     private static class CreateMyAggregateCommand {

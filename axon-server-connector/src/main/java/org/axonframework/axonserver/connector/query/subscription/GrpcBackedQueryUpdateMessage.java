@@ -69,6 +69,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
                            .convert(queryUpdate.getErrorMessage(), exceptionDetails)
                 : null;
         this.metaDataSupplier = new GrpcMetaData(queryUpdate.getMetaDataMap(), serializer);
+        // TODO #3079 - For AF5, we should base the name on the query field, as that's the "old" queryName.
         if (serializedPayload != null) {
             GrpcSerializedObject serializedObject = new GrpcSerializedObject(queryUpdate.getPayload());
             Class<?> payloadClass = serializer.classForType(serializedObject.getType());

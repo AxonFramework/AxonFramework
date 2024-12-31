@@ -53,36 +53,12 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     private final Class<P> payloadType;
 
     /**
-     * Returns a Message representing the given {@code payloadOrMessage}, either by wrapping it or by returning it
-     * as-is. If the given {@code payloadOrMessage} already implements {@link Message}, it is returned as-is, otherwise
-     * a {@link Message} is returned with the parameter as its payload.
-     *
-     * @param payloadOrMessage The payload to wrap or message to return
-     * @return a Message with the given payload or the message
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    public static <P> Message<P> asMessage(Object payloadOrMessage) {
-        if (payloadOrMessage instanceof Message) {
-            //noinspection unchecked
-            return (Message<P>) payloadOrMessage;
-        }
-        QualifiedName name = payloadOrMessage == null
-                ? QualifiedNameUtils.fromDottedName("empty.command.payload")
-                : QualifiedNameUtils.fromClassName(payloadOrMessage.getClass());
-        //noinspection unchecked
-        return new GenericMessage<>(name, (P) payloadOrMessage);
-    }
-
-    /**
      * Constructs a {@link GenericMessage} for the given {@code name} and {@code payload}.
      * <p>
      * Uses the correlation data of the current Unit of Work, if present.
      *
      * @param name    The {@link QualifiedName name} for this {@link Message}.
      * @param payload The payload of type {@code P} for this {@link Message}.
-     * @see #asMessage(Object)
      */
     public GenericMessage(@Nonnull QualifiedName name,
                           @Nullable P payload) {
@@ -98,7 +74,6 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * @param name     The {@link QualifiedName name} for this {@link Message}.
      * @param payload  The payload of type {@code P} for this {@link Message}.
      * @param metaData The metadata for this {@link Message}.
-     * @see #asMessage(Object)
      */
     public GenericMessage(@Nonnull QualifiedName name,
                           @Nullable P payload,

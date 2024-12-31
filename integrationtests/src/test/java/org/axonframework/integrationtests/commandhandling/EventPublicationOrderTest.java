@@ -17,6 +17,8 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -36,7 +38,6 @@ import org.mockito.*;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -62,6 +63,9 @@ class EventPublicationOrderTest {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void publicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
+        UpdateStubAggregateWithExtraEventCommand testPayload = new UpdateStubAggregateWithExtraEventCommand(aggregateId);
+        CommandMessage<UpdateStubAggregateWithExtraEventCommand> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
         DomainEventMessage<StubAggregateCreatedEvent> event = new GenericDomainEventMessage<>(
                 "test", aggregateId, 0, new QualifiedName("test", "event", "0.0.1"),
                 new StubAggregateCreatedEvent(aggregateId)
@@ -70,7 +74,7 @@ class EventPublicationOrderTest {
         doAnswer(invocation -> Void.class).when(eventStore).publish(isA(EventMessage.class));
 
         CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
-                asCommandMessage(new UpdateStubAggregateWithExtraEventCommand(aggregateId)), ProcessingContext.NONE
+                testCommand, ProcessingContext.NONE
         );
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 

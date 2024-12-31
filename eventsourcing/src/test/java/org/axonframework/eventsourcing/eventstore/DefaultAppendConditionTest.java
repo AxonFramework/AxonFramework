@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class DefaultAppendConditionTest {
 
     private static final long TEST_CONSISTENCY_MARKER = 10L;
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.hasIndex(new Index("key", "value"));
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.hasTag(new Tag("key", "value"));
 
     private AppendCondition testSubject;
 
@@ -54,7 +54,7 @@ class DefaultAppendConditionTest {
 
     @Test
     void withSourcingConditionSelectsSmallestConsistencyMarkerAndCombinesCriteria() {
-        EventCriteria testCriteria = EventCriteria.hasIndex(new Index("newKey", "newValue"));
+        EventCriteria testCriteria = EventCriteria.hasTag(new Tag("newKey", "newValue"));
         long testEnd = TEST_CONSISTENCY_MARKER + 5;
         SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(testCriteria, 0L, testEnd);
 

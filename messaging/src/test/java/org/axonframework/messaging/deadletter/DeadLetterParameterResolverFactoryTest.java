@@ -87,7 +87,8 @@ class DeadLetterParameterResolverFactoryTest {
 
     @Test
     void resolverMatchesForAnyMessageType() {
-        CommandMessage<Object> testCommand = GenericCommandMessage.asCommandMessage("some-command");
+        CommandMessage<Object> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "some-command");
         EventMessage<Object> testEvent = GenericEventMessage.asEventMessage("some-command");
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
                 new QualifiedName("test", "query", "0.0.1"), "some-query", instanceOf(String.class)
