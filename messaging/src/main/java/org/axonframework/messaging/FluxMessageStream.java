@@ -48,7 +48,7 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
     });
     private final AtomicReference<Throwable> error = new AtomicReference<>();
     private final AtomicBoolean completed = new AtomicBoolean(false);
-    private final AtomicBoolean cancelled = new AtomicBoolean(false);
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
      * Constructs a {@link MessageStream stream} using the given {@code source} to provide the {@link Entry entries}.
@@ -85,7 +85,7 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
         subscribeToSource();
         Entry<M> poll = readAhead.poll();
         if (poll != null && readAhead.isEmpty()) {
-            if (!cancelled.get()) {
+            if (!closed.get()) {
                 subscription.get().request(1);
             }
         }
@@ -117,12 +117,13 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public boolean hasNextAvailable() {
+        subscribeToSource();
         return !readAhead.isEmpty();
     }
 
     @Override
     public void close() {
-        cancelled.set(true);
+        closed.set(true);
         Subscription s = subscription.get();
         if (s != null) {
             s.cancel();
