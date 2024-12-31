@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
  */
 public interface RoutingStrategy {
 
-    ResourceKey<String> ROUTING_KEY = ResourceKey.getFor("RoutingKey");
+    ResourceKey<String> ROUTING_KEY = ResourceKey.withLabel("RoutingKey");
 
     /**
      * Generates a routing key for the given {@code command}. Commands that should be handled by the same segment,

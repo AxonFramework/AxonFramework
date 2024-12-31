@@ -49,7 +49,7 @@ import java.util.function.UnaryOperator;
 public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.LifecycleManagement<ID, M> {
 
     private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, M>>>> managedEntitiesKey =
-            ResourceKey.getFor("managedEntities");
+            ResourceKey.withLabel("managedEntities");
 
     private final AsyncEventStore eventStore;
     private final CriteriaResolver<ID> criteriaResolver;

@@ -62,7 +62,7 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
                             @Nonnull String context) {
         this.eventStorageEngine = eventStorageEngine;
         this.context = context;
-        this.eventStoreTransactionKey = ResourceKey.createNew();
+        this.eventStoreTransactionKey = ResourceKey.withLabel("eventStoreTransaction");
     }
 
     @Override

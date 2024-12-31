@@ -47,7 +47,7 @@ public class AccessSerializingRepository<ID, T>
     private static final Logger logger = LoggerFactory.getLogger(AccessSerializingRepository.class);
 
     private final ResourceKey<ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>>> workingEntitiesKey =
-            ResourceKey.getFor("workingEntities");
+            ResourceKey.withLabel("workingEntities");
 
     private final AsyncRepository.LifecycleManagement<ID, T> delegate;
     private final ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> inProgress;
