@@ -933,10 +933,6 @@ class Coordinator {
                     segmentId,
                     (i, current) -> current == null || clock.instant().isAfter(current) ? null : current
             );
-            logger.debug("Processor [{}] set release deadline claim to [{}] for Segment [#{}].",
-                         name,
-                         releaseDeadline,
-                         segmentId);
             return releaseDeadline != null;
         }
 
