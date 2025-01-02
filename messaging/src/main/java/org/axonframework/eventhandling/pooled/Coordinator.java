@@ -310,6 +310,10 @@ class Coordinator {
         return tokenStoreInitialized.get();
     }
 
+    void resetRetryExponentialBackoff(int segmentId) {
+        releasesLastBackOffSeconds.compute(segmentId, (s, b) -> 1);
+    }
+
     /**
      * Status holder for this service. Defines whether it is running, has been started (to ensure double
      * {@link #start()} invocations do not restart this coordinator) and maintains a shutdown handler to complete

@@ -84,6 +84,7 @@ class WorkPackage {
     private final int batchSize;
     private final long claimExtensionThreshold;
     private final Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
+    private final Consumer<Integer> segmentEventsBatchProcessedCallback;
     private final Clock clock;
     private final String segmentIdResourceKey;
     private final String lastTokenResourceKey;
@@ -121,6 +122,7 @@ class WorkPackage {
         this.batchSize = builder.batchSize;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.segmentStatusUpdater = builder.segmentStatusUpdater;
+        this.segmentEventsBatchProcessedCallback = builder.segmentEventsBatchProcessedCallback;
         this.clock = builder.clock;
         this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
         this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
@@ -315,7 +317,10 @@ class WorkPackage {
                 unitOfWork.resources().put(lastTokenResourceKey, lastConsumedToken);
                 unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
                 unitOfWork.afterCommit(
-                        u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken))
+                        u -> {
+                            segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
+                            segmentEventsBatchProcessedCallback.accept(segment.getSegmentId());
+                        }
                 );
                 batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
             } finally {
@@ -519,6 +524,7 @@ class WorkPackage {
         private int batchSize = 1;
         private long claimExtensionThreshold = 5000;
         private Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
+        private Consumer<Integer> segmentEventsBatchProcessedCallback;
         private Clock clock = GenericEventMessage.clock;
 
         /**
@@ -645,6 +651,18 @@ class WorkPackage {
          */
         Builder segmentStatusUpdater(Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater) {
             this.segmentStatusUpdater = segmentStatusUpdater;
+            return this;
+        }
+
+        /**
+         * Lambda to be invoked whenever the event batch of this package's {@code segment} processed.
+         *
+         * @param segmentEventsBatchProcessedCallback lambda to be invoked whenever the event batch of this package's {@code segment}
+         *                             processed
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder onSegmentEventsBatchProcessed(Consumer<Integer> segmentEventsBatchProcessedCallback) {
+            this.segmentEventsBatchProcessedCallback = segmentEventsBatchProcessedCallback;
             return this;
         }
 
