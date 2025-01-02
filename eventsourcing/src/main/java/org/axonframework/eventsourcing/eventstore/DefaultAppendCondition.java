@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 5.0.0
  */
 record DefaultAppendCondition(
-        long consistencyMarker,
+        ConsistencyMarker consistencyMarker,
         @Nonnull EventCriteria criteria
 ) implements AppendCondition {
 
@@ -39,15 +39,7 @@ record DefaultAppendCondition(
     }
 
     @Override
-    public AppendCondition with(@Nonnull SourcingCondition condition) {
-        return new DefaultAppendCondition(
-                Math.min(condition.end(), consistencyMarker),
-                criteria.combine(condition.criteria())
-        );
-    }
-
-    @Override
-    public AppendCondition withMarker(long consistencyMarker) {
-        return new DefaultAppendCondition(Math.min(consistencyMarker, this.consistencyMarker), criteria);
+    public AppendCondition withMarker(ConsistencyMarker consistencyMarker) {
+        return new DefaultAppendCondition(this.consistencyMarker.lowerBound(consistencyMarker), criteria);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.command.ConflictingModificationException;
 import org.axonframework.utils.AssertUtils;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
@@ -183,14 +184,14 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
                    .join();
 
 
-        CompletableFuture<Long> actual = testSubject.appendEvents(AppendCondition.withCriteria(TEST_CRITERIA),
+        CompletableFuture<ConsistencyMarker> actual = testSubject.appendEvents(AppendCondition.withCriteria(TEST_CRITERIA),
                                                                   taggedEventMessage("event-2",
                                                                                      TEST_CRITERIA.tags()))
                                                     .thenCompose(AppendTransaction::commit);
 
         ExecutionException actualException = assertThrows(ExecutionException.class,
                                                           () -> actual.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(AppendConditionAssertionException.class, actualException.getCause());
+        assertInstanceOf(ConflictingModificationException.class, actualException.getCause());
     }
 
     @Test
@@ -202,10 +203,10 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         var secondTx = testSubject.appendEvents(appendCondition,
                                                 taggedEventMessage("event-1", TEST_CRITERIA.tags()));
 
-        CompletableFuture<Long> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
+        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
         assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
 
-        CompletableFuture<Long> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
+        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
         var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
         assertInstanceOf(AppendConditionAssertionException.class, actual.getCause());
     }
@@ -213,8 +214,8 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
     @Test
     void concurrentTransactionsForNonOverlappingIndicesBothCommit()
             throws ExecutionException, InterruptedException, TimeoutException {
-        AppendCondition appendCondition1 = new DefaultAppendCondition(-1, TEST_CRITERIA);
-        AppendCondition appendCondition2 = new DefaultAppendCondition(-1, OTHER_CRITERIA);
+        AppendCondition appendCondition1 = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
+        AppendCondition appendCondition2 = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, OTHER_CRITERIA);
 
         AppendTransaction firstTx = testSubject.appendEvents(appendCondition1,
                                                              taggedEventMessage("event-0", TEST_CRITERIA.tags()))
@@ -224,15 +225,15 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
                                                                                  TEST_CRITERIA.tags()))
                                                 .get(1, TimeUnit.SECONDS);
 
-        CompletableFuture<Long> firstCommit = firstTx.commit();
-        CompletableFuture<Long> secondCommit = secondTx.commit();
+        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.commit();
+        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.commit();
 
         assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
         assertDoesNotThrow(() -> secondCommit.get(1, TimeUnit.SECONDS));
 
-        Long actualIndex = firstCommit.join();
+        ConsistencyMarker actualIndex = firstCommit.join();
         assertNotNull(actualIndex);
-        assertEquals(actualIndex + 1, secondCommit.join());
+        assertEquals(GlobalIndexConsistencyMarker.position(actualIndex) + 1, GlobalIndexConsistencyMarker.position(secondCommit.join()));
     }
 
     @Test

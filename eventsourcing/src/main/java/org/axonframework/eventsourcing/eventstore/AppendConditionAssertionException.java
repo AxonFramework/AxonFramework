@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,31 +30,15 @@ public class AppendConditionAssertionException extends RuntimeException {
     }
 
     /**
-     * Constructs an {@link AppendConditionAssertionException} noting that the number of indices in the
-     * {@link AppendCondition} is too high for the {@link AsyncEventStorageEngine}.
-     *
-     * @param actual   The actual number of indices that was present in the validated {@link AppendCondition}.
-     * @param expected The expected number of indices the {@link AsyncEventStorageEngine} validating the
-     *                 {@link AppendCondition} can deal with.
-     * @return An {@link AppendConditionAssertionException} noting that the number of indices in the
-     * {@link AppendCondition} is too high for the {@link AsyncEventStorageEngine}.
-     */
-    public static AppendConditionAssertionException tooManyIndices(int actual, int expected) {
-        return new AppendConditionAssertionException(
-                "Expected #" + expected + " indices but got #" + actual + " indices."
-        );
-    }
-
-    /**
-     * Constructs an {@link AppendConditionAssertionException} noting that the {@link AsyncEventStorageEngine} contains
+     * Constructs an {@code AppendConditionAssertionException} noting that the {@link AsyncEventStorageEngine} contains
      * events matching the {@link AppendCondition#criteria() criteria} passed the given {@code consistencyMarker}.
      *
      * @param consistencyMarker The pointer in the {@link AsyncEventStorageEngine} after which no events should've been
      *                          appended that match the {@link EventCriteria} of an {@link AppendCondition}.
-     * @return An {@link AppendConditionAssertionException} noting that the {@link AsyncEventStorageEngine} contains
+     * @return An {@code AppendConditionAssertionException} noting that the {@link AsyncEventStorageEngine} contains
      * events matching the {@link AppendCondition#criteria() criteria} passed the given {@code consistencyMarker}.
      */
-    public static AppendConditionAssertionException consistencyMarkerSurpassed(long consistencyMarker) {
+    public static AppendConditionAssertionException consistencyMarkerSurpassed(ConsistencyMarker consistencyMarker) {
         return new AppendConditionAssertionException(
                 "Found events matching past consistency marker [" + consistencyMarker + "] while this is not allowed."
         );

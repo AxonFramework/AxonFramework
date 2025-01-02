@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,16 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
+import org.axonframework.modelling.command.ConflictingModificationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +43,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -51,7 +55,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException.consistencyMarkerSurpassed;
-import static org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException.tooManyIndices;
 
 /**
  * Thread-safe {@link AsyncEventStorageEngine} implementation storing events in memory.
@@ -96,11 +99,12 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
         int tagCount = condition.criteria().tags().size();
         if (tagCount > 1) {
-            return CompletableFuture.failedFuture(tooManyIndices(tagCount, 1));
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Conditions with more than one tag are not yet supported"));
         }
         if (containsConflicts(condition)) {
             // early failure, since we know conflicts already exist at insert-time
-            return CompletableFuture.failedFuture(consistencyMarkerSurpassed(condition.consistencyMarker()));
+            return CompletableFuture.failedFuture(new ConflictingModificationException(
+                    "Conflicting events were detected beyond the given consistency marker"));
         }
 
         return CompletableFuture.completedFuture(new AppendTransaction() {
@@ -108,16 +112,16 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
             private final AtomicBoolean finished = new AtomicBoolean(false);
 
             @Override
-            public CompletableFuture<Long> commit() {
+            public CompletableFuture<ConsistencyMarker> commit() {
                 if (finished.getAndSet(true)) {
-                    return CompletableFuture.failedFuture(new RuntimeException("Already committed or rolled back"));
+                    return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
                 appendLock.lock();
                 try {
                     if (containsConflicts(condition)) {
                         return CompletableFuture.failedFuture(consistencyMarkerSurpassed(condition.consistencyMarker()));
                     }
-                    Optional<Long> newHead =
+                    Optional<ConsistencyMarker> newHead =
                             events.stream()
                                   .map(event -> {
                                       long next = nextIndex();
@@ -129,12 +133,12 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                                                        next,
                                                        event.event().getTimestamp());
                                       }
-                                      return next;
+                                      return (ConsistencyMarker) new GlobalIndexConsistencyMarker(next);
                                   })
-                                  .reduce(Long::max);
+                                  .reduce(ConsistencyMarker::upperBound);
 
                     openStreams.forEach(m -> m.callback.get().run());
-                    return CompletableFuture.completedFuture(newHead.orElse(0L));
+                    return CompletableFuture.completedFuture(newHead.orElse(ConsistencyMarker.ORIGIN));
                 } finally {
                     appendLock.unlock();
                 }
@@ -152,10 +156,11 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     }
 
     private boolean containsConflicts(AppendCondition condition) {
-        if (condition.consistencyMarker() == Long.MAX_VALUE) {
+        if (Objects.equals(condition.consistencyMarker(), ConsistencyMarker.INFINITY)) {
             return false;
         }
-        return this.eventStorage.tailMap(condition.consistencyMarker() + 1)
+
+        return this.eventStorage.tailMap(GlobalIndexConsistencyMarker.position(condition.consistencyMarker()) + 1)
                                 .values()
                                 .stream()
                                 .map(event -> (TaggedEventMessage<?>) event)

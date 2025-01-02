@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.eventsourcing.eventstore;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * An {@link AppendCondition} implementation that has {@link EventCriteria#anyEvent() no criteria}.
@@ -39,8 +37,8 @@ final class NoAppendCondition implements AppendCondition {
     }
 
     @Override
-    public long consistencyMarker() {
-        return Long.MAX_VALUE;
+    public ConsistencyMarker consistencyMarker() {
+        return ConsistencyMarker.INFINITY;
     }
 
     @Override
@@ -49,12 +47,7 @@ final class NoAppendCondition implements AppendCondition {
     }
 
     @Override
-    public AppendCondition with(@Nonnull SourcingCondition condition) {
-        return AppendCondition.from(condition);
-    }
-
-    @Override
-    public AppendCondition withMarker(long consistencyMarker) {
+    public AppendCondition withMarker(ConsistencyMarker consistencyMarker) {
         throw new UnsupportedOperationException("Cannot add a consistency marker without any criteria");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,7 +152,7 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
          *
          * @return A {@code CompletableFuture} that completes with the new consistency marker for the transaction.
          */
-        CompletableFuture<Long> commit();
+        CompletableFuture<ConsistencyMarker> commit();
 
         /**
          * Rolls back any events that have been appended, permanently making them unavailable for consumers.
