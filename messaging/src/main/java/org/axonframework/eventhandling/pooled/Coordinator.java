@@ -1129,22 +1129,30 @@ class Coordinator {
                     segmentId,
                     (i, current) -> current == null ? 1 : Math.min(current * 2, 60)
             );
-            releasesDeadlines.compute(segmentId, (i, current) -> {
-                Instant now = clock.instant();
-                Instant releaseDeadline = (current == null)
-                        ? now.plusSeconds(errorWaitTime)
-                        : current.plusSeconds(errorWaitTime);
-                if (current != null && current.isAfter(releaseDeadline)) {
-                    releaseDeadline = current;
-                }
-                logger.debug(
-                        "Processor [{}] set release deadline claim to [{}] for Segment [#{}] using backoff of [{}] seconds.",
-                        name,
-                        releaseDeadline,
-                        segmentId,
-                        errorWaitTime);
-                return releaseDeadline;
-            });
+            releasesDeadlines.compute(
+                    segmentId,
+                    (i, current) -> {
+                        Instant now = clock.instant();
+                        Instant nextBackOffRetry = now.plusSeconds(errorWaitTime);
+                        if (current == null) {
+                            logger.debug(
+                                    "Processor [{}] set release deadline claim to [{}] for Segment [#{}] using backoff of [{}] seconds.",
+                                    name,
+                                    nextBackOffRetry,
+                                    segmentId,
+                                    errorWaitTime);
+                            return nextBackOffRetry;
+                        }
+                        Instant releaseDeadline = current.isAfter(nextBackOffRetry) ? current : nextBackOffRetry;
+                        logger.debug(
+                                "Processor [{}] set release deadline claim to [{}] for Segment [#{}] using backoff of [{}] seconds.",
+                                name,
+                                releaseDeadline,
+                                segmentId,
+                                errorWaitTime);
+                        return releaseDeadline;
+                    }
+            );
         }
     }
 }
