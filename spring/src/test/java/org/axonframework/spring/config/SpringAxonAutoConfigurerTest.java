@@ -94,7 +94,6 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.axonframework.spring.authorization.SecuredMessageHandlerDefinition;
 import org.axonframework.spring.eventhandling.scheduling.quartz.QuartzEventSchedulerFactoryBean;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.junit.jupiter.api.AfterEach;
@@ -362,7 +361,6 @@ public class SpringAxonAutoConfigurerTest {
                         MethodQueryMessageHandlerDefinition.class,
                         ReplayAwareMessageHandlerWrapper.class,
                         DeadlineMethodMessageHandlerDefinition.class,
-                        SecuredMessageHandlerDefinition.class,
                         MethodCreationPolicyDefinition.class,
                         MethodCreationPolicyDefinition.class,
                         MyHandlerEnhancerDefinition.class,
