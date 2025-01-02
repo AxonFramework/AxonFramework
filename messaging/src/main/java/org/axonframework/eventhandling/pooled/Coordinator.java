@@ -1114,30 +1114,17 @@ class Coordinator {
         }
 
         private void calculateReleaseDeadlineUsingBackOff(int segmentId) {
-            int errorWaitTime = releasesLastBackOffSeconds.compute(
-                    segmentId,
-                    (i, current) -> current == null ? 1 : Math.min(current * 2, 60)
-            );
-            releasesDeadlines.compute(
-                    segmentId,
-                    (i, current) -> {
-                        if (current == null) {
-                            Instant releaseDeadline = clock.instant().plusSeconds(errorWaitTime);
-                            logger.debug("Processor [{}] set release deadline claim to [{}] for Segment [#{}].",
-                                         name,
-                                         releaseDeadline,
-                                         segmentId);
-                            return releaseDeadline;
-                        }
-                        Instant nextBackOffRetry = current.plusSeconds(errorWaitTime);
-                        Instant releaseDeadline = current.isAfter(nextBackOffRetry) ? current : nextBackOffRetry;
-                        logger.debug("Processor [{}] set release deadline claim to [{}] for Segment [#{}].",
-                                     name,
-                                     releaseDeadline,
-                                     segmentId);
-                        return releaseDeadline;
-                    }
-            );
+            int errorWaitTime = releasesLastBackOffSeconds.compute(segmentId, (i, current) -> current == null ? 1 : Math.min(current * 2, 60));
+            releasesDeadlines.compute(segmentId, (i, current) -> {
+                Instant now = clock.instant();
+                Instant releaseDeadline = (current == null) ? now.plusSeconds(errorWaitTime) : current.plusSeconds(errorWaitTime);
+                if (current != null && current.isAfter(releaseDeadline)) {
+                    releaseDeadline = current;
+                }
+                logger.debug("Processor [{}] set release deadline claim to [{}] for Segment [#{}].", name, releaseDeadline, segmentId);
+                return releaseDeadline;
+            });
         }
+
     }
 }
