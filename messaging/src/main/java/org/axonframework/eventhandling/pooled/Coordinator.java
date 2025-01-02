@@ -312,6 +312,9 @@ class Coordinator {
 
     void resetRetryExponentialBackoff(int segmentId) {
         releasesLastBackOffSeconds.compute(segmentId, (s, b) -> 1);
+        logger.debug("Processor [{}] set release deadline backoff reset for Segment [#{}].",
+                     name,
+                     segmentId);
     }
 
     /**
@@ -899,7 +902,10 @@ class Coordinator {
             for (Segment segment : unClaimedSegments) {
                 int segmentId = segment.getSegmentId();
                 if (isSegmentBlockedFromClaim(segmentId)) {
-                    logger.debug("Segment {} is still marked to not be claimed by Processor [{}].", segmentId, name);
+                    logger.debug("Segment {} is still marked to not be claimed by Processor [{}] till [{}].",
+                                 segmentId,
+                                 name,
+                                 releasesDeadlines.get(segmentId));
                     processingStatusUpdater.accept(segmentId, u -> null);
                     continue;
                 }
@@ -923,10 +929,15 @@ class Coordinator {
         }
 
         private boolean isSegmentBlockedFromClaim(int segmentId) {
-            return releasesDeadlines.compute(
+            Instant releaseDeadline = releasesDeadlines.compute(
                     segmentId,
                     (i, current) -> current == null || clock.instant().isAfter(current) ? null : current
-            ) != null;
+            );
+            logger.debug("Processor [{}] set release deadline claim to [{}] for Segment [#{}].",
+                         name,
+                         releaseDeadline,
+                         segmentId);
+            return releaseDeadline != null;
         }
 
         private void ensureOpenStream(TrackingToken trackingToken) {
@@ -1126,10 +1137,12 @@ class Coordinator {
                 if (current != null && current.isAfter(releaseDeadline)) {
                     releaseDeadline = current;
                 }
-                logger.debug("Processor [{}] set release deadline claim to [{}] for Segment [#{}].",
-                             name,
-                             releaseDeadline,
-                             segmentId);
+                logger.debug(
+                        "Processor [{}] set release deadline claim to [{}] for Segment [#{}] using backoff of [{}] seconds.",
+                        name,
+                        releaseDeadline,
+                        segmentId,
+                        errorWaitTime);
                 return releaseDeadline;
             });
         }
