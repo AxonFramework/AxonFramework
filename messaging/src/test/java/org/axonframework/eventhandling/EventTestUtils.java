@@ -19,7 +19,6 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.QualifiedNameUtils;
 
 public abstract class EventTestUtils {
@@ -37,10 +36,7 @@ public abstract class EventTestUtils {
      * @param <P>   The generic type of the expected payload of the resulting object
      * @return an EventMessage containing given {@code event} as payload, or {@code event} if it already implements
      * EventMessage.
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
      */
-    @Deprecated
     @SuppressWarnings("unchecked")
     public static <P> EventMessage<P> asEventMessage(@Nonnull Object event) {
         if (event instanceof EventMessage) {

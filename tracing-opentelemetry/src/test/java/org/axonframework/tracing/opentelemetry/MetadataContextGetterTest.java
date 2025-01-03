@@ -17,6 +17,9 @@
 package org.axonframework.tracing.opentelemetry;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -28,8 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MetadataContextGetterTest {
 
-    private final EventMessage<Object> message = EventTestUtils
-            .asEventMessage("MyEvent")
+    private final EventMessage<String> message = asEventMessage("MyEvent")
             .andMetaData(Collections.singletonMap("myKeyOne", "myValueTwo"))
             .andMetaData(Collections.singletonMap("MyKeyTwo", 2));
 
@@ -50,5 +52,12 @@ class MetadataContextGetterTest {
     @Test
     void shouldGetNullFromNullMessage() {
         assertNull(MetadataContextGetter.INSTANCE.get(null, "myKeyOne"));
+    }
+
+    private static <P> EventMessage<P> asEventMessage(P event) {
+        return new GenericEventMessage<>(
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                () -> GenericEventMessage.clock.instant()
+        );
     }
 }

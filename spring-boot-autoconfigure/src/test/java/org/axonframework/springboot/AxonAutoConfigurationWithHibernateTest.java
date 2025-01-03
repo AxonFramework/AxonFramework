@@ -24,12 +24,16 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.Upcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -99,6 +103,13 @@ class AxonAutoConfigurationWithHibernateTest {
         assertEquals(8, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
     }
 
+    private static <P> EventMessage<P> asEventMessage(P event) {
+        return new GenericEventMessage<>(
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                () -> GenericEventMessage.clock.instant()
+        );
+    }
+
     @Transactional
     @Test
     public void eventStorageEngineUsesSerializerBean() {
@@ -107,7 +118,7 @@ class AxonAutoConfigurationWithHibernateTest {
 
         Assertions.assertEquals(serializer, engine.getSnapshotSerializer());
 
-        engine.appendEvents(EventTestUtils.asEventMessage("hello"));
+        engine.appendEvents(asEventMessage("hello"));
         List<? extends TrackedEventMessage<?>> events = engine.readEvents(null, false).collect(Collectors.toList());
         assertEquals(1, events.size());
 

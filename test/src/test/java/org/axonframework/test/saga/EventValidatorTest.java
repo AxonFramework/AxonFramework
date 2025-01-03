@@ -17,6 +17,9 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.MyOtherEvent;
 import org.axonframework.test.matchers.AllFieldsFilter;
@@ -39,11 +42,11 @@ class EventValidatorTest {
         testSubject.assertPublishedEventsMatching(Matchers.noEvents());
     }
 
-    @Test
-    void assertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() {
-        testSubject.handleSync(EventTestUtils.asEventMessage(new MyOtherEvent()));
-
-        assertThrows(AxonAssertionError.class, () -> testSubject.assertPublishedEventsMatching(Matchers.noEvents()));
+    private static <P> EventMessage<P> asEventMessage(P event) {
+        return new GenericEventMessage<>(
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                () -> GenericEventMessage.clock.instant()
+        );
     }
 
     @Test
@@ -52,15 +55,22 @@ class EventValidatorTest {
     }
 
     @Test
+    void assertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() {
+        testSubject.handleSync(asEventMessage(new MyOtherEvent()));
+
+        assertThrows(AxonAssertionError.class, () -> testSubject.assertPublishedEventsMatching(Matchers.noEvents()));
+    }
+
+    @Test
     void assertPublishedEventsThrowsAssertionErrorIfEventWasPublished() {
-        testSubject.handleSync(EventTestUtils.asEventMessage(new MyOtherEvent()));
+        testSubject.handleSync(asEventMessage(new MyOtherEvent()));
 
         assertThrows(AxonAssertionError.class, testSubject::assertPublishedEvents);
     }
 
     @Test
     void assertPublishedEventsForEventMessages() {
-        EventMessage<MyOtherEvent> testEventMessage = EventTestUtils.asEventMessage(new MyOtherEvent());
+        EventMessage<MyOtherEvent> testEventMessage = asEventMessage(new MyOtherEvent());
         testSubject.handleSync(testEventMessage);
 
         testSubject.assertPublishedEvents(testEventMessage);

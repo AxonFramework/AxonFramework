@@ -19,6 +19,8 @@ package org.axonframework.test.aggregate;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.QualifiedNameUtils;
@@ -96,6 +98,20 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
         this.deleted = true;
     }
 
+    @SuppressWarnings("unchecked")
+    private static <P> EventMessage<P> asEventMessage(Object event) {
+        if (event instanceof EventMessage) {
+            return (EventMessage<P>) event;
+        } else if (event instanceof Message) {
+            Message<P> message = (Message<P>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage<>(
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                () -> GenericEventMessage.clock.instant()
+        );
+    }
+
     @Override
     protected <T> ApplyMore doApply(T payload, MetaData metaData) {
         QualifiedName eventName = QualifiedNameUtils.fromClassName(payload.getClass());
@@ -104,7 +120,7 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
         return new ApplyMore() {
             @Override
             public ApplyMore andThenApply(Supplier<?> payloadOrMessageSupplier) {
-                appliedMessages.add(EventTestUtils.asEventMessage(payloadOrMessageSupplier.get()));
+                appliedMessages.add(asEventMessage(payloadOrMessageSupplier.get()));
                 return this;
             }
 

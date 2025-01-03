@@ -16,8 +16,12 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -73,16 +77,11 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
 
-    @Test
-    void testRegisterParameterResolverFactoryStillCallsMetadataValue() {
-        testSubject.registerParameterResolverFactory(new TestParameterResolverFactory(new AtomicBoolean(false)))
-                   .givenAggregate(TEST_AGGREGATE_IDENTIFIER)
-                   .published(EventTestUtils.asEventMessage(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
-                                            .withMetaData(
-                                                         Collections.singletonMap("extraIdentifier",
-                                                                                  "myExtraIdentifier")))
-                   .whenPublishingA(new ParameterResolvedEvent(TEST_AGGREGATE_IDENTIFIER))
-                   .expectAssociationWith("extraIdentifier", "myExtraIdentifier");
+    private static <P> EventMessage<P> asEventMessage(P event) {
+        return new GenericEventMessage<>(
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                () -> GenericEventMessage.clock.instant()
+        );
     }
 
     @Test
@@ -107,6 +106,18 @@ public class FixtureTest_RegisteringMethodEnhancements {
                    .expectScheduledEventOfType(Duration.ofMinutes(10), TimerTriggeredEvent.class);
 
         assertTrue(handlerEnhancerReached.get());
+    }
+
+    @Test
+    void testRegisterParameterResolverFactoryStillCallsMetadataValue() {
+        testSubject.registerParameterResolverFactory(new TestParameterResolverFactory(new AtomicBoolean(false)))
+                   .givenAggregate(TEST_AGGREGATE_IDENTIFIER)
+                   .published(asEventMessage(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
+                                            .withMetaData(
+                                                         Collections.singletonMap("extraIdentifier",
+                                                                                  "myExtraIdentifier")))
+                   .whenPublishingA(new ParameterResolvedEvent(TEST_AGGREGATE_IDENTIFIER))
+                   .expectAssociationWith("extraIdentifier", "myExtraIdentifier");
     }
 
     private static class TestParameterResolverFactory
