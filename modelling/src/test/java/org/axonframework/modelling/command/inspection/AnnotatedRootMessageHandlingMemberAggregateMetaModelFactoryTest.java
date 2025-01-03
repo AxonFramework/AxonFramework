@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -125,8 +125,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         int expectedNumberOfAggregateEventHandlerInvocations = 2;
         int expectedNumberOfMemberEventHandlerInvocations = 1;
 
-        EventMessage<AggregateCreatedEvent> testAggregateEvent = GenericEventMessage.asEventMessage(AGGREGATE_EVENT);
-        EventMessage<MemberEvent> testMemberEvent = GenericEventMessage.asEventMessage(new MemberEvent());
+        EventMessage<AggregateCreatedEvent> testAggregateEvent = EventTestUtils.asEventMessage(AGGREGATE_EVENT);
+        EventMessage<MemberEvent> testMemberEvent = EventTestUtils.asEventMessage(new MemberEvent());
         LeafAggregate testModel = new LeafAggregate();
 
         AggregateModel<LeafAggregate> testSubject =
@@ -143,8 +143,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         int expectedNumberOfAggregateEventHandlerInvocations = 2;
         int expectedNumberOfMemberEventHandlerInvocations = 1;
 
-        EventMessage<AggregateCreatedEvent> testAggregateEvent = GenericEventMessage.asEventMessage(AGGREGATE_EVENT);
-        EventMessage<MemberEvent> testMemberEvent = GenericEventMessage.asEventMessage(new MemberEvent());
+        EventMessage<AggregateCreatedEvent> testAggregateEvent = EventTestUtils.asEventMessage(AGGREGATE_EVENT);
+        EventMessage<MemberEvent> testMemberEvent = EventTestUtils.asEventMessage(new MemberEvent());
         LeafAggregate testModel = new LeafAggregate();
 
         //noinspection unchecked

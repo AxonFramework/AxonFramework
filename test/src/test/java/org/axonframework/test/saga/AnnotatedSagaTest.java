@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ class AnnotatedSagaTest {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         FixtureExecutionResult validator = fixture
                 .givenAggregate(aggregate1).published(
-                        GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(aggregate1)),
+                        EventTestUtils.asEventMessage(new TriggerSagaStartEvent(aggregate1)),
                         new TriggerExistingSagaEvent(aggregate1))
                 .andThenAggregate(aggregate2).published(new TriggerSagaStartEvent(aggregate2))
                 .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(aggregate1));
@@ -349,7 +349,7 @@ class AnnotatedSagaTest {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         FixtureExecutionResult validator = fixture
                 .givenAggregate(aggregate1).published(
-                        GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(aggregate1)),
+                        EventTestUtils.asEventMessage(new TriggerSagaStartEvent(aggregate1)),
                         new TriggerExistingSagaEvent(aggregate1),
                         new TriggerAssociationResolverSagaEvent(aggregate1))
                 .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(aggregate1));

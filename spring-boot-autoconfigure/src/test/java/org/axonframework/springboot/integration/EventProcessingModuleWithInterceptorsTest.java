@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
@@ -58,7 +57,7 @@ class EventProcessingModuleWithInterceptorsTest {
             EventBus eventBus = context.getBean(EventBus.class);
             TestContext.MyEventHandler myEventHandler = context.getBean(TestContext.MyEventHandler.class);
 
-            eventBus.publish(GenericEventMessage.asEventMessage("myEvent"));
+            eventBus.publish(EventTestUtils.asEventMessage("myEvent"));
 
             assertEquals("myMetaDataValue", myEventHandler.getMetaDataValue());
         });

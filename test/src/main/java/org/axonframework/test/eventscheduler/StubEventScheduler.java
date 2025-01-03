@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.axonframework.test.eventscheduler;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 
@@ -86,7 +85,7 @@ public class StubEventScheduler implements EventScheduler {
 
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
-        EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
+        EventMessage eventMessage = EventTestUtils.asEventMessage(event);
         StubScheduleToken token = new StubScheduleToken(triggerDateTime, eventMessage, counter.getAndIncrement());
         scheduledEvents.add(token);
         return token;
@@ -94,7 +93,7 @@ public class StubEventScheduler implements EventScheduler {
 
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
-        EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
+        EventMessage eventMessage = EventTestUtils.asEventMessage(event);
         Instant scheduleTime = currentDateTime.plus(triggerDuration);
         StubScheduleToken token = new StubScheduleToken(scheduleTime, eventMessage, counter.getAndIncrement());
         scheduledEvents.add(token);

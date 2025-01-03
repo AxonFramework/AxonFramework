@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import io.opentelemetry.context.ContextKey;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
@@ -92,7 +91,7 @@ class OpenTelemetrySpanFactoryTest {
 
     @Test
     void propagatesContextInjectsMetadata() {
-        EventMessage<Object> originalMessage = GenericEventMessage.asEventMessage("MyEvent");
+        EventMessage<Object> originalMessage = EventTestUtils.asEventMessage("MyEvent");
         EventMessage<Object> modifiedMessage = factory.propagateContext(originalMessage);
 
         assertNotNull(modifiedMessage.getMetaData().get("traceparent"));
@@ -208,8 +207,8 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     private Message<?> generateMessageWithTraceId(String traceId) {
-        return GenericEventMessage.asEventMessage("MyEvent")
-                                  .andMetaData(Collections.singletonMap("traceparent", traceId));
+        return EventTestUtils.asEventMessage("MyEvent")
+                             .andMetaData(Collections.singletonMap("traceparent", traceId));
     }
 
     @Test

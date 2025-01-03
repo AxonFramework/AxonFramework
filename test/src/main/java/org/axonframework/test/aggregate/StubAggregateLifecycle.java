@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
         return new ApplyMore() {
             @Override
             public ApplyMore andThenApply(Supplier<?> payloadOrMessageSupplier) {
-                appliedMessages.add(GenericEventMessage.asEventMessage(payloadOrMessageSupplier.get()));
+                appliedMessages.add(EventTestUtils.asEventMessage(payloadOrMessageSupplier.get()));
                 return this;
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,7 +159,7 @@ class AbstractEventBusTest {
         when(mockMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
         testSubject = spy(StubPublishingEventBus.builder().messageMonitor(mockMonitor).build());
 
-        testSubject.publish(GenericEventMessage.asEventMessage("test1"), GenericEventMessage.asEventMessage("test2"));
+        testSubject.publish(EventTestUtils.asEventMessage("test1"), EventTestUtils.asEventMessage("test2"));
 
         verify(mockMonitor, times(2)).onMessageIngested(any());
         verify(mockMonitorCallback, never()).reportSuccess();
