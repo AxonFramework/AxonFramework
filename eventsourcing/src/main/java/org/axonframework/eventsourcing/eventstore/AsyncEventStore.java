@@ -19,20 +19,45 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Infrastructure component providing the means to start an {@link EventStoreTransaction} to
  * {@link EventStoreTransaction#appendEvent(EventMessage) append events} and
  * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) event source} models from the underlying
  * storage solution.
+ * <p>
+ * As an implementation of the {@link EventSink}, this {@code EventStore} will initiate a
+ * {@link #transaction(ProcessingContext, String)} when {@link #publish(ProcessingContext, String, List)} is triggered
+ * to append events.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 0.1
  */ // TODO Rename to EventStore once fully integrated
-public interface AsyncEventStore extends DescribableComponent {
+public interface AsyncEventStore extends EventSink, DescribableComponent {
+
+    @Override
+    default void publish(@Nonnull ProcessingContext processingContext,
+                         @Nonnull String context,
+                         EventMessage<?>... events) {
+        this.publish(processingContext, context, Arrays.asList(events));
+    }
+
+    @Override
+    default void publish(@Nonnull ProcessingContext processingContext,
+                         @Nonnull String context,
+                         @Nonnull List<EventMessage<?>> events) {
+        EventStoreTransaction transaction = transaction(processingContext, context);
+        for (EventMessage<?> event : events) {
+            transaction.appendEvent(event);
+        }
+    }
 
     /**
      * Retrieves the {@link EventStoreTransaction transaction for appending events} for the given
