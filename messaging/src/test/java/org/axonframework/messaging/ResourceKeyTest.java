@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,13 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ResourceKeyTest {
 
+    private static final String TEST_LABEL = "testLabel";
+
     @Test
     void resourceKeysShowDebugStringInOutput() {
-        ResourceKey<Object> resourceKey = ResourceKey.withLabel("myRandomDebugStringValue");
+        ResourceKey<Object> resourceKey = ResourceKey.withLabel(TEST_LABEL);
 
-        assertTrue(resourceKey.toString().contains("[myRandomDebugStringValue]"));
+        assertTrue(resourceKey.toString().contains(TEST_LABEL));
     }
 
     @Test
@@ -47,5 +49,10 @@ class ResourceKeyTest {
         ResourceKey<Object> resourceKey = ResourceKey.withLabel(null);
 
         assertFalse(resourceKey.toString().contains("["));
+    }
+
+    @Test
+    void resourceKeysWithIdenticalLabelsAreNotEqual() {
+        assertNotEquals(ResourceKey.withLabel(TEST_LABEL), ResourceKey.withLabel(TEST_LABEL));
     }
 }
