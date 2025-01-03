@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.tracing.attributes;
 
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
@@ -31,7 +31,7 @@ class MessageIdSpanAttributesProviderTest {
 
     @Test
     void extractsMessageIdentifier() {
-        Message<?> event = GenericEventMessage.asEventMessage("Some event");
+        Message<?> event = EventTestUtils.asEventMessage("Some event");
         Map<String, String> map = provider.provideForMessage(event);
         assertEquals(1, map.size());
         assertEquals(event.getIdentifier(), map.get("axon_message_id"));

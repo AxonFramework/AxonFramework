@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
@@ -26,9 +26,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -917,7 +915,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * @return A unique {@link EventMessage} to serves as the {@link DeadLetter#message()} contents.
      */
     protected static EventMessage<String> generateEvent() {
-        return GenericEventMessage.asEventMessage("Then this happened..." + UUID.randomUUID());
+        return EventTestUtils.asEventMessage("Then this happened..." + UUID.randomUUID());
     }
 
     /**

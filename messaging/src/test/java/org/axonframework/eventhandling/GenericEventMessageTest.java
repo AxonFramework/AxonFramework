@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,9 +119,9 @@ class GenericEventMessageTest {
 
     @Test
     void testToString() {
-        String actual = GenericEventMessage.asEventMessage("MyPayload").andMetaData(MetaData.with("key", "value")
-                                                                                            .and("key2", 13))
-                                           .toString();
+        String actual = EventTestUtils.asEventMessage("MyPayload").andMetaData(MetaData.with("key", "value")
+                                                                                       .and("key2", 13))
+                                      .toString();
         assertTrue(actual.startsWith("GenericEventMessage{payload={MyPayload}, metadata={"), "Wrong output: " + actual);
         assertTrue(actual.contains("'key'->'value'"), "Wrong output: " + actual);
         assertTrue(actual.contains("'key2'->'13'"), "Wrong output: " + actual);

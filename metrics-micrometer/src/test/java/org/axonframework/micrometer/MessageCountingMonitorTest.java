@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
@@ -31,7 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -222,5 +223,9 @@ class MessageCountingMonitorTest {
                                   .filter(counter -> Objects
                                           .equals(counter.getId().getTag("payloadType"), "myMetadataValue2"))
                                   .allMatch(counter -> counter.count() == 1));
+    }
+
+    private static EventMessage<Object> asEventMessage(Object payload) {
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
     }
 }

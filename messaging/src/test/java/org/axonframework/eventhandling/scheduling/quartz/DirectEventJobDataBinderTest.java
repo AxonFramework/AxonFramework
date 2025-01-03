@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -48,8 +48,8 @@ class DirectEventJobDataBinderTest {
 
     DirectEventJobDataBinderTest() {
         this.testMetaData = MetaData.with("some-key", "some-value");
-        this.testEventMessage = GenericEventMessage.<String>asEventMessage(TEST_EVENT_PAYLOAD)
-                .withMetaData(testMetaData);
+        this.testEventMessage = EventTestUtils.<String>asEventMessage(TEST_EVENT_PAYLOAD)
+                                              .withMetaData(testMetaData);
     }
 
     static Stream<Arguments> serializerImplementationAndAssertionSpecifics() {

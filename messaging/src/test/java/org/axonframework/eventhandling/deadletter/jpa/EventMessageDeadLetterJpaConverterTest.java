@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -59,7 +60,7 @@ class EventMessageDeadLetterJpaConverterTest {
 
     @Test
     void canConvertGenericEventMessageAndBackCorrectly() {
-        testConversion(GenericEventMessage.asEventMessage(event).andMetaData(metaData));
+        testConversion(EventTestUtils.asEventMessage(event).andMetaData(metaData));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
@@ -34,8 +34,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericTaggedEventMessageTest {
 
     private static final MetaData TEST_META_DATA = MetaData.with("key", "value");
-    private static final EventMessage<String> TEST_EVENT = GenericEventMessage.<String>asEventMessage("event")
-                                                                              .withMetaData(TEST_META_DATA);
+    private static final EventMessage<String> TEST_EVENT = EventTestUtils.<String>asEventMessage("event")
+                                                                         .withMetaData(TEST_META_DATA);
     private static final Tag TEST_TAG = new Tag("key", "value");
     private static final Set<Tag> TEST_TAGS = Set.of(TEST_TAG);
 

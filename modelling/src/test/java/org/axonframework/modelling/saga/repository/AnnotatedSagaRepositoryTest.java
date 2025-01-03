@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -164,7 +164,7 @@ class AnnotatedSagaRepositoryTest {
                                                                                   .build();
         Saga<TestSaga> saga =
                 sagaRepository.createInstance(IdentifierFactory.getInstance().generateIdentifier(), TestSaga::new);
-        saga.handleSync(GenericEventMessage.asEventMessage(new Object()));
+        saga.handleSync(EventTestUtils.asEventMessage(new Object()));
 
         assertEquals(1, CountingInterceptors.counter.get());
     }

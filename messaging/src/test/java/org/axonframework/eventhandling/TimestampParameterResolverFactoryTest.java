@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ class TimestampParameterResolverFactoryTest {
         ParameterResolver<Instant> resolver =
                 testSubject.createInstance(instantMethod, instantMethod.getParameters(), 0);
 
-        final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
+        final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
         assertTrue(resolver.matches(message, null));
         assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message, null));
     }
@@ -93,7 +93,7 @@ class TimestampParameterResolverFactoryTest {
         ParameterResolver<Instant> resolver =
                 testSubject.createInstance(temporalMethod, temporalMethod.getParameters(), 0);
 
-        final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
+        final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
         assertTrue(resolver.matches(message, null));
         assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message, null));
     }
@@ -115,7 +115,7 @@ class TimestampParameterResolverFactoryTest {
     void resolvesToDateTimeWhenAnnotatedWithMetaAnnotation() {
         Parameter[] parameters = metaAnnotatedMethod.getParameters();
         ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, parameters, 0);
-        final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
+        final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
         assertTrue(resolver.matches(message, null), "Resolver should be a match for message " + message);
         assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message, null));
     }

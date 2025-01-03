@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.async.SequencingPolicy;
@@ -429,7 +429,7 @@ class DeadLetteringEventHandlerInvokerTest {
     @Test
     void processAnyLettersReturnsTrueWhenFirstInvocationReturnsTrue() {
         DeadLetter<EventMessage<?>> testDeadLetter =
-                new GenericDeadLetter<>("expectedIdentifier", GenericEventMessage.asEventMessage("payload"));
+                new GenericDeadLetter<>("expectedIdentifier", EventTestUtils.asEventMessage("payload"));
 
         when(queue.process(any(), any())).thenReturn(true)
                                          .thenReturn(false);
@@ -483,7 +483,7 @@ class DeadLetteringEventHandlerInvokerTest {
     @Test
     void processLettersMatchingSequenceReturnsTrueWhenFirstInvocationReturnsTrue() {
         DeadLetter<EventMessage<?>> testDeadLetter =
-                new GenericDeadLetter<>("expectedIdentifier", GenericEventMessage.asEventMessage("payload"));
+                new GenericDeadLetter<>("expectedIdentifier", EventTestUtils.asEventMessage("payload"));
 
         AtomicBoolean filterInvoked = new AtomicBoolean();
         Predicate<DeadLetter<? extends EventMessage<?>>> testFilter = letter -> {

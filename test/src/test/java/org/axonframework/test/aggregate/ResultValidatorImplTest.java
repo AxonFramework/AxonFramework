@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,18 @@ package org.axonframework.test.aggregate;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.deadline.ScheduledDeadlineInfo;
 import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
-import org.hamcrest.*;
+import org.hamcrest.Description;
+import org.hamcrest.DiagnosingMatcher;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -39,7 +43,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.*;
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
@@ -378,5 +381,9 @@ class ResultValidatorImplTest {
             assertThat(e.getMessage(), containsString("<EXPECTED DESCRIPTION TEXT>"));
             assertThat(e.getMessage(), containsString("<MISMATCH TEXT>"));
         }
+    }
+
+    private static EventMessage<Object> asEventMessage(Object payload) {
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
     }
 }

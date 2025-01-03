@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -39,6 +41,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -73,7 +76,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.singleton;
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -210,6 +212,10 @@ class AxonAutoConfigurationTest {
                     assertTrue(startupFailure.getMessage().contains("gatewayTwo"),
                                "Expected mention of 'gatewayTwo' in: " + startupFailure.getMessage());
                 });
+    }
+
+    private static EventMessage<Object> asEventMessage(Object payload) {
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
     }
 
     @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class})

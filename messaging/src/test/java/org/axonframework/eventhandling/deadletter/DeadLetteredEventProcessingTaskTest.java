@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
@@ -48,7 +48,7 @@ class DeadLetteredEventProcessingTaskTest {
 
     @SuppressWarnings("rawtypes") // The DeadLetter mocks don't like the generic, at all...
     private static final EventMessage TEST_EVENT =
-            GenericEventMessage.asEventMessage("Then this happened..." + UUID.randomUUID());
+            EventTestUtils.asEventMessage("Then this happened..." + UUID.randomUUID());
     private static final EnqueueDecision<EventMessage<?>> TEST_DECISION = Decisions.ignore();
 
     private EventMessageHandler eventHandlerOne;

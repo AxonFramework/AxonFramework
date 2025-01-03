@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,11 +44,11 @@ class MultiEventHandlerInvokerTest {
 
     @BeforeEach
     void setUp() {
-        testEventMessage = GenericEventMessage.asEventMessage("some-event");
+        testEventMessage = EventTestUtils.asEventMessage("some-event");
         TrackingToken testToken = ReplayToken.createReplayToken(
                 new GlobalSequenceTrackingToken(10), new GlobalSequenceTrackingToken(0)
         );
-        replayMessage = new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("replay-event"));
+        replayMessage = new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("replay-event"));
         testSegment = new Segment(1, 1);
 
         when(mockedEventHandlerInvokerOne.canHandle(any(), eq(testSegment))).thenReturn(true);

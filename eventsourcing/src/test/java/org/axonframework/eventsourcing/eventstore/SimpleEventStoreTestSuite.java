@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.StubProcessingContext;
@@ -512,6 +512,6 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     protected static EventMessage<?> eventMessage(int seq) {
-        return GenericEventMessage.asEventMessage("Event[" + seq + "]");
+        return EventTestUtils.asEventMessage("Event[" + seq + "]");
     }
 }

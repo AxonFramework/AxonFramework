@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
@@ -121,7 +121,7 @@ class WorkPackageTest {
     @Test
     void scheduleEventDoesNotScheduleIfTheLastDeliveredTokenCoversTheEventsToken() {
         TrackedEventMessage<String> testEvent = new GenericTrackedEventMessage<>(
-                new GlobalSequenceTrackingToken(1L), GenericEventMessage.asEventMessage("some-event")
+                new GlobalSequenceTrackingToken(1L), EventTestUtils.asEventMessage("some-event")
         );
 
         WorkPackage testSubjectWithCustomInitialToken =
@@ -137,7 +137,7 @@ class WorkPackageTest {
     void scheduleEventUpdatesLastDeliveredToken() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> testEvent =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("some-event"));
+                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
 
         testSubject.scheduleEvent(testEvent);
 
@@ -148,7 +148,7 @@ class WorkPackageTest {
     void scheduleEventFailsOnEventValidator() throws ExecutionException, InterruptedException {
         TrackingToken testToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> testEvent =
-                new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("some-event"));
+                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("some-event"));
         eventFilterPredicate = event -> {
             if (event.equals(testEvent)) {
                 throw new IllegalStateException("Some exception");
@@ -172,7 +172,7 @@ class WorkPackageTest {
     void scheduleEventFailsOnBatchProcessor() throws ExecutionException, InterruptedException {
         TrackingToken testToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> testEvent =
-                new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("some-event"));
+                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("some-event"));
         batchProcessorPredicate = event -> {
             if (event.stream().anyMatch(e -> ((TrackedEventMessage<?>) e).trackingToken().equals(testToken))) {
                 throw new IllegalStateException("Some exception");
@@ -200,7 +200,7 @@ class WorkPackageTest {
     void scheduleEventRunsSuccessfully() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("some-event"));
+                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
 
         testSubject.scheduleEvent(expectedEvent);
 
@@ -228,7 +228,7 @@ class WorkPackageTest {
         testSubject = testSubjectBuilder.build();
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("some-event"));
+                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
 
         testSubject.scheduleEvent(expectedEvent);
 
@@ -249,7 +249,7 @@ class WorkPackageTest {
         testSubject = testSubjectBuilder.build();
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("some-event"));
+                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
 
         testSubject.scheduleEvent(expectedEvent);
 
@@ -272,7 +272,7 @@ class WorkPackageTest {
 
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("some-event"));
+                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
         testSubjectWithShortThreshold.scheduleEvent(expectedEvent);
 
         // Should have handled one event, so a subsequent run of WorkPackage#processEvents will extend the claim.
@@ -311,7 +311,7 @@ class WorkPackageTest {
 
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("some-event"));
+                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("some-event"));
         testSubjectWithShortThreshold.scheduleEvent(expectedEvent);
 
         List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
@@ -402,10 +402,10 @@ class WorkPackageTest {
     void scheduleEventsThrowsIllegalArgumentExceptionForNoneMatchingTokens() {
         TrackingToken testTokenOne = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> testEventOne =
-                new GenericTrackedEventMessage<>(testTokenOne, GenericEventMessage.asEventMessage("this-event"));
+                new GenericTrackedEventMessage<>(testTokenOne, EventTestUtils.asEventMessage("this-event"));
         TrackingToken testTokenTwo = new GlobalSequenceTrackingToken(2L);
         TrackedEventMessage<String> testEventTwo =
-                new GenericTrackedEventMessage<>(testTokenTwo, GenericEventMessage.asEventMessage("that-event"));
+                new GenericTrackedEventMessage<>(testTokenTwo, EventTestUtils.asEventMessage("that-event"));
         List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
         testEvents.add(testEventOne);
         testEvents.add(testEventTwo);
@@ -420,9 +420,9 @@ class WorkPackageTest {
     void scheduleEventsDoesNotScheduleIfTheLastDeliveredTokensCoversTheEventsToken() {
         TrackingToken testToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> testEventOne =
-                new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("this-event"));
+                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("this-event"));
         TrackedEventMessage<String> testEventTwo =
-                new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("that-event"));
+                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("that-event"));
         List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
         testEvents.add(testEventOne);
         testEvents.add(testEventTwo);
@@ -441,9 +441,9 @@ class WorkPackageTest {
     void scheduleEventsReturnsTrueIfOnlyOneEventIsAcceptedByTheEventValidator() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> filteredEvent =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("this-event"));
+                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("this-event"));
         TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("that-event"));
+                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("that-event"));
         List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
         testEvents.add(filteredEvent);
         testEvents.add(expectedEvent);
@@ -476,9 +476,9 @@ class WorkPackageTest {
     void scheduleEventsHandlesAllEventsInOneTransactionWhenAllEventsCanBeHandled() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> expectedEventOne =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("this-event"));
+                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("this-event"));
         TrackedEventMessage<String> expectedEventTwo =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("that-event"));
+                new GenericTrackedEventMessage<>(expectedToken, EventTestUtils.asEventMessage("that-event"));
         List<TrackedEventMessage<?>> expectedEvents = new ArrayList<>();
         expectedEvents.add(expectedEventOne);
         expectedEvents.add(expectedEventTwo);

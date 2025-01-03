@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngineTest;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
-    private static final EventMessage<Object> TEST_EVENT = GenericEventMessage.asEventMessage("test");
+    private static final EventMessage<Object> TEST_EVENT = EventTestUtils.asEventMessage("test");
 
     private InMemoryEventStorageEngine testSubject;
 

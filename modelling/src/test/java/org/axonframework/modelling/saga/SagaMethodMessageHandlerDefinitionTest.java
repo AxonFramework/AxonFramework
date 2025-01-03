@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory
 import org.axonframework.modelling.saga.metamodel.SagaModel;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.modelling.utils.ConcurrencyUtils.testConcurrent;
 import static org.junit.jupiter.api.Assertions.*;
 

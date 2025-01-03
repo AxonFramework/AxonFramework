@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.tracing.attributes;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -36,7 +36,7 @@ class MessageNameSpanAttributesProviderTest {
 
     @Test
     void extractsNothingForEvent() {
-        EventMessage<Object> event = GenericEventMessage.asEventMessage("Some event");
+        EventMessage<Object> event = EventTestUtils.asEventMessage("Some event");
         Map<String, String> map = provider.provideForMessage(event);
         assertEquals(0, map.size());
     }

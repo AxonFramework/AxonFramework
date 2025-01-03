@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.monitoring.MessageMonitor;
@@ -36,7 +37,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GlobalMetricRegistryTest {
@@ -182,5 +182,9 @@ class GlobalMetricRegistryTest {
         MessageMonitor<? extends Message<?>> actual = subject.registerComponentWithDefaultTags(String.class, "test");
 
         assertSame(NoOpMessageMonitor.instance(), actual);
+    }
+
+    private static EventMessage<Object> asEventMessage(Object payload) {
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
     }
 }
