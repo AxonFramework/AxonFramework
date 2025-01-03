@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -88,8 +92,6 @@ public class DefaultCommandGateway implements CommandGateway {
                           )
         );
     }
-
-    // todo: QualifiedName - leave it here or create some CommandMessageFactory?
 
     /**
      * Returns the given command as a {@link CommandMessage}. If {@code command} already implements
