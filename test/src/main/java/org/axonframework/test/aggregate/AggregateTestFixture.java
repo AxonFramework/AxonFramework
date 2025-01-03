@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -215,7 +216,10 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         AnnotationCommandHandlerAdapter<?> adapter = new AnnotationCommandHandlerAdapter<>(
-                annotatedCommandHandler, getParameterResolverFactory(), getHandlerDefinition()
+                annotatedCommandHandler,
+                getParameterResolverFactory(),
+                getHandlerDefinition(),
+                new ClassBasedMessageNameResolver()
         );
         adapter.subscribe(commandBus);
         return this;
