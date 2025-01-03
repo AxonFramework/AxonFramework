@@ -39,6 +39,7 @@ import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfigurati
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.axonframework.springboot.autoconfig.OpenTelemetryAutoConfiguration;
+import org.axonframework.springboot.autoconfig.SecurityAutoConfiguration;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.axonframework.tracing.SpanFactory;
@@ -520,6 +521,7 @@ class AxonAutoConfigurationWithTracingTest {
             JmxAutoConfiguration.class,
             OpenTelemetryAutoConfiguration.class,
             WebClientAutoConfiguration.class,
+            SecurityAutoConfiguration.class
     })
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     @Configuration
