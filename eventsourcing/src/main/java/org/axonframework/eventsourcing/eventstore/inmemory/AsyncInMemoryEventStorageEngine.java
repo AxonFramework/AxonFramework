@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Context;
-import org.axonframework.common.SimpleContext;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -167,7 +166,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                       .filter(entry -> match(entry.getValue(), criteria)),
                 entry -> entry.getValue().event(),
                 entry -> {
-                    Context context = new SimpleContext();
+                    Context context = Context.empty();
                     context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(entry.getKey()));
                     Set<Tag> tags = entry.getValue().tags();
                     return tags.isEmpty() ? context : Tag.addToContext(context, tags);

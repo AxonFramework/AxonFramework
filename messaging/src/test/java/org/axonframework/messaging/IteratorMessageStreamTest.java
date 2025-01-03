@@ -22,15 +22,15 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Test class validating the {@link IterableMessageStream} through the {@link MessageStreamTest} suite.
+ * Test class validating the {@link IteratorMessageStream} through the {@link MessageStreamTest} suite.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class IterableMessageStreamTest extends MessageStreamTest<Message<String>> {
+class IteratorMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         return MessageStream.fromIterable(messages);
     }
 

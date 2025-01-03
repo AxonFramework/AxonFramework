@@ -31,7 +31,7 @@ import java.util.concurrent.ThreadLocalRandom;
 class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         Assumptions.assumeTrue(messages.size() == 1, "SingleValueMessageStream only supports a single value");
         return MessageStream.just(messages.getFirst());
     }
