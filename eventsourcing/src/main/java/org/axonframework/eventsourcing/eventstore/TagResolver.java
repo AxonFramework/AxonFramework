@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.eventsourcing.eventstore;
+
+import jakarta.annotation.Nonnull;
 
 import java.util.Set;
 import java.util.function.Function;
@@ -34,10 +36,10 @@ public interface TagResolver<E> extends Function<E, Set<Tag>> {
      * @param event The event to resolve a {@link Set} of {@link Tag Tags} for.
      * @return A {@link Set} of {@link Tag Tags} for the given {@code event} of type {@code E}.
      */
-    Set<Tag> resolve(E event);
+    Set<Tag> resolve(@Nonnull E event);
 
     @Override
-    default Set<Tag> apply(E e) {
+    default Set<Tag> apply(@Nonnull E e) {
         return resolve(e);
     }
 }

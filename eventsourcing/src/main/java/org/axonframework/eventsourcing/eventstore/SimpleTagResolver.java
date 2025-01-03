@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,15 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Simple implementation of the {@link TagResolver} that is able to combine several lambdas to construct
@@ -61,7 +65,8 @@ public class SimpleTagResolver<E> implements TagResolver<E> {
      * @param tagResolver An additional {@code Function} from the event of type {@code E} to a {@link Tag}.
      * @return A copy of {@code this SimpleTagResolver}, adding the given {@code tagResolver} to the set.
      */
-    public SimpleTagResolver<E> withResolver(Function<E, Tag> tagResolver) {
+    public SimpleTagResolver<E> withResolver(@Nonnull Function<E, Tag> tagResolver) {
+        assertNonNull(tagResolver, "A TagResolver cannot be null");
         List<Function<E, Tag>> copy = new ArrayList<>(tagResolvers);
         copy.add(tagResolver);
         return new SimpleTagResolver<>(copy);
@@ -76,13 +81,15 @@ public class SimpleTagResolver<E> implements TagResolver<E> {
      * @return A copy of {@code this SimpleTagResolver}, combining the given {@code keyResolver} and
      * {@code valueResolver} into a lambda constructing a {@link Tag}.
      */
-    public SimpleTagResolver<E> withResolver(Function<E, String> keyResolver,
-                                             Function<E, String> valueResolver) {
+    public SimpleTagResolver<E> withResolver(@Nonnull Function<E, String> keyResolver,
+                                             @Nonnull Function<E, String> valueResolver) {
+        assertNonNull(keyResolver, "A key resolver cannot be null");
+        assertNonNull(valueResolver, "A value resolver cannot be null");
         return withResolver(event -> new Tag(keyResolver.apply(event), valueResolver.apply(event)));
     }
 
     @Override
-    public Set<Tag> resolve(E event) {
+    public Set<Tag> resolve(@Nonnull E event) {
         return tagResolvers.stream()
                            .map(tagResolver -> tagResolver.apply(event))
                            .collect(Collectors.toSet());
