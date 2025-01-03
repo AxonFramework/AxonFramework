@@ -59,6 +59,16 @@ public sealed interface AppendCondition permits NoAppendCondition, DefaultAppend
     }
 
     /**
+     * Creates an AppendCondition to append events only if no events matching given {@code criteria} are available
+     *
+     * @param criteria The criteria for the AppendCondition
+     * @return a condition that matches against given criteria
+     */
+    static AppendCondition withCriteria(@Nonnull EventCriteria criteria) {
+        return new DefaultAppendCondition(-1, criteria);
+    }
+
+    /**
      * Returns the position in the event store until which the {@link #criteria()} should be validated against.
      * <p>
      * Appending will fail when there are events appended after this point that match the provided
