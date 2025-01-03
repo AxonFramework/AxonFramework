@@ -68,6 +68,17 @@ public sealed interface EventCriteria permits AnyEvent, SingleTagCriteria, Combi
     }
 
     /**
+     * Construct a simple {@link EventCriteria} based on the given index {@code key} and {@code value}.
+     *
+     * @param key   The index key of the {@link EventCriteria} being constructed.
+     * @param value The index value of the {@link EventCriteria} being constructed.
+     * @return A simple {@link EventCriteria}.
+     */
+    static EventCriteria hasTag(@Nonnull String key, @Nonnull String value) {
+        return hasTag(new Tag(key, value));
+    }
+
+    /**
      * A {@link Set} of {@link String} containing all the types of events applicable for sourcing, streaming, or
      * appending events.
      *

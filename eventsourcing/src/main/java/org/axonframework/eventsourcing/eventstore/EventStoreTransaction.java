@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,8 +54,8 @@ public interface EventStoreTransaction {
      * @return The {@link MessageStream} of type {@link EventMessage} containing to the event sequence complying to the
      * given {@code condition}.
      */
-    MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition,
-                                          @Nonnull ProcessingContext context);
+    MessageStream<? extends EventMessage<?>> source(@Nonnull SourcingCondition condition,
+                                                    @Nonnull ProcessingContext context);
 
     /**
      * Appends an {@code eventMessage} to be appended to an {@link AsyncEventStore} in this transaction with the given
@@ -80,11 +80,11 @@ public interface EventStoreTransaction {
      * Returns the position in the event store of the last {@link #appendEvent(EventMessage) appended} event by this
      * transaction.
      * <p>
-     * Will return {@code -1L} if nothing has been appended yet.
+     * Will return {@link ConsistencyMarker#ORIGIN} if nothing has been appended yet.
      *
      * @param context The {@link ProcessingContext} for which to retrieve the last appended event for
      * @return The position in the event store of the last {@link #appendEvent(EventMessage) appended} event by this
      * transaction.
      */
-    long appendPosition(@Nonnull ProcessingContext context);
+    ConsistencyMarker appendPosition(@Nonnull ProcessingContext context);
 }

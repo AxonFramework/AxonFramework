@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link DefaultAppendCondition}.
@@ -30,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class DefaultAppendConditionTest {
 
-    private static final long TEST_CONSISTENCY_MARKER = 10L;
+    private static final ConsistencyMarker TEST_CONSISTENCY_MARKER = new GlobalIndexConsistencyMarker(10);
     private static final EventCriteria TEST_CRITERIA = EventCriteria.hasTag(new Tag("key", "value"));
 
     private AppendCondition testSubject;
@@ -43,7 +41,7 @@ class DefaultAppendConditionTest {
     @Test
     void throwsAxonConfigurationExceptionWhenConstructingWithNullEventCriteria() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> new DefaultAppendCondition(-1L, null));
+        assertThrows(AxonConfigurationException.class, () -> new DefaultAppendCondition(ConsistencyMarker.ORIGIN, null));
     }
 
     @Test
@@ -53,22 +51,8 @@ class DefaultAppendConditionTest {
     }
 
     @Test
-    void withSourcingConditionSelectsSmallestConsistencyMarkerAndCombinesCriteria() {
-        EventCriteria testCriteria = EventCriteria.hasTag(new Tag("newKey", "newValue"));
-        long testEnd = TEST_CONSISTENCY_MARKER + 5;
-        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(testCriteria, 0L, testEnd);
-
-        EventCriteria expectedCriteria = testSourcingCondition.criteria().combine(TEST_CRITERIA);
-
-        AppendCondition result = testSubject.with(testSourcingCondition);
-
-        assertEquals(TEST_CONSISTENCY_MARKER, result.consistencyMarker());
-        assertEquals(expectedCriteria, result.criteria());
-    }
-
-    @Test
     void withMarkerSelectsSmallestValue() {
-        long testConsistencyMarker = TEST_CONSISTENCY_MARKER - 5;
+        ConsistencyMarker testConsistencyMarker = new GlobalIndexConsistencyMarker(5);
 
         AppendCondition result = testSubject.withMarker(testConsistencyMarker);
 

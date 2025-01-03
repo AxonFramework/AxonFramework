@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.Context;
-import org.axonframework.common.SimpleContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -60,7 +59,7 @@ class TagTest {
 
     @Test
     void addToContextAddsTheGivenTagsToTheGivenContext() {
-        Context testContext = new SimpleContext();
+        Context testContext = Context.empty();
         Set<Tag> testTags = Set.of(new Tag(TEST_KEY, TEST_VALUE));
 
         testContext = Tag.addToContext(testContext, testTags);
@@ -70,7 +69,7 @@ class TagTest {
 
     @Test
     void fromContextReturnsAnEmptyOptionalWhenNoTagsArePresent() {
-        Context testContext = new SimpleContext();
+        Context testContext = Context.empty();
 
         Optional<Set<Tag>> result = Tag.fromContext(testContext);
 
@@ -79,7 +78,7 @@ class TagTest {
 
     @Test
     void fromContextReturnsAnOptionalWithTheContainedTags() {
-        Context testContext = new SimpleContext();
+        Context testContext = Context.empty();
         Set<Tag> testTags = Set.of(new Tag(TEST_KEY, TEST_VALUE));
 
         testContext = Tag.addToContext(testContext, testTags);

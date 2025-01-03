@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.axonframework.eventsourcing.eventstore.EventCriteria.hasTag;
-import static org.axonframework.eventsourcing.eventstore.SourcingCondition.conditionFor;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link NoAppendCondition}.
@@ -31,8 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class NoAppendConditionTest {
 
     @Test
-    void consistencyMarkerFixedToMinusOne() {
-        assertEquals(-1, AppendCondition.none().consistencyMarker());
+    void consistencyMarkerFixedToLongMax() {
+        assertEquals(ConsistencyMarker.INFINITY, AppendCondition.none().consistencyMarker());
     }
 
     @Test
@@ -41,18 +39,7 @@ class NoAppendConditionTest {
     }
 
     @Test
-    void withSourcingConditionSetsActualMarkerAndCriteria() {
-        long testEnd = 20L;
-        SourcingCondition testSourcingCondition = conditionFor(hasTag(new Tag("key", "value")), 10L, testEnd);
-
-        AppendCondition result = AppendCondition.none().with(testSourcingCondition);
-
-        assertEquals(testEnd, result.consistencyMarker());
-        assertEquals(testSourcingCondition.criteria(), result.criteria());
-    }
-
-    @Test
     void withMarkerThrowsUnsupportedOperationException() {
-        assertThrows(UnsupportedOperationException.class, () -> AppendCondition.none().withMarker(42L));
+        assertThrows(UnsupportedOperationException.class, () -> AppendCondition.none().withMarker(mock()));
     }
 }

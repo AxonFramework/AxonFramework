@@ -28,7 +28,7 @@ import java.util.concurrent.ThreadLocalRandom;
 class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages), error -> MessageStream.empty());
     }
 
@@ -36,7 +36,7 @@ class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message<String>
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
         return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages)
-                                                               .concatWith(MessageStream.failed(failure)),
+                                                               .concatWith(MessageStream.failed(new RuntimeException("Wrong failure"))),
                                                   error -> MessageStream.failed(failure));
     }
 
