@@ -84,7 +84,7 @@ class WorkPackage {
     private final int batchSize;
     private final long claimExtensionThreshold;
     private final Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
-    private final Consumer<Integer> segmentEventsBatchProcessedCallback;
+    private Runnable batchProcessedCallback;
     private final Clock clock;
     private final String segmentIdResourceKey;
     private final String lastTokenResourceKey;
@@ -122,7 +122,6 @@ class WorkPackage {
         this.batchSize = builder.batchSize;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.segmentStatusUpdater = builder.segmentStatusUpdater;
-        this.segmentEventsBatchProcessedCallback = builder.segmentEventsBatchProcessedCallback;
         this.clock = builder.clock;
         this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
         this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
@@ -319,7 +318,7 @@ class WorkPackage {
                 unitOfWork.afterCommit(
                         u -> {
                             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
-                            segmentEventsBatchProcessedCallback.accept(segment.getSegmentId());
+                            batchProcessedCallback.run();
                         }
                 );
                 batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
@@ -456,6 +455,10 @@ class WorkPackage {
         // Reschedule the worker to ensure the abort flag is processed
         scheduleWorker();
         return abortTask;
+    }
+
+    void onBatchProcessed(Runnable batchProcessedCallback) {
+        this.batchProcessedCallback = batchProcessedCallback;
     }
 
     /**

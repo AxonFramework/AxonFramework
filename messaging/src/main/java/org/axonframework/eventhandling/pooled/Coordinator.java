@@ -310,13 +310,6 @@ class Coordinator {
         return tokenStoreInitialized.get();
     }
 
-    void resetRetryExponentialBackoff(int segmentId) {
-        releasesLastBackOffSeconds.compute(segmentId, (s, b) -> 1);
-        logger.debug("Processor [{}] set release deadline backoff reset for Segment [#{}].",
-                     name,
-                     segmentId);
-    }
-
     /**
      * Status holder for this service. Defines whether it is running, has been started (to ensure double
      * {@link #start()} invocations do not restart this coordinator) and maintains a shutdown handler to complete
@@ -788,7 +781,7 @@ class Coordinator {
                             streamStartPosition = streamStartPosition == null || otherUnwrapped == null
                                     ? null : streamStartPosition.lowerBound(otherUnwrapped);
                             workPackages.computeIfAbsent(segment.getSegmentId(),
-                                                         wp -> workPackageFactory.apply(segment, token));
+                                                         wp -> createWorkPackage(segment, token));
                         }
 
                         if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
@@ -850,6 +843,19 @@ class Coordinator {
                     abortAndScheduleRetry(e);
                 }
             }
+        }
+
+        private WorkPackage createWorkPackage(Segment segment, TrackingToken token) {
+            WorkPackage workPackage = workPackageFactory.apply(segment, token);
+            workPackage.onBatchProcessed(() -> resetRetryExponentialBackoff(segment.getSegmentId()));
+            return workPackage;
+        }
+
+        private void resetRetryExponentialBackoff(int segmentId) {
+            releasesLastBackOffSeconds.compute(segmentId, (s, b) -> 1);
+            logger.debug("Processor [{}] set release deadline backoff reset for Segment [#{}].",
+                         name,
+                         segmentId);
         }
 
         private CompletableFuture<Void> abortWorkPackages(Exception cause) {

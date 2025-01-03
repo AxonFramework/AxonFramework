@@ -370,7 +370,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                           .segmentStatusUpdater(singleStatusUpdater(
                                   segment.getSegmentId(), new TrackerStatus(segment, initialToken)
                           ))
-                          .onSegmentEventsBatchProcessed(this::resetRetryExponentialBackoff)
                           .clock(clock)
                           .build();
     }
@@ -402,10 +401,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      */
     private void statusUpdater(int segmentId, UnaryOperator<TrackerStatus> segmentUpdater) {
         processingStatus.computeIfPresent(segmentId, (s, ts) -> segmentUpdater.apply(ts));
-    }
-
-    private void resetRetryExponentialBackoff(int segmentId){
-        coordinator.resetRetryExponentialBackoff(segmentId);
     }
 
     /**
