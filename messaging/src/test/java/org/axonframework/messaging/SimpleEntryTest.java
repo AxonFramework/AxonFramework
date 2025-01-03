@@ -17,10 +17,8 @@
 package org.axonframework.messaging;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Context;
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.ContextTestSuite;
-import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.junit.jupiter.api.*;
 
@@ -62,7 +60,7 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
         Message<Object> expectedMessage = TEST_MESSAGE;
         MetaData expectedMetaData = MetaData.from(Map.of("key", "value"));
         String expectedResourceValue = "test";
-        ResourceKey<String> expectedContextKey = ResourceKey.create(expectedResourceValue);
+        ResourceKey<String> expectedContextKey = ResourceKey.withLabel(expectedResourceValue);
         Context testContext = new SimpleContext().withResource(expectedContextKey, expectedResourceValue);
 
         Entry<Message<Object>> testSubject = new SimpleEntry<>(expectedMessage, testContext);

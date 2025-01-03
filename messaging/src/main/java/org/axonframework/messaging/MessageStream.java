@@ -18,8 +18,6 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.Context;
-import org.axonframework.common.SimpleContext;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;

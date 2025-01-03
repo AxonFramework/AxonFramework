@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.interceptors;
 
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CorrelationDataInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
 
-    public static final ResourceKey<Map<String, Object>> CORRELATION_DATA = ResourceKey.create("CorrelationData");
+    public static final ResourceKey<Map<String, Object>> CORRELATION_DATA = ResourceKey.withLabel("CorrelationData");
     private final List<CorrelationDataProvider> correlationDataProviders;
 
     /**

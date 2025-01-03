@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.common;
+package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 
