@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,15 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 
 /**
  * Test class validating the {@link SimpleTagResolver}
@@ -29,29 +34,66 @@ import java.util.UUID;
 class SimpleTagResolverTest {
 
     @Test
-    void name() {
-        // TODO make actual tests
-        SimpleTagResolver<TestEvent> tagResolver =
+    void resolveSetsExpectedTags() {
+        Set<Tag> expectedTags = Set.of(new Tag("id", TestEvent.INSTANCE.identifier),
+                                       new Tag("otherId", TestEvent.INSTANCE.otherIdentifier));
+
+        SimpleTagResolver<TestEvent> testSubject =
                 SimpleTagResolver.forEvent(TestEvent.class)
-                                 .withResolver(testEvent -> new Tag("counter", Integer.toString(testEvent.counter())))
-                                 .withResolver(testEvent -> "payload", TestEvent::payload)
-                                 .withResolver(testEvent -> new Tag("yoyo", testEvent.yoyo))
-                                 .withResolver(
-                                         testEvent -> "orderId",
-                                         testEvent -> testEvent.orderId().toString()
-                                 );
+                                 .withResolver(event -> new Tag("id", event.identifier))
+                                 .withResolver(event -> "otherId", TestEvent::otherIdentifier);
 
-        TestEvent testEvent = new TestEvent("stuff", 42, (byte) 0, "nono", UUID.randomUUID());
+        Set<Tag> result = testSubject.resolve(TestEvent.INSTANCE);
 
-        Set<Tag> tags = tagResolver.resolve(testEvent);
-        tags.forEach(System.out::println);
+        assertEquals(2, result.size());
+        assertEquals(expectedTags, result);
     }
 
-    record TestEvent(String payload,
-                     int counter,
-                     byte stuff,
-                     String yoyo,
-                     UUID orderId) {
+    @Test
+    void emptyTagSetWhenNoTagResolversAreGiven() {
+        SimpleTagResolver<TestEvent> testSubject = SimpleTagResolver.forEvent(TestEvent.class);
 
+        Set<Tag> result = testSubject.resolve(TestEvent.INSTANCE);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void noDuplicateTagsForDuplicatedTagResolver() {
+        Function<TestEvent, Tag> tagResolver = event -> new Tag("id", event.identifier);
+        SimpleTagResolver<TestEvent> testSubject = SimpleTagResolver.forEvent(TestEvent.class)
+                                                                    .withResolver(tagResolver)
+                                                                    .withResolver(tagResolver);
+
+        Set<Tag> result = testSubject.resolve(TestEvent.INSTANCE);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionForNullTagResolver() {
+        SimpleTagResolver<TestEvent> testSubject = SimpleTagResolver.forEvent(TestEvent.class);
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> testSubject.withResolver(null));
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionForNullKeyResolver() {
+        SimpleTagResolver<TestEvent> testSubject = SimpleTagResolver.forEvent(TestEvent.class);
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> testSubject.withResolver(null, TestEvent::identifier));
+    }
+
+    @Test
+    void throwsAxonConfigurationExceptionForNullValueResolver() {
+        SimpleTagResolver<TestEvent> testSubject = SimpleTagResolver.forEvent(TestEvent.class);
+        //noinspection DataFlowIssue
+        assertThrows(AxonConfigurationException.class, () -> testSubject.withResolver(TestEvent::identifier, null));
+    }
+
+    record TestEvent(String identifier,
+                     String otherIdentifier) {
+
+        static final TestEvent INSTANCE = new TestEvent(UUID.randomUUID().toString(), UUID.randomUUID().toString());
     }
 }
