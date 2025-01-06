@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.replay.GenericResetContext;
 import org.axonframework.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageNameResolver;
@@ -49,6 +50,17 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     private final Class<?> listenerType;
     private final Object annotatedEventListener;
     private final MessageNameResolver messageNameResolver;
+
+    /**
+     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus.
+     *
+     * @param annotatedEventListener the annotated event listener
+     */
+    public AnnotationEventHandlerAdapter(Object annotatedEventListener) {
+        this(annotatedEventListener,
+             ClasspathParameterResolverFactory.forClass(annotatedEventListener.getClass()),
+             new ClassBasedMessageNameResolver());
+    }
 
     /**
      * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus.
