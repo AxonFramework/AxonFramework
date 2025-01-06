@@ -25,7 +25,6 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 /**
  * Test class validating the {@link PayloadBasedTagResolver}
  *
@@ -39,7 +38,7 @@ class PayloadBasedTagResolverTest {
                                        new Tag("otherId", TestEvent.INSTANCE.otherIdentifier));
 
         PayloadBasedTagResolver<TestEvent> testSubject =
-                PayloadBasedTagResolver.forEvent(TestEvent.class)
+                PayloadBasedTagResolver.forPayloadType(TestEvent.class)
                                        .withResolver(event -> new Tag("id", event.identifier))
                                        .withResolver(event -> "otherId", TestEvent::otherIdentifier);
 
@@ -51,7 +50,7 @@ class PayloadBasedTagResolverTest {
 
     @Test
     void emptyTagSetWhenNoTagResolversAreGiven() {
-        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forEvent(TestEvent.class);
+        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class);
 
         Set<Tag> result = testSubject.resolve(TestEvent.INSTANCE);
 
@@ -61,7 +60,7 @@ class PayloadBasedTagResolverTest {
     @Test
     void noDuplicateTagsForDuplicatedTagResolver() {
         Function<TestEvent, Tag> tagResolver = event -> new Tag("id", event.identifier);
-        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forEvent(TestEvent.class)
+        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class)
                                                                                 .withResolver(tagResolver)
                                                                                 .withResolver(tagResolver);
 
@@ -71,24 +70,24 @@ class PayloadBasedTagResolverTest {
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForNullTagResolver() {
-        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forEvent(TestEvent.class);
+    void throwsNullPointerExceptionForNullTagResolver() {
+        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class);
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> testSubject.withResolver(null));
+        assertThrows(NullPointerException.class, () -> testSubject.withResolver(null));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForNullKeyResolver() {
-        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forEvent(TestEvent.class);
+    void throwsNullPointerExceptionForNullKeyResolver() {
+        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class);
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> testSubject.withResolver(null, TestEvent::identifier));
+        assertThrows(NullPointerException.class, () -> testSubject.withResolver(null, TestEvent::identifier));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionForNullValueResolver() {
-        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forEvent(TestEvent.class);
+    void throwsNullPointerExceptionForNullValueResolver() {
+        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class);
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> testSubject.withResolver(TestEvent::identifier, null));
+        assertThrows(NullPointerException.class, () -> testSubject.withResolver(TestEvent::identifier, null));
     }
 
     record TestEvent(String identifier,
