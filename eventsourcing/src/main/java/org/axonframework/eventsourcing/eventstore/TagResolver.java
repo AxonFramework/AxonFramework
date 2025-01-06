@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 
 import java.util.Set;
-import java.util.function.Function;
 
 /**
  * Functional interface towards resolving a {@link Set} of {@link Tag Tags} for a given event of type {@code E}.
@@ -29,7 +28,7 @@ import java.util.function.Function;
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface TagResolver<E> extends Function<E, Set<Tag>> {
+public interface TagResolver<E> {
 
     /**
      * Resolves a {@link Set} of {@link Tag Tags} for the given {@code event} of type {@code E}.
@@ -38,9 +37,4 @@ public interface TagResolver<E> extends Function<E, Set<Tag>> {
      * @return A {@link Set} of {@link Tag Tags} for the given {@code event} of type {@code E}.
      */
     Set<Tag> resolve(@Nonnull E event);
-
-    @Override
-    default Set<Tag> apply(@Nonnull E e) {
-        return resolve(e);
-    }
 }
