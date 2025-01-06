@@ -37,7 +37,28 @@ import jakarta.annotation.Nullable;
 public interface Context {
 
     /**
-     * Indicates whether a resource has been registered with the given {@code key} in this {@link Context}.
+     * Create a Context with a single resource with the given initial {@code key} and {@code value}.
+     *
+     * @param key   The key to add to the newly created Context.
+     * @param value The value to assign to given key.
+     * @param <T>   The type of the initial resource.
+     * @return A Context with a single resource.
+     */
+    static <T> Context with(ResourceKey<T> key, T value) {
+        return new SimpleContext(key, value);
+    }
+
+    /**
+     * Creates an empty Context.
+     *
+     * @return A Context with no resources assigned to it.
+     */
+    static Context empty() {
+        return EmptyContext.INSTANCE;
+    }
+
+    /**
+     * Indicates whether a resource has been registered with the given {@code key} in this Context.
      *
      * @param key The key of the resource to check.
      * @return {@code true} if a resource is registered with this {@code key}, otherwise {@code false}.
@@ -55,14 +76,13 @@ public interface Context {
     <T> T getResource(@Nonnull ResourceKey<T> key);
 
     /**
-     * Constructs a copy of {@code this} {@link Context} adding the given {@code resources} under the given {@code key}
-     * to the copy.
+     * Constructs a copy of {@code this} Context with an additional {@code resource} for given {@code key}.
      *
      * @param key      The key under which to register the {@code resource}.
      * @param resource The resource to register.
      * @param <T>      The type of resource registered under the given {@code key}.
-     * @return A copy of {@code this} {@link Context} with the added given {@code resources} under the given {@code key}
-     * to the copy.
+     * @return A copy of {@code this} Context with the added given {@code resources} under the given {@code key} to the
+     * copy.
      */
     <T> Context withResource(@Nonnull ResourceKey<T> key,
                              @Nonnull T resource);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.messaging.SimpleContext;
 import org.axonframework.messaging.Context;
 import org.junit.jupiter.api.*;
 
@@ -60,7 +59,7 @@ class TagTest {
 
     @Test
     void addToContextAddsTheGivenTagsToTheGivenContext() {
-        Context testContext = new SimpleContext();
+        Context testContext = Context.empty();
         Set<Tag> testTags = Set.of(new Tag(TEST_KEY, TEST_VALUE));
 
         testContext = Tag.addToContext(testContext, testTags);
@@ -70,7 +69,7 @@ class TagTest {
 
     @Test
     void fromContextReturnsAnEmptyOptionalWhenNoTagsArePresent() {
-        Context testContext = new SimpleContext();
+        Context testContext = Context.empty();
 
         Optional<Set<Tag>> result = Tag.fromContext(testContext);
 
@@ -79,7 +78,7 @@ class TagTest {
 
     @Test
     void fromContextReturnsAnOptionalWithTheContainedTags() {
-        Context testContext = new SimpleContext();
+        Context testContext = Context.empty();
         Set<Tag> testTags = Set.of(new Tag(TEST_KEY, TEST_VALUE));
 
         testContext = Tag.addToContext(testContext, testTags);

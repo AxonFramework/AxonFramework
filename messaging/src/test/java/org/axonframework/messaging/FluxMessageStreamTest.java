@@ -16,11 +16,15 @@
 
 package org.axonframework.messaging;
 
+import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link FluxMessageStream} through the {@link MessageStreamTest} suite.
@@ -31,21 +35,39 @@ import java.util.concurrent.ThreadLocalRandom;
 class FluxMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         return MessageStream.fromFlux(Flux.fromIterable(messages));
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
-                                                      Exception failure) {
-        return MessageStream.fromFlux(Flux.fromIterable(messages)
-                                          .concatWith(Mono.error(failure))
-        );
+    protected MessageStream<Message<String>> uncompletedTestSubject(List<Message<String>> messages) {
+        return MessageStream.fromFlux(Flux.fromIterable(messages).concatWith(Flux.create(emitter -> {
+            // does nothing to keep it lingering
+        })));
+    }
+
+    @Override
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
+        return MessageStream.fromFlux(Flux.fromIterable(messages).concatWith(Mono.error(failure)));
     }
 
     @Override
     Message<String> createRandomMessage() {
         return new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
+    }
+
+    @Test
+    void testCallingCloseReleasesFluxSubscription() {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        Flux<Message<String>> flux;
+        flux = Flux.fromIterable(List.of(createRandomMessage(), createRandomMessage(), createRandomMessage()))
+                   .doOnCancel(() -> invoked.set(true));
+        MessageStream<Message<String>> testSubject = MessageStream.fromFlux(flux);
+
+        assertTrue(testSubject.next().isPresent());
+        assertFalse(invoked.get());
+        testSubject.close();
+        assertTrue(invoked.get());
     }
 }
