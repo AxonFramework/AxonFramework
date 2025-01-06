@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.Context;
+import org.axonframework.messaging.Context;
 
 /**
  * Utility class to obtain resources used in previous versions of Axon Framework.
@@ -29,13 +29,13 @@ public abstract class LegacyResources {
     /**
      * The ResourceKey to obtain the Aggregate Identifier from an Event's context.
      */
-    public static final Context.ResourceKey<String> AGGREGATE_IDENTIFIER_KEY = Context.ResourceKey.create("aggregateIdentifier");
+    public static final Context.ResourceKey<String> AGGREGATE_IDENTIFIER_KEY = Context.ResourceKey.withLabel("aggregateIdentifier");
     /**
      * The ResourceKey to obtain the Aggregate Type from an Event's context.
      */
-    public static final Context.ResourceKey<String> AGGREGATE_TYPE_KEY = Context.ResourceKey.create("aggregateType");
+    public static final Context.ResourceKey<String> AGGREGATE_TYPE_KEY = Context.ResourceKey.withLabel("aggregateType");
     /**
      * The ResourceKey to obtain the Aggregate Sequence Number from an Event's context.
      */
-    public static final Context.ResourceKey<Long> AGGREGATE_SEQUENCE_NUMBER_KEY = Context.ResourceKey.create("aggregateSequenceNumber");
+    public static final Context.ResourceKey<Long> AGGREGATE_SEQUENCE_NUMBER_KEY = Context.ResourceKey.withLabel("aggregateSequenceNumber");
 }
