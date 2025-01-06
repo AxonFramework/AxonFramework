@@ -37,11 +37,11 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class SimpleTagResolver<E> implements TagResolver<E> {
+public class PayloadBasedTagResolver<E> implements TagResolver<E> {
 
     private final List<Function<E, Tag>> tagResolvers;
 
-    private SimpleTagResolver(List<Function<E, Tag>> tagResolvers) {
+    private PayloadBasedTagResolver(List<Function<E, Tag>> tagResolvers) {
         this.tagResolvers = List.copyOf(tagResolvers);
     }
 
@@ -55,8 +55,8 @@ public class SimpleTagResolver<E> implements TagResolver<E> {
      * @param <E>       The event for which to resolve a {@link Set} of {@link Tag Tags} for.
      * @return A {@code SimpleTagResolver} instance start, still requiring resolvers.
      */
-    public static <E> SimpleTagResolver<E> forEvent(@SuppressWarnings("unused") Class<E> eventType) {
-        return new SimpleTagResolver<>(new ArrayList<>());
+    public static <E> PayloadBasedTagResolver<E> forEvent(@SuppressWarnings("unused") Class<E> eventType) {
+        return new PayloadBasedTagResolver<>(new ArrayList<>());
     }
 
     /**
@@ -65,11 +65,11 @@ public class SimpleTagResolver<E> implements TagResolver<E> {
      * @param tagResolver An additional {@code Function} from the event of type {@code E} to a {@link Tag}.
      * @return A copy of {@code this SimpleTagResolver}, adding the given {@code tagResolver} to the set.
      */
-    public SimpleTagResolver<E> withResolver(@Nonnull Function<E, Tag> tagResolver) {
+    public PayloadBasedTagResolver<E> withResolver(@Nonnull Function<E, Tag> tagResolver) {
         assertNonNull(tagResolver, "A TagResolver cannot be null");
         List<Function<E, Tag>> copy = new ArrayList<>(tagResolvers);
         copy.add(tagResolver);
-        return new SimpleTagResolver<>(copy);
+        return new PayloadBasedTagResolver<>(copy);
     }
 
     /**
@@ -81,8 +81,8 @@ public class SimpleTagResolver<E> implements TagResolver<E> {
      * @return A copy of {@code this SimpleTagResolver}, combining the given {@code keyResolver} and
      * {@code valueResolver} into a lambda constructing a {@link Tag}.
      */
-    public SimpleTagResolver<E> withResolver(@Nonnull Function<E, String> keyResolver,
-                                             @Nonnull Function<E, String> valueResolver) {
+    public PayloadBasedTagResolver<E> withResolver(@Nonnull Function<E, String> keyResolver,
+                                                   @Nonnull Function<E, String> valueResolver) {
         assertNonNull(keyResolver, "A key resolver cannot be null");
         assertNonNull(valueResolver, "A value resolver cannot be null");
         return withResolver(event -> new Tag(keyResolver.apply(event), valueResolver.apply(event)));

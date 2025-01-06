@@ -27,21 +27,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
- * Test class validating the {@link SimpleTagResolver}
+ * Test class validating the {@link PayloadBasedTagResolver}
  *
  * @author Steven van Beelen
  */
-class SimpleTagResolverTest {
+class PayloadBasedTagResolverTest {
 
     @Test
     void resolveSetsExpectedTags() {
         Set<Tag> expectedTags = Set.of(new Tag("id", TestEvent.INSTANCE.identifier),
                                        new Tag("otherId", TestEvent.INSTANCE.otherIdentifier));
 
-        SimpleTagResolver<TestEvent> testSubject =
-                SimpleTagResolver.forEvent(TestEvent.class)
-                                 .withResolver(event -> new Tag("id", event.identifier))
-                                 .withResolver(event -> "otherId", TestEvent::otherIdentifier);
+        PayloadBasedTagResolver<TestEvent> testSubject =
+                PayloadBasedTagResolver.forEvent(TestEvent.class)
+                                       .withResolver(event -> new Tag("id", event.identifier))
+                                       .withResolver(event -> "otherId", TestEvent::otherIdentifier);
 
         Set<Tag> result = testSubject.resolve(TestEvent.INSTANCE);
 
@@ -51,7 +51,7 @@ class SimpleTagResolverTest {
 
     @Test
     void emptyTagSetWhenNoTagResolversAreGiven() {
-        SimpleTagResolver<TestEvent> testSubject = SimpleTagResolver.forEvent(TestEvent.class);
+        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forEvent(TestEvent.class);
 
         Set<Tag> result = testSubject.resolve(TestEvent.INSTANCE);
 
@@ -61,9 +61,9 @@ class SimpleTagResolverTest {
     @Test
     void noDuplicateTagsForDuplicatedTagResolver() {
         Function<TestEvent, Tag> tagResolver = event -> new Tag("id", event.identifier);
-        SimpleTagResolver<TestEvent> testSubject = SimpleTagResolver.forEvent(TestEvent.class)
-                                                                    .withResolver(tagResolver)
-                                                                    .withResolver(tagResolver);
+        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forEvent(TestEvent.class)
+                                                                                .withResolver(tagResolver)
+                                                                                .withResolver(tagResolver);
 
         Set<Tag> result = testSubject.resolve(TestEvent.INSTANCE);
 
@@ -72,21 +72,21 @@ class SimpleTagResolverTest {
 
     @Test
     void throwsAxonConfigurationExceptionForNullTagResolver() {
-        SimpleTagResolver<TestEvent> testSubject = SimpleTagResolver.forEvent(TestEvent.class);
+        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forEvent(TestEvent.class);
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> testSubject.withResolver(null));
     }
 
     @Test
     void throwsAxonConfigurationExceptionForNullKeyResolver() {
-        SimpleTagResolver<TestEvent> testSubject = SimpleTagResolver.forEvent(TestEvent.class);
+        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forEvent(TestEvent.class);
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> testSubject.withResolver(null, TestEvent::identifier));
     }
 
     @Test
     void throwsAxonConfigurationExceptionForNullValueResolver() {
-        SimpleTagResolver<TestEvent> testSubject = SimpleTagResolver.forEvent(TestEvent.class);
+        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forEvent(TestEvent.class);
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> testSubject.withResolver(TestEvent::identifier, null));
     }
