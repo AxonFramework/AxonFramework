@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.common.Context;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.junit.jupiter.api.*;
@@ -46,8 +45,9 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>> {
     }
 
     @Override
-    protected void publishAdditionalMessage(MessageStream<EventMessage<String>> testSubject, EventMessage<String> randomMessage) {
-        ((QueueMessageStream<EventMessage<String>>)testSubject).offer(randomMessage, Context.empty());
+    protected void publishAdditionalMessage(MessageStream<EventMessage<String>> testSubject,
+                                            EventMessage<String> randomMessage) {
+        ((QueueMessageStream<EventMessage<String>>) testSubject).offer(randomMessage, Context.empty());
     }
 
     @Override

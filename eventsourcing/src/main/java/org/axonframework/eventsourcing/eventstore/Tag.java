@@ -18,9 +18,9 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.common.Context;
-import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Context;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
@@ -59,7 +59,7 @@ public record Tag(@Nonnull String key,
     /**
      * The {@link ResourceKey} used whenever a {@link Context} would contain a {@link Set} of {@link Tag Tags}.
      */
-    public static final ResourceKey<Set<Tag>> RESOURCE_KEY = ResourceKey.create("tags");
+    public static final ResourceKey<Set<Tag>> RESOURCE_KEY = ResourceKey.withLabel("tags");
 
     /**
      * Adds the given {@code token} to the given {@code context} using the {@link #RESOURCE_KEY}.

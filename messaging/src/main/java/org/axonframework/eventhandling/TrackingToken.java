@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Context;
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context;
+import org.axonframework.messaging.Context.ResourceKey;
 
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -34,7 +34,7 @@ public interface TrackingToken {
     /**
      * The {@link ResourceKey} used whenever a {@link Context} would contain a {@link TrackingToken}.
      */
-    ResourceKey<TrackingToken> RESOURCE_KEY = ResourceKey.create("trackingToken");
+    ResourceKey<TrackingToken> RESOURCE_KEY = ResourceKey.withLabel("trackingToken");
 
     /**
      * Adds the given {@code token} to the given {@code context} using the {@link #RESOURCE_KEY}.

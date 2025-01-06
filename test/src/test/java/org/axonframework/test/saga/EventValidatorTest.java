@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@ package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.MyOtherEvent;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class EventValidatorTest {
 
@@ -40,11 +42,11 @@ class EventValidatorTest {
         testSubject.assertPublishedEventsMatching(Matchers.noEvents());
     }
 
-    @Test
-    void assertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() {
-        testSubject.handleSync(GenericEventMessage.asEventMessage(new MyOtherEvent()));
-
-        assertThrows(AxonAssertionError.class, () -> testSubject.assertPublishedEventsMatching(Matchers.noEvents()));
+    private static <P> EventMessage<P> asEventMessage(P event) {
+        return new GenericEventMessage<>(
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                () -> GenericEventMessage.clock.instant()
+        );
     }
 
     @Test
@@ -53,15 +55,22 @@ class EventValidatorTest {
     }
 
     @Test
+    void assertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() {
+        testSubject.handleSync(asEventMessage(new MyOtherEvent()));
+
+        assertThrows(AxonAssertionError.class, () -> testSubject.assertPublishedEventsMatching(Matchers.noEvents()));
+    }
+
+    @Test
     void assertPublishedEventsThrowsAssertionErrorIfEventWasPublished() {
-        testSubject.handleSync(GenericEventMessage.asEventMessage(new MyOtherEvent()));
+        testSubject.handleSync(asEventMessage(new MyOtherEvent()));
 
         assertThrows(AxonAssertionError.class, testSubject::assertPublishedEvents);
     }
 
     @Test
     void assertPublishedEventsForEventMessages() {
-        EventMessage<MyOtherEvent> testEventMessage = GenericEventMessage.asEventMessage(new MyOtherEvent());
+        EventMessage<MyOtherEvent> testEventMessage = asEventMessage(new MyOtherEvent());
         testSubject.handleSync(testEventMessage);
 
         testSubject.assertPublishedEvents(testEventMessage);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.SagaConfigurer;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -435,7 +435,7 @@ public abstract class CachingIntegrationTestSuite {
     private void publish(Object... events) {
         List<EventMessage<?>> eventMessages = new ArrayList<>();
         for (Object event : events) {
-            eventMessages.add(GenericEventMessage.asEventMessage(event));
+            eventMessages.add(EventTestUtils.asEventMessage(event));
         }
         config.eventBus().publish(eventMessages);
     }

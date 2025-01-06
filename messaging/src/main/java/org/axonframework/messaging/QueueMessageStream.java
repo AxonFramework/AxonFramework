@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Context;
 
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
@@ -45,16 +44,16 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
-     * Constructs an instance with an unbounded queue. Offering {@link Entry entries} will always be possible, as long as memory
-     * permits.
+     * Constructs an instance with an unbounded queue. Offering {@link Entry entries} will always be possible, as long
+     * as memory permits.
      */
     public QueueMessageStream() {
         this(new LinkedBlockingQueue<>());
     }
 
     /**
-     * Construct an instance with given {@code queue} as the underlying queue. Offering and consuming {@link Entry entries} will depend
-     * on the semantics of the implementation of the queue.
+     * Construct an instance with given {@code queue} as the underlying queue. Offering and consuming
+     * {@link Entry entries} will depend on the semantics of the implementation of the queue.
      * <p>
      * Note that delivery and consumption of entries is done through {@link BlockingQueue#offer(Object)} and
      * {@link BlockingQueue#poll()}, respectively. This means that a queue must be available to buffer elements.
@@ -86,10 +85,12 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
     }
 
     /**
-     * Marks the queue as completed, indicating to any consumer that no more {@link Entry entries} will become available.
+     * Marks the queue as completed, indicating to any consumer that no more {@link Entry entries} will become
+     * available.
      * <p>
      * Note that there is no validation on offering items whether the stream is completed. It is the caller's
-     * responsibility to ensure no {@link Message Messages} are {@link #offer(Message, Context) offered} after completion.
+     * responsibility to ensure no {@link Message Messages} are {@link #offer(Message, Context) offered} after
+     * completion.
      */
     public void complete() {
         completed.set(true);
@@ -112,7 +113,7 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
     }
 
     /**
-     * Registers given {@code callback} to be invoked when {@link Entry entries} have been consumed from the underlying 
+     * Registers given {@code callback} to be invoked when {@link Entry entries} have been consumed from the underlying
      * queue. Any previously registered callback will be replaced.
      * <p>
      * The given {@code callback} is also notified when the consumer has requested to {@link #close()} this stream.
@@ -125,7 +126,7 @@ public class QueueMessageStream<M extends Message<?>> implements MessageStream<M
 
     /**
      * Whether the consumer has requested to {@link #close()} this stream. This is a signal to producing components to
-     * stop emitting more {@link Message messages}, complete the stream, and release any sources associated with this 
+     * stop emitting more {@link Message messages}, complete the stream, and release any sources associated with this
      * stream.
      *
      * @return {@code true} if a close was requested, otherwise {@code false}.

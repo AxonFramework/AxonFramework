@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
@@ -417,7 +418,7 @@ class PooledStreamingEventProcessorTest {
         when(stubEventHandler.canHandle(any(), any())).thenReturn(false);
         when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
 
-        EventMessage<Integer> eventToIgnoreOne = GenericEventMessage.asEventMessage(1337);
+        EventMessage<Integer> eventToIgnoreOne = EventTestUtils.asEventMessage(1337);
         stubMessageSource.publishMessage(eventToIgnoreOne);
 
         testSubject.start();
@@ -458,16 +459,16 @@ class PooledStreamingEventProcessorTest {
         when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
         when(stubEventHandler.canHandleType(String.class)).thenReturn(true);
 
-        EventMessage<Integer> eventToIgnoreOne = GenericEventMessage.asEventMessage(1337);
-        EventMessage<Integer> eventToIgnoreTwo = GenericEventMessage.asEventMessage(42);
-        EventMessage<Integer> eventToIgnoreThree = GenericEventMessage.asEventMessage(9001);
+        EventMessage<Integer> eventToIgnoreOne = EventTestUtils.asEventMessage(1337);
+        EventMessage<Integer> eventToIgnoreTwo = EventTestUtils.asEventMessage(42);
+        EventMessage<Integer> eventToIgnoreThree = EventTestUtils.asEventMessage(9001);
         List<Integer> eventsToIgnore = new ArrayList<>();
         eventsToIgnore.add(eventToIgnoreOne.getPayload());
         eventsToIgnore.add(eventToIgnoreTwo.getPayload());
         eventsToIgnore.add(eventToIgnoreThree.getPayload());
 
-        EventMessage<String> eventToHandleOne = GenericEventMessage.asEventMessage("some-text");
-        EventMessage<String> eventToHandleTwo = GenericEventMessage.asEventMessage("some-other-text");
+        EventMessage<String> eventToHandleOne = EventTestUtils.asEventMessage("some-text");
+        EventMessage<String> eventToHandleTwo = EventTestUtils.asEventMessage("some-other-text");
         List<String> eventsToHandle = new ArrayList<>();
         eventsToHandle.add(eventToHandleOne.getPayload());
         eventsToHandle.add(eventToHandleTwo.getPayload());
@@ -1265,12 +1266,12 @@ class PooledStreamingEventProcessorTest {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceedSync();
         }));
-        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(0));
-        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(1));
+        stubMessageSource.publishMessage(EventTestUtils.asEventMessage(0));
+        stubMessageSource.publishMessage(EventTestUtils.asEventMessage(1));
 
         testSubject.start();
 
-        stubMessageSource.publishMessage(GenericEventMessage.asEventMessage(2));
+        stubMessageSource.publishMessage(EventTestUtils.asEventMessage(2));
 
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
         TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);

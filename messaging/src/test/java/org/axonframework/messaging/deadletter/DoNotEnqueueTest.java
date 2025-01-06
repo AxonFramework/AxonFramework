@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
@@ -41,7 +41,7 @@ class DoNotEnqueueTest {
     void setUp() {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
-        testLetter = new GenericDeadLetter<>("seqId", GenericEventMessage.asEventMessage("payload"));
+        testLetter = new GenericDeadLetter<>("seqId", EventTestUtils.asEventMessage("payload"));
     }
 
     @Test
