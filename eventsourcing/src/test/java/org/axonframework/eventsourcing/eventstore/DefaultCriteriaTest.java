@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,33 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link SingleTagCriteria}.
+ * Test class validating the {@link DefaultEventCriteria}.
  *
  * @author Steven van Beelen
  */
-class SingleTagCriteriaTest {
+class DefaultCriteriaTest {
 
     @Test
-    void throwsAxonConfigurationExceptionWhenConstructingWithNullTag() {
+    void throwsExceptionWhenConstructingWithNullTag() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> new SingleTagCriteria(null));
+        assertThrows(NullPointerException.class, () -> new DefaultEventCriteria(null, Set.of()));
+
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> new DefaultEventCriteria(Set.of(), null));
     }
 
     @Test
     void containsExpectedData() {
         Tag testTag = new Tag("key", "value");
 
-        EventCriteria testSubject = new SingleTagCriteria(testTag);
+        EventCriteria testSubject = new DefaultEventCriteria(Set.of(), Set.of(testTag));
 
         assertEquals(1, testSubject.tags().size());
         assertTrue(testSubject.tags().contains(testTag));

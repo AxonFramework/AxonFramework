@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,12 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.Collections;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link StartingFrom}.
@@ -31,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class StartingFromTest {
 
     private static final GlobalSequenceTrackingToken TEST_POSITION = new GlobalSequenceTrackingToken(1337);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.hasTag(new Tag("key", "value"));
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
 
     private StreamingCondition testSubject;
 
@@ -43,22 +44,22 @@ class StartingFromTest {
     @Test
     void containsExpectedData() {
         assertEquals(TEST_POSITION, testSubject.position());
-        assertEquals(EventCriteria.anyEvent(), testSubject.criteria());
+        assertEquals(Collections.emptySet(), testSubject.criteria());
     }
 
     @Test
     void withCriteriaReplaceNoCriteriaForGivenCriteria() {
-        assertEquals(EventCriteria.anyEvent(), testSubject.criteria());
+        assertEquals(Collections.emptySet(), testSubject.criteria());
 
-        StreamingCondition result = testSubject.with(TEST_CRITERIA);
+        StreamingCondition result = testSubject.or(TEST_CRITERIA);
 
-        assertEquals(TEST_CRITERIA, result.criteria());
+        assertEquals(Set.of(TEST_CRITERIA), result.criteria());
     }
 
     @Test
     void withCriteriaThrowsIllegalArgumentExceptionWhenPositionIsNull() {
         StreamingCondition nullPositionTestSubject = StreamingCondition.startingFrom(null);
 
-        assertThrows(IllegalArgumentException.class, () -> nullPositionTestSubject.with(TEST_CRITERIA));
+        assertThrows(IllegalArgumentException.class, () -> nullPositionTestSubject.or(TEST_CRITERIA));
     }
 }

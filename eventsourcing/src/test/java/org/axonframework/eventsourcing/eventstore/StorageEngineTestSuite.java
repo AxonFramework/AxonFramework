@@ -57,8 +57,8 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         TEST_DOMAIN_ID = UUID.randomUUID().toString();
         OTHER_DOMAIN_ID = UUID.randomUUID().toString();
 
-        TEST_CRITERIA = EventCriteria.hasTag(new Tag("TEST", TEST_DOMAIN_ID));
-        OTHER_CRITERIA = EventCriteria.hasTag(new Tag("OTHER", OTHER_DOMAIN_ID));
+        TEST_CRITERIA = EventCriteria.forAnyEventType().withTags(new Tag("TEST", TEST_DOMAIN_ID));
+        OTHER_CRITERIA = EventCriteria.forAnyEventType().withTags(new Tag("OTHER", OTHER_DOMAIN_ID));
 
         testSubject = buildStorageEngine();
     }
@@ -88,7 +88,7 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
 
         MessageStream<EventMessage<?>> result = testSubject.tailToken()
                                                            .thenApply(StreamingCondition::startingFrom)
-                                                           .thenApply(sc -> sc.with(TEST_CRITERIA))
+                                                           .thenApply(sc -> sc.or(TEST_CRITERIA))
                                                            .thenApply(testSubject::stream)
                                                            .join();
 
@@ -124,8 +124,7 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
                                                        .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY))
                                                        .join();
 
-        StepVerifier.create(testSubject.stream(StreamingCondition.startingFrom(tokenOfFirstMessage).with(TEST_CRITERIA))
-                                       .asFlux())
+        StepVerifier.create(testSubject.stream(StreamingCondition.startingFrom(tokenOfFirstMessage).or(TEST_CRITERIA)).asFlux())
                     // we've skipped the first one
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo.event()))
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventThree.event()))
@@ -148,7 +147,7 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
 
         MessageStream<EventMessage<?>> result = testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(
                                                                                              10))
-                                                                                     .with(TEST_CRITERIA));
+                                                                                     .or(TEST_CRITERIA));
 
         try {
             assertTrue(result.next().isEmpty());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,10 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.TrackingToken;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import java.util.HashSet;
+import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Default implementation of the {@link StreamingCondition}.
@@ -31,16 +34,25 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 record DefaultStreamingCondition(
         @Nonnull TrackingToken position,
-        @Nonnull EventCriteria criteria
+        @Nonnull Set<EventCriteria> criteria
 ) implements StreamingCondition {
 
     DefaultStreamingCondition {
-        assertNonNull(position, "The position cannot be null");
-        assertNonNull(criteria, "The EventCriteria cannot be null");
+        requireNonNull(position, "The position cannot be null");
+        requireNonNull(criteria, "The EventCriteria cannot be null");
+    }
+
+    public DefaultStreamingCondition(@Nonnull TrackingToken position, @Nonnull EventCriteria... criteria) {
+        this(position, Set.of(criteria));
     }
 
     @Override
-    public StreamingCondition with(@Nonnull EventCriteria criteria) {
-        return new DefaultStreamingCondition(this.position, this.criteria.combine(criteria));
+    public StreamingCondition or(@Nonnull EventCriteria criteria) {
+        if (this.criteria.contains(criteria)) {
+            return this;
+        }
+        Set<EventCriteria> newCriteria = new HashSet<>(this.criteria);
+        newCriteria.add(criteria);
+        return new DefaultStreamingCondition(this.position, newCriteria);
     }
 }

@@ -16,8 +16,9 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.*;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DefaultAppendConditionTest {
 
     private static final ConsistencyMarker TEST_CONSISTENCY_MARKER = new GlobalIndexConsistencyMarker(10);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.hasTag(new Tag("key", "value"));
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
 
     private AppendCondition testSubject;
 
@@ -39,23 +40,24 @@ class DefaultAppendConditionTest {
     }
 
     @Test
-    void throwsAxonConfigurationExceptionWhenConstructingWithNullEventCriteria() {
+    void throwsExceptionWhenConstructingWithNullEventCriteria() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> new DefaultAppendCondition(ConsistencyMarker.ORIGIN, null));
+        assertThrows(NullPointerException.class, () -> new DefaultAppendCondition(ConsistencyMarker.ORIGIN, (EventCriteria) null));
     }
 
     @Test
     void containsExpectedData() {
         assertEquals(TEST_CONSISTENCY_MARKER, testSubject.consistencyMarker());
-        assertEquals(TEST_CRITERIA, testSubject.criteria());
+        assertEquals(Set.of(TEST_CRITERIA), testSubject.criteria());
     }
 
     @Test
-    void withMarkerSelectsSmallestValue() {
+    void withMarkerChangesMarkerButLeavesConditions() {
         ConsistencyMarker testConsistencyMarker = new GlobalIndexConsistencyMarker(5);
 
         AppendCondition result = testSubject.withMarker(testConsistencyMarker);
 
         assertEquals(testConsistencyMarker, result.consistencyMarker());
+        assertEquals(testSubject.criteria(), result.criteria());
     }
 }

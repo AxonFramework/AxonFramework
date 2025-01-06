@@ -37,6 +37,7 @@ import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarke
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
@@ -56,6 +57,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Event Storage Engine implementation that uses the aggregate-oriented APIs of Axon Server, allowing it to interact
@@ -219,18 +221,30 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
 
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        String aggregateIdentifier = resolveAggregateIdentifier(condition.criteria().tags());
-        AggregateEventStream aggregateStream = connection.eventChannel().openAggregateStream(aggregateIdentifier);
-        return MessageStream.fromStream(
-                aggregateStream.asStream(),
-                this::convertToMessage,
-                event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
-                                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                              event.getAggregateSequenceNumber())
-                                .withResource(ConsistencyMarker.RESOURCE_KEY,
-                                              new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
-                                                                                  event.getAggregateSequenceNumber())));
+        MessageStream<EventMessage<?>> resultingStream = MessageStream.empty();
+        for (EventCriteria criterion : condition.criteria()) {
+            String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
+            // axonserver uses 0 to denote the end of a stream, so if 0 is provided, we use 1. For infinity, we use 0.
+            long end = condition.end() == Long.MAX_VALUE ? 0 : condition.end() + 1;
+            AggregateEventStream aggregateStream = connection.eventChannel().openAggregateStream(aggregateIdentifier, condition.start(), end);
+            resultingStream = resultingStream.concatWith(MessageStream.fromStream(
+                    aggregateStream.asStream(),
+                    this::convertToMessage,
+                    event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+                                    .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
+                                    .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
+                                                  event.getAggregateSequenceNumber())
+                                    .withResource(ConsistencyMarker.RESOURCE_KEY,
+                                                  new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
+                                                                                      event.getAggregateSequenceNumber()))));
+        }
+        AtomicReference<ConsistencyMarker> consistencyMarker = new AtomicReference<>();
+        return resultingStream.map(e -> {
+            ConsistencyMarker newMarker = consistencyMarker.accumulateAndGet(e.getResource(ConsistencyMarker.RESOURCE_KEY),
+                                                                             (m1, m2) -> m1
+                                                                                     == null ? m2 : m1.upperBound(m2));
+            return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
+        });
     }
 
     private EventMessage<byte[]> convertToMessage(Event event) {

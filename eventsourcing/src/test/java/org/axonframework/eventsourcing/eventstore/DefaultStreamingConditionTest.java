@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link DefaultStreamingCondition}.
@@ -32,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class DefaultStreamingConditionTest {
 
     private static final GlobalSequenceTrackingToken TEST_POSITION = new GlobalSequenceTrackingToken(1337);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.hasTag(new Tag("key", "value"));
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
 
     private DefaultStreamingCondition testSubject;
 
@@ -42,31 +41,20 @@ class DefaultStreamingConditionTest {
     }
 
     @Test
-    void throwsAxonConfigurationExceptionWhenConstructingWithNullPosition() {
+    void throwsExceptionWhenConstructingWithNullPosition() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> new DefaultStreamingCondition(null, TEST_CRITERIA));
+        assertThrows(NullPointerException.class, () -> new DefaultStreamingCondition(null, TEST_CRITERIA));
     }
 
     @Test
-    void throwsAxonConfigurationExceptionWhenConstructingWithNullCriteria() {
-        //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> new DefaultStreamingCondition(TEST_POSITION, null));
+    void throwsExceptionWhenConstructingWithNullCriteria() {
+        assertThrows(NullPointerException.class, () -> new DefaultStreamingCondition(TEST_POSITION, (EventCriteria) null));
     }
 
     @Test
     void containsExpectedData() {
         assertEquals(TEST_POSITION, testSubject.position());
-        assertEquals(TEST_CRITERIA, testSubject.criteria());
+        assertEquals(Set.of(TEST_CRITERIA), testSubject.criteria());
     }
 
-    @Test
-    void withCriteriaCombinesGivenWithExistingCriteria() {
-        EventCriteria testCriteria = EventCriteria.hasTag(new Tag("other-key", "other-value"));
-        EventCriteria expectedCriteria = testCriteria.combine(TEST_CRITERIA);
-
-        StreamingCondition result = testSubject.with(testCriteria);
-
-        assertEquals(TEST_POSITION, testSubject.position());
-        assertEquals(expectedCriteria, result.criteria());
-    }
 }

@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -49,7 +49,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     private final List<Consumer<EventMessage<?>>> callbacks;
 
     private final ResourceKey<AppendCondition> appendConditionKey;
-    private final ResourceKey<List<EventMessage<?>>> eventQueueKey;
+    private final ResourceKey<List<TaggedEventMessage<?>>> eventQueueKey;
     private final ResourceKey<ConsistencyMarker> appendPositionKey;
 
     /**
@@ -86,14 +86,16 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     @Override
     public void appendEvent(@Nonnull EventMessage<?> eventMessage) {
-        List<EventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
+        List<TaggedEventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
                     attachAppendEventsStep();
                     return new CopyOnWriteArrayList<>();
                 }
         );
-        eventQueue.add(eventMessage);
+        // TODO - Use a indexer function to define the indices to assign to each event
+        eventQueue.add(new GenericTaggedEventMessage<>(
+                eventMessage, Set.of()));
 
         callbacks.forEach(callback -> callback.accept(eventMessage));
     }
@@ -103,16 +105,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                 context -> {
                     AppendCondition appendCondition =
                             context.computeResourceIfAbsent(appendConditionKey, AppendCondition::none);
-                    List<EventMessage<?>> eventQueue = context.getResource(eventQueueKey);
+                    List<TaggedEventMessage<?>> eventQueue = context.getResource(eventQueueKey);
 
-                    List<TaggedEventMessage<?>> taggedEvents = new ArrayList<>();
-                    for (EventMessage<?> event : eventQueue) {
-                        // TODO - Use a indexer function to define the indices to assign to each event
-                        taggedEvents.add(new GenericTaggedEventMessage<>(
-                                event, appendCondition.criteria().tags()
-                        ));
-                    }
-                    return eventStorageEngine.appendEvents(appendCondition, taggedEvents)
+                    return eventStorageEngine.appendEvents(appendCondition, eventQueue)
                                              .thenAccept(tx -> {
                                                  processingContext.onCommit(c -> doCommit(context, tx));
                                                  processingContext.onError((ctx, p, e) -> tx.rollback());

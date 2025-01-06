@@ -25,13 +25,14 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.EventsCondition;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.modelling.command.ConflictingModificationException;
 import org.slf4j.Logger;
@@ -97,7 +98,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
-        int tagCount = condition.criteria().tags().size();
+        int tagCount = condition.criteria().stream().map(c -> c.tags().size()).reduce(0, Integer::max);
         if (tagCount > 1) {
             return CompletableFuture.failedFuture(new IllegalArgumentException("Conditions with more than one tag are not yet supported"));
         }
@@ -164,7 +165,11 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                                 .values()
                                 .stream()
                                 .map(event -> (TaggedEventMessage<?>) event)
-                                .anyMatch(taggedEvent -> condition.criteria().matchingTags(taggedEvent.tags()));
+                                .anyMatch(taggedEvent -> condition.matches(asType(taggedEvent.event().name()), taggedEvent.tags()));
+    }
+
+    private String asType(QualifiedName name) {
+        return name.namespace() + "." + name.localName();
     }
 
     @Override
@@ -175,7 +180,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
 
         return eventsToMessageStream(condition.start(),
                                      Math.min(condition.end(), eventStorage.lastKey()),
-                                     condition.criteria());
+                                     condition);
     }
 
     @Override
@@ -184,23 +189,18 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
             logger.debug("Start streaming events with condition [{}].", condition);
         }
 
-        return eventsToMessageStream(condition.position().position().orElse(-1L), Long.MAX_VALUE, condition.criteria());
+        return eventsToMessageStream(condition.position().position().orElse(-1) + 1, Long.MAX_VALUE, condition);
     }
 
-    private MessageStream<EventMessage<?>> eventsToMessageStream(long start, long end, EventCriteria criteria) {
-        MapBackedMessageStream mapBackedMessageStream = new MapBackedMessageStream(start, end, criteria);
+    private MessageStream<EventMessage<?>> eventsToMessageStream(long start, long end, EventsCondition condition) {
+        MapBackedMessageStream mapBackedMessageStream = new MapBackedMessageStream(start, end, condition);
         openStreams.add(mapBackedMessageStream);
         return mapBackedMessageStream;
     }
 
-    private static boolean match(TaggedEventMessage<?> taggedEvent, EventCriteria criteria) {
-        // TODO #3085 Remove usage of getPayloadType in favor of QualifiedName solution
-        return matchingType(taggedEvent.event().getPayloadType().getName(), criteria.types())
-                && criteria.matchingTags(taggedEvent.tags());
-    }
-
-    private static boolean matchingType(String eventName, Set<String> types) {
-        return types.isEmpty() || types.contains(eventName);
+    private static boolean match(TaggedEventMessage<?> taggedEvent, EventsCondition condition) {
+        QualifiedName qualifiedName = taggedEvent.event().name();
+        return condition.matches(qualifiedName.namespace() + "." + qualifiedName.localName(), taggedEvent.tags());
     }
 
     @Override
@@ -262,12 +262,12 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         private final AtomicLong position;
         private final AtomicReference<Runnable> callback;
         private final long end;
-        private final EventCriteria criteria;
+        private final EventsCondition condition;
 
-        public MapBackedMessageStream(long start, long end, EventCriteria criteria) {
+        public MapBackedMessageStream(long start, long end, EventsCondition condition) {
             this.end = end;
-            this.criteria = criteria;
-            position = new AtomicLong(start + 1);
+            this.condition = condition;
+            position = new AtomicLong(start);
             callback = new AtomicReference<>(() -> {
             });
         }
@@ -280,7 +280,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                     && position.compareAndSet(currentPosition,
                                               currentPosition + 1)) {
                 TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
-                if (match(nextEvent, criteria)) {
+                if (match(nextEvent, condition)) {
                     Context context = Context.empty();
                     context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition));
                     context = Tag.addToContext(context, nextEvent.tags());

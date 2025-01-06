@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * {@link ConsistencyMarker} implementation that keeps track of a sequence per aggregate identifier. A single
@@ -61,8 +62,8 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
         if (appendCondition.consistencyMarker() instanceof AggregateBasedConsistencyMarker abcm) {
             return abcm;
         }
-        if (!appendCondition.criteria().tags().isEmpty() && appendCondition.consistencyMarker() == INFINITY) {
-            throw new IllegalArgumentException("Consistency marker must not be infinity");
+        if (!appendCondition.criteria().isEmpty() && appendCondition.consistencyMarker() == INFINITY) {
+            throw new IllegalArgumentException("Consistency marker must not be infinity when criteria are provided");
         } else if (appendCondition.consistencyMarker() == ORIGIN || appendCondition.consistencyMarker() == INFINITY) {
             return new AggregateBasedConsistencyMarker(Map.of());
         }
@@ -76,7 +77,13 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
 
     @Override
     public AggregateBasedConsistencyMarker doUpperBound(AggregateBasedConsistencyMarker other) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        Map<String, Long> newPositions = new HashMap<>(aggregatePositions);
+        other.aggregatePositions.forEach((id, seq) -> {
+            if (!newPositions.containsKey(id) || newPositions.get(id) < seq) {
+                newPositions.put(id, seq);
+            }
+        });
+        return new AggregateBasedConsistencyMarker(newPositions);
     }
 
     /**
@@ -118,5 +125,18 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
         HashMap<String, Long> newMap = new HashMap<>(aggregatePositions);
         newMap.put(aggregateIdentifier, newSequence);
         return new AggregateBasedConsistencyMarker(newMap);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof AggregateBasedConsistencyMarker that)) {
+            return false;
+        }
+        return Objects.equals(aggregatePositions, that.aggregatePositions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(aggregatePositions);
     }
 }
