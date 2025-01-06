@@ -38,10 +38,10 @@ import java.util.stream.Collectors;
  */
 public class PayloadBasedTagResolver<P> implements TagResolver<P> {
 
-    private final List<Function<P, Tag>> tagResolvers;
+    private final List<Function<P, Tag>> resolvers;
 
-    private PayloadBasedTagResolver(List<Function<P, Tag>> tagResolvers) {
-        this.tagResolvers = List.copyOf(tagResolvers);
+    private PayloadBasedTagResolver(List<Function<P, Tag>> resolvers) {
+        this.resolvers = List.copyOf(resolvers);
     }
 
     /**
@@ -59,14 +59,14 @@ public class PayloadBasedTagResolver<P> implements TagResolver<P> {
     }
 
     /**
-     * Construct a copy of {@code this SimpleTagResolver}, adding the given {@code tagResolver} to the set.
+     * Construct a copy of {@code this SimpleTagResolver}, adding the given {@code resolver} to the set.
      *
-     * @param tagResolver An additional {@code Function} from the event of type {@code P} to a {@link Tag}.
-     * @return A copy of {@code this SimpleTagResolver}, adding the given {@code tagResolver} to the set.
+     * @param resolver An additional {@code Function} from the event of type {@code P} to a {@link Tag}.
+     * @return A copy of {@code this SimpleTagResolver}, adding the given {@code resolver} to the set.
      */
-    public PayloadBasedTagResolver<P> withResolver(@Nonnull Function<P, Tag> tagResolver) {
-        List<Function<P, Tag>> copy = new ArrayList<>(tagResolvers);
-        copy.add(Objects.requireNonNull(tagResolver, "A TagResolver cannot be null"));
+    public PayloadBasedTagResolver<P> withResolver(@Nonnull Function<P, Tag> resolver) {
+        List<Function<P, Tag>> copy = new ArrayList<>(resolvers);
+        copy.add(Objects.requireNonNull(resolver, "A TagResolver cannot be null"));
         return new PayloadBasedTagResolver<>(copy);
     }
 
@@ -82,15 +82,15 @@ public class PayloadBasedTagResolver<P> implements TagResolver<P> {
     public PayloadBasedTagResolver<P> withResolver(@Nonnull Function<P, String> keyResolver,
                                                    @Nonnull Function<P, String> valueResolver) {
         Function<P, String> keyLambda = Objects.requireNonNull(keyResolver, "A key resolver cannot be null");
-        Function<P, String> valueLambda =
-                Objects.requireNonNull(valueResolver, "A valueLambda resolver cannot be null");
+        Function<P, String> valueLambda = Objects.requireNonNull(valueResolver,
+                                                                 "A valueLambda resolver cannot be null");
         return withResolver(event -> new Tag(keyLambda.apply(event), valueLambda.apply(event)));
     }
 
     @Override
     public Set<Tag> resolve(@Nonnull P event) {
-        return tagResolvers.stream()
-                           .map(tagResolver -> tagResolver.apply(event))
-                           .collect(Collectors.toSet());
+        return resolvers.stream()
+                        .map(resolver -> resolver.apply(event))
+                        .collect(Collectors.toSet());
     }
 }
