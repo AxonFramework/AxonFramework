@@ -69,7 +69,7 @@ class SpringBeanResolverFactoryTest {
 
     private static final AtomicInteger COUNTER = new AtomicInteger();
     private static final EventMessage<Object> EVENT_MESSAGE = asEventMessage("Hi there");
-    private static final MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+    private final MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
     private ProcessingContext processingContext;
 
