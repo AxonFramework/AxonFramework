@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -124,7 +124,7 @@ class SagaConfigurerTest {
                                                        .buildConfiguration();
         configuration.start();
         TestEvent testEvent = new TestEvent();
-        eventStore.publish(GenericEventMessage.asEventMessage(testEvent));
+        eventStore.publish(EventTestUtils.asEventMessage(testEvent));
         Set<String> sagas = sagaStore.findSagas(TestSaga.class, new AssociationValue("id", testEvent.id.toString()));
         assertEquals(1, sagas.size());
         assertEquals(1, TestSaga.counter.get());

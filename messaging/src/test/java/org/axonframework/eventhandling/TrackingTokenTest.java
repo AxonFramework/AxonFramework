@@ -16,8 +16,9 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Context;
-import org.junit.jupiter.api.*;
+import org.axonframework.messaging.Context;
+import org.axonframework.messaging.SimpleContext;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 

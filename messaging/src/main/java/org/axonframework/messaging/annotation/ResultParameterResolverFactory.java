@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.interceptors.ResultHandler;
@@ -44,7 +44,7 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
 
     private static final ThreadLocal<Object> REGISTERED_RESULT = new ThreadLocal<>();
     private static final Object IGNORE_RESULT_PARAMETER_MARKER = new Object();
-    public static final ResourceKey<Object> RESOURCE_KEY = ResourceKey.create("Invocation result for interceptors");
+    public static final ResourceKey<Object> RESOURCE_KEY = ResourceKey.withLabel("Invocation result for interceptors");
 
 
     public static <R> R callWithResult(Object result, ProcessingContext processingContext,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.pooled;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
@@ -138,9 +138,9 @@ class CoordinatorTest {
     void ifCoordinationTaskSchedulesEventsWithTheSameTokenTogether() throws InterruptedException {
         TrackingToken testToken = new GlobalSequenceTrackingToken(0);
         TrackedEventMessage testEventOne =
-                new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("this-event"));
+                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("this-event"));
         TrackedEventMessage testEventTwo =
-                new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("that-event"));
+                new GenericTrackedEventMessage<>(testToken, EventTestUtils.asEventMessage("that-event"));
         List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
         testEvents.add(testEventOne);
         testEvents.add(testEventTwo);

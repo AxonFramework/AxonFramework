@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
@@ -49,7 +49,7 @@ import java.util.function.UnaryOperator;
 public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.LifecycleManagement<ID, M> {
 
     private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, M>>>> managedEntitiesKey =
-            ResourceKey.create("managedEntities");
+            ResourceKey.withLabel("managedEntities");
 
     private final AsyncEventStore eventStore;
     private final CriteriaResolver<ID> criteriaResolver;
