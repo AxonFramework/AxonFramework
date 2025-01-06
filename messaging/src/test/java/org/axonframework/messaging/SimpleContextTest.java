@@ -17,6 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.common.ContextTestSuite;
+import org.axonframework.messaging.Context.ResourceKey;
 
 /**
  * Test class validating the {@link SimpleContext}.
@@ -25,7 +26,7 @@ import org.axonframework.common.ContextTestSuite;
  */
 public class SimpleContextTest extends ContextTestSuite<SimpleContext> {
 
-    private static final Context.ResourceKey<String> RANDOM_RESOURCE_KEY = Context.ResourceKey.create("RandomResource");
+    private static final ResourceKey<String> RANDOM_RESOURCE_KEY = ResourceKey.withLabel("RandomResource");
 
     @Override
     public SimpleContext testSubject() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.messaging;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.ContextTestSuite;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.junit.jupiter.api.*;
 
@@ -61,7 +61,7 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
         MetaData expectedMetaData = MetaData.from(Map.of("key", "value"));
         String expectedResourceValue = "test";
         ResourceKey<String> expectedContextKey = ResourceKey.withLabel(expectedResourceValue);
-        Context testContext = new SimpleContext().withResource(expectedContextKey, expectedResourceValue);
+        Context testContext = Context.empty().withResource(expectedContextKey, expectedResourceValue);
 
         Entry<Message<Object>> testSubject = new SimpleEntry<>(expectedMessage, testContext);
 
