@@ -90,13 +90,13 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
         }
     }
 
-    private static String resolveAggregateType(Set<Tag> indices) {
-        if (indices.isEmpty()) {
+    private static String resolveAggregateType(Set<Tag> tags) {
+        if (tags.isEmpty()) {
             return null;
-        } else if (indices.size() > 1) {
+        } else if (tags.size() > 1) {
             throw new IllegalArgumentException("Condition must provide exactly one tag");
         } else {
-            return indices.iterator().next().key();
+            return tags.iterator().next().key();
         }
     }
 
