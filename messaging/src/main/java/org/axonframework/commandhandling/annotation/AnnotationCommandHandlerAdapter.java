@@ -92,6 +92,9 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
      * @param annotatedCommandHandler  The object containing the @CommandHandler annotated methods
      * @param parameterResolverFactory The strategy for resolving handler method parameter values
      * @param handlerDefinition        The handler definition used to create concrete handlers
+     * @param messageNameResolver      The {@link MessageNameResolver} resolving the
+     *                                 {@link org.axonframework.messaging.QualifiedName names} for
+     *                                 {@link org.axonframework.commandhandling.CommandMessage CommandMessages}
      */
     @SuppressWarnings("unchecked")
     public AnnotationCommandHandlerAdapter(T annotatedCommandHandler,

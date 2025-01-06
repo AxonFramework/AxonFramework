@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.replay.GenericResetContext;
 import org.axonframework.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageNameResolver;
@@ -55,9 +54,14 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
      * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus.
      *
      * @param annotatedEventListener the annotated event listener
+     * @param messageNameResolver    The {@link MessageNameResolver} resolving the
+     *                               {@link org.axonframework.messaging.QualifiedName names} for
+     *                               {@link org.axonframework.eventhandling.EventMessage EventMessages}
      */
-    public AnnotationEventHandlerAdapter(Object annotatedEventListener) {
-        this(annotatedEventListener, ClasspathParameterResolverFactory.forClass(annotatedEventListener.getClass()));
+    public AnnotationEventHandlerAdapter(Object annotatedEventListener, MessageNameResolver messageNameResolver) {
+        this(annotatedEventListener,
+             ClasspathParameterResolverFactory.forClass(annotatedEventListener.getClass()),
+             messageNameResolver);
     }
 
     /**
@@ -66,13 +70,18 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
      *
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
+     * @param messageNameResolver      The {@link MessageNameResolver} resolving the
+     *                                 {@link org.axonframework.messaging.QualifiedName names} for
+     *                                 {@link org.axonframework.eventhandling.EventMessage EventMessages}
      */
     public AnnotationEventHandlerAdapter(Object annotatedEventListener,
-                                         ParameterResolverFactory parameterResolverFactory) {
+                                         ParameterResolverFactory parameterResolverFactory,
+                                         MessageNameResolver messageNameResolver) {
         this(annotatedEventListener,
              parameterResolverFactory,
              ClasspathHandlerDefinition.forClass(annotatedEventListener.getClass()),
-             new ClassBasedMessageNameResolver());
+             messageNameResolver
+        );
     }
 
     /**
@@ -83,6 +92,9 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
      * @param handlerDefinition        the handler definition used to create concrete handlers
+     * @param messageNameResolver      The {@link MessageNameResolver} resolving the
+     *                                 {@link org.axonframework.messaging.QualifiedName names} for
+     *                                 {@link org.axonframework.eventhandling.EventMessage EventMessages}
      */
     public AnnotationEventHandlerAdapter(Object annotatedEventListener,
                                          ParameterResolverFactory parameterResolverFactory,
