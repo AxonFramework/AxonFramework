@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
@@ -70,7 +70,7 @@ class SimpleResourceParameterResolverFactoryTest {
     void resolvesToResourceWhenMessageHandlingMethodHasResourceParameter() {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResourceParameter, messageHandlingMethodWithResourceParameter.getParameters(), 1);
-        final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
+        final EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("test");
         assertTrue(resolver.matches(eventMessage, null));
         assertEquals(TEST_RESOURCE, resolver.resolveParameterValue(eventMessage, null));
     }
@@ -80,7 +80,7 @@ class SimpleResourceParameterResolverFactoryTest {
     void resolvesToResourceWhenMessageHandlingMethodHasAnotherResourceParameter() {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResource2Parameter, messageHandlingMethodWithResource2Parameter.getParameters(), 1);
-        final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
+        final EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("test");
         assertTrue(resolver.matches(eventMessage, null));
         assertEquals(TEST_RESOURCE2, resolver.resolveParameterValue(eventMessage, null));
     }

@@ -16,7 +16,8 @@
 
 package org.axonframework.common;
 
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public abstract class ContextTestSuite<C extends Context> {
 
     protected static final String EXPECTED_RESOURCE_VALUE = "testContext";
-    protected static final ResourceKey<String> TEST_RESOURCE_KEY = ResourceKey.create(EXPECTED_RESOURCE_VALUE);
+    protected static final ResourceKey<String> TEST_RESOURCE_KEY = ResourceKey.withLabel(EXPECTED_RESOURCE_VALUE);
 
     /**
      * Build a test subject of type {@code C} for this suite.
@@ -68,7 +69,7 @@ public abstract class ContextTestSuite<C extends Context> {
     @Test
     void withResourceReturnsNewContextInstanceWithTheExpectedResources() {
         String expectedResourceValueTwo = "resourceTwo";
-        ResourceKey<String> testResourceKeyTwo = ResourceKey.create(expectedResourceValueTwo);
+        ResourceKey<String> testResourceKeyTwo = ResourceKey.withLabel(expectedResourceValueTwo);
 
         C testSubject = testSubject();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,9 @@ import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFac
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
@@ -66,7 +64,7 @@ class ServerConnectorConfigurerModuleTest {
                 testSubject.getComponent(TargetContextResolver.class);
         assertNotNull(resultTargetContextResolver);
         // The default TargetContextResolver is a no-op which returns null
-        assertNull(resultTargetContextResolver.resolveContext(GenericEventMessage.asEventMessage("some-event")));
+        assertNull(resultTargetContextResolver.resolveContext(EventTestUtils.asEventMessage("some-event")));
     }
 
     @Test

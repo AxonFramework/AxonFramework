@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
@@ -86,7 +86,7 @@ class MultiParameterResolverFactoryTest {
     @Test
     void firstMatchingResolverMayReturnValue() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
-        final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
+        final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
         when(mockFactory1.createInstance(ArgumentMatchers.any(Executable.class),
                                          ArgumentMatchers.any(),
                                          ArgumentMatchers.anyInt()))
