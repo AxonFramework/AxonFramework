@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.io.Serial;
 import java.util.Map;
@@ -40,33 +39,6 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
 
     @Serial
     private static final long serialVersionUID = -6872386525166762225L;
-
-    /**
-     * Returns the given {@code messageOrPayload} as a {@link ResetContext}. If {@code messageOrPayload} already
-     * implements {@code ResetContext}, it is returned as-is. If it implements {@link Message}, {@code messageOrPayload}
-     * will be cast to {@code Message} and current time is used to create a {@code ResetContext}. Otherwise, the given
-     * {@code messageOrPayload} is wrapped into a {@link GenericResetContext} as its payload.
-     *
-     * @param messageOrPayload the payload to wrap or cast as {@link ResetContext}
-     * @param <T>              the type of payload contained in the message
-     * @return a {@link ResetContext} containing given {@code messageOrPayload} as payload, or the
-     * {@code messageOrPayload} if it already implements {@code ResetContext}.
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public static <T> ResetContext<T> asResetContext(Object messageOrPayload) {
-        if (messageOrPayload instanceof ResetContext) {
-            return (ResetContext<T>) messageOrPayload;
-        } else if (messageOrPayload instanceof Message) {
-            return new GenericResetContext<>((Message<T>) messageOrPayload);
-        }
-        QualifiedName name = messageOrPayload == null
-                ? new QualifiedName("axon.framework", "empty.reset.context", "5.0.0")
-                : QualifiedNameUtils.fromClassName(messageOrPayload.getClass());
-        return new GenericResetContext<>(name, (T) messageOrPayload);
-    }
 
     /**
      * Constructs a {@link GenericResetContext} for the given {@code name} and {@code payload}.
