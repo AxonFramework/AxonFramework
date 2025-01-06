@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -84,9 +87,23 @@ public class StubEventScheduler implements EventScheduler {
     }
 
 
+    @SuppressWarnings("unchecked")
+    private static <P> EventMessage<P> asEventMessage(Object event) {
+        if (event instanceof EventMessage) {
+            return (EventMessage<P>) event;
+        } else if (event instanceof Message) {
+            Message<P> message = (Message<P>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage<>(
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                () -> GenericEventMessage.clock.instant()
+        );
+    }
+
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
-        EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
+        EventMessage eventMessage = asEventMessage(event);
         StubScheduleToken token = new StubScheduleToken(triggerDateTime, eventMessage, counter.getAndIncrement());
         scheduledEvents.add(token);
         return token;
@@ -94,7 +111,7 @@ public class StubEventScheduler implements EventScheduler {
 
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
-        EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
+        EventMessage eventMessage = asEventMessage(event);
         Instant scheduleTime = currentDateTime.plus(triggerDuration);
         StubScheduleToken token = new StubScheduleToken(scheduleTime, eventMessage, counter.getAndIncrement());
         scheduledEvents.add(token);
