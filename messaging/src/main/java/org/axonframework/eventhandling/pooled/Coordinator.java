@@ -852,7 +852,7 @@ class Coordinator {
         }
 
         private void resetRetryExponentialBackoff(int segmentId) {
-            releasesLastBackOffSeconds.compute(segmentId, (s, b) -> 1);
+            releasesLastBackOffSeconds.compute(segmentId, (s, b) -> null);
             logger.debug("Processor [{}] reset release deadline backoff for Segment [#{}].",
                          name,
                          segmentId);
