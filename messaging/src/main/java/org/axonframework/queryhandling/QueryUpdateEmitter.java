@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.Collections;
 import java.util.Set;
@@ -96,7 +100,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
         } else if (payload instanceof Message) {
             return new GenericSubscriptionQueryUpdateMessage<>((Message<U>) payload);
         }
-        // todo: use MessageNameResolver below
+        // TODO #3085 use MessageNameResolver below
         return new GenericSubscriptionQueryUpdateMessage<>(
                 QualifiedNameUtils.fromClassName(payload.getClass()), (U) payload
         );
