@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.axonframework.deadline.annotation;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
@@ -35,7 +34,7 @@ class DeadlineMethodMessageHandlerDefinitionTest {
     @BeforeEach
     void setUp() {
         listener = new Listener();
-        handlerAdapter = new AnnotationEventHandlerAdapter(listener, new ClassBasedMessageNameResolver());
+        handlerAdapter = new AnnotationEventHandlerAdapter(listener);
     }
 
     @Test
