@@ -439,7 +439,7 @@ public class AxonConfig {
 
 The error mode differs between the Tracking- and Pooled Streaming Event Processor.
 
-Whenever the xref:event-processors/index.adoc#error-handling[error handler] rethrows an exception (keep in mind, that by default the exception is just logged), a `TrackingEventProcessor` will retry processing the event using an incremental back-off period.
+Whenever the xref:event-processors/index.adoc#error-handling[error handler] rethrows an exception, a `TrackingEventProcessor` will retry processing the event using an incremental back-off period.
 It will start at 1 second and double after each attempt until it reaches the maximum wait time of 60 seconds per attempt.
 This back-off time ensures that in a distributed environment, when another node is able to process events, it will have the opportunity to claim the <<tracking-tokens,token>> required to process the event.
 
