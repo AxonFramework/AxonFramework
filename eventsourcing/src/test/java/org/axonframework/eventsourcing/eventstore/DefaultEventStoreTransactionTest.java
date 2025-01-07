@@ -22,12 +22,15 @@ import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventSto
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.UnaryOperator;
 
 import static org.axonframework.eventsourcing.eventstore.EventCriteria.anyEvent;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 class DefaultEventStoreTransactionTest {
@@ -72,8 +75,14 @@ class DefaultEventStoreTransactionTest {
     void appendPosition() {
     }
 
+    @Captor
+    ArgumentCaptor<Context.ResourceKey<AppendCondition>> keyCaptor;
+    @Captor
+    ArgumentCaptor<UnaryOperator<AppendCondition>> valueCaptor;
+
     @BeforeEach
     void setUp() {
+        MockitoAnnotations.openMocks(this);
         unitOfWork = new AsyncUnitOfWork();
         eventStorageEngine = new AsyncInMemoryEventStorageEngine();
     }
@@ -81,17 +90,61 @@ class DefaultEventStoreTransactionTest {
     @Test
     void whenSourceThenCreateAppendCondition() {
         // given
-        var appendCondition = anAppendCondition();
+        var sourcingCondition = aSourcingCondition();
 
         // when
         var context = awaitCompletion(unitOfWork.executeWithResult(unitOfWorkContext -> {
-            eventStoreTransaction = new DefaultEventStoreTransaction(eventStorageEngine, unitOfWorkContext);
+            var spiedContext = spy(unitOfWorkContext);
+            eventStoreTransaction = new DefaultEventStoreTransaction(eventStorageEngine, spiedContext);
             eventStoreTransaction.source(aSourcingCondition(),
-                                         unitOfWorkContext); // how differ the context from constructor?
-            return CompletableFuture.completedFuture(unitOfWorkContext);
+                                         spiedContext); // how differ the context from constructor?
+            return CompletableFuture.completedFuture(spiedContext);
         }));
 
         // then
-        assertEquals(appendCondition, context.getResource(APPEND_CONDITION_KEY));
+        verify(context).updateResource(keyCaptor.capture(), valueCaptor.capture());
+        var key = keyCaptor.getValue().toString();
+        assertTrue(key.contains("appendCondition"));
+//        var value = valueCaptor.getValue()
+
     }
+
+//    @Test
+//    void sourcingConditionIsMappedToAppendConditionByEventStoreTransaction() {
+//        EventCriteria expectedCriteria = TEST_AGGREGATE_CRITERIA;
+//        EventMessage<?> expectedEventOne = eventMessage(0);
+//        EventMessage<?> expectedEventTwo = eventMessage(1);
+//        EventMessage<?> expectedEventThree = eventMessage(2);
+//        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(expectedCriteria);
+//
+//        AtomicReference<MessageStream<EventMessage<?>>> initialStreamReference = new AtomicReference<>();
+//        AtomicReference<MessageStream<EventMessage<?>>> finalStreamReference = new AtomicReference<>();
+//
+//        AsyncUnitOfWork uow = new AsyncUnitOfWork();
+//        uow.runOnPreInvocation(context -> {
+//               EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
+//               initialStreamReference.set(transaction.source(testSourcingCondition, context));
+//           })
+//           .runOnPostInvocation(context -> {
+//               EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
+//               transaction.appendEvent(expectedEventOne);
+//               transaction.appendEvent(expectedEventTwo);
+//               transaction.appendEvent(expectedEventThree);
+//           })
+//           // Event are given to the store in the PREPARE_COMMIT phase.
+//           // Hence, we retrieve the sourced set after that.
+//           .runOnAfterCommit(context -> {
+//               EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
+//               finalStreamReference.set(transaction.source(testSourcingCondition, context));
+//           });
+//        awaitCompletion(uow.execute());
+//
+//        assertNull(initialStreamReference.get().firstAsCompletableFuture().join());
+//
+//        StepVerifier.create(finalStreamReference.get().asFlux())
+//                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 0, expectedEventOne))
+//                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 1, expectedEventTwo))
+//                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 2, expectedEventThree))
+//                    .verifyComplete();
+//    }
 }
