@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,6 +171,13 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         StepVerifier.create(
                             testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
                     .expectNextCount(3)
+                    .verifyComplete();
+    }
+
+    @Test
+    void sourcingEventsReturnsEmptyStreamIfNoEventsInTheStore() {
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
+                    .expectNextCount(0)
                     .verifyComplete();
     }
 

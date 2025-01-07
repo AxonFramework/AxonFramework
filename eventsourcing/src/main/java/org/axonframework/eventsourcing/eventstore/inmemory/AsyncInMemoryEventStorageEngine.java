@@ -169,7 +169,8 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         }
 
         return eventsToMessageStream(condition.start(),
-                                     Math.min(condition.end(), eventStorage.lastKey()),
+                                     Math.min(condition.end(), eventStorage.isEmpty() ? -1 : eventStorage.lastKey()),
+                                     // fixme: why stuck with Long.MAX_VALUE?
                                      condition.criteria());
     }
 
