@@ -33,18 +33,23 @@ import java.util.function.BiFunction;
  */
 @FunctionalInterface
 public interface MessageHandler<M extends Message<?>, R extends Message<?>>
-        extends Named, BiFunction<M, ProcessingContext, MessageStream<R>> {
+        extends Named, BiFunction<M, ProcessingContext, MessageStream<? extends R>> {
+
+    /**
+     * @param message
+     * @param context
+     * @return
+     */
+    @Nonnull
+    MessageStream<? extends R> handle(@Nonnull M message, @Nonnull ProcessingContext context);
+
+    @Override
+    default MessageStream<? extends R> apply(@Nonnull M message, @Nonnull ProcessingContext context) {
+        return this.handle(message, context);
+    }
 
     @Override
     default QualifiedName name() {
         return QualifiedNameUtils.fromClassName(this.getClass());
     }
-
-    @Override
-    default MessageStream<R> apply(@Nonnull M message, @Nonnull ProcessingContext context) {
-        return this.handle(message, context);
-    }
-
-    @Nonnull
-    MessageStream<R> handle(@Nonnull M message, @Nonnull ProcessingContext context);
 }
