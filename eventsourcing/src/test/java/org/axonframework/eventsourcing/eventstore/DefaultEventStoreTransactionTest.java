@@ -16,14 +16,19 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.eventsourcing.StubProcessingContext;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
 import org.axonframework.messaging.Context;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.junit.jupiter.api.*;
+
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.eventsourcing.eventstore.EventCriteria.anyEvent;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 class DefaultEventStoreTransactionTest {
 
@@ -31,7 +36,7 @@ class DefaultEventStoreTransactionTest {
             "appendCondition");
     private AsyncEventStorageEngine eventStorageEngine;
     private EventStoreTransaction eventStoreTransaction;
-    private ProcessingContext processingContext;
+    private AsyncUnitOfWork unitOfWork;
 
     private static SourcingCondition aSourcingCondition() {
         return new DefaultSourcingCondition(anyEvent(), 1L, 999L);
@@ -41,23 +46,18 @@ class DefaultEventStoreTransactionTest {
         return new DefaultAppendCondition(999L, anyEvent());
     }
 
-    @BeforeEach
-    void setUp() {
-        processingContext = new StubProcessingContext();
-        eventStorageEngine = new AsyncInMemoryEventStorageEngine();
-        eventStoreTransaction = new DefaultEventStoreTransaction(eventStorageEngine, processingContext);
+    // TODO - Discuss: Perfect candidate to move to a commons test utils module?
+    protected static <R> R awaitCompletion(CompletableFuture<R> completion) {
+        await().atMost(Duration.ofMillis(500)) // todo: testcontainers shaded dependency?
+               .pollDelay(Duration.ofMillis(25))
+               .untilAsserted(() -> assertFalse(completion.isCompletedExceptionally(),
+                                                () -> completion.exceptionNow().toString()));
+        return completion.join();
     }
 
-    @Test
-    void whenSourceThenCreateAppendCondition() {
-        // given
-        AppendCondition appendCondition = anAppendCondition();
-
-        // when
-        eventStoreTransaction.source(aSourcingCondition(), processingContext);
-
-        // then
-        assertEquals(appendCondition, processingContext.getResource(APPEND_CONDITION_KEY));
+    // TODO - Discuss: Perfect candidate to move to a commons test utils module?
+    protected static EventMessage<?> eventMessage(int seq) {
+        return EventTestUtils.asEventMessage("Event[" + seq + "]");
     }
 
     @Test
@@ -70,5 +70,28 @@ class DefaultEventStoreTransactionTest {
 
     @Test
     void appendPosition() {
+    }
+
+    @BeforeEach
+    void setUp() {
+        unitOfWork = new AsyncUnitOfWork();
+        eventStorageEngine = new AsyncInMemoryEventStorageEngine();
+    }
+
+    @Test
+    void whenSourceThenCreateAppendCondition() {
+        // given
+        var appendCondition = anAppendCondition();
+
+        // when
+        var context = awaitCompletion(unitOfWork.executeWithResult(unitOfWorkContext -> {
+            eventStoreTransaction = new DefaultEventStoreTransaction(eventStorageEngine, unitOfWorkContext);
+            eventStoreTransaction.source(aSourcingCondition(),
+                                         unitOfWorkContext); // how differ the context from constructor?
+            return CompletableFuture.completedFuture(unitOfWorkContext);
+        }));
+
+        // then
+        assertEquals(appendCondition, context.getResource(APPEND_CONDITION_KEY));
     }
 }
