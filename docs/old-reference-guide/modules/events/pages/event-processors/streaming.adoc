@@ -439,14 +439,16 @@ public class AxonConfig {
 
 The error mode differs between the Tracking- and Pooled Streaming Event Processor.
 
-Whenever the xref:event-processors/index.adoc#error-handling[error handler] rethrows an exception, a `TrackingEventProcessor` will retry processing the event using an incremental back-off period.
+Whenever the xref:event-processors/index.adoc#error-handling[error handler] rethrows an exception (keep in mind, that by default the exception is just logged), a `TrackingEventProcessor` will retry processing the event using an incremental back-off period.
 It will start at 1 second and double after each attempt until it reaches the maximum wait time of 60 seconds per attempt.
 This back-off time ensures that in a distributed environment, when another node is able to process events, it will have the opportunity to claim the <<tracking-tokens,token>> required to process the event.
 
 The `PooledStreamingEventProcessor` simply aborts the failed part of the process.
 The Pooled Streaming Processor can deal with this since the <<Pooled streaming processor threading,threading mode>> is different from the Tracking Processor.
-As such, the chance is high the failed process will be picked up quickly by another thread within the same JVM.
-This chance increases further whenever the PSEP instance is distributed over several application instances.
+As such, the chance is high the failed process will be picked up quickly by another thread within the same JVM and the processor will retry to do so using an incremental back-off period.
+It will start at 1 second and double after each attempt until it reaches the maximum wait time of 60 seconds per attempt. The back-off will not transition over into a distributed environment.
+The chance that the failed part will be picked up by another thread increases further whenever the PSEP instance is distributed over several application instances.
+In the distributed environment the backoff will be ignored by other PSEP instances and the failed part may be picked up by another instance immediately.
 
 [[tracking-tokens]]
 == Tracking tokens
