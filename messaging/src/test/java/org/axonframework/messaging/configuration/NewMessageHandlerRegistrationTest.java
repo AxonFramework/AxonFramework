@@ -70,7 +70,7 @@ class NewMessageHandlerRegistrationTest {
 
         testSubject = new GenericMessageHandlingComponent();
 
-        testSubject.registerMessageHandler(MESSAGE_HANDLER_NAME, (message, context) -> {
+        testSubject.subscribe(MESSAGE_HANDLER_NAME, (message, context) -> {
                        messageHandlerInvoked.set(true);
                        return MessageStream.empty();
                    })
@@ -98,29 +98,29 @@ class NewMessageHandlerRegistrationTest {
 
         QualifiedName testName = new QualifiedName("axon", "test", "0.0.1");
 
-        plainMHC.registerMessageHandler(testName, (message, context) -> MessageStream.empty())
+        plainMHC.subscribe(testName, (message, context) -> MessageStream.empty())
 
-                .registerMessageHandler(testName, new TestCommandHandler())
+                .subscribe(testName, new TestCommandHandler())
 //                .registerCommandHandler(testName, new TestCommandHandler())
 //                .registerCommandHandler(testName, (command, context) -> MessageStream.empty())
 
-                .registerMessageHandler(testName, new TestEventHandler())
+                .subscribe(testName, new TestEventHandler())
 //                .registerEventHandler(testName, new TestEventHandler())
 //                .registerEventHandler(testName, (event, context) -> MessageStream.empty())
 
-                .registerMessageHandler(testName, new TestQueryHandler())
+                .subscribe(testName, new TestQueryHandler())
 //                .registerQueryHandler(testName, new TestQueryHandler())
 //                .registerQueryHandler(testName, (query, context) -> MessageStream.empty())
 
-                .registerMessageHandler(Set.of(testName), new TestMessageHandlingComponent<>());
+                .subscribe(Set.of(testName), new TestMessageHandlingComponent<>());
 
-        aggregate.registerMessageHandler(testName, (message, context) -> MessageStream.empty())
+        aggregate.subscribe(testName, (message, context) -> MessageStream.empty())
 
-                 .registerMessageHandler(testName, new TestCommandHandler())
+                 .subscribe(testName, new TestCommandHandler())
                  .registerCommandHandler(testName, new TestCommandHandler())
                  .registerCommandHandler(testName, (command, context) -> MessageStream.empty())
 
-                 .registerMessageHandler(testName, new TestEventHandler())
+                 .subscribe(testName, new TestEventHandler())
                  .registerEventHandler(testName, new TestEventHandler())
                  .registerEventHandler(testName, (event, context) -> MessageStream.empty())
 
@@ -128,39 +128,39 @@ class NewMessageHandlerRegistrationTest {
 //                 .registerQueryHandler(testName, new TestQueryHandler())
 //                 .registerQueryHandler(testName, (query, context) -> MessageStream.empty())
 
-                 .registerMessageHandler(Set.of(testName), new TestMessageHandlingComponent<>());
+                 .subscribe(Set.of(testName), new TestMessageHandlingComponent<>());
 
-        projector.registerMessageHandler(testName, (message, context) -> MessageStream.empty())
+        projector.subscribe(testName, (message, context) -> MessageStream.empty())
 
 //                 .registerMessageHandler(testName, new TestCommandHandler())
 //                 .registerCommandHandler(testName, new TestCommandHandler())
 //                 .registerCommandHandler(testName, (command, context) -> MessageStream.empty())
 
-                 .registerMessageHandler(testName, new TestEventHandler())
+                 .subscribe(testName, new TestEventHandler())
                  .registerEventHandler(testName, new TestEventHandler())
                  .registerEventHandler(testName, (event, context) -> MessageStream.empty())
 
-                 .registerMessageHandler(testName, new TestQueryHandler())
+                 .subscribe(testName, new TestQueryHandler())
                  .registerQueryHandler(testName, new TestQueryHandler())
                  .registerQueryHandler(testName, (query, context) -> MessageStream.empty())
 
-                 .registerMessageHandler(Set.of(testName), new TestMessageHandlingComponent<>());
+                 .subscribe(Set.of(testName), new TestMessageHandlingComponent<>());
 
-        genericMHC.registerMessageHandler(testName, (message, context) -> MessageStream.empty())
+        genericMHC.subscribe(testName, (message, context) -> MessageStream.empty())
 
-                  .registerMessageHandler(testName, new TestCommandHandler())
+                  .subscribe(testName, new TestCommandHandler())
                   .registerCommandHandler(testName, new TestCommandHandler())
                   .registerCommandHandler(testName, (command, context) -> MessageStream.empty())
 
-                  .registerMessageHandler(testName, new TestEventHandler())
+                  .subscribe(testName, new TestEventHandler())
                   .registerEventHandler(testName, new TestEventHandler())
                   .registerEventHandler(testName, (event, context) -> MessageStream.empty())
 
-                  .registerMessageHandler(testName, new TestQueryHandler())
+                  .subscribe(testName, new TestQueryHandler())
                   .registerQueryHandler(testName, new TestQueryHandler())
                   .registerQueryHandler(testName, (query, context) -> MessageStream.empty())
 
-                  .registerMessageHandler(Set.of(testName), new TestMessageHandlingComponent<>());
+                  .subscribe(Set.of(testName), new TestMessageHandlingComponent<>());
     }
 
     @Test
@@ -265,7 +265,7 @@ class NewMessageHandlerRegistrationTest {
         QueryMessage<Object, Object> testQueryMessage = new QueryMessageWithType(QUERY_HANDLER_NAME);
 
         GenericMessageHandlingComponent testSubjectWithRegisteredMHC =
-                new GenericMessageHandlingComponent().registerMessageHandler(testSubject.supportedMessages(), testSubject);
+                new GenericMessageHandlingComponent().subscribe(testSubject.supportedMessages(), testSubject);
 
         testSubjectWithRegisteredMHC.handle(testMessage, ProcessingContext.NONE);
         testSubjectWithRegisteredMHC.handle(testCommandMessage, ProcessingContext.NONE);
@@ -318,7 +318,7 @@ class NewMessageHandlerRegistrationTest {
             implements MessageHandlingComponent<HM, HR> {
 
         @Override
-        public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry registerMessageHandler(
+        public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry subscribe(
                 @Nonnull Set<QualifiedName> names,
                 @Nonnull H messageHandler
         ) {

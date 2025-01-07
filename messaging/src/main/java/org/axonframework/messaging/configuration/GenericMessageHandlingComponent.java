@@ -65,7 +65,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> GenericMessageHandlingComponent registerMessageHandler(
+    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> GenericMessageHandlingComponent subscribe(
             @Nonnull Set<QualifiedName> names,
             @Nonnull H messageHandler
     ) {
@@ -89,32 +89,32 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> GenericMessageHandlingComponent registerMessageHandler(
+    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> GenericMessageHandlingComponent subscribe(
             @Nonnull QualifiedName name,
             @Nonnull H messageHandler
     ) {
-        return this.registerMessageHandler(Set.of(name), messageHandler);
+        return this.subscribe(Set.of(name), messageHandler);
     }
 
     public <C extends CommandHandler> GenericMessageHandlingComponent registerCommandHandler(
             @Nonnull QualifiedName messageType,
             @Nonnull C commandHandler
     ) {
-        return registerMessageHandler(messageType, commandHandler);
+        return subscribe(messageType, commandHandler);
     }
 
     public <E extends EventHandler> GenericMessageHandlingComponent registerEventHandler(
             @Nonnull QualifiedName messageType,
             @Nonnull E eventHandler
     ) {
-        return registerMessageHandler(messageType, eventHandler);
+        return subscribe(messageType, eventHandler);
     }
 
     public <Q extends QueryHandler> GenericMessageHandlingComponent registerQueryHandler(
             @Nonnull QualifiedName messageType,
             @Nonnull Q queryHandler
     ) {
-        return registerMessageHandler(messageType, queryHandler);
+        return subscribe(messageType, queryHandler);
     }
 
     @Override

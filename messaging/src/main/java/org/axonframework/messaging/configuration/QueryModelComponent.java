@@ -57,7 +57,7 @@ public class QueryModelComponent implements MessageHandlingComponent<Message<?>,
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryModelComponent registerMessageHandler(
+    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryModelComponent subscribe(
             @Nonnull Set<QualifiedName> names, @Nonnull H messageHandler
     ) {
         if (messageHandler instanceof EventHandler eventHandler) {
@@ -72,11 +72,11 @@ public class QueryModelComponent implements MessageHandlingComponent<Message<?>,
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryModelComponent registerMessageHandler(
+    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryModelComponent subscribe(
             @Nonnull QualifiedName name,
             @Nonnull H messageHandler
     ) {
-        return registerMessageHandler(Set.of(name), messageHandler);
+        return subscribe(Set.of(name), messageHandler);
     }
 
     public <E extends EventHandler> QueryModelComponent registerEventHandler(@Nonnull QualifiedName messageType,

@@ -53,7 +53,7 @@ public class QueryHandlingComponent implements MessageHandlingComponent<QueryMes
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryHandlingComponent registerMessageHandler(
+    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryHandlingComponent subscribe(
             @Nonnull Set<QualifiedName> names,
             @Nonnull H messageHandler
     ) {
@@ -68,11 +68,11 @@ public class QueryHandlingComponent implements MessageHandlingComponent<QueryMes
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryHandlingComponent registerMessageHandler(
+    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryHandlingComponent subscribe(
             @Nonnull QualifiedName name,
             @Nonnull H messageHandler
     ) {
-        return registerMessageHandler(Set.of(name), messageHandler);
+        return subscribe(Set.of(name), messageHandler);
     }
 
     /**
@@ -83,7 +83,7 @@ public class QueryHandlingComponent implements MessageHandlingComponent<QueryMes
      */
     public <Q extends QueryHandler> QueryHandlingComponent registerQueryHandler(@Nonnull Set<QualifiedName> names,
                                                                                 @Nonnull Q queryHandler) {
-        return registerMessageHandler(names, queryHandler);
+        return subscribe(names, queryHandler);
     }
 
     /**

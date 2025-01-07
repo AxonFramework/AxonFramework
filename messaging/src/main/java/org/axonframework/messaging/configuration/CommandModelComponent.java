@@ -57,7 +57,7 @@ public class CommandModelComponent implements MessageHandlingComponent<Message<?
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> CommandModelComponent registerMessageHandler(
+    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> CommandModelComponent subscribe(
             @Nonnull Set<QualifiedName> names,
             @Nonnull H messageHandler
     ) {
@@ -73,11 +73,11 @@ public class CommandModelComponent implements MessageHandlingComponent<Message<?
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> CommandModelComponent registerMessageHandler(
+    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> CommandModelComponent subscribe(
             @Nonnull QualifiedName name,
             @Nonnull H messageHandler
     ) {
-        return registerMessageHandler(Set.of(name), messageHandler);
+        return subscribe(Set.of(name), messageHandler);
     }
 
     public <C extends CommandHandler> CommandModelComponent registerCommandHandler(@Nonnull QualifiedName messageType,

@@ -41,16 +41,16 @@ public interface MessageHandlerRegistry {
      *                       interested in messages dispatched with any of the given {@code names}.
      * @return This registry for fluent interfacing.
      */
-    <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry registerMessageHandler(
+    <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry subscribe(
             @Nonnull Set<QualifiedName> names,
             @Nonnull H messageHandler
     );
 
-    default <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry registerMessageHandler(
+    default <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry subscribe(
             @Nonnull QualifiedName name,
             @Nonnull H messageHandler
     ) {
-        return registerMessageHandler(Set.of(name), messageHandler);
+        return subscribe(Set.of(name), messageHandler);
     }
 
     /**

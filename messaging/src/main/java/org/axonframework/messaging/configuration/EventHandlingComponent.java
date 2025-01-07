@@ -52,7 +52,7 @@ public class EventHandlingComponent implements MessageHandlingComponent<EventMes
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> EventHandlingComponent registerMessageHandler(
+    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> EventHandlingComponent subscribe(
             @Nonnull Set<QualifiedName> names,
             @Nonnull H messageHandler
     ) {
@@ -67,11 +67,11 @@ public class EventHandlingComponent implements MessageHandlingComponent<EventMes
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> EventHandlingComponent registerMessageHandler(
+    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> EventHandlingComponent subscribe(
             @Nonnull QualifiedName name,
             @Nonnull H messageHandler
     ) {
-        return registerMessageHandler(Set.of(name), messageHandler);
+        return subscribe(Set.of(name), messageHandler);
     }
 
     /**
@@ -83,7 +83,7 @@ public class EventHandlingComponent implements MessageHandlingComponent<EventMes
      */
     public <E extends EventHandler> EventHandlingComponent registerEventHandler(@Nonnull Set<QualifiedName> names,
                                                                                 @Nonnull E eventHandler) {
-        return registerMessageHandler(names, eventHandler);
+        return subscribe(names, eventHandler);
     }
 
     /**
