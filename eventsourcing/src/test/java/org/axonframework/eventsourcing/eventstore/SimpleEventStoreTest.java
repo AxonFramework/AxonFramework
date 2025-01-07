@@ -29,6 +29,13 @@ import java.util.concurrent.CompletableFuture;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link SimpleEventStore} supports just one context and delegates operations to
+ * {@link AsyncEventStorageEngine}.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 class SimpleEventStoreTest {
 
     private static final String MATCHING_CONTEXT = "matching-context";
