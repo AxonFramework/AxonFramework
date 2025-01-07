@@ -17,10 +17,12 @@
 package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.queryhandling.QueryMessage;
 
 import java.util.Set;
 
@@ -33,49 +35,66 @@ import java.util.Set;
  */
 public class QueryModelComponent implements MessageHandlingComponent<Message<?>, Message<?>> {
 
-    private final MessageHandlingComponent<Message<?>, Message<?>> delegate;
+    private final EventHandlingComponent eventComponent;
+    private final QueryHandlingComponent queryComponent;
 
     public QueryModelComponent() {
-        this.delegate = new GenericMessageHandlingComponent();
+        this.eventComponent = new EventHandlingComponent();
+        this.queryComponent = new QueryHandlingComponent();
     }
 
     @Nonnull
     @Override
-    public MessageStream<Message<?>> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
-        return delegate.handle(message, context);
+    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+        return switch (message) {
+            case QueryMessage<?, ?> query -> queryComponent.handle(query, context);
+            case EventMessage<?> event -> eventComponent.handle(event, context);
+            default -> throw new IllegalArgumentException(
+                    "Cannot handle message of type " + message.getClass()
+                            + ". Only EventMessages and QueryMessages are supported."
+            );
+        };
     }
 
     @Override
     public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryModelComponent registerMessageHandler(
-            @Nonnull Set<QualifiedName> messageTypes, @Nonnull H messageHandler
+            @Nonnull Set<QualifiedName> names, @Nonnull H messageHandler
     ) {
-        if (messageHandler instanceof CommandHandler) {
-            throw new UnsupportedOperationException("Cannot register command handlers on a query model component");
+        if (messageHandler instanceof EventHandler eventHandler) {
+            eventComponent.registerEventHandler(names, eventHandler);
+            return this;
         }
-        delegate.registerMessageHandler(messageTypes, messageHandler);
-        return this;
+        if (messageHandler instanceof QueryHandler queryHandler) {
+            queryComponent.registerQueryHandler(names, queryHandler);
+            return this;
+        }
+        throw new IllegalArgumentException("Cannot register command handlers on a query model component");
     }
 
     @Override
     public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryModelComponent registerMessageHandler(
-            @Nonnull QualifiedName messageType,
+            @Nonnull QualifiedName name,
             @Nonnull H messageHandler
     ) {
-        return registerMessageHandler(Set.of(messageType), messageHandler);
+        return registerMessageHandler(Set.of(name), messageHandler);
     }
 
     public <E extends EventHandler> QueryModelComponent registerEventHandler(@Nonnull QualifiedName messageType,
                                                                              @Nonnull E eventHandler) {
-        return registerMessageHandler(messageType, eventHandler);
+        eventComponent.registerEventHandler(messageType, eventHandler);
+        return this;
     }
 
     public <Q extends QueryHandler> QueryModelComponent registerQueryHandler(@Nonnull QualifiedName messageType,
                                                                              @Nonnull Q queryHandler) {
-        return registerMessageHandler(messageType, queryHandler);
+        queryComponent.registerQueryHandler(messageType, queryHandler);
+        return this;
     }
 
     @Override
     public Set<QualifiedName> supportedMessages() {
-        return delegate.supportedMessages();
+        Set<QualifiedName> supportedMessage = eventComponent.supportedMessages();
+        supportedMessage.addAll(queryComponent.supportedMessages());
+        return supportedMessage;
     }
 }

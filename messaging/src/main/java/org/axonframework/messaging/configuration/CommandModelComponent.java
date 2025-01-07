@@ -17,6 +17,8 @@
 package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -33,50 +35,67 @@ import java.util.Set;
  */
 public class CommandModelComponent implements MessageHandlingComponent<Message<?>, Message<?>> {
 
-    private final MessageHandlingComponent<Message<?>, Message<?>> delegate;
+    private final CommandHandlingComponent commandComponent;
+    private final EventHandlingComponent eventComponent;
 
     public CommandModelComponent() {
-        this.delegate = new GenericMessageHandlingComponent();
+        this.commandComponent = new CommandHandlingComponent();
+        this.eventComponent = new EventHandlingComponent();
     }
 
     @Nonnull
     @Override
-    public MessageStream<Message<?>> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
-        return delegate.handle(message, context);
+    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+        return switch (message) {
+            case CommandMessage<?> command -> commandComponent.handle(command, context);
+            case EventMessage<?> event -> eventComponent.handle(event, context);
+            default -> throw new IllegalArgumentException(
+                    "Cannot handle message of type " + message.getClass()
+                            + ". Only CommandMessages and EventMessages are supported."
+            );
+        };
     }
 
     @Override
     public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> CommandModelComponent registerMessageHandler(
-            @Nonnull Set<QualifiedName> messageTypes,
+            @Nonnull Set<QualifiedName> names,
             @Nonnull H messageHandler
     ) {
-        if (messageHandler instanceof QueryHandler) {
-            throw new UnsupportedOperationException("Cannot register command handlers on a command model component");
+        if (messageHandler instanceof CommandHandler commandHandler) {
+            commandComponent.registerCommandHandler(names, commandHandler);
+            return this;
         }
-        delegate.registerMessageHandler(messageTypes, messageHandler);
-        return this;
+        if (messageHandler instanceof EventHandler eventHandler) {
+            eventComponent.registerEventHandler(names, eventHandler);
+            return this;
+        }
+        throw new IllegalArgumentException("Cannot register query handlers on a command model component");
     }
 
     @Override
     public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> CommandModelComponent registerMessageHandler(
-            @Nonnull QualifiedName messageType,
+            @Nonnull QualifiedName name,
             @Nonnull H messageHandler
     ) {
-        return registerMessageHandler(Set.of(messageType), messageHandler);
+        return registerMessageHandler(Set.of(name), messageHandler);
     }
 
     public <C extends CommandHandler> CommandModelComponent registerCommandHandler(@Nonnull QualifiedName messageType,
                                                                                    @Nonnull C commandHandler) {
-        return registerMessageHandler(messageType, commandHandler);
+        commandComponent.registerCommandHandler(messageType, commandHandler);
+        return this;
     }
 
     public <E extends EventHandler> CommandModelComponent registerEventHandler(@Nonnull QualifiedName messageType,
                                                                                @Nonnull E eventHandler) {
-        return registerMessageHandler(messageType, eventHandler);
+        eventComponent.registerEventHandler(messageType, eventHandler);
+        return this;
     }
 
     @Override
     public Set<QualifiedName> supportedMessages() {
-        return delegate.supportedMessages();
+        Set<QualifiedName> supportedMessage = commandComponent.supportedMessages();
+        supportedMessage.addAll(eventComponent.supportedMessages());
+        return supportedMessage;
     }
 }
