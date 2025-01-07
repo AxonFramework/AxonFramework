@@ -48,5 +48,5 @@ public interface MessageHandlingComponent<M extends Message<?>, R extends Messag
      *
      * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported message types.
      */
-    Set<QualifiedName> messageTypes();
+    Set<QualifiedName> supportedMessages();
 }

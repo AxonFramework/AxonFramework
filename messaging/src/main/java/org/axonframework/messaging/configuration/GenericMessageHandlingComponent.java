@@ -38,14 +38,14 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final ConcurrentHashMap<QualifiedName, MessageHandler<Message<?>, Message<?>>> messageHandlersByQualifiedName;
+    private final ConcurrentHashMap<QualifiedName, MessageHandler<Message<?>, Message<?>>> messageHandlersByName;
     // TODO I would expect component-level interceptors to reside here as well. So, the @MessageHandlerInterceptor, for example.
 
     /**
      *
      */
     public GenericMessageHandlingComponent() {
-        this.messageHandlersByQualifiedName = new ConcurrentHashMap<>();
+        this.messageHandlersByName = new ConcurrentHashMap<>();
     }
 
     @Nonnull
@@ -54,7 +54,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
                                             @Nonnull ProcessingContext context) {
         QualifiedName messageType = message.name();
         // TODO add interceptor knowledge
-        MessageHandler<Message<?>, Message<?>> messageHandler = messageHandlersByQualifiedName.get(messageType);
+        MessageHandler<Message<?>, Message<?>> messageHandler = messageHandlersByName.get(messageType);
         if (messageHandler == null) {
             // TODO this would benefit from a dedicate exception
             return MessageStream.failed(new IllegalArgumentException(
@@ -72,7 +72,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
         if (messageHandler != this) {
             messageTypes.forEach(messageType -> {
                 //noinspection unchecked
-                MessageHandler<Message<?>, Message<?>> oldHandler = messageHandlersByQualifiedName.put(
+                MessageHandler<Message<?>, Message<?>> oldHandler = messageHandlersByName.put(
                         messageType, (MessageHandler<Message<?>, Message<?>>) messageHandler
                 );
                 if (oldHandler != null) {
@@ -118,7 +118,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     }
 
     @Override
-    public Set<QualifiedName> messageTypes() {
-        return Set.copyOf(messageHandlersByQualifiedName.keySet());
+    public Set<QualifiedName> supportedMessages() {
+        return Set.copyOf(messageHandlersByName.keySet());
     }
 }

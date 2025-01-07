@@ -265,7 +265,7 @@ class NewMessageHandlerRegistrationTest {
         QueryMessage<Object, Object> testQueryMessage = new QueryMessageWithType(QUERY_HANDLER_NAME);
 
         GenericMessageHandlingComponent testSubjectWithRegisteredMHC =
-                new GenericMessageHandlingComponent().registerMessageHandler(testSubject.messageTypes(), testSubject);
+                new GenericMessageHandlingComponent().registerMessageHandler(testSubject.supportedMessages(), testSubject);
 
         testSubjectWithRegisteredMHC.handle(testMessage, ProcessingContext.NONE);
         testSubjectWithRegisteredMHC.handle(testCommandMessage, ProcessingContext.NONE);
@@ -332,7 +332,7 @@ class NewMessageHandlerRegistrationTest {
         }
 
         @Override
-        public Set<QualifiedName> messageTypes() {
+        public Set<QualifiedName> supportedMessages() {
             return Set.of();
         }
     }
