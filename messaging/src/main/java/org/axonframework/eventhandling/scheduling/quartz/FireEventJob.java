@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,7 @@ public class FireEventJob implements Job {
                 ? new GenericEventMessage<>(((EventMessage<?>) event).name(),
                                             ((EventMessage<?>) event).getPayload(),
                                             ((EventMessage<?>) event).getMetaData())
-                : new GenericEventMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), event);
+                : new GenericEventMessage<>(QualifiedNameUtils.fromClassName(event.getClass()),
+                                            event); // TODO #3085 use MessageNameResolver
     }
 }
