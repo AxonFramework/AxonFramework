@@ -183,7 +183,7 @@ class SimpleEventStoreTest {
     }
 
     @Test
-    void describeToIncludesContextAndStorageEngine() {
+    void describeToDescribesPropertiesForEventStorageEngineAndTheContext() {
         // given
         ComponentDescriptor descriptor = mock(ComponentDescriptor.class);
 
