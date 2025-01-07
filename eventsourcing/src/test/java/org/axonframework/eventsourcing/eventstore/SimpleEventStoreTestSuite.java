@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,15 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.StubProcessingContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -56,7 +53,7 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
     protected static final String NOT_MATCHING_CONTEXT = "some-other-context";
     protected static final String TEST_AGGREGATE_ID = "someId";
     protected static final EventCriteria TEST_AGGREGATE_CRITERIA =
-            EventCriteria.hasIndex(new Index("aggregateIdentifier", TEST_AGGREGATE_ID));
+            EventCriteria.hasTag(new Tag("aggregateIdentifier", TEST_AGGREGATE_ID));
 
     protected ESE storageEngine;
 
@@ -108,9 +105,9 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
         }));
 
         StepVerifier.create(result.asFlux())
-                    .assertNext(entry -> assertTrackedAndTagged(entry, expectedEventOne, 0, expectedCriteria))
-                    .assertNext(entry -> assertTrackedAndTagged(entry, expectedEventTwo, 1, expectedCriteria))
-                    .assertNext(entry -> assertTrackedAndTagged(entry, expectedEventThree, 4, expectedCriteria))
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 0, expectedEventOne))
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 1, expectedEventTwo))
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 4, expectedEventThree))
                     .verifyComplete();
     }
 
@@ -147,20 +144,21 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
         assertNull(initialStreamReference.get().firstAsCompletableFuture().join());
 
         StepVerifier.create(finalStreamReference.get().asFlux())
-                    .assertNext(entry -> assertTrackedAndTagged(entry, expectedEventOne, 0, expectedCriteria))
-                    .assertNext(entry -> assertTrackedAndTagged(entry, expectedEventTwo, 1, expectedCriteria))
-                    .assertNext(entry -> assertTrackedAndTagged(entry, expectedEventThree, 2, expectedCriteria))
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 0, expectedEventOne))
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 1, expectedEventTwo))
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 2, expectedEventThree))
                     .verifyComplete();
     }
 
-    private static void assertTrackedAndTagged(Entry<EventMessage<?>> actual,
-                                               EventMessage<?> expected,
-                                               int expectedPosition,
-                                               EventCriteria expectedCriteria) {
-        assertInstanceOf(GenericIndexedEventMessage.class, actual.message());
-        Set<Index> actualIndices = ((GenericIndexedEventMessage<?>) actual.message()).indices();
-        assertTrue(actualIndices.containsAll(expectedCriteria.indices()));
-        assertTrackedEntry(actual, expected, expectedPosition);
+    private static void assertTagsPositionAndEvent(Entry<EventMessage<?>> actual,
+                                                   EventCriteria expectedCriteria,
+                                                   int expectedPosition,
+                                                   EventMessage<?> expectedEvent) {
+        Optional<Set<Tag>> optionalTags = Tag.fromContext(actual);
+        assertTrue(optionalTags.isPresent());
+        Set<Tag> actualTags = optionalTags.get();
+        assertTrue(actualTags.containsAll(expectedCriteria.tags()));
+        assertPositionAndEvent(actual, expectedPosition, expectedEvent);
     }
 
     @Test
@@ -300,9 +298,9 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
         MessageStream<EventMessage<?>> result = testSubject.open(TEST_CONTEXT, testStreamingCondition);
 
         StepVerifier.create(result.asFlux())
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne, 4))
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo, 5))
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree, 6))
+                    .assertNext(entry -> assertPositionAndEvent(entry, 4, expectedEventOne))
+                    .assertNext(entry -> assertPositionAndEvent(entry, 5, expectedEventTwo))
+                    .assertNext(entry -> assertPositionAndEvent(entry, 6, expectedEventThree))
                     .verifyComplete();
     }
 
@@ -330,21 +328,21 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
         MessageStream<EventMessage<?>> result = testSubject.open(TEST_CONTEXT, testStreamingCondition);
 
         StepVerifier.create(result.asFlux())
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne, 0))
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo, 1))
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree, 4))
+                    .assertNext(entry -> assertPositionAndEvent(entry, 0, expectedEventOne))
+                    .assertNext(entry -> assertPositionAndEvent(entry, 1, expectedEventTwo))
+                    .assertNext(entry -> assertPositionAndEvent(entry, 4, expectedEventThree))
                     .verifyComplete();
     }
 
-    private static void assertTrackedEntry(Entry<EventMessage<?>> actual,
-                                           EventMessage<?> expected,
-                                           long expectedPosition) {
+    private static void assertPositionAndEvent(Entry<EventMessage<?>> actual,
+                                               long expectedPosition,
+                                               EventMessage<?> expectedEvent) {
         Optional<TrackingToken> actualToken = TrackingToken.fromContext(actual);
         assertTrue(actualToken.isPresent());
         OptionalLong actualPosition = actualToken.get().position();
         assertTrue(actualPosition.isPresent());
         assertEquals(expectedPosition, actualPosition.getAsLong());
-        assertEvent(actual.message(), expected);
+        assertEvent(actual.message(), expectedEvent);
     }
 
     private static void assertEvent(EventMessage<?> actual,
@@ -514,6 +512,6 @@ public abstract class SimpleEventStoreTestSuite<ESE extends AsyncEventStorageEng
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     protected static EventMessage<?> eventMessage(int seq) {
-        return GenericEventMessage.asEventMessage("Event[" + seq + "]");
+        return EventTestUtils.asEventMessage("Event[" + seq + "]");
     }
 }

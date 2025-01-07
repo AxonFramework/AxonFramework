@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
@@ -44,9 +44,9 @@ class FilteringEventStorageEngineTest {
 
     @Test
     void eventsFromArrayMatchingAreForwarded() {
-        EventMessage<String> event1 = GenericEventMessage.asEventMessage("accept");
-        EventMessage<String> event2 = GenericEventMessage.asEventMessage("fail");
-        EventMessage<String> event3 = GenericEventMessage.asEventMessage("accept");
+        EventMessage<String> event1 = EventTestUtils.asEventMessage("accept");
+        EventMessage<String> event2 = EventTestUtils.asEventMessage("fail");
+        EventMessage<String> event3 = EventTestUtils.asEventMessage("accept");
 
         testSubject.appendEvents(event1, event2, event3);
 
@@ -55,9 +55,9 @@ class FilteringEventStorageEngineTest {
 
     @Test
     void eventsFromListMatchingAreForwarded() {
-        EventMessage<String> event1 = GenericEventMessage.asEventMessage("accept");
-        EventMessage<String> event2 = GenericEventMessage.asEventMessage("fail");
-        EventMessage<String> event3 = GenericEventMessage.asEventMessage("accept");
+        EventMessage<String> event1 = EventTestUtils.asEventMessage("accept");
+        EventMessage<String> event2 = EventTestUtils.asEventMessage("fail");
+        EventMessage<String> event3 = EventTestUtils.asEventMessage("accept");
 
         testSubject.appendEvents(asList(event1, event2, event3));
 

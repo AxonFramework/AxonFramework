@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,30 +17,27 @@
 package org.axonframework.integrationtests.eventhandling;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.integrationtests.commandhandling.LoopingChangeDoneEvent;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-
-/**
- * @author Allard Buijze
- */
 
 public class LoopingEventHandler {
 
-    private CommandBus commandBus;
+    private final CommandBus commandBus;
+
+    public LoopingEventHandler(CommandBus commandBus) {
+        this.commandBus = commandBus;
+    }
 
     @EventHandler
     public void handleLoopingEvent(LoopingChangeDoneEvent event) {
-        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(event.getAggregateIdentifier())),
-                            ProcessingContext.NONE);
-    }
+        UpdateStubAggregateCommand testPayload = new UpdateStubAggregateCommand(event.getAggregateIdentifier());
+        GenericCommandMessage<UpdateStubAggregateCommand> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
 
-    @Autowired
-    public void setCommandBus(CommandBus commandBus) {
-        this.commandBus = commandBus;
+        commandBus.dispatch(testCommand, ProcessingContext.NONE);
     }
 }

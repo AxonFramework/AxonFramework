@@ -14,33 +14,36 @@
  * limitations under the License.
  */
 
-package org.axonframework.common;
+package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
- * Simple implementation of the {@link Context} providing a sane implementation for context-specific resource
- * management.
+ * Implementation of the {@link Context} providing a basic implementation for context-specific resource management.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
 public class SimpleContext implements Context {
 
-    private final ConcurrentMap<ResourceKey<?>, Object> resources;
+    private final Map<ResourceKey<?>, Object> resources;
 
     /**
-     * Constructs a {@link SimpleContext} without any resources.
+     * Constructs a SimpleContext with a single resource.
+     *
+     * @param <T>   The type of the initial resource
+     * @param key   The key of the initial resource
+     * @param value The initial resource
      */
-    public SimpleContext() {
-        this(new ConcurrentHashMap<>());
+    public <T> SimpleContext(ResourceKey<T> key, T value) {
+        this(Map.of(key, value));
     }
 
-    private SimpleContext(ConcurrentMap<ResourceKey<?>, Object> resources) {
+    private SimpleContext(Map<ResourceKey<?>, Object> resources) {
         this.resources = resources;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,11 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.SerializedObject;
@@ -75,6 +79,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
     private final boolean useBinaryPojo;
     private final boolean startScheduler;
     private final boolean stopScheduler;
+    private final MessageNameResolver messageNameResolver;
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     /**
@@ -95,6 +100,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         useBinaryPojo = builder.useBinaryPojo;
         startScheduler = builder.startScheduler;
         stopScheduler = builder.stopScheduler;
+        messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -235,7 +241,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
                 data.getP(), byte[].class, data.getC(), data.getR()
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(deserializedPayload);
+        EventMessage<?> eventMessage = asEventMessage(deserializedPayload);
         if (!isNull(data.getM())) {
             SimpleSerializedObject<byte[]> serializedMetaData = new SimpleSerializedObject<>(
                     data.getM(), byte[].class, MetaData.class.getName(), null
@@ -245,12 +251,27 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         return eventMessage;
     }
 
+    @SuppressWarnings("unchecked")
+    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
+        if (event instanceof EventMessage<?>) {
+            return (EventMessage<E>) event;
+        } else if (event instanceof Message<?>) {
+            Message<E> message = (Message<E>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage<>(
+                messageNameResolver.resolve(event),
+                (E) event,
+                MetaData.emptyInstance()
+        );
+    }
+
     private EventMessage<?> fromDbSchedulerEventData(DbSchedulerHumanReadableEventData data) {
         SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
                 data.getSerializedPayload(), String.class, data.getPayloadClass(), data.getRevision()
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(deserializedPayload);
+        EventMessage<?> eventMessage = asEventMessage(deserializedPayload);
         if (!isNull(data.getSerializedMetadata())) {
             SimpleSerializedObject<String> serializedMetaData = new SimpleSerializedObject<>(
                     data.getSerializedMetadata(), String.class, MetaData.class.getName(), null
@@ -332,6 +353,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         private boolean useBinaryPojo = true;
         private boolean startScheduler = true;
         private boolean stopScheduler = true;
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the events. It should have either
@@ -421,6 +443,19 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
          */
         public Builder stopScheduler(boolean stopScheduler) {
             this.stopScheduler = stopScheduler;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link EventMessage EventMessages}.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

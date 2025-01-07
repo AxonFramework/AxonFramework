@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.common;
+package org.axonframework.messaging;
+
+import org.axonframework.common.ContextTestSuite;
+import org.axonframework.messaging.Context.ResourceKey;
 
 /**
  * Test class validating the {@link SimpleContext}.
@@ -23,8 +26,10 @@ package org.axonframework.common;
  */
 public class SimpleContextTest extends ContextTestSuite<SimpleContext> {
 
+    private static final ResourceKey<String> RANDOM_RESOURCE_KEY = ResourceKey.withLabel("RandomResource");
+
     @Override
     public SimpleContext testSubject() {
-        return new SimpleContext();
+        return new SimpleContext(RANDOM_RESOURCE_KEY, "SimpleContext");
     }
 }

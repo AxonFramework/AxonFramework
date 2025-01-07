@@ -33,7 +33,7 @@ class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
     private static final Function<Entry<Message<String>>, Entry<Message<String>>> NO_OP_MAPPER = entry -> entry;
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         return new MappedMessageStream<>(MessageStream.fromIterable(messages), NO_OP_MAPPER);
     }
 
@@ -45,6 +45,7 @@ class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
+        return new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"),
+                                    "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
@@ -39,12 +41,11 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
     private DelayedMessageStream(@Nonnull CompletableFuture<MessageStream<M>> delegate) {
         this.delegate = delegate;
     }
-
     /**
      * Creates a {@link MessageStream stream} that delays actions to its {@code delegate} when it becomes available.
      * <p>
      * If the given {@code delegate} has already {@link CompletableFuture#isDone() completed}, it returns the
-     * {@code MessageStream} immediately from it. Otherwise, it returns a {@link DelayedMessageStream} instance wrapping
+     * {@code MessageStream} immediately from it. Otherwise, it returns a DelayedMessageStream instance wrapping
      * the given {@code delegate}.
      *
      * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream stream} to delegate to
@@ -54,18 +55,20 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      * available.
      */
     public static <M extends Message<?>> MessageStream<M> create(
-            @Nonnull CompletableFuture<MessageStream<M>> delegate
-    ) {
-        if (delegate.isDone()) {
+            @Nonnull CompletableFuture<MessageStream<M>> delegate) {
+        CompletableFuture<MessageStream<M>> safeDelegate = delegate
+                .exceptionallyCompose(CompletableFuture::failedFuture)
+                .thenApply(ms -> Objects.requireNonNullElse(ms, EmptyMessageStream.instance()));
+        if (safeDelegate.isDone()) {
             try {
                 return delegate.get();
             } catch (InterruptedException e) {
-                return new DelayedMessageStream<>(delegate);
+                return new DelayedMessageStream<>(safeDelegate);
             } catch (ExecutionException e) {
                 return MessageStream.failed(e.getCause());
             }
         }
-        return new DelayedMessageStream<>(delegate.exceptionallyCompose(CompletableFuture::failedFuture));
+        return new DelayedMessageStream<>(safeDelegate);
     }
 
     @Override
@@ -75,13 +78,61 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
 
     @Override
     public Flux<Entry<M>> asFlux() {
-        return Mono.fromFuture(delegate)
-                   .flatMapMany(MessageStream::asFlux);
+        return Mono.fromFuture(delegate).flatMapMany(MessageStream::asFlux);
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
+    public Optional<Entry<M>> next() {
+        if (delegate.isDone()) {
+            return delegate.getNow(null).next();
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public void onAvailable(@Nonnull Runnable callback) {
+        delegate.whenComplete((r, e) -> {
+            if (r != null) {
+                r.onAvailable(callback);
+            } else {
+                callback.run();
+            }
+        });
+    }
+
+    @Override
+    public Optional<Throwable> error() {
+        if (delegate.isDone()) {
+            if (delegate.isCompletedExceptionally()) {
+                return Optional.of(delegate.exceptionNow());
+            } else {
+                return delegate.getNow(null).error();
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean isCompleted() {
+        return delegate.isDone() && delegate.getNow(null).isCompleted();
+    }
+
+    @Override
+    public boolean hasNextAvailable() {
+        return delegate.isDone() && (delegate.isCompletedExceptionally() || delegate.getNow(null).hasNextAvailable());
+    }
+
+    @Override
+    public void close() {
+        if (!delegate.isDone()) {
+            delegate.cancel(false);
+        } else {
+            delegate.getNow(null).close();
+        }
+    }
+
+    @Override
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
     }
 }

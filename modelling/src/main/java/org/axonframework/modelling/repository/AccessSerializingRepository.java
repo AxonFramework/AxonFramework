@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.repository;
 
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -47,7 +47,7 @@ public class AccessSerializingRepository<ID, T>
     private static final Logger logger = LoggerFactory.getLogger(AccessSerializingRepository.class);
 
     private final ResourceKey<ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>>> workingEntitiesKey =
-            ResourceKey.create("workingEntities");
+            ResourceKey.withLabel("workingEntities");
 
     private final AsyncRepository.LifecycleManagement<ID, T> delegate;
     private final ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> inProgress;

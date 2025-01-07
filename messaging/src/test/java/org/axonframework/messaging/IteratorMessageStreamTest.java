@@ -16,21 +16,21 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Test class validating the {@link IterableMessageStream} through the {@link MessageStreamTest} suite.
+ * Test class validating the {@link IteratorMessageStream} through the {@link MessageStreamTest} suite.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class IterableMessageStreamTest extends MessageStreamTest<Message<String>> {
+class IteratorMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         return MessageStream.fromIterable(messages);
     }
 
@@ -43,6 +43,7 @@ class IterableMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
+        return new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"),
+                                    "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

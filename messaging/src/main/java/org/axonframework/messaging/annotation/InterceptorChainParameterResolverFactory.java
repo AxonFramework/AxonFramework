@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -42,7 +42,7 @@ public class InterceptorChainParameterResolverFactory
 
     private static final ThreadLocal<InterceptorChain<?, ?>> CURRENT = new ThreadLocal<>();
     private static final ResourceKey<InterceptorChain<?, ?>> INTERCEPTOR_CHAIN_KEY =
-            ResourceKey.create("InterceptorChain");
+            ResourceKey.withLabel("InterceptorChain");
 
     /**
      * Invoke the given {@code action} with the given {@code interceptorChain} being available for parameter injection.

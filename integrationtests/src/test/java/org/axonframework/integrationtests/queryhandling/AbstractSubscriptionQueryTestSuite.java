@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -134,7 +134,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         chatQueryHandler.emitter.complete(String.class, TEST_PAYLOAD::equals);
         chatQueryHandler.emitter.emit(String.class,
                                       TEST_PAYLOAD::equals,
-                                      GenericSubscriptionQueryUpdateMessage.asUpdateMessage("Update12"));
+                                      new GenericSubscriptionQueryUpdateMessage<>(new QualifiedName("test", "query-string", "0.0.1"), "Update12"));
 
 
         StepVerifier.create(result1.initialResult().map(Message::getPayload))
@@ -148,7 +148,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         chatQueryHandler.emitter.emit(Integer.class,
                                       m -> m == 5,
-                                      GenericSubscriptionQueryUpdateMessage.asUpdateMessage(1));
+                                      new GenericSubscriptionQueryUpdateMessage<>(new QualifiedName("test", "query-integer", "0.0.1"), 1));
         chatQueryHandler.emitter.complete(Integer.class, m -> m == 5);
         chatQueryHandler.emitter.emit(Integer.class, m -> m == 5, 2);
 
@@ -197,7 +197,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         // Sets given UnitOfWork as the current, active, started UnitOfWork
         DefaultUnitOfWork<?> unitOfWork =
-                new DefaultUnitOfWork<>(GenericEventMessage.<String>asEventMessage("some-event-payload"));
+                new DefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -294,7 +294,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         // Sets given UnitOfWork as the current, active, started UnitOfWork
         DefaultUnitOfWork<?> unitOfWork =
-                new DefaultUnitOfWork<>(GenericEventMessage.<String>asEventMessage("some-event-payload"));
+                new DefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -356,7 +356,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         // Sets given UnitOfWork as the current, active, started UnitOfWork
         DefaultUnitOfWork<?> unitOfWork =
-                new DefaultUnitOfWork<>(GenericEventMessage.<String>asEventMessage("some-event-payload"));
+                new DefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -873,10 +873,10 @@ public abstract class AbstractSubscriptionQueryTestSuite {
             Executors.newSingleThreadExecutor().submit(() -> {
                 emitter.emit(String.class,
                              TEST_PAYLOAD::equals,
-                             GenericSubscriptionQueryUpdateMessage.asUpdateMessage("Update1"));
+                             new GenericSubscriptionQueryUpdateMessage<>(new QualifiedName("test", "query-string", "0.0.1"), "Update1"));
                 emitter.emit(String.class,
                              TEST_PAYLOAD::equals,
-                             GenericSubscriptionQueryUpdateMessage.asUpdateMessage("Update2"));
+                             new GenericSubscriptionQueryUpdateMessage<>(new QualifiedName("test", "query-string", "0.0.1"), "Update2"));
                 emitter.complete(String.class, TEST_PAYLOAD::equals);
                 latch.countDown();
             });

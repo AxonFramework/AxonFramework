@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,10 @@
 package org.axonframework.messaging;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Context;
-import org.axonframework.common.Context.ResourceKey;
 import org.axonframework.common.ContextTestSuite;
-import org.axonframework.common.SimpleContext;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream.Entry;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
@@ -35,9 +33,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
+    private static final Message<Object> TEST_MESSAGE =
+            new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "some-payload");
+
     @Override
     public SimpleEntry<Message<?>> testSubject() {
-        return new SimpleEntry<>(GenericMessage.asMessage("some-payload"));
+        return new SimpleEntry<>(TEST_MESSAGE);
     }
 
     @Test
@@ -47,7 +48,7 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
     @Test
     void containsExpectedData() {
-        Message<Object> expected = GenericMessage.asMessage("some-payload");
+        Message<Object> expected = TEST_MESSAGE;
 
         Entry<Message<Object>> testSubject = new SimpleEntry<>(expected);
 
@@ -56,11 +57,11 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
     @Test
     void mapsContainedMessageAndContextAsExpected() {
-        Message<Object> expectedMessage = GenericMessage.asMessage("some-payload");
+        Message<Object> expectedMessage = TEST_MESSAGE;
         MetaData expectedMetaData = MetaData.from(Map.of("key", "value"));
         String expectedResourceValue = "test";
-        ResourceKey<String> expectedContextKey = ResourceKey.create(expectedResourceValue);
-        Context testContext = new SimpleContext().withResource(expectedContextKey, expectedResourceValue);
+        ResourceKey<String> expectedContextKey = ResourceKey.withLabel(expectedResourceValue);
+        Context testContext = Context.empty().withResource(expectedContextKey, expectedResourceValue);
 
         Entry<Message<Object>> testSubject = new SimpleEntry<>(expectedMessage, testContext);
 

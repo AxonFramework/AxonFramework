@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.CachingSupplier;
 
 import java.io.Serial;
@@ -57,40 +56,12 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     public static Clock clock = Clock.systemUTC();
 
     /**
-     * Returns the given event as an EventMessage. If {@code event} already implements EventMessage, it is returned
-     * as-is. If it is a Message, a new EventMessage will be created using the payload and meta data of the given
-     * message. Otherwise, the given {@code event} is wrapped into a GenericEventMessage as its payload.
-     *
-     * @param event the event to wrap as EventMessage
-     * @param <P>   The generic type of the expected payload of the resulting object
-     * @return an EventMessage containing given {@code event} as payload, or {@code event} if it already implements
-     * EventMessage.
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public static <P> EventMessage<P> asEventMessage(@Nonnull Object event) {
-        if (event instanceof EventMessage) {
-            return (EventMessage<P>) event;
-        } else if (event instanceof Message) {
-            Message<P> message = (Message<P>) event;
-            return new GenericEventMessage<>(message, clock.instant());
-        }
-        return new GenericEventMessage<>(
-                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
-                clock.instant()
-        );
-    }
-
-    /**
      * Constructs a {@link GenericEventMessage} for the given {@code name} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
      * @param name    The {@link QualifiedName name} for this {@link EventMessage}.
      * @param payload The payload of type {@code P} for this {@link EventMessage}.
-     * @see #asEventMessage(Object)
      */
     public GenericEventMessage(@Nonnull QualifiedName name,
                                @Nonnull P payload) {
@@ -103,7 +74,6 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * @param name     The {@link QualifiedName name} for this {@link EventMessage}.
      * @param payload  The payload of type {@code P} for this {@link EventMessage}.
      * @param metaData The metadata for this {@link EventMessage}.
-     * @see #asEventMessage(Object)
      */
     public GenericEventMessage(@Nonnull QualifiedName name,
                                @Nonnull P payload,
@@ -120,7 +90,6 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * @param payload    The payload of type {@code P} for this {@link EventMessage}.
      * @param metaData   The metadata for this {@link EventMessage}.
      * @param timestamp  The {@link Instant timestamp} of this {@link EventMessage EventMessage's} creation.
-     * @see #asEventMessage(Object)
      */
     public GenericEventMessage(@Nonnull String identifier,
                                @Nonnull QualifiedName name,

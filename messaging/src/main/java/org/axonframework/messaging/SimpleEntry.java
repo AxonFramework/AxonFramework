@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.Context;
-import org.axonframework.common.SimpleContext;
 import org.axonframework.messaging.MessageStream.Entry;
 
 import java.util.function.Function;
@@ -36,19 +34,24 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context context) implements Entry<M> {
+public record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context context) implements Entry<M> {
 
     /**
-     * Construct a {@link SimpleEntry} with the given {@code message}, setting the {@link Context} to a
-     * {@link SimpleContext}.
+     * Construct a SimpleEntry with the given {@code message} and an empty {@link Context}.
      *
      * @param message The {@link Message} of type {@code M} contained in this {@link Entry}.
      */
-    SimpleEntry(@Nullable M message) {
-        this(message, new SimpleContext());
+    public SimpleEntry(@Nullable M message) {
+        this(message, Context.empty());
     }
 
-    SimpleEntry {
+    /**
+     * Compact construct asserting the {@code context} is not {@code null}.
+     *
+     * @param context The context for this entry
+     * @param message The message for this entry
+     */
+    public SimpleEntry {
         assertNonNull(context, "The context cannot be null");
     }
 
@@ -68,7 +71,7 @@ record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context c
     }
 
     @Override
-    public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
-        return this.context.withResource(key, resource);
+    public <T> Entry<M> withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+        return new SimpleEntry<>(message, context.withResource(key, resource));
     }
 }

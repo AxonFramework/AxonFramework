@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -63,9 +63,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         this.processingContext = processingContext;
         this.callbacks = new CopyOnWriteArrayList<>();
 
-        this.appendConditionKey = ResourceKey.create("appendCondition");
-        this.eventQueueKey = ResourceKey.create("eventQueue");
-        this.appendPositionKey = ResourceKey.create("appendPosition");
+        this.appendConditionKey = ResourceKey.withLabel("appendCondition");
+        this.eventQueueKey = ResourceKey.withLabel("eventQueue");
+        this.appendPositionKey = ResourceKey.withLabel("appendPosition");
     }
 
     @Override

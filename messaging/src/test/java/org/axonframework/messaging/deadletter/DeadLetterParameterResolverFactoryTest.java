@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -87,8 +87,9 @@ class DeadLetterParameterResolverFactoryTest {
 
     @Test
     void resolverMatchesForAnyMessageType() {
-        CommandMessage<Object> testCommand = GenericCommandMessage.asCommandMessage("some-command");
-        EventMessage<Object> testEvent = GenericEventMessage.asEventMessage("some-command");
+        CommandMessage<Object> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "some-command");
+        EventMessage<Object> testEvent = EventTestUtils.asEventMessage("some-command");
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
                 new QualifiedName("test", "query", "0.0.1"), "some-query", instanceOf(String.class)
         );
@@ -103,7 +104,7 @@ class DeadLetterParameterResolverFactoryTest {
 
     @Test
     void resolvesDeadLetterFromUnitOfWorkResources() {
-        EventMessage<String> testMessage = GenericEventMessage.asEventMessage("some-event");
+        EventMessage<String> testMessage = EventTestUtils.asEventMessage("some-event");
         DeadLetter<EventMessage<String>> expected = new GenericDeadLetter<>(
                 "sequenceId", testMessage, new RuntimeException("some-cause")
         );
@@ -119,7 +120,7 @@ class DeadLetterParameterResolverFactoryTest {
 
     @Test
     void resolvesNullWhenNoUnitOfWorkIsActive() {
-        Message<Object> testMessage = GenericEventMessage.asEventMessage("some-event");
+        Message<Object> testMessage = EventTestUtils.asEventMessage("some-event");
 
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
@@ -129,7 +130,7 @@ class DeadLetterParameterResolverFactoryTest {
 
     @Test
     void resolvesNullWhenNoDeadLetterIsPresentInTheUnitOfWorkResources() {
-        EventMessage<String> testMessage = GenericEventMessage.asEventMessage("some-event");
+        EventMessage<String> testMessage = EventTestUtils.asEventMessage("some-event");
         DefaultUnitOfWork.startAndGet(testMessage);
 
         ParameterResolver<DeadLetter<?>> resolver =

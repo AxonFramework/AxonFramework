@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateMember;
@@ -40,8 +41,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test class validating an annotated {@link AggregateModel} with {@link AggregateMember}s on the root level of a
- * polymorphic aggregate behaves as desired when a meta model is created with the {@link
- * AnnotatedAggregateMetaModelFactory}.
+ * polymorphic aggregate behaves as desired when a metamodel is created with the
+ * {@link AnnotatedAggregateMetaModelFactory}.
  * <p>
  * The hierarchy of the Aggregate, is as follows:
  * <p>
@@ -65,15 +66,16 @@ import static org.mockito.Mockito.*;
  * <p>
  * <b>Event Sourcing Handler Tests</b>
  * <p>
- * There are two tests for event sourcing handling in place, namely {@link #testCreateAggregateModelDoesNotDuplicateRootLevelAggregateMembers()}
- * and {@link #testCreateAggregateModelDoesNotDuplicateRootLevelAggregateMembersForPolymorphicAggregates()}.
+ * There are two tests for event sourcing handling in place, namely
+ * {@link #createAggregateModelDoesNotDuplicateRootLevelAggregateMembers()} and
+ * {@link #createAggregateModelDoesNotDuplicateRootLevelAggregateMembersForPolymorphicAggregates()}.
  * <p>
  * On all levels an {@link AggregateCreatedEvent} handler is present. Only the {@link EventHandlingMember} has the
- * {@link MemberEvent} handler. In such a set up we would assume the {@link AggregateCreatedEvent} handler to be invoked
- * once in the aggregate root (which encompasses the {@link RootAggregate}, {@link NodeAggregate} and {@link
- * LeafAggregate}/{@link OtherLeafAggregate} aggregate) and once in the {@link EventHandlingMember}. Furthermore we
- * would anticipate the {@link MemberEvent} handler to be invoked once too, since there only is a single occurrence of
- * the member in the entire set up.
+ * {@link MemberEvent} handler. In such a set-up we would assume the {@link AggregateCreatedEvent} handler to be invoked
+ * once in the aggregate root (which encompasses the {@link RootAggregate}, {@link NodeAggregate} and
+ * {@link LeafAggregate}/{@link OtherLeafAggregate} aggregate) and once in the {@link EventHandlingMember}. Furthermore
+ * we would anticipate the {@link MemberEvent} handler to be invoked once too, since there only is a single occurrence
+ * of the member in the entire set up.
  * <p>
  * <b>Command Handling and Intercepting Tests</b>
  * <p>
@@ -84,16 +86,17 @@ import static org.mockito.Mockito.*;
  * leaf implementation (e.g. the {@link LeafAggregate}) it is anticipated that the {@link CommandHandlingMember} will be
  * invoked accordingly, regardless of aggregate hierarchy or use of polymorphism.
  * <p>
- * Furthermore the {@link MemberCommand} has an interceptor present on each level of the aggregate root (thus the {@link
- * RootAggregate}, {@link NodeAggregate} and {@link LeafAggregate}/{@link OtherLeafAggregate} aggregate). Regardless of
- * the handled message type by a {@link CommandHandlerInterceptor} annotated method, any matching interceptors will be
- * invoked on any level of the aggregate's hierarchy. As such the number of invocations on the command interceptor for
- * the {@link MemberCommand} should be three, matching the number of interceptor methods.
+ * Furthermore the {@link MemberCommand} has an interceptor present on each level of the aggregate root (thus the
+ * {@link RootAggregate}, {@link NodeAggregate} and {@link LeafAggregate}/{@link OtherLeafAggregate} aggregate).
+ * Regardless of the handled message type by a {@link CommandHandlerInterceptor} annotated method, any matching
+ * interceptors will be invoked on any level of the aggregate's hierarchy. As such the number of invocations on the
+ * command interceptor for the {@link MemberCommand} should be three, matching the number of interceptor methods.
  *
  * @author Steven van Beelen
  */
 class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
 
+    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
     private static final AggregateCreatedEvent AGGREGATE_EVENT = new AggregateCreatedEvent("some-id");
     private static final MemberCommand MEMBER_COMMAND = new MemberCommand("some-id");
 
@@ -122,8 +125,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         int expectedNumberOfAggregateEventHandlerInvocations = 2;
         int expectedNumberOfMemberEventHandlerInvocations = 1;
 
-        EventMessage<AggregateCreatedEvent> testAggregateEvent = GenericEventMessage.asEventMessage(AGGREGATE_EVENT);
-        EventMessage<MemberEvent> testMemberEvent = GenericEventMessage.asEventMessage(new MemberEvent());
+        EventMessage<AggregateCreatedEvent> testAggregateEvent = EventTestUtils.asEventMessage(AGGREGATE_EVENT);
+        EventMessage<MemberEvent> testMemberEvent = EventTestUtils.asEventMessage(new MemberEvent());
         LeafAggregate testModel = new LeafAggregate();
 
         AggregateModel<LeafAggregate> testSubject =
@@ -140,8 +143,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         int expectedNumberOfAggregateEventHandlerInvocations = 2;
         int expectedNumberOfMemberEventHandlerInvocations = 1;
 
-        EventMessage<AggregateCreatedEvent> testAggregateEvent = GenericEventMessage.asEventMessage(AGGREGATE_EVENT);
-        EventMessage<MemberEvent> testMemberEvent = GenericEventMessage.asEventMessage(new MemberEvent());
+        EventMessage<AggregateCreatedEvent> testAggregateEvent = EventTestUtils.asEventMessage(AGGREGATE_EVENT);
+        EventMessage<MemberEvent> testMemberEvent = EventTestUtils.asEventMessage(new MemberEvent());
         LeafAggregate testModel = new LeafAggregate();
 
         //noinspection unchecked
@@ -157,7 +160,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
 
     @Test
     void createdAggregateModelReturnsCommandHandlingFunctionFromParentAggregate() throws Exception {
-        CommandMessage<MemberCommand> testMemberCommand = GenericCommandMessage.asCommandMessage(MEMBER_COMMAND);
+        CommandMessage<MemberCommand> testMemberCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_NAME, MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
@@ -174,7 +178,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     @Test
     void createdAggregateModelReturnsCommandHandlingFunctionFromParentAggregateForPolymorphicAggregate()
             throws Exception {
-        CommandMessage<MemberCommand> testMemberCommand = GenericCommandMessage.asCommandMessage(MEMBER_COMMAND);
+        CommandMessage<MemberCommand> testMemberCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_NAME, MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
@@ -195,7 +200,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     void createdAggregateModelInvokesAllCommandInterceptors() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
 
-        CommandMessage<MemberCommand> testMemberCommand = GenericCommandMessage.asCommandMessage(MEMBER_COMMAND);
+        CommandMessage<MemberCommand> testMemberCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_NAME, MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
@@ -212,7 +218,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     @Test
     void createdAggregateModelInvokesAllCommandInterceptorsForPolymorphicAggregate() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
-        CommandMessage<MemberCommand> testMemberCommand = GenericCommandMessage.asCommandMessage(MEMBER_COMMAND);
+        CommandMessage<MemberCommand> testMemberCommand =
+                new GenericCommandMessage<>(TEST_COMMAND_NAME, MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
@@ -332,45 +339,21 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         }
     }
 
-    public static class CreateAggregateCommand {
+    public record CreateAggregateCommand(String id) {
 
-        private final String id;
-
-        public CreateAggregateCommand(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
     }
 
-    public static class AggregateCreatedEvent {
+    public record AggregateCreatedEvent(String id) {
 
-        private final String id;
-
-        public AggregateCreatedEvent(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return id;
-        }
     }
 
-    public static class MemberCommand {
+    public record MemberCommand(@TargetAggregateIdentifier String id) {
 
-        @TargetAggregateIdentifier
-        private final String id;
-
-        public MemberCommand(String id) {
-            this.id = id;
+        @Override
+        public String id() {
+                return id;
+            }
         }
-
-        public String getId() {
-            return id;
-        }
-    }
 
     public static class MemberEvent {
 

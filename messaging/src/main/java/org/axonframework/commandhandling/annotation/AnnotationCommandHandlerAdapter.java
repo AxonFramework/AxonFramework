@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,28 @@
 
 package org.axonframework.commandhandling.annotation;
 
-import org.axonframework.commandhandling.*;
+import jakarta.annotation.Nullable;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayDeque;
@@ -44,6 +61,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a Command Bus.
@@ -64,7 +82,8 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
                                            ParameterResolverFactory parameterResolverFactory) {
         this(annotatedCommandHandler,
              parameterResolverFactory,
-             ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()));
+             ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
+             new ClassBasedMessageNameResolver());
     }
 
     /**
@@ -77,13 +96,16 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
     @SuppressWarnings("unchecked")
     public AnnotationCommandHandlerAdapter(T annotatedCommandHandler,
                                            ParameterResolverFactory parameterResolverFactory,
-                                           HandlerDefinition handlerDefinition) {
+                                           HandlerDefinition handlerDefinition,
+                                           MessageNameResolver messageNameResolver) {
         assertNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null");
+        assertNonNull(messageNameResolver, "The Message Name Resolver may not be null");
         this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedCommandHandler.getClass(),
                                                            parameterResolverFactory,
                                                            handlerDefinition);
 
         this.target = annotatedCommandHandler;
+        this.messageNameResolver = messageNameResolver;
     }
 
     /**
@@ -130,8 +152,22 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
                     .filter(ch -> ch.canHandle(command, processingContext))
                     .findFirst()
                     .map(handler -> handler.handle(command, processingContext, target)
-                                           .mapMessage(GenericCommandResultMessage::asCommandResultMessage))
+                                           .mapMessage(this::asCommandResultMessage))
                     .orElseGet(() -> MessageStream.failed(new NoHandlerForCommandException(command)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult) {
+        if (commandResult instanceof CommandResultMessage) {
+            return (CommandResultMessage<R>) commandResult;
+        } else if (commandResult instanceof Message) {
+            Message<R> commandResultMessage = (Message<R>) commandResult;
+            return new GenericCommandResultMessage<>(commandResultMessage);
+        }
+        QualifiedName name = commandResult == null
+                ? QualifiedNameUtils.fromDottedName("empty.command.result")
+                : messageNameResolver.resolve(commandResult);
+        return new GenericCommandResultMessage<>(name, (R) commandResult);
     }
 
     @Override
