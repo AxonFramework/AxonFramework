@@ -50,7 +50,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
 
     @Nonnull
     @Override
-    public MessageStream<Message<?>> handle(@Nonnull Message<?> message,
+    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
                                             @Nonnull ProcessingContext context) {
         QualifiedName messageType = message.name();
         // TODO add interceptor knowledge
