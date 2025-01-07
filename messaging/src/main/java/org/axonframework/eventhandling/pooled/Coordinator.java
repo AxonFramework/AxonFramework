@@ -1012,7 +1012,7 @@ class Coordinator {
             workPackages.values().stream()
                         .filter(WorkPackage::isAbortTriggered)
                         .forEach(workPackage -> {
-                            advanceReleaseDeadlineUsingRetryBackOff(workPackage.segment().getSegmentId());
+                            advanceReleaseDeadlineFor(workPackage.segment().getSegmentId());
                             abortWorkPackage(workPackage, null);
                         });
 
@@ -1126,7 +1126,7 @@ class Coordinator {
                        });
         }
 
-        private void advanceReleaseDeadlineUsingRetryBackOff(int segmentId) {
+        private void advanceReleaseDeadlineFor(int segmentId) {
             int errorWaitTime = releasesLastBackOffSeconds.compute(
                     segmentId,
                     (i, current) -> current == null ? 1 : Math.min(current * 2, 60)
