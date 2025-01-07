@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
@@ -52,11 +53,11 @@ class SimpleEventStoreTest {
         testSubject = new SimpleEventStore(mockStorageEngine, MATCHING_CONTEXT);
     }
 
-    private GlobalSequenceTrackingToken aGlobalSequenceToken() {
+    private static GlobalSequenceTrackingToken aGlobalSequenceToken() {
         return new GlobalSequenceTrackingToken(999);
     }
 
-    private StreamingCondition aStreamingCondition() {
+    private static StreamingCondition aStreamingCondition() {
         return StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(999));
     }
 
@@ -180,5 +181,18 @@ class SimpleEventStoreTest {
             assertSame(expectedFuture, result);
             verify(mockStorageEngine).tokenAt(timestamp);
         }
+    }
+
+    @Test
+    void describeToIncludesContextAndStorageEngine() {
+        // given
+        ComponentDescriptor descriptor = mock(ComponentDescriptor.class);
+
+        // when
+        testSubject.describeTo(descriptor);
+
+        // then
+        verify(descriptor).describeProperty("eventStorageEngine", mockStorageEngine);
+        verify(descriptor).describeProperty("context", MATCHING_CONTEXT);
     }
 }
