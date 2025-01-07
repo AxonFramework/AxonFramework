@@ -66,11 +66,11 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
 
     @Override
     public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> GenericMessageHandlingComponent registerMessageHandler(
-            @Nonnull Set<QualifiedName> messageTypes,
+            @Nonnull Set<QualifiedName> names,
             @Nonnull H messageHandler
     ) {
         if (messageHandler != this) {
-            messageTypes.forEach(messageType -> {
+            names.forEach(messageType -> {
                 //noinspection unchecked
                 MessageHandler<Message<?>, Message<?>> oldHandler = messageHandlersByName.put(
                         messageType, (MessageHandler<Message<?>, Message<?>>) messageHandler
@@ -90,10 +90,10 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
 
     @Override
     public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> GenericMessageHandlingComponent registerMessageHandler(
-            @Nonnull QualifiedName messageType,
+            @Nonnull QualifiedName name,
             @Nonnull H messageHandler
     ) {
-        return this.registerMessageHandler(Set.of(messageType), messageHandler);
+        return this.registerMessageHandler(Set.of(name), messageHandler);
     }
 
     public <C extends CommandHandler> GenericMessageHandlingComponent registerCommandHandler(

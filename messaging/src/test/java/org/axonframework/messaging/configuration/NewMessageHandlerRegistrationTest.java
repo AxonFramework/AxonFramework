@@ -319,7 +319,7 @@ class NewMessageHandlerRegistrationTest {
 
         @Override
         public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry registerMessageHandler(
-                @Nonnull Set<QualifiedName> messageTypes,
+                @Nonnull Set<QualifiedName> names,
                 @Nonnull H messageHandler
         ) {
             return null;
