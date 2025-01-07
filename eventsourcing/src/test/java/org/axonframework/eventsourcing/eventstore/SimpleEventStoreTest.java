@@ -65,58 +65,57 @@ class SimpleEventStoreTest {
     class VerifyingContext {
 
         @Test
-        void startingTransactionForAnotherContextThrowsIllegalArgumentException() {
+        void transactionThrowsIfContextDoesNotMatch() {
             assertThrows(IllegalArgumentException.class,
                          () -> testSubject.transaction(processingContext, NOT_MATCHING_CONTEXT));
         }
 
         @Test
-        void openingStreamForAnotherContextThrowsIllegalArgumentException() {
+        void openThrowsIfContextDoesNotMatch() {
             assertThrows(IllegalArgumentException.class,
                          () -> testSubject.open(NOT_MATCHING_CONTEXT, aStreamingCondition()));
         }
 
         @Test
-        void requestingHeadTokenForAnotherContextThrowsIllegalArgumentException() {
+        void headTokenThrowsIfContextDoesNotMatch() {
             assertThrows(IllegalArgumentException.class,
                          () -> testSubject.headToken(NOT_MATCHING_CONTEXT));
         }
 
         @Test
-        void requestingTailTokenForAnotherContextThrowsIllegalArgumentException() {
+        void tailTokenThrowsIfContextDoesNotMatch() {
             assertThrows(IllegalArgumentException.class,
                          () -> testSubject.tailToken(NOT_MATCHING_CONTEXT));
         }
 
         @Test
-        void requestingTokenAtForAnotherContextThrowsIllegalArgumentException() {
-            Instant timestamp = Instant.now();
+        void tokenAtThrowsIfContextDoesNotMatch() {
             assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.tokenAt(NOT_MATCHING_CONTEXT, timestamp));
+                         () -> testSubject.tokenAt(NOT_MATCHING_CONTEXT, Instant.now()));
         }
 
         @Test
-        void startingTransactionWithMatchingContextSucceeds() {
+        void transactionDoesNotThrowIfContextMatches() {
             assertDoesNotThrow(() -> testSubject.transaction(processingContext, MATCHING_CONTEXT));
         }
 
         @Test
-        void openingStreamWithMatchingContextSucceeds() {
+        void openDoesNotThrowIfContextMatches() {
             assertDoesNotThrow(() -> testSubject.open(MATCHING_CONTEXT, aStreamingCondition()));
         }
 
         @Test
-        void requestingHeadTokenWithMatchingContextSucceeds() {
+        void headTokenDoesNotThrowIfContextMatches() {
             assertDoesNotThrow(() -> testSubject.headToken(MATCHING_CONTEXT));
         }
 
         @Test
-        void requestingTailTokenWithMatchingContextSucceeds() {
+        void tailTokenDoesNotThrowIfContextMatches() {
             assertDoesNotThrow(() -> testSubject.tailToken(MATCHING_CONTEXT));
         }
 
         @Test
-        void requestingTokenAtWithMatchingContextSucceeds() {
+        void tokenAtDoesNotThrowIfContextMatches() {
             assertDoesNotThrow(() -> testSubject.tokenAt(MATCHING_CONTEXT, Instant.now()));
         }
     }
