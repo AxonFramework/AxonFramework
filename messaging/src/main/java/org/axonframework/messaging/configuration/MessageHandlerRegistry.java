@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,21 +36,21 @@ import java.util.Set;
 public interface MessageHandlerRegistry {
 
     /**
-     * @param messageTypes   The set of {@link QualifiedName message types} the given {@code messageHandler} can handle.
+     * @param names   The set of {@link QualifiedName message types} the given {@code messageHandler} can handle.
      * @param messageHandler A {@link MessageHandler handler} or {@link MessageHandlingComponent handling component}
-     *                       interested in messages dispatched with any of the given {@code messageTypes}.
+     *                       interested in messages dispatched with any of the given {@code names}.
      * @return This registry for fluent interfacing.
      */
     <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry registerMessageHandler(
-            @Nonnull Set<QualifiedName> messageTypes,
+            @Nonnull Set<QualifiedName> names,
             @Nonnull H messageHandler
     );
 
     default <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry registerMessageHandler(
-            @Nonnull QualifiedName messageType,
+            @Nonnull QualifiedName name,
             @Nonnull H messageHandler
     ) {
-        return registerMessageHandler(Set.of(messageType), messageHandler);
+        return registerMessageHandler(Set.of(name), messageHandler);
     }
 
     /**
