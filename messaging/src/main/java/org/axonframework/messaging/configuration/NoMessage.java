@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ public class NoMessage implements Message<Void> {
 
     public static final NoMessage INSTANCE = new NoMessage();
 
-    private static final QualifiedName TYPE = QualifiedName.className(NoMessage.class);
+    private static final QualifiedName NAME = new QualifiedName("axon", "no-message", "5.0.0");
 
     private NoMessage() {
     }
@@ -39,8 +39,8 @@ public class NoMessage implements Message<Void> {
 
     @Nonnull
     @Override
-    public QualifiedName type() {
-        return TYPE;
+    public QualifiedName name() {
+        return NAME;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.function.BiFunction;
@@ -36,7 +37,7 @@ public interface MessageHandler<M extends Message<?>, R extends Message<?>>
 
     @Override
     default QualifiedName name() {
-        return QualifiedName.className(this.getClass());
+        return QualifiedNameUtils.fromClassName(this.getClass());
     }
 
     @Override

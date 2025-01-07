@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,13 +52,13 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     @Override
     public MessageStream<Message<?>> handle(@Nonnull Message<?> message,
                                             @Nonnull ProcessingContext context) {
-        QualifiedName messageType = message.type();
+        QualifiedName messageType = message.name();
         // TODO add interceptor knowledge
         MessageHandler<Message<?>, Message<?>> messageHandler = messageHandlersByQualifiedName.get(messageType);
         if (messageHandler == null) {
             // TODO this would benefit from a dedicate exception
             return MessageStream.failed(new IllegalArgumentException(
-                    "No handler found for message type [" + messageType.toSimpleString() + "]"
+                    "No handler found for message type [" + messageType + "]"
             ));
         }
         return messageHandler.apply(message, context);
@@ -81,7 +81,9 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
                 }
             });
         } else {
-            logger.warn("Ignoring registration of [{}], as it is not recommend to register a MessageHandlingComponent with itself.", messageHandler.name());
+            logger.warn(
+                    "Ignoring registration of [{}], as it is not recommend to register a MessageHandlingComponent with itself.",
+                    messageHandler.name());
         }
         return this;
     }

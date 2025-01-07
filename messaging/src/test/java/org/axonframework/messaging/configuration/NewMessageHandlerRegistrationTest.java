@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,18 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.internal.util.collections.Sets;
+import org.junit.jupiter.api.*;
+import org.mockito.internal.util.collections.*;
 
 import java.time.Instant;
 import java.util.Map;
@@ -46,10 +49,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class NewMessageHandlerRegistrationTest {
 
-    private static final QualifiedName MESSAGE_HANDLER_NAME = QualifiedName.dottedName("message");
-    private static final QualifiedName COMMAND_HANDLER_NAME = QualifiedName.dottedName("command");
-    private static final QualifiedName EVENT_HANDLER_NAME = QualifiedName.dottedName("event");
-    private static final QualifiedName QUERY_HANDLER_NAME = QualifiedName.dottedName("query");
+    private static final QualifiedName MESSAGE_HANDLER_NAME = new QualifiedName("axon", "message", "0.0.1");
+    private static final QualifiedName COMMAND_HANDLER_NAME = new QualifiedName("axon", "command", "0.0.1");
+    private static final QualifiedName EVENT_HANDLER_NAME = new QualifiedName("axon", "event", "0.0.1");
+    private static final QualifiedName QUERY_HANDLER_NAME = new QualifiedName("axon", "query", "0.0.1");
 
     private AtomicBoolean messageHandlerInvoked;
     private AtomicBoolean commandHandlerInvoked;
@@ -93,7 +96,7 @@ class NewMessageHandlerRegistrationTest {
         QueryModelComponent projector = new QueryModelComponent();
         GenericMessageHandlingComponent genericMHC = new GenericMessageHandlingComponent();
 
-        QualifiedName testName = QualifiedName.dottedName("this.is.a.test");
+        QualifiedName testName = new QualifiedName("axon", "test", "0.0.1");
 
         plainMHC.registerMessageHandler(testName, (message, context) -> MessageStream.empty())
 
@@ -162,7 +165,10 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void handlingUnknownMessageReturnsFailedMessageStream() {
-        MessageStream<Message<?>> result = testSubject.handle(GenericMessage.asMessage("test"), ProcessingContext.NONE);
+        MessageStream<Message<?>> result = testSubject.handle(new GenericMessage<>(new QualifiedName("axon",
+                                                                                                     "test",
+                                                                                                     "0.0.1"), "test"),
+                                                              ProcessingContext.NONE);
 
         CompletableFuture<MessageStream.Entry<Message<?>>> resultFuture = result.firstAsCompletableFuture();
 
@@ -278,7 +284,9 @@ class NewMessageHandlerRegistrationTest {
         @Nonnull
         public MessageStream<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                              @Nonnull ProcessingContext context) {
-            return MessageStream.just(GenericCommandResultMessage.asCommandResultMessage("done!"));
+            return MessageStream.just(new GenericCommandResultMessage<>(
+                    new QualifiedName("axon", "command-response", "0.0.1"), "done!"
+            ));
         }
     }
 
@@ -299,9 +307,9 @@ class NewMessageHandlerRegistrationTest {
         public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> message,
                                                              @Nonnull ProcessingContext context) {
             return MessageStream.fromIterable(Sets.newSet(
-                    GenericQueryResponseMessage.asResponseMessage("one"),
-                    GenericQueryResponseMessage.asResponseMessage("two"),
-                    GenericQueryResponseMessage.asResponseMessage("three")
+                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query-response", "0.0.1"), "one"),
+                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query-response", "0.0.1"), "two"),
+                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query-response", "0.0.1"), "three")
             ));
         }
     }
@@ -329,7 +337,7 @@ class NewMessageHandlerRegistrationTest {
         }
     }
 
-    private record MessageWithType(QualifiedName type) implements Message<Object> {
+    private record MessageWithType(QualifiedName name) implements Message<Object> {
 
         @Override
         public String getIdentifier() {
@@ -338,8 +346,8 @@ class NewMessageHandlerRegistrationTest {
 
         @Nonnull
         @Override
-        public QualifiedName type() {
-            return type;
+        public QualifiedName name() {
+            return name;
         }
 
         @Override
@@ -368,7 +376,7 @@ class NewMessageHandlerRegistrationTest {
         }
     }
 
-    private record CommandMessageWithType(QualifiedName type) implements CommandMessage<Object> {
+    private record CommandMessageWithType(QualifiedName name) implements CommandMessage<Object> {
 
         @Override
         public String getIdentifier() {
@@ -377,8 +385,8 @@ class NewMessageHandlerRegistrationTest {
 
         @Nonnull
         @Override
-        public QualifiedName type() {
-            return type;
+        public QualifiedName name() {
+            return name;
         }
 
         @Override
@@ -417,7 +425,7 @@ class NewMessageHandlerRegistrationTest {
         }
     }
 
-    private record EventMessageWithType(QualifiedName type) implements EventMessage<Object> {
+    private record EventMessageWithType(QualifiedName name) implements EventMessage<Object> {
 
         @Override
         public String getIdentifier() {
@@ -426,8 +434,8 @@ class NewMessageHandlerRegistrationTest {
 
         @Nonnull
         @Override
-        public QualifiedName type() {
-            return type;
+        public QualifiedName name() {
+            return name;
         }
 
         @Override
@@ -466,7 +474,7 @@ class NewMessageHandlerRegistrationTest {
         }
     }
 
-    private record QueryMessageWithType(QualifiedName type) implements QueryMessage<Object, Object> {
+    private record QueryMessageWithType(QualifiedName name) implements QueryMessage<Object, Object> {
 
         @Override
         public String getIdentifier() {
@@ -475,8 +483,8 @@ class NewMessageHandlerRegistrationTest {
 
         @Nonnull
         @Override
-        public QualifiedName type() {
-            return type;
+        public QualifiedName name() {
+            return name;
         }
 
         @Override

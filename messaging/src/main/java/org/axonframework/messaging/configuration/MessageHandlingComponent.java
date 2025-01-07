@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.messaging.configuration;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.util.Set;
 
@@ -40,7 +41,7 @@ public interface MessageHandlingComponent<M extends Message<?>, R extends Messag
      */
     @Override
     default QualifiedName name() {
-        return QualifiedName.className(getClass());
+        return QualifiedNameUtils.fromClassName(getClass());
     }
 
     /**
