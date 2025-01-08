@@ -46,6 +46,14 @@ class DefaultEventStoreTransactionTest {
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey = Context.ResourceKey.withLabel(
             "eventStoreTransaction");
 
+    @BeforeEach
+    void setUp() {
+    }
+
+    @AfterEach
+    void tearDown() {
+    }
+
     // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
     private static <R> R awaitCompletion(CompletableFuture<R> completion) {
         await().atMost(Duration.ofMillis(500))
@@ -53,6 +61,25 @@ class DefaultEventStoreTransactionTest {
                .untilAsserted(() -> assertFalse(completion.isCompletedExceptionally(),
                                                 () -> completion.exceptionNow().toString()));
         return completion.join();
+    }
+
+    private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext) {
+        return processingContext.computeResourceIfAbsent(
+                testEventStoreTransactionKey,
+                () -> new DefaultEventStoreTransaction(new AsyncInMemoryEventStorageEngine(), processingContext)
+        );
+    }
+
+    @Test
+    void appendEvent() {
+    }
+
+    @Test
+    void onAppend() {
+    }
+
+    @Test
+    void appendPosition() {
     }
 
     // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
@@ -90,31 +117,23 @@ class DefaultEventStoreTransactionTest {
         assertEquals(expected.getMetaData(), actual.getMetaData());
     }
 
-    @BeforeEach
-    void setUp() {
-    }
-
-    @AfterEach
-    void tearDown() {
-    }
-
     @Test
     void sourcingConditionIsMappedToAppendCondition() {
         // given
-        EventCriteria expectedCriteria = TEST_AGGREGATE_CRITERIA;
-        EventMessage<?> expectedEventOne = eventMessage(0);
-        EventMessage<?> expectedEventTwo = eventMessage(1);
-        EventMessage<?> expectedEventThree = eventMessage(2);
-        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(expectedCriteria);
+        var expectedCriteria = TEST_AGGREGATE_CRITERIA;
+        var expectedEventOne = eventMessage(0);
+        var expectedEventTwo = eventMessage(1);
+        var expectedEventThree = eventMessage(2);
+        var sourcingCondition = SourcingCondition.conditionFor(expectedCriteria);
 
         AtomicReference<MessageStream<? extends EventMessage<?>>> initialStreamReference = new AtomicReference<>();
         AtomicReference<MessageStream<? extends EventMessage<?>>> finalStreamReference = new AtomicReference<>();
 
         // when
-        AsyncUnitOfWork uow = new AsyncUnitOfWork();
+        var uow = new AsyncUnitOfWork();
         uow.runOnPreInvocation(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-               initialStreamReference.set(transaction.source(testSourcingCondition, context));
+               initialStreamReference.set(transaction.source(sourcingCondition, context));
            })
            .runOnPostInvocation(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
@@ -126,7 +145,7 @@ class DefaultEventStoreTransactionTest {
            // Hence, we retrieve the sourced set after that.
            .runOnAfterCommit(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-               finalStreamReference.set(transaction.source(testSourcingCondition, context));
+               finalStreamReference.set(transaction.source(sourcingCondition, context));
            });
         awaitCompletion(uow.execute());
 
@@ -138,24 +157,5 @@ class DefaultEventStoreTransactionTest {
                     .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 1, expectedEventTwo))
                     .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 2, expectedEventThree))
                     .verifyComplete();
-    }
-
-    private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext) {
-        return processingContext.computeResourceIfAbsent(
-                testEventStoreTransactionKey,
-                () -> new DefaultEventStoreTransaction(new AsyncInMemoryEventStorageEngine(), processingContext)
-        );
-    }
-
-    @Test
-    void appendEvent() {
-    }
-
-    @Test
-    void onAppend() {
-    }
-
-    @Test
-    void appendPosition() {
     }
 }
