@@ -33,7 +33,6 @@ import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
-import org.axonframework.modelling.command.ConflictingModificationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +53,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException.consistencyMarkerSurpassed;
+import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
 /**
  * Thread-safe {@link AsyncEventStorageEngine} implementation storing events in memory.
@@ -103,8 +102,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         }
         if (containsConflicts(condition)) {
             // early failure, since we know conflicts already exist at insert-time
-            return CompletableFuture.failedFuture(new ConflictingModificationException(
-                    "Conflicting events were detected beyond the given consistency marker"));
+            return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
         }
 
         return CompletableFuture.completedFuture(new AppendTransaction() {
@@ -119,7 +117,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                 appendLock.lock();
                 try {
                     if (containsConflicts(condition)) {
-                        return CompletableFuture.failedFuture(consistencyMarkerSurpassed(condition.consistencyMarker()));
+                        return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
                     }
                     Optional<ConsistencyMarker> newHead =
                             events.stream()

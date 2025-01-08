@@ -35,6 +35,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
+import org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
@@ -45,7 +46,6 @@ import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.command.ConflictingModificationException;
 import org.axonframework.serialization.Converter;
 
 import java.time.Instant;
@@ -56,6 +56,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
 /**
  * Event Storage Engine implementation that uses the aggregate-oriented APIs of Axon Server, allowing it to interact
@@ -163,8 +165,7 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
             private Throwable translateConflictException(Throwable e) {
                 if (e instanceof StatusRuntimeException sre && Objects.equals(sre.getStatus().getCode(),
                                                                               Status.OUT_OF_RANGE.getCode())) {
-                    ConflictingModificationException translated = new ConflictingModificationException(
-                            "Conflicting changes detected beyond provided consistency marker");
+                    AppendEventsTransactionRejectedException translated = conflictingEventsDetected(consistencyMarker);
                     translated.addSuppressed(e);
                     return translated;
                 }

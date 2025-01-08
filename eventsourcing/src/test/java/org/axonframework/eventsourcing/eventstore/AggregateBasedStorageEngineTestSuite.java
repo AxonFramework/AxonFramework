@@ -24,7 +24,6 @@ import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine.Append
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.command.ConflictingModificationException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
@@ -234,7 +233,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
 
         ExecutionException actualException = assertThrows(ExecutionException.class,
                                                           () -> actual.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(ConflictingModificationException.class, actualException.getCause());
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, actualException.getCause());
     }
 
     @Test
@@ -249,7 +248,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
 
         CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
         var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(ConflictingModificationException.class, actual.getCause());
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
     }
 
     @Test
