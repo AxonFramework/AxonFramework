@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
@@ -102,19 +101,4 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
     CompletableFuture<TrackingToken> tokenAt(@Nonnull String context,
                                              @Nonnull Instant at);
 
-    /**
-     * Creates a {@link TrackingToken} tracking all {@link EventMessage events} since the given {@code since} from an
-     * {@link MessageStream event stream} for the given {@code context}.
-     * <p>
-     * If there is an {@link EventMessage} exactly at that time (before given {@code since}), it will be tracked too.
-     *
-     * @param context The context pointing towards the {@link MessageStream event stream} for which to retrieve a token
-     *                tracking all events since the given {@code since}.
-     * @param since   The {@link Duration} determining how the tracking token should be created. The returned token
-     *                points at very first event before this {@code Duration}.
-     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at a position before the given
-     * {@code duration} of the {@link MessageStream event stream} for the given {@code context}.
-     */
-    CompletableFuture<TrackingToken> tokenSince(@Nonnull String context,
-                                                @Nonnull Duration since);
 }

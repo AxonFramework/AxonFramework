@@ -54,8 +54,8 @@ public interface EventStoreTransaction {
      * @return The {@link MessageStream} of type {@link EventMessage} containing to the event sequence complying to the
      * given {@code condition}.
      */
-    MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition,
-                                          @Nonnull ProcessingContext context);
+    MessageStream<? extends EventMessage<?>> source(@Nonnull SourcingCondition condition,
+                                                    @Nonnull ProcessingContext context);
 
     /**
      * Appends an {@code eventMessage} to be appended to an {@link AsyncEventStore} in this transaction with the given

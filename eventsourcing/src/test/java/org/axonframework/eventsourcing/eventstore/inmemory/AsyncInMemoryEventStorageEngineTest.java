@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.*;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.junit.jupiter.api.Test;
-import reactor.test.StepVerifier;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
+import org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException;
+import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
+import org.axonframework.eventsourcing.eventstore.Tag;
+import org.junit.jupiter.api.*;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.eventsourcing.eventstore.EventCriteria.hasTag;
 import static org.axonframework.eventsourcing.eventstore.SourcingCondition.conditionFor;
@@ -38,11 +38,11 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  *
  * @author Steven van Beelen
  */
-class InMemorySimpleEventStoreTest extends SimpleEventStoreTestSuite<AsyncInMemoryEventStorageEngine> {
+class AsyncInMemoryEventStorageEngineTest extends StorageEngineTestSuite<AsyncInMemoryEventStorageEngine> {
 
     @Override
     protected AsyncInMemoryEventStorageEngine buildStorageEngine() {
-        return new AsyncInMemoryEventStorageEngine(Clock.systemUTC());
+        return new AsyncInMemoryEventStorageEngine();
     }
 
     /**
@@ -52,25 +52,11 @@ class InMemorySimpleEventStoreTest extends SimpleEventStoreTestSuite<AsyncInMemo
      */
     @Test
     void appendEventsThrowsAppendConditionAssertionExceptionWhenToManyTagsAreGiven() {
-        SourcingCondition firstCondition = conditionFor(TEST_AGGREGATE_CRITERIA);
+        SourcingCondition firstCondition = conditionFor(TEST_CRITERIA);
         SourcingCondition secondCondition = conditionFor(hasTag(new Tag("aggregateId", "other-aggregate-id")));
-        AtomicReference<MessageStream<EventMessage<?>>> streamReference = new AtomicReference<>();
 
-        EventMessage<?> testEvent = eventMessage(0);
-
-        AsyncUnitOfWork uow = new AsyncUnitOfWork();
-        uow.runOnPreInvocation(context -> {
-               EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
-               MessageStream<EventMessage<?>> firstStream = transaction.source(firstCondition, context);
-               MessageStream<EventMessage<?>> secondStream = transaction.source(secondCondition, context);
-               streamReference.set(firstStream.concatWith(secondStream));
-           })
-           .runOnPostInvocation(context -> {
-               EventStoreTransaction transaction = testSubject.transaction(context, TEST_CONTEXT);
-               transaction.appendEvent(testEvent);
-           });
-
-        CompletableFuture<Void> result = uow.execute();
+        CompletableFuture<AsyncEventStorageEngine.AppendTransaction> result = testSubject.appendEvents(AppendCondition.from(
+                firstCondition.combine(secondCondition)));
 
         await().atMost(Duration.ofMillis(500))
                .pollDelay(Duration.ofMillis(25))
@@ -78,10 +64,5 @@ class InMemorySimpleEventStoreTest extends SimpleEventStoreTestSuite<AsyncInMemo
                    assertTrue(result.isCompletedExceptionally());
                    assertInstanceOf(AppendConditionAssertionException.class, result.exceptionNow());
                });
-
-        // The stream should be entirely empty, as two non-existing models are sourced.
-        assertNotNull(streamReference.get());
-        StepVerifier.create(streamReference.get().asFlux())
-                    .verifyComplete();
     }
 }
