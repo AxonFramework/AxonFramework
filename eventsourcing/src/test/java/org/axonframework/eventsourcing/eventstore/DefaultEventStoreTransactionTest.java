@@ -28,14 +28,24 @@ import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
+/**
+ * Test class validating the {@link DefaultEventStoreTransaction}.
+ *
+ * @author Steven van Beelen
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 class DefaultEventStoreTransactionTest {
 
     protected static final String TEST_AGGREGATE_ID = "someId";
@@ -67,18 +77,6 @@ class DefaultEventStoreTransactionTest {
                 testEventStoreTransactionKey,
                 () -> new DefaultEventStoreTransaction(new AsyncInMemoryEventStorageEngine(), processingContext)
         );
-    }
-
-    @Test
-    void appendEvent() {
-    }
-
-    @Test
-    void onAppend() {
-    }
-
-    @Test
-    void appendPosition() {
     }
 
     // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
@@ -124,17 +122,15 @@ class DefaultEventStoreTransactionTest {
         var event2 = eventMessage(1);
         var event3 = eventMessage(2);
         var sourcingCondition = SourcingCondition.conditionFor(eventCriteria);
-        var expected = new Object() {
-            MessageStream<? extends EventMessage<?>> initialStream;
-            MessageStream<? extends EventMessage<?>> finalStream;
-            Long consistencyMarker;
-        };
 
         // when
+        var preCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+        var postCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+        var consistencyMarker = new AtomicLong();
         var uow = new AsyncUnitOfWork();
         uow.runOnPreInvocation(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-               expected.initialStream = transaction.source(sourcingCondition, context);
+               preCommitEvents.set(transaction.source(sourcingCondition, context));
            })
            .runOnPostInvocation(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
@@ -146,18 +142,261 @@ class DefaultEventStoreTransactionTest {
            // Hence, we retrieve the sourced set after that.
            .runOnAfterCommit(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-               expected.finalStream = transaction.source(sourcingCondition, context);
+               postCommitEvents.set(transaction.source(sourcingCondition, context));
 
-               expected.consistencyMarker = transaction.appendPosition(context);
+               consistencyMarker.set(transaction.appendPosition(context));
            });
         awaitCompletion(uow.execute());
 
         // then
-        assertNull(expected.initialStream.firstAsCompletableFuture().join());
-        StepVerifier.create(expected.finalStream.asFlux())
+        assertNull(preCommitEvents.get().firstAsCompletableFuture().join());
+        StepVerifier.create(postCommitEvents.get().asFlux())
                     .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 0, event1))
                     .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 1, event2))
                     .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 2, event3))
                     .verifyComplete();
+        assertEquals(consistencyMarker.get(), 2);
     }
+
+    @Test
+    void appendEventNotifiesRegisteredCallbacks() {
+        // given
+        var event1 = eventMessage(0);
+        var callbackEvent = new AtomicReference<EventMessage<?>>();
+
+        // when
+        var uow = new AsyncUnitOfWork();
+        uow.runOnPreInvocation(context -> {
+            EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+            transaction.onAppend(callbackEvent::set);
+            transaction.appendEvent(event1);
+        });
+        awaitCompletion(uow.execute());
+
+        // then
+        assertNotNull(callbackEvent.get());
+        assertEquals(event1.getIdentifier(), callbackEvent.get().getIdentifier());
+    }
+
+    @Test
+    void multipleCallbacksAreNotifiedOnAppend() {
+        // given
+        var event1 = eventMessage(0);
+        var callback1Events = new ArrayList<EventMessage<?>>();
+        var callback2Events = new ArrayList<EventMessage<?>>();
+
+        // when
+        var uow = new AsyncUnitOfWork();
+        uow.runOnPreInvocation(context -> {
+            EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+            transaction.onAppend(callback1Events::add);
+            transaction.onAppend(callback2Events::add);
+            transaction.appendEvent(event1);
+        });
+        awaitCompletion(uow.execute());
+
+        // then
+        assertEquals(1, callback1Events.size());
+        assertEquals(1, callback2Events.size());
+        assertEquals(event1.getIdentifier(), callback1Events.getFirst().getIdentifier());
+        assertEquals(event1.getIdentifier(), callback2Events.getFirst().getIdentifier());
+    }
+
+    @Test
+    void appendPositionReturnsMinusOneWhenNoEventsAppended() {
+        // when
+        var result = new AtomicLong();
+        var uow = new AsyncUnitOfWork();
+        uow.runOnPreInvocation(context -> {
+            EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+            result.set(transaction.appendPosition(context));
+        });
+        awaitCompletion(uow.execute());
+
+        // then
+        assertEquals(-1L, result.get());
+    }
+
+    @Test
+    void eventsAreOnlyVisibleAfterCommit() {
+        // given
+        var event1 = eventMessage(0);
+        var event2 = eventMessage(1);
+        var sourcingCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA);
+        var preCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+        var postCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+
+        // when
+        var uow = new AsyncUnitOfWork();
+        uow.runOnPreInvocation(context -> {
+               EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+               transaction.appendEvent(event1);
+               transaction.appendEvent(event2);
+               // Check events before commit
+               preCommitEvents.set(transaction.source(sourcingCondition, context));
+           })
+           .runOnAfterCommit(context -> {
+               EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+               // Check events after commit
+               postCommitEvents.set(transaction.source(sourcingCondition, context));
+           });
+        awaitCompletion(uow.execute());
+
+        // then
+        // Before commit - no events should be visible
+        StepVerifier.create(preCommitEvents.get().asFlux())
+                    .verifyComplete();
+
+        // After commit - both events should be visible
+        StepVerifier.create(postCommitEvents.get().asFlux())
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, TEST_AGGREGATE_CRITERIA, 0, event1))
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, TEST_AGGREGATE_CRITERIA, 1, event2))
+                    .verifyComplete();
+    }
+
+    @Test
+    void eventsAreNotAppendedWhenTransactionFails() {
+        // given
+        var event1 = eventMessage(0);
+        var event2 = eventMessage(1);
+        var sourcingCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA);
+        var postFailureEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+
+        // when
+        var uow = new AsyncUnitOfWork();
+        uow.runOnPreInvocation(context -> {
+               EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+               transaction.appendEvent(event1);
+               transaction.appendEvent(event2);
+           })
+           .runOnPrepareCommit(context -> {
+               throw new RuntimeException("Simulated failure during prepare commit");
+           })
+           .runOnAfterCommit(context -> {
+               // This shouldn't be reached, but if it is, we'll catch it in our assertions
+               EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+               postFailureEvents.set(transaction.source(sourcingCondition, context));
+           });
+
+        // then
+        assertThrows(RuntimeException.class, () -> awaitCompletion(uow.execute()));
+
+        // Create a new transaction to verify no events were persisted
+        var verificationUow = new AsyncUnitOfWork();
+        var finalEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+        verificationUow.runOnPreInvocation(context -> {
+            EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+            finalEvents.set(transaction.source(sourcingCondition, context));
+        });
+        awaitCompletion(verificationUow.execute());
+
+        // Verify no events were stored
+        StepVerifier.create(finalEvents.get().asFlux())
+                    .verifyComplete();
+    }
+
+    @Test
+    void rollbackPreventsEventPersistence() {
+        // given
+        var event1 = eventMessage(0);
+        var event2 = eventMessage(1);
+        var sourcingCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA);
+        var eventsAfterRollback = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+
+        // when
+        var uow = new AsyncUnitOfWork();
+        uow.runOnPreInvocation(context -> {
+               EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+               transaction.appendEvent(event1);
+               transaction.appendEvent(event2);
+           })
+           .runOnPrepareCommit(context -> {
+               throw new RuntimeException("Simulated failure triggering rollback");
+           });
+
+        assertThrows(RuntimeException.class, () -> awaitCompletion(uow.execute()));
+
+        // Create a new transaction to verify the rollback effect
+        var verificationUow = new AsyncUnitOfWork();
+        verificationUow.runOnPreInvocation(context -> {
+            EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+            eventsAfterRollback.set(transaction.source(sourcingCondition, context));
+        });
+        awaitCompletion(verificationUow.execute());
+
+        // then
+        StepVerifier.create(eventsAfterRollback.get().asFlux())
+                    .verifyComplete(); // No events should be visible
+    }
+
+//    @Test
+//    void eventsRemainVisibleAfterSuccessfulCommitEvenIfLaterTransactionFails() {
+//        // given
+//        var event1 = eventMessage(0);
+//        var event2 = eventMessage(1);
+//        var sourcingCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA);
+//        var finalEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+//
+//        // First transaction - should succeed
+//        var successfulUow = new AsyncUnitOfWork();
+//        successfulUow.runOnPreInvocation(context -> {
+//            EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+//            transaction.appendEvent(event1);
+//        });
+//        awaitCompletion(successfulUow.execute());
+//
+//        // Second transaction - should fail
+//        var failingUow = new AsyncUnitOfWork();
+//        failingUow.runOnPreInvocation(context -> {
+//                      EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+//                      transaction.appendEvent(event2);
+//                  })
+//                  .runOnPrepareCommit(context -> {
+//                      throw new RuntimeException("Simulated failure");
+//                  });
+//        assertThrows(RuntimeException.class, () -> awaitCompletion(failingUow.execute()));
+//
+//        // Verify final state
+//        var verificationUow = new AsyncUnitOfWork();
+//        verificationUow.runOnPreInvocation(context -> {
+//            EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+//            finalEvents.set(transaction.source(sourcingCondition, context));
+//        });
+//        awaitCompletion(verificationUow.execute());
+//
+//        // then
+//        StepVerifier.create(finalEvents.get().asFlux())
+//                    .assertNext(entry -> assertTagsPositionAndEvent(entry, TEST_AGGREGATE_CRITERIA, 0, event1))
+//                    .verifyComplete();
+//    }
+
+//    @Test
+//    void multipleSourcingOperationsCombineConditions() {
+//        // given
+//        var eventCriteria1 = EventCriteria.hasTag(new Tag("criteria1", "value1"));
+//        var eventCriteria2 = EventCriteria.hasTag(new Tag("criteria2", "value2"));
+//        var event1 = eventMessage(0);
+//        var sourcingCondition1 = SourcingCondition.conditionFor(eventCriteria1);
+//        var sourcingCondition2 = SourcingCondition.conditionFor(eventCriteria2);
+//
+//        // when
+//        var uow = new AsyncUnitOfWork();
+//        uow.runOnPreInvocation(context -> {
+//            EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+//            transaction.source(sourcingCondition1, context);
+//            transaction.source(sourcingCondition2, context);
+//            transaction.appendEvent(event1);
+//        });
+//        awaitCompletion(uow.execute());
+//
+//        // Verify the event has both tags
+//        StepVerifier.create(storageEngine.source(sourcingCondition1).asFlux())
+//                    .assertNext(entry -> {
+//                        Optional<Set<Tag>> tags = Tag.fromContext(entry);
+//                        assertTrue(tags.isPresent());
+//                        assertTrue(tags.get().containsAll(eventCriteria1.tags()));
+//                        assertTrue(tags.get().containsAll(eventCriteria2.tags()));
+//                    })
+//                    .verifyComplete();
+//    }
 }
